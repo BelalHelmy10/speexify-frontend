@@ -3,7 +3,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import GoogleButton from "../components/GoogleButton";
+import dynamic from "next/dynamic";
+const GoogleButton = dynamic(() => import("../components/GoogleButton"), {
+  ssr: false,
+});
 import {
   me as apiMe,
   googleLogin as apiGoogleLogin,
