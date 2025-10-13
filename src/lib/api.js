@@ -1,17 +1,27 @@
 // src/lib/api.js
 import axios from "axios";
 
-// Trim trailing slashes; fallback to localhost in dev.
-const baseURL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
-  "http://localhost:5050";
+// Prefer going through Next.js rewrites to avoid CORS headaches.
+// This works in dev, preview, and prod on Vercel.
+let baseURL = "/api";
+
+// Optional escape hatch: set NEXT_PUBLIC_DIRECT_BACKEND=1
+// to talk to the backend directly (useful if you run the frontend
+// without the Next dev server, or for debugging).
+if (
+  process.env.NEXT_PUBLIC_DIRECT_BACKEND === "1" &&
+  process.env.NEXT_PUBLIC_API_URL
+) {
+  baseURL = process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "");
+}
 
 const api = axios.create({
-  baseURL, // every call is relative to your backend
-  withCredentials: true, // send/receive auth cookies
+  baseURL,
+  withCredentials: true, // keep this if you use cookie-based auth
+  // timeout: 15000, // optional: add a timeout if you like
 });
 
-// (optional) simple dev logger for API errors
+// (optional) dev logger
 if (process.env.NODE_ENV !== "production") {
   api.interceptors.response.use(
     (res) => res,
