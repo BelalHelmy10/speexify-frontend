@@ -1,0 +1,874 @@
+// web/src/styles/register.scss
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Variables & Theme
+// ─────────────────────────────────────────────────────────────────────────────
+$bg-primary: #ffffff;
+$bg-secondary: #f8fafc;
+$text-primary: #0f172a;
+$text-secondary: #64748b;
+$text-muted: #94a3b8;
+$brand: #0ea5e9;
+$brand-dark: #0284c7;
+$brand-light: #38bdf8;
+$error: #ef4444;
+$error-bg: #fef2f2;
+$success: #10b981;
+$success-bg: #ecfdf5;
+$border: #e2e8f0;
+$border-focus: rgba(14, 165, 233, 0.4);
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+  0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+  0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+  0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+$transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page Layout
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at 20% 50%,
+        rgba(99, 102, 241, 0.15) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 80% 50%,
+        rgba(236, 72, 153, 0.15) 0%,
+        transparent 50%
+      );
+  }
+}
+
+@keyframes gradientShift {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Container
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Card
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-card {
+  background: $bg-primary;
+  border-radius: 24px;
+  padding: 48px 40px;
+  box-shadow: $shadow-xl, 0 0 0 1px rgba(0, 0, 0, 0.05);
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+
+  @media (max-width: 480px) {
+    padding: 32px 24px;
+    border-radius: 20px;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Brand Icon
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+
+  .brand-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, $brand 0%, $brand-dark 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: $shadow-lg, 0 0 0 4px rgba(14, 165, 233, 0.1);
+
+    svg {
+      width: 28px;
+      height: 28px;
+      color: white;
+    }
+  }
+}
+
+@keyframes brandPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Header
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-header {
+  text-align: center;
+  margin-bottom: 32px;
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 700;
+    color: $text-primary;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    margin: 0;
+    font-size: 15px;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Progress Steps (Register-specific)
+// ─────────────────────────────────────────────────────────────────────────────
+.progress-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+  padding: 0 20px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+
+  span {
+    font-size: 13px;
+    font-weight: 600;
+    color: $text-muted;
+    transition: color $transition-base;
+  }
+
+  &.active {
+    .step-circle {
+      background: linear-gradient(135deg, $brand 0%, $brand-dark 100%);
+      color: white;
+      border-color: transparent;
+      box-shadow: $shadow-md, 0 0 0 4px rgba(14, 165, 233, 0.15);
+      transform: scale(1.1);
+    }
+
+    span {
+      color: $text-primary;
+    }
+  }
+}
+
+.step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: $bg-secondary;
+  border: 2px solid $border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: $text-muted;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+  position: relative;
+  z-index: 1;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:has(svg) {
+    animation: stepComplete 0.5s ease;
+  }
+}
+
+.step-line {
+  width: 60px;
+  height: 2px;
+  background: $border;
+  margin: 0 8px 24px;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, $brand 0%, $brand-dark 100%);
+    transition: width 0.5s ease;
+  }
+}
+
+@keyframes stepComplete {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Alerts
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+  background: $error-bg;
+  color: $error;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+
+  &.success {
+    background: $success-bg;
+    color: $success;
+    border-color: rgba(16, 185, 129, 0.2);
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Social Auth
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-social {
+  margin-bottom: 24px;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Divider
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+  color: $text-muted;
+  font-size: 14px;
+  font-weight: 500;
+
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid $border;
+  }
+
+  span {
+    padding: 0 16px;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Form
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    label {
+      margin: 0;
+    }
+  }
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 13px;
+  color: $text-muted;
+  line-height: 1.4;
+}
+
+.optional {
+  font-weight: 400;
+  color: $text-muted;
+  font-size: 13px;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Input Wrapper
+// ─────────────────────────────────────────────────────────────────────────────
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .input-icon {
+    position: absolute;
+    left: 14px;
+    width: 20px;
+    height: 20px;
+    color: $text-muted;
+    pointer-events: none;
+    transition: color $transition-fast;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 14px 12px 44px;
+    font-size: 15px;
+    color: $text-primary;
+    background: $bg-primary;
+    border: 1.5px solid $border;
+    border-radius: 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    font-family: inherit;
+
+    &::placeholder {
+      color: $text-muted;
+    }
+
+    &:hover {
+      border-color: darken($border, 5%);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $brand;
+      box-shadow: 0 0 0 4px $border-focus;
+    }
+
+    &:focus ~ .input-icon {
+      color: $brand;
+    }
+
+    // Special styling for verification code
+    &[type="text"][inputMode="numeric"] {
+      letter-spacing: 0.3em;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      padding-left: 14px;
+
+      &::placeholder {
+        letter-spacing: 0.2em;
+        font-size: 16px;
+      }
+
+      &:focus {
+        letter-spacing: 0.4em;
+      }
+    }
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 12px;
+    padding: 6px;
+    background: none;
+    border: none;
+    color: $text-muted;
+    cursor: pointer;
+    transition: color $transition-fast;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+
+    &:hover {
+      color: $text-primary;
+      background: $bg-secondary;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &:has(input:focus) .password-toggle {
+    color: $brand;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Buttons
+// ─────────────────────────────────────────────────────────────────────────────
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, $brand 0%, $brand-dark 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: $shadow-md, 0 1px 0 0 rgba(255, 255, 255, 0.1) inset;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 100%
+    );
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: $shadow-lg, 0 1px 0 0 rgba(255, 255, 255, 0.1) inset;
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .spinner {
+    width: 18px;
+    height: 18px;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Form Actions (Resend & Change Email)
+// ─────────────────────────────────────────────────────────────────────────────
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: -8px;
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: $brand;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(14, 165, 233, 0.08);
+    color: $brand-dark;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Footer
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-footer {
+  margin-top: 24px;
+  text-align: center;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: $text-secondary;
+  }
+
+  .link-primary {
+    color: $brand;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $brand-dark;
+      text-decoration: underline;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Decorative Elements
+// ─────────────────────────────────────────────────────────────────────────────
+.auth-decoration {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 70%
+  );
+  filter: blur(40px);
+
+  &.circle-1 {
+    width: 400px;
+    height: 400px;
+    top: -100px;
+    left: -100px;
+    animation-delay: 0s;
+  }
+
+  &.circle-2 {
+    width: 300px;
+    height: 300px;
+    bottom: -80px;
+    right: -80px;
+    animation-delay: 5s;
+  }
+
+  &.circle-3 {
+    width: 200px;
+    height: 200px;
+    top: 50%;
+    right: -50px;
+    animation-delay: 10s;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Responsive Adjustments
+// ─────────────────────────────────────────────────────────────────────────────
+@media (max-width: 480px) {
+  .progress-steps {
+    padding: 0 8px;
+  }
+
+  .step-line {
+    width: 40px;
+    margin: 0 4px 24px;
+  }
+
+  .step {
+    span {
+      font-size: 12px;
+    }
+  }
+
+  .step-circle {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enhanced Input & Placeholder Styles
+// ─────────────────────────────────────────────────────────────────────────────
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .input-icon {
+    position: absolute;
+    left: 14px;
+    width: 20px;
+    height: 20px;
+    color: $text-muted;
+    pointer-events: none;
+    transition: color $transition-fast;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 14px 12px 44px;
+    font-size: 15px;
+    color: $text-primary;
+    background: $bg-primary;
+    border: 1.5px solid $border;
+    border-radius: 12px;
+    transition: all $transition-base;
+    font-family: inherit;
+
+    // Enhanced placeholder styling
+    &::placeholder {
+      color: $text-muted;
+      opacity: 1;
+      transition: opacity $transition-fast;
+    }
+
+    &::-webkit-input-placeholder {
+      color: $text-muted;
+      opacity: 1;
+    }
+
+    &::-moz-placeholder {
+      color: $text-muted;
+      opacity: 1;
+    }
+
+    &:-ms-input-placeholder {
+      color: $text-muted;
+      opacity: 1;
+    }
+
+    // Placeholder fades on focus
+    &:focus::placeholder {
+      opacity: 0.5;
+    }
+
+    &:hover {
+      border-color: darken($border, 5%);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $brand;
+      box-shadow: 0 0 0 4px $border-focus;
+    }
+
+    &:focus ~ .input-icon {
+      color: $brand;
+    }
+
+    // Special styling for verification code
+    &[type="text"][inputMode="numeric"] {
+      letter-spacing: 0.3em;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      padding-left: 14px;
+
+      &::placeholder {
+        letter-spacing: 0.2em;
+        font-size: 16px;
+        color: $text-muted;
+        opacity: 0.7;
+      }
+
+      &:focus {
+        letter-spacing: 0.4em;
+      }
+    }
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 12px;
+    padding: 6px;
+    background: none;
+    border: none;
+    color: $text-muted;
+    cursor: pointer;
+    transition: color $transition-fast;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+
+    &:hover {
+      color: $text-primary;
+      background: $bg-secondary;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &:has(input:focus) .password-toggle {
+    color: $brand;
+  }
+}
+
+// For inputs without icon wrapper (like in ForgotPassword)
+.auth-form input:not(.input-wrapper input) {
+  padding: 12px 14px;
+  font-size: 15px;
+  color: $text-primary;
+  background: $bg-primary;
+  border: 1.5px solid $border;
+  border-radius: 12px;
+  transition: all $transition-base;
+  font-family: inherit;
+
+  &::placeholder {
+    color: $text-muted;
+    opacity: 1;
+  }
+
+  &:focus::placeholder {
+    opacity: 0.5;
+  }
+
+  &:hover {
+    border-color: darken($border, 5%);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $brand;
+    box-shadow: 0 0 0 4px $border-focus;
+  }
+}

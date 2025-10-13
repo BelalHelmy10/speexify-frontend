@@ -1,0 +1,391 @@
+/* src/styles/_footer.scss - PREMIUM EDITION */
+
+// ═════════════════════════════════════════════════════════════════════════════
+// COLOR VARIABLES - Standalone
+// ═════════════════════════════════════════════════════════════════════════════
+
+$ink: #0f172a;
+$muted: #64748b;
+$border: rgba(15, 23, 42, 0.08);
+$brand: #0ea5e9;
+$bg: #ffffff;
+$bg-subtle: #f8fafc;
+
+// ═════════════════════════════════════════════════════════════════════════════
+// FOOTER WRAPPER
+// - Sophisticated gradient background
+// - Elegant top border with shadow
+// ═════════════════════════════════════════════════════════════════════════════
+
+.site-footer-wrapper {
+  position: relative;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-top: 1px solid $border;
+  padding: 80px 0 40px;
+  margin-top: 120px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(14, 165, 233, 0.3) 50%,
+      transparent
+    );
+  }
+
+  @media (max-width: 900px) {
+    padding: 60px 0 32px;
+    margin-top: 80px;
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// FOOTER TOP - Main Content Grid
+// ═════════════════════════════════════════════════════════════════════════════
+
+.footer-top {
+  display: grid;
+  grid-template-columns: 1.3fr 2fr;
+  gap: clamp(40px, 6vw, 80px);
+  margin-bottom: 60px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    gap: 48px;
+    margin-bottom: 48px;
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// BRAND SECTION
+// - Logo with shimmer effect
+// - Tagline
+// - Newsletter signup
+// ═════════════════════════════════════════════════════════════════════════════
+
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.brand-link {
+  position: relative;
+  display: inline-block;
+  font-weight: 800;
+  font-size: 28px;
+  color: $ink;
+  text-decoration: none;
+  letter-spacing: -0.5px;
+  width: fit-content;
+  overflow: hidden;
+
+  .brand-text {
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .brand-shimmer {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(14, 165, 233, 0.2),
+      transparent
+    );
+    transition: left 0.6s ease;
+  }
+
+  &:hover {
+    text-decoration: none;
+
+    .brand-text {
+      transform: translateX(2px);
+    }
+
+    .brand-shimmer {
+      left: 100%;
+    }
+  }
+}
+
+.brand-tagline {
+  color: $muted;
+  line-height: 1.6;
+  font-size: 15px;
+  max-width: 320px;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// NEWSLETTER
+// - Modern input with inline button
+// - Smooth interactions
+// ═════════════════════════════════════════════════════════════════════════════
+
+.newsletter {
+  margin-top: 8px;
+}
+
+.newsletter-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: $ink;
+  margin-bottom: 12px;
+  letter-spacing: -0.2px;
+}
+
+.newsletter-form {
+  display: flex;
+  gap: 8px;
+  max-width: 400px;
+}
+
+.newsletter-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid $border;
+  border-radius: 12px;
+  font-size: 14px;
+  color: $ink;
+  background: $bg;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $brand;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1),
+      0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+}
+
+.newsletter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, $brand 0%, #0284c7 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px -4px rgba(14, 165, 233, 0.4);
+  white-space: nowrap;
+
+  svg {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -6px rgba(14, 165, 233, 0.5);
+
+    svg {
+      transform: translateX(2px);
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// NAVIGATION COLUMNS
+// - Clean grid layout
+// - Animated link arrows
+// ═════════════════════════════════════════════════════════════════════════════
+
+.footer-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+
+  @media (max-width: 700px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px 24px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+.nav-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-col-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: $ink;
+  margin-bottom: 16px;
+  letter-spacing: -0.2px;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.nav-col-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-col-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  color: $muted;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: fit-content;
+
+  .link-arrow {
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &:hover {
+    color: $brand;
+    text-decoration: none;
+    transform: translateX(2px);
+
+    .link-arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// FOOTER BOTTOM
+// - Copyright and social links
+// - Clean separation
+// ═════════════════════════════════════════════════════════════════════════════
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 32px;
+  border-top: 1px solid $border;
+
+  @media (max-width: 700px) {
+    flex-direction: column;
+    gap: 24px;
+    align-items: flex-start;
+  }
+}
+
+.footer-bottom-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.copyright {
+  color: $muted;
+  font-size: 14px;
+  margin: 0;
+}
+
+.footer-bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// SOCIAL LINKS
+// - Icon buttons with smooth hover states
+// - Professional styling
+// ═════════════════════════════════════════════════════════════════════════════
+
+.social-links {
+  display: flex;
+  gap: 10px;
+}
+
+.social-link {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: $bg;
+  border: 1px solid $border;
+  color: $muted;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  svg {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &:hover {
+    background: $brand;
+    border-color: $brand;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -6px rgba(14, 165, 233, 0.4);
+    text-decoration: none;
+
+    svg {
+      transform: scale(1.1);
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ACCESSIBILITY
+// ═════════════════════════════════════════════════════════════════════════════
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-link,
+  .nav-col-link,
+  .social-link,
+  .newsletter-btn {
+    transition: none;
+  }
+
+  .brand-shimmer {
+    display: none;
+  }
+}

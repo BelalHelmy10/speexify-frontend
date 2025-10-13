@@ -1,0 +1,74 @@
+@import "variables";
+@import "mixins";
+@import "layout";
+@import "./buttons";
+@import "./cards";
+@import "./tables";
+@import "./forms";
+@import "./calendar";
+/* src/styles/global.scss (or wherever you collect partials) */
+@import "./header"; // <= add this line (resolves to _header.scss)
+@import "./auth";
+@import "./footer";
+@import "./admin.scss";
+@import "./dashboard.scss";
+
+// body {
+//   margin: 0;
+//   font-family: $font-main;
+//   background: white;
+//   color: $text-dark;
+// }
+body {
+  font-family: system-ui, sans-serif;
+  background: #f9fafb;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  /* matches the sizing used elsewhere (e.g., mobile drawer width) */
+  width: min(100% - 32px, 1200px);
+  margin: 0 auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+a {
+  text-decoration: none;
+  color: $primary;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+.nav-link {
+  color: inherit;
+  opacity: 0.9;
+}
+.nav-link.active {
+  font-weight: 600;
+  text-decoration: underline;
+}
+.btn-link {
+  background: none;
+  border: none;
+  color: #0ea5e9;
+}
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.nsm7Bb-HzV7m-LgbsSe-BPrWId {
+  font-size: 1rem;
+  font-weight: 700 !important;
+}
+
+/* src/styles/_perf-off.scss */
+// *,
+// :before,
+// :after {
+//   animation: none !important;
+//   transition: none !important;
+//   scroll-behavior: auto !important;
+// }

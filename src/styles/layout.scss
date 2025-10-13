@@ -1,0 +1,63 @@
+@import "variables";
+
+.site-header {
+  border-bottom: 1px solid #eee;
+  background: #fff;
+
+  .container {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 14px 16px;
+  }
+
+  .brand {
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+}
+
+.site-main {
+  padding: 24px 0 48px;
+}
+
+.site-footer {
+  border-top: 1px solid #eee;
+  padding: 16px 0;
+  background: #fafafa;
+  color: #555;
+}
+
+.container-narrow {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panel {
+  padding: 16px;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  background: white;
+
+  h3 {
+    margin-top: 0;
+  }
+}
+
+.button-row {
+  display: flex;
+  gap: 8px;
+}

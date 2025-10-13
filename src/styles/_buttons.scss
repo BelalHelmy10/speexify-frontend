@@ -1,0 +1,29 @@
+.btn {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: $radius;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+
+  &--primary {
+    background: $color-primary;
+    color: white;
+    border: none;
+
+    &:hover {
+      background: $color-primary-dark;
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: $color-primary;
+    border: 1px solid $color-primary;
+
+    &:hover {
+      background: $color-primary;
+      color: white;
+    }
+  }
+}

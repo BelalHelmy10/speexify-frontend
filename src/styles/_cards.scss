@@ -1,0 +1,17 @@
+.card {
+  padding: $spacing;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  background: white;
+
+  &__title {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+
+  &__value {
+    font-size: 24px;
+    font-weight: 600;
+  }
+}
