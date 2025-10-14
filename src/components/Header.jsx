@@ -79,17 +79,21 @@ export default function Header() {
 
   const RightCTA = () =>
     checking ? (
-      <span className="nav-status">
-        <span className="status-pulse"></span>
-        <span className="status-text">Checking…</span>
+      <span className="spx-nav-status">
+        <span className="spx-status-pulse"></span>
+        <span className="spx-status-text">Checking…</span>
       </span>
     ) : !user ? (
-      <Link href="/login" className="nav-cta" onClick={() => setOpen(false)}>
-        <span className="cta-bg"></span>
-        <span className="cta-content">
-          <span className="cta-text">Log in</span>
+      <Link
+        href="/login"
+        className="spx-nav-cta"
+        onClick={() => setOpen(false)}
+      >
+        <span className="spx-cta-bg"></span>
+        <span className="spx-cta-content">
+          <span className="spx-cta-text">Log in</span>
           <svg
-            className="cta-arrow"
+            className="spx-cta-arrow"
             width="16"
             height="16"
             viewBox="0 0 16 16"
@@ -106,12 +110,16 @@ export default function Header() {
         </span>
       </Link>
     ) : (
-      <button type="button" className="nav-cta logout-btn" onClick={logout}>
-        <span className="cta-bg"></span>
-        <span className="cta-content">
-          <span className="cta-text">Logout</span>
+      <button
+        type="button"
+        className="spx-nav-cta spx-logout-btn"
+        onClick={logout}
+      >
+        <span className="spx-cta-bg"></span>
+        <span className="spx-cta-content">
+          <span className="spx-cta-text">Logout</span>
           <svg
-            className="cta-icon"
+            className="spx-cta-icon"
             width="16"
             height="16"
             viewBox="0 0 16 16"
@@ -136,52 +144,55 @@ export default function Header() {
     );
 
   return (
-    <header className={`site-header-wrapper${scrolled ? " is-scrolled" : ""}`}>
-      <div className="header-glow"></div>
-      <div className="site-header container">
+    <header
+      className={`spx-header-wrapper${scrolled ? " spx-is-scrolled" : ""}`}
+    >
+      <div className="spx-header-glow"></div>
+      <div className="spx-header-container container">
         <Link
           href={logoTo}
-          className="brand"
+          className="spx-brand"
           aria-label="Speexify"
           onClick={() => setOpen(false)}
         >
-          <span className="brand-text">Speexify</span>
+          <span className="spx-brand-text">Speexify</span>
         </Link>
 
-        <nav className="nav">
-          <ul className="nav-list">
+        <nav className="spx-nav">
+          <ul className="spx-nav-list">
             {links.map((item, idx) => (
               <li
                 key={item.to}
-                className="nav-item"
+                className="spx-nav-item"
                 style={{ "--item-index": idx }}
               >
                 <Link
                   href={item.to}
                   className={
-                    "nav-link" + (isActive(item.to) ? " is-active" : "")
+                    "spx-nav-link" + (isActive(item.to) ? " spx-is-active" : "")
                   }
                   onClick={() => setOpen(false)}
                 >
-                  <span className="link-bg"></span>
-                  <span className="link-text">{item.label}</span>
+                  <span className="spx-link-bg"></span>
+                  <span className="spx-link-text">{item.label}</span>
                 </Link>
               </li>
             ))}
             {!checking && !user && (
               <li
-                className="nav-item nav-item-special"
+                className="spx-nav-item spx-nav-item-special"
                 style={{ "--item-index": links.length }}
               >
                 <Link
                   href="/register"
                   className={
-                    "nav-link" + (isActive("/register") ? " is-active" : "")
+                    "spx-nav-link" +
+                    (isActive("/register") ? " spx-is-active" : "")
                   }
                   onClick={() => setOpen(false)}
                 >
-                  <span className="link-bg"></span>
-                  <span className="link-text">Register</span>
+                  <span className="spx-link-bg"></span>
+                  <span className="spx-link-text">Register</span>
                 </Link>
               </li>
             )}
@@ -191,42 +202,43 @@ export default function Header() {
         <RightCTA />
 
         <button
-          className={"nav-toggle" + (open ? " is-open" : "")}
+          className={"spx-nav-toggle" + (open ? " spx-is-open" : "")}
           aria-label="Toggle menu"
           aria-expanded={open ? "true" : "false"}
           onClick={() => setOpen((v) => !v)}
         >
-          <span className="toggle-box">
-            <span className="toggle-inner">
-              <span className="toggle-line"></span>
-              <span className="toggle-line"></span>
-              <span className="toggle-line"></span>
+          <span className="spx-toggle-box">
+            <span className="spx-toggle-inner">
+              <span className="spx-toggle-line"></span>
+              <span className="spx-toggle-line"></span>
+              <span className="spx-toggle-line"></span>
             </span>
           </span>
         </button>
       </div>
 
-      <div className={"mobile-drawer" + (open ? " is-open" : "")}>
-        <div className="mobile-drawer-inner">
-          <ul className="mobile-list">
+      <div className={"spx-mobile-drawer" + (open ? " spx-is-open" : "")}>
+        <div className="spx-mobile-drawer-inner">
+          <ul className="spx-mobile-list">
             {links.map((item, idx) => (
               <li
                 key={item.to}
-                className="mobile-item"
+                className="spx-mobile-item"
                 style={{ "--item-index": idx }}
               >
                 <Link
                   href={item.to}
                   className={
-                    "mobile-link" + (isActive(item.to) ? " is-active" : "")
+                    "spx-mobile-link" +
+                    (isActive(item.to) ? " spx-is-active" : "")
                   }
                   onClick={() => setOpen(false)}
                 >
-                  <span className="mobile-link-bg"></span>
-                  <span className="mobile-link-content">
-                    <span className="mobile-link-text">{item.label}</span>
+                  <span className="spx-mobile-link-bg"></span>
+                  <span className="spx-mobile-link-content">
+                    <span className="spx-mobile-link-text">{item.label}</span>
                     <svg
-                      className="mobile-link-arrow"
+                      className="spx-mobile-link-arrow"
                       width="18"
                       height="18"
                       viewBox="0 0 18 18"
@@ -248,22 +260,22 @@ export default function Header() {
             {!checking && !user && (
               <>
                 <li
-                  className="mobile-item"
+                  className="spx-mobile-item"
                   style={{ "--item-index": links.length }}
                 >
                   <Link
                     href="/register"
                     className={
-                      "mobile-link" +
-                      (isActive("/register") ? " is-active" : "")
+                      "spx-mobile-link" +
+                      (isActive("/register") ? " spx-is-active" : "")
                     }
                     onClick={() => setOpen(false)}
                   >
-                    <span className="mobile-link-bg"></span>
-                    <span className="mobile-link-content">
-                      <span className="mobile-link-text">Register</span>
+                    <span className="spx-mobile-link-bg"></span>
+                    <span className="spx-mobile-link-content">
+                      <span className="spx-mobile-link-text">Register</span>
                       <svg
-                        className="mobile-link-arrow"
+                        className="spx-mobile-link-arrow"
                         width="18"
                         height="18"
                         viewBox="0 0 18 18"
@@ -281,16 +293,16 @@ export default function Header() {
                   </Link>
                 </li>
                 <li
-                  className="mobile-item mobile-item-cta"
+                  className="spx-mobile-item spx-mobile-item-cta"
                   style={{ "--item-index": links.length + 1 }}
                 >
                   <Link
                     href="/login"
-                    className="mobile-cta"
+                    className="spx-mobile-cta"
                     onClick={() => setOpen(false)}
                   >
-                    <span className="mobile-cta-bg"></span>
-                    <span className="mobile-cta-content">
+                    <span className="spx-mobile-cta-bg"></span>
+                    <span className="spx-mobile-cta-content">
                       <span>Log in</span>
                       <svg
                         width="18"
@@ -314,16 +326,16 @@ export default function Header() {
 
             {!checking && user && (
               <li
-                className="mobile-item mobile-item-cta"
+                className="spx-mobile-item spx-mobile-item-cta"
                 style={{ "--item-index": links.length }}
               >
                 <button
-                  className="mobile-cta logout-btn"
+                  className="spx-mobile-cta spx-logout-btn"
                   onClick={logout}
                   type="button"
                 >
-                  <span className="mobile-cta-bg"></span>
-                  <span className="mobile-cta-content">
+                  <span className="spx-mobile-cta-bg"></span>
+                  <span className="spx-mobile-cta-content">
                     <span>Logout</span>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path

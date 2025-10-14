@@ -1,9 +1,12 @@
 // web/middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
-const API =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
-  "http://localhost:5050";
+// const API =
+//   process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
+//   "http://localhost:5050";
+
+// Use the same host as the incoming request (so cookies are included)
+const ORIGIN = req.nextUrl.origin;
 
 // routes we protect (must be logged in)
 const PRIVATE_ROUTES = ["/dashboard", "/calendar", "/settings", "/admin"];
@@ -19,7 +22,7 @@ export async function middleware(req) {
   let isAdmin = false;
 
   try {
-    const res = await fetch(`${API}/api/auth/me`, {
+    const res = await fetch(`${ORIGIN}/api/auth/me`, {
       headers: {
         cookie: req.headers.get("cookie") || "",
       },
