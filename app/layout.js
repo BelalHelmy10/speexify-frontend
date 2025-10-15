@@ -9,6 +9,11 @@ import Header from "../components/Header";
 import Header from "../components/Footer";
 import Header from "../components/Providers";
 
+export const metadata = {
+  title: { default: "Speexify", template: "%s — Speexify" },
+  description: "Language & communication coaching for teams.",
+};
+
 const API =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
   "http://localhost:5050";
