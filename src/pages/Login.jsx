@@ -4,7 +4,12 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import GoogleButton from "../components/GoogleButton";
+import dynamic from "next/dynamic";
+
+const GoogleButton = dynamic(() => import("../components/GoogleButton"), {
+  ssr: false,
+});
+
 import {
   login as apiLogin,
   googleLogin as apiGoogleLogin,
@@ -21,7 +26,6 @@ function Login() {
   const router = useRouter();
   const params = useSearchParams();
 
-  // Read auth from the global provider
   const { user, checking, refresh } = useAuth();
 
   const redirectAfterLogin = () => {
@@ -29,7 +33,6 @@ function Login() {
     router.replace(next);
   };
 
-  // If already logged in, skip the page
   useEffect(() => {
     if (!checking && user) {
       redirectAfterLogin();
@@ -43,7 +46,7 @@ function Login() {
     setSubmitting(true);
     try {
       await apiLogin(form);
-      await refresh(); // update provider.user immediately
+      await refresh();
       redirectAfterLogin();
     } catch (err) {
       setMsg(err?.response?.data?.error || "Login failed");
@@ -75,7 +78,6 @@ function Login() {
       await refresh();
       router.replace("/");
     } catch (e) {
-      // non-blocking
       console.error(e);
     }
   };

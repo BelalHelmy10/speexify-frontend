@@ -1,12 +1,15 @@
 // src/lib/auth.js
 import api from "./api";
 
+// Always include cookies (needed for session on a different origin)
+const opts = { withCredentials: true };
+
 /**
  * Fetch current authenticated user
  * Uses cookies for auth via axios defaults (withCredentials: true)
  */
 export async function me() {
-  const { data } = await api.get("/api/auth/me");
+  const { data } = await api.get("/api/auth/me", opts);
   return data;
 }
 
@@ -15,7 +18,7 @@ export async function me() {
  * @param {Object} payload { email, password }
  */
 export async function login(payload) {
-  const { data } = await api.post("/api/auth/login", payload);
+  const { data } = await api.post("/api/auth/login", payload, opts);
   return data;
 }
 
@@ -24,7 +27,7 @@ export async function login(payload) {
  * @param {string} credential - JWT credential from Google
  */
 export async function googleLogin(credential) {
-  const { data } = await api.post("/api/auth/google", { credential });
+  const { data } = await api.post("/api/auth/google", { credential }, opts);
   return data;
 }
 
@@ -32,7 +35,7 @@ export async function googleLogin(credential) {
  * Logout user and clear cookies/session
  */
 export async function logout() {
-  const { data } = await api.post("/api/auth/logout");
+  const { data } = await api.post("/api/auth/logout", null, opts);
   return data;
 }
 
@@ -41,7 +44,7 @@ export async function logout() {
  * @param {string} email
  */
 export async function registerStart(email) {
-  const { data } = await api.post("/api/auth/register/start", { email });
+  const { data } = await api.post("/api/auth/register/start", { email }, opts);
   return data;
 }
 
@@ -50,6 +53,6 @@ export async function registerStart(email) {
  * @param {Object} payload { email, code, password, name }
  */
 export async function registerComplete(payload) {
-  const { data } = await api.post("/api/auth/register/complete", payload);
+  const { data } = await api.post("/api/auth/register/complete", payload, opts);
   return data;
 }
