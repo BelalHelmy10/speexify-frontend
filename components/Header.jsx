@@ -4,8 +4,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import useAuth from "@/src/hooks/useAuth";
-import { logout as apiLogout } from "@/src/lib/auth";
+import useAuth from "@/hooks/useAuth";
+import { logout as apiLogout } from "@/lib/auth";
 
 export default function Header() {
   const { user, checking, setUser } = useAuth();
