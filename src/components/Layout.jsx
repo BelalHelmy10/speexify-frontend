@@ -6,8 +6,8 @@
 // - Uses {children} to render the current page inside a consistent frame
 // - Optional footer (on by default)
 // ─────────────────────────────────────────────────────────────────────────────
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import Header from "../../components/Header";
+import Header from "../../components/Footer";
 
 export default function Layout({ children, withFooter = true }) {
   return (

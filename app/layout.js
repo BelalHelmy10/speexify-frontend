@@ -5,9 +5,9 @@ import "../src/styles/calendar.scss";
 import "./globals.scss";
 
 import { cookies } from "next/headers";
-import Header from "../src/components/Header";
-import Footer from "../src/components/Footer";
-import Providers from "../src/components/Providers";
+import Header from "../components/Header";
+import Header from "../components/Footer";
+import Header from "../components/Providers";
 
 const API =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||

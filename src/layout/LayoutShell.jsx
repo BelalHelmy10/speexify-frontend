@@ -3,8 +3,8 @@
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "../hooks/useAuth";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import Header from "../../components/Header";
+import Header from "../../components/Footer";
 
 const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
