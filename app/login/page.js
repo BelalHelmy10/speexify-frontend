@@ -1,10 +1,2 @@
-"use client";
-import Login from "@/legacy/pages/Login";
-
-export default function Page() {
-  return (
-    <>
-      <Login />
-    </>
-  );
-}
+export const metadata = { title: "Log in — Speexify" };
+export default function LoginPage(){ return <div>Login</div>; }

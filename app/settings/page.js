@@ -1,10 +1,2 @@
-"use client";
-import Settings from "@/legacy/pages/Settings";
-
-export default function Page() {
-  return (
-    <>
-      <Settings />
-    </>
-  );
-}
+export const metadata = { title: "Settings — Speexify" };
+export default function SettingsPage(){ return <div>Settings</div>; }

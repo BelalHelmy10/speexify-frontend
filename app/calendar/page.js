@@ -1,11 +1,2 @@
-"use client";
-
-import Calendar from "@/legacy/pages/Calendar";
-
-export default function Page() {
-  return (
-    <>
-      <Calendar />
-    </>
-  );
-}
+export const metadata = { title: "Calendar — Speexify" };
+export default function CalendarPage(){ return <div>Calendar</div>; }

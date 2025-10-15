@@ -1,8 +1,2 @@
-// app/contact/page.js
-import Screen from "@/legacy/pages/Contact";
-
-export const metadata = { title: "Contact – Speexify", description: "" };
-
-export default function Page() {
-  return <Screen />;
-}
+export const metadata = { title: "Contact — Speexify" };
+export default function ContactPage(){ return <div>Contact</div>; }

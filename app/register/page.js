@@ -1,10 +1,2 @@
-"use client";
-import Register from "@/legacy/pages/Register";
-
-export default function Page() {
-  return (
-    <>
-      <Register />
-    </>
-  );
-}
+export const metadata = { title: "Register — Speexify" };
+export default function RegisterPage(){ return <div>Register</div>; }

@@ -1,11 +1,2 @@
-// app/individual-training/page.js
-import Screen from "@/legacy/pages/IndividualTraining";
-
-export const metadata = {
-  title: "Individual Training – Speexify",
-  description: "",
-};
-
-export default function Page() {
-  return <Screen />;
-}
+export const metadata = { title: "Individual Training — Speexify" };
+export default function IndividualTrainingPage(){ return <div>Individual Training</div>; }
