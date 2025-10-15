@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import Admin from "@/legacy/pages/Admin";
-import { RequireAuth } from "../../src/components/RouteGuard";
 import useAuth from "../../src/hooks/useAuth";
 import Spinner from "../../src/components/Spinner";
 
@@ -33,10 +32,10 @@ function AdminGate({ children }) {
 
 export default function Page() {
   return (
-    <RequireAuth>
+    <>
       <AdminGate>
         <Admin />
       </AdminGate>
-    </RequireAuth>
+    </>
   );
 }
