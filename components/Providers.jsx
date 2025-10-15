@@ -2,7 +2,7 @@
 "use client";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { AuthProvider } from "../hooks/useAuth";
+import { AuthProvider } from "@/src/hooks/useAuth";
 
 // Read from env at build/runtime
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
