@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
-const GoogleButton = dynamic(() => import("../components/GoogleButton"), {
+const GoogleButton = dynamic(() => import("@/components/GoogleButton"), {
   ssr: false,
 });
 
@@ -14,7 +14,7 @@ import {
   googleLogin as apiGoogleLogin,
   registerStart as apiRegisterStart,
   registerComplete as apiRegisterComplete,
-} from "../lib/auth";
+} from "@/lib/auth";
 
 export default function Register() {
   const [step, setStep] = useState(1);

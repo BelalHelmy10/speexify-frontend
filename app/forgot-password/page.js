@@ -1,5 +1,5 @@
 // app/forgot-password/page.js
-import Screen from "../../src/pages/ForgotPassword";
+import Screen from "@/legacy/pages/ForgotPassword";
 
 export const metadata = {
   title: "Reset Password – Speexify",

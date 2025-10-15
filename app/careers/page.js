@@ -1,5 +1,5 @@
 // app/careers/page.js
-import Screen from "../../src/pages/Careers";
+import Screen from "@/legacy/pages/Careers";
 
 export const metadata = { title: "Careers – Speexify", description: "" };
 

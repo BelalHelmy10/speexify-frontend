@@ -4,7 +4,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import Admin from "../../src/pages/Admin";
+import Admin from "@/legacy/pages/Admin";
 import { RequireAuth } from "../../src/components/RouteGuard";
 import useAuth from "../../src/hooks/useAuth";
 import Spinner from "../../src/components/Spinner";

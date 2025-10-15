@@ -11,10 +11,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import useAuth from "../hooks/useAuth";
-import api from "../lib/api";
-import { fmtInTz } from "../utils/date";
-import { getSafeExternalUrl } from "../utils/url";
+import useAuth from "@/hooks/useAuth";
+import api from "@/lib/api";
+import { fmtInTz } from "@/utils/date";
+import { getSafeExternalUrl } from "@/utils/url";
 
 /* ────────────────────────────────────────────────────────────────────────────
    Utilities

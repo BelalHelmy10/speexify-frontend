@@ -1,6 +1,6 @@
 "use client";
-import Settings from "../../src/pages/Settings";
-import { RequireAuth } from "../../src/components/RouteGuard";
+import Settings from "@/legacy/pages/Settings";
+import { RequireAuth } from "@/components/RouteGuard";
 
 export default function Page() {
   return (

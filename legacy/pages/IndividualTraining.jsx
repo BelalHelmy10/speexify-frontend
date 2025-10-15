@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import useAuth from "../hooks/useAuth";
-import api from "../lib/api";
-import "../styles/individual.scss";
+import useAuth from "@/hooks/useAuth";
+import api from "@/lib/api";
+import "@/styles/individual.scss";
 
 function Individual() {
   const { user } = useAuth();

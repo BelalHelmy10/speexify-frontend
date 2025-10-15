@@ -1,6 +1,6 @@
 "use client";
-import Dashboard from "../../src/pages/Dashboard";
-import { RequireAuth } from "../../src/components/RouteGuard";
+import Dashboard from "@/legacy/pages/Dashboard";
+import { RequireAuth } from "@/components/RouteGuard";
 
 export default function Page() {
   return (

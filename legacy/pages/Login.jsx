@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
-const GoogleButton = dynamic(() => import("../components/GoogleButton"), {
+const GoogleButton = dynamic(() => import("@/components/GoogleButton"), {
   ssr: false,
 });
 
@@ -14,8 +14,8 @@ import {
   login as apiLogin,
   googleLogin as apiGoogleLogin,
   logout as apiLogout,
-} from "../lib/auth";
-import useAuth from "../hooks/useAuth";
+} from "@/lib/auth";
+import useAuth from "@/hooks/useAuth";
 
 function Login() {
   const [form, setForm] = useState({ email: "", password: "" });

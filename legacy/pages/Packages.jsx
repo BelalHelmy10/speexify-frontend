@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import api from "../lib/api";
-import "../styles/packages.scss";
+import api from "@/lib/api";
+import "@/styles/packages.scss";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 

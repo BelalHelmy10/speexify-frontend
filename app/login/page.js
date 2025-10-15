@@ -1,6 +1,6 @@
 "use client";
-import Login from "../../src/pages/Login";
-import { RequireAnon } from "../../src/components/RouteGuard";
+import Login from "@/legacy/pages/Login";
+import { RequireAnon } from "@/components/RouteGuard";
 
 export default function Page() {
   return (

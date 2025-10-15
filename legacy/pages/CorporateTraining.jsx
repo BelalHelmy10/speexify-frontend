@@ -2,11 +2,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import api from "../lib/api";
+import api from "@/lib/api";
 import Link from "next/link";
 // If these styles are GLOBAL, move them into globals.scss instead.
 // If they are component-scoped, consider converting to a CSS module.
-import "../styles/corporate.scss";
+import "@/styles/corporate.scss";
 
 export default function CorporateTraining() {
   const formRef = useRef(null);

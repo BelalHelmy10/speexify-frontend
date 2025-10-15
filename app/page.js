@@ -3,8 +3,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import useAuth from "../src/hooks/useAuth";
-import Home from "../src/pages/Home";
+import useAuth from "@/hooks/useAuth";
+import Home from "@/legacy/pages/Home";
 
 export default function Page() {
   const { user, checking } = useAuth();

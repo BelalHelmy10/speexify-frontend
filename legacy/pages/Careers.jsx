@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import "../styles/careers.scss";
+import "@/styles/careers.scss";
 
 export default function Careers() {
   const [jobs, setJobs] = useState([]);

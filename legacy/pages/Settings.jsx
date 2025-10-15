@@ -2,8 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "../lib/api";
-import "../styles/settings.scss";
+import api from "@/lib/api";
+import "@/styles/settings.scss";
 
 const timezones = [
   "UTC",

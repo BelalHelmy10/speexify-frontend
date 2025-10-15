@@ -3,7 +3,7 @@
 
 import React from "react";
 import Link from "next/link";
-import "../styles/about.scss";
+import "@/styles/about.scss";
 
 const heroImg = "/images/about_hero.avif";
 const historyImg = "/images/about_history.avif";

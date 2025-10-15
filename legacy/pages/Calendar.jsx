@@ -8,7 +8,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState, useEffect } from "react";
-import api from "../lib/api";
+import api from "@/lib/api";
 import MiniCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
@@ -25,7 +25,7 @@ import {
   format,
 } from "date-fns";
 
-import { getSafeExternalUrl } from "../utils/url";
+import { getSafeExternalUrl } from "@/utils/url";
 
 // date-fns localizer for RBC
 const locales = {};

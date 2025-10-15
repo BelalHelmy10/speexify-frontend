@@ -1,5 +1,5 @@
 // app/contact/page.js
-import Screen from "../../src/pages/Contact";
+import Screen from "@/legacy/pages/Contact";
 
 export const metadata = { title: "Contact – Speexify", description: "" };
 

@@ -1,6 +1,6 @@
 "use client";
-import Register from "../../src/pages/Register";
-import { RequireAnon } from "../../src/components/RouteGuard";
+import Register from "@/legacy/pages/Register";
+import { RequireAnon } from "@/components/RouteGuard";
 
 export default function Page() {
   return (

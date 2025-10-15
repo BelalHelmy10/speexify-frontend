@@ -1,5 +1,5 @@
 // app/about/page.js
-import About from "../../src/pages/About";
+import About from "@/legacy/pages/About";
 
 export const metadata = {
   title: "About – Speexify",

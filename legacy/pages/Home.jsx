@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import "../styles/home.scss";
+import "@/styles/home.scss";
 
 function Home() {
   return (

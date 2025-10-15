@@ -3,8 +3,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import api from "../lib/api";
-import { login as apiLogin } from "../lib/auth";
+import api from "@/lib/api";
+import { login as apiLogin } from "@/lib/auth";
 
 export default function ForgotPassword() {
   const [step, setStep] = useState(1);

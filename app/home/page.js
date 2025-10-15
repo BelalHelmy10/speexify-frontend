@@ -1,5 +1,5 @@
 // app/individual-training/page.js
-import Screen from "../../src/pages/Home";
+import Screen from "@/legacy/pages/Home";
 
 export const metadata = {
   title: "Individual Training – Speexify",

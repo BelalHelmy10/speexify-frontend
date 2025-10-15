@@ -1,5 +1,5 @@
 // app/packages/page.js
-import Screen from "../../src/pages/Packages";
+import Screen from "@/legacy/pages/Packages";
 export const metadata = { title: "Packages – Speexify", description: "" };
 
 export default function Page() {

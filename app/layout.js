@@ -1,7 +1,7 @@
 // app/layout.js
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-calendar/dist/Calendar.css";
-import "../src/styles/calendar.scss";
+import "../styles/calendar.scss";
 import "./globals.scss";
 
 import { cookies } from "next/headers";
