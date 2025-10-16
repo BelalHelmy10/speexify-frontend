@@ -9,11 +9,6 @@ import Providers from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-export const metadata = {
-  title: { default: "Speexify", template: "%s — Speexify" },
-  description: "Language & communication coaching for teams.",
-};
-
 export default async function RootLayout({ children }) {
   const user = await getServerUser();
 
