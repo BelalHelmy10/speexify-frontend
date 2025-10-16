@@ -1,86 +1,53 @@
 // middleware.js
 import { NextResponse } from "next/server";
 
-// Change this if your cookie name is different
-const TOKEN_COOKIE = "token";
-
-// Routes that require auth
+const TOKEN_COOKIE = "token"; // change if your cookie name differs
 const PRIVATE_ROUTES = ["/dashboard", "/calendar", "/settings", "/admin"];
-
-// Routes a logged-in user shouldn't visit
 const AUTH_PAGES = ["/login", "/register"];
 
-export async function middleware(req) {
-  const { pathname, search } = req.nextUrl;
+function isPrivate(pathname) {
+  return PRIVATE_ROUTES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
+}
+function isAuthPage(pathname) {
+  return AUTH_PAGES.includes(pathname);
+}
 
-  // Quick pre-check: skip network call if there's definitely no token
-  const token = req.cookies.get(TOKEN_COOKIE)?.value;
+export function middleware(req) {
+  const { pathname } = req.nextUrl;
+  const token = req.cookies.get(TOKEN_COOKIE)?.value ?? null;
+  const authed = Boolean(token);
 
-  let authed = Boolean(token);
-  let isAdmin = false;
-
-  if (token) {
-    try {
-      // Must read origin inside the function (req exists here)
-      const origin = req.nextUrl.origin;
-
-      const res = await fetch(`${origin}/api/auth/me`, {
-        headers: {
-          cookie: req.headers.get("cookie") || "",
-        },
-        cache: "no-store",
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const user = data?.user;
-        authed = !!user;
-        isAdmin = user?.role === "admin";
-      } else {
-        authed = false;
-      }
-    } catch {
-      authed = false;
-    }
+  // Don’t run on Next internals or static files
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/assets") ||
+    pathname.match(/\.(png|jpe?g|gif|svg|ico|webp|avif|css|js|map)$/)
+  ) {
+    return NextResponse.next();
   }
 
-  // 1) Redirect logged-in users away from auth pages
-  if (authed && AUTH_PAGES.includes(pathname)) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
-
-  // 2) Protect private routes
-  if (!authed && PRIVATE_ROUTES.some((p) => pathname.startsWith(p))) {
+  // Block private routes if not logged in
+  if (isPrivate(pathname) && !authed) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
-    const redirectTo = pathname + (search || "");
-    url.searchParams.set("redirect", redirectTo);
+    url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
-  // 3) Non-admin hitting /admin → bounce to dashboard
-  if (pathname.startsWith("/admin") && authed && !isAdmin) {
+  // Keep logged-in users out of auth pages
+  if (isAuthPage(pathname) && authed) {
     const url = req.nextUrl.clone();
     url.pathname = "/dashboard";
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
-
-  // 4) Optional: authed user landing on "/" → dashboard
-  if (authed && pathname === "/") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
     return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
-// Only run where needed (avoids /_next, /api, static assets)
 export const config = {
   matcher: [
     "/",

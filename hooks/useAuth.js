@@ -7,7 +7,7 @@ import {
   useState,
   useCallback,
 } from "react";
-import { me as apiMe, logout as apiLogout } from "../lib/auth";
+import { me as apiMe, logout as apiLogout } from "@/lib/auth";
 
 const Ctx = createContext({
   user: null,
@@ -18,14 +18,14 @@ const Ctx = createContext({
 });
 
 export function AuthProvider({ children, initialUser = null }) {
-  // Seed with the user from the server (no navbar flicker)
   const [user, setUser] = useState(initialUser);
-  const [checking, setChecking] = useState(!initialUser); // if we have a user, we're not checking
+  const [checking, setChecking] = useState(!initialUser);
 
   const refresh = useCallback(async () => {
+    setChecking(true);
     try {
       const data = await apiMe();
-      setUser(data?.user || null);
+      setUser(data?.user ?? null);
     } catch {
       setUser(null);
     } finally {
@@ -42,14 +42,11 @@ export function AuthProvider({ children, initialUser = null }) {
   }, []);
 
   useEffect(() => {
-    // If we didn't get a user from the server, fetch on mount
     if (!initialUser) refresh();
-    // If we DID get a user, you can still optionally background-refresh:
-    // else refresh();
   }, [initialUser, refresh]);
 
   return (
-    <Ctx.Provider value={{ user, setUser, checking, refresh, logout }}>
+    <Ctx.Provider value={{ user, checking, setUser, refresh, logout }}>
       {children}
     </Ctx.Provider>
   );
