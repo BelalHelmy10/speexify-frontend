@@ -1,5 +1,5 @@
 "use client";
-import Register from "@/pages/Register";
+import Register from "@/legacy/pages/Register";
 export default function Page() {
   return <Register />;
 }
