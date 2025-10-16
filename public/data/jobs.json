@@ -1,0 +1,93 @@
+{
+  "departments": [
+    "Teaching",
+    "Sales",
+    "Engineering",
+    "Marketing",
+    "Operations",
+    "Customer Success"
+  ],
+  "jobs": [
+    {
+      "id": "ENG-001",
+      "title": "Frontend Engineer",
+      "department": "Engineering",
+      "location": "Remote",
+      "type": "Full-time",
+      "summary": "Ship delightful product experiences in React while keeping performance crisp.",
+      "tags": ["React", "TypeScript", "Vite"],
+      "description": [
+        "Build accessible, responsive UI with modern React.",
+        "Collaborate with design and product on user-facing features.",
+        "Improve frontend performance and DX."
+      ],
+      "requirements": [
+        "3+ years with React + TypeScript.",
+        "Solid CSS/SCSS and component composition.",
+        "A product mindset and care for UX."
+      ],
+      "benefits": ["Remote-first", "Learning stipend", "Flexible PTO"],
+      "applyUrl": ""
+    },
+    {
+      "id": "EDU-104",
+      "title": "English Language Coach (Part-time)",
+      "department": "Teaching",
+      "location": "Remote (Global)",
+      "type": "Part-time",
+      "summary": "Coach adult learners toward job-specific communication goals.",
+      "description": [
+        "Deliver 1:1 and small group virtual sessions.",
+        "Use Speexify resources to craft goal-aligned plans.",
+        "Track learner progress and outcomes."
+      ],
+      "requirements": [
+        "C2 English proficiency.",
+        "Experience teaching adults online.",
+        "Empathy and outcome-orientation."
+      ],
+      "benefits": ["Flexible scheduling", "Training & mentorship"],
+      "applyUrl": ""
+    },
+    {
+      "id": "MKT-022",
+      "title": "Content Marketer",
+      "department": "Marketing",
+      "location": "EMEA or Americas (Remote)",
+      "type": "Full-time",
+      "summary": "Own content that fuels demand—case studies, articles, email sequences.",
+      "description": [
+        "Plan and create content across the funnel.",
+        "Work with SMEs, customers, and design.",
+        "Measure and iterate for impact."
+      ],
+      "requirements": [
+        "3+ years B2B content experience.",
+        "Clear, concise writing with structure.",
+        "Comfort with analytics and testing."
+      ],
+      "benefits": ["Remote-first", "Learning stipend", "Wellbeing support"],
+      "applyUrl": ""
+    },
+    {
+      "id": "CS-015",
+      "title": "Customer Success Manager",
+      "department": "Customer Success",
+      "location": "APAC (Remote)",
+      "type": "Full-time",
+      "summary": "Drive renewal and expansion by delivering outcomes for enterprise clients.",
+      "description": [
+        "Be the strategic partner for a book of enterprise customers.",
+        "Align programs to customer goals and report ROI.",
+        "Coordinate cross-functionally to unblock issues."
+      ],
+      "requirements": [
+        "3+ years in B2B Customer Success.",
+        "Strong communication and stakeholder management.",
+        "Comfort with data and executive reporting."
+      ],
+      "benefits": ["Remote-first", "Home office stipend", "Flexible PTO"],
+      "applyUrl": ""
+    }
+  ]
+}
