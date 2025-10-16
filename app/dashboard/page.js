@@ -1,2 +1,5 @@
-export const metadata = { title: "Dashboard — Speexify" };
-export default function DashboardPage(){ return <div>Dashboard</div>; }
+"use client";
+import Dashboard from "@/legacy/pages/Dashboard";
+export default function Page() {
+  return <Dashboard />;
+}

@@ -1,2 +1,5 @@
-export const metadata = { title: "Individual Training — Speexify" };
-export default function IndividualTrainingPage(){ return <div>Individual Training</div>; }
+"use client";
+import Individual from "@/legacy/pages/Individual";
+export default function Page() {
+  return <Individual />;
+}

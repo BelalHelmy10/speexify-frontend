@@ -1,2 +1,5 @@
-export const metadata = { title: "Admin — Speexify" };
-export default function AdminPage(){ return <div>Admin</div>; }
+"use client";
+import Admin from "@/legacy/pages/Admin";
+export default function Page() {
+  return <Admin />;
+}

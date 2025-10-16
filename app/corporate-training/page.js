@@ -1,2 +1,5 @@
-export const metadata = { title: "Corporate Training — Speexify" };
-export default function CorporateTrainingPage(){ return <div>Corporate Training</div>; }
+"use client";
+import Corporate from "@/legacy/pages/Corporate";
+export default function Page() {
+  return <Corporate />;
+}

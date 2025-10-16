@@ -13,23 +13,10 @@ export default function Page() {
 
   useEffect(() => {
     if (checking) return;
-    if (user) {
-      const next = params.get("next") || "/dashboard";
-      router.replace(next);
-    }
+    if (user) router.replace(params.get("next") || "/dashboard");
   }, [checking, user, router, params]);
 
-  if (checking) {
-    return (
-      <div className="route-loading flex items-center justify-center min-h-[60vh] text-gray-600">
-        Loading…
-      </div>
-    );
-  }
-
-  // If logged in, redirect is in flight
+  if (checking) return <div className="route-loading">Loading…</div>;
   if (user) return null;
-
-  // Not logged in → show marketing / landing page
   return <Home />;
 }

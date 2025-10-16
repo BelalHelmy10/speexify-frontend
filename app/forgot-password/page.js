@@ -1,2 +1,5 @@
-export const metadata = { title: "Forgot Password — Speexify" };
-export default function ForgotPasswordPage(){ return <div>Forgot Password</div>; }
+"use client";
+import ForgotPassword from "@/legacy/pages/ForgotPassword";
+export default function Page() {
+  return <ForgotPassword />;
+}

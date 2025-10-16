@@ -1,2 +1,5 @@
-export const metadata = { title: "Contact — Speexify" };
-export default function ContactPage(){ return <div>Contact</div>; }
+"use client";
+import Contact from "@/legacy/pages/Contact";
+export default function Page() {
+  return <Contact />;
+}
