@@ -55,10 +55,14 @@ function Login() {
     }
   };
 
-  const handleGoogleSuccess = async (data) => {
+  const handleGoogleSuccess = async ({ credential }) => {
     try {
+      if (!credential) {
+        setMsg("Google didn’t return a credential");
+        return;
+      }
       setMsg("");
-      await apiGoogleLogin(data.credential);
+      await apiGoogleLogin({ credential }); // send an object
       await refresh();
       redirectAfterLogin();
     } catch (err) {

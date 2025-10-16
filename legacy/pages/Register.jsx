@@ -77,16 +77,18 @@ export default function Register() {
     }
   };
 
-  const handleGoogleSuccess = async (data) => {
+  const handleGoogleSuccess = async ({ credential }) => {
     try {
+      if (!credential) {
+        setMsg("Google didn’t return a credential");
+        return;
+      }
       setMsg("");
-      await apiGoogleLogin(data.credential);
-      const res = await apiMe();
-      if (res?.user) window.location.href = "/dashboard";
-      else setMsg("Signed in with Google, but no user returned.");
+      await apiGoogleLogin({ credential }); // send an object
+      await refresh();
+      redirectAfterLogin();
     } catch (err) {
       console.error(err);
-      setMsgType("error");
       setMsg(err?.response?.data?.error || "Google sign-in failed");
     }
   };
