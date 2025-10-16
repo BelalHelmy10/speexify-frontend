@@ -2,31 +2,22 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import Home from "@/legacy/pages/Home";
 
-// Optional metadata if you want SEO titles even for the root page
-export const metadata = {
-  title: "Home — Speexify",
-  description:
-    "Welcome to Speexify — personalized language and communication coaching for teams and professionals.",
-};
-
-export default function HomePage() {
+export default function Page() {
   const { user, checking } = useAuth();
   const router = useRouter();
+  const params = useSearchParams();
 
   useEffect(() => {
-    let cancelled = false;
-    if (!checking && user && !cancelled) {
-      // Use replace() to avoid polluting browser history
-      router.replace("/dashboard");
+    if (checking) return;
+    if (user) {
+      const next = params.get("next") || "/dashboard";
+      router.replace(next);
     }
-    return () => {
-      cancelled = true;
-    };
-  }, [checking, user, router]);
+  }, [checking, user, router, params]);
 
   if (checking) {
     return (
@@ -36,7 +27,7 @@ export default function HomePage() {
     );
   }
 
-  // When user exists, we’ve already scheduled a redirect
+  // If logged in, redirect is in flight
   if (user) return null;
 
   // Not logged in → show marketing / landing page
