@@ -1,14 +1,6 @@
-// web/src/pages/Dashboard.jsx
-// ─────────────────────────────────────────────────────────────────────────────
-// Dashboard - Premium Edition:
-// - Animated KPI cards with gradient accents
-// - Enhanced next session card with visual hierarchy
-// - Beautiful upcoming sessions with hover effects
-// - Smooth transitions and micro-interactions
-// - Glass-morphism modal with backdrop blur
-// Styling lives in web/src/styles/Dashboard.scss (imported via global.scss)
-// ─────────────────────────────────────────────────────────────────────────────
+// app/dashboard/page.jsx
 "use client";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import useAuth from "@/hooks/useAuth";
@@ -187,6 +179,7 @@ function SessionRow({
               <button
                 className="btn btn--ghost btn--danger"
                 onClick={() => onCancel(s)}
+                title="Cancel session"
               >
                 <svg
                   width="16"
@@ -256,10 +249,10 @@ function Modal({ title, children, onClose }) {
    ──────────────────────────────────────────────────────────────────────────── */
 
 export default function Dashboard() {
-  const [status, setStatus] = useState("Loading...");
+  const [status, setStatus] = useState("Loading…");
   const [summary, setSummary] = useState(null);
-
   const { user, checking } = useAuth();
+
   const [teachSummary, setTeachSummary] = useState({
     nextTeach: null,
     upcomingTeachCount: 0,
@@ -276,33 +269,39 @@ export default function Dashboard() {
 
   const fetchSummary = async () => {
     try {
-      const res = await api.get("/api/me/summary");
+      // via rewrite → /api/me/summary
+      const res = await api.get("/me/summary");
       setSummary(res.data);
       setStatus("");
     } catch (e) {
-      setStatus(e.response?.data?.error || "Failed to load dashboard");
+      setStatus(e?.response?.data?.error || "Failed to load dashboard");
     }
   };
 
+  // Fetch once we know whether the user is logged in
   useEffect(() => {
+    if (checking) return;
+    if (!user) {
+      setStatus("Not authenticated");
+      return;
+    }
     fetchSummary();
-  }, []);
+  }, [checking, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!user || user.role !== "teacher") return;
+    if (checking || !user) return;
+
+    // Teacher summary is optional; ignore errors
     (async () => {
       try {
-        const { data } = await api.get("/api/teacher/summary");
+        // Prefer /teacher/summary if you added it; otherwise ignore on 404
+        const { data } = await api.get("/teacher/summary");
         setTeachSummary({
           nextTeach: data?.nextTeach || null,
           upcomingTeachCount: data?.upcomingTeachCount || 0,
           taughtCount: data?.taughtCount || 0,
         });
-      } catch (e) {
-        console.warn(
-          "teacher summary failed",
-          e?.response?.data || e?.message || e
-        );
+      } catch {
         setTeachSummary({
           nextTeach: null,
           upcomingTeachCount: 0,
@@ -310,17 +309,13 @@ export default function Dashboard() {
         });
       }
     })();
-  }, [user]);
+  }, [checking, user]);
 
   const fetchSessions = async () => {
     try {
       const [u, p] = await Promise.all([
-        api.get("/api/me/sessions", {
-          params: { range: "upcoming", limit: 10 },
-        }),
-        api.get("/api/me/sessions", {
-          params: { range: "past", limit: 10 },
-        }),
+        api.get("/me/sessions", { params: { range: "upcoming", limit: 10 } }),
+        api.get("/me/sessions", { params: { range: "past", limit: 10 } }),
       ]);
 
       const pickList = (payload, preferredKey) => {
@@ -335,21 +330,23 @@ export default function Dashboard() {
       setUpcoming(pickList(u, "upcoming"));
       setPast(pickList(p, "past"));
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.warn(
-        "sessions fetch failed",
+        "[dashboard] sessions fetch failed",
         e?.response?.data || e?.message || e
       );
     }
   };
 
   useEffect(() => {
+    if (checking || !user) return;
     fetchSessions();
-  }, []);
+  }, [checking, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCancel = async (s) => {
     if (!window.confirm("Cancel this session?")) return;
     try {
-      await api.post(`/api/sessions/${s.id}/cancel`);
+      await api.post(`/sessions/${s.id}/cancel`);
       await Promise.all([fetchSessions(), fetchSummary()]);
     } catch (e) {
       alert(e?.response?.data?.error || "Failed to cancel");
@@ -367,7 +364,7 @@ export default function Dashboard() {
   const submitReschedule = async () => {
     if (!reschedSession) return;
     try {
-      await api.post(`/api/sessions/${reschedSession.id}/reschedule`, {
+      await api.post(`/sessions/${reschedSession.id}/reschedule`, {
         startAt: new Date(newStart).toISOString(),
         endAt: newEnd ? new Date(newEnd).toISOString() : null,
       });
@@ -385,7 +382,7 @@ export default function Dashboard() {
   const visibleNext =
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
 
-  const { upcomingCount, completedCount } = summary;
+  const { upcomingCount, completedCount, timezone } = summary;
 
   return (
     <div className="container-narrow dashboard">
@@ -438,15 +435,12 @@ export default function Dashboard() {
           value={upcomingCount + completedCount}
           icon={
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
               <path d="M12 2L2 7l10 5 10-5-10-5z" />
               <path d="M2 17l10 5 10-5" />
@@ -496,7 +490,7 @@ export default function Dashboard() {
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
                   </svg>
-                  {fmtInTz(teachSummary.nextTeach.startAt, summary?.timezone)}
+                  {fmtInTz(teachSummary.nextTeach.startAt, timezone)}
                   {teachSummary.nextTeach.endAt
                     ? ` — ${fmt(teachSummary.nextTeach.endAt)}`
                     : ""}
@@ -525,7 +519,7 @@ export default function Dashboard() {
                   teachSummary.nextTeach.endAt
                 ) ? (
                   <a
-                    href={teachSummary.nextTeach.meetingUrl}
+                    href={getSafeExternalUrl(teachSummary.nextTeach.meetingUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="btn btn--primary btn--glow"
@@ -602,7 +596,7 @@ export default function Dashboard() {
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
-                {fmtInTz(visibleNext.startAt, summary?.timezone)}
+                {fmtInTz(visibleNext.startAt, timezone)}
                 {visibleNext.endAt ? ` — ${fmt(visibleNext.endAt)}` : ""}
               </div>
             </div>
@@ -610,7 +604,7 @@ export default function Dashboard() {
               {visibleNext.meetingUrl &&
               canJoin(visibleNext.startAt, visibleNext.endAt) ? (
                 <a
-                  href={visibleNext.meetingUrl}
+                  href={getSafeExternalUrl(visibleNext.meetingUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="btn btn--primary btn--glow"
@@ -680,7 +674,7 @@ export default function Dashboard() {
               <SessionRow
                 key={s.id}
                 s={s}
-                timezone={summary?.timezone}
+                timezone={timezone}
                 isUpcoming
                 onCancel={handleCancel}
                 onRescheduleClick={openReschedule}
@@ -717,7 +711,7 @@ export default function Dashboard() {
               <SessionRow
                 key={s.id}
                 s={s}
-                timezone={summary?.timezone}
+                timezone={timezone}
                 isUpcoming={false}
                 onCancel={() => {}}
                 onRescheduleClick={() => {}}
@@ -767,6 +761,7 @@ export default function Dashboard() {
 /* ────────────────────────────────────────────────────────────────────────────
    KPI card with gradient accent
    ──────────────────────────────────────────────────────────────────────────── */
+
 function Card({ title, value, icon, gradient }) {
   return (
     <div className={`card card--kpi card--${gradient}`}>

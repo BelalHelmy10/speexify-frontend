@@ -1,8 +1,13 @@
+// app/careers/page.jsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import "@/styles/careers.scss";
+
+export const metadata = {
+  title: "Careers | Speexify",
+  description: "Join the team building communication coaching that works.",
+};
 
 export default function Careers() {
   const [jobs, setJobs] = useState([]);

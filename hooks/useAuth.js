@@ -7,8 +7,9 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
-import { me as apiMe, logout as apiLogout } from "@/lib/auth";
+import api from "@/lib/api";
 
 const Ctx = createContext({
   user: null,
@@ -21,28 +22,56 @@ const Ctx = createContext({
 export function AuthProvider({ children, initialUser = null }) {
   const [user, setUser] = useState(initialUser);
   const [checking, setChecking] = useState(!initialUser);
+  const mountedRef = useRef(true);
 
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const safeSet = (setter) => {
+    if (mountedRef.current) setter();
+  };
+
+  // Always use the rewrite (/api/...) through our axios instance.
   const refresh = useCallback(async () => {
-    setChecking(true);
+    safeSet(() => setChecking(true));
     try {
-      const data = await apiMe();
-      setUser(data?.user ?? null);
-    } catch {
-      setUser(null);
+      const { data } = await api.get("/auth/me"); // ← rewrite (same-origin + cookies)
+      safeSet(() => setUser(data?.user ?? null));
+    } catch (e) {
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[useAuth.refresh] failed:",
+          e?.response?.data || e?.message || e
+        );
+      }
+      safeSet(() => setUser(null));
     } finally {
-      setChecking(false);
+      safeSet(() => setChecking(false));
     }
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      await apiLogout();
+      await api.post("/auth/logout"); // ← rewrite (clears speexify.sid)
+    } catch (e) {
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[useAuth.logout] failed:",
+          e?.response?.data || e?.message || e
+        );
+      }
     } finally {
-      setUser(null);
+      safeSet(() => setUser(null));
     }
   }, []);
 
   useEffect(() => {
+    // If server passed an initial user we trust it; otherwise, fetch it.
     if (!initialUser) refresh();
   }, [initialUser, refresh]);
 

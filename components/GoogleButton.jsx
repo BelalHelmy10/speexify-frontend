@@ -2,26 +2,45 @@
 "use client";
 
 import { GoogleLogin } from "@react-oauth/google";
+import api from "@/lib/api";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /**
- * Thin wrapper around @react-oauth/google that simply forwards
- * the raw GIS payload to the parent (so pages can call your API
- * via the Next.js /api rewrite and set cookies on the correct domain).
+ * Google login button integrated with your backend via /api/auth/google.
  *
- * Usage:
- *   <GoogleButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
- *
- * onSuccess receives: { credential, clientId, select_by, ... }
+ * - Uses the same axios client as the rest of the app (cookies kept).
+ * - Handles redirect after login automatically.
+ * - Logs errors in dev for easier debugging.
  */
-export default function GoogleButton({ onSuccess, onError, ...rest }) {
-  const handleSuccess = (resp) => {
-    if (typeof onSuccess === "function") onSuccess(resp);
-    else console.log("[GoogleButton] success:", resp); // eslint-disable-line no-console
+export default function GoogleButton() {
+  const router = useRouter();
+  const params = useSearchParams();
+
+  const handleSuccess = async ({ credential }) => {
+    if (!credential) return;
+
+    try {
+      // Send credential to backend through Next.js rewrite (/api → backend)
+      const res = await api.post("/auth/google", { credential });
+
+      // Expect { ok: true, user: {...} }
+      if (res.data?.ok) {
+        console.log("[GoogleButton] Login success:", res.data.user);
+        // Redirect to intended page or dashboard
+        router.replace(params.get("next") || "/dashboard");
+      } else {
+        console.error("[GoogleButton] Unexpected response:", res.data);
+        alert("Login failed — please try again.");
+      }
+    } catch (err) {
+      console.error("[GoogleButton] Login error:", err);
+      alert("Google login failed — please try again.");
+    }
   };
 
   const handleError = (err) => {
-    if (typeof onError === "function") onError(err);
-    else console.error("[GoogleButton] error:", err); // eslint-disable-line no-console
+    console.error("[GoogleButton] OAuth popup error:", err);
+    alert("Google sign-in was cancelled or failed.");
   };
 
   return (
@@ -30,7 +49,11 @@ export default function GoogleButton({ onSuccess, onError, ...rest }) {
       ux_mode="popup"
       onSuccess={handleSuccess}
       onError={handleError}
-      {...rest}
+      theme="outline"
+      size="large"
+      shape="rectangular"
+      text="signin_with"
+      width="280"
     />
   );
 }
