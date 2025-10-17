@@ -1,5 +1,6 @@
 // src/hooks/useAuth.js
 "use client";
+
 import {
   createContext,
   useContext,
