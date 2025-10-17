@@ -4,11 +4,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Careers | Speexify",
-  description: "Join the team building communication coaching that works.",
-};
-
 export default function Careers() {
   const [jobs, setJobs] = useState([]);
   const [departments, setDepartments] = useState([]);
