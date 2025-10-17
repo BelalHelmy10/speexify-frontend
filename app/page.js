@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useAuth from "@/hooks/useAuth";
+import "@/styles/home.scss";
 
 // (Global CSS note)
 // Move this to app/layout.js:
