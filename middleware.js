@@ -1,7 +1,6 @@
-// middleware.js
 import { NextResponse } from "next/server";
 
-const TOKEN_COOKIE = "speexify.sid"; // ← align with express-session cookie name
+const TOKEN_COOKIE = "speexify.sid"; // session cookie name
 const PRIVATE_ROUTES = ["/dashboard", "/calendar", "/settings", "/admin"];
 const AUTH_PAGES = ["/login", "/register"];
 
@@ -19,6 +18,7 @@ export function middleware(req) {
   const token = req.cookies.get(TOKEN_COOKIE)?.value ?? null;
   const authed = Boolean(token);
 
+  // allow assets / api
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -29,6 +29,7 @@ export function middleware(req) {
     return NextResponse.next();
   }
 
+  // keep protection for private routes
   if (isPrivate(pathname) && !authed) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
@@ -36,12 +37,7 @@ export function middleware(req) {
     return NextResponse.redirect(url);
   }
 
-  if (isAuthPage(pathname) && authed) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
-
+  // ✅ do NOT redirect away from /login or /register just because a cookie exists
   return NextResponse.next();
 }
 
