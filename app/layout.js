@@ -1,15 +1,15 @@
 // app/layout.js
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import "react-calendar/dist/Calendar.css";
-import "../styles/calendar.scss";
 import "./globals.scss";
+import "react-calendar/dist/Calendar.css";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import "../styles/calendar.scss";
 
 import { getServerUser } from "./server-auth";
 import Providers from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-// ✅ Add metadata here (server only — allowed)
+// ✅ Server-side metadata
 export const metadata = {
   title: "Home — Speexify",
   description:
@@ -29,7 +29,8 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en">
-      <body>
+      {/* hydration guard avoids noisy console warnings if any client theme toggles exist */}
+      <body suppressHydrationWarning>
         <Providers initialUser={user}>
           <Header />
           <main>{children}</main>

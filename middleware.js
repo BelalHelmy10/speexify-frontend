@@ -1,7 +1,7 @@
 // middleware.js
 import { NextResponse } from "next/server";
 
-const TOKEN_COOKIE = "token"; // change if your cookie name differs
+const TOKEN_COOKIE = "speexify.sid"; // ← align with express-session cookie name
 const PRIVATE_ROUTES = ["/dashboard", "/calendar", "/settings", "/admin"];
 const AUTH_PAGES = ["/login", "/register"];
 
@@ -19,7 +19,6 @@ export function middleware(req) {
   const token = req.cookies.get(TOKEN_COOKIE)?.value ?? null;
   const authed = Boolean(token);
 
-  // Don’t run on Next internals or static files
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -30,7 +29,6 @@ export function middleware(req) {
     return NextResponse.next();
   }
 
-  // Block private routes if not logged in
   if (isPrivate(pathname) && !authed) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
@@ -38,7 +36,6 @@ export function middleware(req) {
     return NextResponse.redirect(url);
   }
 
-  // Keep logged-in users out of auth pages
   if (isAuthPage(pathname) && authed) {
     const url = req.nextUrl.clone();
     url.pathname = "/dashboard";

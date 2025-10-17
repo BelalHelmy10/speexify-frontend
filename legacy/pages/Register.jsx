@@ -4,19 +4,21 @@
 import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 
 const GoogleButton = dynamic(() => import("@/components/GoogleButton"), {
   ssr: false,
 });
 
 import {
-  me as apiMe,
-  googleLogin as apiGoogleLogin,
   registerStart as apiRegisterStart,
   registerComplete as apiRegisterComplete,
+  googleLogin as apiGoogleLogin,
 } from "@/lib/auth";
 
 export default function Register() {
+  const router = useRouter();
+
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -52,7 +54,7 @@ export default function Register() {
       }, 1000);
     } catch (err) {
       setMsgType("error");
-      setMsg(err?.response?.data?.error || "Could not send verification code");
+      setMsg(err?.message || "Could not send verification code");
     } finally {
       setSending(false);
     }
@@ -68,28 +70,33 @@ export default function Register() {
       setMsg(`Account created successfully! Redirecting...`);
       setTimeout(() => {
         window.location.href = "/login";
-      }, 1500);
+      }, 1200);
     } catch (err) {
       setMsgType("error");
-      setMsg(err?.response?.data?.error || "Registration failed");
+      setMsg(err?.message || "Registration failed");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleGoogleSuccess = async ({ credential }) => {
+  // Called by <GoogleButton/> with resp = { credential, ... }
+  const handleGoogleSuccess = async (resp) => {
     try {
+      const credential = resp?.credential;
       if (!credential) {
+        setMsgType("error");
         setMsg("Google didn’t return a credential");
         return;
       }
       setMsg("");
-      await apiGoogleLogin({ credential }); // send an object
-      await refresh();
-      redirectAfterLogin();
+      // IMPORTANT: send the raw string, not an object
+      await apiGoogleLogin(credential);
+      // Session cookie is set; just go to dashboard
+      router.replace("/dashboard");
     } catch (err) {
       console.error(err);
-      setMsg(err?.response?.data?.error || "Google sign-in failed");
+      setMsgType("error");
+      setMsg(err?.message || "Google sign-in failed");
     }
   };
 
@@ -161,7 +168,7 @@ export default function Register() {
               </div>
               <span>Email</span>
             </div>
-            <div className="step-line"></div>
+            <div className="step-line" />
             <div className={`step ${step >= 2 ? "active" : ""}`}>
               <div className="step-circle">2</div>
               <span>Verify</span>
@@ -473,9 +480,9 @@ export default function Register() {
         </section>
 
         <div className="auth-decoration">
-          <div className="decoration-circle circle-1"></div>
-          <div className="decoration-circle circle-2"></div>
-          <div className="decoration-circle circle-3"></div>
+          <div className="decoration-circle circle-1" />
+          <div className="decoration-circle circle-2" />
+          <div className="decoration-circle circle-3" />
         </div>
       </div>
     </main>

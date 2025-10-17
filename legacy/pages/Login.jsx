@@ -49,25 +49,28 @@ function Login() {
       await refresh();
       redirectAfterLogin();
     } catch (err) {
-      setMsg(err?.response?.data?.error || "Login failed");
+      setMsg(err?.message || "Login failed");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleGoogleSuccess = async ({ credential }) => {
+  // Called by <GoogleButton/> with resp = { credential, ... }
+  const handleGoogleSuccess = async (resp) => {
     try {
+      const credential = resp?.credential;
       if (!credential) {
         setMsg("Google didn’t return a credential");
         return;
       }
       setMsg("");
-      await apiGoogleLogin({ credential }); // send an object
+      // IMPORTANT: send the raw string, not an object
+      await apiGoogleLogin(credential);
       await refresh();
       redirectAfterLogin();
     } catch (err) {
       console.error(err);
-      setMsg(err?.response?.data?.error || "Google sign-in failed");
+      setMsg(err?.message || "Google sign-in failed");
     }
   };
 
@@ -306,9 +309,9 @@ function Login() {
         </section>
 
         <div className="auth-decoration">
-          <div className="decoration-circle circle-1"></div>
-          <div className="decoration-circle circle-2"></div>
-          <div className="decoration-circle circle-3"></div>
+          <div className="decoration-circle circle-1" />
+          <div className="decoration-circle circle-2" />
+          <div className="decoration-circle circle-3" />
         </div>
       </div>
     </main>
