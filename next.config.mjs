@@ -1,24 +1,17 @@
 /** @type {import('next').NextConfig} */
 const apiBase = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050"
-).replace(/\/+$/, "");
+  process.env.BACKEND_API_BASE || // ← use a server-side var on Vercel
+  process.env.NEXT_PUBLIC_API_URL || // fallback if you insist
+  "http://localhost:5050"
+) // local dev
+  .replace(/\/+$/, "");
 
 const nextConfig = {
-  // Only keep this if CI must not fail on lint; otherwise remove it.
   eslint: { ignoreDuringBuilds: true },
-
-  images: {
-    // Add more if you load external images from other hosts
-    domains: ["lh3.googleusercontent.com"],
-  },
-
+  images: { domains: ["lh3.googleusercontent.com"] },
   async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${apiBase}/api/:path*`,
-      },
-    ];
+    // /api/* → https://<your-backend>/api/*  (server-side rewrite)
+    return [{ source: "/api/:path*", destination: `${apiBase}/api/:path*` }];
   },
 };
 
