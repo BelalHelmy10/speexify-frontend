@@ -11,6 +11,7 @@ import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import api from "@/lib/api";
 import MiniCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import useAuth from "@/hooks/useAuth";
 
 import { Calendar as BigCalendar, dateFnsLocalizer } from "react-big-calendar";
 import {
@@ -67,6 +68,7 @@ function getVisibleRange(date, view) {
 }
 
 export default function CalendarPage() {
+  const { user, checking } = useAuth();
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -77,7 +79,7 @@ export default function CalendarPage() {
   // Fetch sessions for a range
   const fetchEvents = useCallback(async (startISO, endISO) => {
     setError("");
-    const { data } = await api.get("/api/me/sessions-between", {
+    const { data } = await api.get("/me/sessions-between", {
       params: { start: startISO, end: endISO, includeCanceled: true },
     });
     return Array.isArray(data) ? data : data?.sessions || [];
@@ -85,6 +87,7 @@ export default function CalendarPage() {
 
   // Load events whenever date or view changes
   useEffect(() => {
+    if (checking || !user) return;
     const { start, end } = getVisibleRange(currentDate, view);
     (async () => {
       try {
@@ -102,6 +105,7 @@ export default function CalendarPage() {
   // Handle RBC's range notifications
   const handleRangeChange = useCallback(
     async (range) => {
+      if (checking || !user) return;
       try {
         let start, end;
         if (Array.isArray(range)) {
@@ -188,6 +192,11 @@ export default function CalendarPage() {
   const scheduledCount = events.filter((e) => e.status === "scheduled").length;
   const canceledCount = events.filter((e) => e.status === "canceled").length;
   const currentMonthYear = format(currentDate, "MMMM yyyy");
+
+  if (checking)
+    return <div className="calendar-premium-container">Loading…</div>;
+  if (!user)
+    return <div className="calendar-premium-container">Not authenticated</div>;
 
   return (
     <div className="calendar-premium-container">

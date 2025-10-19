@@ -4,8 +4,10 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "@/lib/api";
 import "@/styles/admin.scss";
+import useAuth from "@/hooks/useAuth";
 
 function Admin() {
+  const { user, checking } = useAuth();
   const [status, setStatus] = useState("");
   const [users, setUsers] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -112,26 +114,28 @@ function Admin() {
   }, [editingId, editForm.date, editForm.startTime, editForm.endTime]);
 
   useEffect(() => {
+    if (checking || !user) return;
     (async () => {
       try {
-        const u = await api.get("/api/users?role=learner");
+        const u = await api.get("/users?role=learner");
         setUsers(u.data || []);
       } catch (e) {
         setStatus(e.response?.data?.error || "Failed to load learners");
       }
     })();
-  }, []);
+  }, [checking, user]);
 
   useEffect(() => {
+    if (checking || !user) return;
     (async () => {
       try {
-        const { data } = await api.get("/api/teachers?active=1");
+        const { data } = await api.get("/teachers?active=1");
         setTeachers(data || []);
       } catch (e) {
         setStatus(e.response?.data?.error || "Failed to load teachers");
       }
     })();
-  }, []);
+  }, [checking, user]);
 
   useEffect(() => {
     const t = setTimeout(() => setQDebounced(q), 300);
@@ -165,7 +169,7 @@ function Admin() {
   const reloadSessions = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/api/admin/sessions?${params}`);
+      const { data } = await api.get(`/admin/sessions?${params}`);
       const { items, total } = normalizeSessionsResponse(data);
       setSessions(items);
       setTotal(total);
@@ -200,7 +204,7 @@ function Admin() {
         notes: form.notes || undefined,
         teacherId: form.teacherId ? Number(form.teacherId) : undefined,
       };
-      await api.post("/api/sessions", payload);
+      await api.post("/sessions", payload);
       setStatus("Created ✓");
       await reloadSessions();
       setForm((f) => ({
@@ -256,7 +260,7 @@ function Admin() {
         userId: editForm.userId ? Number(editForm.userId) : undefined,
         teacherId: editForm.teacherId ? Number(editForm.teacherId) : 0,
       };
-      await api.patch(`/api/sessions/${id}`, payload);
+      await api.patch(`/sessions/${id}`, payload);
       setStatus("Updated ✓");
       setEditingId(null);
       await reloadSessions();
@@ -269,7 +273,7 @@ function Admin() {
     if (!window.confirm("Delete this session?")) return;
     setStatus("Deleting…");
     try {
-      await api.delete(`/api/sessions/${id}`);
+      await api.delete(`/sessions/${id}`);
       setStatus("Deleted ✓");
       setSessions((rows) => rows.filter((r) => r.id !== id));
       setTotal((t) => Math.max(0, t - 1));
@@ -282,7 +286,7 @@ function Admin() {
     setUsersBusy(true);
     try {
       const { data } = await api.get(
-        `/api/admin/users?q=${encodeURIComponent(usersQ)}`
+        `/admin/users?q=${encodeURIComponent(usersQ)}`
       );
       setUsersAdmin(data || []);
     } finally {
@@ -301,9 +305,7 @@ function Admin() {
 
   async function changeRole(u, role) {
     try {
-      await api.patch(`/api/admin/users/${u.id}`, {
-        role,
-      });
+      await api.patch(`/admin/users/${u.id}`, { role });
       setStatus("Role updated ✓");
       loadUsersAdmin();
     } catch (e) {
@@ -313,9 +315,7 @@ function Admin() {
 
   async function toggleDisabled(u) {
     try {
-      await api.patch(`/api/admin/users/${u.id}`, {
-        isDisabled: !u.isDisabled,
-      });
+      await api.patch(`/admin/users/${u.id}`, { isDisabled: !u.isDisabled });
       setStatus(!u.isDisabled ? "User disabled" : "User enabled");
       loadUsersAdmin();
     } catch (e) {
@@ -325,7 +325,7 @@ function Admin() {
 
   async function sendReset(u) {
     try {
-      await api.post(`/api/admin/users/${u.id}/reset-password`);
+      await api.post(`/admin/users/${u.id}/reset-password`);
       setStatus("Reset email sent ✓");
     } catch (e) {
       setStatus(e.response?.data?.error || "Failed to send reset");
@@ -334,7 +334,7 @@ function Admin() {
 
   async function impersonate(u) {
     try {
-      await api.post(`/api/admin/impersonate/${u.id}`);
+      await api.post(`/admin/impersonate/${u.id}`);
       setStatus(`Viewing as ${u.email}`);
     } catch (e) {
       setStatus(e.response?.data?.error || "Failed to impersonate");
@@ -343,7 +343,7 @@ function Admin() {
 
   async function stopImpersonate() {
     try {
-      await api.post(`/api/admin/impersonate/stop`);
+      await api.post(`/admin/impersonate/stop`);
       setStatus("Back to admin");
     } catch (e) {
       setStatus(e.response?.data?.error || "Failed to stop impersonation");
@@ -1177,7 +1177,7 @@ function TeacherWorkload({ teacherId, from, to }) {
         if (from) p.set("from", from);
         if (to) p.set("to", to);
         const { data } = await api.get(
-          `/api/admin/teachers/workload?${p.toString()}`
+          `/admin/teachers/workload?${p.toString()}`
         );
         setRows(Array.isArray(data) ? data : []);
       } catch (e) {

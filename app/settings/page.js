@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import "@/styles/settings.scss";
+import useAuth from "@/hooks/useAuth";
 
 const timezones = [
   "UTC",
@@ -21,6 +22,7 @@ const timezones = [
 ];
 
 export default function Settings() {
+  const { user, checking } = useAuth();
   const [me, setMe] = useState(null);
   const [status, setStatus] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -30,15 +32,16 @@ export default function Settings() {
   const [pwSuccess, setPwSuccess] = useState(false);
 
   useEffect(() => {
+    if (checking || !user) return;
     (async () => {
       try {
-        const res = await api.get("/api/me");
+        const res = await api.get("/me");
         setMe(res.data);
       } catch (e) {
         setStatus(e.response?.data?.error || "Failed to load profile");
       }
     })();
-  }, []);
+  }, [checking, user]);
 
   const onSave = async (e) => {
     e.preventDefault();
@@ -46,7 +49,7 @@ export default function Settings() {
     setSaveSuccess(false);
     try {
       const payload = { name: me.name || "", timezone: me.timezone || "" };
-      const res = await api.patch("/api/me", payload);
+      const res = await api.patch("/me", payload);
       setMe(res.data);
       setStatus("");
       setSaveSuccess(true);
@@ -62,10 +65,7 @@ export default function Settings() {
     setPwStatus("Saving...");
     setPwSuccess(false);
     try {
-      await api.post("/api/me/password", {
-        currentPassword,
-        newPassword,
-      });
+      await api.post("/me/password", { currentPassword, newPassword });
       setPwStatus("");
       setPwSuccess(true);
       setCurrentPassword("");
@@ -87,6 +87,24 @@ export default function Settings() {
       </div>
     );
   }
+
+  if (checking)
+    return (
+      <div className="settings-modern">
+        <div className="settings-loading">
+          <div className="spinner" />
+          <p>Loading…</p>
+        </div>
+      </div>
+    );
+  if (!user)
+    return (
+      <div className="settings-modern">
+        <div className="settings-loading">
+          <p>Not authenticated</p>
+        </div>
+      </div>
+    );
 
   return (
     <div className="settings-modern">

@@ -1,45 +1,54 @@
-// src/lib/server.auth.js
-// Server-only helper to read the current user
+// app/server-auth.js
 import { cookies } from "next/headers";
 
 /**
- * Decide how to reach the backend:
- * - Default: use the Next.js rewrite (/api/...) to keep same-origin + cookies.
- * - Fallback: if BACKEND_API_BASE is set (and you prefer direct), use it.
+ * Optional direct backend base (bypasses Next.js rewrites)
+ * - Leave unset to use relative /api/* calls that go through Next rewrites.
+ * - Set BACKEND_API_BASE to talk directly to the backend (server-to-server).
  */
-const DIRECT_BASE =
-  (process.env.BACKEND_API_BASE &&
-    process.env.BACKEND_API_BASE.replace(/\/+$/, "")) ||
-  ""; // empty means "use rewrite"
+const DIRECT_BASE = process.env.BACKEND_API_BASE
+  ? process.env.BACKEND_API_BASE.replace(/\/+$/, "")
+  : "";
 
-/** Build the URL to call */
+/**
+ * Helper to build the absolute or relative API URL
+ * @param {string} path like "/api/auth/me"
+ */
 function apiUrl(path) {
   if (!path.startsWith("/")) path = `/${path}`;
   return DIRECT_BASE ? `${DIRECT_BASE}${path}` : `/api${path}`;
 }
 
+/**
+ * Fetch the current authenticated user from the backend.
+ * Runs only on the server during SSR (never in the browser).
+ *
+ * @returns {Promise<Object|null>} The user object or null if not authenticated.
+ */
 export async function getServerUser() {
   try {
-    // Forward the user's cookies from the incoming request
     const cookieHeader = cookies().toString();
 
     const res = await fetch(apiUrl("/api/auth/me"), {
-      // When using a relative URL, Next will call the same host; cookie header is enough.
-      // When using DIRECT_BASE, this is server→server; CORS doesn't apply.
-      headers: { cookie: cookieHeader },
-      // Avoid caching; we want the live session state
-      cache: "no-store",
+      headers: {
+        cookie: cookieHeader,
+      },
+      cache: "no-store", // Always fetch fresh session state
+      next: { revalidate: 0 },
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // 401/403 means not logged in — treat as null, don’t throw
+      if (res.status === 401 || res.status === 403) return null;
+      throw new Error(`Unexpected response ${res.status}`);
+    }
 
     const data = await res.json();
-    return data?.user || null;
-  } catch (e) {
-    // Optional: log in dev
+    return data?.user ?? null;
+  } catch (err) {
     if (process.env.NODE_ENV !== "production") {
       // eslint-disable-next-line no-console
-      console.warn("[getServerUser] failed:", e?.message || e);
+      console.warn("[getServerUser] failed:", err?.message || err);
     }
     return null;
   }

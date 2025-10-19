@@ -30,7 +30,7 @@ function Login() {
 
   const redirectAfterLogin = () => {
     const next = params.get("next") || "/dashboard";
-    router.replace(next);
+    window.location.href = next;
   };
 
   useEffect(() => {
@@ -83,7 +83,7 @@ function Login() {
     try {
       await apiLogout();
       await refresh();
-      router.replace("/");
+      window.location.href = "/";
     } catch (e) {
       console.error(e);
     }

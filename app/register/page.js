@@ -92,7 +92,7 @@ export default function Register() {
       // IMPORTANT: send the raw string, not an object
       await apiGoogleLogin(credential);
       // Session cookie is set; just go to dashboard
-      router.replace("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err) {
       console.error(err);
       setMsgType("error");

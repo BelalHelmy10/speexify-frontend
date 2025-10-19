@@ -9,27 +9,29 @@ import Providers from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-// ✅ Server-side metadata
+// Server-side metadata (Next App Router)
 export const metadata = {
-  title: "Home — Speexify",
+  title: { default: "Speexify", template: "%s — Speexify" },
   description:
     "Welcome to Speexify — personalized language and communication coaching for teams and professionals.",
+  metadataBase: new URL("https://speexify.com"),
   openGraph: {
     title: "Speexify",
     description:
       "Personalized language and communication coaching for teams and professionals.",
-    url: "https://speexify.vercel.app",
+    url: "/",
     siteName: "Speexify",
     type: "website",
   },
 };
 
 export default async function RootLayout({ children }) {
+  // Seed client auth context from the server cookie on first paint
   const user = await getServerUser();
 
   return (
     <html lang="en">
-      {/* hydration guard avoids noisy console warnings if any client theme toggles exist */}
+      {/* suppressHydrationWarning helps if any client theme toggles differ on first paint */}
       <body suppressHydrationWarning>
         <Providers initialUser={user}>
           <Header />
