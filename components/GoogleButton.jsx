@@ -4,24 +4,21 @@
 import { GoogleLogin } from "@react-oauth/google";
 
 /**
- * Thin wrapper around @react-oauth/google that simply forwards
- * the raw GIS payload to the parent (so pages can call your API
- * via the Next.js /api rewrite and set cookies on the correct domain).
+ * Lightweight wrapper for @react-oauth/google.
+ * Simply forwards the GIS response to parent handlers.
  *
  * Usage:
  *   <GoogleButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
- *
- * onSuccess receives: { credential, clientId, select_by, ... }
  */
 export default function GoogleButton({ onSuccess, onError, ...rest }) {
   const handleSuccess = (resp) => {
     if (typeof onSuccess === "function") onSuccess(resp);
-    else console.log("[GoogleButton] success:", resp); // eslint-disable-line no-console
+    else console.log("[GoogleButton] success:", resp);
   };
 
   const handleError = (err) => {
     if (typeof onError === "function") onError(err);
-    else console.error("[GoogleButton] error:", err); // eslint-disable-line no-console
+    else console.error("[GoogleButton] error:", err);
   };
 
   return (
@@ -30,6 +27,11 @@ export default function GoogleButton({ onSuccess, onError, ...rest }) {
       ux_mode="popup"
       onSuccess={handleSuccess}
       onError={handleError}
+      theme="outline"
+      size="large"
+      shape="rectangular"
+      text="signin_with"
+      width="280"
       {...rest}
     />
   );
