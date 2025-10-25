@@ -2,43 +2,59 @@
 import { cookies } from "next/headers";
 
 /**
- * Optional: talk directly to the backend (server-to-server).
- * Leave unset to use Next.js rewrites at /api/*.
- *
- * Example BACKEND_API_BASE: "https://api.speexify.com"
+ * BACKEND_API_BASE must be your backend origin, WITHOUT a trailing slash.
+ *   Example: https://api.speexify.com
+ * If you don’t have a separate API domain, point to the same origin serving your API.
  */
-const DIRECT_BASE = process.env.BACKEND_API_BASE
+const BASE = process.env.BACKEND_API_BASE
   ? process.env.BACKEND_API_BASE.replace(/\/+$/, "")
-  : "";
+  : null;
 
-/**
- * Build a correct backend URL.
- * Pass paths WITHOUT the leading "/api" (e.g. "/auth/me").
- * - When DIRECT_BASE is set: https://api.../api/<path>
- * - Otherwise (rewrites):   /api/<path>
- */
-function apiUrl(path) {
-  if (!path.startsWith("/")) path = `/${path}`;
-  return DIRECT_BASE ? `${DIRECT_BASE}/api${path}` : `/api${path}`;
+if (!BASE && process.env.NODE_ENV !== "development") {
+  // In production we want an explicit backend base to avoid relying on rewrites in SSR.
+  // eslint-disable-next-line no-console
+  console.warn(
+    "[server-auth] BACKEND_API_BASE is not set. Set it to your API origin (e.g. https://api.speexify.com)."
+  );
 }
 
 /**
- * SSR: fetch the current user using the incoming request cookies.
- * Returns null if unauthenticated.
+ * Build an absolute backend URL for server-to-server calls.
+ * Pass paths WITHOUT the leading /api. Example: userPath("auth/me") -> https://api.../api/auth/me
+ */
+function userPath(path) {
+  const p = path.startsWith("/") ? path.slice(1) : path;
+  if (BASE) return `${BASE}/api/${p}`;
+  // Fallback for local dev: call through rewrites
+  return `/api/${p}`;
+}
+
+/**
+ * SSR helper: returns the user or null.
+ * IMPORTANT: We forward the incoming request cookies so the backend can authenticate the session.
  */
 export async function getServerUser() {
   try {
     const cookieHeader = cookies().toString();
 
-    const res = await fetch(apiUrl("/auth/me"), {
-      headers: { cookie: cookieHeader },
+    const res = await fetch(userPath("auth/me"), {
+      method: "GET",
+      headers: {
+        cookie: cookieHeader,
+        // Prevent proxies/CDNs from caching this auth check
+        "cache-control": "no-store, no-cache, must-revalidate",
+        pragma: "no-cache",
+      },
+      // Next.js cache controls
       cache: "no-store",
       next: { revalidate: 0 },
     });
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) return null;
-      throw new Error(`Unexpected response ${res.status}`);
+      // eslint-disable-next-line no-console
+      console.warn("[getServerUser] unexpected status:", res.status);
+      return null;
     }
 
     const data = await res.json();

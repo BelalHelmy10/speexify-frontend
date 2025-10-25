@@ -9,7 +9,9 @@ import Providers from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-// Server-side metadata (Next App Router)
+// Force dynamic rendering so the first paint always reflects the live auth state
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: { default: "Speexify", template: "%s — Speexify" },
   description:
@@ -26,12 +28,11 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  // Seed client auth context from the server cookie on first paint
+  // Seed client auth from SSR using the real backend (with cookies)
   const user = await getServerUser();
 
   return (
     <html lang="en">
-      {/* suppressHydrationWarning helps if any client theme toggles differ on first paint */}
       <body suppressHydrationWarning>
         <Providers initialUser={user}>
           <Header />
