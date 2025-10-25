@@ -193,18 +193,24 @@ function Admin() {
     e.preventDefault();
     setStatus("Saving…");
     try {
+      // Build ISO datetimes the API expects
+      const startAt = joinDateTime(form.date, form.startTime);
+      const endAt = form.endTime ? joinDateTime(form.date, form.endTime) : null;
+
       const payload = {
         userId: Number(form.userId),
-        title: form.title.trim(),
-        date: form.date,
-        startTime: form.startTime,
-        endTime: form.endTime || undefined,
-        duration: form.endTime ? undefined : Number(form.duration || 60),
-        meetingUrl: form.meetingUrl || undefined,
-        notes: form.notes || undefined,
-        teacherId: form.teacherId ? Number(form.teacherId) : undefined,
+        // If you want teacher required, keep as Number; otherwise only include when selected
+        ...(form.teacherId ? { teacherId: Number(form.teacherId) } : {}),
+        title: form.title.trim() || "Lesson",
+        startAt: startAt.toISOString(),
+        ...(endAt
+          ? { endAt: endAt.toISOString() }
+          : { durationMin: Number(form.duration || 60) }),
+        meetingUrl: form.meetingUrl || null,
+        notes: form.notes || null,
       };
-      await api.post("/sessions", payload);
+
+      await api.post("/admin/sessions", payload); // << correct admin endpoint
       setStatus("Created ✓");
       await reloadSessions();
       setForm((f) => ({
@@ -247,20 +253,31 @@ function Admin() {
   const updateSession = async (id) => {
     setStatus("Updating…");
     try {
+      const startAt =
+        editForm.date && editForm.startTime
+          ? joinDateTime(editForm.date, editForm.startTime)
+          : null;
+      const endAt =
+        editForm.date && editForm.endTime
+          ? joinDateTime(editForm.date, editForm.endTime)
+          : null;
+
       const payload = {
         title: editForm.title.trim(),
-        date: editForm.date,
-        startTime: editForm.startTime,
-        endTime: editForm.endTime || undefined,
-        duration: editForm.endTime
-          ? undefined
-          : Number(editForm.duration || 60),
+        ...(startAt ? { startAt: startAt.toISOString() } : {}),
+        ...(endAt !== null
+          ? { endAt: endAt ? endAt.toISOString() : null }
+          : {}),
         meetingUrl: editForm.meetingUrl || null,
         notes: editForm.notes || null,
-        userId: editForm.userId ? Number(editForm.userId) : undefined,
-        teacherId: editForm.teacherId ? Number(editForm.teacherId) : 0,
+        ...(editForm.userId ? { userId: Number(editForm.userId) } : {}),
+        // If blank should mean "unassigned", omit the key or send 0 based on your backend choice
+        ...(editForm.teacherId
+          ? { teacherId: Number(editForm.teacherId) }
+          : {}),
       };
-      await api.patch(`/sessions/${id}`, payload);
+
+      await api.patch(`/admin/sessions/${id}`, payload); // << correct admin endpoint
       setStatus("Updated ✓");
       setEditingId(null);
       await reloadSessions();
@@ -273,7 +290,7 @@ function Admin() {
     if (!window.confirm("Delete this session?")) return;
     setStatus("Deleting…");
     try {
-      await api.delete(`/sessions/${id}`);
+      await api.delete(`/admin/sessions/${id}`); // << correct admin endpoint
       setStatus("Deleted ✓");
       setSessions((rows) => rows.filter((r) => r.id !== id));
       setTotal((t) => Math.max(0, t - 1));
