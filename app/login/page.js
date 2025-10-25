@@ -1,4 +1,4 @@
-// src/pages/login.jsx  (use lowercase "login.jsx")
+// src/pages/login.jsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -22,7 +22,8 @@ function Login() {
   const [msg, setMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [redirecting, setRedirecting] = useState(false); // 👈 NEW
+  const [redirecting, setRedirecting] = useState(false); // hide UI during post-login nav
+  const [loggingOut, setLoggingOut] = useState(false); // hide UI during logout
 
   const router = useRouter();
   const params = useSearchParams();
@@ -31,14 +32,14 @@ function Login() {
 
   const redirectAfterLogin = () => {
     const next = params.get("next") || "/dashboard";
-    router.replace(next); // 👈 CHANGED (no full page reload)
+    router.replace(next);
     router.refresh();
   };
 
   // If already authenticated, start redirect immediately and render nothing
   useEffect(() => {
     if (!checking && user) {
-      setRedirecting(true); // 👈 NEW
+      setRedirecting(true);
       redirectAfterLogin();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,7 +49,7 @@ function Login() {
     e.preventDefault();
     setMsg("");
     setSubmitting(true);
-    setRedirecting(true); // 👈 NEW
+    setRedirecting(true);
     try {
       await apiLogin(form);
       await refresh();
@@ -70,7 +71,7 @@ function Login() {
         return;
       }
       setMsg("");
-      setRedirecting(true); // 👈 NEW
+      setRedirecting(true);
       await apiGoogleLogin(credential); // send raw string to /api/auth/google
       await refresh();
       redirectAfterLogin();
@@ -87,18 +88,19 @@ function Login() {
   };
 
   const logout = async () => {
+    setLoggingOut(true); // hide any “not authenticated” flashes while the app flips state
     try {
       await apiLogout();
-      await refresh();
-      router.replace("/");
-      router.refresh();
     } catch (e) {
-      console.error(e);
+      // ignore
     }
+    await refresh();
+    router.replace("/login");
+    router.refresh();
   };
 
-  // 👇 KEY: never render the card while checking, redirecting, or already authenticated
-  if (checking || redirecting || user) return null;
+  // KEY: never render the card while checking, redirecting, logging out, or already authenticated
+  if (checking || redirecting || loggingOut || user) return null;
 
   return (
     <main className="auth-page">
