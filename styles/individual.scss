@@ -1,5 +1,31 @@
-@use "variables" as *;
-@use "mixins" as *;
+// ========================================
+// VARIABLES
+// ========================================
+$brand: #0ea5e9;
+$brand-ink: #0b6fa3;
+$brand-light: #38bdf8;
+$ink: #0f172a;
+$muted: #475569;
+$border: #e2e8f0;
+$bg-soft: #f8fafc;
+$bg: #f5f7fb;
+$card-bg: #ffffff;
+$text: #0b0b0f;
+$shadow: 0 4px 16px rgba(14, 21, 47, 0.08), 0 8px 32px rgba(14, 21, 47, 0.06);
+$radius-card: 20px;
+
+// Breakpoints
+$bp-md: 960px;
+$bp-sm: 720px;
+
+// Spacing
+$space-4: 16px;
+$space-6: 24px;
+$space-7: 32px;
+$space-8: 40px;
+$space-9: 48px;
+$space-10: 64px;
+
 // ========================================
 // ANIMATIONS
 // ========================================

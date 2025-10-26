@@ -1,5 +1,28 @@
-@use "variables" as *;
-@use "mixins" as *;
+// web/src/styles/settings.scss
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Modern Settings Page Design
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --settings-bg-start: #667eea;
+  --settings-bg-end: #764ba2;
+  --settings-surface: rgba(255, 255, 255, 0.95);
+  --settings-border: rgba(148, 163, 184, 0.2);
+  --settings-text: #1e293b;
+  --settings-text-light: #64748b;
+  --settings-text-muted: #94a3b8;
+
+  --settings-primary: #3b82f6;
+  --settings-primary-dark: #2563eb;
+  --settings-success: #10b981;
+  --settings-warning: #f59e0b;
+  --settings-danger: #ef4444;
+
+  --settings-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  --settings-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
      Base Layout
      ═══════════════════════════════════════════════════════════════════════════ */

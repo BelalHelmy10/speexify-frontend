@@ -1,5 +1,17 @@
-@use "variables" as *;
-@use "mixins" as *;
+/* Palette hooks (use your existing CSS variables if present) */
+:root {
+  --accent: #5a67d8;
+  --accent-soft: rgba(90, 103, 216, 0.25);
+  --panel-bg: #fff;
+  --text: #111;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --ok: #0ea5e9;
+  --good: #10b981;
+  --warn: #f59e0b;
+  --bad: #ef4444;
+}
+
 .progress-panel {
   display: block;
   background: var(--panel-bg);
