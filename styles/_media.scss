@@ -1,4 +1,5 @@
-@import "variables";
+@use "variables" as *;
+@use "mixins" as *;
 /* web/src/styles/_media.scss */
 img,
 picture {

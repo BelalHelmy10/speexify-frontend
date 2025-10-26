@@ -1,5 +1,6 @@
 /* src/styles/_header.scss - ULTRA PREMIUM EDITION - PERFORMANCE TRIM */
-@import "variables";
+@use "variables" as *;
+@use "mixins" as *;
 
 /* ────────────────────────────────────────────────────────────────────────────
    HEADER WRAPPER
