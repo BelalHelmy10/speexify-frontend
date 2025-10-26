@@ -1,63 +1,201 @@
-// Colors
-$primary: #0070f3;
-$secondary: #00b894;
-$bg-light: #fafafa;
-$text-dark: #333;
-$text-light: #666;
-
-$color-primary: #0ea5e9;
-$color-primary-dark: #0369a1;
-$color-border: #e5e7eb;
-$radius: 8px;
-
-// Fonts
-$font-main: "Poppins", sans-serif;
-
-// Spacing
-$spacing: 12px;
-$spacing-sm: 8px;
-$spacing-md: 16px;
-$spacing-lg: 24px;
-
-$bg: var(--surface, #ffffff);
-$ink: var(--ink, #0f172a); // slate-900-ish
-$muted: var(--muted, #5b6b87);
-$brand: var(--brand, #0ea5e9); // your primary
+// ============================================
+// COLORS - PRIMARY/BRAND
+// ============================================
+$brand: #0ea5e9;
+$brand-dark: #0284c7;
+$brand-light: #38bdf8;
+$brand-ink: #0b6fa3;
 $brand-700: color-mix(in srgb, $brand 85%, #000);
-$ring: rgba(15, 23, 42, 0.06);
 
-//other variables
+// Aliases (keep for consistency across codebase)
+$color-primary: $brand;
+$color-primary-ink: $brand-ink;
+$color-primary-light: $brand-light;
+$accent: $brand;
+$accent-ink: $brand-ink;
+$accent-light: $brand-light;
 
-//colors
-// $color-primary: #1acbdd;
-// $color-primary-dark:#28b485;
-// $color-primary-light:#7ed56f;
-
-$color-primary-dark: #0d666f;
-$color-primary-light: #8de5ee;
-
+// ============================================
+// COLORS - SECONDARY & TERTIARY
+// ============================================
+$secondary: #00b894;
 $color-secondary-light: #ffb900;
 $color-secondary-dark: #ff7730;
-
 $color-tertiary-light: #2998ff;
 $color-tertiary-dark: #5643fa;
 
+// ============================================
+// COLORS - BACKGROUNDS
+// ============================================
+$bg: #ffffff;
+$bg-primary: #ffffff;
+$bg-secondary: #f8fafc;
+$bg-light: #fafafa;
+$bg-soft: #f8fafc;
+$bg-subtle: #f8fafc;
+$card-bg: #ffffff;
+$surface: #f8fafc;
+$color-surface: #f8fafc;
+
+// ============================================
+// COLORS - TEXT & INK
+// ============================================
+$ink: #0f172a;
+$text: #0b0b0f;
+$text-primary: #0f172a;
+$text-secondary: #64748b;
+$text-muted: #94a3b8;
+$text-dark: #333;
+$text-light: #666;
+$color-black: #0f172a;
+$color-white: #ffffff;
+
+// ============================================
+// COLORS - MUTED & GREYS
+// ============================================
+$muted: #64748b;
+$color-muted: #475569;
 $color-grey-light: #f7f7f7;
 $color-grey-light-2: #eee;
-
 $color-dark-grey: #777;
 $color-dark-grey-2: #999;
 $color-dark-grey-3: #333;
 
-$color-white: #fff;
-$color-black: #000;
+// ============================================
+// COLORS - BORDERS & RINGS
+// ============================================
+$border: #e2e8f0;
+$border-focus: rgba(14, 165, 233, 0.4);
+$color-border: #e2e8f0;
+$ring: rgba(15, 23, 42, 0.06);
 
-//GRID
+// ============================================
+// COLORS - STATUS & FEEDBACK
+// ============================================
+$error: #ef4444;
+$error-bg: #fef2f2;
+$success: #10b981;
+$success-bg: #ecfdf5;
+
+// ============================================
+// SHADOWS
+// ============================================
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+  0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+  0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+  0 10px 10px -5px rgba(0, 0, 0, 0.04);
+$shadow: 0 4px 16px rgba(14, 21, 47, 0.08), 0 8px 32px rgba(14, 21, 47, 0.06);
+
+// ============================================
+// TRANSITIONS
+// ============================================
+$transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+// ============================================
+// RADIUS
+// ============================================
+$radius: 8px;
+$radius-card: 20px;
+
+// ============================================
+// TYPOGRAPHY
+// ============================================
+$font-main: "Poppins", sans-serif;
+$default-font-size: 1.6rem;
+$font-size-big: 2rem;
+
+// ============================================
+// SPACING
+// ============================================
+$spacing: 12px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$space-4: 16px;
+$space-6: 24px;
+$space-7: 32px;
+$space-8: 40px;
+$space-9: 48px;
+$space-10: 64px;
+
+// ============================================
+// GRID
+// ============================================
 $grid-width: 114rem;
 $gutter-vertical: 8rem;
 $gutter-vertical-small: 6rem;
 $gutter-horizontal: 6rem;
 
-//font-sizes
-$default-font-size: 1.6rem;
-$font-size-big: 2rem;
+// ============================================
+// BREAKPOINTS
+// ============================================
+$bp-lg: 1100px;
+$bp-md: 960px;
+$bp-sm: 640px;
+$bp-xs: 560px;
+
+// ============================================
+// CSS CUSTOM PROPERTIES - ROOT
+// ============================================
+:root {
+  --accent: #5a67d8;
+  --accent-soft: rgba(90, 103, 216, 0.25);
+  --panel-bg: #fff;
+  --text: #111;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --ok: #0ea5e9;
+  --good: #10b981;
+  --warn: #f59e0b;
+  --bad: #ef4444;
+}
+
+// ============================================
+// CSS CUSTOM PROPERTIES - ADMIN THEME
+// ============================================
+:root {
+  --admin-bg-primary: #1e293b;
+  --admin-bg-secondary: #0f172a;
+  --admin-surface: rgba(30, 41, 59, 0.8);
+  --admin-border: rgba(148, 163, 184, 0.1);
+  --admin-text-primary: #f8fafc;
+  --admin-text-secondary: #94a3b8;
+  --admin-text-muted: #64748b;
+  --admin-primary: #3b82f6;
+  --admin-primary-dark: #2563eb;
+  --admin-success: #10b981;
+  --admin-success-dark: #059669;
+  --admin-accent: #8b5cf6;
+  --admin-accent-dark: #7c3aed;
+  --admin-warning: #f59e0b;
+  --admin-warning-dark: #d97706;
+  --admin-danger: #ef4444;
+  --admin-radius: 24px;
+  --admin-radius-sm: 12px;
+  --admin-radius-md: 16px;
+  --admin-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+// ============================================
+// CSS CUSTOM PROPERTIES - SETTINGS THEME
+// ============================================
+:root {
+  --settings-bg-start: #667eea;
+  --settings-bg-end: #764ba2;
+  --settings-surface: rgba(255, 255, 255, 0.95);
+  --settings-border: rgba(148, 163, 184, 0.2);
+  --settings-text: #1e293b;
+  --settings-text-light: #64748b;
+  --settings-text-muted: #94a3b8;
+  --settings-primary: #3b82f6;
+  --settings-primary-dark: #2563eb;
+  --settings-success: #10b981;
+  --settings-warning: #f59e0b;
+  --settings-danger: #ef4444;
+  --settings-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  --settings-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
