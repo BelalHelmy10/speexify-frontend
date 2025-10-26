@@ -141,7 +141,6 @@ $space-10: 64px;
     box-shadow: 0 4px 12px rgba($color-black, 0.2);
 
     &:hover {
-      background: lighten($color-black, 5%);
       box-shadow: 0 6px 20px rgba($color-black, 0.3);
       transform: translateY(-2px);
       text-decoration: none;

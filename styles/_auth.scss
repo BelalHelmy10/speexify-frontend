@@ -416,10 +416,6 @@ $transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
       color: $text-muted;
     }
 
-    &:hover {
-      border-color: darken($border, 5%);
-    }
-
     &:focus {
       outline: none;
       border-color: $brand;

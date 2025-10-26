@@ -1,17 +1,17 @@
-@import "variables";
-@import "mixins";
-@import "layout";
-@import "./buttons";
-@import "./cards";
-@import "./tables";
-@import "./forms";
-@import "./calendar";
+@use "variables" as *;
+@use "mixins" as *;
+@use "layout";
+@use "./buttons";
+@use "./cards";
+@use "./tables";
+@use "./forms";
+@use "./calendar";
 /* src/styles/global.scss (or wherever you collect partials) */
-@import "./header"; // <= add this line (resolves to _header.scss)
-@import "./auth";
-@import "./footer";
-@import "./admin.scss";
-@import "./dashboard.scss";
+@use "./header"; // <= add this line (resolves to _header.scss)
+@use "./auth";
+@use "./footer";
+@use "./admin.scss";
+@use "./dashboard.scss";
 
 // body {
 //   margin: 0;

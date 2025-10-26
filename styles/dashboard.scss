@@ -1,6 +1,6 @@
 // web/src/styles/Dashboard.scss
-@import "variables";
-@import "mixins";
+@use "variables" as *;
+@use "mixins" as *;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dashboard - Premium Edition
