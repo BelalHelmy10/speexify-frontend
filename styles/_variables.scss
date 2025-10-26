@@ -199,3 +199,15 @@ $bp-xs: 560px;
   --settings-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   --settings-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
+
+// Pick one for each:
+$primary: #0070f3; // or use $brand (#0ea5e9) instead?
+$color-primary-dark: #0369a1; // ⚠️ URGENT - or #0d666f
+$color-primary-light: #8de5ee; // or #38bdf8 (currently in file)
+$bg: #ffffff; // or #f5f7fb
+$ink: #0f172a; // or #111827
+$muted: #64748b; // or #475569 or #5b6b87 or #6b7280
+$border: #e2e8f0; // or rgba(15, 23, 42, 0.08) or #e5e7eb
+$ring: rgba(15, 23, 42, 0.06); // or #e5e7eb
+$bp-md: 960px; // or 980px
+$bp-sm: 640px; // or 720px or 780px
