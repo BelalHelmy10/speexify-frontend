@@ -9,6 +9,7 @@ import Providers from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
+// Force dynamic rendering so the first paint always reflects the live auth state
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -24,20 +25,12 @@ export const metadata = {
     siteName: "Speexify",
     type: "website",
   },
-
-  icons: {
-    icon: [
-      { url: "/SpeexifyWebIcon.png" },
-      { url: "/icon-32.png", sizes: "32x32", type: "image/png" },
-    ],
-    apple: [{ url: "/SpeexifyWebIcon.png", sizes: "180x180" }],
-  },
-  // Optional if you have a PWA:
-  manifest: "/site.webmanifest",
 };
 
 export default async function RootLayout({ children }) {
+  // Seed client auth from SSR using the real backend (with cookies)
   const user = await getServerUser();
+
   return (
     <html lang="en">
       <body suppressHydrationWarning>
