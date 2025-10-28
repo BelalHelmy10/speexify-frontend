@@ -193,13 +193,11 @@ function Admin() {
     e.preventDefault();
     setStatus("Saving…");
     try {
-      // Build ISO datetimes the API expects
       const startAt = joinDateTime(form.date, form.startTime);
       const endAt = form.endTime ? joinDateTime(form.date, form.endTime) : null;
 
       const payload = {
         userId: Number(form.userId),
-        // If you want teacher required, keep as Number; otherwise only include when selected
         ...(form.teacherId ? { teacherId: Number(form.teacherId) } : {}),
         title: form.title.trim() || "Lesson",
         startAt: startAt.toISOString(),
@@ -210,7 +208,7 @@ function Admin() {
         notes: form.notes || null,
       };
 
-      await api.post("/admin/sessions", payload); // << correct admin endpoint
+      await api.post("/admin/sessions", payload);
       setStatus("Created ✓");
       await reloadSessions();
       setForm((f) => ({
@@ -271,13 +269,12 @@ function Admin() {
         meetingUrl: editForm.meetingUrl || null,
         notes: editForm.notes || null,
         ...(editForm.userId ? { userId: Number(editForm.userId) } : {}),
-        // If blank should mean "unassigned", omit the key or send 0 based on your backend choice
         ...(editForm.teacherId
           ? { teacherId: Number(editForm.teacherId) }
           : {}),
       };
 
-      await api.patch(`/admin/sessions/${id}`, payload); // << correct admin endpoint
+      await api.patch(`/admin/sessions/${id}`, payload);
       setStatus("Updated ✓");
       setEditingId(null);
       await reloadSessions();
@@ -290,7 +287,7 @@ function Admin() {
     if (!window.confirm("Delete this session?")) return;
     setStatus("Deleting…");
     try {
-      await api.delete(`/admin/sessions/${id}`); // << correct admin endpoint
+      await api.delete(`/admin/sessions/${id}`);
       setStatus("Deleted ✓");
       setSessions((rows) => rows.filter((r) => r.id !== id));
       setTotal((t) => Math.max(0, t - 1));
@@ -368,18 +365,18 @@ function Admin() {
   }
 
   return (
-    <div className="admin-modern">
-      <div className="admin-header">
-        <div className="admin-header__content">
-          <h1 className="admin-title">
+    <div className="adm-modern">
+      <div className="adm-header">
+        <div className="adm-header__content">
+          <h1 className="adm-title">
             Admin Dashboard
-            <span className="admin-subtitle">
+            <span className="adm-subtitle">
               Manage users, sessions, and monitor teacher workload
             </span>
           </h1>
         </div>
         {status && (
-          <div className="status-toast">
+          <div className="adm-status-toast">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path
                 d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z"
@@ -399,10 +396,10 @@ function Admin() {
         )}
       </div>
 
-      <section className="admin-card">
-        <div className="admin-card__header">
-          <div className="admin-card__title-group">
-            <div className="admin-card__icon admin-card__icon--primary">
+      <section className="adm-card">
+        <div className="adm-card__header">
+          <div className="adm-card__title-group">
+            <div className="adm-card__icon adm-card__icon--primary">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.3503 17.623 3.8507 18.1676 4.55231C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z"
@@ -414,14 +411,14 @@ function Admin() {
               </svg>
             </div>
             <div>
-              <h2 className="admin-card__title">User Management</h2>
-              <p className="admin-card__subtitle">
+              <h2 className="adm-card__title">User Management</h2>
+              <p className="adm-card__subtitle">
                 {usersAdmin.length} total users
               </p>
             </div>
           </div>
-          <div className="admin-card__actions">
-            <div className="search-box">
+          <div className="adm-card__actions">
+            <div className="adm-search">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
                   d="M7 13C10.3137 13 13 10.3137 13 7C13 3.68629 10.3137 1 7 1C3.68629 1 1 3.68629 1 7C1 10.3137 3.68629 13 7 13Z"
@@ -443,7 +440,7 @@ function Admin() {
                 onChange={(e) => setUsersQ(e.target.value)}
               />
             </div>
-            <button className="btn-icon-modern" onClick={loadUsersAdmin}>
+            <button className="adm-btn-icon" onClick={loadUsersAdmin}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path
                   d="M1 9H17M9 1V17"
@@ -453,13 +450,13 @@ function Admin() {
                 />
               </svg>
             </button>
-            <button className="btn-secondary" onClick={stopImpersonate}>
+            <button className="adm-btn-secondary" onClick={stopImpersonate}>
               Return to admin
             </button>
           </div>
         </div>
 
-        <div className="data-table">
+        <div className="adm-table">
           <table>
             <thead>
               <tr>
@@ -473,19 +470,19 @@ function Admin() {
               {usersAdmin.map((u) => (
                 <tr key={u.id}>
                   <td>
-                    <div className="user-cell">
-                      <div className="user-avatar">
+                    <div className="adm-user">
+                      <div className="adm-avatar">
                         {u.name?.charAt(0) || u.email.charAt(0)}
                       </div>
-                      <div className="user-info">
-                        <div className="user-name">{u.name || "—"}</div>
-                        <div className="user-email">{u.email}</div>
+                      <div className="adm-user__info">
+                        <div className="adm-user__name">{u.name || "—"}</div>
+                        <div className="adm-user__email">{u.email}</div>
                       </div>
                     </div>
                   </td>
                   <td>
                     <select
-                      className="role-select"
+                      className="adm-role"
                       value={u.role}
                       onChange={(e) => changeRole(u, e.target.value)}
                     >
@@ -496,20 +493,20 @@ function Admin() {
                   </td>
                   <td>
                     <span
-                      className={`status-badge ${
+                      className={`adm-status ${
                         u.isDisabled
-                          ? "status-badge--inactive"
-                          : "status-badge--active"
+                          ? "adm-status--inactive"
+                          : "adm-status--active"
                       }`}
                     >
-                      <span className="status-badge__dot" />
+                      <span className="adm-status__dot" />
                       {u.isDisabled ? "Inactive" : "Active"}
                     </span>
                   </td>
                   <td>
-                    <div className="action-buttons">
+                    <div className="adm-actions">
                       <button
-                        className="btn-action"
+                        className="adm-action"
                         onClick={() => sendReset(u)}
                         title="Reset Password"
                       >
@@ -535,7 +532,7 @@ function Admin() {
                         </svg>
                       </button>
                       <button
-                        className="btn-action"
+                        className="adm-action"
                         onClick={() => impersonate(u)}
                         title="View As"
                       >
@@ -560,8 +557,8 @@ function Admin() {
                         </svg>
                       </button>
                       <button
-                        className={`btn-action ${
-                          !u.isDisabled ? "btn-action--danger" : ""
+                        className={`adm-action ${
+                          !u.isDisabled ? "adm-action--danger" : ""
                         }`}
                         onClick={() => toggleDisabled(u)}
                         title={u.isDisabled ? "Enable" : "Disable"}
@@ -589,10 +586,10 @@ function Admin() {
         </div>
       </section>
 
-      <section className="admin-card">
-        <div className="admin-card__header">
-          <div className="admin-card__title-group">
-            <div className="admin-card__icon admin-card__icon--success">
+      <section className="adm-card">
+        <div className="adm-card__header">
+          <div className="adm-card__title-group">
+            <div className="adm-card__icon adm-card__icon--success">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M12 5V19M5 12H19"
@@ -603,23 +600,23 @@ function Admin() {
               </svg>
             </div>
             <div>
-              <h2 className="admin-card__title">Create New Session</h2>
-              <p className="admin-card__subtitle">
+              <h2 className="adm-card__title">Create New Session</h2>
+              <p className="adm-card__subtitle">
                 Schedule a session for a learner
               </p>
             </div>
           </div>
         </div>
 
-        <form onSubmit={createSession} className="modern-form">
-          <div className="form-grid">
-            <div className="form-field">
-              <label className="form-label">
-                Learner<span className="form-required">*</span>
+        <form onSubmit={createSession} className="adm-form">
+          <div className="adm-form__grid">
+            <div className="adm-field">
+              <label className="adm-label">
+                Learner<span className="adm-required">*</span>
               </label>
               <select
                 name="userId"
-                className="form-input"
+                className="adm-input"
                 value={form.userId}
                 onChange={onCreateChange}
                 required
@@ -633,11 +630,11 @@ function Admin() {
               </select>
             </div>
 
-            <div className="form-field">
-              <label className="form-label">Teacher</label>
+            <div className="adm-field">
+              <label className="adm-label">Teacher</label>
               <select
                 name="teacherId"
-                className="form-input"
+                className="adm-input"
                 value={form.teacherId}
                 onChange={onCreateChange}
               >
@@ -650,13 +647,13 @@ function Admin() {
               </select>
             </div>
 
-            <div className="form-field form-field--full">
-              <label className="form-label">
-                Session Title<span className="form-required">*</span>
+            <div className="adm-field adm-field--full">
+              <label className="adm-label">
+                Session Title<span className="adm-required">*</span>
               </label>
               <input
                 name="title"
-                className="form-input"
+                className="adm-input"
                 value={form.title}
                 onChange={onCreateChange}
                 placeholder="e.g., React Advanced Patterns"
@@ -664,51 +661,51 @@ function Admin() {
               />
             </div>
 
-            <div className="form-field">
-              <label className="form-label">
-                Date<span className="form-required">*</span>
+            <div className="adm-field">
+              <label className="adm-label">
+                Date<span className="adm-required">*</span>
               </label>
               <input
                 type="date"
                 name="date"
-                className="form-input"
+                className="adm-input"
                 value={form.date}
                 onChange={onCreateChange}
                 required
               />
             </div>
 
-            <div className="form-field">
-              <label className="form-label">
-                Start Time<span className="form-required">*</span>
+            <div className="adm-field">
+              <label className="adm-label">
+                Start Time<span className="adm-required">*</span>
               </label>
               <input
                 type="time"
                 name="startTime"
-                className="form-input"
+                className="adm-input"
                 value={form.startTime}
                 onChange={onCreateChange}
                 required
               />
             </div>
 
-            <div className="form-field">
-              <label className="form-label">End Time</label>
+            <div className="adm-field">
+              <label className="adm-label">End Time</label>
               <input
                 type="time"
                 name="endTime"
-                className="form-input"
+                className="adm-input"
                 value={form.endTime}
                 onChange={onCreateChange}
               />
             </div>
 
-            <div className="form-field">
-              <label className="form-label">Duration (minutes)</label>
+            <div className="adm-field">
+              <label className="adm-label">Duration (minutes)</label>
               <input
                 type="number"
                 name="duration"
-                className="form-input"
+                className="adm-input"
                 value={form.duration}
                 onChange={onCreateChange}
                 min="15"
@@ -717,22 +714,22 @@ function Admin() {
               />
             </div>
 
-            <div className="form-field form-field--full">
-              <label className="form-label">Meeting URL</label>
+            <div className="adm-field adm-field--full">
+              <label className="adm-label">Meeting URL</label>
               <input
                 name="meetingUrl"
-                className="form-input"
+                className="adm-input"
                 value={form.meetingUrl}
                 onChange={onCreateChange}
                 placeholder="https://meet.google.com/..."
               />
             </div>
 
-            <div className="form-field form-field--full">
-              <label className="form-label">Notes</label>
+            <div className="adm-field adm-field--full">
+              <label className="adm-label">Notes</label>
               <textarea
                 name="notes"
-                className="form-textarea"
+                className="adm-textarea"
                 value={form.notes}
                 onChange={onCreateChange}
                 rows={3}
@@ -741,8 +738,8 @@ function Admin() {
             </div>
           </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn-primary">
+          <div className="adm-form__actions">
+            <button type="submit" className="adm-btn-primary">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
                   d="M8 3V13M3 8H13"
@@ -755,7 +752,7 @@ function Admin() {
             </button>
             <button
               type="button"
-              className="btn-secondary"
+              className="adm-btn-secondary"
               onClick={() =>
                 setForm((f) => ({
                   ...f,
@@ -774,10 +771,10 @@ function Admin() {
         </form>
       </section>
 
-      <section className="admin-card">
-        <div className="admin-card__header">
-          <div className="admin-card__title-group">
-            <div className="admin-card__icon admin-card__icon--accent">
+      <section className="adm-card">
+        <div className="adm-card__header">
+          <div className="adm-card__title-group">
+            <div className="adm-card__icon adm-card__icon--accent">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <rect
                   x="3"
@@ -797,16 +794,16 @@ function Admin() {
               </svg>
             </div>
             <div>
-              <h2 className="admin-card__title">All Sessions</h2>
-              <p className="admin-card__subtitle">
+              <h2 className="adm-card__title">All Sessions</h2>
+              <p className="adm-card__subtitle">
                 {loading
                   ? "Loading..."
                   : `${sessions.length} of ${total} sessions`}
               </p>
             </div>
           </div>
-          <div className="admin-card__actions">
-            <div className="search-box">
+          <div className="adm-card__actions">
+            <div className="adm-search">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
                   d="M7 13C10.3137 13 13 10.3137 13 7C13 3.68629 10.3137 1 7 1C3.68629 1 1 3.68629 1 7C1 10.3137 3.68629 13 7 13Z"
@@ -829,7 +826,7 @@ function Admin() {
               />
             </div>
             <select
-              className="filter-select"
+              className="adm-filter"
               value={teacherIdFilter}
               onChange={(e) => setTeacherIdFilter(e.target.value)}
             >
@@ -842,26 +839,26 @@ function Admin() {
             </select>
             <input
               type="date"
-              className="filter-select"
+              className="adm-filter"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
             />
             <input
               type="date"
-              className="filter-select"
+              className="adm-filter"
               value={to}
               onChange={(e) => setTo(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="sessions-grid">
+        <div className="adm-sessions">
           {sessions.map((s) =>
             editingId === s.id ? (
-              <div key={s.id} className="session-edit-card">
-                <div className="session-edit-header">
+              <div key={s.id} className="adm-session-edit">
+                <div className="adm-session-edit__header">
                   <h3>Edit Session #{s.id}</h3>
-                  <button className="btn-close" onClick={cancelEdit}>
+                  <button className="adm-btn-close" onClick={cancelEdit}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path
                         d="M12 4L4 12M4 4L12 12"
@@ -872,12 +869,12 @@ function Admin() {
                     </svg>
                   </button>
                 </div>
-                <div className="form-grid">
-                  <div className="form-field">
-                    <label className="form-label">Learner</label>
+                <div className="adm-form__grid">
+                  <div className="adm-field">
+                    <label className="adm-label">Learner</label>
                     <select
                       name="userId"
-                      className="form-input"
+                      className="adm-input"
                       value={editForm.userId}
                       onChange={onEditChange}
                     >
@@ -888,11 +885,11 @@ function Admin() {
                       ))}
                     </select>
                   </div>
-                  <div className="form-field">
-                    <label className="form-label">Teacher</label>
+                  <div className="adm-field">
+                    <label className="adm-label">Teacher</label>
                     <select
                       name="teacherId"
-                      className="form-input"
+                      className="adm-input"
                       value={editForm.teacherId}
                       onChange={onEditChange}
                     >
@@ -904,51 +901,51 @@ function Admin() {
                       ))}
                     </select>
                   </div>
-                  <div className="form-field form-field--full">
-                    <label className="form-label">Title</label>
+                  <div className="adm-field adm-field--full">
+                    <label className="adm-label">Title</label>
                     <input
                       name="title"
-                      className="form-input"
+                      className="adm-input"
                       value={editForm.title}
                       onChange={onEditChange}
                     />
                   </div>
-                  <div className="form-field">
-                    <label className="form-label">Date</label>
+                  <div className="adm-field">
+                    <label className="adm-label">Date</label>
                     <input
                       type="date"
                       name="date"
-                      className="form-input"
+                      className="adm-input"
                       value={editForm.date}
                       onChange={onEditChange}
                     />
                   </div>
-                  <div className="form-field">
-                    <label className="form-label">Start Time</label>
+                  <div className="adm-field">
+                    <label className="adm-label">Start Time</label>
                     <input
                       type="time"
                       name="startTime"
-                      className="form-input"
+                      className="adm-input"
                       value={editForm.startTime}
                       onChange={onEditChange}
                     />
                   </div>
-                  <div className="form-field">
-                    <label className="form-label">End Time</label>
+                  <div className="adm-field">
+                    <label className="adm-label">End Time</label>
                     <input
                       type="time"
                       name="endTime"
-                      className="form-input"
+                      className="adm-input"
                       value={editForm.endTime}
                       onChange={onEditChange}
                     />
                   </div>
-                  <div className="form-field">
-                    <label className="form-label">Duration (minutes)</label>
+                  <div className="adm-field">
+                    <label className="adm-label">Duration (minutes)</label>
                     <input
                       type="number"
                       name="duration"
-                      className="form-input"
+                      className="adm-input"
                       value={editForm.duration}
                       onChange={onEditChange}
                       min="15"
@@ -956,28 +953,28 @@ function Admin() {
                       disabled={!!editForm.endTime}
                     />
                   </div>
-                  <div className="form-field form-field--full">
-                    <label className="form-label">Meeting URL</label>
+                  <div className="adm-field adm-field--full">
+                    <label className="adm-label">Meeting URL</label>
                     <input
                       name="meetingUrl"
-                      className="form-input"
+                      className="adm-input"
                       value={editForm.meetingUrl}
                       onChange={onEditChange}
                     />
                   </div>
                 </div>
-                <div className="session-edit-actions">
-                  <button className="btn-secondary" onClick={cancelEdit}>
+                <div className="adm-session-edit__actions">
+                  <button className="adm-btn-secondary" onClick={cancelEdit}>
                     Cancel
                   </button>
                   <button
-                    className="btn-danger"
+                    className="adm-btn-danger"
                     onClick={() => deleteSession(s.id)}
                   >
                     Delete
                   </button>
                   <button
-                    className="btn-primary"
+                    className="adm-btn-primary"
                     onClick={() => updateSession(s.id)}
                   >
                     Save Changes
@@ -985,14 +982,12 @@ function Admin() {
                 </div>
               </div>
             ) : (
-              <div key={s.id} className="session-card-modern">
-                <div className="session-card-modern__header">
-                  <div className="session-card-modern__badge">
-                    Session #{s.id}
-                  </div>
-                  <div className="action-buttons">
+              <div key={s.id} className="adm-session">
+                <div className="adm-session__header">
+                  <div className="adm-session__badge">Session #{s.id}</div>
+                  <div className="adm-actions">
                     <button
-                      className="btn-action"
+                      className="adm-action"
                       onClick={() => startEdit(s)}
                       title="Edit"
                     >
@@ -1012,7 +1007,7 @@ function Admin() {
                       </svg>
                     </button>
                     <button
-                      className="btn-action btn-action--danger"
+                      className="adm-action adm-action--danger"
                       onClick={() => deleteSession(s.id)}
                       title="Delete"
                     >
@@ -1033,9 +1028,9 @@ function Admin() {
                     </button>
                   </div>
                 </div>
-                <h3 className="session-card-modern__title">{s.title}</h3>
-                <div className="session-card-modern__info">
-                  <div className="info-row">
+                <h3 className="adm-session__title">{s.title}</h3>
+                <div className="adm-session__info">
+                  <div className="adm-info-row">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path
                         d="M8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z"
@@ -1051,7 +1046,7 @@ function Admin() {
                     </svg>
                     <span>{fmt(s.startAt)}</span>
                   </div>
-                  <div className="info-row">
+                  <div className="adm-info-row">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <circle
                         cx="8"
@@ -1070,7 +1065,7 @@ function Admin() {
                     <span>{s.user?.name || s.user?.email}</span>
                   </div>
                   {s.teacher && (
-                    <div className="info-row">
+                    <div className="adm-info-row">
                       <svg
                         width="16"
                         height="16"
@@ -1099,7 +1094,7 @@ function Admin() {
                       href={s.meetingUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="meeting-link"
+                      className="adm-meeting-link"
                     >
                       <svg
                         width="16"
@@ -1125,10 +1120,10 @@ function Admin() {
         </div>
       </section>
 
-      <section className="admin-card">
-        <div className="admin-card__header">
-          <div className="admin-card__title-group">
-            <div className="admin-card__icon admin-card__icon--warning">
+      <section className="adm-card">
+        <div className="adm-card__header">
+          <div className="adm-card__title-group">
+            <div className="adm-card__icon adm-card__icon--warning">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z"
@@ -1143,13 +1138,13 @@ function Admin() {
               </svg>
             </div>
             <div>
-              <h2 className="admin-card__title">Teacher Workload</h2>
-              <p className="admin-card__subtitle">Monitor hours and payroll</p>
+              <h2 className="adm-card__title">Teacher Workload</h2>
+              <p className="adm-card__subtitle">Monitor hours and payroll</p>
             </div>
           </div>
-          <div className="admin-card__actions">
+          <div className="adm-card__actions">
             <select
-              className="filter-select"
+              className="adm-filter"
               value={teacherIdFilter}
               onChange={(e) => setTeacherIdFilter(e.target.value)}
             >
@@ -1162,13 +1157,13 @@ function Admin() {
             </select>
             <input
               type="date"
-              className="filter-select"
+              className="adm-filter"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
             />
             <input
               type="date"
-              className="filter-select"
+              className="adm-filter"
               value={to}
               onChange={(e) => setTo(e.target.value)}
             />
@@ -1235,42 +1230,42 @@ function TeacherWorkload({ teacherId, from, to }) {
   }
 
   return (
-    <div className="workload-grid">
+    <div className="adm-workload">
       {rows.map((w) => (
-        <div key={w.teacher.id} className="workload-card">
-          <div className="workload-card__header">
-            <div className="user-avatar user-avatar--large">
+        <div key={w.teacher.id} className="adm-workload__card">
+          <div className="adm-workload__header">
+            <div className="adm-avatar adm-avatar--lg">
               {w.teacher.name?.charAt(0) || w.teacher.email.charAt(0)}
             </div>
-            <div className="workload-card__info">
+            <div className="adm-workload__info">
               <h3>{w.teacher.name || w.teacher.email}</h3>
               <p>{w.teacher.email}</p>
             </div>
           </div>
-          <div className="workload-stats">
-            <div className="workload-stat">
-              <div className="workload-stat__label">Sessions</div>
-              <div className="workload-stat__value">{w.sessions}</div>
+          <div className="adm-workload__stats">
+            <div className="adm-stat">
+              <div className="adm-stat__label">Sessions</div>
+              <div className="adm-stat__value">{w.sessions}</div>
             </div>
-            <div className="workload-stat">
-              <div className="workload-stat__label">Hours</div>
-              <div className="workload-stat__value">{w.hours}</div>
+            <div className="adm-stat">
+              <div className="adm-stat__label">Hours</div>
+              <div className="adm-stat__value">{w.hours}</div>
             </div>
-            <div className="workload-stat">
-              <div className="workload-stat__label">Rate/Hour</div>
-              <div className="workload-stat__value">
+            <div className="adm-stat">
+              <div className="adm-stat__label">Rate/Hour</div>
+              <div className="adm-stat__value">
                 ${(w.rateHourlyCents / 100).toFixed(2)}
               </div>
             </div>
-            <div className="workload-stat workload-stat--highlight">
-              <div className="workload-stat__label">Total Payroll</div>
-              <div className="workload-stat__value">
+            <div className="adm-stat adm-stat--highlight">
+              <div className="adm-stat__label">Total Payroll</div>
+              <div className="adm-stat__value">
                 ${w.payrollAppliedUSD.toFixed(2)}
               </div>
             </div>
           </div>
-          <div className="workload-method">
-            <span className="badge-method">{w.method}</span>
+          <div className="adm-workload__method">
+            <span className="adm-badge">{w.method}</span>
           </div>
         </div>
       ))}
