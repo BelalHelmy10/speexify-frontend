@@ -49,7 +49,7 @@
 // ========================================
 // BASE
 // ========================================
-.spx-pkg {
+.pack-spx-pkg {
   box-sizing: border-box;
   overflow-x: hidden;
   color: $ink;
@@ -205,7 +205,7 @@
 // ========================================
 // SECTION HEADERS
 // ========================================
-.spx-pkg-section-header {
+.pack-spx-pkg-section-header {
   text-align: center;
   margin-bottom: $space-9;
 
@@ -214,7 +214,7 @@
   }
 }
 
-.spx-pkg-section-title {
+.pack-spx-pkg-section-title {
   margin: 0 0 12px;
   font-size: clamp(28px, 4vw, 40px);
   font-weight: 800;
@@ -224,7 +224,7 @@
   background-clip: text;
 }
 
-.spx-pkg-section-subtitle {
+.pack-spx-pkg-section-subtitle {
   font-size: 18px;
   color: $muted;
   margin: 0;
@@ -235,7 +235,7 @@
 // ========================================
 // HERO
 // ========================================
-.spx-pkg-hero {
+.pack-spx-pkg-hero {
   padding: 100px 0 80px;
   position: relative;
   min-height: 85vh;
@@ -389,7 +389,7 @@
 }
 
 // Tabs
-.spx-pkg-tabs {
+.pack-spx-pkg-tabs {
   display: inline-flex;
   background: #fff;
   border: 2px solid $border;
@@ -400,7 +400,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.spx-pkg-tab {
+.pack-spx-pkg-tab {
   border: 0;
   background: transparent;
   padding: 10px 20px;
@@ -416,7 +416,7 @@
     background: $bg-soft;
   }
 
-  &.is-active {
+  &.pack-is-active {
     background: linear-gradient(135deg, $accent, $accent-light);
     color: #fff;
     box-shadow: 0 4px 12px rgba($accent, 0.3);
@@ -426,7 +426,7 @@
 // ========================================
 // PRICING GRID
 // ========================================
-.spx-pkg-grid {
+.pack-spx-pkg-grid {
   display: grid;
   gap: $space-7;
   grid-template-columns: repeat(3, 1fr);
@@ -439,7 +439,7 @@
 // ========================================
 // PLAN CARD
 // ========================================
-.spx-pkg-card--plan {
+.pack-spx-pkg-card--plan {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -451,20 +451,20 @@
     transform: translateY(-8px);
     box-shadow: 0 20px 40px rgba($accent, 0.2);
 
-    .spx-pkg-media img {
+    .pack-spx-pkg-media img {
       transform: scale(1.05);
     }
 
-    .spx-pkg-card__overlay {
+    .pack-spx-pkg-card__overlay {
       opacity: 0.3;
     }
   }
 
-  &.is-popular {
+  &.pack-is-popular {
     border: 2px solid $accent;
     box-shadow: 0 8px 32px rgba($accent, 0.2);
 
-    .spx-pkg-badge {
+    .pack-spx-pkg-badge {
       position: absolute;
       top: 16px;
       right: 16px;
@@ -472,7 +472,7 @@
     }
   }
 
-  .spx-pkg-media {
+  .pack-spx-pkg-media {
     margin: 0;
     border-radius: 20px 20px 0 0;
   }
@@ -540,7 +540,7 @@
   }
 }
 
-.spx-pkg-badge {
+.pack-spx-pkg-badge {
   display: inline-block;
   font-size: 12px;
   padding: 6px 12px;
@@ -558,7 +558,7 @@
 // ========================================
 // ESTIMATOR
 // ========================================
-.spx-pkg-estimator {
+.pack-spx-pkg-estimator {
   background: linear-gradient(135deg, #f9fafb 0%, #fff 100%);
   border: 1px solid $border;
   border-radius: 24px;
@@ -689,7 +689,7 @@
 // ========================================
 // HOW IT WORKS
 // ========================================
-.spx-pkg-grid-steps {
+.pack-spx-pkg-grid-steps {
   display: grid;
   gap: $space-6;
   grid-template-columns: repeat(3, 1fr);
@@ -720,7 +720,7 @@
   }
 }
 
-.spx-pkg-step {
+.pack-spx-pkg-step {
   background: #fff;
   border: 1px solid $border;
   border-radius: 20px;
@@ -737,7 +737,7 @@
     box-shadow: 0 20px 40px rgba($accent, 0.15);
     border-color: rgba($accent, 0.3);
 
-    .spx-pkg-step__n {
+    .pack-spx-pkg-step__n {
       transform: scale(1.1);
       background: linear-gradient(135deg, $accent, $accent-light);
     }
@@ -783,7 +783,7 @@
 // ========================================
 // COMPARISON TABLE
 // ========================================
-.spx-pkg-compare {
+.pack-spx-pkg-compare {
   &__header {
     text-align: center;
     margin-bottom: $space-8;
@@ -838,12 +838,12 @@
       }
     }
 
-    td.feat {
+    td.pack-feat {
       color: $ink;
       font-weight: 600;
     }
 
-    td.check {
+    td.pack-check {
       width: 120px;
       text-align: center;
 
@@ -858,7 +858,7 @@
       }
     }
 
-    .empty {
+    .pack-empty {
       text-align: center;
       color: $muted;
       padding: $space-8;
@@ -869,7 +869,7 @@
 // ========================================
 // FAQ
 // ========================================
-.spx-pkg-faq {
+.pack-spx-pkg-faq {
   display: grid;
   gap: 16px;
   max-width: 800px;
@@ -888,7 +888,7 @@
     }
 
     &[open] {
-      .spx-pkg-faq__q::after {
+      .pack-spx-pkg-faq__q::after {
         transform: rotate(-135deg);
         margin-top: -4px;
       }
@@ -946,7 +946,7 @@
 // ========================================
 // CTA
 // ========================================
-.spx-pkg-cta {
+.pack-spx-pkg-cta {
   padding: 100px 0;
   position: relative;
   overflow: hidden;
@@ -1044,7 +1044,7 @@
     }
   }
 
-  .spx-pkg-btn--primary {
+  .pack-spx-pkg-btn--primary {
     background: #fff;
     color: $accent;
 
@@ -1054,7 +1054,7 @@
     }
   }
 
-  .spx-pkg-btn--ghost {
+  .pack-spx-pkg-btn--ghost {
     color: #fff;
     border-color: rgba(255, 255, 255, 0.5);
 
