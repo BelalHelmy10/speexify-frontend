@@ -1,15 +1,15 @@
-@use "variables" as *;
 // web/src/styles/admin.scss
+@use "variables" as *;
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Design Tokens & Variables
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Base Layout
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Base Layout
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.admin-modern {
+.adm-admin-modern {
   min-height: 100vh;
   background: linear-gradient(
     135deg,
@@ -23,10 +23,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Header
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Header
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.admin-header {
+.adm-admin-header {
   max-width: 1400px;
   margin: 0 auto 2rem;
   display: flex;
@@ -36,7 +36,7 @@
   flex-wrap: wrap;
 }
 
-.admin-title {
+.adm-admin-title {
   font-size: 2.5rem;
   font-weight: 800;
   background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
@@ -49,7 +49,7 @@
   gap: 0.5rem;
 }
 
-.admin-subtitle {
+.adm-admin-subtitle {
   font-size: 1rem;
   font-weight: 400;
   opacity: 0.7;
@@ -60,10 +60,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Status Toast
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Status Toast
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.status-toast {
+.adm-status-toast {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -93,10 +93,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Card Components
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Card Components
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.admin-card {
+.adm-admin-card {
   max-width: 1400px;
   margin: 0 auto 2rem;
   background: var(--admin-surface);
@@ -106,7 +106,7 @@
   box-shadow: var(--admin-shadow);
 }
 
-.admin-card__header {
+.adm-admin-card__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -115,13 +115,13 @@
   flex-wrap: wrap;
 }
 
-.admin-card__title-group {
+.adm-admin-card__title-group {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.admin-card__icon {
+.adm-admin-card__icon {
   width: 56px;
   height: 56px;
   border-radius: var(--admin-radius-md);
@@ -167,20 +167,20 @@
   }
 }
 
-.admin-card__title {
+.adm-admin-card__title {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--admin-text-primary);
   margin: 0;
 }
 
-.admin-card__subtitle {
+.adm-admin-card__subtitle {
   font-size: 0.875rem;
   color: var(--admin-text-secondary);
   margin-top: 0.25rem;
 }
 
-.admin-card__actions {
+.adm-admin-card__actions {
   display: flex;
   gap: 1rem;
   align-items: center;
@@ -188,10 +188,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Search & Filter Components
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Search & Filter Components
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.search-box {
+.adm-search-box {
   position: relative;
   display: flex;
   align-items: center;
@@ -227,7 +227,7 @@
   }
 }
 
-.filter-select {
+.adm-filter-select {
   padding: 0.75rem 1rem;
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.2);
@@ -251,10 +251,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Data Table
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Data Table
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.data-table {
+.adm-data-table {
   overflow-x: auto;
   border-radius: var(--admin-radius-sm);
   border: 1px solid rgba(148, 163, 184, 0.1);
@@ -298,16 +298,16 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     User Components
-     ═══════════════════════════════════════════════════════════════════════════ */
+   User Components
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.user-cell {
+.adm-user-cell {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.user-avatar {
+.adm-user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -332,14 +332,14 @@
   }
 }
 
-.user-info {
+.adm-user-info {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
 }
 
-.user-name {
+.adm-user-name {
   font-weight: 600;
   color: var(--admin-text-primary);
   white-space: nowrap;
@@ -347,7 +347,7 @@
   text-overflow: ellipsis;
 }
 
-.user-email {
+.adm-user-email {
   font-size: 0.813rem;
   color: var(--admin-text-secondary);
   white-space: nowrap;
@@ -356,10 +356,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Status & Role Components
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Status & Role Components
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.status-badge {
+.adm-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -389,7 +389,7 @@
   }
 }
 
-.role-select {
+.adm-role-select {
   padding: 0.5rem 0.75rem;
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.2);
@@ -413,16 +413,16 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Action Buttons
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Action Buttons
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.action-buttons {
+.adm-action-buttons {
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
 
-.btn-action {
+.adm-btn-action {
   width: 36px;
   height: 36px;
   display: flex;
@@ -452,7 +452,7 @@
   }
 }
 
-.btn-icon-modern {
+.adm-btn-icon-modern {
   width: 44px;
   height: 44px;
   display: flex;
@@ -482,21 +482,21 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Form Components
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Form Components
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.modern-form {
+.adm-modern-form {
   margin-top: 1.5rem;
 }
 
-.form-grid {
+.adm-form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
-.form-field {
+.adm-form-field {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -506,7 +506,7 @@
   }
 }
 
-.form-label {
+.adm-form-label {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--admin-text-secondary);
@@ -515,12 +515,12 @@
   gap: 0.25rem;
 }
 
-.form-required {
+.adm-form-required {
   color: var(--admin-danger);
 }
 
-.form-input,
-.form-textarea {
+.adm-form-input,
+.adm-form-textarea {
   padding: 0.875rem 1rem;
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.2);
@@ -547,13 +547,13 @@
   }
 }
 
-.form-textarea {
+.adm-form-textarea {
   resize: vertical;
   min-height: 100px;
   font-family: inherit;
 }
 
-.form-actions {
+.adm-form-actions {
   display: flex;
   gap: 1rem;
   justify-content: flex-start;
@@ -562,10 +562,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Button Styles
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Button Styles
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.btn-primary {
+.adm-btn-primary {
   display: inline-flex;
   align-items: center;
   gap: 0.625rem;
@@ -595,7 +595,7 @@
   }
 }
 
-.btn-secondary {
+.adm-btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 0.625rem;
@@ -620,7 +620,7 @@
   }
 }
 
-.btn-danger {
+.adm-btn-danger {
   display: inline-flex;
   align-items: center;
   gap: 0.625rem;
@@ -646,7 +646,7 @@
   }
 }
 
-.btn-close {
+.adm-btn-close {
   width: 32px;
   height: 32px;
   display: flex;
@@ -667,16 +667,16 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Session Cards & Grid
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Session Cards & Grid
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.sessions-grid {
+.adm-sessions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 1.5rem;
 }
 
-.session-card-modern {
+.adm-session-card-modern {
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: var(--admin-radius-md);
@@ -721,7 +721,7 @@
   }
 }
 
-.info-row {
+.adm-info-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -740,7 +740,7 @@
   }
 }
 
-.meeting-link {
+.adm-meeting-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -766,10 +766,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Session Edit Card
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Session Edit Card
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.session-edit-card {
+.adm-session-edit-card {
   grid-column: 1 / -1;
   background: rgba(59, 130, 246, 0.05);
   border: 2px solid rgba(59, 130, 246, 0.3);
@@ -777,7 +777,7 @@
   padding: 1.5rem;
 }
 
-.session-edit-header {
+.adm-session-edit-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -791,7 +791,7 @@
   }
 }
 
-.session-edit-actions {
+.adm-session-edit-actions {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
@@ -801,16 +801,16 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Workload Components
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Workload Components
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.workload-grid {
+.adm-workload-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1.5rem;
 }
 
-.workload-card {
+.adm-workload-card {
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: var(--admin-radius-md);
@@ -857,14 +857,14 @@
   }
 }
 
-.workload-stats {
+.adm-workload-stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   margin-bottom: 1rem;
 }
 
-.workload-stat {
+.adm-workload-stat {
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 10px;
@@ -894,18 +894,18 @@
     );
     border-color: rgba(16, 185, 129, 0.3);
 
-    .workload-stat__value {
+    .adm-workload-stat__value {
       color: var(--admin-success);
     }
   }
 }
 
-.workload-method {
+.adm-workload-method {
   display: flex;
   justify-content: flex-end;
 }
 
-.badge-method {
+.adm-badge-method {
   display: inline-block;
   padding: 0.375rem 0.875rem;
   background: rgba(139, 92, 246, 0.15);
@@ -918,83 +918,83 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Responsive Design
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Responsive Design
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 1024px) {
-  .admin-modern {
+  .adm-admin-modern {
     padding: 1.5rem;
   }
 
-  .admin-card {
+  .adm-admin-card {
     padding: 1.5rem;
   }
 
-  .form-grid {
+  .adm-form-grid {
     grid-template-columns: 1fr;
   }
 
-  .sessions-grid {
+  .adm-sessions-grid {
     grid-template-columns: 1fr;
   }
 
-  .workload-grid {
+  .adm-workload-grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .admin-modern {
+  .adm-admin-modern {
     padding: 1rem;
   }
 
-  .admin-title {
+  .adm-admin-title {
     font-size: 2rem;
   }
 
-  .admin-card {
+  .adm-admin-card {
     padding: 1rem;
     border-radius: var(--admin-radius-md);
   }
 
-  .admin-card__header {
+  .adm-admin-card__header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .admin-card__actions {
+  .adm-admin-card__actions {
     width: 100%;
   }
 
-  .search-box input {
+  .adm-search-box input {
     min-width: 100%;
   }
 
-  .data-table {
+  .adm-data-table {
     font-size: 0.813rem;
   }
 
-  .user-cell {
+  .adm-user-cell {
     flex-direction: column;
     align-items: flex-start;
   }
 }
 
 @media (max-width: 480px) {
-  .admin-title {
+  .adm-admin-title {
     font-size: 1.5rem;
   }
 
-  .admin-card__icon {
+  .adm-admin-card__icon {
     width: 48px;
     height: 48px;
   }
 
-  .admin-card__title {
+  .adm-admin-card__title {
     font-size: 1.25rem;
   }
 
-  .form-actions {
+  .adm-form-actions {
     flex-direction: column;
 
     button {
