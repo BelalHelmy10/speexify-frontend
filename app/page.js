@@ -21,7 +21,7 @@ export default function Page() {
     if (user) router.replace(params.get("next") || "/dashboard");
   }, [checking, user, router, params]);
 
-  if (checking) return <div className="route-loading">Loading…</div>;
+  if (checking) return <div className="home-route-loading">Loading…</div>;
   if (user) return null;
   return <Home />;
 }
@@ -31,36 +31,42 @@ export default function Page() {
    ============================ */
 function Home() {
   return (
-    <div className="home">
+    <div className="home-home">
       {/* ===== HERO ===== */}
-      <section className="hero">
-        <div className="hero__background">
-          <div className="hero__gradient"></div>
-          <div className="hero__grid-pattern"></div>
+      <section className="home-hero">
+        <div className="home-hero__background">
+          <div className="home-hero__gradient"></div>
+          <div className="home-hero__grid-pattern"></div>
         </div>
 
-        <div className="hero__grid container">
-          <div className="hero__copy">
-            <div className="hero__badge">
-              <span className="hero__badge-icon">✦</span>
+        <div className="home-hero__grid home-container">
+          <div className="home-hero__copy">
+            <div className="home-hero__badge">
+              <span className="home-hero__badge-icon">✦</span>
               <span>Language &amp; communication coaching</span>
             </div>
 
-            <h1 className="hero__title">
+            <h1 className="home-hero__title">
               Empower your team to
-              <span className="hero__title-accent"> speak with confidence</span>
+              <span className="home-hero__title-accent">
+                {" "}
+                speak with confidence
+              </span>
             </h1>
 
-            <p className="hero__sub">
+            <p className="home-hero__sub">
               Speexify delivers personalized English coaching and applied
               learning programs that drive measurable performance at work.
             </p>
 
-            <div className="hero__cta">
-              <Link className="btn btn--primary btn--shine" href="/register">
+            <div className="home-hero__cta">
+              <Link
+                className="home-btn home-btn--primary home-btn--shine"
+                href="/register"
+              >
                 <span>Get started</span>
                 <svg
-                  className="btn__arrow"
+                  className="home-btn__arrow"
                   width="16"
                   height="16"
                   viewBox="0 0 16 16"
@@ -76,45 +82,47 @@ function Home() {
                   />
                 </svg>
               </Link>
-              <Link className="btn btn--ghost" href="/packages">
+              <Link className="home-btn home-btn--ghost" href="/packages">
                 Explore packages
               </Link>
             </div>
 
-            <div className="hero__stats">
-              <div className="hero__stat">
-                <div className="hero__stat-num">98%</div>
-                <div className="hero__stat-label">Client satisfaction</div>
+            <div className="home-hero__stats">
+              <div className="home-hero__stat">
+                <div className="home-hero__stat-num">98%</div>
+                <div className="home-hero__stat-label">Client satisfaction</div>
               </div>
-              <div className="hero__stat">
-                <div className="hero__stat-num">50k+</div>
-                <div className="hero__stat-label">Coaching hours</div>
+              <div className="home-hero__stat">
+                <div className="home-hero__stat-num">50k+</div>
+                <div className="home-hero__stat-label">Coaching hours</div>
               </div>
-              <div className="hero__stat">
-                <div className="hero__stat-num">2.6×</div>
-                <div className="hero__stat-label">Faster outcomes</div>
+              <div className="home-hero__stat">
+                <div className="home-hero__stat-num">2.6×</div>
+                <div className="home-hero__stat-label">Faster outcomes</div>
               </div>
             </div>
           </div>
 
-          <div className="hero__media">
-            <div className="media-card">
-              <div className="media-card__glow"></div>
+          <div className="home-hero__media">
+            <div className="home-media-card">
+              <div className="home-media-card__glow"></div>
               <img
                 src="/images/Hero First.avif"
                 alt="Live English coaching product preview"
-                className="media-card__img"
+                className="home-media-card__img"
               />
-              <div className="media-card__float media-card__float--1">
-                <div className="float-badge">
-                  <span className="float-badge__icon">💬</span>
-                  <span className="float-badge__text">Live coaching</span>
+              <div className="home-media-card__float home-media-card__float--1">
+                <div className="home-float-badge">
+                  <span className="home-float-badge__icon">💬</span>
+                  <span className="home-float-badge__text">Live coaching</span>
                 </div>
               </div>
-              <div className="media-card__float media-card__float--2">
-                <div className="float-badge">
-                  <span className="float-badge__icon">⚡</span>
-                  <span className="float-badge__text">Instant feedback</span>
+              <div className="home-media-card__float home-media-card__float--2">
+                <div className="home-float-badge">
+                  <span className="home-float-badge__icon">⚡</span>
+                  <span className="home-float-badge__text">
+                    Instant feedback
+                  </span>
                 </div>
               </div>
             </div>
@@ -123,39 +131,43 @@ function Home() {
       </section>
 
       {/* ===== SOCIAL PROOF ===== */}
-      <section className="proof">
-        <div className="container">
-          <p className="proof__title">Trusted by teams at</p>
-          <div className="proof__logos">
-            <div className="proof__logo-wrap">
+      <section className="home-proof">
+        <div className="home-container">
+          <p className="home-proof__title">Trusted by teams at</p>
+          <div className="home-proof__logos">
+            <div className="home-proof__logo-wrap">
               <img
                 src="/images/logo-amazon.svg"
                 alt="Amazon"
-                className="logo"
+                className="home-logo"
               />
             </div>
-            <div className="proof__logo-wrap">
+            <div className="home-proof__logo-wrap">
               <img
                 src="/images/logo-cocacola.svg"
                 alt="Coca Cola"
-                className="logo"
+                className="home-logo"
               />
             </div>
-            <div className="proof__logo-wrap">
-              <img src="/images/logo-tesla.svg" alt="Tesla" className="logo" />
+            <div className="home-proof__logo-wrap">
+              <img
+                src="/images/logo-tesla.svg"
+                alt="Tesla"
+                className="home-logo"
+              />
             </div>
-            <div className="proof__logo-wrap">
+            <div className="home-proof__logo-wrap">
               <img
                 src="/images/logo-allianz.svg"
                 alt="Allianz"
-                className="logo"
+                className="home-logo"
               />
             </div>
-            <div className="proof__logo-wrap">
+            <div className="home-proof__logo-wrap">
               <img
                 src="/images/logo-indeed.svg"
                 alt="Indeed"
-                className="logo"
+                className="home-logo"
               />
             </div>
           </div>
@@ -163,16 +175,16 @@ function Home() {
       </section>
 
       {/* ===== FEATURES ===== */}
-      <section className="features">
-        <div className="container">
-          <div className="section-header">
-            <h2 className="section-title">Why Speexify</h2>
-            <p className="section-subtitle">
+      <section className="home-features">
+        <div className="home-container">
+          <div className="home-section-header">
+            <h2 className="home-section-title">Why Speexify</h2>
+            <p className="home-section-subtitle">
               Everything you need to master professional communication
             </p>
           </div>
 
-          <div className="features__grid">
+          <div className="home-features__grid">
             <Feature
               icon="🎯"
               title="Personalized coaching"
@@ -198,16 +210,16 @@ function Home() {
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
-      <section className="spx-home-how">
-        <div className="container">
-          <div className="section-header">
-            <h2 className="section-title">How it works</h2>
-            <p className="section-subtitle">
+      <section className="home-spx-how">
+        <div className="home-container">
+          <div className="home-section-header">
+            <h2 className="home-section-title">How it works</h2>
+            <p className="home-section-subtitle">
               Three simple steps to transformation
             </p>
           </div>
 
-          <div className="spx-home-how__grid">
+          <div className="home-spx-how__grid">
             <HowStep
               step="01"
               title="Assess"
@@ -228,11 +240,14 @@ function Home() {
             />
           </div>
 
-          <div className="spx-home-how__cta">
-            <Link className="btn btn--primary btn--shine" href="/register">
+          <div className="home-spx-how__cta">
+            <Link
+              className="home-btn home-btn--primary home-btn--shine"
+              href="/register"
+            >
               <span>Start your assessment</span>
               <svg
-                className="btn__arrow"
+                className="home-btn__arrow"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
@@ -248,7 +263,7 @@ function Home() {
                 />
               </svg>
             </Link>
-            <Link className="btn btn--ghost" href="/contact">
+            <Link className="home-btn home-btn--ghost" href="/contact">
               Ask a question
             </Link>
           </div>
@@ -256,16 +271,16 @@ function Home() {
       </section>
 
       {/* ===== CURRICULUM ===== */}
-      <section className="spx-home-curriculum">
-        <div className="container">
-          <div className="section-header">
-            <h2 className="section-title">What you'll learn</h2>
-            <p className="section-subtitle">
+      <section className="home-spx-curriculum">
+        <div className="home-container">
+          <div className="home-section-header">
+            <h2 className="home-section-title">What you'll learn</h2>
+            <p className="home-section-subtitle">
               Practical, job-ready modules you can apply the same day
             </p>
           </div>
 
-          <div className="spx-home-curriculum__grid">
+          <div className="home-spx-curriculum__grid">
             <CurriculumCard
               title="Client communication"
               desc="Run structured calls, handle objections, and summarize clearly."
@@ -292,8 +307,8 @@ function Home() {
             />
           </div>
 
-          <div className="spx-home-curriculum__more">
-            <Link className="btn btn--ghost" href="/packages">
+          <div className="home-spx-curriculum__more">
+            <Link className="home-btn home-btn--ghost" href="/packages">
               See full track list
             </Link>
           </div>
@@ -301,16 +316,16 @@ function Home() {
       </section>
 
       {/* ===== COACHES ===== */}
-      <section className="spx-home-coaches">
-        <div className="container">
-          <div className="section-header">
-            <h2 className="section-title">Meet a few of our coaches</h2>
-            <p className="section-subtitle">
+      <section className="home-spx-coaches">
+        <div className="home-container">
+          <div className="home-section-header">
+            <h2 className="home-section-title">Meet a few of our coaches</h2>
+            <p className="home-section-subtitle">
               Expert trainers with real-world business experience
             </p>
           </div>
 
-          <div className="spx-home-coaches__grid">
+          <div className="home-spx-coaches__grid">
             <CoachCard
               name="Billy H."
               role="Senior Communication Coach"
@@ -331,23 +346,23 @@ function Home() {
             />
           </div>
 
-          <p className="spx-home-coaches__note">
+          <p className="home-spx-coaches__note">
             We'll match you with the perfect coach for your goals
           </p>
         </div>
       </section>
 
       {/* ===== CASE STUDIES ===== */}
-      <section className="spx-home-cases">
-        <div className="container">
-          <div className="section-header">
-            <h2 className="section-title">Real outcomes</h2>
-            <p className="section-subtitle">
+      <section className="home-spx-cases">
+        <div className="home-container">
+          <div className="home-section-header">
+            <h2 className="home-section-title">Real outcomes</h2>
+            <p className="home-section-subtitle">
               See how teams are transforming their communication
             </p>
           </div>
 
-          <div className="spx-home-cases__grid">
+          <div className="home-spx-cases__grid">
             <CaseCard
               logo="/images/logo-indeed.svg"
               title="Onboarding made faster"
@@ -374,9 +389,9 @@ function Home() {
       </section>
 
       {/* ===== TESTIMONIALS ===== */}
-      <section className="testimonials">
-        <div className="container">
-          <div className="testimonials__grid">
+      <section className="home-testimonials">
+        <div className="home-container">
+          <div className="home-testimonials__grid">
             <Quote
               quote="My coach helped me nail tough client calls. I feel confident and clear."
               author="Sara M."
@@ -400,38 +415,38 @@ function Home() {
       </section>
 
       {/* ===== FAQ ===== */}
-      <section className="spx-home-faq">
-        <div className="container">
-          <div className="section-header">
-            <h2 className="section-title">Frequently asked questions</h2>
-            <p className="section-subtitle">
+      <section className="home-spx-faq">
+        <div className="home-container">
+          <div className="home-section-header">
+            <h2 className="home-section-title">Frequently asked questions</h2>
+            <p className="home-section-subtitle">
               Everything you need to know to get started
             </p>
           </div>
 
-          <div className="spx-home-faq__grid">
-            <details className="spx-home-faq__item">
+          <div className="home-spx-faq__grid">
+            <details className="home-spx-faq__item">
               <summary>How do you match me with a coach?</summary>
               <p>
                 We consider your goals, current level, industry, and schedule to
                 suggest the best coach profiles for you or your team.
               </p>
             </details>
-            <details className="spx-home-faq__item">
+            <details className="home-spx-faq__item">
               <summary>Can I switch coaches later?</summary>
               <p>
                 Absolutely. If the fit isn't right, you can switch anytime
                 without losing progress.
               </p>
             </details>
-            <details className="spx-home-faq__item">
+            <details className="home-spx-faq__item">
               <summary>Do you offer corporate packages?</summary>
               <p>
                 Yes — we support budget controls, reporting, and manager
                 dashboards for teams.
               </p>
             </details>
-            <details className="spx-home-faq__item">
+            <details className="home-spx-faq__item">
               <summary>What's the time commitment?</summary>
               <p>
                 Most learners do 1–2 sessions per week plus short, role-based
@@ -443,24 +458,24 @@ function Home() {
       </section>
 
       {/* ===== NEWSLETTER ===== */}
-      <section className="spx-home-newsletter">
-        <div className="container">
-          <div className="spx-home-newsletter__inner">
-            <div className="spx-home-newsletter__copy">
+      <section className="home-spx-newsletter">
+        <div className="home-container">
+          <div className="home-spx-newsletter__inner">
+            <div className="home-spx-newsletter__copy">
               <h3>Get actionable communication tips</h3>
               <p>Monthly insights from coaches — no spam, just value.</p>
             </div>
             <form
-              className="spx-home-newsletter__form"
+              className="home-spx-newsletter__form"
               onSubmit={(e) => e.preventDefault()}
             >
               <input
                 type="email"
                 placeholder="Enter your email"
                 aria-label="Email"
-                className="spx-home-newsletter__input"
+                className="home-spx-newsletter__input"
               />
-              <button className="btn btn--primary" type="submit">
+              <button className="home-btn home-btn--primary" type="submit">
                 Subscribe
               </button>
             </form>
@@ -469,30 +484,32 @@ function Home() {
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="cta">
-        <div className="cta__background">
-          <div className="cta__gradient"></div>
-          <div className="cta__shapes">
-            <div className="cta__shape cta__shape--1"></div>
-            <div className="cta__shape cta__shape--2"></div>
+      <section className="home-cta">
+        <div className="home-cta__background">
+          <div className="home-cta__gradient"></div>
+          <div className="home-cta__shapes">
+            <div className="home-cta__shape home-cta__shape--1"></div>
+            <div className="home-cta__shape home-cta__shape--2"></div>
           </div>
         </div>
 
-        <div className="container cta__inner">
-          <div className="cta__content">
-            <h3 className="cta__title">Ready to accelerate your English?</h3>
-            <p className="cta__sub">
+        <div className="home-container home-cta__inner">
+          <div className="home-cta__content">
+            <h3 className="home-cta__title">
+              Ready to accelerate your English?
+            </h3>
+            <p className="home-cta__sub">
               Join Speexify today — start with a personalized plan in minutes.
             </p>
           </div>
-          <div className="cta__actions">
+          <div className="home-cta__actions">
             <Link
-              className="btn btn--primary btn--lg btn--shine"
+              className="home-btn home-btn--primary home-btn--lg home-btn--shine"
               href="/register"
             >
               <span>Create your account</span>
               <svg
-                className="btn__arrow"
+                className="home-btn__arrow"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
@@ -508,7 +525,10 @@ function Home() {
                 />
               </svg>
             </Link>
-            <Link className="btn btn--ghost btn--lg" href="/contact">
+            <Link
+              className="home-btn home-btn--ghost home-btn--lg"
+              href="/contact"
+            >
               Talk to us
             </Link>
           </div>
@@ -518,25 +538,25 @@ function Home() {
   );
 }
 
-/* ========== Local UI bits (unchanged) ========== */
+/* ========== Local UI bits (unchanged except class names) ========== */
 function Feature({ icon, title, text }) {
   return (
-    <div className="feature">
-      <div className="feature__icon" aria-hidden="true">
+    <div className="home-feature">
+      <div className="home-feature__icon" aria-hidden="true">
         <span>{icon}</span>
       </div>
-      <h3 className="feature__title">{title}</h3>
-      <p className="feature__text">{text}</p>
+      <h3 className="home-feature__title">{title}</h3>
+      <p className="home-feature__text">{text}</p>
     </div>
   );
 }
 
 function Quote({ quote, author, role, rating }) {
   return (
-    <figure className="quote">
-      <div className="quote__stars" aria-hidden="true">
+    <figure className="home-quote">
+      <div className="home-quote__stars" aria-hidden="true">
         {Array.from({ length: rating }).map((_, i) => (
-          <span key={i} className="quote__star">
+          <span key={i} className="home-quote__star">
             ★
           </span>
         ))}
@@ -552,12 +572,12 @@ function Quote({ quote, author, role, rating }) {
 
 function HowStep({ step, title, text, img }) {
   return (
-    <div className="spx-home-how__card">
-      <div className="spx-home-how__media">
+    <div className="home-spx-how__card">
+      <div className="home-spx-how__media">
         <img src={img} alt="" />
-        <span className="spx-home-how__badge">{step}</span>
+        <span className="home-spx-how__badge">{step}</span>
       </div>
-      <div className="spx-home-how__body">
+      <div className="home-spx-how__body">
         <h3>{title}</h3>
         <p>{text}</p>
       </div>
@@ -568,13 +588,13 @@ function HowStep({ step, title, text, img }) {
 function CurriculumCard({ title, desc, img, color }) {
   return (
     <article
-      className={`spx-home-curriculum__card spx-home-curriculum__card--${color}`}
+      className={`home-spx-curriculum__card home-spx-curriculum__card--${color}`}
     >
-      <div className="spx-home-curriculum__thumb">
+      <div className="home-spx-curriculum__thumb">
         <img src={img} alt="" />
-        <div className="spx-home-curriculum__overlay"></div>
+        <div className="home-spx-curriculum__overlay"></div>
       </div>
-      <div className="spx-home-curriculum__content">
+      <div className="home-spx-curriculum__content">
         <h3>{title}</h3>
         <p>{desc}</p>
       </div>
@@ -584,15 +604,15 @@ function CurriculumCard({ title, desc, img, color }) {
 
 function CoachCard({ name, role, bio, img }) {
   return (
-    <div className="spx-home-coaches__card">
-      <div className="spx-home-coaches__avatar-wrap">
-        <img className="spx-home-coaches__avatar" src={img} alt={name} />
-        <div className="spx-home-coaches__avatar-ring"></div>
+    <div className="home-spx-coaches__card">
+      <div className="home-spx-coaches__avatar-wrap">
+        <img className="home-spx-coaches__avatar" src={img} alt={name} />
+        <div className="home-spx-coaches__avatar-ring"></div>
       </div>
-      <div className="spx-home-coaches__info">
+      <div className="home-spx-coaches__info">
         <h3>{name}</h3>
-        <p className="spx-home-coaches__role">{role}</p>
-        <p className="spx-home-coaches__bio">{bio}</p>
+        <p className="home-spx-coaches__role">{role}</p>
+        <p className="home-spx-coaches__bio">{bio}</p>
       </div>
     </div>
   );
@@ -600,17 +620,17 @@ function CoachCard({ name, role, bio, img }) {
 
 function CaseCard({ logo, title, text, metric, metricLabel }) {
   return (
-    <div className="spx-home-cases__card">
-      <div className="spx-home-cases__header">
-        <div className="spx-home-cases__logo">
+    <div className="home-spx-cases__card">
+      <div className="home-spx-cases__header">
+        <div className="home-spx-cases__logo">
           <img src={logo} alt="" />
         </div>
-        <div className="spx-home-cases__metric">
-          <div className="spx-home-cases__metric-num">{metric}</div>
-          <div className="spx-home-cases__metric-label">{metricLabel}</div>
+        <div className="home-spx-cases__metric">
+          <div className="home-spx-cases__metric-num">{metric}</div>
+          <div className="home-spx-cases__metric-label">{metricLabel}</div>
         </div>
       </div>
-      <div className="spx-home-cases__content">
+      <div className="home-spx-cases__content">
         <h3>{title}</h3>
         <p>{text}</p>
       </div>

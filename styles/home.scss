@@ -60,7 +60,7 @@
 // ========================================
 // UTILITIES
 // ========================================
-.container {
+.home-container {
   margin: 0 auto;
   padding: 0 24px;
   max-width: 1200px;
@@ -70,7 +70,7 @@
   }
 }
 
-.section-header {
+.home-section-header {
   text-align: center;
   margin-bottom: 48px;
 
@@ -79,7 +79,7 @@
   }
 }
 
-.section-title {
+.home-section-title {
   font-size: clamp(28px, 4vw, 40px);
   font-weight: 800;
   margin: 0 0 12px;
@@ -89,7 +89,7 @@
   background-clip: text;
 }
 
-.section-subtitle {
+.home-section-subtitle {
   font-size: 18px;
   color: $muted;
   margin: 0;
@@ -100,7 +100,7 @@
 // ========================================
 // BUTTONS
 // ========================================
-.btn {
+.home-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -178,7 +178,7 @@
 // ========================================
 // HOME
 // ========================================
-.home {
+.home-home {
   background: $bg;
   color: $ink;
   overflow-x: hidden;
@@ -187,7 +187,7 @@
 // ========================================
 // HERO
 // ========================================
-.hero {
+.home-hero {
   padding-top: 4rem;
   position: relative;
   min-height: 90vh;
@@ -330,7 +330,7 @@
 // ========================================
 // MEDIA CARD
 // ========================================
-.media-card {
+.home-media-card {
   position: relative;
   border-radius: 24px;
   overflow: hidden;
@@ -383,7 +383,7 @@
   }
 }
 
-.float-badge {
+.home-float-badge {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -408,7 +408,7 @@
 // ========================================
 // PROOF
 // ========================================
-.proof {
+.home-proof {
   padding: 60px 0;
   background: $bg;
   border-bottom: 1px solid $ring;
@@ -447,7 +447,7 @@
     }
   }
 
-  .logo {
+  .home-logo {
     max-height: 40px;
     width: auto;
     object-fit: contain;
@@ -457,7 +457,7 @@
 // ========================================
 // FEATURES
 // ========================================
-.features {
+.home-features {
   padding: 100px 0;
   background: $surface;
   position: relative;
@@ -486,7 +486,7 @@
   }
 }
 
-.feature {
+.home-feature {
   background: #fff;
   border: 1px solid $ring;
   border-radius: 20px;
@@ -513,7 +513,7 @@
       opacity: 1;
     }
 
-    .feature__icon {
+    .home-feature__icon {
       background: linear-gradient(135deg, $brand, $brand-light);
     }
   }
@@ -552,7 +552,7 @@
 // ========================================
 // HOW IT WORKS
 // ========================================
-.spx-home-how {
+.home-spx-how {
   padding: 100px 0;
   background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
   position: relative;
@@ -604,11 +604,11 @@
       box-shadow: 0 20px 40px rgba($brand, 0.2);
       border-color: rgba($brand, 0.4);
 
-      .spx-home-how__media img {
+      .home-spx-how__media img {
         transform: scale(1.05);
       }
 
-      .spx-home-how__badge {
+      .home-spx-how__badge {
         transform: scale(1.1);
         background: linear-gradient(135deg, $brand, $brand-light);
       }
@@ -671,7 +671,7 @@
 // ========================================
 // CURRICULUM
 // ========================================
-.spx-home-curriculum {
+.home-spx-curriculum {
   padding: 100px 0;
   background: #fff;
 
@@ -702,28 +702,28 @@
       transform: translateY(-8px);
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 
-      .spx-home-curriculum__thumb img {
+      .home-spx-curriculum__thumb img {
         transform: scale(1.1);
       }
 
-      .spx-home-curriculum__overlay {
+      .home-spx-curriculum__overlay {
         opacity: 0.3;
       }
     }
 
-    &--blue .spx-home-curriculum__overlay {
+    &--blue .home-spx-curriculum__overlay {
       background: linear-gradient(135deg, $brand, $brand-light);
     }
 
-    &--purple .spx-home-curriculum__overlay {
+    &--purple .home-spx-curriculum__overlay {
       background: linear-gradient(135deg, #a855f7, #ec4899);
     }
 
-    &--green .spx-home-curriculum__overlay {
+    &--green .home-spx-curriculum__overlay {
       background: linear-gradient(135deg, #10b981, #06b6d4);
     }
 
-    &--orange .spx-home-curriculum__overlay {
+    &--orange .home-spx-curriculum__overlay {
       background: linear-gradient(135deg, #f59e0b, #ef4444);
     }
   }
@@ -773,7 +773,7 @@
 // ========================================
 // COACHES
 // ========================================
-.spx-home-coaches {
+.home-spx-coaches {
   padding: 100px 0;
   background: $surface;
   border-top: 1px solid $ring;
@@ -804,11 +804,11 @@
       box-shadow: 0 20px 40px rgba($brand, 0.15);
       border-color: rgba($brand, 0.3);
 
-      .spx-home-coaches__avatar-ring {
+      .home-spx-coaches__avatar-ring {
         animation: pulse-ring 1.5s ease-out infinite;
       }
 
-      .spx-home-coaches__avatar {
+      .home-spx-coaches__avatar {
         transform: scale(1.05);
       }
     }
@@ -872,7 +872,7 @@
 // ========================================
 // CASE STUDIES
 // ========================================
-.spx-home-cases {
+.home-spx-cases {
   padding: 100px 0;
   background: #fff;
 
@@ -899,7 +899,7 @@
       border-color: rgba($brand, 0.3);
       background: #fff;
 
-      .spx-home-cases__metric-num {
+      .home-spx-cases__metric-num {
         background: linear-gradient(135deg, $brand 0%, $brand-light 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -969,7 +969,7 @@
 // ========================================
 // TESTIMONIALS
 // ========================================
-.testimonials {
+.home-testimonials {
   padding: 100px 0;
   background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
 
@@ -984,7 +984,7 @@
   }
 }
 
-.quote {
+.home-quote {
   background: #fff;
   border: 1px solid $ring;
   border-radius: 20px;
@@ -1050,7 +1050,7 @@
 // ========================================
 // FAQ
 // ========================================
-.spx-home-faq {
+.home-spx-faq {
   padding: 100px 0;
   background: $surface;
   border-top: 1px solid $ring;
@@ -1135,7 +1135,7 @@
 // ========================================
 // NEWSLETTER
 // ========================================
-.spx-home-newsletter {
+.home-spx-newsletter {
   padding: 80px 0;
   background: linear-gradient(135deg, #f7fbff 0%, #eef6ff 100%);
   position: relative;
@@ -1216,7 +1216,7 @@
 // ========================================
 // CTA
 // ========================================
-.cta {
+.home-cta {
   padding: 100px 0;
   position: relative;
   overflow: hidden;
@@ -1314,7 +1314,7 @@
     }
   }
 
-  .btn--primary {
+  .home-btn--primary {
     background: #fff;
     color: $brand;
 
@@ -1324,7 +1324,7 @@
     }
   }
 
-  .btn--ghost {
+  .home-btn--ghost {
     color: #fff;
     border-color: rgba(255, 255, 255, 0.5);
 
