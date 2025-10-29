@@ -111,29 +111,23 @@ function Packages() {
   }, [seats]);
 
   return (
-    <div className="pack-spx-pkg">
+    <div className="spx-pkg">
       {/* HERO */}
-      <section className="pack-spx-pkg__section pack-spx-pkg-hero">
-        <div className="pack-spx-pkg__container pack-spx-pkg-hero__inner pack-spx-pkg-card">
-          <div className="pack-spx-pkg-hero__copy">
-            <h1 className="pack-spx-pkg-hero__title">
-              Simple, flexible pricing
-            </h1>
-            <p className="pack-spx-pkg-hero__subtitle">
+      <section className="spx-pkg__section spx-pkg-hero">
+        <div className="spx-pkg__container spx-pkg-hero__inner spx-pkg-card">
+          <div className="spx-pkg-hero__copy">
+            <h1 className="spx-pkg-hero__title">Simple, flexible pricing</h1>
+            <p className="spx-pkg-hero__subtitle">
               Individuals start right away. Teams get tailored programs with
               reporting and enterprise billing.
             </p>
 
-            <div
-              className="pack-spx-pkg-tabs"
-              role="tablist"
-              aria-label="Audience"
-            >
+            <div className="spx-pkg-tabs" role="tablist" aria-label="Audience">
               <button
                 role="tab"
                 aria-selected={tab === AUD.INDIVIDUAL}
-                className={`pack-spx-pkg-tab ${
-                  tab === AUD.INDIVIDUAL ? "pack-is-active" : ""
+                className={`spx-pkg-tab ${
+                  tab === AUD.INDIVIDUAL ? "is-active" : ""
                 }`}
                 onClick={() => setTab(AUD.INDIVIDUAL)}
               >
@@ -142,8 +136,8 @@ function Packages() {
               <button
                 role="tab"
                 aria-selected={tab === AUD.CORPORATE}
-                className={`pack-spx-pkg-tab ${
-                  tab === AUD.CORPORATE ? "pack-is-active" : ""
+                className={`spx-pkg-tab ${
+                  tab === AUD.CORPORATE ? "is-active" : ""
                 }`}
                 onClick={() => setTab(AUD.CORPORATE)}
               >
@@ -152,18 +146,18 @@ function Packages() {
             </div>
 
             {tab === AUD.INDIVIDUAL ? (
-              <div className="pack-spx-pkg-hero__note">
+              <div className="spx-pkg-hero__note">
                 Pay online, reschedule easily, no long-term contracts.
               </div>
             ) : (
-              <div className="pack-spx-pkg-hero__note">
+              <div className="spx-pkg-hero__note">
                 Volume pricing, invoicing & POs, progress reporting.
               </div>
             )}
           </div>
 
           {/* hero image */}
-          <figure className="pack-spx-pkg-media pack-spx-pkg-hero__media">
+          <figure className="spx-pkg-media spx-pkg-hero__media">
             <img
               src="/images/english-coaching-in-action.avif"
               alt="English coaching in action"
@@ -174,22 +168,18 @@ function Packages() {
       </section>
 
       {/* STATUS */}
-      <section className="pack-spx-pkg__section">
-        <div className="pack-spx-pkg__container">
-          {loading && (
-            <div className="pack-spx-pkg-status">Loading packages…</div>
-          )}
+      <section className="spx-pkg__section">
+        <div className="spx-pkg__container">
+          {loading && <div className="spx-pkg-status">Loading packages…</div>}
           {!loading && err && (
-            <div className="pack-spx-pkg-status pack-spx-pkg-status--warn">
-              {err}
-            </div>
+            <div className="spx-pkg-status spx-pkg-status--warn">{err}</div>
           )}
         </div>
       </section>
 
       {/* PRICING GRID */}
-      <section className="pack-spx-pkg__section">
-        <div className="pack-spx-pkg__container pack-spx-pkg-grid">
+      <section className="spx-pkg__section">
+        <div className="spx-pkg__container spx-pkg-grid">
           {plans.map((p, idx) => (
             <PricingCard key={p.id || idx} plan={p} audience={tab} />
           ))}
@@ -198,19 +188,17 @@ function Packages() {
 
       {/* CORPORATE SEATS ESTIMATOR */}
       {tab === AUD.CORPORATE && (
-        <section className="pack-spx-pkg__section pack-spx-pkg-estimator">
-          <div className="pack-spx-pkg__container pack-spx-pkg-card pack-spx-pkg-estimator__row">
-            <div className="pack-spx-pkg-estimator__copy">
-              <h3 className="pack-spx-pkg-estimator__title">
-                Rough seat estimate
-              </h3>
-              <p className="pack-spx-pkg-estimator__p">
+        <section className="spx-pkg__section spx-pkg-estimator">
+          <div className="spx-pkg__container spx-pkg-card spx-pkg-estimator__row">
+            <div className="spx-pkg-estimator__copy">
+              <h3 className="spx-pkg-estimator__title">Rough seat estimate</h3>
+              <p className="spx-pkg-estimator__p">
                 Drag to estimate a starting budget. We’ll tailor a proposal to
                 your goals and schedule.
               </p>
             </div>
-            <div className="pack-spx-pkg-estimator__control">
-              <label className="pack-spx-pkg-label" htmlFor="seats">
+            <div className="spx-pkg-estimator__control">
+              <label className="spx-pkg-label" htmlFor="seats">
                 Seats
               </label>
               <input
@@ -222,22 +210,20 @@ function Packages() {
                 value={seats}
                 onChange={(e) => setSeats(Number(e.target.value))}
               />
-              <div className="pack-spx-pkg-estimator__value">
-                {seats} people
-              </div>
+              <div className="spx-pkg-estimator__value">{seats} people</div>
             </div>
-            <div className="pack-spx-pkg-estimator__result">
-              <div className="pack-spx-pkg-estimator__number">
+            <div className="spx-pkg-estimator__result">
+              <div className="spx-pkg-estimator__number">
                 ~${corpEstimate}/mo
               </div>
               <Link
                 href="/corporate#rfp"
-                className="pack-spx-pkg-btn pack-spx-pkg-btn--primary"
+                className="spx-pkg-btn spx-pkg-btn--primary"
               >
                 Request proposal
               </Link>
             </div>
-            <div className="pack-spx-pkg-estimator__disclaimer">
+            <div className="spx-pkg-estimator__disclaimer">
               This is a placeholder estimate. Actual pricing depends on format,
               cadence, and scope.
             </div>
@@ -246,8 +232,8 @@ function Packages() {
       )}
 
       {/* HOW IT WORKS */}
-      <section className="pack-spx-pkg__section pack-spx-pkg-how">
-        <div className="pack-spx-pkg__container pack-spx-pkg-grid-steps">
+      <section className="spx-pkg__section spx-pkg-how">
+        <div className="spx-pkg__container spx-pkg-grid-steps">
           <Step
             n="1"
             title="Pick a plan"
@@ -267,15 +253,15 @@ function Packages() {
       </section>
 
       {/* FEATURE COMPARISON */}
-      <section className="pack-spx-pkg__section">
-        <div className="pack-spx-pkg__container pack-spx-pkg-compare pack-spx-pkg-card">
-          <div className="pack-spx-pkg-compare__header">
-            <h2 className="pack-spx-pkg-compare__title">
+      <section className="spx-pkg__section">
+        <div className="spx-pkg__container spx-pkg-compare spx-pkg-card">
+          <div className="spx-pkg-compare__header">
+            <h2 className="spx-pkg-compare__title">
               Compare {tab === AUD.INDIVIDUAL ? "individual" : "team"} plans
             </h2>
           </div>
-          <div className="pack-spx-pkg-compare__tablewrap">
-            <table className="pack-spx-pkg-compare__table">
+          <div className="spx-pkg-compare__tablewrap">
+            <table className="spx-pkg-compare__table">
               <thead>
                 <tr>
                   <th>Features</th>
@@ -287,16 +273,16 @@ function Packages() {
               <tbody>
                 {matrix.length === 0 ? (
                   <tr>
-                    <td colSpan={1 + plans.length} className="pack-empty">
+                    <td colSpan={1 + plans.length} className="empty">
                       Feature details coming soon.
                     </td>
                   </tr>
                 ) : (
                   matrix.map((row, rIdx) => (
                     <tr key={rIdx}>
-                      <td className="pack-feat">{row.label}</td>
+                      <td className="feat">{row.label}</td>
                       {row.checks.map((has, cIdx) => (
-                        <td key={cIdx} className="pack-check">
+                        <td key={cIdx} className="check">
                           {has ? "✓" : "—"}
                         </td>
                       ))}
@@ -310,10 +296,10 @@ function Packages() {
       </section>
 
       {/* FAQ */}
-      <section className="pack-spx-pkg__section pack-spx-pkg-faq">
-        <div className="pack-spx-pkg__container pack-spx-pkg-card">
-          <h2 className="pack-spx-pkg-faq__title">FAQs</h2>
-          <div className="pack-spx-pkg-faq__list">
+      <section className="spx-pkg__section spx-pkg-faq">
+        <div className="spx-pkg__container spx-pkg-card">
+          <h2 className="spx-pkg-faq__title">FAQs</h2>
+          <div className="spx-pkg-faq__list">
             <Faq
               q="Can I switch plans later?"
               a="Yes. You can change plans between billing periods; we’ll help you migrate."
@@ -331,34 +317,31 @@ function Packages() {
       </section>
 
       {/* CTA STRIP */}
-      <section className="pack-spx-pkg__section pack-spx-pkg-cta">
-        <div className="pack-spx-pkg__container pack-spx-pkg-cta__inner">
+      <section className="spx-pkg__section spx-pkg-cta">
+        <div className="spx-pkg__container spx-pkg-cta__inner">
           <h2>Ready to begin?</h2>
           {tab === AUD.INDIVIDUAL ? (
-            <div className="pack-spx-pkg-cta__actions">
+            <div className="spx-pkg-cta__actions">
               <Link
-                className="pack-spx-pkg-btn pack-spx-pkg-btn--primary"
+                className="spx-pkg-btn spx-pkg-btn--primary"
                 href="/individual#trial"
               >
                 Book free consult
               </Link>
-              <Link
-                className="pack-spx-pkg-btn pack-spx-pkg-btn--ghost"
-                href="/packages"
-              >
+              <Link className="spx-pkg-btn spx-pkg-btn--ghost" href="/packages">
                 See individual plans
               </Link>
             </div>
           ) : (
-            <div className="pack-spx-pkg-cta__actions">
+            <div className="spx-pkg-cta__actions">
               <Link
                 href="/corporate#rfp"
-                className="pack-spx-pkg-btn pack-spx-pkg-btn--primary"
+                className="spx-pkg-btn spx-pkg-btn--primary"
               >
                 Request proposal
               </Link>
               <Link
-                className="pack-spx-pkg-btn pack-spx-pkg-btn--ghost"
+                className="spx-pkg-btn spx-pkg-btn--ghost"
                 href="/corporate"
               >
                 Learn more
@@ -402,47 +385,44 @@ function PricingCard({ plan, audience }) {
 
   return (
     <div
-      className={`pack-spx-pkg-card pack-spx-pkg-card--plan ${
-        isPopular ? "pack-is-popular" : ""
+      className={`spx-pkg-card spx-pkg-card--plan ${
+        isPopular ? "is-popular" : ""
       }`}
     >
-      <figure className="pack-spx-pkg-media pack-spx-pkg-card__media">
+      <figure className="spx-pkg-media spx-pkg-card__media">
         <img src={image} alt="" loading="lazy" />
       </figure>
 
-      <div className="pack-spx-pkg-card__head">
-        <div className="pack-spx-pkg-card__title">{title}</div>
-        {isPopular && <span className="pack-spx-pkg-badge">Most popular</span>}
+      <div className="spx-pkg-card__head">
+        <div className="spx-pkg-card__title">{title}</div>
+        {isPopular && <span className="spx-pkg-badge">Most popular</span>}
       </div>
 
-      {description && <p className="pack-spx-pkg-card__desc">{description}</p>}
+      {description && <p className="spx-pkg-card__desc">{description}</p>}
 
-      <div className="pack-spx-pkg-card__price">
-        <div className="pack-spx-pkg-card__value">{priceLabel}</div>
-        {sub && <div className="pack-spx-pkg-card__sub">{sub}</div>}
+      <div className="spx-pkg-card__price">
+        <div className="spx-pkg-card__value">{priceLabel}</div>
+        {sub && <div className="spx-pkg-card__sub">{sub}</div>}
       </div>
 
       {bullets.length > 0 && (
-        <ul className="pack-spx-pkg-card__bullets">
+        <ul className="spx-pkg-card__bullets">
           {bullets.map((b, i) => (
             <li key={i}>{b}</li>
           ))}
         </ul>
       )}
 
-      <div className="pack-spx-pkg-card__actions">
+      <div className="spx-pkg-card__actions">
         {isCorp ? (
           <>
             <Link
               href="/corporate#rfp"
-              className="pack-spx-pkg-btn pack-spx-pkg-btn--primary"
+              className="spx-pkg-btn spx-pkg-btn--primary"
             >
               Request proposal
             </Link>
-            <Link
-              className="pack-spx-pkg-btn pack-spx-pkg-btn--ghost"
-              href="/corporate"
-            >
+            <Link className="spx-pkg-btn spx-pkg-btn--ghost" href="/corporate">
               Learn more
             </Link>
           </>
@@ -450,13 +430,13 @@ function PricingCard({ plan, audience }) {
           <>
             <Link
               href={`/checkout?plan=${encodeURIComponent(title)}`}
-              className="pack-spx-pkg-btn pack-spx-pkg-btn--primary"
+              className="spx-pkg-btn spx-pkg-btn--primary"
             >
               Buy now
             </Link>
             <Link
               href="/individual#trial"
-              className="pack-spx-pkg-btn pack-spx-pkg-btn--ghost"
+              className="spx-pkg-btn spx-pkg-btn--ghost"
             >
               Book consult
             </Link>
@@ -469,10 +449,10 @@ function PricingCard({ plan, audience }) {
 
 function Step({ n, title, desc }) {
   return (
-    <div className="pack-spx-pkg-step pack-spx-pkg-card">
-      <div className="pack-spx-pkg-step__n">{n}</div>
-      <div className="pack-spx-pkg-step__title">{title}</div>
-      <div className="pack-spx-pkg-step__desc">{desc}</div>
+    <div className="spx-pkg-step spx-pkg-card">
+      <div className="spx-pkg-step__n">{n}</div>
+      <div className="spx-pkg-step__title">{title}</div>
+      <div className="spx-pkg-step__desc">{desc}</div>
     </div>
   );
 }
@@ -480,16 +460,16 @@ function Step({ n, title, desc }) {
 function Faq({ q, a }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className={`pack-spx-pkg-faq__item ${open ? "pack-is-open" : ""}`}>
+    <div className={`spx-pkg-faq__item ${open ? "is-open" : ""}`}>
       <button
-        className="pack-spx-pkg-faq__q"
+        className="spx-pkg-faq__q"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
         {q}
-        <span className="pack-spx-pkg-faq__icon">{open ? "–" : "+"}</span>
+        <span className="spx-pkg-faq__icon">{open ? "–" : "+"}</span>
       </button>
-      <div className="pack-spx-pkg-faq__a">{a}</div>
+      <div className="spx-pkg-faq__a">{a}</div>
     </div>
   );
 }
@@ -506,7 +486,7 @@ const defaultIndividualPlans = [
     featuresRaw:
       "Coach-matched 1:1\nFlexible scheduling\nPractical homework\nEmail feedback",
     isPopular: false,
-    image: "/assets/packages-v2/individual-starter.avif",
+    image: "/images/pilot.avif",
   },
   {
     title: "Standard",
@@ -518,7 +498,7 @@ const defaultIndividualPlans = [
     featuresRaw:
       "Coach-matched 1:1\nWeekly plan\nPronunciation tune-ups\nProgress check-ins",
     isPopular: true,
-    image: "/assets/packages-v2/individual-standard.avif",
+    image: "/images/team.avif",
   },
   {
     title: "Intensive",
@@ -530,7 +510,7 @@ const defaultIndividualPlans = [
     featuresRaw:
       "2× weekly sessions\nPriority scheduling\nDetailed feedback\nMock interviews/presentations",
     isPopular: false,
-    image: "/assets/packages-v2/individual-intensive.avif",
+    image: "/images/company.avif",
   },
 ];
 
