@@ -212,3 +212,20 @@ $radius-card: 20px;
   --settings-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   --settings-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
+
+// ============================================================================
+// Speexify Checkout Styles
+// ============================================================================
+
+// Variables (adjust to match your design system)
+$checkout-primary: #2563eb;
+$checkout-primary-hover: #1d4ed8;
+$checkout-text: #1f2937;
+$checkout-text-muted: #6b7280;
+$checkout-border: #e5e7eb;
+$checkout-bg-light: #f9fafb;
+$checkout-info-bg: #eff6ff;
+$checkout-info-border: #bfdbfe;
+$checkout-info-text: #1e40af;
+$checkout-radius: 12px;
+$checkout-radius-sm: 8px;
