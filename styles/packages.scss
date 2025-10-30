@@ -1,11 +1,12 @@
 @use "variables" as *;
-// ========================================
-// VARIABLES
-// ========================================
 
-// ========================================
-// ANIMATIONS
-// ========================================
+/* ========================================
+   VARIABLES
+   ======================================== */
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -46,9 +47,9 @@
   }
 }
 
-// ========================================
-// BASE
-// ========================================
+/* ========================================
+   BASE
+   ======================================== */
 .spx-pkg {
   box-sizing: border-box;
   overflow-x: hidden;
@@ -78,9 +79,9 @@
     padding: 0 $space-6;
   }
 
-  // ========================================
-  // COMMON UI
-  // ========================================
+  /* ========================================
+     COMMON UI
+     ======================================== */
   &-card {
     background: $bg;
     border: 1px solid $border;
@@ -202,9 +203,9 @@
   }
 }
 
-// ========================================
-// SECTION HEADERS
-// ========================================
+/* ========================================
+   SECTION HEADERS
+   ======================================== */
 .spx-pkg-section-header {
   text-align: center;
   margin-bottom: $space-9;
@@ -232,9 +233,9 @@
   margin: 0 auto;
 }
 
-// ========================================
-// HERO
-// ========================================
+/* ========================================
+   HERO
+   ======================================== */
 .spx-pkg-hero {
   padding: 100px 0 80px;
   position: relative;
@@ -399,7 +400,7 @@
   }
 }
 
-// Tabs
+/* Tabs */
 .spx-pkg-tabs {
   display: inline-flex;
   background: #fff;
@@ -434,23 +435,24 @@
   }
 }
 
-// ========================================
-// PRICING GRID
-// ========================================
+/* ========================================
+   PRICING GRID
+   ======================================== */
 .spx-pkg-grid {
   display: grid;
   gap: $space-7;
   grid-template-columns: repeat(3, 1fr);
-  align-items: stretch; // Ensure all items stretch to same height
+  align-items: stretch;
+  grid-auto-rows: 1fr; /* lock equal heights */
 
   @media (max-width: $bp-md) {
     grid-template-columns: 1fr;
   }
 }
 
-// ========================================
-// PLAN CARD (FIXED VERSION)
-// ========================================
+/* ========================================
+   PLAN CARD (FIXED VERSION)
+   ======================================== */
 .spx-pkg-card--plan {
   display: flex;
   flex-direction: column;
@@ -458,16 +460,16 @@
   padding: 0;
   position: relative;
   overflow: hidden;
-  height: 100%; // Force equal heights in grid
-  min-height: 680px; // Ensure consistent minimum height
+  height: 100%;
+  min-height: 680px;
 
   @media (max-width: $bp-md) {
     min-height: auto;
   }
 
   &:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba($accent, 0.2);
+    /* no translateY so grid doesn't jump */
+    box-shadow: 0 24px 48px rgba($accent, 0.22);
 
     .spx-pkg-media img {
       transform: scale(1.05);
@@ -479,37 +481,34 @@
   }
 
   &.is-popular {
-    border: 3px solid $accent; // Stronger border for emphasis
+    /* emphasize without changing geometry */
+    border-radius: 20px;
+    border: 2px solid transparent;
+    background: linear-gradient(#fff, #fff) padding-box,
+      linear-gradient(135deg, $accent, $accent-light) border-box;
     box-shadow: 0 12px 40px rgba($accent, 0.25);
-    transform: scale(1.02); // Slightly larger to stand out
-    z-index: 2;
+  }
 
-    @media (max-width: $bp-md) {
-      transform: scale(1);
-    }
-
-    .spx-pkg-badge {
-      position: absolute;
-      top: 200px; // Position below the illustration
-      right: 20px;
-      z-index: 3;
-      box-shadow: 0 4px 12px rgba($accent, 0.4);
-    }
+  /* keep badge inside header row */
+  &.is-popular .spx-pkg-card__head .spx-pkg-badge {
+    position: static;
+    margin-left: 10px;
+    box-shadow: 0 4px 12px rgba($accent, 0.25);
   }
 
   .spx-pkg-media {
     margin: 0;
     border-radius: 20px 20px 0 0;
-    aspect-ratio: 16 / 9; // Maintain consistent aspect ratio
-    height: 180px; // Fixed height for all cards
+    aspect-ratio: auto; /* override base */
+    height: 180px; /* single sizing source */
     background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-    flex-shrink: 0; // Don't allow shrinking
+    flex-shrink: 0;
 
     img {
       width: 100%;
       height: 100%;
-      object-fit: contain; // Show full illustration without cropping
-      padding: 24px; // Breathing room around illustrations
+      object-fit: contain;
+      padding: 16px; /* tighter padding to avoid overflow */
     }
   }
 
@@ -524,6 +523,9 @@
 
   &__head {
     padding: 24px 28px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     flex-shrink: 0;
   }
 
@@ -541,7 +543,7 @@
     padding: 0 28px;
     line-height: 1.6;
     font-size: 15px;
-    min-height: 48px; // Ensure consistent space for descriptions
+    min-height: 56px; /* two lines worth to normalize height */
     flex-shrink: 0;
   }
 
@@ -569,7 +571,7 @@
     margin: 0;
     padding: 0 28px 0 48px;
     color: $ink;
-    flex: 1; // Take up remaining space, pushing actions to bottom
+    flex: 1; /* fill remaining space */
     font-size: 15px;
 
     li {
@@ -595,14 +597,20 @@
     padding: 28px;
     border-top: 1px solid $border;
     flex-wrap: wrap;
-    margin-top: auto; // Always stick to bottom
+    margin-top: auto;
     flex-shrink: 0;
 
     .spx-pkg-btn {
-      flex: 1;
+      flex: 1 1 48%; /* two even buttons per row */
       justify-content: center;
-      min-width: 140px;
+      min-width: 0;
       font-size: 14px;
+    }
+
+    @media (min-width: $bp-md) {
+      .spx-pkg-btn {
+        flex: 1 1 0; /* single row on wider screens if space allows */
+      }
     }
   }
 }
@@ -622,9 +630,9 @@
   border: 1px solid rgba($accent, 0.3);
 }
 
-// ========================================
-// ESTIMATOR (FIXED LAYOUT)
-// ========================================
+/* ========================================
+   ESTIMATOR (FIXED LAYOUT)
+   ======================================== */
 .spx-pkg-estimator {
   &__row {
     display: grid;
@@ -730,9 +738,9 @@
   }
 }
 
-// ========================================
-// HOW IT WORKS
-// ========================================
+/* ========================================
+   HOW IT WORKS
+   ======================================== */
 .spx-pkg-how {
   background: linear-gradient(135deg, #f9fafb 0%, #fff 100%);
   padding: $space-10 0;
@@ -829,9 +837,9 @@
   }
 }
 
-// ========================================
-// COMPARISON TABLE
-// ========================================
+/* ========================================
+   COMPARISON TABLE
+   ======================================== */
 .spx-pkg-compare {
   &__header {
     text-align: center;
@@ -915,9 +923,9 @@
   }
 }
 
-// ========================================
-// FAQ
-// ========================================
+/* ========================================
+   FAQ
+   ======================================== */
 .spx-pkg-faq {
   &__title {
     text-align: center;
@@ -999,9 +1007,9 @@
   }
 }
 
-// ========================================
-// CTA
-// ========================================
+/* ========================================
+   CTA
+   ======================================== */
 .spx-pkg-cta {
   padding: 80px 0;
   position: relative;
