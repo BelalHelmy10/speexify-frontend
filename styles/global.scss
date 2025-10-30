@@ -13,7 +13,10 @@
 @use "./footer";
 @use "./admin.scss";
 @use "./dashboard.scss";
-@use "./checkout.scss"; // body {
+@use "./checkout.scss";
+@use "./payment-result.scss";
+
+// body {
 //   margin: 0;
 //   font-family: $font-main;
 //   background: white;

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import "@/styles/payment-result.scss";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
@@ -8,12 +9,10 @@ export default function PaymentSuccessPage() {
   const [status, setStatus] = useState("loading");
 
   useEffect(() => {
-    // Paymob redirects with these query params
     const success = searchParams.get("success");
     const orderId = searchParams.get("order");
-    const txnId = searchParams.get("id"); // transaction ID
+    const txnId = searchParams.get("id");
 
-    // Check if payment was successful
     if (success === "true") {
       setStatus("success");
     } else {
@@ -23,10 +22,14 @@ export default function PaymentSuccessPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Processing payment...</p>
+      <div className="payment-result payment-result--loading">
+        <div className="payment-result__container">
+          <div className="payment-result__loading">
+            <div className="payment-result__spinner"></div>
+            <p className="payment-result__loading-text">
+              Processing payment...
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -34,11 +37,53 @@ export default function PaymentSuccessPage() {
 
   if (status === "success") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-green-50">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="payment-result payment-result--success">
+        <div className="payment-result__container">
+          <div className="payment-result__card">
+            <div className="payment-result__icon payment-result__icon--success">
+              <svg
+                className="payment-result__icon-svg"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h1 className="payment-result__title">Payment Successful!</h1>
+            <p className="payment-result__message">
+              Your payment has been processed successfully.
+              {searchParams.get("order") && (
+                <span className="payment-result__order">
+                  {" "}
+                  Order ID: {searchParams.get("order")}
+                </span>
+              )}
+            </p>
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="payment-result__btn payment-result__btn--primary"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="payment-result payment-result--failed">
+      <div className="payment-result__container">
+        <div className="payment-result__card">
+          <div className="payment-result__icon payment-result__icon--failed">
             <svg
-              className="w-8 h-8 text-green-600"
+              className="payment-result__icon-svg"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -47,58 +92,21 @@ export default function PaymentSuccessPage() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M5 13l4 4L19 7"
+                d="M6 18L18 6M6 6l12 12"
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Payment Successful!
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Your payment has been processed successfully. Order ID:{" "}
-            {searchParams.get("order")}
+          <h1 className="payment-result__title">Payment Failed</h1>
+          <p className="payment-result__message">
+            Your payment could not be processed. Please try again.
           </p>
           <button
-            onClick={() => router.push("/dashboard")}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            onClick={() => router.push("/packages")}
+            className="payment-result__btn payment-result__btn--primary"
           >
-            Go to Dashboard
+            Try Again
           </button>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-red-50">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg
-            className="w-8 h-8 text-red-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Payment Failed
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your payment could not be processed. Please try again.
-        </p>
-        <button
-          onClick={() => router.push("/checkout")}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-        >
-          Try Again
-        </button>
       </div>
     </div>
   );
