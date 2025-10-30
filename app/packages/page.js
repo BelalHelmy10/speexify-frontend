@@ -429,7 +429,7 @@ function PricingCard({ plan, audience }) {
         ) : (
           <>
             <Link
-              href={`/checkout/${plan.id}`}
+              href={`/checkout?plan=${encodeURIComponent(plan.title)}`}
               className="spx-pkg-btn spx-pkg-btn--primary"
             >
               Buy now
