@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { me } from "@/lib/auth"; // ← Import your auth helper
+import { me } from "@/lib/auth";
 import "@/styles/checkout.scss";
 
 export default function CheckoutPage() {
@@ -11,10 +11,10 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const [pkg, setPkg] = useState(null);
-  const [user, setUser] = useState(null); // ← Add user state
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingPkg, setLoadingPkg] = useState(true);
-  const [loadingUser, setLoadingUser] = useState(true); // ← Add loading state
+  const [loadingUser, setLoadingUser] = useState(true);
 
   const planTitle = searchParams.get("plan");
 
@@ -34,7 +34,6 @@ export default function CheckoutPage() {
   }, []);
 
   // Fetch package details
-  // Fetch package details
   useEffect(() => {
     if (!planTitle) {
       setLoadingPkg(false);
@@ -52,15 +51,12 @@ export default function CheckoutPage() {
           packages.map((p) => p.title)
         );
 
-        // Decode URL-encoded title and normalize for comparison
         const decodedTitle = decodeURIComponent(planTitle).trim();
 
-        // Try multiple matching strategies
         let selected = packages.find(
           (p) => p.title.toLowerCase() === decodedTitle.toLowerCase()
         );
 
-        // Fallback: fuzzy match (contains)
         if (!selected) {
           selected = packages.find(
             (p) =>
@@ -85,13 +81,11 @@ export default function CheckoutPage() {
     try {
       setLoading(true);
 
-      // If user is not logged in, prompt them to login first
       if (!user) {
         const shouldLogin = confirm(
           "Please log in to continue with checkout. Redirect to login page?"
         );
         if (shouldLogin) {
-          // Save the current checkout URL to return after login
           sessionStorage.setItem("checkout_return_url", window.location.href);
           router.push("/login");
         }
@@ -102,7 +96,6 @@ export default function CheckoutPage() {
       const amountEGP = pkg.priceUSD * USD_TO_EGP_RATE;
       const amountCents = Math.round(amountEGP * 100);
 
-      // Parse user name
       const nameParts = (user.name || "User").split(" ");
       const firstName = nameParts[0] || "User";
       const lastName = nameParts.slice(1).join(" ") || "";
@@ -139,10 +132,10 @@ export default function CheckoutPage() {
   // Show loading while fetching user and package
   if (loadingPkg || loadingUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Loading...</p>
+      <div className="checkout__loading">
+        <div className="checkout__loading-content">
+          <div className="checkout__loading-spinner"></div>
+          <p className="checkout__loading-text">Loading...</p>
         </div>
       </div>
     );
@@ -151,15 +144,15 @@ export default function CheckoutPage() {
   // Package not found
   if (!pkg) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold mb-4">Package not found</h1>
-          <p className="text-gray-600 mb-6">
+      <div className="checkout__error">
+        <div className="checkout__error-content">
+          <h1 className="checkout__error-title">Package not found</h1>
+          <p className="checkout__error-message">
             The package you selected could not be found.
           </p>
           <button
             onClick={() => router.push("/packages")}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            className="checkout__error-button"
           >
             View all packages
           </button>
@@ -172,102 +165,112 @@ export default function CheckoutPage() {
   const priceEGP = pkg.priceUSD * USD_TO_EGP_RATE;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="checkout">
+      <div className="checkout__container">
         {/* Header with User Info */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Checkout</h1>
+        <div className="checkout__header">
+          <h1 className="checkout__header-title">Checkout</h1>
           {user && (
-            <div className="text-sm text-gray-600">
-              Logged in as <span className="font-semibold">{user.email}</span>
+            <div className="checkout__header-user">
+              Logged in as <strong>{user.email}</strong>
             </div>
           )}
         </div>
 
         {/* Login Warning (if not logged in) */}
         {!user && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-yellow-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">
-                  Login required
-                </h3>
-                <p className="mt-1 text-sm text-yellow-700">
-                  You'll be prompted to log in before payment.
-                </p>
+          <div className="checkout__warning">
+            <div className="checkout__warning-content">
+              <svg
+                className="checkout__warning-icon"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="checkout__warning-text">
+                <h3>Login required</h3>
+                <p>You'll be prompted to log in before payment.</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Package Summary */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">{pkg.title}</h2>
-          <p className="text-gray-600 mb-4">{pkg.description}</p>
+        <div className="checkout__package">
+          <h2 className="checkout__package-title">{pkg.title}</h2>
+          <p className="checkout__package-description">{pkg.description}</p>
 
           {/* Package Details */}
-          <div className="border-t pt-4 space-y-2">
+          <div className="checkout__details">
             {pkg.sessionsPerPack && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Sessions:</span>
-                <span className="font-semibold">{pkg.sessionsPerPack}</span>
+              <div className="checkout__details-row">
+                <span className="checkout__details-label">Sessions:</span>
+                <span className="checkout__details-value">
+                  {pkg.sessionsPerPack}
+                </span>
               </div>
             )}
             {pkg.durationMin && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Duration per session:</span>
-                <span className="font-semibold">{pkg.durationMin} min</span>
+              <div className="checkout__details-row">
+                <span className="checkout__details-label">
+                  Duration per session:
+                </span>
+                <span className="checkout__details-value">
+                  {pkg.durationMin} min
+                </span>
               </div>
             )}
           </div>
 
           {/* Pricing */}
-          <div className="border-t pt-4 mt-4">
-            <div className="flex justify-between text-lg mb-2">
-              <span className="text-gray-700">Package Price (USD):</span>
-              <span className="font-semibold">${pkg.priceUSD}</span>
+          <div className="checkout__pricing">
+            <div className="checkout__pricing-row">
+              <span className="checkout__pricing-label">
+                Package Price (USD):
+              </span>
+              <span className="checkout__pricing-value">${pkg.priceUSD}</span>
             </div>
-            <div className="flex justify-between text-lg mb-2">
-              <span className="text-gray-700">Price (EGP):</span>
-              <span className="font-semibold">EGP {priceEGP.toFixed(2)}</span>
+            <div className="checkout__pricing-row">
+              <span className="checkout__pricing-label">Price (EGP):</span>
+              <span className="checkout__pricing-value">
+                EGP {priceEGP.toFixed(2)}
+              </span>
             </div>
-            <div className="flex justify-between text-2xl font-bold border-t pt-3 mt-3">
-              <span>Total:</span>
-              <span className="text-blue-600">EGP {priceEGP.toFixed(2)}</span>
+            <div className="checkout__pricing-row checkout__pricing-row--total">
+              <span className="checkout__pricing-label checkout__pricing-label--total">
+                Total:
+              </span>
+              <span className="checkout__pricing-value checkout__pricing-value--total">
+                EGP {priceEGP.toFixed(2)}
+              </span>
             </div>
           </div>
 
           {/* Exchange Rate Note */}
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+          <div className="checkout__exchange-note">
             💱 Exchange rate: $1 USD = {USD_TO_EGP_RATE} EGP
           </div>
         </div>
 
         {/* Customer Information Preview (if logged in) */}
         {user && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h3 className="font-semibold mb-3">Billing Information</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Name:</span>
-                <span>{user.name || "Not provided"}</span>
+          <div className="checkout__customer">
+            <h3 className="checkout__customer-title">Billing Information</h3>
+            <div className="checkout__customer-info">
+              <div className="checkout__customer-row">
+                <span className="checkout__customer-label">Name:</span>
+                <span className="checkout__customer-value">
+                  {user.name || "Not provided"}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Email:</span>
-                <span>{user.email}</span>
+              <div className="checkout__customer-row">
+                <span className="checkout__customer-label">Email:</span>
+                <span className="checkout__customer-value">{user.email}</span>
               </div>
             </div>
           </div>
@@ -277,30 +280,11 @@ export default function CheckoutPage() {
         <button
           onClick={startPayment}
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-semibold text-lg transition-colors"
+          className="checkout__pay-button"
         >
           {loading ? (
-            <span className="flex items-center justify-center">
-              <svg
-                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
+            <span className="checkout__pay-button-loading">
+              <span className="checkout__pay-button-spinner"></span>
               Processing...
             </span>
           ) : (
@@ -309,16 +293,13 @@ export default function CheckoutPage() {
         </button>
 
         {/* Security Note */}
-        <div className="mt-6 text-center text-sm text-gray-600">
+        <div className="checkout__security">
           🔒 Secured by Paymob payment gateway
         </div>
 
         {/* Back Link */}
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => router.push("/packages")}
-            className="text-blue-600 hover:underline"
-          >
+        <div className="checkout__back">
+          <button onClick={() => router.push("/packages")}>
             ← Back to packages
           </button>
         </div>
