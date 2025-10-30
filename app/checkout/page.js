@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { me } from "@/lib/auth"; // ← Import your auth helper
+import "@/styles/checkout.scss";
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
