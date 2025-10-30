@@ -86,8 +86,9 @@ export default function CheckoutPage() {
           "Please log in to continue with checkout. Redirect to login page?"
         );
         if (shouldLogin) {
-          sessionStorage.setItem("checkout_return_url", window.location.href);
-          router.push("/login");
+          // ✅ CHANGED: Use URL parameter instead of sessionStorage
+          const currentUrl = encodeURIComponent(window.location.href);
+          router.push(`/login?next=${currentUrl}`);
         }
         return;
       }

@@ -1,7 +1,7 @@
 // src/pages/login.jsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -30,26 +30,21 @@ function Login() {
 
   const { user, checking, refresh } = useAuth();
 
-  const redirectAfterLogin = () => {
-    // Debug logging
-    const checkoutUrl = sessionStorage.getItem("checkout_return_url");
-    console.log("🔍 Checking sessionStorage:", checkoutUrl);
-    console.log("🔍 Type:", typeof checkoutUrl);
+  const redirectAfterLogin = useCallback(() => {
+    const next = params.get("next");
 
-    if (checkoutUrl) {
-      console.log("✅ Found checkout URL, redirecting to:", checkoutUrl);
-      sessionStorage.removeItem("checkout_return_url");
-      router.replace(checkoutUrl);
-      router.refresh();
+    console.log("🔍 Checking next param:", next);
+
+    if (next) {
+      console.log("✅ Found next param, redirecting to:", next);
+      window.location.href = decodeURIComponent(next);
       return;
     }
 
-    console.log("❌ No checkout URL found");
-    const next = params.get("next") || "/dashboard";
-    console.log("📍 Redirecting to:", next);
-    router.replace(next);
+    console.log("📍 No next param, redirecting to dashboard");
+    router.replace("/dashboard");
     router.refresh();
-  };
+  }, [params, router]);
 
   // If already authenticated, start redirect immediately and render nothing
   useEffect(() => {
