@@ -386,6 +386,17 @@
     animation: float 4s ease-in-out infinite;
     z-index: 0;
   }
+
+  &__note {
+    margin-top: 16px;
+    padding: 12px 20px;
+    background: rgba($accent, 0.05);
+    border-left: 3px solid $accent;
+    border-radius: 8px;
+    color: $muted;
+    font-size: 14px;
+    animation: fadeInUp 0.8s ease 0.5s backwards;
+  }
 }
 
 // Tabs
@@ -430,6 +441,7 @@
   display: grid;
   gap: $space-7;
   grid-template-columns: repeat(3, 1fr);
+  align-items: stretch; // Ensure all items stretch to same height
 
   @media (max-width: $bp-md) {
     grid-template-columns: 1fr;
@@ -437,15 +449,21 @@
 }
 
 // ========================================
-// PLAN CARD
+// PLAN CARD (FIXED VERSION)
 // ========================================
 .spx-pkg-card--plan {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   padding: 0;
   position: relative;
   overflow: hidden;
+  height: 100%; // Force equal heights in grid
+  min-height: 680px; // Ensure consistent minimum height
+
+  @media (max-width: $bp-md) {
+    min-height: auto;
+  }
 
   &:hover {
     transform: translateY(-8px);
@@ -461,20 +479,38 @@
   }
 
   &.is-popular {
-    border: 2px solid $accent;
-    box-shadow: 0 8px 32px rgba($accent, 0.2);
+    border: 3px solid $accent; // Stronger border for emphasis
+    box-shadow: 0 12px 40px rgba($accent, 0.25);
+    transform: scale(1.02); // Slightly larger to stand out
+    z-index: 2;
+
+    @media (max-width: $bp-md) {
+      transform: scale(1);
+    }
 
     .spx-pkg-badge {
       position: absolute;
-      top: 16px;
-      right: 16px;
+      top: 200px; // Position below the illustration
+      right: 20px;
       z-index: 3;
+      box-shadow: 0 4px 12px rgba($accent, 0.4);
     }
   }
 
   .spx-pkg-media {
     margin: 0;
     border-radius: 20px 20px 0 0;
+    aspect-ratio: 16 / 9; // Maintain consistent aspect ratio
+    height: 180px; // Fixed height for all cards
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    flex-shrink: 0; // Don't allow shrinking
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain; // Show full illustration without cropping
+      padding: 24px; // Breathing room around illustrations
+    }
   }
 
   &__overlay {
@@ -483,60 +519,91 @@
     background: linear-gradient(135deg, $accent, $accent-light);
     opacity: 0.15;
     transition: opacity 0.4s ease;
+    pointer-events: none;
   }
 
   &__head {
-    padding: 24px 24px 0;
+    padding: 24px 28px 0;
+    flex-shrink: 0;
   }
 
   &__title {
     font-weight: 700;
-    font-size: 22px;
+    font-size: 24px;
     color: $ink;
     margin: 0;
+    line-height: 1.3;
   }
 
   &__desc {
     color: $muted;
     margin: 0;
-    padding: 0 24px;
+    padding: 0 28px;
     line-height: 1.6;
+    font-size: 15px;
+    min-height: 48px; // Ensure consistent space for descriptions
+    flex-shrink: 0;
   }
 
   &__price {
-    padding: 0 24px;
+    padding: 0 28px;
+    margin: 8px 0;
+    flex-shrink: 0;
   }
 
   &__value {
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 800;
     color: $accent-ink;
     margin-bottom: 4px;
+    line-height: 1;
   }
 
   &__sub {
     color: $muted;
     font-size: 14px;
+    margin-top: 4px;
   }
 
   &__bullets {
     margin: 0;
-    padding: 0 24px 0 44px;
+    padding: 0 28px 0 48px;
     color: $ink;
+    flex: 1; // Take up remaining space, pushing actions to bottom
+    font-size: 15px;
 
     li {
-      margin: 8px 0;
-      line-height: 1.5;
+      margin: 10px 0;
+      line-height: 1.6;
+      position: relative;
+      list-style: none;
+
+      &::before {
+        content: "✓";
+        position: absolute;
+        left: -20px;
+        color: $accent;
+        font-weight: 700;
+        font-size: 16px;
+      }
     }
   }
 
   &__actions {
     display: flex;
-    gap: 8px;
-    padding: 24px;
+    gap: 10px;
+    padding: 28px;
     border-top: 1px solid $border;
     flex-wrap: wrap;
-    margin-top: auto;
+    margin-top: auto; // Always stick to bottom
+    flex-shrink: 0;
+
+    .spx-pkg-btn {
+      flex: 1;
+      justify-content: center;
+      min-width: 140px;
+      font-size: 14px;
+    }
   }
 }
 
@@ -556,56 +623,44 @@
 }
 
 // ========================================
-// ESTIMATOR
+// ESTIMATOR (FIXED LAYOUT)
 // ========================================
 .spx-pkg-estimator {
-  background: linear-gradient(135deg, #f9fafb 0%, #fff 100%);
-  border: 1px solid $border;
-  border-radius: 24px;
-  padding: $space-10;
-  box-shadow: 0 4px 16px rgba(14, 21, 47, 0.08);
+  &__row {
+    display: grid;
+    gap: $space-7;
+    grid-template-columns: 1fr;
 
-  @media (max-width: $bp-md) {
-    padding: $space-7;
+    @media (min-width: $bp-md) {
+      grid-template-columns: 1.2fr 1fr 1fr;
+      align-items: start;
+    }
   }
 
-  &__header {
-    text-align: center;
-    margin-bottom: $space-8;
+  &__copy {
+    @media (min-width: $bp-md) {
+      padding-top: 8px;
+    }
   }
 
   &__title {
     margin: 0 0 12px;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 800;
     color: $ink;
   }
 
-  &__subtitle {
+  &__p {
     color: $muted;
     margin: 0;
-    font-size: 16px;
-  }
-
-  &__body {
-    display: grid;
-    gap: $space-7;
-    grid-template-columns: 1fr 1fr;
-    align-items: center;
-
-    @media (max-width: $bp-md) {
-      grid-template-columns: 1fr;
-    }
+    font-size: 15px;
+    line-height: 1.6;
   }
 
   &__control {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-  }
-
-  &__slider {
-    position: relative;
+    gap: 12px;
 
     input[type="range"] {
       width: 100%;
@@ -638,16 +693,8 @@
     }
   }
 
-  &__markers {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 8px;
-    font-size: 12px;
-    color: $muted;
-  }
-
   &__value {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     color: $ink;
   }
@@ -657,22 +704,18 @@
     flex-direction: column;
     gap: 16px;
     align-items: center;
-    padding: $space-7;
-    background: #fff;
+    padding: $space-6;
+    background: linear-gradient(
+      135deg,
+      rgba($accent, 0.05),
+      rgba($accent-light, 0.05)
+    );
     border-radius: 16px;
-    border: 1px solid $border;
-  }
-
-  &__label {
-    color: $muted;
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    border: 2px solid rgba($accent, 0.2);
   }
 
   &__number {
-    font-size: 40px;
+    font-size: 36px;
     font-weight: 800;
     color: $accent-ink;
   }
@@ -681,14 +724,20 @@
     color: $muted;
     font-size: 13px;
     text-align: center;
-    margin-top: $space-6;
+    margin-top: $space-4;
     font-style: italic;
+    grid-column: 1 / -1;
   }
 }
 
 // ========================================
 // HOW IT WORKS
 // ========================================
+.spx-pkg-how {
+  background: linear-gradient(135deg, #f9fafb 0%, #fff 100%);
+  padding: $space-10 0;
+}
+
 .spx-pkg-grid-steps {
   display: grid;
   gap: $space-6;
@@ -769,7 +818,7 @@
   &__title {
     font-weight: 700;
     font-size: 20px;
-    margin-bottom: 8px;
+    margin: 0 0 8px;
     color: $ink;
   }
 
@@ -870,10 +919,20 @@
 // FAQ
 // ========================================
 .spx-pkg-faq {
-  display: grid;
-  gap: 16px;
-  max-width: 800px;
-  margin: 0 auto;
+  &__title {
+    text-align: center;
+    margin: 0 0 $space-8;
+    font-size: 32px;
+    font-weight: 800;
+    color: $ink;
+  }
+
+  &__list {
+    display: grid;
+    gap: 16px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
 
   &__item {
     background: #fff;
@@ -887,17 +946,15 @@
       box-shadow: 0 4px 12px rgba($accent, 0.1);
     }
 
-    &[open] {
-      .spx-pkg-faq__q::after {
-        transform: rotate(-135deg);
-        margin-top: -4px;
+    &.is-open {
+      .spx-pkg-faq__icon {
+        transform: rotate(45deg);
       }
-    }
 
-    summary {
-      list-style: none;
-      &::-webkit-details-marker {
-        display: none;
+      .spx-pkg-faq__a {
+        max-height: 500px;
+        padding: 0 20px 20px;
+        opacity: 1;
       }
     }
   }
@@ -905,7 +962,7 @@
   &__q {
     width: 100%;
     text-align: left;
-    background: #fff;
+    background: transparent;
     border: 0;
     padding: 20px;
     font-weight: 700;
@@ -914,32 +971,31 @@
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    position: relative;
     transition: color 0.3s ease;
+    color: $ink;
 
     &:hover {
       color: $accent;
     }
+  }
 
-    &::after {
-      content: "";
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      width: 12px;
-      height: 12px;
-      margin-top: -8px;
-      border-right: 2px solid $accent;
-      border-bottom: 2px solid $accent;
-      transform: rotate(45deg);
-      transition: all 0.3s ease;
-    }
+  &__icon {
+    font-size: 20px;
+    color: $accent;
+    font-weight: 400;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    margin-left: 16px;
   }
 
   &__a {
     color: $muted;
-    padding: 0 20px 20px;
+    padding: 0 20px;
     line-height: 1.6;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.3s ease;
   }
 }
 
@@ -947,11 +1003,19 @@
 // CTA
 // ========================================
 .spx-pkg-cta {
-  padding: 100px 0;
+  padding: 80px 0;
   position: relative;
   overflow: hidden;
   color: #fff;
   margin-top: $space-10;
+  background: linear-gradient(
+    135deg,
+    $accent 0%,
+    $accent-ink 50%,
+    #0c4a6e 100%
+  );
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
 
   &__background {
     position: absolute;
@@ -1006,15 +1070,17 @@
 
   &__inner {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    gap: 40px;
+    text-align: center;
+    gap: 32px;
     position: relative;
     z-index: 1;
 
-    @media (max-width: $bp-md) {
-      flex-direction: column;
-      text-align: center;
+    h2 {
+      margin: 0;
+      font-size: 36px;
+      font-weight: 900;
     }
   }
 
@@ -1038,10 +1104,7 @@
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-
-    @media (max-width: $bp-md) {
-      justify-content: center;
-    }
+    justify-content: center;
   }
 
   .spx-pkg-btn--primary {
