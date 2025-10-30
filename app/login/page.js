@@ -31,6 +31,19 @@ function Login() {
   const { user, checking, refresh } = useAuth();
 
   const redirectAfterLogin = () => {
+    // First, check if user came from checkout
+    const checkoutUrl = sessionStorage.getItem("checkout_return_url");
+
+    if (checkoutUrl) {
+      // Clear the saved URL
+      sessionStorage.removeItem("checkout_return_url");
+      // Redirect back to checkout
+      router.replace(checkoutUrl);
+      router.refresh();
+      return;
+    }
+
+    // Otherwise, use the 'next' param or default to dashboard
     const next = params.get("next") || "/dashboard";
     router.replace(next);
     router.refresh();
