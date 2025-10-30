@@ -31,20 +31,22 @@ function Login() {
   const { user, checking, refresh } = useAuth();
 
   const redirectAfterLogin = () => {
-    // First, check if user came from checkout
+    // Debug logging
     const checkoutUrl = sessionStorage.getItem("checkout_return_url");
+    console.log("🔍 Checking sessionStorage:", checkoutUrl);
+    console.log("🔍 Type:", typeof checkoutUrl);
 
     if (checkoutUrl) {
-      // Clear the saved URL
+      console.log("✅ Found checkout URL, redirecting to:", checkoutUrl);
       sessionStorage.removeItem("checkout_return_url");
-      // Redirect back to checkout
       router.replace(checkoutUrl);
       router.refresh();
       return;
     }
 
-    // Otherwise, use the 'next' param or default to dashboard
+    console.log("❌ No checkout URL found");
     const next = params.get("next") || "/dashboard";
+    console.log("📍 Redirecting to:", next);
     router.replace(next);
     router.refresh();
   };
