@@ -219,20 +219,23 @@ $radius-card: 20px;
 
 // Variables (adjust to match your design system)
 // Colors
-$color-primary: #2563eb;
-$color-primary-hover: #1d4ed8;
-$color-gray-50: #f9fafb;
-$color-gray-100: #f3f4f6;
-$color-gray-400: #9ca3af;
-$color-gray-600: #4b5563;
-$color-gray-700: #374151;
-$color-gray-800: #1f2937;
-$color-white: #ffffff;
-$color-yellow-50: #fefce8;
-$color-yellow-200: #fde68a;
-$color-yellow-400: #facc15;
-$color-yellow-700: #a16207;
-$color-yellow-800: #854d0e;
-$color-blue-50: #eff6ff;
-$color-blue-600: #2563eb;
-$color-blue-800: #1e40af;
+$primary-color: #2563eb;
+$primary-hover: #1d4ed8;
+$gray-50: #f9fafb;
+$gray-100: #f3f4f6;
+$gray-400: #9ca3af;
+$gray-600: #4b5563;
+$gray-700: #374151;
+$gray-800: #1f2937;
+$yellow-50: #fefce8;
+$yellow-200: #fef08a;
+$yellow-400: #facc15;
+$yellow-700: #a16207;
+$yellow-800: #854d0e;
+$blue-50: #eff6ff;
+$blue-600: #2563eb;
+$blue-800: #1e40af;
+$white: #ffffff;
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+  0 4px 6px -2px rgba(0, 0, 0, 0.05);
