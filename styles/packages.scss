@@ -105,7 +105,6 @@
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: hidden;
 
     &:active {
       transform: translateY(1px);
@@ -131,6 +130,7 @@
       &:hover {
         background: rgba($accent, 0.1);
         border-color: $accent-ink;
+        color: $accent-ink;
         text-decoration: none;
       }
     }
