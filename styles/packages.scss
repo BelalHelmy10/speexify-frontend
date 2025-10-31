@@ -455,7 +455,6 @@
 .spx-pkg-card--plan {
   display: flex;
   flex-direction: column;
-  padding: 0;
   position: relative;
   overflow: visible;
   height: 100%;
@@ -549,8 +548,11 @@
   }
 
   &__title {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 5rem;
     font-weight: 800;
-    font-size: 28px;
+    font-size: 3rem;
     color: $ink;
     margin: 0;
     line-height: 1.2;
