@@ -506,6 +506,9 @@
   align-items: center;
   gap: 6px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  &:hover {
+    text-decoration: none;
+  }
 
   svg {
     width: 16px;
@@ -516,6 +519,7 @@
 
   &:hover svg {
     transform: scale(1.1);
+    text-decoration: none;
   }
 
   &--sm {
