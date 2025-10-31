@@ -15,7 +15,7 @@ const valuesIconC = "/logos/icon_ownership.svg";
 const valuesIconD = "/logos/icon_inclusive.svg";
 const leadBilly = "/images/Billy.jpeg";
 const leadZiad = "/images/ZiadAnwer.jpeg";
-const leadChris = "/images/leader_chris.avif";
+const leadChris = "/images/Chris_Os.jpg";
 
 const stats = [
   { value: "6", label: "languages", icon: "🌍" },

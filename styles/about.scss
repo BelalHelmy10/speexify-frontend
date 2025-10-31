@@ -681,7 +681,7 @@
     &-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: $space-6;
+      gap: $space-8;
 
       @media (max-width: $bp-lg) {
         grid-template-columns: 1fr;
@@ -691,15 +691,16 @@
 
   &__leader {
     background: $color-white;
-    border-radius: 16px;
+    border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     border: 1px solid $color-border;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
+    flex-direction: column; // Change from row to column
     align-items: center;
-    gap: 20px;
-    padding: 20px;
+    text-align: center;
+    padding: 32px; // Increase padding
 
     @media (max-width: $bp-sm) {
       flex-direction: column;
@@ -707,7 +708,7 @@
     }
 
     &:hover {
-      transform: translateY(-4px);
+      transform: translateY(-8px);
       box-shadow: 0 12px 28px rgba($color-primary, 0.15);
 
       .about__leader-media img {
@@ -722,12 +723,13 @@
     &-media {
       position: relative;
       overflow: hidden;
-      border-radius: 12px;
+      border-radius: 50%;
       flex-shrink: 0;
+      margin-bottom: 20px;
 
       img {
-        width: 80px;
-        height: 80px;
+        width: 120px;
+        height: 120px;
         object-fit: cover;
         object-position: 50% 30%;
         display: block;
@@ -744,18 +746,16 @@
     }
 
     &-card {
-      flex: 1;
-
       h4 {
-        margin: 0 0 4px;
-        font-size: 18px;
+        margin: 0 0 8px; // Increase margin
+        font-size: 20px; // Increase from 18px
         font-weight: 700;
       }
 
       span {
         color: $color-muted;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 15px; // Increase from 14px
       }
     }
   }
