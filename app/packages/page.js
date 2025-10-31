@@ -365,7 +365,6 @@ function PricingCard({ plan, audience }) {
     isPopular,
     sessionsPerPack,
     durationMin,
-    image,
   } = plan;
 
   const bullets = parseFeatures(plan.featuresRaw || "").slice(0, 8);
@@ -389,10 +388,6 @@ function PricingCard({ plan, audience }) {
         isPopular ? "is-popular" : ""
       }`}
     >
-      <figure className="spx-pkg-media spx-pkg-card__media">
-        <img src={image} alt="" loading="lazy" />
-      </figure>
-
       <div className="spx-pkg-card__head">
         <div className="spx-pkg-card__title">{title}</div>
         {isPopular && <span className="spx-pkg-badge">Most popular</span>}
