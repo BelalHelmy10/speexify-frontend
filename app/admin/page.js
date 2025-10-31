@@ -6,6 +6,68 @@ import api from "@/lib/api";
 import "@/styles/admin.scss";
 import useAuth from "@/hooks/useAuth";
 
+function TimeInput({ value, onChange, name, required }) {
+  const parseTime = (timeStr) => {
+    if (!timeStr) return { hours: "", minutes: "" };
+    const [h, m] = timeStr.split(":");
+    return { hours: h || "", minutes: m || "" };
+  };
+
+  const { hours, minutes } = parseTime(value);
+
+  const handleHourChange = (e) => {
+    let h = e.target.value;
+    if (h === "") {
+      onChange({ target: { name, value: "" } });
+      return;
+    }
+    h = Math.max(0, Math.min(23, parseInt(h) || 0));
+    const newTime = `${String(h).padStart(2, "0")}:${minutes || "00"}`;
+    onChange({ target: { name, value: newTime } });
+  };
+
+  const handleMinuteChange = (e) => {
+    let m = e.target.value;
+    if (m === "") {
+      onChange({ target: { name, value: `${hours || "00"}:00` } });
+      return;
+    }
+    m = Math.max(0, Math.min(59, parseInt(m) || 0));
+    const newTime = `${hours || "00"}:${String(m).padStart(2, "0")}`;
+    onChange({ target: { name, value: newTime } });
+  };
+
+  return (
+    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+      <input
+        type="number"
+        min="0"
+        max="23"
+        step="1"
+        value={hours}
+        onChange={handleHourChange}
+        placeholder="HH"
+        required={required}
+        style={{ width: "4rem", textAlign: "center" }}
+        className="adm-form-input"
+      />
+      <span style={{ color: "var(--admin-text-secondary)" }}>:</span>
+      <input
+        type="number"
+        min="0"
+        max="59"
+        step="1"
+        value={minutes}
+        onChange={handleMinuteChange}
+        placeholder="MM"
+        required={required}
+        style={{ width: "4rem", textAlign: "center" }}
+        className="adm-form-input"
+      />
+    </div>
+  );
+}
+
 function Admin() {
   const { user, checking } = useAuth();
   const [status, setStatus] = useState("");
@@ -679,10 +741,8 @@ function Admin() {
               <label className="adm-form-label">
                 Start Time<span className="adm-form-required">*</span>
               </label>
-              <input
-                type="time"
+              <TimeInput
                 name="startTime"
-                className="adm-form-input"
                 value={form.startTime}
                 onChange={onCreateChange}
                 required
@@ -691,10 +751,8 @@ function Admin() {
 
             <div className="adm-form-field">
               <label className="adm-form-label">End Time</label>
-              <input
-                type="time"
+              <TimeInput
                 name="endTime"
-                className="adm-form-input"
                 value={form.endTime}
                 onChange={onCreateChange}
               />
@@ -922,20 +980,16 @@ function Admin() {
                   </div>
                   <div className="adm-form-field">
                     <label className="adm-form-label">Start Time</label>
-                    <input
-                      type="time"
+                    <TimeInput
                       name="startTime"
-                      className="adm-form-input"
                       value={editForm.startTime}
                       onChange={onEditChange}
                     />
                   </div>
                   <div className="adm-form-field">
                     <label className="adm-form-label">End Time</label>
-                    <input
-                      type="time"
+                    <TimeInput
                       name="endTime"
-                      className="adm-form-input"
                       value={editForm.endTime}
                       onChange={onEditChange}
                     />
