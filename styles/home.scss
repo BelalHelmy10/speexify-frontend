@@ -271,7 +271,7 @@
   }
 
   &__title-accent {
-    background: linear-gradient(135deg, $brand 0%, $brand-light 100%);
+    background: $brand;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -994,7 +994,7 @@
   position: relative;
 
   &::before {
-    content: '"';
+    content: "\201C";
     position: absolute;
     top: 20px;
     left: 20px;
