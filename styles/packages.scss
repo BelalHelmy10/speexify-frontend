@@ -1,7 +1,4 @@
 @use "variables" as *;
-// ========================================
-// VARIABLES
-// ========================================
 
 // ========================================
 // ANIMATIONS
@@ -14,6 +11,15 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -43,6 +49,16 @@
   }
   50% {
     background-position: 100% 50%;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
   }
 }
 
@@ -138,32 +154,6 @@
       padding: 14px 28px;
       font-size: 16px;
     }
-
-    &--shine {
-      &::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 50%;
-        height: 100%;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(255, 255, 255, 0.3),
-          transparent
-        );
-        animation: shine 3s infinite;
-      }
-    }
-
-    &__arrow {
-      transition: transform 0.3s ease;
-    }
-
-    &:hover &__arrow {
-      transform: translateX(4px);
-    }
   }
 
   &-label {
@@ -247,33 +237,6 @@
     min-height: auto;
   }
 
-  &__background {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-  }
-
-  &__gradient {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-        ellipse 80% 50% at 50% -20%,
-        rgba($accent, 0.12),
-        transparent 50%
-      ),
-      linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
-  }
-
-  &__pattern {
-    position: absolute;
-    inset: 0;
-    background-image: linear-gradient(rgba($accent, 0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba($accent, 0.02) 1px, transparent 1px);
-    background-size: 50px 50px;
-    mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
-  }
-
   &__inner {
     display: grid;
     grid-template-columns: 1.1fr 0.9fr;
@@ -288,30 +251,6 @@
     }
   }
 
-  &__badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: linear-gradient(
-      135deg,
-      rgba($accent, 0.1),
-      rgba($accent-light, 0.1)
-    );
-    border: 1px solid rgba($accent, 0.2);
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
-    color: $accent-ink;
-    margin-bottom: 24px;
-    animation: fadeInUp 0.8s ease;
-  }
-
-  &__badge-icon {
-    font-size: 16px;
-    animation: float 3s ease-in-out infinite;
-  }
-
   &__title {
     font-size: clamp(36px, 6vw, 56px);
     line-height: 1.1;
@@ -319,13 +258,6 @@
     font-weight: 900;
     color: $ink;
     animation: fadeInUp 0.8s ease 0.1s backwards;
-  }
-
-  &__title-accent {
-    background: linear-gradient(135deg, $accent 0%, $accent-light 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
   }
 
   &__subtitle {
@@ -337,54 +269,11 @@
     animation: fadeInUp 0.8s ease 0.2s backwards;
   }
 
-  &__features {
-    display: flex;
-    gap: 24px;
-    animation: fadeInUp 0.8s ease 0.4s backwards;
-    flex-wrap: wrap;
-  }
-
-  &__feature {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: $muted;
-    font-size: 15px;
-  }
-
-  &__feature-icon {
-    color: $accent;
-    flex-shrink: 0;
-  }
-
   &__media {
     position: relative;
     border-radius: 24px;
     box-shadow: 0 20px 60px rgba($accent, 0.2);
     animation: fadeInUp 0.8s ease 0.2s backwards;
-
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 24px;
-      padding: 2px;
-      background: linear-gradient(135deg, $accent, $accent-light);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      z-index: 2;
-    }
-  }
-
-  &__media-glow {
-    position: absolute;
-    inset: -50%;
-    background: radial-gradient(circle, rgba($accent, 0.3), transparent 70%);
-    animation: float 4s ease-in-out infinite;
-    z-index: 0;
   }
 
   &__note {
@@ -393,13 +282,20 @@
     background: rgba($accent, 0.05);
     border-left: 3px solid $accent;
     border-radius: 8px;
-    color: $muted;
+    color: $ink;
     font-size: 14px;
     animation: fadeInUp 0.8s ease 0.5s backwards;
+
+    strong {
+      color: $accent-ink;
+      font-weight: 700;
+    }
   }
 }
 
-// Tabs
+// ========================================
+// TABS (Individual/Corporate)
+// ========================================
 .spx-pkg-tabs {
   display: inline-flex;
   background: #fff;
@@ -435,21 +331,128 @@
 }
 
 // ========================================
+// LESSON TYPE TOGGLE (One-on-One / Group)
+// ========================================
+.spx-pkg-lesson-toggle {
+  display: flex;
+  gap: 16px;
+  margin: 32px 0 24px;
+  animation: fadeInUp 0.8s ease 0.3s backwards;
+
+  @media (max-width: $bp-md) {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.spx-pkg-lesson-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: #fff;
+  border: 2px solid $border;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  &:hover {
+    border-color: $accent;
+    box-shadow: 0 4px 16px rgba($accent, 0.15);
+    transform: translateY(-2px);
+  }
+
+  &.is-active {
+    border-color: $accent;
+    background: linear-gradient(
+      135deg,
+      rgba($accent, 0.08),
+      rgba($accent-light, 0.08)
+    );
+    box-shadow: 0 4px 16px rgba($accent, 0.2);
+
+    .spx-pkg-lesson-icon {
+      transform: scale(1.1);
+    }
+
+    .spx-pkg-lesson-text strong {
+      color: $accent-ink;
+    }
+  }
+
+  @media (max-width: $bp-md) {
+    padding: 16px 20px;
+  }
+}
+
+.spx-pkg-lesson-icon {
+  font-size: 32px;
+  line-height: 1;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+
+  @media (max-width: $bp-md) {
+    font-size: 28px;
+  }
+}
+
+.spx-pkg-lesson-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+
+  strong {
+    font-size: 18px;
+    font-weight: 700;
+    color: $ink;
+    transition: color 0.3s ease;
+
+    @media (max-width: $bp-md) {
+      font-size: 16px;
+    }
+  }
+
+  small {
+    font-size: 13px;
+    color: $muted;
+    font-weight: 500;
+  }
+}
+
+// ========================================
+// PRICING SECTION
+// ========================================
+.spx-pkg-pricing-section {
+  position: relative;
+}
+
+// ========================================
 // PRICING GRID
 // ========================================
 .spx-pkg-grid {
   display: grid;
   gap: $space-7;
-  grid-template-columns: repeat(3, 1fr);
-  align-items: stretch; // Ensure all items stretch to same height
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: stretch;
+
+  @media (min-width: $bp-md) {
+    grid-template-columns: repeat(4, 1fr);
+  }
 
   @media (max-width: $bp-md) {
     grid-template-columns: 1fr;
   }
+
+  &--fade-in {
+    animation: fadeIn 0.6s ease;
+  }
 }
 
 // ========================================
-// PLAN CARD (FIXED VERSION)
+// PLAN CARD
 // ========================================
 .spx-pkg-card--plan {
   display: flex;
@@ -458,8 +461,8 @@
   padding: 0;
   position: relative;
   overflow: hidden;
-  height: 100%; // Force equal heights in grid
-  min-height: 680px; // Ensure consistent minimum height
+  height: 100%;
+  min-height: 680px;
 
   @media (max-width: $bp-md) {
     min-height: auto;
@@ -472,54 +475,41 @@
     .spx-pkg-media img {
       transform: scale(1.05);
     }
-
-    .spx-pkg-card__overlay {
-      opacity: 0.3;
-    }
   }
 
   &.is-popular {
-    border: 3px solid $accent; // Stronger border for emphasis
+    border: 3px solid $accent;
     box-shadow: 0 12px 40px rgba($accent, 0.25);
-    transform: scale(1.02); // Slightly larger to stand out
+    transform: scale(1.02);
     z-index: 2;
 
     @media (max-width: $bp-md) {
       transform: scale(1);
     }
 
-    .spx-pkg-badge {
-      position: absolute;
-      top: 200px; // Position below the illustration
-      right: 20px;
-      z-index: 3;
-      box-shadow: 0 4px 12px rgba($accent, 0.4);
+    &:hover {
+      transform: scale(1.02) translateY(-8px);
+
+      @media (max-width: $bp-md) {
+        transform: translateY(-8px);
+      }
     }
   }
 
   .spx-pkg-media {
     margin: 0;
     border-radius: 20px 20px 0 0;
-    aspect-ratio: 16 / 9; // Maintain consistent aspect ratio
-    height: 180px; // Fixed height for all cards
+    aspect-ratio: 16 / 9;
+    height: 180px;
     background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-    flex-shrink: 0; // Don't allow shrinking
+    flex-shrink: 0;
 
     img {
       width: 100%;
       height: 100%;
-      object-fit: contain; // Show full illustration without cropping
-      padding: 24px; // Breathing room around illustrations
+      object-fit: contain;
+      padding: 24px;
     }
-  }
-
-  &__overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, $accent, $accent-light);
-    opacity: 0.15;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
   }
 
   &__head {
@@ -531,8 +521,16 @@
     font-weight: 700;
     font-size: 24px;
     color: $ink;
-    margin: 0;
+    margin: 0 0 8px;
     line-height: 1.3;
+  }
+
+  &__sessions {
+    font-size: 14px;
+    font-weight: 600;
+    color: $accent;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   &__desc {
@@ -541,7 +539,7 @@
     padding: 0 28px;
     line-height: 1.6;
     font-size: 15px;
-    min-height: 48px; // Ensure consistent space for descriptions
+    min-height: 48px;
     flex-shrink: 0;
   }
 
@@ -563,13 +561,24 @@
     color: $muted;
     font-size: 14px;
     margin-top: 4px;
+    font-weight: 600;
+  }
+
+  &__duration {
+    color: $muted;
+    font-size: 13px;
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: $bg-soft;
+    border-radius: 8px;
+    display: inline-block;
   }
 
   &__bullets {
     margin: 0;
     padding: 0 28px 0 48px;
     color: $ink;
-    flex: 1; // Take up remaining space, pushing actions to bottom
+    flex: 1;
     font-size: 15px;
 
     li {
@@ -595,7 +604,7 @@
     padding: 28px;
     border-top: 1px solid $border;
     flex-wrap: wrap;
-    margin-top: auto; // Always stick to bottom
+    margin-top: auto;
     flex-shrink: 0;
 
     .spx-pkg-btn {
@@ -608,22 +617,38 @@
 }
 
 .spx-pkg-badge {
-  display: inline-block;
+  position: absolute;
+  top: 200px;
+  right: 20px;
+  z-index: 3;
   font-size: 12px;
   padding: 6px 12px;
   border-radius: 999px;
-  background: linear-gradient(
-    135deg,
-    rgba($accent, 0.15),
-    rgba($accent-light, 0.15)
-  );
-  color: $accent-ink;
+  background: linear-gradient(135deg, $accent, $accent-light);
+  color: #fff;
   font-weight: 700;
-  border: 1px solid rgba($accent, 0.3);
+  box-shadow: 0 4px 12px rgba($accent, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.spx-pkg-savings {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 3;
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #10b981;
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 // ========================================
-// ESTIMATOR (FIXED LAYOUT)
+// ESTIMATOR
 // ========================================
 .spx-pkg-estimator {
   &__row {
@@ -792,10 +817,6 @@
     }
   }
 
-  &__badge {
-    display: inline-flex;
-  }
-
   &__n {
     width: 48px;
     height: 48px;
@@ -809,10 +830,6 @@
     font-size: 20px;
     box-shadow: 0 4px 12px rgba($accent, 0.3);
     transition: all 0.4s ease;
-  }
-
-  &__body {
-    flex: 1;
   }
 
   &__title {
@@ -848,6 +865,7 @@
   &__subtitle {
     color: $muted;
     margin: 0;
+    font-size: 16px;
   }
 
   &__tablewrap {
@@ -895,16 +913,8 @@
     td.check {
       width: 120px;
       text-align: center;
-
-      .check-icon {
-        color: $accent;
-        display: inline-block;
-      }
-
-      .check-dash {
-        color: $border;
-        font-size: 20px;
-      }
+      font-size: 18px;
+      color: $accent;
     }
 
     .empty {
@@ -1017,57 +1027,6 @@
   background-size: 200% 200%;
   animation: gradient-shift 15s ease infinite;
 
-  &__background {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-  }
-
-  &__gradient {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      135deg,
-      $accent 0%,
-      $accent-ink 50%,
-      #0c4a6e 100%
-    );
-    background-size: 200% 200%;
-    animation: gradient-shift 15s ease infinite;
-  }
-
-  &__shapes {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-  }
-
-  &__shape {
-    position: absolute;
-    border-radius: 50%;
-    background: radial-gradient(
-      circle,
-      rgba(255, 255, 255, 0.1),
-      transparent 70%
-    );
-
-    &--1 {
-      width: 600px;
-      height: 600px;
-      top: -300px;
-      right: -200px;
-      animation: float 20s ease-in-out infinite;
-    }
-
-    &--2 {
-      width: 400px;
-      height: 400px;
-      bottom: -200px;
-      left: -100px;
-      animation: float 15s ease-in-out infinite reverse;
-    }
-  }
-
   &__inner {
     display: flex;
     flex-direction: column;
@@ -1079,25 +1038,9 @@
 
     h2 {
       margin: 0;
-      font-size: 36px;
+      font-size: clamp(28px, 5vw, 36px);
       font-weight: 900;
     }
-  }
-
-  &__content {
-    max-width: 600px;
-  }
-
-  &__title {
-    margin: 0 0 12px;
-    font-size: 36px;
-    font-weight: 900;
-  }
-
-  &__subtitle {
-    margin: 0;
-    font-size: 18px;
-    opacity: 0.95;
   }
 
   &__actions {
