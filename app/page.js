@@ -97,7 +97,7 @@ function Home() {
                 <div className="home-hero__stat-label">Coaching hours</div>
               </div>
               <div className="home-hero__stat">
-                <div className="home-hero__stat-num">2.6×</div>
+                <div className="home-hero__stat-num">2.7×</div>
                 <div className="home-hero__stat-label">Faster outcomes</div>
               </div>
             </div>
