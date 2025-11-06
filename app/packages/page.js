@@ -196,11 +196,7 @@ function Packages() {
             </p>
           </div>
 
-          <div
-            className={`spx-pkg-grid ${
-              tab === AUD.CORPORATE ? "spx-pkg-grid--3col" : ""
-            } spx-pkg-grid--fade-in`}
-          >
+          <div className="spx-pkg-grid spx-pkg-grid--fade-in">
             {plans.map((p, idx) => (
               <PricingCard
                 key={p.id || idx}
@@ -446,38 +442,36 @@ function PricingCard({ plan, audience, lessonType }) {
         <img src={image} alt="" loading="lazy" />
       </figure>
 
-      <div className="spx-pkg-card__content">
-        <div className="spx-pkg-card__head">
-          <div className="spx-pkg-card__title">{title}</div>
-          {sessionsPerPack && (
-            <div className="spx-pkg-card__sessions">
-              {sessionsPerPack} sessions
-            </div>
-          )}
-        </div>
-
-        {description && <p className="spx-pkg-card__desc">{description}</p>}
-
-        <div className="spx-pkg-card__price">
-          <div className="spx-pkg-card__value">{priceLabel}</div>
-          {perSessionPrice && (
-            <div className="spx-pkg-card__sub">${perSessionPrice}/session</div>
-          )}
-          {durationMin && !isCorp && (
-            <div className="spx-pkg-card__duration">
-              {durationMin} min/session
-            </div>
-          )}
-        </div>
-
-        {bullets.length > 0 && (
-          <ul className="spx-pkg-card__bullets">
-            {bullets.map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
+      <div className="spx-pkg-card__head">
+        <div className="spx-pkg-card__title">{title}</div>
+        {sessionsPerPack && (
+          <div className="spx-pkg-card__sessions">
+            {sessionsPerPack} sessions
+          </div>
         )}
       </div>
+
+      {description && <p className="spx-pkg-card__desc">{description}</p>}
+
+      <div className="spx-pkg-card__price">
+        <div className="spx-pkg-card__value">{priceLabel}</div>
+        {perSessionPrice && (
+          <div className="spx-pkg-card__sub">${perSessionPrice}/session</div>
+        )}
+        {durationMin && !isCorp && (
+          <div className="spx-pkg-card__duration">
+            {durationMin} min/session
+          </div>
+        )}
+      </div>
+
+      {bullets.length > 0 && (
+        <ul className="spx-pkg-card__bullets">
+          {bullets.map((b, i) => (
+            <li key={i}>{b}</li>
+          ))}
+        </ul>
+      )}
 
       <div className="spx-pkg-card__actions">
         {isCorp ? (
@@ -573,7 +567,7 @@ const oneOnOnePlans = [
     id: "1on1-24",
     title: "Intensive",
     description: "Accelerate your progress with deep practice",
-    priceUSD: 1248,
+    priceUSD: 1.248,
     durationMin: 60,
     sessionsPerPack: 24,
     priceType: "BUNDLE",
@@ -587,7 +581,7 @@ const oneOnOnePlans = [
     id: "1on1-48",
     title: "Master",
     description: "Maximum commitment for transformation",
-    priceUSD: 2304,
+    priceUSD: 2.304,
     durationMin: 60,
     sessionsPerPack: 48,
     priceType: "BUNDLE",
@@ -645,7 +639,7 @@ const groupPlans = [
     id: "group-48",
     title: "Group Master",
     description: "Complete transformation through group dynamics",
-    priceUSD: 1392,
+    priceUSD: 1.392,
     durationMin: 90,
     sessionsPerPack: 48,
     priceType: "BUNDLE",
