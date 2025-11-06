@@ -417,15 +417,15 @@ function PricingCard({ plan, audience, lessonType }) {
     savings,
   } = plan;
 
-  const bullets = parseFeatures(plan.featuresRaw || "").slice(0, 8);
+  const bullets = parseFeatures(plan.featuresRaw || "").slice(0, 6);
   const isCorp = audience === AUD.CORPORATE;
 
   const priceLabel = (() => {
     if (priceType === "CUSTOM" || (!priceUSD && !startingAtUSD))
-      return "Custom Pricing";
-    if (startingAtUSD && !priceUSD) return `From $${startingAtUSD}`;
+      return "Custom";
+    if (startingAtUSD && !priceUSD) return `$${startingAtUSD}`;
     if (typeof priceUSD === "number") return `$${priceUSD}`;
-    return "Custom Pricing";
+    return "Custom";
   })();
 
   const perSessionPrice =
@@ -439,39 +439,39 @@ function PricingCard({ plan, audience, lessonType }) {
         isPopular ? "is-popular" : ""
       }`}
     >
-      {isPopular && <div className="spx-pkg-badge">Most Popular</div>}
-      {savings && <div className="spx-pkg-savings">{savings}</div>}
+      {isPopular && <div className="spx-pkg-popular-badge">Most Popular</div>}
+      {savings && <div className="spx-pkg-savings-badge">{savings}</div>}
 
-      <figure className="spx-pkg-media spx-pkg-card__media">
+      <div className="spx-pkg-card__image">
         <img src={image} alt="" loading="lazy" />
-      </figure>
+      </div>
 
-      <div className="spx-pkg-card__content">
-        <div className="spx-pkg-card__head">
-          <div className="spx-pkg-card__title">{title}</div>
+      <div className="spx-pkg-card__body">
+        <div className="spx-pkg-card__header">
+          <h3 className="spx-pkg-card__title">{title}</h3>
           {sessionsPerPack && (
-            <div className="spx-pkg-card__sessions">
-              {sessionsPerPack} sessions
-            </div>
+            <span className="spx-pkg-card__meta">
+              {sessionsPerPack} {sessionsPerPack === 1 ? "session" : "sessions"}
+              {durationMin && !isCorp && <> · {durationMin} min</>}
+            </span>
           )}
         </div>
 
-        {description && <p className="spx-pkg-card__desc">{description}</p>}
+        {description && (
+          <p className="spx-pkg-card__description">{description}</p>
+        )}
 
-        <div className="spx-pkg-card__price">
-          <div className="spx-pkg-card__value">{priceLabel}</div>
+        <div className="spx-pkg-card__pricing">
+          <div className="spx-pkg-card__price">{priceLabel}</div>
           {perSessionPrice && (
-            <div className="spx-pkg-card__sub">${perSessionPrice}/session</div>
-          )}
-          {durationMin && !isCorp && (
-            <div className="spx-pkg-card__duration">
-              {durationMin} min/session
+            <div className="spx-pkg-card__price-detail">
+              ${perSessionPrice} per session
             </div>
           )}
         </div>
 
         {bullets.length > 0 && (
-          <ul className="spx-pkg-card__bullets">
+          <ul className="spx-pkg-card__features">
             {bullets.map((b, i) => (
               <li key={i}>{b}</li>
             ))}
@@ -479,16 +479,19 @@ function PricingCard({ plan, audience, lessonType }) {
         )}
       </div>
 
-      <div className="spx-pkg-card__actions">
+      <div className="spx-pkg-card__footer">
         {isCorp ? (
           <>
             <Link
               href="/corporate#rfp"
-              className="spx-pkg-btn spx-pkg-btn--primary"
+              className="spx-pkg-card__btn spx-pkg-card__btn--primary"
             >
               Contact Sales
             </Link>
-            <Link className="spx-pkg-btn spx-pkg-btn--ghost" href="/corporate">
+            <Link
+              href="/corporate"
+              className="spx-pkg-card__btn spx-pkg-card__btn--secondary"
+            >
               Learn More
             </Link>
           </>
@@ -496,13 +499,13 @@ function PricingCard({ plan, audience, lessonType }) {
           <>
             <Link
               href={`/checkout?plan=${encodeURIComponent(plan.title)}`}
-              className="spx-pkg-btn spx-pkg-btn--primary"
+              className="spx-pkg-card__btn spx-pkg-card__btn--primary"
             >
               Buy Now
             </Link>
             <Link
               href="/individual#trial"
-              className="spx-pkg-btn spx-pkg-btn--ghost"
+              className="spx-pkg-card__btn spx-pkg-card__btn--secondary"
             >
               Free Consultation
             </Link>
@@ -578,7 +581,7 @@ const oneOnOnePlans = [
     sessionsPerPack: 24,
     priceType: "BUNDLE",
     featuresRaw:
-      "Private 1:1 coaching\nPriority scheduling\nAdvanced curriculum\nWeekly progress calls\nMock interviews\nIndustry-specific content\nUnlimited email support",
+      "Private 1:1 coaching\nPriority scheduling\nAdvanced curriculum\nWeekly progress calls\nMock interviews\nIndustry-specific content",
     isPopular: false,
     savings: "Save 13%",
     image: "/images/company.avif",
@@ -592,7 +595,7 @@ const oneOnOnePlans = [
     sessionsPerPack: 48,
     priceType: "BUNDLE",
     featuresRaw:
-      "Private 1:1 coaching\nDedicated coach\nBi-weekly strategy sessions\nComprehensive assessments\nCareer coaching\nNetworking practice\nLifetime resource access\n24/7 support",
+      "Private 1:1 coaching\nDedicated coach\nBi-weekly strategy sessions\nComprehensive assessments\nCareer coaching\nNetworking practice",
     isPopular: false,
     savings: "Save 20%",
     image: "/images/company.avif",
@@ -636,7 +639,7 @@ const groupPlans = [
     sessionsPerPack: 24,
     priceType: "BUNDLE",
     featuresRaw:
-      "Small groups (2-5 learners)\nStable learning cohort\nReal-world simulations\nGroup projects\nPeer presentations\nProgress tracking\nExtended resources",
+      "Small groups (2-5 learners)\nStable learning cohort\nReal-world simulations\nGroup projects\nPeer presentations\nProgress tracking",
     isPopular: false,
     savings: "Save 20%",
     image: "/images/company.avif",
@@ -650,7 +653,7 @@ const groupPlans = [
     sessionsPerPack: 48,
     priceType: "BUNDLE",
     featuresRaw:
-      "Small groups (2-5 learners)\nDedicated cohort\nAdvanced workshops\nGuest speaker sessions\nCommunity access\nCertificate of completion\nLifetime alumni network\nOngoing support",
+      "Small groups (2-5 learners)\nDedicated cohort\nAdvanced workshops\nGuest speaker sessions\nCommunity access\nCertificate of completion",
     isPopular: false,
     savings: "Save 28%",
     image: "/images/company.avif",
@@ -665,7 +668,7 @@ const corporatePlans = [
     priceType: "CUSTOM",
     startingAtUSD: null,
     featuresRaw:
-      "5-15 employees\nMixed 1:1 and group format\nNeeds assessment\n8-12 week program\nKickoff workshop\nEnd-of-program report\nManager briefings",
+      "5-15 employees\nMixed 1:1 and group format\nNeeds assessment\n8-12 week program\nKickoff workshop\nEnd-of-program report",
     isPopular: false,
     image: "/images/pilot.avif",
   },
@@ -676,7 +679,7 @@ const corporatePlans = [
     priceType: "CUSTOM",
     startingAtUSD: null,
     featuresRaw:
-      "15-50 employees\nFlexible delivery formats\nCustom curriculum design\nQuarterly assessments\nDedicated program manager\nMonthly reporting dashboard\nInvoicing & PO support\nSSO integration",
+      "15-50 employees\nFlexible delivery formats\nCustom curriculum design\nQuarterly assessments\nDedicated program manager\nMonthly reporting dashboard",
     isPopular: true,
     image: "/images/team.avif",
   },
@@ -687,7 +690,7 @@ const corporatePlans = [
     priceType: "CUSTOM",
     startingAtUSD: null,
     featuresRaw:
-      "50+ employees\nMulti-location rollout\nDedicated Customer Success Manager\nExecutive dashboards\nAPI integration\nSecurity & compliance review\nCustom reporting\nQuarterly business reviews\n24/7 support\nROI analysis",
+      "50+ employees\nMulti-location rollout\nDedicated CSM\nExecutive dashboards\nAPI integration\nSecurity & compliance review",
     isPopular: false,
     image: "/images/company.avif",
   },
