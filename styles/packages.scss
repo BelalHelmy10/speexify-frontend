@@ -110,17 +110,19 @@
   &-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 12px 24px;
-    border-radius: 12px;
+    padding: 10px 20px;
+    border-radius: 10px;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 14px;
     text-decoration: none;
     border: none;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    white-space: nowrap;
 
     &:active {
       transform: translateY(1px);
@@ -446,6 +448,15 @@
     grid-template-columns: 1fr;
   }
 
+  // 3-column grid for corporate (centered)
+  &--3col {
+    @media (min-width: $bp-md) {
+      grid-template-columns: repeat(3, 1fr);
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+  }
+
   &--fade-in {
     animation: fadeIn 0.6s ease;
   }
@@ -457,7 +468,6 @@
 .spx-pkg-card--plan {
   display: flex;
   flex-direction: column;
-  gap: 20px;
   padding: 0;
   position: relative;
   overflow: hidden;
@@ -512,8 +522,16 @@
     }
   }
 
+  // New wrapper for all content with padding
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    flex: 1;
+  }
+
   &__head {
-    padding: 24px 28px 0;
     flex-shrink: 0;
   }
 
@@ -536,7 +554,6 @@
   &__desc {
     color: $muted;
     margin: 0;
-    padding: 0 28px;
     line-height: 1.6;
     font-size: 15px;
     min-height: 48px;
@@ -544,7 +561,6 @@
   }
 
   &__price {
-    padding: 0 28px;
     margin: 8px 0;
     flex-shrink: 0;
   }
@@ -576,21 +592,21 @@
 
   &__bullets {
     margin: 0;
-    padding: 0 28px 0 48px;
+    padding: 0 0 0 24px;
     color: $ink;
     flex: 1;
     font-size: 15px;
+    list-style: none;
 
     li {
       margin: 10px 0;
       line-height: 1.6;
       position: relative;
-      list-style: none;
 
       &::before {
         content: "✓";
         position: absolute;
-        left: -20px;
+        left: -24px;
         color: $accent;
         font-weight: 700;
         font-size: 16px;
@@ -601,7 +617,7 @@
   &__actions {
     display: flex;
     gap: 10px;
-    padding: 28px;
+    padding: 20px 24px;
     border-top: 1px solid $border;
     flex-wrap: wrap;
     margin-top: auto;
@@ -609,9 +625,7 @@
 
     .spx-pkg-btn {
       flex: 1;
-      justify-content: center;
-      min-width: 140px;
-      font-size: 14px;
+      min-width: 120px;
     }
   }
 }
@@ -621,7 +635,7 @@
   top: 200px;
   right: 20px;
   z-index: 3;
-  font-size: 12px;
+  font-size: 11px;
   padding: 6px 12px;
   border-radius: 999px;
   background: linear-gradient(135deg, $accent, $accent-light);
@@ -629,6 +643,8 @@
   font-weight: 700;
   box-shadow: 0 4px 12px rgba($accent, 0.4);
   animation: pulse 2s ease-in-out infinite;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .spx-pkg-savings {
