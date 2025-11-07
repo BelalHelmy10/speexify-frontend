@@ -1,69 +1,90 @@
 @use "variables" as *;
-// ========================================
-// VARIABLES
-// ========================================
 
-// ========================================
-// ANIMATIONS
-// ========================================
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* -------------------------------------------------------
+   SPACING SYSTEM (rem-based, consistent vertical rhythm)
+   Scale: 2xs:0.25  xs:0.5  sm:0.75  md:1.0  lg:1.5  xl:2.0  2xl:3.0
+--------------------------------------------------------*/
+:root {
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  --radius-lg: 1.25rem; // 20px
+  --radius-md: 0.75rem; // 12px
+
+  --container-max: 72rem; // 1152px
+  --container-pad: 1.25rem; // 20px
 }
 
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-15px);
-  }
+/* Simple stack utilities to control vertical spacing without extra wrappers */
+.stack-2xs > * + * {
+  margin-top: var(--space-2xs);
+}
+.stack-xs > * + * {
+  margin-top: var(--space-xs);
+}
+.stack-sm > * + * {
+  margin-top: var(--space-sm);
+}
+.stack-md > * + * {
+  margin-top: var(--space-md);
+}
+.stack-lg > * + * {
+  margin-top: var(--space-lg);
+}
+.row-gap-xs {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-@keyframes shine {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(200%);
-  }
+/* Sections share consistent top/bottom rhythm */
+.section {
+  padding-block: var(--space-2xl);
+}
+.section--tight {
+  padding-block: var(--space-xl);
 }
 
-// ========================================
-// BASE
-// ========================================
+/* ---------------------------------------
+   BASE LAYOUT
+----------------------------------------*/
 .contact {
   overflow-x: hidden;
 
   .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 $space-6;
+    max-width: var(--container-max);
+    margin-inline: auto;
+    padding-inline: var(--container-pad);
   }
 }
 
-// ========================================
-// BUTTONS
-// ========================================
+/* ---------------------------------------
+   BUTTONS
+----------------------------------------*/
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border-radius: 12px;
+  gap: var(--space-xs);
+  padding: 0.75rem 1.25rem; // 12px 20px
+  border-radius: var(--radius-md);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 0.9375rem; // 15px
   text-decoration: none;
   border: none;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease,
+    border-color 0.2s ease;
   position: relative;
   overflow: hidden;
 
@@ -78,11 +99,10 @@
       $color-primary-ink 100%
     );
     color: #fff;
-    box-shadow: 0 4px 12px rgba($color-primary, 0.3);
-
+    box-shadow: 0 4px 12px rgba($color-primary, 0.25);
     &:hover {
-      box-shadow: 0 6px 20px rgba($color-primary, 0.4);
-      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba($color-primary, 0.35);
+      transform: translateY(-1px);
       text-decoration: none;
     }
   }
@@ -91,60 +111,48 @@
     background: transparent;
     color: $color-primary;
     border: 2px solid $color-primary;
-
     &:hover {
-      background: rgba($color-primary, 0.1);
+      background: rgba($color-primary, 0.08);
       border-color: $color-primary-ink;
       text-decoration: none;
     }
   }
 
   &--social {
-    padding: 8px 16px;
-    font-size: 14px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
   }
 
-  &--shine {
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 50%;
-      height: 100%;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.3),
-        transparent
-      );
-      animation: shine 3s infinite;
-    }
+  &--shine::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.25),
+      transparent
+    );
+    animation: shine 3s infinite;
   }
 
   &__arrow {
-    transition: transform 0.3s ease;
+    transition: transform 0.2s ease;
   }
-
   &:hover &__arrow {
     transform: translateX(4px);
   }
 }
 
-// ========================================
-// HERO
-// ========================================
+/* ---------------------------------------
+   HERO
+----------------------------------------*/
 .contact-hero {
-  padding: 100px 0 80px;
   position: relative;
-  min-height: 75vh;
+  min-height: 70vh;
   display: flex;
   align-items: center;
-
-  @media (max-width: $bp-md) {
-    padding: 60px 0 40px;
-    min-height: auto;
-  }
 
   &__background {
     position: absolute;
@@ -152,7 +160,6 @@
     z-index: 0;
     overflow: hidden;
   }
-
   &__gradient {
     position: absolute;
     inset: 0;
@@ -163,7 +170,6 @@
       ),
       linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
   }
-
   &__pattern {
     position: absolute;
     inset: 0;
@@ -177,7 +183,7 @@
   }
 
   &__content {
-    max-width: 800px;
+    max-width: 48rem;
     position: relative;
     z-index: 1;
   }
@@ -185,8 +191,8 @@
   &__badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
+    gap: var(--space-xs);
+    padding: 0.5rem 0.875rem;
     background: linear-gradient(
       135deg,
       rgba($color-primary, 0.1),
@@ -194,24 +200,23 @@
     );
     border: 1px solid rgba($color-primary, 0.2);
     border-radius: 999px;
-    font-size: 13px;
+    font-size: 0.8125rem;
     font-weight: 600;
     color: $color-primary-ink;
-    margin-bottom: 24px;
-    animation: fadeInUp 0.8s ease;
+    animation: fadeInUp 0.6s ease both;
   }
 
   &__badge-icon {
-    font-size: 16px;
+    font-size: 1rem;
   }
 
   &__title {
-    font-size: clamp(36px, 6vw, 56px);
+    font-size: clamp(2.25rem, 6vw, 3.5rem);
     line-height: 1.1;
-    margin: 0 0 24px;
+    margin: 0;
     font-weight: 900;
     color: $color-black;
-    animation: fadeInUp 0.8s ease 0.1s backwards;
+    animation: fadeInUp 0.6s ease 0.05s both;
 
     &-accent {
       background: linear-gradient(
@@ -222,67 +227,56 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      margin-left: 0.25ch;
     }
   }
 
   &__subtitle {
-    font-size: 19px;
-    line-height: 1.6;
+    font-size: 1.125rem;
+    line-height: 1.65;
     color: $color-muted;
-    margin: 0 0 32px;
-    max-width: 540px;
-    animation: fadeInUp 0.8s ease 0.2s backwards;
+    max-width: 36rem;
+    margin: 0;
+    animation: fadeInUp 0.6s ease 0.1s both;
   }
 
   &__actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    animation: fadeInUp 0.8s ease 0.3s backwards;
+    animation: fadeInUp 0.6s ease 0.15s both;
   }
 }
 
-// ========================================
-// CONTACT GRID
-// ========================================
+/* ---------------------------------------
+   GRID (Form + Sidebar)
+----------------------------------------*/
 .contact-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: $space-7;
-  margin: $space-10 auto;
+  grid-template-columns: minmax(0, 1fr) 22.5rem; // 360px
+  gap: var(--space-xl);
 
   @media (max-width: $bp-md) {
     grid-template-columns: 1fr;
   }
 }
 
-// ========================================
-// FORM
-// ========================================
-.contact-form {
-  form {
-    margin-top: $space-6;
-  }
-}
-
+/* ---------------------------------------
+   CARDS & FORM
+----------------------------------------*/
 .card {
   background: $color-white;
   border: 1px solid $color-border;
-  border-radius: 20px;
-  padding: $space-7;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 
   &__header {
-    margin-bottom: $space-6;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-sm);
   }
-
   &__icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.75rem;
     background: linear-gradient(
       135deg,
       rgba($color-primary, 0.1),
@@ -293,25 +287,26 @@
     color: $color-primary;
     flex-shrink: 0;
   }
-
   &__title {
     margin: 0;
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: 700;
   }
-
   &__subtitle {
     color: $color-muted;
-    margin: 4px 0 0;
-    font-size: 15px;
+    margin: 0;
+    font-size: 0.9375rem;
   }
+}
+
+.contact-form form {
+  margin: 0;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: $space-6;
-  margin-bottom: $space-6;
+  gap: var(--space-lg);
 
   @media (max-width: $bp-sm) {
     grid-template-columns: 1fr;
@@ -319,7 +314,6 @@
 
   &--3 {
     grid-template-columns: 1fr 1fr 1fr;
-
     @media (max-width: $bp-md) {
       grid-template-columns: 1fr;
     }
@@ -329,32 +323,31 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-xs);
 }
 
 .label {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.875rem;
   color: $color-black;
 }
 
 .input,
 .select,
 .textarea {
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   border: 2px solid $color-border;
-  border-radius: 12px;
-  font-size: 15px;
-  outline: none;
-  transition: all 0.3s ease;
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
   background: $color-white;
   font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &:focus {
     border-color: $color-primary;
     box-shadow: 0 0 0 3px rgba($color-primary, 0.15);
   }
-
   &::placeholder {
     color: $color-muted;
   }
@@ -365,26 +358,26 @@
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 16px center;
-  padding-right: 40px;
+  background-position: right 1rem center;
+  padding-right: 2.25rem;
 }
 
 .textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 8rem;
   line-height: 1.6;
 }
 
 .checkbox {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--space-sm);
   cursor: pointer;
-  margin-top: $space-6;
+  margin-top: var(--space-sm);
 
   input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+    width: 1.125rem;
+    height: 1.125rem;
     cursor: pointer;
     accent-color: $color-primary;
     flex-shrink: 0;
@@ -392,7 +385,7 @@
   }
 
   span {
-    font-size: 14px;
+    font-size: 0.875rem;
     color: $color-muted;
     line-height: 1.5;
   }
@@ -402,7 +395,6 @@
   color: $color-primary;
   text-decoration: none;
   font-weight: 600;
-
   &:hover {
     text-decoration: underline;
   }
@@ -411,32 +403,31 @@
 .actions {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: $space-6;
+  gap: var(--space-sm);
   flex-wrap: wrap;
+  margin-top: var(--space-sm);
 }
 
 .form-status {
   color: $color-primary-ink;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
-// ========================================
-// SIDEBAR
-// ========================================
+/* ---------------------------------------
+   SIDEBAR
+----------------------------------------*/
 .contact-sidebar {
   display: flex;
   flex-direction: column;
-  gap: $space-6;
+  gap: var(--space-lg);
 }
 
 .contact-card {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba($color-primary, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba($color-primary, 0.14);
   }
 }
 
@@ -445,12 +436,11 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 16px;
+  gap: var(--space-sm);
 
   li {
-    padding-bottom: 16px;
+    padding-bottom: var(--space-sm);
     border-bottom: 1px solid $color-border;
-
     &:last-child {
       border-bottom: none;
       padding-bottom: 0;
@@ -459,18 +449,18 @@
 
   &__title {
     font-weight: 600;
-    margin-bottom: 6px;
+    margin-bottom: 0.25rem;
     color: $color-black;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 }
 
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 16px;
-  padding: 8px 12px;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  padding: 0.5rem 0.75rem;
   border-radius: 999px;
   background: linear-gradient(
     135deg,
@@ -479,9 +469,8 @@
   );
   border: 1px solid rgba($color-primary, 0.2);
   color: $color-primary-ink;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
-
   svg {
     color: $color-primary;
   }
@@ -489,15 +478,14 @@
 
 .kvs {
   display: grid;
-  gap: 16px;
+  gap: var(--space-sm);
 
   > div {
     display: flex;
     justify-content: space-between;
     color: $color-black;
-    padding-bottom: 12px;
+    padding-bottom: 0.75rem;
     border-bottom: 1px solid $color-border;
-
     &:last-child {
       border-bottom: none;
       padding-bottom: 0;
@@ -507,9 +495,8 @@
   span {
     color: $color-muted;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
-
   strong {
     font-weight: 700;
   }
@@ -517,18 +504,17 @@
 
 .social {
   display: flex;
-  gap: 8px;
+  gap: var(--space-xs);
   flex-wrap: wrap;
 }
 
-// ========================================
-// LANES
-// ========================================
+/* ---------------------------------------
+   LANES
+----------------------------------------*/
 .lanes {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: $space-6;
-  margin: $space-10 auto;
+  gap: var(--space-lg);
 
   @media (max-width: $bp-md) {
     grid-template-columns: 1fr;
@@ -538,53 +524,49 @@
 .lane {
   background: $color-white;
   border: 1px solid $color-border;
-  border-radius: 20px;
-  padding: $space-7;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba($color-primary, 0.15);
-    border-color: rgba($color-primary, 0.3);
-
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba($color-primary, 0.14);
+    border-color: rgba($color-primary, 0.28);
     .lane__icon {
-      transform: scale(1.1);
+      transform: scale(1.06);
     }
   }
 
   &__icon {
-    font-size: 32px;
-    margin-bottom: 16px;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
     display: inline-block;
-    transition: transform 0.4s ease;
+    transition: transform 0.2s ease;
   }
 
   h3 {
-    margin: 0 0 12px;
-    font-size: 20px;
+    margin: 0 0 0.25rem;
+    font-size: 1.25rem;
     font-weight: 700;
   }
-
   p {
     color: $color-muted;
-    margin: 0 0 16px;
+    margin: 0;
     line-height: 1.6;
   }
 }
 
-// ========================================
-// MAP
-// ========================================
+/* ---------------------------------------
+   MAP
+----------------------------------------*/
 .contact-map {
   background: $color-surface;
-  padding: $space-10 0;
-  border-top: 1px solid $color-border;
-  border-bottom: 1px solid $color-border;
+  border-block: 1px solid $color-border;
 
   &__inner {
     display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: $space-7;
+    grid-template-columns: 22.5rem 1fr;
+    gap: var(--space-xl);
 
     @media (max-width: $bp-md) {
       grid-template-columns: 1fr;
@@ -593,40 +575,34 @@
 
   &__panel {
     h3 {
-      font-size: 20px;
+      font-size: 1.25rem;
       font-weight: 700;
-      margin-bottom: 16px;
+      margin: 0;
     }
-
     p {
       color: $color-muted;
-      margin-bottom: 20px;
+      margin: 0;
       line-height: 1.6;
     }
   }
 
   &__canvas {
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
   }
 }
 
 .map-placeholder {
-  height: 320px;
-  border-radius: 20px;
+  height: 20rem;
+  border-radius: var(--radius-lg);
   border: 2px dashed $color-border;
   background: $color-white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+  gap: var(--space-sm);
   color: $color-muted;
-
+  text-align: center;
   svg {
     opacity: 0.5;
   }
-
   span {
     font-weight: 600;
   }
@@ -637,15 +613,13 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 12px;
-
+  gap: var(--space-sm);
   li {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-sm);
     color: $color-black;
     font-weight: 600;
-
     svg {
       color: $color-primary;
       flex-shrink: 0;
@@ -653,16 +627,16 @@
   }
 }
 
-// ========================================
-// FAQ
-// ========================================
+/* ---------------------------------------
+   FAQ
+----------------------------------------*/
 .faq {
-  margin: $space-10 auto;
-  max-width: 900px;
+  max-width: 56.25rem; // 900px
+  margin-inline: auto;
 
   &__title {
-    margin-bottom: $space-7;
-    font-size: clamp(28px, 4vw, 40px);
+    margin: 0 0 var(--space-lg);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
     font-weight: 800;
     text-align: center;
     background: linear-gradient(
@@ -678,25 +652,23 @@
 
 .accordion {
   display: grid;
-  gap: 16px;
+  gap: var(--space-sm);
 
   &__item {
     background: $color-white;
     border: 1px solid $color-border;
-    border-radius: 16px;
+    border-radius: 1rem;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
     &:hover {
-      border-color: rgba($color-primary, 0.3);
+      border-color: rgba($color-primary, 0.28);
       box-shadow: 0 4px 12px rgba($color-primary, 0.1);
     }
 
-    &[open] {
-      .accordion__q::after {
-        transform: rotate(-135deg);
-        margin-top: -4px;
-      }
+    &[open] .accordion__q::after {
+      transform: rotate(-135deg);
+      margin-top: -4px;
     }
 
     summary {
@@ -712,13 +684,13 @@
     text-align: left;
     background: transparent;
     border: none;
-    padding: 20px;
+    padding: 1rem 1.25rem;
     font-weight: 700;
-    font-size: 17px;
+    font-size: 1.0625rem;
     color: $color-black;
     cursor: pointer;
     position: relative;
-    transition: color 0.3s ease;
+    transition: color 0.2s ease;
     display: block;
 
     &:hover {
@@ -728,7 +700,7 @@
     &::after {
       content: "";
       position: absolute;
-      right: 20px;
+      right: 1.25rem;
       top: 50%;
       width: 12px;
       height: 12px;
@@ -736,24 +708,42 @@
       border-right: 2px solid $color-primary;
       border-bottom: 2px solid $color-primary;
       transform: rotate(45deg);
-      transition: all 0.3s ease;
+      transition: transform 0.2s ease;
     }
   }
 
   &__a {
-    padding: 0 20px 20px;
+    padding: 0 1.25rem 1rem;
     color: $color-muted;
-    line-height: 1.6;
-
+    line-height: 1.7;
     p {
       margin: 0;
     }
   }
 }
 
-// ========================================
-// RESPONSIVE
-// ========================================
+/* ---------------------------------------
+   ANIMATIONS & REDUCED MOTION
+----------------------------------------*/
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes shine {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(120%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
