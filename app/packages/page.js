@@ -650,6 +650,17 @@ const corporatePlans = [
       "50+ employees\nMulti-location rollout\nDedicated Customer Success Manager\nExecutive dashboards\nAPI integration\nSecurity & compliance review\nCustom reporting\nQuarterly business reviews\n24/7 support\nROI analysis",
     isPopular: false,
   },
+  {
+    id: "global-enterprise",
+    title: "Global Enterprise",
+    description:
+      "Worldwide language training with enterprise-grade scalability",
+    priceType: "CUSTOM",
+    startingAtUSD: null,
+    featuresRaw:
+      "100+ employees\nGlobal multi-region deployment\n24/7 multilingual support\nDedicated Enterprise Success Director\nAdvanced analytics & insights\nCustom integrations (HRIS, LMS, SSO)\nRegulatory & data compliance (GDPR, SOC2)\nROI & performance benchmarking\nAnnual strategic partnership review\nTailored executive workshops",
+    isPopular: false,
+  },
 ];
 
 export default Packages;
