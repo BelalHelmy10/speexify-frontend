@@ -12,7 +12,7 @@
   background: rgba(255, 255, 255, 0.95);
   /* removed backdrop-filter */
   padding: 16px 0;
-  transition: background-color 0.3s ease, padding 0.2s ease;
+  transition: background-color 0.3s ease;
   width: 100%;
 
   &::before {
@@ -31,7 +31,7 @@
   &.spx-is-scrolled {
     background: #fff;
     /* removed backdrop-filter */
-    padding: 10px 0;
+
     /* simplified shadow */
     box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
   }
@@ -76,9 +76,9 @@
   }
 
   .spx-is-scrolled & {
-    padding: 14px 24px;
-    min-height: 60px;
     box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    transform: scale(0.98);
+    transform-origin: top center;
   }
 }
 
