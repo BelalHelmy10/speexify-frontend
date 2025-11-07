@@ -399,7 +399,7 @@ function Packages() {
 }
 
 /* Components */
-function PricingCard({ plan, audience, lessonType }) {
+function PricingCard({ plan, audience }) {
   const {
     title,
     description,
@@ -409,18 +409,19 @@ function PricingCard({ plan, audience, lessonType }) {
     isPopular,
     sessionsPerPack,
     durationMin,
-    image,
     savings,
   } = plan;
 
   const bullets = parseFeatures(plan.featuresRaw || "").slice(0, 8);
   const isCorp = audience === AUD.CORPORATE;
 
-  const priceLabel = (() => {
+  const totalLabel = (() => {
     if (priceType === "CUSTOM" || (!priceUSD && !startingAtUSD))
       return "Custom Pricing";
-    if (startingAtUSD && !priceUSD) return `From $${startingAtUSD}`;
-    if (typeof priceUSD === "number") return `$${priceUSD}`;
+    if (startingAtUSD && !priceUSD)
+      return `From $${Number(startingAtUSD).toLocaleString()}`;
+    if (typeof priceUSD === "number")
+      return `$${Number(priceUSD).toLocaleString()}`;
     return "Custom Pricing";
   })();
 
@@ -435,12 +436,10 @@ function PricingCard({ plan, audience, lessonType }) {
         isPopular ? "is-popular" : ""
       }`}
     >
-      {isPopular && <div className="spx-pkg-badge">Most Popular</div>}
-      {savings && <div className="spx-pkg-savings">{savings}</div>}
-
-      <figure className="spx-pkg-media spx-pkg-card__media">
-        <img src={image} alt="" loading="lazy" />
-      </figure>
+      {isPopular && <div className="spx-pkg-badge">MOST POPULAR</div>}
+      {savings && (
+        <div className="spx-pkg-savings">{savings.toUpperCase()}</div>
+      )}
 
       <div className="spx-pkg-card__head">
         <div className="spx-pkg-card__title">{title}</div>
@@ -454,7 +453,7 @@ function PricingCard({ plan, audience, lessonType }) {
       {description && <p className="spx-pkg-card__desc">{description}</p>}
 
       <div className="spx-pkg-card__price">
-        <div className="spx-pkg-card__value">{priceLabel}</div>
+        <div className="spx-pkg-card__value">{totalLabel}</div>
         {perSessionPrice && (
           <div className="spx-pkg-card__sub">${perSessionPrice}/session</div>
         )}
@@ -488,6 +487,7 @@ function PricingCard({ plan, audience, lessonType }) {
           </>
         ) : (
           <>
+            {/* KEEPING YOUR PAYMENT LINK + LABEL */}
             <Link
               href={`/checkout?plan=${encodeURIComponent(plan.title)}`}
               className="spx-pkg-btn spx-pkg-btn--primary"
@@ -534,7 +534,7 @@ function Faq({ q, a }) {
   );
 }
 
-/* Plan Data */
+/* Plan Data (fixed decimals to integers where needed) */
 const oneOnOnePlans = [
   {
     id: "1on1-4",
@@ -547,7 +547,6 @@ const oneOnOnePlans = [
     featuresRaw:
       "Private 1:1 coaching\nFlexible scheduling\nPersonalized curriculum\nSession recordings\nEmail support",
     isPopular: false,
-    image: "/images/pilot.avif",
   },
   {
     id: "1on1-12",
@@ -561,13 +560,12 @@ const oneOnOnePlans = [
       "Private 1:1 coaching\nPriority scheduling\nCustom learning plan\nDetailed progress reports\nHomework & resources\nPronunciation analysis",
     isPopular: true,
     savings: "Save 8%",
-    image: "/images/team.avif",
   },
   {
     id: "1on1-24",
     title: "Intensive",
     description: "Accelerate your progress with deep practice",
-    priceUSD: 1.248,
+    priceUSD: 1248, // was 1.248
     durationMin: 60,
     sessionsPerPack: 24,
     priceType: "BUNDLE",
@@ -575,13 +573,12 @@ const oneOnOnePlans = [
       "Private 1:1 coaching\nPriority scheduling\nAdvanced curriculum\nWeekly progress calls\nMock interviews\nIndustry-specific content\nUnlimited email support",
     isPopular: false,
     savings: "Save 13%",
-    image: "/images/company.avif",
   },
   {
     id: "1on1-48",
     title: "Master",
     description: "Maximum commitment for transformation",
-    priceUSD: 2.304,
+    priceUSD: 2304, // was 2.304
     durationMin: 60,
     sessionsPerPack: 48,
     priceType: "BUNDLE",
@@ -589,7 +586,6 @@ const oneOnOnePlans = [
       "Private 1:1 coaching\nDedicated coach\nBi-weekly strategy sessions\nComprehensive assessments\nCareer coaching\nNetworking practice\nLifetime resource access\n24/7 support",
     isPopular: false,
     savings: "Save 20%",
-    image: "/images/company.avif",
   },
 ];
 
@@ -605,7 +601,6 @@ const groupPlans = [
     featuresRaw:
       "Small groups (2-5 learners)\nLevel-matched peers\nInteractive exercises\nGroup activities\nShared resources",
     isPopular: false,
-    image: "/images/pilot.avif",
   },
   {
     id: "group-12",
@@ -619,7 +614,6 @@ const groupPlans = [
       "Small groups (2-5 learners)\nCarefully matched groups\nRole-play scenarios\nPeer feedback sessions\nMonthly assessments\nDigital workbook",
     isPopular: true,
     savings: "Save 13%",
-    image: "/images/team.avif",
   },
   {
     id: "group-24",
@@ -633,13 +627,12 @@ const groupPlans = [
       "Small groups (2-5 learners)\nStable learning cohort\nReal-world simulations\nGroup projects\nPeer presentations\nProgress tracking\nExtended resources",
     isPopular: false,
     savings: "Save 20%",
-    image: "/images/company.avif",
   },
   {
     id: "group-48",
     title: "Group Master",
     description: "Complete transformation through group dynamics",
-    priceUSD: 1.392,
+    priceUSD: 1392, // was 1.392
     durationMin: 90,
     sessionsPerPack: 48,
     priceType: "BUNDLE",
@@ -647,7 +640,6 @@ const groupPlans = [
       "Small groups (2-5 learners)\nDedicated cohort\nAdvanced workshops\nGuest speaker sessions\nCommunity access\nCertificate of completion\nLifetime alumni network\nOngoing support",
     isPopular: false,
     savings: "Save 28%",
-    image: "/images/company.avif",
   },
 ];
 
@@ -661,7 +653,6 @@ const corporatePlans = [
     featuresRaw:
       "5-15 employees\nMixed 1:1 and group format\nNeeds assessment\n8-12 week program\nKickoff workshop\nEnd-of-program report\nManager briefings",
     isPopular: false,
-    image: "/images/pilot.avif",
   },
   {
     id: "corp-team",
@@ -672,7 +663,6 @@ const corporatePlans = [
     featuresRaw:
       "15-50 employees\nFlexible delivery formats\nCustom curriculum design\nQuarterly assessments\nDedicated program manager\nMonthly reporting dashboard\nInvoicing & PO support\nSSO integration",
     isPopular: true,
-    image: "/images/team.avif",
   },
   {
     id: "corp-enterprise",
@@ -683,7 +673,6 @@ const corporatePlans = [
     featuresRaw:
       "50+ employees\nMulti-location rollout\nDedicated Customer Success Manager\nExecutive dashboards\nAPI integration\nSecurity & compliance review\nCustom reporting\nQuarterly business reviews\n24/7 support\nROI analysis",
     isPopular: false,
-    image: "/images/company.avif",
   },
 ];
 
