@@ -42,16 +42,6 @@
   }
 }
 
-@keyframes gradient-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
 @keyframes pulse {
   0%,
   100% {
@@ -65,7 +55,7 @@
 // ========================================
 // BASE
 // ========================================
-.spx-pkg {
+.ecp {
   box-sizing: border-box;
   overflow-x: hidden;
   color: $ink;
@@ -89,7 +79,7 @@
 
   &__container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1300px;
     margin: 0 auto;
     padding: 0 $space-6;
   }
@@ -104,7 +94,8 @@
     padding: $space-7;
     box-shadow: 0 4px 16px rgba(14, 21, 47, 0.08),
       0 8px 32px rgba(14, 21, 47, 0.06);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   &-btn {
@@ -118,7 +109,10 @@
     text-decoration: none;
     border: none;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
 
@@ -195,7 +189,7 @@
 // ========================================
 // SECTION HEADERS
 // ========================================
-.spx-pkg-section-header {
+.ecp-section-header {
   text-align: center;
   margin-bottom: $space-9;
 
@@ -204,7 +198,7 @@
   }
 }
 
-.spx-pkg-section-title {
+.ecp-section-title {
   margin: 0 0 12px;
   font-size: clamp(28px, 4vw, 40px);
   font-weight: 800;
@@ -214,10 +208,9 @@
   background-clip: text;
 }
 
-.spx-pkg-section-subtitle {
+.ecp-section-subtitle {
   font-size: 18px;
   color: $muted;
-  margin: 0;
   max-width: 600px;
   margin: 0 auto;
 }
@@ -225,7 +218,7 @@
 // ========================================
 // HERO
 // ========================================
-.spx-pkg-hero {
+.ecp-hero {
   padding: 100px 0 80px;
   position: relative;
   min-height: 85vh;
@@ -296,7 +289,7 @@
 // ========================================
 // TABS (Individual/Corporate)
 // ========================================
-.spx-pkg-tabs {
+.ecp-tabs {
   display: inline-flex;
   background: #fff;
   border: 2px solid $border;
@@ -307,7 +300,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.spx-pkg-tab {
+.ecp-tab {
   border: 0;
   background: transparent;
   padding: 10px 20px;
@@ -316,7 +309,7 @@
   cursor: pointer;
   font-weight: 600;
   font-size: 15px;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
 
   &:hover {
     color: $ink;
@@ -333,7 +326,7 @@
 // ========================================
 // LESSON TYPE TOGGLE (One-on-One / Group)
 // ========================================
-.spx-pkg-lesson-toggle {
+.ecp-lesson-toggle {
   display: flex;
   gap: 16px;
   margin: 32px 0 24px;
@@ -345,7 +338,7 @@
   }
 }
 
-.spx-pkg-lesson-btn {
+.ecp-lesson-btn {
   flex: 1;
   display: flex;
   align-items: center;
@@ -355,7 +348,10 @@
   border: 2px solid $border;
   border-radius: 16px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
   &:hover {
@@ -373,11 +369,11 @@
     );
     box-shadow: 0 4px 16px rgba($accent, 0.2);
 
-    .spx-pkg-lesson-icon {
+    .ecp-lesson-icon {
       transform: scale(1.1);
     }
 
-    .spx-pkg-lesson-text strong {
+    .ecp-lesson-text strong {
       color: $accent-ink;
     }
   }
@@ -387,7 +383,7 @@
   }
 }
 
-.spx-pkg-lesson-icon {
+.ecp-lesson-icon {
   font-size: 32px;
   line-height: 1;
   transition: transform 0.3s ease;
@@ -398,7 +394,7 @@
   }
 }
 
-.spx-pkg-lesson-text {
+.ecp-lesson-text {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -425,14 +421,14 @@
 // ========================================
 // PRICING SECTION
 // ========================================
-.spx-pkg-pricing-section {
+.ecp-pricing-section {
   position: relative;
 }
 
 // ========================================
 // PRICING GRID
 // ========================================
-.spx-pkg-grid {
+.ecp-grid {
   display: grid;
   gap: $space-7;
   grid-template-columns: repeat(4, 1fr);
@@ -447,32 +443,42 @@
 }
 
 // ========================================
-// PLAN CARD (updated to match screenshot)
+// PLAN CARD
 // ========================================
-.spx-pkg-card--plan {
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  padding: 28px;
-  border-radius: 22px;
-  background: #fff;
+.ecp-card {
+  background: $bg;
   border: 1px solid $border;
-  box-shadow: 0 4px 16px rgba(14, 21, 47, 0.06);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  min-height: 560px;
+  border-radius: 20px;
+  padding: $space-7;
+  box-shadow: 0 4px 16px rgba(14, 21, 47, 0.08),
+    0 8px 32px rgba(14, 21, 47, 0.06);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
-  @media (max-width: $bp-md) {
-    min-height: auto;
-  }
+  &--plan {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: 28px;
+    border-radius: 22px;
+    background: #fff;
+    border: 1px solid $border;
+    box-shadow: 0 4px 16px rgba(14, 21, 47, 0.06);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 
-  &:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 28px rgba(14, 21, 47, 0.12);
-  }
+    @media (max-width: $bp-md) {
+      min-height: auto;
+    }
 
-  &.is-popular {
-    border: 2px solid $accent;
-    box-shadow: 0 16px 34px rgba($accent, 0.18);
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 28px rgba(14, 21, 47, 0.12);
+    }
+
+    &.is-popular {
+      border: 2px solid $accent;
+      box-shadow: 0 16px 34px rgba($accent, 0.18);
+    }
   }
 
   /* header */
@@ -482,7 +488,7 @@
 
   &__title {
     font-weight: 800;
-    font-size: 26px;
+    font-size: 24px;
     line-height: 1.25;
     color: $ink;
     margin: 0 0 6px;
@@ -568,7 +574,7 @@
     margin-top: 18px;
     flex-wrap: wrap;
 
-    .spx-pkg-btn {
+    .ecp-btn {
       flex: 1;
       justify-content: center;
       min-width: 140px;
@@ -578,7 +584,7 @@
 }
 
 /* pill: MOST POPULAR (centered top) */
-.spx-pkg-badge {
+.ecp-badge {
   position: absolute;
   top: -12px;
   left: 50%;
@@ -595,7 +601,7 @@
 }
 
 /* pill: SAVE XX% (green top-right) */
-.spx-pkg-savings {
+.ecp-savings {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -613,7 +619,7 @@
 // ========================================
 // ESTIMATOR
 // ========================================
-.spx-pkg-estimator {
+.ecp-estimator {
   &__row {
     display: grid;
     gap: $space-7;
@@ -721,12 +727,12 @@
 // ========================================
 // HOW IT WORKS
 // ========================================
-.spx-pkg-how {
+.ecp-how {
   background: linear-gradient(135deg, #f9fafb 0%, #fff 100%);
   padding: $space-10 0;
 }
 
-.spx-pkg-grid-steps {
+.ecp-grid-steps {
   display: grid;
   gap: $space-6;
   grid-template-columns: repeat(3, 1fr);
@@ -757,12 +763,14 @@
   }
 }
 
-.spx-pkg-step {
+.ecp-step {
   background: #fff;
   border: 1px solid $border;
   border-radius: 20px;
   padding: $space-7;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 1;
   display: flex;
@@ -774,7 +782,7 @@
     box-shadow: 0 20px 40px rgba($accent, 0.15);
     border-color: rgba($accent, 0.3);
 
-    .spx-pkg-step__n {
+    .ecp-step__n {
       transform: scale(1.1);
       background: linear-gradient(135deg, $accent, $accent-light);
     }
@@ -792,7 +800,7 @@
     font-weight: 800;
     font-size: 20px;
     box-shadow: 0 4px 12px rgba($accent, 0.3);
-    transition: all 0.4s ease;
+    transition: transform 0.4s ease, background 0.4s ease;
   }
 
   &__title {
@@ -812,7 +820,7 @@
 // ========================================
 // COMPARISON TABLE
 // ========================================
-.spx-pkg-compare {
+.ecp-compare {
   &__header {
     text-align: center;
     margin-bottom: $space-8;
@@ -891,7 +899,7 @@
 // ========================================
 // FAQ
 // ========================================
-.spx-pkg-faq {
+.ecp-faq {
   &__title {
     text-align: center;
     margin: 0 0 $space-8;
@@ -912,7 +920,7 @@
     border: 1px solid $border;
     border-radius: 16px;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 
     &:hover {
       border-color: rgba($accent, 0.3);
@@ -920,11 +928,11 @@
     }
 
     &.is-open {
-      .spx-pkg-faq__icon {
+      .ecp-faq__icon {
         transform: rotate(45deg);
       }
 
-      .spx-pkg-faq__a {
+      .ecp-faq__a {
         max-height: 500px;
         padding: 0 20px 20px;
         opacity: 1;
@@ -968,14 +976,14 @@
     max-height: 0;
     overflow: hidden;
     opacity: 0;
-    transition: all 0.3s ease;
+    transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
   }
 }
 
 // ========================================
 // CTA
 // ========================================
-.spx-pkg-cta {
+.ecp-cta {
   padding: 80px 0;
   position: relative;
   overflow: hidden;
@@ -988,7 +996,6 @@
     #0c4a6e 100%
   );
   background-size: 200% 200%;
-  animation: gradient-shift 15s ease infinite;
 
   &__inner {
     display: flex;
@@ -1013,7 +1020,7 @@
     justify-content: center;
   }
 
-  .spx-pkg-btn--primary {
+  .ecp-btn--primary {
     background: #fff;
     color: $accent;
 
@@ -1023,7 +1030,7 @@
     }
   }
 
-  .spx-pkg-btn--ghost {
+  .ecp-btn--ghost {
     color: #fff;
     border-color: rgba(255, 255, 255, 0.5);
 

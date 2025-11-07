@@ -65,24 +65,22 @@ function Packages() {
   }, [seats]);
 
   return (
-    <div className="spx-pkg">
+    <div className="ecp">
       {/* HERO */}
-      <section className="spx-pkg__section spx-pkg-hero">
-        <div className="spx-pkg__container spx-pkg-hero__inner">
-          <div className="spx-pkg-hero__copy">
-            <h1 className="spx-pkg-hero__title">
-              Professional English Coaching
-            </h1>
-            <p className="spx-pkg-hero__subtitle">
+      <section className="ecp__section ecp-hero">
+        <div className="ecp__container ecp-hero__inner">
+          <div className="ecp-hero__copy">
+            <h1 className="ecp-hero__title">Professional English Coaching</h1>
+            <p className="ecp-hero__subtitle">
               Choose the format that works for you—private one-on-one sessions
               or collaborative group learning. Flexible plans, real results.
             </p>
 
-            <div className="spx-pkg-tabs" role="tablist" aria-label="Audience">
+            <div className="ecp-tabs" role="tablist" aria-label="Audience">
               <button
                 role="tab"
                 aria-selected={tab === AUD.INDIVIDUAL}
-                className={`spx-pkg-tab ${
+                className={`ecp-tab ${
                   tab === AUD.INDIVIDUAL ? "is-active" : ""
                 }`}
                 onClick={() => setTab(AUD.INDIVIDUAL)}
@@ -92,7 +90,7 @@ function Packages() {
               <button
                 role="tab"
                 aria-selected={tab === AUD.CORPORATE}
-                className={`spx-pkg-tab ${
+                className={`ecp-tab ${
                   tab === AUD.CORPORATE ? "is-active" : ""
                 }`}
                 onClick={() => setTab(AUD.CORPORATE)}
@@ -102,27 +100,27 @@ function Packages() {
             </div>
 
             {tab === AUD.INDIVIDUAL && (
-              <div className="spx-pkg-lesson-toggle">
+              <div className="ecp-lesson-toggle">
                 <button
-                  className={`spx-pkg-lesson-btn ${
+                  className={`ecp-lesson-btn ${
                     lessonType === LESSON_TYPE.ONE_ON_ONE ? "is-active" : ""
                   }`}
                   onClick={() => setLessonType(LESSON_TYPE.ONE_ON_ONE)}
                 >
-                  <span className="spx-pkg-lesson-icon">👤</span>
-                  <span className="spx-pkg-lesson-text">
+                  <span className="ecp-lesson-icon">👤</span>
+                  <span className="ecp-lesson-text">
                     <strong>One-on-One</strong>
                     <small>Private sessions</small>
                   </span>
                 </button>
                 <button
-                  className={`spx-pkg-lesson-btn ${
+                  className={`ecp-lesson-btn ${
                     lessonType === LESSON_TYPE.GROUP ? "is-active" : ""
                   }`}
                   onClick={() => setLessonType(LESSON_TYPE.GROUP)}
                 >
-                  <span className="spx-pkg-lesson-icon">👥</span>
-                  <span className="spx-pkg-lesson-text">
+                  <span className="ecp-lesson-icon">👥</span>
+                  <span className="ecp-lesson-text">
                     <strong>Group</strong>
                     <small>2-5 learners</small>
                   </span>
@@ -131,7 +129,7 @@ function Packages() {
             )}
 
             {tab === AUD.INDIVIDUAL ? (
-              <div className="spx-pkg-hero__note">
+              <div className="ecp-hero__note">
                 {lessonType === LESSON_TYPE.ONE_ON_ONE ? (
                   <>
                     <strong>60-minute sessions</strong> · Personalized coaching
@@ -145,14 +143,14 @@ function Packages() {
                 )}
               </div>
             ) : (
-              <div className="spx-pkg-hero__note">
+              <div className="ecp-hero__note">
                 Custom programs · Progress reporting · Enterprise billing ·
                 Dedicated support
               </div>
             )}
           </div>
 
-          <figure className="spx-pkg-media spx-pkg-hero__media">
+          <figure className="ecp-media ecp-hero__media">
             <img
               src="/images/english-coaching-in-action.avif"
               alt="English coaching in action"
@@ -164,39 +162,39 @@ function Packages() {
 
       {/* STATUS */}
       {loading && (
-        <section className="spx-pkg__section">
-          <div className="spx-pkg__container">
-            <div className="spx-pkg-status">Loading packages…</div>
+        <section className="ecp__section">
+          <div className="ecp__container">
+            <div className="ecp-status">Loading packages…</div>
           </div>
         </section>
       )}
       {!loading && err && (
-        <section className="spx-pkg__section">
-          <div className="spx-pkg__container">
-            <div className="spx-pkg-status spx-pkg-status--warn">{err}</div>
+        <section className="ecp__section">
+          <div className="ecp__container">
+            <div className="ecp-status ecp-status--warn">{err}</div>
           </div>
         </section>
       )}
 
       {/* PRICING GRID */}
-      <section className="spx-pkg__section spx-pkg-pricing-section">
-        <div className="spx-pkg__container">
-          <div className="spx-pkg-section-header">
-            <h2 className="spx-pkg-section-title">
+      <section className="ecp__section ecp-pricing-section">
+        <div className="ecp__container">
+          <div className="ecp-section-header">
+            <h2 className="ecp-section-title">
               {tab === AUD.INDIVIDUAL
                 ? lessonType === LESSON_TYPE.ONE_ON_ONE
                   ? "One-on-One Packages"
                   : "Group Learning Packages"
                 : "Enterprise Solutions"}
             </h2>
-            <p className="spx-pkg-section-subtitle">
+            <p className="ecp-section-subtitle">
               {tab === AUD.INDIVIDUAL
                 ? "Choose the package that fits your learning goals and schedule"
                 : "Scalable language training for teams of all sizes"}
             </p>
           </div>
 
-          <div className="spx-pkg-grid spx-pkg-grid--fade-in">
+          <div className="ecp-grid ecp-grid--fade-in">
             {plans.map((p, idx) => (
               <PricingCard
                 key={p.id || idx}
@@ -211,17 +209,17 @@ function Packages() {
 
       {/* CORPORATE SEATS ESTIMATOR */}
       {tab === AUD.CORPORATE && (
-        <section className="spx-pkg__section spx-pkg-estimator">
-          <div className="spx-pkg__container spx-pkg-card spx-pkg-estimator__row">
-            <div className="spx-pkg-estimator__copy">
-              <h3 className="spx-pkg-estimator__title">Budget Estimator</h3>
-              <p className="spx-pkg-estimator__p">
+        <section className="ecp__section ecp-estimator">
+          <div className="ecp__container ecp-card ecp-estimator__row">
+            <div className="ecp-estimator__copy">
+              <h3 className="ecp-estimator__title">Budget Estimator</h3>
+              <p className="ecp-estimator__p">
                 Get a rough estimate for your team size. Final pricing depends
                 on program format, duration, and custom requirements.
               </p>
             </div>
-            <div className="spx-pkg-estimator__control">
-              <label className="spx-pkg-label" htmlFor="seats">
+            <div className="ecp-estimator__control">
+              <label className="ecp-label" htmlFor="seats">
                 Team Size
               </label>
               <input
@@ -233,20 +231,17 @@ function Packages() {
                 value={seats}
                 onChange={(e) => setSeats(Number(e.target.value))}
               />
-              <div className="spx-pkg-estimator__value">{seats} employees</div>
+              <div className="ecp-estimator__value">{seats} employees</div>
             </div>
-            <div className="spx-pkg-estimator__result">
-              <div className="spx-pkg-estimator__number">
+            <div className="ecp-estimator__result">
+              <div className="ecp-estimator__number">
                 ~${corpEstimate.toLocaleString()}/mo
               </div>
-              <Link
-                href="/corporate#rfp"
-                className="spx-pkg-btn spx-pkg-btn--primary"
-              >
+              <Link href="/corporate#rfp" className="ecp-btn ecp-btn--primary">
                 Get Custom Quote
               </Link>
             </div>
-            <div className="spx-pkg-estimator__disclaimer">
+            <div className="ecp-estimator__disclaimer">
               This is an indicative estimate only. Actual pricing varies based
               on program scope, duration, and delivery format.
             </div>
@@ -255,15 +250,15 @@ function Packages() {
       )}
 
       {/* HOW IT WORKS */}
-      <section className="spx-pkg__section spx-pkg-how">
-        <div className="spx-pkg__container">
-          <div className="spx-pkg-section-header">
-            <h2 className="spx-pkg-section-title">How It Works</h2>
-            <p className="spx-pkg-section-subtitle">
+      <section className="ecp__section ecp-how">
+        <div className="ecp__container">
+          <div className="ecp-section-header">
+            <h2 className="ecp-section-title">How It Works</h2>
+            <p className="ecp-section-subtitle">
               Get started in three simple steps
             </p>
           </div>
-          <div className="spx-pkg-grid-steps">
+          <div className="ecp-grid-steps">
             <Step
               n="1"
               title="Choose Your Plan"
@@ -284,16 +279,16 @@ function Packages() {
       </section>
 
       {/* FEATURE COMPARISON */}
-      <section className="spx-pkg__section">
-        <div className="spx-pkg__container spx-pkg-compare spx-pkg-card">
-          <div className="spx-pkg-compare__header">
-            <h2 className="spx-pkg-compare__title">What's Included</h2>
-            <p className="spx-pkg-compare__subtitle">
+      <section className="ecp__section">
+        <div className="ecp__container ecp-compare ecp-card">
+          <div className="ecp-compare__header">
+            <h2 className="ecp-compare__title">What's Included</h2>
+            <p className="ecp-compare__subtitle">
               Compare features across all packages
             </p>
           </div>
-          <div className="spx-pkg-compare__tablewrap">
-            <table className="spx-pkg-compare__table">
+          <div className="ecp-compare__tablewrap">
+            <table className="ecp-compare__table">
               <thead>
                 <tr>
                   <th>Features</th>
@@ -329,10 +324,10 @@ function Packages() {
       </section>
 
       {/* FAQ */}
-      <section className="spx-pkg__section spx-pkg-faq">
-        <div className="spx-pkg__container spx-pkg-card">
-          <h2 className="spx-pkg-faq__title">Frequently Asked Questions</h2>
-          <div className="spx-pkg-faq__list">
+      <section className="ecp__section ecp-faq">
+        <div className="ecp__container ecp-card">
+          <h2 className="ecp-faq__title">Frequently Asked Questions</h2>
+          <div className="ecp-faq__list">
             <Faq
               q="Can I switch between One-on-One and Group lessons?"
               a="Yes! You can switch formats between billing periods. Contact us and we'll help you transition smoothly."
@@ -358,34 +353,34 @@ function Packages() {
       </section>
 
       {/* CTA STRIP */}
-      <section className="spx-pkg__section spx-pkg-cta">
-        <div className="spx-pkg__container spx-pkg-cta__inner">
+      <section className="ecp__section ecp-cta">
+        <div className="ecp__container ecp-cta__inner">
           <h2>Ready to Start Your English Journey?</h2>
           {tab === AUD.INDIVIDUAL ? (
-            <div className="spx-pkg-cta__actions">
+            <div className="ecp-cta__actions">
               <Link
-                className="spx-pkg-btn spx-pkg-btn--primary spx-pkg-btn--lg"
+                className="ecp-btn ecp-btn--primary ecp-btn--lg"
                 href="/individual#trial"
               >
                 Book Free Consultation
               </Link>
               <Link
-                className="spx-pkg-btn spx-pkg-btn--ghost spx-pkg-btn--lg"
+                className="ecp-btn ecp-btn--ghost ecp-btn--lg"
                 href="/packages"
               >
                 View All Plans
               </Link>
             </div>
           ) : (
-            <div className="spx-pkg-cta__actions">
+            <div className="ecp-cta__actions">
               <Link
                 href="/corporate#rfp"
-                className="spx-pkg-btn spx-pkg-btn--primary spx-pkg-btn--lg"
+                className="ecp-btn ecp-btn--primary ecp-btn--lg"
               >
                 Request Proposal
               </Link>
               <Link
-                className="spx-pkg-btn spx-pkg-btn--ghost spx-pkg-btn--lg"
+                className="ecp-btn ecp-btn--ghost ecp-btn--lg"
                 href="/corporate"
               >
                 Learn About Corporate Programs
@@ -431,57 +426,44 @@ function PricingCard({ plan, audience }) {
       : null;
 
   return (
-    <div
-      className={`spx-pkg-card spx-pkg-card--plan ${
-        isPopular ? "is-popular" : ""
-      }`}
-    >
-      {isPopular && <div className="spx-pkg-badge">MOST POPULAR</div>}
-      {savings && (
-        <div className="spx-pkg-savings">{savings.toUpperCase()}</div>
-      )}
+    <div className={`ecp-card ecp-card--plan ${isPopular ? "is-popular" : ""}`}>
+      {isPopular && <div className="ecp-badge">MOST POPULAR</div>}
+      {savings && <div className="ecp-savings">{savings.toUpperCase()}</div>}
 
-      <div className="spx-pkg-card__head">
-        <div className="spx-pkg-card__title">{title}</div>
+      <div className="ecp-card__head">
+        <div className="ecp-card__title">{title}</div>
         {sessionsPerPack && (
-          <div className="spx-pkg-card__sessions">
-            {sessionsPerPack} sessions
-          </div>
+          <div className="ecp-card__sessions">{sessionsPerPack} sessions</div>
         )}
       </div>
 
-      {description && <p className="spx-pkg-card__desc">{description}</p>}
+      {description && <p className="ecp-card__desc">{description}</p>}
 
-      <div className="spx-pkg-card__price">
-        <div className="spx-pkg-card__value">{totalLabel}</div>
+      <div className="ecp-card__price">
+        <div className="ecp-card__value">{totalLabel}</div>
         {perSessionPrice && (
-          <div className="spx-pkg-card__sub">${perSessionPrice}/session</div>
+          <div className="ecp-card__sub">${perSessionPrice}/session</div>
         )}
         {durationMin && !isCorp && (
-          <div className="spx-pkg-card__duration">
-            {durationMin} min/session
-          </div>
+          <div className="ecp-card__duration">{durationMin} min/session</div>
         )}
       </div>
 
       {bullets.length > 0 && (
-        <ul className="spx-pkg-card__bullets">
+        <ul className="ecp-card__bullets">
           {bullets.map((b, i) => (
             <li key={i}>{b}</li>
           ))}
         </ul>
       )}
 
-      <div className="spx-pkg-card__actions">
+      <div className="ecp-card__actions">
         {isCorp ? (
           <>
-            <Link
-              href="/corporate#rfp"
-              className="spx-pkg-btn spx-pkg-btn--primary"
-            >
+            <Link href="/corporate#rfp" className="ecp-btn ecp-btn--primary">
               Contact Sales
             </Link>
-            <Link className="spx-pkg-btn spx-pkg-btn--ghost" href="/corporate">
+            <Link className="ecp-btn ecp-btn--ghost" href="/corporate">
               Learn More
             </Link>
           </>
@@ -490,15 +472,9 @@ function PricingCard({ plan, audience }) {
             {/* KEEPING YOUR PAYMENT LINK + LABEL */}
             <Link
               href={`/checkout?plan=${encodeURIComponent(plan.title)}`}
-              className="spx-pkg-btn spx-pkg-btn--primary"
+              className="ecp-btn ecp-btn--primary"
             >
               Buy Now
-            </Link>
-            <Link
-              href="/individual#trial"
-              className="spx-pkg-btn spx-pkg-btn--ghost"
-            >
-              Free Consultation
             </Link>
           </>
         )}
@@ -509,10 +485,10 @@ function PricingCard({ plan, audience }) {
 
 function Step({ n, title, desc }) {
   return (
-    <div className="spx-pkg-step spx-pkg-card">
-      <div className="spx-pkg-step__n">{n}</div>
-      <div className="spx-pkg-step__title">{title}</div>
-      <div className="spx-pkg-step__desc">{desc}</div>
+    <div className="ecp-step ecp-card">
+      <div className="ecp-step__n">{n}</div>
+      <div className="ecp-step__title">{title}</div>
+      <div className="ecp-step__desc">{desc}</div>
     </div>
   );
 }
@@ -520,16 +496,16 @@ function Step({ n, title, desc }) {
 function Faq({ q, a }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className={`spx-pkg-faq__item ${open ? "is-open" : ""}`}>
+    <div className={`ecp-faq__item ${open ? "is-open" : ""}`}>
       <button
-        className="spx-pkg-faq__q"
+        className="ecp-faq__q"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
         {q}
-        <span className="spx-pkg-faq__icon">{open ? "−" : "+"}</span>
+        <span className="ecp-faq__icon">{open ? "−" : "+"}</span>
       </button>
-      <div className="spx-pkg-faq__a">{a}</div>
+      <div className="ecp-faq__a">{a}</div>
     </div>
   );
 }
@@ -565,7 +541,7 @@ const oneOnOnePlans = [
     id: "1on1-24",
     title: "Intensive",
     description: "Accelerate your progress with deep practice",
-    priceUSD: 1248, // was 1.248
+    priceUSD: 1248,
     durationMin: 60,
     sessionsPerPack: 24,
     priceType: "BUNDLE",
@@ -578,7 +554,7 @@ const oneOnOnePlans = [
     id: "1on1-48",
     title: "Master",
     description: "Maximum commitment for transformation",
-    priceUSD: 2304, // was 2.304
+    priceUSD: 2304,
     durationMin: 60,
     sessionsPerPack: 48,
     priceType: "BUNDLE",
@@ -632,7 +608,7 @@ const groupPlans = [
     id: "group-48",
     title: "Group Master",
     description: "Complete transformation through group dynamics",
-    priceUSD: 1392, // was 1.392
+    priceUSD: 1392,
     durationMin: 90,
     sessionsPerPack: 48,
     priceType: "BUNDLE",
