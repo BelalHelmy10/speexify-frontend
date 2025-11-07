@@ -409,6 +409,7 @@ function PricingCard({ plan, audience, lessonType }) {
     isPopular,
     sessionsPerPack,
     durationMin,
+    image,
     savings,
   } = plan;
 
@@ -437,77 +438,51 @@ function PricingCard({ plan, audience, lessonType }) {
       {isPopular && <div className="spx-pkg-badge">Most Popular</div>}
       {savings && <div className="spx-pkg-savings">{savings}</div>}
 
-      <div className="spx-pkg-card__content">
-        <div className="spx-pkg-card__head">
-          <div className="spx-pkg-card__title">{title}</div>
-          <p className="spx-pkg-card__desc">{description}</p>
-        </div>
+      <figure className="spx-pkg-media spx-pkg-card__media">
+        <img src={image} alt="" loading="lazy" />
+      </figure>
 
-        <div className="spx-pkg-card__sessions-wrapper">
-          {sessionsPerPack && (
-            <div className="spx-pkg-card__sessions-count">
-              <span className="spx-pkg-card__sessions-number">
-                {sessionsPerPack}
-              </span>
-              <span className="spx-pkg-card__sessions-label">sessions</span>
-            </div>
-          )}
-          {durationMin && !isCorp && (
-            <div className="spx-pkg-card__duration">
-              {durationMin} min/session
-            </div>
-          )}
-        </div>
-
-        <div className="spx-pkg-card__price">
-          <div className="spx-pkg-card__value">{priceLabel}</div>
-          {perSessionPrice && (
-            <div className="spx-pkg-card__sub">
-              <span className="spx-pkg-card__per-session">
-                ${perSessionPrice}
-              </span>
-              <span className="spx-pkg-card__per-session-label">
-                per session
-              </span>
-            </div>
-          )}
-        </div>
-
-        {bullets.length > 0 && (
-          <ul className="spx-pkg-card__bullets">
-            {bullets.map((b, i) => (
-              <li key={i}>
-                <svg
-                  className="spx-pkg-card__check-icon"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>{b}</span>
-              </li>
-            ))}
-          </ul>
+      <div className="spx-pkg-card__head">
+        <div className="spx-pkg-card__title">{title}</div>
+        {sessionsPerPack && (
+          <div className="spx-pkg-card__sessions">
+            {sessionsPerPack} sessions
+          </div>
         )}
       </div>
+
+      {description && <p className="spx-pkg-card__desc">{description}</p>}
+
+      <div className="spx-pkg-card__price">
+        <div className="spx-pkg-card__value">{priceLabel}</div>
+        {perSessionPrice && (
+          <div className="spx-pkg-card__sub">${perSessionPrice}/session</div>
+        )}
+        {durationMin && !isCorp && (
+          <div className="spx-pkg-card__duration">
+            {durationMin} min/session
+          </div>
+        )}
+      </div>
+
+      {bullets.length > 0 && (
+        <ul className="spx-pkg-card__bullets">
+          {bullets.map((b, i) => (
+            <li key={i}>{b}</li>
+          ))}
+        </ul>
+      )}
 
       <div className="spx-pkg-card__actions">
         {isCorp ? (
           <>
             <Link
               href="/corporate#rfp"
-              className="spx-pkg-btn spx-pkg-btn--primary spx-pkg-btn--full"
+              className="spx-pkg-btn spx-pkg-btn--primary"
             >
               Contact Sales
             </Link>
-            <Link
-              className="spx-pkg-btn spx-pkg-btn--ghost spx-pkg-btn--full"
-              href="/corporate"
-            >
+            <Link className="spx-pkg-btn spx-pkg-btn--ghost" href="/corporate">
               Learn More
             </Link>
           </>
@@ -515,13 +490,13 @@ function PricingCard({ plan, audience, lessonType }) {
           <>
             <Link
               href={`/checkout?plan=${encodeURIComponent(plan.title)}`}
-              className="spx-pkg-btn spx-pkg-btn--primary spx-pkg-btn--full"
+              className="spx-pkg-btn spx-pkg-btn--primary"
             >
               Buy Now
             </Link>
             <Link
               href="/individual#trial"
-              className="spx-pkg-btn spx-pkg-btn--ghost spx-pkg-btn--full"
+              className="spx-pkg-btn spx-pkg-btn--ghost"
             >
               Free Consultation
             </Link>
@@ -572,6 +547,7 @@ const oneOnOnePlans = [
     featuresRaw:
       "Private 1:1 coaching\nFlexible scheduling\nPersonalized curriculum\nSession recordings\nEmail support",
     isPopular: false,
+    image: "/images/pilot.avif",
   },
   {
     id: "1on1-12",
@@ -585,12 +561,13 @@ const oneOnOnePlans = [
       "Private 1:1 coaching\nPriority scheduling\nCustom learning plan\nDetailed progress reports\nHomework & resources\nPronunciation analysis",
     isPopular: true,
     savings: "Save 8%",
+    image: "/images/team.avif",
   },
   {
     id: "1on1-24",
     title: "Intensive",
     description: "Accelerate your progress with deep practice",
-    priceUSD: 1248,
+    priceUSD: 1.248,
     durationMin: 60,
     sessionsPerPack: 24,
     priceType: "BUNDLE",
@@ -598,12 +575,13 @@ const oneOnOnePlans = [
       "Private 1:1 coaching\nPriority scheduling\nAdvanced curriculum\nWeekly progress calls\nMock interviews\nIndustry-specific content\nUnlimited email support",
     isPopular: false,
     savings: "Save 13%",
+    image: "/images/company.avif",
   },
   {
     id: "1on1-48",
     title: "Master",
     description: "Maximum commitment for transformation",
-    priceUSD: 2304,
+    priceUSD: 2.304,
     durationMin: 60,
     sessionsPerPack: 48,
     priceType: "BUNDLE",
@@ -611,6 +589,7 @@ const oneOnOnePlans = [
       "Private 1:1 coaching\nDedicated coach\nBi-weekly strategy sessions\nComprehensive assessments\nCareer coaching\nNetworking practice\nLifetime resource access\n24/7 support",
     isPopular: false,
     savings: "Save 20%",
+    image: "/images/company.avif",
   },
 ];
 
@@ -626,6 +605,7 @@ const groupPlans = [
     featuresRaw:
       "Small groups (2-5 learners)\nLevel-matched peers\nInteractive exercises\nGroup activities\nShared resources",
     isPopular: false,
+    image: "/images/pilot.avif",
   },
   {
     id: "group-12",
@@ -639,6 +619,7 @@ const groupPlans = [
       "Small groups (2-5 learners)\nCarefully matched groups\nRole-play scenarios\nPeer feedback sessions\nMonthly assessments\nDigital workbook",
     isPopular: true,
     savings: "Save 13%",
+    image: "/images/team.avif",
   },
   {
     id: "group-24",
@@ -652,12 +633,13 @@ const groupPlans = [
       "Small groups (2-5 learners)\nStable learning cohort\nReal-world simulations\nGroup projects\nPeer presentations\nProgress tracking\nExtended resources",
     isPopular: false,
     savings: "Save 20%",
+    image: "/images/company.avif",
   },
   {
     id: "group-48",
     title: "Group Master",
     description: "Complete transformation through group dynamics",
-    priceUSD: 1392,
+    priceUSD: 1.392,
     durationMin: 90,
     sessionsPerPack: 48,
     priceType: "BUNDLE",
@@ -665,6 +647,7 @@ const groupPlans = [
       "Small groups (2-5 learners)\nDedicated cohort\nAdvanced workshops\nGuest speaker sessions\nCommunity access\nCertificate of completion\nLifetime alumni network\nOngoing support",
     isPopular: false,
     savings: "Save 28%",
+    image: "/images/company.avif",
   },
 ];
 
@@ -678,6 +661,7 @@ const corporatePlans = [
     featuresRaw:
       "5-15 employees\nMixed 1:1 and group format\nNeeds assessment\n8-12 week program\nKickoff workshop\nEnd-of-program report\nManager briefings",
     isPopular: false,
+    image: "/images/pilot.avif",
   },
   {
     id: "corp-team",
@@ -688,6 +672,7 @@ const corporatePlans = [
     featuresRaw:
       "15-50 employees\nFlexible delivery formats\nCustom curriculum design\nQuarterly assessments\nDedicated program manager\nMonthly reporting dashboard\nInvoicing & PO support\nSSO integration",
     isPopular: true,
+    image: "/images/team.avif",
   },
   {
     id: "corp-enterprise",
@@ -698,6 +683,7 @@ const corporatePlans = [
     featuresRaw:
       "50+ employees\nMulti-location rollout\nDedicated Customer Success Manager\nExecutive dashboards\nAPI integration\nSecurity & compliance review\nCustom reporting\nQuarterly business reviews\n24/7 support\nROI analysis",
     isPopular: false,
+    image: "/images/company.avif",
   },
 ];
 

@@ -110,7 +110,6 @@
   &-btn {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
     padding: 12px 24px;
     border-radius: 12px;
@@ -154,10 +153,6 @@
     &--lg {
       padding: 14px 28px;
       font-size: 16px;
-    }
-
-    &--full {
-      width: 100%;
     }
   }
 
@@ -457,17 +452,17 @@
 }
 
 // ========================================
-// REDESIGNED PLAN CARD (MODERN & CLEAN)
+// PLAN CARD
 // ========================================
 .spx-pkg-card--plan {
   display: flex;
   flex-direction: column;
+  gap: 20px;
   padding: 0;
   position: relative;
   overflow: hidden;
   height: 100%;
-  min-height: 620px;
-  background: #fff;
+  min-height: 680px;
 
   @media (max-width: $bp-md) {
     min-height: auto;
@@ -476,6 +471,10 @@
   &:hover {
     transform: translateY(-8px);
     box-shadow: 0 20px 40px rgba($accent, 0.2);
+
+    .spx-pkg-media img {
+      transform: scale(1.05);
+    }
   }
 
   &.is-popular {
@@ -497,157 +496,133 @@
     }
   }
 
-  // Card content wrapper
-  &__content {
-    padding: 32px 28px 0;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+  .spx-pkg-media {
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    aspect-ratio: 16 / 9;
+    height: 180px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 24px;
+    }
   }
 
-  // Header section
   &__head {
+    padding: 24px 28px 0;
     flex-shrink: 0;
   }
 
   &__title {
-    font-weight: 800;
-    font-size: 28px;
+    font-weight: 700;
+    font-size: 24px;
     color: $ink;
-    margin: 0 0 12px;
-    line-height: 1.2;
+    margin: 0 0 8px;
+    line-height: 1.3;
+  }
+
+  &__sessions {
+    font-size: 14px;
+    font-weight: 600;
+    color: $accent;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   &__desc {
     color: $muted;
     margin: 0;
+    padding: 0 28px;
     line-height: 1.6;
     font-size: 15px;
-  }
-
-  // Sessions wrapper - horizontal layout
-  &__sessions-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid $border;
+    min-height: 48px;
     flex-shrink: 0;
   }
 
-  &__sessions-count {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
+  &__price {
+    padding: 0 28px;
+    margin: 8px 0;
+    flex-shrink: 0;
   }
 
-  &__sessions-number {
-    font-size: 48px;
+  &__value {
+    font-size: 36px;
     font-weight: 800;
-    color: $ink;
+    color: $accent-ink;
+    margin-bottom: 4px;
     line-height: 1;
   }
 
-  &__sessions-label {
-    font-size: 16px;
+  &__sub {
     color: $muted;
+    font-size: 14px;
+    margin-top: 4px;
     font-weight: 600;
   }
 
   &__duration {
     color: $muted;
     font-size: 13px;
+    margin-top: 8px;
     padding: 6px 12px;
     background: $bg-soft;
     border-radius: 8px;
-    font-weight: 600;
+    display: inline-block;
   }
 
-  // Pricing section
-  &__price {
-    flex-shrink: 0;
-  }
-
-  &__value {
-    font-size: 40px;
-    font-weight: 800;
-    color: $accent-ink;
-    margin-bottom: 8px;
-    line-height: 1;
-  }
-
-  &__sub {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-  }
-
-  &__per-session {
-    font-size: 20px;
-    font-weight: 700;
-    color: $accent;
-  }
-
-  &__per-session-label {
-    color: $muted;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  // Features list
   &__bullets {
     margin: 0;
-    padding: 0;
-    list-style: none;
+    padding: 0 28px 0 48px;
     color: $ink;
     flex: 1;
     font-size: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
 
     li {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
+      margin: 10px 0;
       line-height: 1.6;
+      position: relative;
+      list-style: none;
 
-      span {
-        flex: 1;
+      &::before {
+        content: "✓";
+        position: absolute;
+        left: -20px;
+        color: $accent;
+        font-weight: 700;
+        font-size: 16px;
       }
     }
   }
 
-  &__check-icon {
-    width: 20px;
-    height: 20px;
-    color: #10b981;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  // Actions
   &__actions {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     padding: 28px;
     border-top: 1px solid $border;
+    flex-wrap: wrap;
     margin-top: auto;
     flex-shrink: 0;
+
+    .spx-pkg-btn {
+      flex: 1;
+      justify-content: center;
+      min-width: 140px;
+      font-size: 14px;
+    }
   }
 }
 
-// Badges
 .spx-pkg-badge {
   position: absolute;
-  top: 20px;
+  top: 200px;
   right: 20px;
   z-index: 3;
   font-size: 12px;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 999px;
   background: linear-gradient(135deg, $accent, $accent-light);
   color: #fff;
@@ -658,8 +633,8 @@
 
 .spx-pkg-savings {
   position: absolute;
-  top: 20px;
-  left: 20px;
+  top: 16px;
+  left: 16px;
   z-index: 3;
   font-size: 11px;
   padding: 6px 12px;
