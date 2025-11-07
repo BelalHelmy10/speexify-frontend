@@ -104,6 +104,7 @@ export default function CheckoutPage() {
       const body = {
         amountCents,
         orderId: `order_${Date.now()}_${pkg.id}_user${user.id}`,
+        packageId: Number(pkg.id),
         currency: "EGP",
         customer: {
           firstName,

@@ -261,7 +261,7 @@ export default function Dashboard() {
 
   const [upcoming, setUpcoming] = useState([]);
   const [past, setPast] = useState([]);
-
+  const [packs, setPacks] = useState([]);
   const [reschedOpen, setReschedOpen] = useState(false);
   const [reschedSession, setReschedSession] = useState(null);
   const [newStart, setNewStart] = useState("");
@@ -338,9 +338,29 @@ export default function Dashboard() {
     }
   };
 
+  const fetchPackages = async () => {
+    try {
+      const { data } = await api.get("/me/packages");
+      // Accept either array or {items:[...]} just in case
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.items)
+        ? data.items
+        : [];
+      setPacks(list);
+    } catch (e) {
+      // silent fail on dashboard
+      console.warn(
+        "[dashboard] packages fetch failed",
+        e?.response?.data || e?.message || e
+      );
+    }
+  };
+
   useEffect(() => {
     if (checking || !user) return;
     fetchSessions();
+    fetchPackages();
   }, [checking, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCancel = async (s) => {
@@ -383,6 +403,36 @@ export default function Dashboard() {
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
 
   const { upcomingCount, completedCount, timezone } = summary;
+
+  const activePack =
+    packs.find(
+      (p) => p.status === "active" && !p.expired && Number(p.remaining) > 0
+    ) || packs[0];
+
+  const progressPct = activePack
+    ? Math.max(
+        0,
+        Math.min(
+          100,
+          Math.round(
+            ((activePack.sessionsTotal - activePack.sessionsUsed) /
+              activePack.sessionsTotal) *
+              100
+          )
+        )
+      )
+    : 0;
+
+  const expiryLabel = activePack?.expiresAt
+    ? new Date(activePack.expiresAt).toLocaleDateString()
+    : null;
+
+  const totalRemainingCredits = packs.reduce(
+    (sum, p) =>
+      sum + Math.max(0, Number(p.sessionsTotal) - Number(p.sessionsUsed || 0)),
+    0
+  );
+  const outOfCredits = totalRemainingCredits <= 0;
 
   return (
     <div className="container-narrow dashboard">
@@ -449,6 +499,118 @@ export default function Dashboard() {
           }
           gradient="purple"
         />
+      </div>
+
+      {/* Out of credits banner */}
+      {outOfCredits && (
+        <div
+          className="panel panel--warning"
+          style={{ borderLeft: "4px solid #f59e0b" }}
+        >
+          <div
+            className="panel__badge"
+            style={{ background: "#fff7ed", color: "#9a3412" }}
+          >
+            Action needed
+          </div>
+          <h3 style={{ marginTop: 8 }}>You’re out of session credits</h3>
+          <p style={{ margin: "6px 0 12px", opacity: 0.9 }}>
+            Purchase a package to book your next session.
+          </p>
+          <div className="button-row">
+            <Link href="/packages" className="btn btn--primary">
+              Browse packages
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Your plan (entitlement) */}
+      <div className="panel panel--featured">
+        <div className="panel__badge">Your plan</div>
+
+        {!activePack ? (
+          <div className="empty-state">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+            <p>No active packages yet.</p>
+            <div className="button-row">
+              <Link href="/packages" className="btn btn--primary">
+                Browse packages
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            <h3 className="next-session__title">{activePack.title}</h3>
+            <div className="next-session__time" style={{ marginTop: 6 }}>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              {activePack.minutesPerSession
+                ? `${activePack.minutesPerSession} min / session`
+                : "Flexible duration"}
+              {expiryLabel ? ` · Expires ${expiryLabel}` : ""}
+            </div>
+
+            <div className="progress" style={{ margin: "16px 0 8px" }}>
+              <div
+                className="progress__bar"
+                style={{
+                  height: 8,
+                  borderRadius: 999,
+                  background: "var(--surface-3, #eef1f4)",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${progressPct}%`,
+                    height: "100%",
+                    borderRadius: 999,
+                    background:
+                      "linear-gradient(90deg, rgba(58,123,213,1) 0%, rgba(58,213,180,1) 100%)",
+                    transition: "width .3s ease",
+                  }}
+                />
+              </div>
+              <div
+                className="progress__label"
+                style={{ fontSize: 12, marginTop: 6, opacity: 0.8 }}
+              >
+                {activePack.sessionsTotal - activePack.sessionsUsed} of{" "}
+                {activePack.sessionsTotal} sessions remaining
+              </div>
+            </div>
+
+            <div className="button-row">
+              <Link href="/calendar" className="btn btn--primary">
+                Book a session
+              </Link>
+              <Link href="/packages" className="btn btn--ghost">
+                View all plans
+              </Link>
+            </div>
+          </>
+        )}
       </div>
 
       {user?.role === "teacher" && (

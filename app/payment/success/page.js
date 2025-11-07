@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import "@/styles/payment-result.scss";
+import api from "@/lib/api";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
@@ -9,15 +10,45 @@ export default function PaymentSuccessPage() {
   const [status, setStatus] = useState("loading");
 
   useEffect(() => {
-    const success = searchParams.get("success");
-    const orderId = searchParams.get("order");
-    const txnId = searchParams.get("id");
+    let timer = null;
 
-    if (success === "true") {
-      setStatus("success");
-    } else {
-      setStatus("failed");
+    const orderId = searchParams.get("order"); // you set this as merchant_order_id
+    const successParam = searchParams.get("success");
+
+    // If we don't have an orderId, just fallback to the query param
+    if (!orderId) {
+      setStatus(successParam === "true" ? "success" : "failed");
+      return;
     }
+
+    // Poll the backend for the real order status (webhook sets it)
+    async function poll() {
+      try {
+        const { data } = await api.get(
+          `/api/orders/${encodeURIComponent(orderId)}`
+        );
+        if (data?.status === "paid") {
+          setStatus("success");
+          return; // stop polling
+        }
+        if (data?.status === "failed" || data?.status === "canceled") {
+          setStatus("failed");
+          return; // stop polling
+        }
+        // keep polling while pending
+        timer = setTimeout(poll, 1500);
+      } catch (_e) {
+        // if API not reachable, fallback to URL param once
+        setStatus(successParam === "true" ? "success" : "failed");
+      }
+    }
+
+    setStatus("loading");
+    poll();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [searchParams]);
 
   if (status === "loading") {
