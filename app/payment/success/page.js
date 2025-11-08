@@ -96,12 +96,26 @@ export default function PaymentSuccessPage() {
                 </span>
               )}
             </p>
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="payment-result__btn payment-result__btn--primary"
-            >
-              Go to Dashboard
-            </button>
+            <div className="payment-result__actions">
+              <button
+                onClick={() => router.push("/onboarding")}
+                className="payment-result__btn payment-result__btn--primary"
+              >
+                Start onboarding
+              </button>
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="payment-result__btn payment-result__btn--ghost"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+
+            <p className="payment-result__small">
+              Your credits are now available. If they don’t appear immediately,
+              give it a few seconds and refresh — we confirm payment via a
+              secure webhook.
+            </p>
           </div>
         </div>
       </div>
@@ -137,6 +151,10 @@ export default function PaymentSuccessPage() {
           >
             Try Again
           </button>
+          <p className="payment-result__small">
+            If you were charged but still see this, email{" "}
+            <strong>hello@speexify.com</strong> with your Order ID.
+          </p>
         </div>
       </div>
     </div>

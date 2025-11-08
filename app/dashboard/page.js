@@ -262,6 +262,8 @@ export default function Dashboard() {
   const [upcoming, setUpcoming] = useState([]);
   const [past, setPast] = useState([]);
   const [packs, setPacks] = useState([]);
+  const [onboarding, setOnboarding] = useState(null);
+  const [assessment, setAssessment] = useState(null);
   const [reschedOpen, setReschedOpen] = useState(false);
   const [reschedSession, setReschedSession] = useState(null);
   const [newStart, setNewStart] = useState("");
@@ -357,10 +359,26 @@ export default function Dashboard() {
     }
   };
 
+  const fetchOnboarding = async () => {
+    try {
+      const { data } = await api.get("/me/onboarding");
+      setOnboarding(data || null);
+    } catch {}
+  };
+
+  const fetchAssessment = async () => {
+    try {
+      const { data } = await api.get("/me/assessment");
+      setAssessment(data || null);
+    } catch {}
+  };
+
   useEffect(() => {
     if (checking || !user) return;
     fetchSessions();
     fetchPackages();
+    fetchOnboarding();
+    fetchAssessment();
   }, [checking, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCancel = async (s) => {
@@ -433,6 +451,11 @@ export default function Dashboard() {
     0
   );
   const outOfCredits = totalRemainingCredits <= 0;
+
+  const hasActivePack =
+    !!activePack && activePack.sessionsTotal - activePack.sessionsUsed > 0;
+  const onbComplete = !!onboarding;
+  const assComplete = !!assessment;
 
   return (
     <div className="container-narrow dashboard">
@@ -601,10 +624,21 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="button-row">
-              <Link href="/calendar" className="btn btn--primary">
-                Book a session
+            <div className="button-row" style={{ gap: 12, flexWrap: "wrap" }}>
+              <Link
+                href="/onboarding"
+                className={`btn ${onbComplete ? "btn--ghost" : "btn--primary"}`}
+              >
+                {onbComplete ? "View onboarding" : "Complete onboarding form"}
               </Link>
+
+              <Link
+                href="/assessment"
+                className={`btn ${assComplete ? "btn--ghost" : "btn--primary"}`}
+              >
+                {assComplete ? "View assessment" : "Take written assessment"}
+              </Link>
+
               <Link href="/packages" className="btn btn--ghost">
                 View all plans
               </Link>
