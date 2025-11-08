@@ -1,0 +1,546 @@
+// ============================================
+// Onboarding Form Styles
+// ============================================
+
+@import "variables";
+@import "mixins";
+
+// ============================================
+// Wrapper & Container
+// ============================================
+
+.onboarding-wrapper {
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.03) 0%,
+    rgba(139, 92, 246, 0.03) 50%,
+    rgba(236, 72, 153, 0.03) 100%
+  );
+  padding: $space-6 $space-4;
+
+  @include breakpoint(md) {
+    padding: $space-12 $space-6;
+  }
+
+  @include breakpoint(lg) {
+    padding: $space-16 $space-8;
+  }
+}
+
+.onboarding-container {
+  max-width: 800px;
+  margin: 0 auto;
+  @include card;
+  @include fade-in(0.4s);
+
+  @include breakpoint(md) {
+    border-radius: $radius-xl;
+  }
+}
+
+// ============================================
+// Header Section
+// ============================================
+
+.onboarding-header {
+  margin-bottom: $space-10;
+  text-align: center;
+
+  @include breakpoint(md) {
+    margin-bottom: $space-12;
+  }
+
+  &__title {
+    margin: 0 0 $space-3 0;
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    line-height: $line-height-tight;
+    color: $color-text-primary;
+    letter-spacing: -0.02em;
+    @include gradient-text;
+
+    @include breakpoint(md) {
+      font-size: $font-size-3xl;
+    }
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-size: $font-size-base;
+    line-height: $line-height-relaxed;
+    color: $color-text-secondary;
+    max-width: 600px;
+    margin: 0 auto;
+
+    @include breakpoint(md) {
+      font-size: $font-size-lg;
+    }
+  }
+}
+
+// ============================================
+// Form
+// ============================================
+
+.onboarding-form {
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $space-6;
+    margin-bottom: $space-8;
+
+    @include breakpoint(md) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: $space-8;
+    }
+  }
+}
+
+// ============================================
+// Form Field
+// ============================================
+
+.onboarding-field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  animation: slideInUp 0.4s ease-out backwards;
+
+  // Stagger animation for each field
+  @for $i from 1 through 8 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$i * 0.05}s;
+    }
+  }
+
+  // Full width fields
+  &--full {
+    @include breakpoint(md) {
+      grid-column: 1 / -1;
+    }
+  }
+
+  // Label
+  &__label {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    cursor: pointer;
+  }
+
+  &__label-text {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    letter-spacing: -0.01em;
+
+    @include breakpoint(md) {
+      font-size: $font-size-base;
+    }
+  }
+
+  &__label-hint {
+    font-size: $font-size-xs;
+    color: $color-text-tertiary;
+    font-weight: $font-weight-normal;
+
+    @include breakpoint(md) {
+      font-size: $font-size-sm;
+    }
+  }
+
+  // Input
+  &__input {
+    @include input-base;
+
+    &:hover:not(:disabled) {
+      background-color: $color-surface-hover;
+    }
+
+    &:focus {
+      background-color: $color-white;
+      border-color: $color-primary;
+      box-shadow: $focus-ring;
+    }
+  }
+
+  // Textarea
+  &__textarea {
+    @include input-base;
+    resize: vertical;
+    min-height: 100px;
+    font-family: $font-family-base;
+
+    &:hover:not(:disabled) {
+      background-color: $color-surface-hover;
+    }
+
+    &:focus {
+      background-color: $color-white;
+      border-color: $color-primary;
+      box-shadow: $focus-ring;
+    }
+
+    @include custom-scrollbar;
+  }
+
+  // Select Wrapper
+  &__select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  // Select
+  &__select {
+    @include input-base;
+    padding-right: $space-10;
+    cursor: pointer;
+
+    // Hide default arrow
+    appearance: none;
+    background-image: none;
+
+    &:hover:not(:disabled) {
+      background-color: $color-surface-hover;
+    }
+
+    &:focus {
+      background-color: $color-white;
+      border-color: $color-primary;
+      box-shadow: $focus-ring;
+    }
+
+    // Option styling
+    option {
+      padding: $space-2;
+    }
+  }
+
+  // Custom Select Icon
+  &__select-icon {
+    position: absolute;
+    right: $space-4;
+    color: $color-text-tertiary;
+    pointer-events: none;
+    transition: transform $transition-base;
+
+    .onboarding-field__select:focus ~ & {
+      transform: rotate(180deg);
+      color: $color-primary;
+    }
+  }
+}
+
+// ============================================
+// Actions Section
+// ============================================
+
+.onboarding-actions {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding-top: $space-8;
+  border-top: 1px solid $color-border-light;
+  animation: fadeIn 0.5s ease-out 0.4s backwards;
+
+  @include breakpoint(sm) {
+    flex-direction: row;
+    align-items: center;
+    gap: $space-4;
+  }
+}
+
+// ============================================
+// Buttons
+// ============================================
+
+.onboarding-btn {
+  @include button-base;
+
+  // Primary Button
+  &--primary {
+    @include gradient-primary;
+    color: $color-text-inverse;
+    font-weight: $font-weight-semibold;
+    box-shadow: $shadow-sm;
+    position: relative;
+    overflow: hidden;
+
+    // Shimmer effect
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
+      transition: left 0.5s;
+    }
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: $shadow-lg;
+
+      &::before {
+        left: 100%;
+      }
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      background: $color-gray-300;
+      box-shadow: none;
+    }
+  }
+
+  // Ghost Button
+  &--ghost {
+    background-color: transparent;
+    color: $color-text-secondary;
+    border: 1.5px solid $color-border-light;
+
+    &:hover:not(:disabled) {
+      background-color: $color-gray-50;
+      border-color: $color-border-medium;
+      color: $color-text-primary;
+    }
+
+    &:active:not(:disabled) {
+      background-color: $color-gray-100;
+    }
+  }
+
+  // Spinner
+  &__spinner {
+    @include spinner(16px, 2px);
+    display: inline-block;
+  }
+}
+
+// ============================================
+// Success Message
+// ============================================
+
+.onboarding-success {
+  @include flex-center;
+  gap: $space-2;
+  padding: $space-3 $space-4;
+  background-color: $color-success-light;
+  color: $color-success;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  animation: scaleIn 0.3s ease-out;
+
+  @include breakpoint(sm) {
+    margin-left: auto;
+  }
+
+  svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    stroke-width: 2.5;
+  }
+
+  span {
+    white-space: nowrap;
+  }
+}
+
+// ============================================
+// Responsive Adjustments
+// ============================================
+
+@include breakpoint(md) {
+  .onboarding-field {
+    &__input,
+    &__textarea,
+    &__select {
+      padding: $space-4 $space-5;
+    }
+  }
+
+  .onboarding-btn {
+    padding: $space-4 $space-8;
+    font-size: $font-size-lg;
+  }
+}
+
+// ============================================
+// Dark Mode Support (Optional)
+// ============================================
+
+@media (prefers-color-scheme: dark) {
+  .onboarding-wrapper {
+    background: linear-gradient(
+      135deg,
+      rgba(99, 102, 241, 0.1) 0%,
+      rgba(139, 92, 246, 0.1) 50%,
+      rgba(236, 72, 153, 0.1) 100%
+    );
+  }
+
+  .onboarding-container {
+    background-color: #1a1a1a;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+  }
+
+  .onboarding-header {
+    &__title {
+      color: #f5f5f5;
+    }
+
+    &__subtitle {
+      color: #a3a3a3;
+    }
+  }
+
+  .onboarding-field {
+    &__label-text {
+      color: #f5f5f5;
+    }
+
+    &__label-hint {
+      color: #737373;
+    }
+
+    &__input,
+    &__textarea,
+    &__select {
+      background-color: #262626;
+      border-color: #404040;
+      color: #f5f5f5;
+
+      &::placeholder {
+        color: #737373;
+      }
+
+      &:hover:not(:disabled) {
+        background-color: #2d2d2d;
+        border-color: #525252;
+      }
+
+      &:focus {
+        background-color: #2d2d2d;
+        border-color: $color-primary-light;
+      }
+
+      &:disabled {
+        background-color: #1a1a1a;
+      }
+    }
+
+    &__select-icon {
+      color: #737373;
+    }
+  }
+
+  .onboarding-actions {
+    border-top-color: #404040;
+  }
+
+  .onboarding-btn {
+    &--ghost {
+      color: #a3a3a3;
+      border-color: #404040;
+
+      &:hover:not(:disabled) {
+        background-color: #262626;
+        border-color: #525252;
+        color: #f5f5f5;
+      }
+
+      &:active:not(:disabled) {
+        background-color: #1a1a1a;
+      }
+    }
+  }
+
+  .onboarding-success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+  }
+}
+
+// ============================================
+// Print Styles
+// ============================================
+
+@media print {
+  .onboarding-wrapper {
+    background: white;
+    padding: 0;
+  }
+
+  .onboarding-container {
+    box-shadow: none;
+    max-width: 100%;
+  }
+
+  .onboarding-actions {
+    display: none;
+  }
+
+  .onboarding-field {
+    &__input,
+    &__textarea,
+    &__select {
+      border: 1px solid #000;
+      padding: $space-2;
+    }
+  }
+}
+
+// ============================================
+// Accessibility Enhancements
+// ============================================
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .onboarding-field {
+    &__input,
+    &__textarea,
+    &__select {
+      border-width: 2px;
+
+      &:focus {
+        border-width: 3px;
+      }
+    }
+  }
+
+  .onboarding-btn {
+    border-width: 2px;
+
+    &--ghost {
+      border-width: 2px;
+    }
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .onboarding-btn--primary::before {
+    display: none;
+  }
+}
