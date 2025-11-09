@@ -35,14 +35,31 @@ export function AuthProvider({ children, initialUser = null }) {
   };
 
   // Always use the rewrite (/api/...) through our axios instance.
+  // src/hooks/useAuth.js
+  // ...
   const refresh = useCallback(async () => {
     safeSet(() => setChecking(true));
+
+    async function tryOnce() {
+      // Force no-cache + cache-buster; axios instance already has withCredentials
+      const { data } = await api.get("/auth/me", {
+        params: { t: Date.now() },
+        headers: { "Cache-Control": "no-store" },
+      });
+      return data?.user ?? null;
+    }
+
     try {
-      const { data } = await api.get("/auth/me"); // ← rewrite (same-origin + cookies)
-      safeSet(() => setUser(data?.user ?? null));
+      let u = await tryOnce();
+      // Immediately after Google login, the Set-Cookie can land a tick late.
+      // Retry quickly with a tiny backoff (total < 500ms).
+      for (let i = 0; !u && i < 3; i++) {
+        await new Promise((r) => setTimeout(r, 80 * (i + 1))); // 80ms, 160ms, 240ms
+        u = await tryOnce();
+      }
+      safeSet(() => setUser(u));
     } catch (e) {
       if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
         console.warn(
           "[useAuth.refresh] failed:",
           e?.response?.data || e?.message || e
@@ -53,22 +70,7 @@ export function AuthProvider({ children, initialUser = null }) {
       safeSet(() => setChecking(false));
     }
   }, []);
-
-  const logout = useCallback(async () => {
-    try {
-      await api.post("/auth/logout"); // ← rewrite (clears speexify.sid)
-    } catch (e) {
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.warn(
-          "[useAuth.logout] failed:",
-          e?.response?.data || e?.message || e
-        );
-      }
-    } finally {
-      safeSet(() => setUser(null));
-    }
-  }, []);
+  // ...
 
   useEffect(() => {
     // If server passed an initial user we trust it; otherwise, fetch it.
