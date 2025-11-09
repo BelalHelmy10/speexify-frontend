@@ -98,6 +98,14 @@ export default function OnboardingPage() {
     [answers.motivations]
   );
 
+  // Helper function for dynamic slider background
+  const getSliderBackground = (value, min, max) => {
+    const percentage = ((value - min) / (max - min)) * 100;
+    return {
+      background: `linear-gradient(to right, #0ea5e9 0%, #0ea5e9 ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`,
+    };
+  };
+
   const handleCheckboxGroup = (key, value) => {
     setAnswers((prev) => {
       const arr = new Set(prev[key]);
@@ -498,6 +506,11 @@ export default function OnboardingPage() {
                         onChange={(e) =>
                           handleNestedRange("skillPriority", s, e.target.value)
                         }
+                        style={getSliderBackground(
+                          answers.skillPriority[s],
+                          1,
+                          5
+                        )}
                       />
                       <div className="onboarding-slider__scale">
                         <span>1</span>
@@ -644,6 +657,11 @@ export default function OnboardingPage() {
                         onChange={(e) =>
                           handleNestedRange("confidence", s, e.target.value)
                         }
+                        style={getSliderBackground(
+                          answers.confidence[s],
+                          1,
+                          10
+                        )}
                       />
                       <div className="onboarding-slider__scale">
                         <span>1</span>
