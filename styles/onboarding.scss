@@ -434,13 +434,7 @@
   width: 100%;
   height: 8px;
   border-radius: 4px;
-  background: linear-gradient(
-    to right,
-    $brand 0%,
-    $brand calc(var(--value, 50) * 1%),
-    $border calc(var(--value, 50) * 1%),
-    $border 100%
-  );
+  background: $border;
   outline: none;
   cursor: pointer;
   transition: all $transition-base;
