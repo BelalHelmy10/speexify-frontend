@@ -1,7 +1,7 @@
 // app/dashboard/page.jsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
@@ -263,50 +263,25 @@ export default function Dashboard() {
   const [newStart, setNewStart] = useState("");
   const [newEnd, setNewEnd] = useState("");
 
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
-      const res = await api.get("/me/summary");
+      const res = await api.get("/me/summary", { params: { t: Date.now() } });
       setSummary(res.data);
       setStatus("");
     } catch (e) {
       setStatus(e?.response?.data?.error || "Failed to load dashboard");
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    if (checking) return;
-    if (!user) {
-      setStatus("Not authenticated");
-      return;
-    }
-    fetchSummary();
-  }, [checking, user]);
-
-  useEffect(() => {
-    if (checking || !user) return;
-    (async () => {
-      try {
-        const { data } = await api.get("/teacher/summary");
-        setTeachSummary({
-          nextTeach: data?.nextTeach || null,
-          upcomingTeachCount: data?.upcomingTeachCount || 0,
-          taughtCount: data?.taughtCount || 0,
-        });
-      } catch {
-        setTeachSummary({
-          nextTeach: null,
-          upcomingTeachCount: 0,
-          taughtCount: 0,
-        });
-      }
-    })();
-  }, [checking, user]);
-
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     try {
       const [u, p] = await Promise.all([
-        api.get("/me/sessions", { params: { range: "upcoming", limit: 10 } }),
-        api.get("/me/sessions", { params: { range: "past", limit: 10 } }),
+        api.get("/me/sessions", {
+          params: { range: "upcoming", limit: 10, t: Date.now() },
+        }),
+        api.get("/me/sessions", {
+          params: { range: "past", limit: 10, t: Date.now() },
+        }),
       ]);
 
       const pickList = (payload, preferredKey) => {
@@ -326,11 +301,13 @@ export default function Dashboard() {
         e?.response?.data || e?.message || e
       );
     }
-  };
+  }, []);
 
-  const fetchPackages = async () => {
+  const fetchPackages = useCallback(async () => {
     try {
-      const { data } = await api.get("/me/packages");
+      const { data } = await api.get("/me/packages", {
+        params: { t: Date.now() },
+      });
       const list = Array.isArray(data)
         ? data
         : Array.isArray(data?.items)
@@ -343,39 +320,84 @@ export default function Dashboard() {
         e?.response?.data || e?.message || e
       );
     }
-  };
+  }, []);
 
-  const fetchOnboarding = async () => {
+  const fetchOnboarding = useCallback(async () => {
     try {
-      const { data } = await api.get("/me/onboarding");
+      const { data } = await api.get("/me/onboarding", {
+        params: { t: Date.now() },
+      });
       setOnboarding(data || null);
-    } catch (e) {
-      // Silent fail
-    }
-  };
+    } catch {}
+  }, []);
 
-  const fetchAssessment = async () => {
+  const fetchAssessment = useCallback(async () => {
     try {
-      const { data } = await api.get("/me/assessment");
+      const { data } = await api.get("/me/assessment", {
+        params: { t: Date.now() },
+      });
       setAssessment(data || null);
-    } catch (e) {
-      // Silent fail
-    }
-  };
+    } catch {}
+  }, []);
+
+  // Helper to refresh everything (call this after session completion from anywhere)
+  const refreshAll = useCallback(async () => {
+    await Promise.all([fetchSummary(), fetchSessions(), fetchPackages()]);
+  }, [fetchSummary, fetchSessions, fetchPackages]);
 
   useEffect(() => {
-    if (checking || !user) return;
-    fetchSessions();
-    fetchPackages();
+    if (checking) return;
+    if (!user) {
+      setStatus("Not authenticated");
+      return;
+    }
+    refreshAll();
     fetchOnboarding();
     fetchAssessment();
+  }, [checking, user, refreshAll, fetchOnboarding, fetchAssessment]);
+
+  // Teacher summary
+  useEffect(() => {
+    if (checking || !user) return;
+    (async () => {
+      try {
+        const { data } = await api.get("/teacher/summary", {
+          params: { t: Date.now() },
+        });
+        setTeachSummary({
+          nextTeach: data?.nextTeach || null,
+          upcomingTeachCount: data?.upcomingTeachCount || 0,
+          taughtCount: data?.taughtCount || 0,
+        });
+      } catch {
+        setTeachSummary({
+          nextTeach: null,
+          upcomingTeachCount: 0,
+          taughtCount: 0,
+        });
+      }
+    })();
   }, [checking, user]);
+
+  // Keep fresh when tab regains focus / becomes visible
+  useEffect(() => {
+    const onFocus = () => refreshAll();
+    const onVis = () => {
+      if (document.visibilityState === "visible") refreshAll();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [refreshAll]);
 
   const handleCancel = async (s) => {
     if (!window.confirm("Cancel this session?")) return;
     try {
       await api.post(`/sessions/${s.id}/cancel`);
-      await Promise.all([fetchSessions(), fetchSummary()]);
+      await refreshAll();
     } catch (e) {
       alert(e?.response?.data?.error || "Failed to cancel");
     }
@@ -398,7 +420,7 @@ export default function Dashboard() {
       });
       setReschedOpen(false);
       setReschedSession(null);
-      await Promise.all([fetchSessions(), fetchSummary()]);
+      await refreshAll();
     } catch (e) {
       alert(e?.response?.data?.error || "Failed to reschedule");
     }
@@ -411,35 +433,29 @@ export default function Dashboard() {
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
   const { upcomingCount, completedCount, timezone } = summary;
 
-  const activePack =
-    packs.find(
-      (p) => p.status === "active" && !p.expired && Number(p.remaining) > 0
-    ) || packs[0];
-
-  const progressPct = activePack
-    ? Math.max(
-        0,
-        Math.min(
-          100,
-          Math.round(
-            ((activePack.sessionsTotal - activePack.sessionsUsed) /
-              activePack.sessionsTotal) *
-              100
-          )
-        )
-      )
-    : 0;
-
-  const expiryLabel = activePack?.expiresAt
-    ? new Date(activePack.expiresAt).toLocaleDateString()
-    : null;
-
-  const totalRemainingCredits = packs.reduce(
-    (sum, p) =>
-      sum + Math.max(0, Number(p.sessionsTotal) - Number(p.sessionsUsed || 0)),
+  // ── Aggregated package math (active + not expired) ────────────────────────────
+  const activePacks = packs.filter((p) => p.status === "active" && !p.expired);
+  const totalSessions = activePacks.reduce(
+    (s, p) => s + Number(p.sessionsTotal || 0),
     0
   );
-  const outOfCredits = totalRemainingCredits <= 0;
+  const usedSessions = activePacks.reduce(
+    (s, p) => s + Number(p.sessionsUsed || 0),
+    0
+  );
+  const remainingSessions = Math.max(0, totalSessions - usedSessions);
+  const progressPct =
+    totalSessions > 0
+      ? Math.min(100, Math.round((usedSessions / totalSessions) * 100))
+      : 0;
+
+  // Choose a representative pack for title/duration/expiry (first active)
+  const primaryPack = activePacks[0];
+  const expiryLabel = primaryPack?.expiresAt
+    ? new Date(primaryPack.expiresAt).toLocaleDateString()
+    : null;
+
+  const outOfCredits = remainingSessions <= 0;
 
   const onbComplete = !!onboarding;
   const assComplete = !!assessment;
@@ -540,7 +556,7 @@ export default function Dashboard() {
       <div className="panel panel--featured">
         <div className="panel__badge">Your plan</div>
 
-        {!activePack ? (
+        {activePacks.length === 0 ? (
           <div className="empty-state">
             <svg
               width="48"
@@ -563,7 +579,9 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            <h3 className="next-session__title">{activePack.title}</h3>
+            <h3 className="next-session__title">
+              {primaryPack?.title || "Your plan"}
+            </h3>
             <div className="next-session__time" style={{ marginTop: 6 }}>
               <svg
                 width="16"
@@ -576,8 +594,8 @@ export default function Dashboard() {
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
-              {activePack.minutesPerSession
-                ? `${activePack.minutesPerSession} min / session`
+              {primaryPack?.minutesPerSession
+                ? `${primaryPack.minutesPerSession} min / session`
                 : "Flexible duration"}
               {expiryLabel ? ` · Expires ${expiryLabel}` : ""}
             </div>
@@ -607,8 +625,7 @@ export default function Dashboard() {
                 className="progress__label"
                 style={{ fontSize: 12, marginTop: 6, opacity: 0.8 }}
               >
-                {activePack.sessionsTotal - activePack.sessionsUsed} of{" "}
-                {activePack.sessionsTotal} sessions remaining
+                {remainingSessions} of {totalSessions} sessions remaining
               </div>
             </div>
 
