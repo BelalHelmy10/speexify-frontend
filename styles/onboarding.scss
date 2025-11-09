@@ -9,6 +9,8 @@
 // Layout & Container
 // ============================================================================
 
+@use "variables" as *;
+
 .onboarding-wrapper {
   min-height: 100vh;
   background: linear-gradient(
