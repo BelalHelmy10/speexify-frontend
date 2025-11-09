@@ -8,10 +8,6 @@ import api from "@/lib/api";
 import { fmtInTz } from "@/utils/date";
 import { getSafeExternalUrl } from "@/utils/url";
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Utilities
-   ──────────────────────────────────────────────────────────────────────────── */
-
 const fmt = (d) =>
   new Date(d).toLocaleString([], {
     weekday: "short",
@@ -68,10 +64,6 @@ const useCountdown = (startAt, endAt) => {
 
   return "Ended";
 };
-
-/* ────────────────────────────────────────────────────────────────────────────
-   Session row (one item in upcoming/past lists)
-   ──────────────────────────────────────────────────────────────────────────── */
 
 function SessionRow({
   s,
@@ -158,7 +150,6 @@ function SessionRow({
                   )}
                 </a>
               )}
-
               <button
                 className="btn btn--ghost"
                 onClick={() => onRescheduleClick(s)}
@@ -175,7 +166,6 @@ function SessionRow({
                 </svg>
                 Reschedule
               </button>
-
               <button
                 className="btn btn--ghost btn--danger"
                 onClick={() => onCancel(s)}
@@ -214,10 +204,6 @@ function SessionRow({
   );
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Modal with glass-morphism
-   ──────────────────────────────────────────────────────────────────────────── */
-
 function Modal({ title, children, onClose }) {
   return (
     <div className="modal">
@@ -244,9 +230,17 @@ function Modal({ title, children, onClose }) {
   );
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Main component
-   ──────────────────────────────────────────────────────────────────────────── */
+function Card({ title, value, icon, gradient }) {
+  return (
+    <div className={`card card--kpi card--${gradient}`}>
+      <div className="card__icon">{icon}</div>
+      <div className="card__content">
+        <div className="card__title">{title}</div>
+        <div className="card__value">{value}</div>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const [status, setStatus] = useState("Loading…");
@@ -271,7 +265,6 @@ export default function Dashboard() {
 
   const fetchSummary = async () => {
     try {
-      // via rewrite → /api/me/summary
       const res = await api.get("/me/summary");
       setSummary(res.data);
       setStatus("");
@@ -280,7 +273,6 @@ export default function Dashboard() {
     }
   };
 
-  // Fetch once we know whether the user is logged in
   useEffect(() => {
     if (checking) return;
     if (!user) {
@@ -288,15 +280,12 @@ export default function Dashboard() {
       return;
     }
     fetchSummary();
-  }, [checking, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [checking, user]);
 
   useEffect(() => {
     if (checking || !user) return;
-
-    // Teacher summary is optional; ignore errors
     (async () => {
       try {
-        // Prefer /teacher/summary if you added it; otherwise ignore on 404
         const { data } = await api.get("/teacher/summary");
         setTeachSummary({
           nextTeach: data?.nextTeach || null,
@@ -332,7 +321,6 @@ export default function Dashboard() {
       setUpcoming(pickList(u, "upcoming"));
       setPast(pickList(p, "past"));
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn(
         "[dashboard] sessions fetch failed",
         e?.response?.data || e?.message || e
@@ -343,7 +331,6 @@ export default function Dashboard() {
   const fetchPackages = async () => {
     try {
       const { data } = await api.get("/me/packages");
-      // Accept either array or {items:[...]} just in case
       const list = Array.isArray(data)
         ? data
         : Array.isArray(data?.items)
@@ -351,7 +338,6 @@ export default function Dashboard() {
         : [];
       setPacks(list);
     } catch (e) {
-      // silent fail on dashboard
       console.warn(
         "[dashboard] packages fetch failed",
         e?.response?.data || e?.message || e
@@ -363,14 +349,18 @@ export default function Dashboard() {
     try {
       const { data } = await api.get("/me/onboarding");
       setOnboarding(data || null);
-    } catch {}
+    } catch (e) {
+      // Silent fail
+    }
   };
 
   const fetchAssessment = async () => {
     try {
       const { data } = await api.get("/me/assessment");
       setAssessment(data || null);
-    } catch {}
+    } catch (e) {
+      // Silent fail
+    }
   };
 
   useEffect(() => {
@@ -379,7 +369,7 @@ export default function Dashboard() {
     fetchPackages();
     fetchOnboarding();
     fetchAssessment();
-  }, [checking, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [checking, user]);
 
   const handleCancel = async (s) => {
     if (!window.confirm("Cancel this session?")) return;
@@ -419,7 +409,6 @@ export default function Dashboard() {
 
   const visibleNext =
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
-
   const { upcomingCount, completedCount, timezone } = summary;
 
   const activePack =
@@ -452,10 +441,11 @@ export default function Dashboard() {
   );
   const outOfCredits = totalRemainingCredits <= 0;
 
-  const hasActivePack =
-    !!activePack && activePack.sessionsTotal - activePack.sessionsUsed > 0;
   const onbComplete = !!onboarding;
   const assComplete = !!assessment;
+  const pendingActionsCount = [!onbComplete, !assComplete].filter(
+    Boolean
+  ).length;
 
   return (
     <div className="container-narrow dashboard">
@@ -524,7 +514,6 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Out of credits banner */}
       {outOfCredits && (
         <div
           className="panel panel--warning"
@@ -536,7 +525,7 @@ export default function Dashboard() {
           >
             Action needed
           </div>
-          <h3 style={{ marginTop: 8 }}>You’re out of session credits</h3>
+          <h3 style={{ marginTop: 8 }}>You're out of session credits</h3>
           <p style={{ margin: "6px 0 12px", opacity: 0.9 }}>
             Purchase a package to book your next session.
           </p>
@@ -548,7 +537,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Your plan (entitlement) */}
       <div className="panel panel--featured">
         <div className="panel__badge">Your plan</div>
 
@@ -624,18 +612,64 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {pendingActionsCount > 0 && (
+              <div className="alert-badge">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+                {pendingActionsCount === 2
+                  ? "2 required actions"
+                  : "1 required action"}
+              </div>
+            )}
+
             <div className="button-row" style={{ gap: 12, flexWrap: "wrap" }}>
               <Link
                 href="/onboarding"
-                className={`btn ${onbComplete ? "btn--ghost" : "btn--primary"}`}
+                className={`btn ${
+                  onbComplete ? "btn--ghost" : "btn--primary btn--pulse"
+                }`}
               >
+                {!onbComplete && (
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v4m0 4h.01" />
+                  </svg>
+                )}
                 {onbComplete ? "View onboarding" : "Complete onboarding form"}
               </Link>
 
               <Link
                 href="/assessment"
-                className={`btn ${assComplete ? "btn--ghost" : "btn--primary"}`}
+                className={`btn ${
+                  assComplete ? "btn--ghost" : "btn--primary btn--pulse"
+                }`}
               >
+                {!assComplete && (
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v4m0 4h.01" />
+                  </svg>
+                )}
                 {assComplete ? "View assessment" : "Take written assessment"}
               </Link>
 
@@ -950,22 +984,6 @@ export default function Dashboard() {
           </div>
         </Modal>
       )}
-    </div>
-  );
-}
-
-/* ────────────────────────────────────────────────────────────────────────────
-   KPI card with gradient accent
-   ──────────────────────────────────────────────────────────────────────────── */
-
-function Card({ title, value, icon, gradient }) {
-  return (
-    <div className={`card card--kpi card--${gradient}`}>
-      <div className="card__icon">{icon}</div>
-      <div className="card__content">
-        <div className="card__title">{title}</div>
-        <div className="card__value">{value}</div>
-      </div>
     </div>
   );
 }
