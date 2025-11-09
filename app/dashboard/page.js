@@ -446,7 +446,7 @@ export default function Dashboard() {
   const remainingSessions = Math.max(0, totalSessions - usedSessions);
   const progressPct =
     totalSessions > 0
-      ? Math.min(100, Math.round((usedSessions / totalSessions) * 100))
+      ? Math.min(100, Math.round((remainingSessions / totalSessions) * 100))
       : 0;
 
   // Choose a representative pack for title/duration/expiry (first active)
