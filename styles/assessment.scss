@@ -1,0 +1,574 @@
+// ============================================================================
+// Assessment Page Styles
+// ============================================================================
+
+// Import your variables (assuming they're available)
+// @import 'variables';
+
+// ============================================================================
+// Container & Layout
+// ============================================================================
+@use "variables" as *;
+
+.assessment-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: $space-8 $spacing-lg;
+  min-height: 100vh;
+
+  @media (max-width: $bp-sm) {
+    padding: $space-6 $spacing-md;
+  }
+}
+
+// ============================================================================
+// Title & Intro
+// ============================================================================
+
+.assessment-title {
+  color: $text-primary;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 $spacing-lg;
+  letter-spacing: -0.02em;
+  position: relative;
+  padding-bottom: $spacing-lg;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, $brand 0%, $brand-light 100%);
+    border-radius: 2px;
+  }
+
+  @media (max-width: $bp-sm) {
+    font-size: 2rem;
+  }
+}
+
+.assessment-intro {
+  color: $text-secondary;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  margin: 0 0 $space-7;
+  padding: $spacing-lg;
+  background: linear-gradient(
+    135deg,
+    rgba(14, 165, 233, 0.04) 0%,
+    rgba(14, 165, 233, 0.08) 100%
+  );
+  border-left: 4px solid $brand;
+  border-radius: 12px;
+
+  strong {
+    color: $brand-ink;
+    font-weight: 600;
+  }
+
+  @media (max-width: $bp-sm) {
+    font-size: 1rem;
+    padding: $spacing-md;
+  }
+}
+
+// ============================================================================
+// Prompt Panel
+// ============================================================================
+
+.assessment-panel {
+  background: $bg-primary;
+  border: 2px solid $border;
+  border-radius: 16px;
+  padding: $space-6;
+  margin-bottom: $space-7;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.06),
+    0 1px 2px rgba(14, 165, 233, 0.04);
+  transition: all $transition-base;
+
+  &:hover {
+    border-color: $brand-light;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.08),
+      0 2px 4px rgba(14, 165, 233, 0.06);
+  }
+
+  &[data-panel="prompt"] {
+    border-left: 4px solid $brand;
+  }
+
+  @media (max-width: $bp-sm) {
+    padding: $spacing-lg;
+  }
+}
+
+.assessment-panel__title {
+  color: $brand-ink;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 $spacing-md;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  &::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: $brand;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.4);
+  }
+}
+
+.assessment-panel__body {
+  color: $text-primary;
+  font-size: 1rem;
+  line-height: 1.7;
+  margin: 0 0 $spacing-lg;
+
+  em {
+    font-style: italic;
+    color: $text-dark;
+  }
+}
+
+.assessment-tip {
+  color: $text-secondary;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0;
+  padding: $spacing-md;
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(16, 185, 129, 0.15);
+
+  strong {
+    color: $success;
+    font-weight: 600;
+  }
+}
+
+// ============================================================================
+// Form Grid
+// ============================================================================
+
+.assessment-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+// ============================================================================
+// Label & Textarea
+// ============================================================================
+
+.assessment-label {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.assessment-label__text {
+  color: $text-primary;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.assessment-textarea {
+  width: 100%;
+  padding: $spacing-lg;
+  border: 2px solid $border;
+  border-radius: 16px;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: $text-primary;
+  background: $bg-primary;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 320px;
+  transition: all $transition-base;
+
+  &::placeholder {
+    color: $text-muted;
+  }
+
+  &:hover {
+    border-color: darken($border, 8%);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $brand;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1),
+      0 4px 12px rgba(14, 165, 233, 0.08);
+    background: $color-white;
+  }
+
+  // Smooth scrollbar
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $bg-soft;
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $border;
+    border-radius: 10px;
+
+    &:hover {
+      background: darken($border, 15%);
+    }
+  }
+}
+
+// ============================================================================
+// Word Count Display
+// ============================================================================
+
+.assessment-wordcount {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  background: $bg-soft;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  color: $text-secondary;
+  border: 1px solid $border;
+
+  strong {
+    color: $text-primary;
+    font-weight: 600;
+  }
+
+  @media (max-width: $bp-sm) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-sm;
+  }
+}
+
+.assessment-lastsubmit {
+  color: $success;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  &::before {
+    content: "✓";
+    font-weight: bold;
+  }
+}
+
+.assessment-draftnote {
+  color: $text-muted;
+  font-style: italic;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  &::before {
+    content: "💾";
+    font-size: 0.875rem;
+  }
+}
+
+// ============================================================================
+// Actions & Buttons
+// ============================================================================
+
+.assessment-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding-top: $spacing-lg;
+  border-top: 2px solid $border;
+  flex-wrap: wrap;
+
+  @media (max-width: $bp-sm) {
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+}
+
+.assessment-action {
+  @media (max-width: $bp-sm) {
+    width: 100%;
+  }
+}
+
+.assessment-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all $transition-base;
+  text-decoration: none;
+  border: 2px solid $border;
+  font-family: inherit;
+  white-space: nowrap;
+  background: $bg-primary;
+  color: $text-primary;
+
+  @media (max-width: $bp-sm) {
+    width: 100%;
+  }
+
+  &:hover:not(:disabled) {
+    background: $bg-soft;
+    border-color: darken($border, 8%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.2);
+  }
+
+  // Primary variant
+  &--primary {
+    background: linear-gradient(135deg, $brand 0%, $brand-dark 100%);
+    color: $color-white;
+    border-color: $brand;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.25),
+      0 1px 2px rgba(14, 165, 233, 0.15);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(
+        135deg,
+        $brand-dark 0%,
+        darken($brand-dark, 5%) 100%
+      );
+      border-color: $brand-dark;
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35),
+        0 2px 4px rgba(14, 165, 233, 0.2);
+    }
+
+    &:focus-visible {
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.25),
+        0 0 0 4px rgba(14, 165, 233, 0.3);
+    }
+  }
+
+  // Ghost variant
+  &--ghost {
+    background: transparent;
+    color: $text-secondary;
+    border-color: transparent;
+
+    &:hover {
+      background: $bg-soft;
+      color: $text-primary;
+      border-color: $border;
+      box-shadow: none;
+    }
+
+    &:focus-visible {
+      background: $bg-soft;
+      border-color: $brand;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+    }
+  }
+}
+
+// ============================================================================
+// Loading State
+// ============================================================================
+
+.assessment-btn:disabled {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ============================================================================
+// Status Messages & Alerts
+// ============================================================================
+
+.assessment-alert {
+  padding: $spacing-md $spacing-lg;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+  animation: slideDown 0.3s ease-out;
+
+  &--info {
+    background: $blue-50;
+    color: $blue-800;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+  }
+
+  &--warning {
+    background: $yellow-50;
+    color: $yellow-800;
+    border: 1px solid rgba(250, 204, 21, 0.3);
+  }
+
+  &--success {
+    background: $success-bg;
+    color: $success;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+
+  &--error {
+    background: $error-bg;
+    color: $error;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ============================================================================
+// Focus & Hover Enhancements
+// ============================================================================
+
+// Enhanced focus states for accessibility
+*:focus-visible {
+  outline: 2px solid $brand;
+  outline-offset: 2px;
+}
+
+// Smooth transitions on interactive elements
+button,
+a,
+input,
+textarea,
+select {
+  transition: all $transition-base;
+}
+
+// ============================================================================
+// Responsive Adjustments
+// ============================================================================
+
+@media (max-width: $bp-sm) {
+  .assessment-wordcount {
+    font-size: 0.875rem;
+  }
+
+  .assessment-textarea {
+    min-height: 280px;
+    padding: $spacing-md;
+  }
+
+  .assessment-panel {
+    margin-bottom: $space-6;
+  }
+}
+
+// ============================================================================
+// Print Styles
+// ============================================================================
+
+@media print {
+  .assessment-actions {
+    display: none;
+  }
+
+  .assessment-container {
+    padding: 0;
+  }
+
+  .assessment-panel {
+    border: 1px solid #ddd;
+    box-shadow: none;
+  }
+
+  .assessment-textarea {
+    border: 1px solid #ddd;
+    min-height: auto;
+  }
+}
+
+// ============================================================================
+// Dark Mode Support (Optional - for future enhancement)
+// ============================================================================
+
+@media (prefers-color-scheme: dark) {
+  // Can be implemented later if needed
+  // Example:
+  // .assessment-container {
+  //   background: $color-black;
+  //   color: $color-white;
+  // }
+}
+
+// ============================================================================
+// Utility Classes
+// ============================================================================
+
+.assessment-hidden {
+  display: none !important;
+}
+
+.assessment-visible {
+  display: block !important;
+}
+
+.assessment-text-center {
+  text-align: center;
+}
+
+.assessment-mt-4 {
+  margin-top: $space-4;
+}
+
+.assessment-mb-4 {
+  margin-bottom: $space-4;
+}
