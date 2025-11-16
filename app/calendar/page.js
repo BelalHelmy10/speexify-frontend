@@ -27,6 +27,7 @@ import {
 } from "date-fns";
 
 import { getSafeExternalUrl } from "@/utils/url";
+import { useRouter } from "next/router";
 
 // date-fns localizer for RBC
 const locales = {};
@@ -69,6 +70,7 @@ function getVisibleRange(date, view) {
 
 export default function CalendarPage() {
   const { user, checking } = useAuth();
+  const router = useRouter();
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -166,19 +168,14 @@ export default function CalendarPage() {
   }, []);
 
   // Click → join link
-  const onSelectEvent = useCallback((event) => {
-    const choice = window.prompt(
-      `📅 ${
-        event.title
-      }\n\n✨ Status: ${event.status.toUpperCase()}\n\n💡 Type "join" to open the meeting link`,
-      "join"
-    );
-    if (choice && choice.toLowerCase().startsWith("join")) {
-      const url = getSafeExternalUrl(event.meetingUrl);
-      if (!url) return alert("⚠️ No valid meeting link available.");
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
-  }, []);
+  // Click → go to session detail page
+  const onSelectEvent = useCallback(
+    (event) => {
+      if (!event?.id) return;
+      router.push(`/dashboard/sessions/${event.id}`);
+    },
+    [router]
+  );
 
   // Mini calendar → jump date
   const onMiniChange = (date) => {
