@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 
-export default function SessionDetailPage() {
-  const params = useParams();
+export default function SessionDetailPage({ params }) {
   const router = useRouter();
-  const id = params?.id;
+  const { id } = params; // /dashboard/sessions/[id]
 
   const [session, setSession] = useState(null);
   const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"
@@ -58,23 +57,33 @@ export default function SessionDetailPage() {
 
   if (status === "loading") {
     return (
-      <div className="page page-session-detail">
-        <button onClick={handleBack} className="btn btn-link">
+      <div className="container-narrow page-session-detail">
+        <button
+          onClick={handleBack}
+          className="btn btn--ghost"
+          style={{ marginTop: 16 }}
+        >
           ← Back
         </button>
-        <h1>Loading session…</h1>
+        <h2 style={{ marginTop: 24 }}>Loading session…</h2>
       </div>
     );
   }
 
   if (status === "error" || !session) {
     return (
-      <div className="page page-session-detail">
-        <button onClick={handleBack} className="btn btn-link">
+      <div className="container-narrow page-session-detail">
+        <button
+          onClick={handleBack}
+          className="btn btn--ghost"
+          style={{ marginTop: 16 }}
+        >
           ← Back
         </button>
-        <h1>Session not available</h1>
-        <p className="text-danger">{error || "Could not load session."}</p>
+        <h2 style={{ marginTop: 24 }}>Session not available</h2>
+        <p style={{ marginTop: 8, color: "#b91c1c" }}>
+          {error || "Could not load session."}
+        </p>
       </div>
     );
   }
@@ -88,21 +97,26 @@ export default function SessionDetailPage() {
     user,
     teacher,
     status: s,
+    feedbackScore,
   } = session;
 
   return (
-    <div className="page page-session-detail">
-      <button onClick={handleBack} className="btn btn-link">
+    <div className="container-narrow page-session-detail">
+      <button
+        onClick={handleBack}
+        className="btn btn--ghost"
+        style={{ marginTop: 16 }}
+      >
         ← Back
       </button>
 
-      <header className="session-header">
+      <header className="session-header" style={{ marginTop: 24 }}>
         <h1>{title || "Session details"}</h1>
-        {s && <span className={`badge badge-status-${s}`}>{s}</span>}
+        {s && <span className={`badge badge--${s}`}>{s}</span>}
       </header>
 
       <section className="session-section">
-        <h2>Time</h2>
+        <h3>Time</h3>
         <p>
           <strong>Start:</strong> {formatDateTime(startAt)}
           <br />
@@ -111,7 +125,7 @@ export default function SessionDetailPage() {
       </section>
 
       <section className="session-section">
-        <h2>Teacher</h2>
+        <h3>Teacher</h3>
         {teacher ? (
           <p>
             {teacher.name || teacher.email}
@@ -124,7 +138,7 @@ export default function SessionDetailPage() {
       </section>
 
       <section className="session-section">
-        <h2>Learner</h2>
+        <h3>Learner</h3>
         {user ? (
           <p>
             {user.name || user.email}
@@ -137,13 +151,13 @@ export default function SessionDetailPage() {
       </section>
 
       <section className="session-section">
-        <h2>Join link</h2>
+        <h3>Join link</h3>
         {meetingUrl ? (
           <a
             href={meetingUrl}
             target="_blank"
             rel="noreferrer"
-            className="btn btn-primary"
+            className="btn btn--primary"
           >
             Join session
           </a>
@@ -153,9 +167,16 @@ export default function SessionDetailPage() {
       </section>
 
       <section className="session-section">
-        <h2>Notes / Homework</h2>
+        <h3>Notes / Homework</h3>
         {notes ? <p>{notes}</p> : <p>No notes added yet.</p>}
       </section>
+
+      {typeof feedbackScore === "number" && (
+        <section className="session-section">
+          <h3>Feedback</h3>
+          <p>Rating: {feedbackScore}/5</p>
+        </section>
+      )}
     </div>
   );
 }
