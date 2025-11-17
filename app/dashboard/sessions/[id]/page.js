@@ -1,7 +1,8 @@
+// app/dashboard/sessions/[id]/page.js
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 
 export default function SessionDetailPage({ params }) {
@@ -97,7 +98,7 @@ export default function SessionDetailPage({ params }) {
     user,
     teacher,
     status: s,
-    feedbackScore,
+    teacherFeedback, // 👈 new: object with the 3 sections
   } = session;
 
   return (
@@ -171,10 +172,38 @@ export default function SessionDetailPage({ params }) {
         {notes ? <p>{notes}</p> : <p>No notes added yet.</p>}
       </section>
 
-      {typeof feedbackScore === "number" && (
+      {teacherFeedback && (
         <section className="session-section">
-          <h3>Feedback</h3>
-          <p>Rating: {feedbackScore}/5</p>
+          <h3>Teacher feedback</h3>
+
+          <div style={{ display: "grid", gap: "16px", marginTop: 8 }}>
+            <div>
+              <h4>Message to the learner</h4>
+              <p>
+                {teacherFeedback.messageToLearner?.trim()
+                  ? teacherFeedback.messageToLearner
+                  : "No message provided."}
+              </p>
+            </div>
+
+            <div>
+              <h4>Comments on the session</h4>
+              <p>
+                {teacherFeedback.commentsOnSession?.trim()
+                  ? teacherFeedback.commentsOnSession
+                  : "No comments provided."}
+              </p>
+            </div>
+
+            <div>
+              <h4>Future steps</h4>
+              <p>
+                {teacherFeedback.futureSteps?.trim()
+                  ? teacherFeedback.futureSteps
+                  : "No future steps added yet."}
+              </p>
+            </div>
+          </div>
         </section>
       )}
     </div>

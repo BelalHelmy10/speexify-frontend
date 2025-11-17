@@ -71,7 +71,7 @@ function SessionRow({
   onCancel,
   onRescheduleClick,
   isUpcoming = true,
-  onGiveFeedback, // 👈 NEW (for past sessions)
+  isTeacher = false,
 }) {
   const countdown = useCountdown(s.startAt, s.endAt);
   const joinable = canJoin(s.startAt, s.endAt);
@@ -101,26 +101,12 @@ function SessionRow({
             {s.status && (
               <span className={`badge badge--${s.status}`}>{s.status}</span>
             )}
-            {!isUpcoming && typeof s.feedbackScore === "number" && (
-              <span className="badge badge--feedback">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-                {s.feedbackScore}/5
-              </span>
-            )}
           </div>
         </div>
 
         <div className="session-item__actions">
           {isUpcoming ? (
             <>
-              {/* existing upcoming buttons (unchanged) */}
               {s.meetingUrl && (
                 <a
                   href={getSafeExternalUrl(s.meetingUrl)}
@@ -133,21 +119,13 @@ function SessionRow({
                     joinable ? "Join now" : "Join becomes active near start"
                   }
                 >
-                  {joinable ? (
-                    <>
-                      {/* ...icon... */}
-                      Join session
-                    </>
-                  ) : (
-                    countdown || "Join soon"
-                  )}
+                  {joinable ? <>Join session</> : countdown || "Join soon"}
                 </a>
               )}
               <button
                 className="btn btn--ghost"
                 onClick={() => onRescheduleClick(s)}
               >
-                {/* Reschedule icon + label */}
                 Reschedule
               </button>
               <button
@@ -155,7 +133,6 @@ function SessionRow({
                 onClick={() => onCancel(s)}
                 title="Cancel session"
               >
-                {/* Cancel icon + label */}
                 Cancel
               </button>
             </>
@@ -178,16 +155,25 @@ function SessionRow({
                 </svg>
               </Link>
 
-              {onGiveFeedback &&
-                s.status === "completed" &&
-                typeof s.feedbackScore !== "number" && (
-                  <button
-                    className="btn btn--primary"
-                    onClick={() => onGiveFeedback(s)}
-                  >
-                    Give feedback
-                  </button>
-                )}
+              {/* Teacher: Give feedback (dedicated page, only if completed & no feedback yet) */}
+              {isTeacher && s.status === "completed" && !s.teacherFeedback && (
+                <Link
+                  href={`/dashboard/sessions/${s.id}/feedback`}
+                  className="btn btn--primary"
+                >
+                  Give feedback
+                </Link>
+              )}
+
+              {/* Learner: View feedback (only after teacher filled it) */}
+              {!isTeacher && s.teacherFeedback && (
+                <Link
+                  href={`/dashboard/sessions/${s.id}/feedback`}
+                  className="btn btn--primary"
+                >
+                  View feedback
+                </Link>
+              )}
             </>
           )}
         </div>
@@ -238,6 +224,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState("Loading…");
   const [summary, setSummary] = useState(null);
   const { user, checking } = useAuth();
+  const isTeacher = user?.role === "teacher";
 
   const [teachSummary, setTeachSummary] = useState({
     nextTeach: null,
@@ -254,10 +241,6 @@ export default function Dashboard() {
   const [reschedSession, setReschedSession] = useState(null);
   const [newStart, setNewStart] = useState("");
   const [newEnd, setNewEnd] = useState("");
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [feedbackSession, setFeedbackSession] = useState(null);
-  const [feedbackRating, setFeedbackRating] = useState(5);
-  const [feedbackNotes, setFeedbackNotes] = useState("");
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -336,7 +319,6 @@ export default function Dashboard() {
     } catch {}
   }, []);
 
-  // Helper to refresh everything (call this after session completion from anywhere)
   const refreshAll = useCallback(async () => {
     await Promise.all([fetchSummary(), fetchSessions(), fetchPackages()]);
   }, [fetchSummary, fetchSessions, fetchPackages]);
@@ -422,30 +404,6 @@ export default function Dashboard() {
     }
   };
 
-  const openFeedback = (s) => {
-    setFeedbackSession(s);
-    setFeedbackRating(
-      typeof s.feedbackScore === "number" ? s.feedbackScore : 5
-    );
-    setFeedbackNotes("");
-    setFeedbackOpen(true);
-  };
-
-  const submitFeedback = async () => {
-    if (!feedbackSession) return;
-    try {
-      await api.post(`/sessions/${feedbackSession.id}/feedback/learner`, {
-        rating: feedbackRating,
-        notes: feedbackNotes,
-      });
-      setFeedbackOpen(false);
-      setFeedbackSession(null);
-      await refreshAll();
-    } catch (e) {
-      alert(e?.response?.data?.error || "Failed to submit feedback");
-    }
-  };
-
   if (status) return <p className="loading-state">{status}</p>;
   if (!summary) return null;
 
@@ -453,7 +411,6 @@ export default function Dashboard() {
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
   const { upcomingCount, completedCount, timezone } = summary;
 
-  // ── Aggregated package math (active + not expired) ────────────────────────────
   const activePacks = packs.filter((p) => p.status === "active" && !p.expired);
   const totalSessions = activePacks.reduce(
     (s, p) => s + Number(p.sessionsTotal || 0),
@@ -469,7 +426,6 @@ export default function Dashboard() {
       ? Math.min(100, Math.round((remainingSessions / totalSessions) * 100))
       : 0;
 
-  // Choose a representative pack for title/duration/expiry (first active)
   const primaryPack = activePacks[0];
   const expiryLabel = primaryPack?.expiresAt
     ? new Date(primaryPack.expiresAt).toLocaleDateString()
@@ -718,7 +674,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {user?.role === "teacher" && (
+      {isTeacher && (
         <div className="panel panel--featured">
           <div className="panel__badge">Teaching</div>
           <h3>Next session to teach</h3>
@@ -791,16 +747,6 @@ export default function Dashboard() {
                     rel="noreferrer"
                     className="btn btn--primary btn--glow"
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
                     Join session
                   </a>
                 ) : (
@@ -826,90 +772,6 @@ export default function Dashboard() {
           )}
         </div>
       )}
-
-      <div className="panel panel--featured">
-        <div className="panel__badge">Learning</div>
-        <h3>Next session</h3>
-        {!visibleNext ? (
-          <div className="empty-state">
-            <svg
-              width="48"
-              height="48"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            <p>No upcoming sessions yet.</p>
-          </div>
-        ) : (
-          <>
-            <div className="next-session">
-              <div className="next-session__title">{visibleNext.title}</div>
-              <div className="next-session__time">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-                {fmtInTz(visibleNext.startAt, timezone)}
-                {visibleNext.endAt ? ` — ${fmt(visibleNext.endAt)}` : ""}
-              </div>
-            </div>
-            <div className="button-row">
-              {visibleNext.meetingUrl &&
-              canJoin(visibleNext.startAt, visibleNext.endAt) ? (
-                <a
-                  href={getSafeExternalUrl(visibleNext.meetingUrl)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn--primary btn--glow"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Join session
-                </a>
-              ) : (
-                <Link href="/calendar" className="btn btn--ghost">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  View calendar
-                </Link>
-              )}
-            </div>
-          </>
-        )}
-      </div>
 
       <div className="panel">
         <div className="panel__head">
@@ -945,6 +807,7 @@ export default function Dashboard() {
                 isUpcoming
                 onCancel={handleCancel}
                 onRescheduleClick={openReschedule}
+                isTeacher={isTeacher}
               />
             ))}
           </div>
@@ -982,7 +845,7 @@ export default function Dashboard() {
                 isUpcoming={false}
                 onCancel={() => {}}
                 onRescheduleClick={() => {}}
-                onGiveFeedback={openFeedback} // 👈 NEW
+                isTeacher={isTeacher}
               />
             ))}
           </div>
@@ -1018,53 +881,6 @@ export default function Dashboard() {
             </button>
             <button className="btn btn--primary" onClick={submitReschedule}>
               Save changes
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {feedbackOpen && (
-        <Modal
-          title={
-            feedbackSession?.title
-              ? `Feedback for "${feedbackSession.title}"`
-              : "Session feedback"
-          }
-          onClose={() => setFeedbackOpen(false)}
-        >
-          <div className="form-grid">
-            <label>
-              <span>Rating (1–5)</span>
-              <input
-                type="number"
-                min={1}
-                max={5}
-                value={feedbackRating}
-                onChange={(e) =>
-                  setFeedbackRating(
-                    Math.max(1, Math.min(5, Number(e.target.value) || 5))
-                  )
-                }
-              />
-            </label>
-            <label>
-              <span>Comments (optional)</span>
-              <textarea
-                rows={3}
-                value={feedbackNotes}
-                onChange={(e) => setFeedbackNotes(e.target.value)}
-              />
-            </label>
-          </div>
-          <div className="button-row">
-            <button
-              className="btn btn--ghost"
-              onClick={() => setFeedbackOpen(false)}
-            >
-              Cancel
-            </button>
-            <button className="btn btn--primary" onClick={submitFeedback}>
-              Submit feedback
             </button>
           </div>
         </Modal>
