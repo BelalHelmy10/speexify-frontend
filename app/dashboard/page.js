@@ -184,7 +184,10 @@ function SessionRow({
               </button>
             </>
           ) : (
-            <Link href={`/sessions/${s.id}`} className="btn btn--ghost">
+            <Link
+              href={`/dashboard/sessions/${s.id}`}
+              className="btn btn--ghost"
+            >
               View details
               <svg
                 width="16"
