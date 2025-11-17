@@ -1,156 +1,243 @@
+// app/dashboard/sessions/[id]/feedback/page.jsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import useAuth from "@/hooks/useAuth";
+import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import useAuth from "@/hooks/useAuth";
 
-export default function SessionFeedbackPage() {
-  const { id } = useParams();
+export default function SessionFeedbackPage({ params }) {
+  const { id } = params;
   const router = useRouter();
   const { user, checking } = useAuth();
 
-  const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
-  const [feedback, setFeedback] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Feedback fields
   const [messageToLearner, setMessageToLearner] = useState("");
   const [commentsOnSession, setCommentsOnSession] = useState("");
   const [futureSteps, setFutureSteps] = useState("");
 
-  const [saving, setSaving] = useState(false);
+  const isTeacher = user?.role === "teacher";
 
-  const isTeacher = session && user && session.teacherId === user.id;
-  const canEdit = isTeacher || (user && user.role === "admin");
+  const canEdit = useMemo(() => {
+    if (!session) return false;
+    // Teacher only; you can also require status === "completed" if you like:
+    // return isTeacher && session.status === "completed";
+    return isTeacher;
+  }, [session, isTeacher]);
 
   useEffect(() => {
     if (!id || checking) return;
-    if (!user) {
-      setError("Not authenticated");
-      setLoading(false);
-      return;
-    }
 
-    (async () => {
+    let cancelled = false;
+
+    async function load() {
       try {
         setLoading(true);
         setError("");
+        const { data } = await api.get(`/sessions/${id}`);
+        if (cancelled) return;
 
-        const [sRes, fRes] = await Promise.all([
-          api.get(`/sessions/${id}`),
-          api.get(`/sessions/${id}/feedback`),
-        ]);
+        const s = data?.session || null;
+        setSession(s);
 
-        setSession(sRes.data || null);
-        setFeedback(fRes.data || null);
-
-        if (fRes.data) {
-          setMessageToLearner(fRes.data.messageToLearner || "");
-          setCommentsOnSession(fRes.data.commentsOnSession || "");
-          setFutureSteps(fRes.data.futureSteps || "");
-        }
-
-        setLoading(false);
-      } catch (e) {
-        console.error(e);
-        setError(e?.response?.data?.error || "Failed to load session/feedback");
-        setLoading(false);
+        const tf = s?.teacherFeedback || {};
+        setMessageToLearner(tf.messageToLearner || "");
+        setCommentsOnSession(tf.commentsOnSession || "");
+        setFutureSteps(tf.futureSteps || "");
+      } catch (err) {
+        if (cancelled) return;
+        console.error("Failed to load session feedback", err);
+        setError(
+          err?.response?.data?.error || "Failed to load session feedback"
+        );
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    })();
-  }, [id, checking, user]);
+    }
 
-  const onSave = async () => {
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, checking]);
+
+  const handleBack = () => {
+    router.push(`/dashboard/sessions/${id}`);
+  };
+
+  const handleSave = async () => {
+    if (!canEdit) return;
     try {
       setSaving(true);
       setError("");
-      await api.post(`/sessions/${id}/feedback`, {
+
+      // Adjust this endpoint/body to match your backend if needed
+      await api.post(`/sessions/${id}/feedback/teacher`, {
         messageToLearner,
         commentsOnSession,
         futureSteps,
       });
-      setSaving(false);
-      router.push(`/dashboard/sessions/${id}`);
-    } catch (e) {
-      console.error(e);
-      setError(e?.response?.data?.error || "Failed to save feedback");
+
+      alert("Feedback saved.");
+      // Optionally re-fetch to stay in sync
+    } catch (err) {
+      console.error("Failed to save feedback", err);
+      setError(err?.response?.data?.error || "Failed to save feedback");
+    } finally {
       setSaving(false);
     }
   };
 
-  if (checking || loading)
-    return <div className="container-narrow">Loading…</div>;
-  if (error) return <div className="container-narrow error-text">{error}</div>;
-  if (!session)
-    return <div className="container-narrow">Session not found.</div>;
+  const formatSessionDate = () => {
+    const start = session?.startAt;
+    if (!start) return "";
+    const d = new Date(start);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
+  if (checking || loading) {
+    return (
+      <div className="container-narrow page-session-detail">
+        <button
+          onClick={handleBack}
+          className="btn btn--ghost"
+          style={{ marginTop: 16 }}
+        >
+          ← Back to session
+        </button>
+        <h2 style={{ marginTop: 24 }}>Loading feedback…</h2>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="container-narrow page-session-detail">
+        <button
+          onClick={handleBack}
+          className="btn btn--ghost"
+          style={{ marginTop: 16 }}
+        >
+          ← Back to session
+        </button>
+        <h2 style={{ marginTop: 24 }}>Session not found</h2>
+        {error && (
+          <p style={{ marginTop: 8, color: "#b91c1c" }}>
+            {error || "Could not load session."}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  const sessionDateLabel = formatSessionDate();
 
   return (
-    <div className="container-narrow">
+    <div className="container-narrow page-session-detail">
       <button
+        onClick={handleBack}
         className="btn btn--ghost"
-        onClick={() => router.push(`/dashboard/sessions/${id}`)}
-        style={{ marginBottom: 16 }}
+        style={{ marginTop: 16 }}
       >
         ← Back to session
       </button>
 
-      <h2>Session feedback</h2>
-      <p style={{ opacity: 0.8, marginTop: 4 }}>
-        {session.title || "Session"} ·{" "}
-        {new Date(session.startAt).toLocaleString()}
-      </p>
-
-      {!canEdit && (
-        <p style={{ marginTop: 16, fontStyle: "italic", opacity: 0.8 }}>
-          This feedback is read-only. Only the teacher can edit it.
+      <header style={{ marginTop: 24, marginBottom: 16 }}>
+        <h1>Session feedback</h1>
+        <p style={{ marginTop: 4, opacity: 0.8 }}>
+          Session
+          {sessionDateLabel ? ` · ${sessionDateLabel}` : ""}
         </p>
+
+        <p
+          style={{
+            marginTop: 8,
+            fontStyle: "italic",
+            opacity: 0.8,
+          }}
+        >
+          {canEdit
+            ? "You can edit and save feedback for this session. The learner will see it as read-only."
+            : "This feedback is read-only. Only the teacher can edit it."}
+        </p>
+      </header>
+
+      {error && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: 12,
+            borderRadius: 8,
+            background: "#fef2f2",
+            color: "#b91c1c",
+          }}
+        >
+          {error}
+        </div>
       )}
 
-      <div className="panel" style={{ marginTop: 24 }}>
-        <div className="form-grid">
-          <label>
+      <div
+        className="panel"
+        style={{
+          padding: 24,
+          borderRadius: 16,
+          boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
+        }}
+      >
+        <div
+          className="form-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 20,
+            marginBottom: 16,
+          }}
+        >
+          <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <span>Message to the learner</span>
             <textarea
               rows={4}
               value={messageToLearner}
               onChange={(e) => setMessageToLearner(e.target.value)}
-              disabled={!canEdit}
+              readOnly={!canEdit}
             />
           </label>
 
-          <label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <span>Comments on the session</span>
             <textarea
               rows={4}
               value={commentsOnSession}
               onChange={(e) => setCommentsOnSession(e.target.value)}
-              disabled={!canEdit}
-            />
-          </label>
-
-          <label>
-            <span>Future steps</span>
-            <textarea
-              rows={4}
-              value={futureSteps}
-              onChange={(e) => setFutureSteps(e.target.value)}
-              disabled={!canEdit}
+              readOnly={!canEdit}
             />
           </label>
         </div>
 
+        <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <span>Future steps</span>
+          <textarea
+            rows={4}
+            value={futureSteps}
+            onChange={(e) => setFutureSteps(e.target.value)}
+            readOnly={!canEdit}
+          />
+        </label>
+
         {canEdit && (
-          <div className="button-row" style={{ marginTop: 16 }}>
-            <button
-              className="btn btn--ghost"
-              onClick={() => router.push(`/dashboard/sessions/${id}`)}
-              disabled={saving}
-            >
-              Cancel
-            </button>
+          <div className="button-row" style={{ marginTop: 20 }}>
             <button
               className="btn btn--primary"
-              onClick={onSave}
+              onClick={handleSave}
               disabled={saving}
             >
               {saving ? "Saving…" : "Save feedback"}
