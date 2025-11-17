@@ -71,6 +71,7 @@ function SessionRow({
   onCancel,
   onRescheduleClick,
   isUpcoming = true,
+  onGiveFeedback, // 👈 NEW (for past sessions)
 }) {
   const countdown = useCountdown(s.startAt, s.endAt);
   const joinable = canJoin(s.startAt, s.endAt);
@@ -119,6 +120,7 @@ function SessionRow({
         <div className="session-item__actions">
           {isUpcoming ? (
             <>
+              {/* existing upcoming buttons (unchanged) */}
               {s.meetingUrl && (
                 <a
                   href={getSafeExternalUrl(s.meetingUrl)}
@@ -133,16 +135,7 @@ function SessionRow({
                 >
                   {joinable ? (
                     <>
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
+                      {/* ...icon... */}
                       Join session
                     </>
                   ) : (
@@ -154,16 +147,7 @@ function SessionRow({
                 className="btn btn--ghost"
                 onClick={() => onRescheduleClick(s)}
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M11 19H6.931A1.922 1.922 0 015 17.087V8h12v3M15 3v4M9 3v4M3 10h16M18 21v-6M15 18h6" />
-                </svg>
+                {/* Reschedule icon + label */}
                 Reschedule
               </button>
               <button
@@ -171,6 +155,14 @@ function SessionRow({
                 onClick={() => onCancel(s)}
                 title="Cancel session"
               >
+                {/* Cancel icon + label */}
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href={`/sessions/${s.id}`} className="btn btn--ghost">
+                View details
                 <svg
                   width="16"
                   height="16"
@@ -179,27 +171,21 @@ function SessionRow({
                   stroke="currentColor"
                   strokeWidth="2"
                 >
-                  <path d="M18 6L6 18M6 6l12 12" />
+                  <path d="M9 18l6-6-6-6" />
                 </svg>
-              </button>
+              </Link>
+
+              {onGiveFeedback &&
+                s.status === "completed" &&
+                typeof s.feedbackScore !== "number" && (
+                  <button
+                    className="btn btn--primary"
+                    onClick={() => onGiveFeedback(s)}
+                  >
+                    Give feedback
+                  </button>
+                )}
             </>
-          ) : (
-            <Link
-              href={`/dashboard/sessions/${s.id}`}
-              className="btn btn--ghost"
-            >
-              View details
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </Link>
           )}
         </div>
       </div>
@@ -265,6 +251,10 @@ export default function Dashboard() {
   const [reschedSession, setReschedSession] = useState(null);
   const [newStart, setNewStart] = useState("");
   const [newEnd, setNewEnd] = useState("");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackSession, setFeedbackSession] = useState(null);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackNotes, setFeedbackNotes] = useState("");
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -426,6 +416,30 @@ export default function Dashboard() {
       await refreshAll();
     } catch (e) {
       alert(e?.response?.data?.error || "Failed to reschedule");
+    }
+  };
+
+  const openFeedback = (s) => {
+    setFeedbackSession(s);
+    setFeedbackRating(
+      typeof s.feedbackScore === "number" ? s.feedbackScore : 5
+    );
+    setFeedbackNotes("");
+    setFeedbackOpen(true);
+  };
+
+  const submitFeedback = async () => {
+    if (!feedbackSession) return;
+    try {
+      await api.post(`/sessions/${feedbackSession.id}/feedback/learner`, {
+        rating: feedbackRating,
+        notes: feedbackNotes,
+      });
+      setFeedbackOpen(false);
+      setFeedbackSession(null);
+      await refreshAll();
+    } catch (e) {
+      alert(e?.response?.data?.error || "Failed to submit feedback");
     }
   };
 
@@ -965,6 +979,7 @@ export default function Dashboard() {
                 isUpcoming={false}
                 onCancel={() => {}}
                 onRescheduleClick={() => {}}
+                onGiveFeedback={openFeedback} // 👈 NEW
               />
             ))}
           </div>
@@ -1000,6 +1015,53 @@ export default function Dashboard() {
             </button>
             <button className="btn btn--primary" onClick={submitReschedule}>
               Save changes
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {feedbackOpen && (
+        <Modal
+          title={
+            feedbackSession?.title
+              ? `Feedback for "${feedbackSession.title}"`
+              : "Session feedback"
+          }
+          onClose={() => setFeedbackOpen(false)}
+        >
+          <div className="form-grid">
+            <label>
+              <span>Rating (1–5)</span>
+              <input
+                type="number"
+                min={1}
+                max={5}
+                value={feedbackRating}
+                onChange={(e) =>
+                  setFeedbackRating(
+                    Math.max(1, Math.min(5, Number(e.target.value) || 5))
+                  )
+                }
+              />
+            </label>
+            <label>
+              <span>Comments (optional)</span>
+              <textarea
+                rows={3}
+                value={feedbackNotes}
+                onChange={(e) => setFeedbackNotes(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="button-row">
+            <button
+              className="btn btn--ghost"
+              onClick={() => setFeedbackOpen(false)}
+            >
+              Cancel
+            </button>
+            <button className="btn btn--primary" onClick={submitFeedback}>
+              Submit feedback
             </button>
           </div>
         </Modal>
