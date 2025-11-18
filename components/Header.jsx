@@ -65,6 +65,7 @@ export default function Header() {
   const learner = [
     { to: "/dashboard", label: "Dashboard" },
     { to: "/calendar", label: "Calendar" },
+    { to: "/dashboard/progress", label: "Progress" },
     { to: "/settings", label: "Settings" },
   ];
 
