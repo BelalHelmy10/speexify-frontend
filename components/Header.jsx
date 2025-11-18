@@ -16,9 +16,15 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
 
   const isActive = (href) => {
-    if (!href) return false;
-    if (href === "/") return pathname === "/";
-    return pathname?.startsWith(href);
+    if (!href || !pathname) return false;
+
+    // Exact match logic for any nested dashboard route
+    if (href.startsWith("/dashboard")) {
+      return pathname === href;
+    }
+
+    // Normal match for public pages
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   useEffect(() => {
