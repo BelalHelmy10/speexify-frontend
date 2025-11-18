@@ -156,12 +156,13 @@ function SessionRow({
               </Link>
 
               {/* Teacher: Give feedback (dedicated page, only if completed & no feedback yet) */}
-              {isTeacher && s.status === "completed" && !s.teacherFeedback && (
+              {/* Teacher: give OR edit feedback on completed sessions */}
+              {isTeacher && s.status === "completed" && (
                 <Link
                   href={`/dashboard/sessions/${s.id}/feedback`}
                   className="btn btn--primary"
                 >
-                  Give feedback
+                  {s.teacherFeedback ? "Edit feedback" : "Give feedback"}
                 </Link>
               )}
 
