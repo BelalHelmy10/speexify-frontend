@@ -5,8 +5,11 @@ import { useEffect, useState, useMemo } from "react";
 import api from "@/lib/api";
 import "@/styles/admin.scss";
 import useAuth from "@/hooks/useAuth";
+import { useToast, useConfirm } from "@/components/ToastProvider";
 
 function Admin() {
+  const { toast } = useToast();
+  const { confirmModal } = useConfirm();
   const { user, checking } = useAuth();
   const [status, setStatus] = useState("");
   const [users, setUsers] = useState([]);
@@ -209,7 +212,8 @@ function Admin() {
       };
 
       await api.post("/admin/sessions", payload);
-      setStatus("Created ✓");
+      toast.success("Session created");
+      setStatus("");
       await reloadSessions();
       setForm((f) => ({
         ...f,
@@ -275,24 +279,31 @@ function Admin() {
       };
 
       await api.patch(`/admin/sessions/${id}`, payload);
-      setStatus("Updated ✓");
+      toast.success("Session updates");
+      setStatus("");
       setEditingId(null);
       await reloadSessions();
     } catch (e) {
-      setStatus(e.response?.data?.error || "Failed to update session");
+      toast.error(e.response?.data?.error || "Failed to update session");
+      setStatus("");
     }
   };
 
   const deleteSession = async (id) => {
-    if (!window.confirm("Delete this session?")) return;
+    const ok = await confirmModal("Delete this session?");
+    if (!ok) return;
+
     setStatus("Deleting…");
+
     try {
       await api.delete(`/admin/sessions/${id}`);
-      setStatus("Deleted ✓");
+      toast.success("Session deleted");
+      setStatus("");
       setSessions((rows) => rows.filter((r) => r.id !== id));
       setTotal((t) => Math.max(0, t - 1));
     } catch (e) {
-      setStatus(e.response?.data?.error || "Failed to delete session");
+      toast.error(e.response?.data?.error || "Failed to delete session");
+      setStatus("");
     }
   };
 
@@ -320,45 +331,54 @@ function Admin() {
   async function changeRole(u, role) {
     try {
       await api.patch(`/admin/users/${u.id}`, { role });
-      setStatus("Role updated ✓");
+      toast.success("Role created");
+      setStatus("");
       loadUsersAdmin();
     } catch (e) {
-      setStatus(e.response?.data?.error || "Failed to update role");
+      toast.error(e.response?.data?.error || "Failed to update role");
+      setStatus("");
     }
   }
 
   async function toggleDisabled(u) {
     try {
       await api.patch(`/admin/users/${u.id}`, { isDisabled: !u.isDisabled });
-      setStatus(!u.isDisabled ? "User disabled" : "User enabled");
+      toast.success(!u.isDisabled ? "User disabled" : "User enabled");
+      setStatus("");
       loadUsersAdmin();
     } catch (e) {
-      setStatus(e.response?.data?.error || "Failed to change status");
+      toast.error(e.response?.data?.error || "Failed to change status");
+      setStatus("");
     }
   }
 
   async function sendReset(u) {
     try {
       await api.post(`/admin/users/${u.id}/reset-password`);
-      setStatus("Reset email sent ✓");
+      toast.success("Reset email sent");
+      setStatus("");
     } catch (e) {
-      setStatus(e.response?.data?.error || "Failed to send reset");
+      toast.error(e.response?.data?.error || "Failed to send reset");
+      setStatus("");
     }
   }
 
   async function impersonate(u) {
     try {
       await api.post(`/admin/impersonate/${u.id}`);
-      setStatus(`Viewing as ${u.email}`);
+      toast.success(`Viewing as ${u.email}`);
+      setStatus("");
     } catch (e) {
-      setStatus(e.response?.data?.error || "Failed to impersonate");
+      toast.error(e.response?.data?.error || "Failed to impersonate");
+      setStatus("");
     }
   }
 
   async function stopImpersonate() {
     try {
       await api.post(`/admin/impersonate/stop`);
-      setStatus("Back to admin");
+      toast.success("Back to admin");
+      setStatus("");
     } catch (e) {
       setStatus(e.response?.data?.error || "Failed to stop impersonation");
     }
@@ -375,25 +395,6 @@ function Admin() {
             </span>
           </h1>
         </div>
-        {status && (
-          <div className="adm-status-toast">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-              <path
-                d="M7 10L9 12L13 8"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {status}
-          </div>
-        )}
       </div>
 
       <section className="adm-admin-card">

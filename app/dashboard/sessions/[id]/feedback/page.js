@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
+import { useToast } from "@/components/ToastProvider";
 
 export default function SessionFeedbackPage({ params }) {
   const { id } = params;
@@ -22,6 +23,7 @@ export default function SessionFeedbackPage({ params }) {
   const [futureSteps, setFutureSteps] = useState("");
 
   const isTeacher = user?.role === "teacher";
+  const toast = useToast();
 
   const canEdit = useMemo(() => {
     if (!session) return false;
@@ -76,18 +78,17 @@ export default function SessionFeedbackPage({ params }) {
       setSaving(true);
       setError("");
 
-      // Adjust this endpoint/body to match your backend if needed
       await api.post(`/sessions/${id}/feedback/teacher`, {
         messageToLearner,
         commentsOnSession,
         futureSteps,
       });
 
-      alert("Feedback saved.");
-      // Optionally re-fetch to stay in sync
+      toast.success("Feedback saved.");
     } catch (err) {
       console.error("Failed to save feedback", err);
       setError(err?.response?.data?.error || "Failed to save feedback");
+      toast.error("Failed to save feedback");
     } finally {
       setSaving(false);
     }

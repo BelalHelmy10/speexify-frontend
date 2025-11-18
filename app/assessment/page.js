@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import api from "@/lib/api";
 import Link from "next/link";
+import { useToast } from "@/components/ToastProvider";
 
 const TARGET_MIN = 150; // soft target
 const TARGET_MAX = 250; // soft target
@@ -14,6 +15,7 @@ function countWords(s) {
 }
 
 export default function AssessmentPage() {
+  const { toast, confirmModal } = useToast();
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   const [last, setLast] = useState(null);
@@ -82,17 +84,17 @@ export default function AssessmentPage() {
     e.preventDefault();
 
     if (wordCount < HARD_MIN) {
-      const ok = confirm(
+      const ok = await confirmModal(
         `Your submission is only ${wordCount} words (minimum recommended is ${TARGET_MIN}). Submit anyway?`
       );
       if (!ok) return;
     } else if (wordCount < TARGET_MIN || wordCount > TARGET_MAX) {
-      const ok = confirm(
+      const ok = await confirmModal(
         `Your response is ${wordCount} words. The target range is ${TARGET_MIN}–${TARGET_MAX} words. Submit anyway?`
       );
       if (!ok) return;
     } else if (wordCount > HARD_MAX) {
-      const ok = confirm(
+      const ok = await confirmModal(
         `Your submission is ${wordCount} words, which is quite long. Are you sure you want to submit?`
       );
       if (!ok) return;
@@ -104,17 +106,19 @@ export default function AssessmentPage() {
       try {
         window.localStorage.removeItem(draftKey);
       } catch {}
-      alert("Assessment submitted. We’ll review it soon.");
+      toast.success("Assessment submitted. We’ll review it soon.");
       setLast({ text, createdAt: new Date().toISOString() });
     } catch (e) {
-      alert(e?.response?.data?.error || "Failed to submit");
+      toast.error(e?.response?.data?.error || "Failed to submit");
     } finally {
       setSaving(false);
     }
   };
 
-  const clearDraft = () => {
-    const ok = confirm("Clear your current draft? This cannot be undone.");
+  const clearDraft = async () => {
+    const ok = await confirmModal(
+      "Clear your current draft? This cannot be undone."
+    );
     if (!ok) return;
     setText("");
     setWordCount(0);

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
 import Link from "next/link";
+import { useToast } from "@/components/ToastProvider";
 
 const MOTIVATIONS = [
   "Professional development",
@@ -45,6 +46,7 @@ const SKILLS = [
 ];
 
 export default function OnboardingPage() {
+  const { toast } = useToast();
   const [answers, setAnswers] = useState({
     // ——— Profile / Logistics ———
     timezone: "",
@@ -143,7 +145,7 @@ export default function OnboardingPage() {
       await api.post("/me/onboarding", { answers });
       setSaved(true);
     } catch (e) {
-      alert(e?.response?.data?.error || "Failed to save");
+      toast.error(e?.response?.data?.error || "Failed to save");
     } finally {
       setSaving(false);
     }

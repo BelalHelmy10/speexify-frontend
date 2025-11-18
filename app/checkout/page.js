@@ -5,8 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { me } from "@/lib/auth";
 import "@/styles/checkout.scss";
+import { useToast } from "@/components/ToastProvider";
 
 export default function CheckoutPage() {
+  const { toast, confirmModal } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -82,11 +84,10 @@ export default function CheckoutPage() {
       setLoading(true);
 
       if (!user) {
-        const shouldLogin = confirm(
+        const shouldLogin = await confirmModal(
           "Please log in to continue with checkout. Redirect to login page?"
         );
         if (shouldLogin) {
-          // ✅ CHANGED: Use URL parameter instead of sessionStorage
           const currentUrl = encodeURIComponent(window.location.href);
           router.push(`/login?next=${currentUrl}`);
         }
@@ -125,7 +126,7 @@ export default function CheckoutPage() {
 
       window.location.href = res.iframeUrl;
     } catch (e) {
-      alert(e.message);
+      toast.error(e.message || "Payment failed");
     } finally {
       setLoading(false);
     }

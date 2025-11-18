@@ -7,6 +7,7 @@ import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { fmtInTz } from "@/utils/date";
 import { getSafeExternalUrl } from "@/utils/url";
+import { useToast } from "@/components/ToastProvider";
 
 const fmt = (d) =>
   new Date(d).toLocaleString([], {
@@ -222,6 +223,7 @@ function Card({ title, value, icon, gradient }) {
 }
 
 export default function Dashboard() {
+  const { toast, confirmModal } = useToast();
   const [status, setStatus] = useState("Loading…");
   const [summary, setSummary] = useState(null);
   const { user, checking } = useAuth();
@@ -373,12 +375,13 @@ export default function Dashboard() {
   }, [refreshAll]);
 
   const handleCancel = async (s) => {
-    if (!window.confirm("Cancel this session?")) return;
+    const ok = await confirmModal("Cancel this session?");
+    if (!ok) return;
     try {
       await api.post(`/sessions/${s.id}/cancel`);
       await refreshAll();
     } catch (e) {
-      alert(e?.response?.data?.error || "Failed to cancel");
+      toast.error(e?.response?.data?.error || "Failed to cancel");
     }
   };
 
@@ -401,7 +404,7 @@ export default function Dashboard() {
       setReschedSession(null);
       await refreshAll();
     } catch (e) {
-      alert(e?.response?.data?.error || "Failed to reschedule");
+      toast.error(e?.response?.data?.error || "Failed to reschedule");
     }
   };
 
