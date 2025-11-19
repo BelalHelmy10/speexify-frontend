@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
-import ".@/styles/progress-page.scss";
+import "@/styles/progress-page.scss";
 
 export default function ProgressPage() {
   const { user, checking } = useAuth();
