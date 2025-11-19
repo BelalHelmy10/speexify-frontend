@@ -139,7 +139,7 @@
           rgba($color-primary, 0.12),
           transparent 50%
         ),
-        linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+        linear-gradient(180deg, #f7fbff 0%, $color-white 100%);
     }
 
     &-pattern {

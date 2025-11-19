@@ -1,5 +1,6 @@
 @use "variables" as *;
 /* web/src/styles/_media.scss */
+
 img,
 picture {
   max-width: 100%;
@@ -10,7 +11,7 @@ picture {
 /* Common media wrappers */
 .media {
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: $radius-lg;
 }
 
 .media--cover img {
@@ -21,11 +22,11 @@ picture {
 
 /* Card media placeholder ratios */
 .ratio-16x9 {
-  aspect-ratio: 16/9;
+  aspect-ratio: 16 / 9;
 }
 .ratio-4x3 {
-  aspect-ratio: 4/3;
+  aspect-ratio: 4 / 3;
 }
 .ratio-1x1 {
-  aspect-ratio: 1/1;
+  aspect-ratio: 1 / 1;
 }

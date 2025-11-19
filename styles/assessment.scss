@@ -197,7 +197,7 @@
   }
 
   &:hover {
-    border-color: darken($border, 8%);
+    border-color: ($border, 8%);
   }
 
   &:focus {
@@ -223,7 +223,7 @@
     border-radius: 10px;
 
     &:hover {
-      background: darken($border, 15%);
+      background: ($border, 15%);
     }
   }
 }
@@ -330,7 +330,7 @@
 
   &:hover:not(:disabled) {
     background: $bg-soft;
-    border-color: darken($border, 8%);
+    border-color: ($border, 8%);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
   }
@@ -362,7 +362,7 @@
       background: linear-gradient(
         135deg,
         $brand-dark 0%,
-        darken($brand-dark, 5%) 100%
+        ($brand-dark, 5%) 100%
       );
       border-color: $brand-dark;
       box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35),
