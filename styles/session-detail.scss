@@ -1,0 +1,259 @@
+@use "variables" as *;
+
+/* ─────────────────────────────────────────────
+   SESSION DETAIL PAGE
+   ───────────────────────────────────────────── */
+
+.page-session-detail {
+  padding: $space-10 0;
+  background: linear-gradient(180deg, #eef2ff 0%, $bg 40%, #ffffff 100%);
+
+  &__inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 $space-6;
+  }
+
+  &__back {
+    margin-bottom: $space-6;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   MAIN CARD
+   ───────────────────────────────────────────── */
+
+.session-detail-card {
+  background: $color-white;
+  border-radius: 24px;
+  border: 1px solid $color-border;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+  padding: $space-8;
+  display: flex;
+  flex-direction: column;
+  gap: $space-7;
+
+  &--state {
+    gap: $space-4;
+  }
+
+  @media (max-width: $bp-sm) {
+    padding: $space-7;
+    border-radius: 20px;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   HEADER
+   ───────────────────────────────────────────── */
+
+.session-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-6;
+
+  @media (max-width: $bp-sm) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $space-4;
+  }
+}
+
+.session-detail-title {
+  margin: 0 0 8px;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 800;
+  color: $color-black;
+  letter-spacing: -0.02em;
+}
+
+.session-detail-subtitle {
+  margin: 0;
+  color: $color-muted;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ─────────────────────────────────────────────
+   STATUS PILL
+   ───────────────────────────────────────────── */
+
+.session-detail-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba($color-primary, 0.25);
+  background: rgba($color-primary, 0.08);
+  color: $color-primary-ink;
+  white-space: nowrap;
+
+  &--loading {
+    border-color: rgba(#0ea5e9, 0.3);
+    background: rgba(#0ea5e9, 0.08);
+    color: #0369a1;
+  }
+
+  &--error {
+    border-color: rgba(#ef4444, 0.3);
+    background: rgba(#fee2e2, 0.8);
+    color: #b91c1c;
+  }
+
+  /* Optional common statuses */
+  &--scheduled {
+    border-color: rgba(#22c55e, 0.35);
+    background: rgba(#dcfce7, 0.9);
+    color: #15803d;
+  }
+
+  &--completed {
+    border-color: rgba(#0ea5e9, 0.35);
+    background: rgba(#e0f2fe, 0.9);
+    color: #0369a1;
+  }
+
+  &--cancelled,
+  &--canceled,
+  &--no_show {
+    border-color: rgba(#f97316, 0.35);
+    background: rgba(#ffedd5, 0.9);
+    color: #c2410c;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   GRID + SECTIONS
+   ───────────────────────────────────────────── */
+
+.session-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-6;
+
+  @media (max-width: $bp-md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.session-detail-section {
+  background: $color-surface;
+  border-radius: 18px;
+  border: 1px solid $color-border;
+  padding: $space-6;
+
+  &--wide {
+    background: $color-white;
+  }
+
+  &__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: $space-4;
+    margin-bottom: 6px;
+
+    @media (max-width: $bp-sm) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  &__title {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 700;
+    color: $color-black;
+  }
+
+  &__body {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.7;
+    color: $color-black;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 13px;
+    color: $color-muted;
+  }
+}
+
+.session-detail-muted {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: $color-muted;
+}
+
+.session-detail-join-btn {
+  margin-top: $space-4;
+}
+
+/* ─────────────────────────────────────────────
+   FEEDBACK
+   ───────────────────────────────────────────── */
+
+.session-detail-feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-6;
+  margin-top: $space-4;
+
+  @media (max-width: $bp-lg) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: $bp-sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.session-detail-feedback {
+  background: $color-surface;
+  border-radius: 16px;
+  border: 1px solid $color-border;
+  padding: $space-5;
+
+  &__title {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: $color-black;
+  }
+
+  &__body {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.7;
+    color: $color-muted;
+    white-space: pre-line;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   ERROR TEXT
+   ───────────────────────────────────────────── */
+
+.session-detail-error {
+  margin: 0;
+  font-size: 14px;
+  color: #b91c1c;
+}
+
+/* ─────────────────────────────────────────────
+   RESPONSIVE
+   ───────────────────────────────────────────── */
+
+@media (max-width: $bp-sm) {
+  .session-detail-card {
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  }
+}

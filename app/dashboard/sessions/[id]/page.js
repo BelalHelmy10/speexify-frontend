@@ -1,13 +1,13 @@
-// app/dashboard/sessions/[id]/page.js
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import "./session-detail.scss";
 
 export default function SessionDetailPage({ params }) {
   const router = useRouter();
-  const { id } = params; // /dashboard/sessions/[id]
+  const { id } = params;
 
   const [session, setSession] = useState(null);
   const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"
@@ -56,39 +56,77 @@ export default function SessionDetailPage({ params }) {
     });
   };
 
+  // ─────────────────────────────────────
+  // LOADING STATE
+  // ─────────────────────────────────────
   if (status === "loading") {
     return (
-      <div className="container-narrow page-session-detail">
-        <button
-          onClick={handleBack}
-          className="btn btn--ghost"
-          style={{ marginTop: 16 }}
-        >
-          ← Back
-        </button>
-        <h2 style={{ marginTop: 24 }}>Loading session…</h2>
+      <div className="page-session-detail">
+        <div className="page-session-detail__inner container-narrow">
+          <button
+            onClick={handleBack}
+            className="btn btn--ghost page-session-detail__back"
+          >
+            ← Back
+          </button>
+
+          <div className="session-detail-card session-detail-card--state">
+            <header className="session-detail-header">
+              <div>
+                <h1 className="session-detail-title">Loading session…</h1>
+                <p className="session-detail-subtitle">
+                  We’re fetching the latest details for this session.
+                </p>
+              </div>
+              <span className="session-detail-status session-detail-status--loading">
+                Loading
+              </span>
+            </header>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // ─────────────────────────────────────
+  // ERROR / NOT FOUND STATE
+  // ─────────────────────────────────────
   if (status === "error" || !session) {
     return (
-      <div className="container-narrow page-session-detail">
-        <button
-          onClick={handleBack}
-          className="btn btn--ghost"
-          style={{ marginTop: 16 }}
-        >
-          ← Back
-        </button>
-        <h2 style={{ marginTop: 24 }}>Session not available</h2>
-        <p style={{ marginTop: 8, color: "#b91c1c" }}>
-          {error || "Could not load session."}
-        </p>
+      <div className="page-session-detail">
+        <div className="page-session-detail__inner container-narrow">
+          <button
+            onClick={handleBack}
+            className="btn btn--ghost page-session-detail__back"
+          >
+            ← Back
+          </button>
+
+          <div className="session-detail-card session-detail-card--state">
+            <header className="session-detail-header">
+              <div>
+                <h1 className="session-detail-title">Session not available</h1>
+                <p className="session-detail-subtitle">
+                  We couldn’t load this session right now.
+                </p>
+              </div>
+              <span className="session-detail-status session-detail-status--error">
+                Error
+              </span>
+            </header>
+
+            <p className="session-detail-error">
+              {error || "Could not load session."}
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // ─────────────────────────────────────
+  // NORMAL STATE
+  // ─────────────────────────────────────
   const {
     title,
     startAt,
@@ -98,114 +136,158 @@ export default function SessionDetailPage({ params }) {
     user,
     teacher,
     status: s,
-    teacherFeedback, // 👈 new: object with the 3 sections
+    teacherFeedback,
   } = session;
 
   return (
-    <div className="container-narrow page-session-detail">
-      <button
-        onClick={handleBack}
-        className="btn btn--ghost"
-        style={{ marginTop: 16 }}
-      >
-        ← Back
-      </button>
+    <div className="page-session-detail">
+      <div className="page-session-detail__inner container-narrow">
+        <button
+          onClick={handleBack}
+          className="btn btn--ghost page-session-detail__back"
+        >
+          ← Back
+        </button>
 
-      <header className="session-header" style={{ marginTop: 24 }}>
-        <h1>{title || "Session details"}</h1>
-        {s && <span className={`badge badge--${s}`}>{s}</span>}
-      </header>
-
-      <section className="session-section">
-        <h3>Time</h3>
-        <p>
-          <strong>Start:</strong> {formatDateTime(startAt)}
-          <br />
-          <strong>End:</strong> {formatDateTime(endAt)}
-        </p>
-      </section>
-
-      <section className="session-section">
-        <h3>Teacher</h3>
-        {teacher ? (
-          <p>
-            {teacher.name || teacher.email}
-            <br />
-            <small>{teacher.email}</small>
-          </p>
-        ) : (
-          <p>Not assigned</p>
-        )}
-      </section>
-
-      <section className="session-section">
-        <h3>Learner</h3>
-        {user ? (
-          <p>
-            {user.name || user.email}
-            <br />
-            <small>{user.email}</small>
-          </p>
-        ) : (
-          <p>Not found</p>
-        )}
-      </section>
-
-      <section className="session-section">
-        <h3>Join link</h3>
-        {meetingUrl ? (
-          <a
-            href={meetingUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="btn btn--primary"
-          >
-            Join session
-          </a>
-        ) : (
-          <p>No join link set yet.</p>
-        )}
-      </section>
-
-      <section className="session-section">
-        <h3>Notes / Homework</h3>
-        {notes ? <p>{notes}</p> : <p>No notes added yet.</p>}
-      </section>
-
-      {teacherFeedback && (
-        <section className="session-section">
-          <h3>Teacher feedback</h3>
-
-          <div style={{ display: "grid", gap: "16px", marginTop: 8 }}>
+        <div className="session-detail-card">
+          <header className="session-detail-header">
             <div>
-              <h4>Message to the learner</h4>
-              <p>
-                {teacherFeedback.messageToLearner?.trim()
-                  ? teacherFeedback.messageToLearner
-                  : "No message provided."}
+              <h1 className="session-detail-title">
+                {title || "Session details"}
+              </h1>
+              <p className="session-detail-subtitle">
+                Overview of this lesson, participants, and feedback.
               </p>
             </div>
 
-            <div>
-              <h4>Comments on the session</h4>
-              <p>
-                {teacherFeedback.commentsOnSession?.trim()
-                  ? teacherFeedback.commentsOnSession
-                  : "No comments provided."}
-              </p>
-            </div>
+            {s && (
+              <span
+                className={`session-detail-status session-detail-status--${s}`}
+              >
+                {s}
+              </span>
+            )}
+          </header>
 
-            <div>
-              <h4>Future steps</h4>
-              <p>
-                {teacherFeedback.futureSteps?.trim()
-                  ? teacherFeedback.futureSteps
-                  : "No future steps added yet."}
+          <div className="session-detail-grid">
+            <section className="session-detail-section">
+              <h3 className="session-detail-section__title">Time</h3>
+              <p className="session-detail-section__body">
+                <strong>Start:</strong> {formatDateTime(startAt)}
+                <br />
+                <strong>End:</strong> {formatDateTime(endAt)}
               </p>
-            </div>
+            </section>
+
+            <section className="session-detail-section">
+              <h3 className="session-detail-section__title">Teacher</h3>
+              {teacher ? (
+                <p className="session-detail-section__body">
+                  {teacher.name || teacher.email}
+                  <br />
+                  <span className="session-detail-muted">{teacher.email}</span>
+                </p>
+              ) : (
+                <p className="session-detail-section__body">Not assigned.</p>
+              )}
+            </section>
+
+            <section className="session-detail-section">
+              <h3 className="session-detail-section__title">Learner</h3>
+              {user ? (
+                <p className="session-detail-section__body">
+                  {user.name || user.email}
+                  <br />
+                  <span className="session-detail-muted">{user.email}</span>
+                </p>
+              ) : (
+                <p className="session-detail-section__body">Not found.</p>
+              )}
+            </section>
           </div>
-        </section>
-      )}
+
+          <section className="session-detail-section session-detail-section--wide">
+            <div className="session-detail-section__header">
+              <h3 className="session-detail-section__title">Join link</h3>
+            </div>
+            {meetingUrl ? (
+              <a
+                href={meetingUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn--primary session-detail-join-btn"
+              >
+                Join session
+              </a>
+            ) : (
+              <p className="session-detail-section__body">
+                No join link set yet.
+              </p>
+            )}
+          </section>
+
+          <section className="session-detail-section session-detail-section--wide">
+            <div className="session-detail-section__header">
+              <h3 className="session-detail-section__title">
+                Notes / Homework
+              </h3>
+            </div>
+            <p className="session-detail-section__body">
+              {notes && notes.trim()
+                ? notes
+                : "No notes or homework have been added for this session yet."}
+            </p>
+          </section>
+
+          {teacherFeedback && (
+            <section className="session-detail-section session-detail-section--wide">
+              <div className="session-detail-section__header">
+                <h3 className="session-detail-section__title">
+                  Teacher feedback
+                </h3>
+                <p className="session-detail-section__hint">
+                  Reflections from your teacher to help guide your next steps.
+                </p>
+              </div>
+
+              <div className="session-detail-feedback-grid">
+                <div className="session-detail-feedback">
+                  <h4 className="session-detail-feedback__title">
+                    Message to the learner
+                  </h4>
+                  <p className="session-detail-feedback__body">
+                    {teacherFeedback.messageToLearner?.trim()
+                      ? teacherFeedback.messageToLearner
+                      : "No message provided."}
+                  </p>
+                </div>
+
+                <div className="session-detail-feedback">
+                  <h4 className="session-detail-feedback__title">
+                    Comments on the session
+                  </h4>
+                  <p className="session-detail-feedback__body">
+                    {teacherFeedback.commentsOnSession?.trim()
+                      ? teacherFeedback.commentsOnSession
+                      : "No comments provided."}
+                  </p>
+                </div>
+
+                <div className="session-detail-feedback">
+                  <h4 className="session-detail-feedback__title">
+                    Future steps
+                  </h4>
+                  <p className="session-detail-feedback__body">
+                    {teacherFeedback.futureSteps?.trim()
+                      ? teacherFeedback.futureSteps
+                      : "No future steps added yet."}
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
