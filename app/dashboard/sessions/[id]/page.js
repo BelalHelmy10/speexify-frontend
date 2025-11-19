@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import "./session-detail.scss";
+import "@/styles/session-detail.scss";
 
 export default function SessionDetailPage({ params }) {
   const router = useRouter();
