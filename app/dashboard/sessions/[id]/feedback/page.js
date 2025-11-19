@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/components/ToastProvider";
 import "@/styles/session-feedback.scss";
+import { trackEvent } from "@/lib/analytics";
 
 export default function SessionFeedbackPage({ params }) {
   const { id } = params;
@@ -80,6 +81,18 @@ export default function SessionFeedbackPage({ params }) {
         messageToLearner,
         commentsOnSession,
         futureSteps,
+      });
+
+      // 🔹 Analytics: teacher feedback submitted
+      trackEvent("feedback_submitted", {
+        role: "teacher",
+        sessionId: id,
+      });
+
+      // 🔹 Optionally treat this as the moment session is completed
+      trackEvent("session_completed", {
+        sessionId: id,
+        by: "teacher_feedback",
       });
 
       toast.success("Feedback saved.");

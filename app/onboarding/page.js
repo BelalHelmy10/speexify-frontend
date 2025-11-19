@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
 import Link from "next/link";
 import { useToast } from "@/components/ToastProvider";
+import { trackEvent } from "@/lib/analytics";
 
 const MOTIVATIONS = [
   "Professional development",
@@ -143,6 +144,14 @@ export default function OnboardingPage() {
     setSaved(false);
     try {
       await api.post("/me/onboarding", { answers });
+
+      // 🔹 Analytics: onboarding completed
+      trackEvent("onboarding_completed", {
+        // You can add more details if you want, e.g.:
+        // timezone: answers.timezone,
+        // experienceYears: answers.experienceYears,
+      });
+
       setSaved(true);
     } catch (e) {
       toast.error(e?.response?.data?.error || "Failed to save");

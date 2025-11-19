@@ -15,6 +15,7 @@ import {
   registerComplete as apiRegisterComplete,
   googleLogin as apiGoogleLogin,
 } from "@/lib/auth";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Register() {
   const router = useRouter();
@@ -62,10 +63,17 @@ export default function Register() {
 
   const complete = async (e) => {
     e.preventDefault();
-    setMsg("");
     setSubmitting(true);
     try {
-      await apiRegisterComplete({ email, code, password, name });
+      const result = await apiRegisterComplete({ email, code, password, name });
+
+      // 🔹 Analytics: signup completed
+      trackEvent("signup_completed", {
+        email,
+        // if your API returns user info, you can also include:
+        userId: result?.user?.id,
+      });
+
       setMsgType("success");
       setMsg(`Account created successfully! Redirecting...`);
       setTimeout(() => {

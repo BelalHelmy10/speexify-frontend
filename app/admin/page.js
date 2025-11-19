@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import "@/styles/admin.scss";
 import useAuth from "@/hooks/useAuth";
 import { useToast, useConfirm } from "@/components/ToastProvider";
+import { trackEvent } from "@/lib/analytics";
 
 function Admin() {
   const { toast } = useToast();
@@ -211,7 +212,16 @@ function Admin() {
         notes: form.notes || null,
       };
 
-      await api.post("/admin/sessions", payload);
+      const { data } = await api.post("/admin/sessions", payload);
+
+      // 🔹 Analytics: session booked (admin)
+      trackEvent("session_booked", {
+        source: "admin",
+        sessionId: data?.id, // if backend returns it
+        learnerId: payload.userId,
+        teacherId: payload.teacherId || null,
+      });
+
       toast.success("Session created");
       setStatus("");
       await reloadSessions();

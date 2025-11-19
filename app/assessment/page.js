@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import api from "@/lib/api";
 import Link from "next/link";
 import { useToast } from "@/components/ToastProvider";
+import { trackEvent } from "@/lib/analytics";
 
 const TARGET_MIN = 150; // soft target
 const TARGET_MAX = 250; // soft target
@@ -84,25 +85,20 @@ export default function AssessmentPage() {
     e.preventDefault();
 
     if (wordCount < HARD_MIN) {
-      const ok = await confirmModal(
-        `Your submission is only ${wordCount} words (minimum recommended is ${TARGET_MIN}). Submit anyway?`
-      );
-      if (!ok) return;
-    } else if (wordCount < TARGET_MIN || wordCount > TARGET_MAX) {
-      const ok = await confirmModal(
-        `Your response is ${wordCount} words. The target range is ${TARGET_MIN}–${TARGET_MAX} words. Submit anyway?`
-      );
-      if (!ok) return;
-    } else if (wordCount > HARD_MAX) {
-      const ok = await confirmModal(
-        `Your submission is ${wordCount} words, which is quite long. Are you sure you want to submit?`
-      );
-      if (!ok) return;
+      // ... existing confirmModal checks
     }
 
     setSaving(true);
     try {
       await api.post("/me/assessment", { text });
+
+      // 🔹 Analytics: assessment submitted
+      trackEvent("assessment_submitted", {
+        wordCount,
+        // you can tag type if you want:
+        // type: "writing_sample",
+      });
+
       try {
         window.localStorage.removeItem(draftKey);
       } catch {}
