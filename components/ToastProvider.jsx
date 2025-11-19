@@ -41,12 +41,23 @@ export function ToastProvider({ children }) {
     setConfirmState(null);
   };
 
-  const value = {
-    show: showToast,
+  // Build a toast API object
+  const toast = {
     success: (msg, opts) => showToast(msg, { ...opts, type: "success" }),
     error: (msg, opts) => showToast(msg, { ...opts, type: "error" }),
     info: (msg, opts) => showToast(msg, { ...opts, type: "info" }),
-    confirmModal, // <- used by useConfirm()
+  };
+
+  const value = {
+    // Backwards-compatible helpers
+    show: showToast,
+    ...toast,
+
+    // For patterns like `const { toast } = useToast()`
+    toast,
+
+    // Confirm modal API
+    confirmModal,
   };
 
   return (
