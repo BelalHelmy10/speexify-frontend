@@ -62,7 +62,7 @@
   background: $bg-primary;
   border-radius: 24px;
   padding: 48px 40px;
-  box-shadow: $shadow-xl, 0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-shadow: $shadow-lg;
   animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 
@@ -99,7 +99,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: $shadow-lg, 0 0 0 4px rgba($brand, 0.1);
+    box-shadow: $shadow-md;
 
     svg {
       width: 28px;
@@ -171,8 +171,8 @@
       background: linear-gradient(135deg, $brand 0%, $brand-dark 100%);
       color: $color-white;
       border-color: transparent;
-      box-shadow: $shadow-md, 0 0 0 4px rgba($brand, 0.15);
-      transform: scale(1.1);
+      box-shadow: $shadow-sm;
+      transform: scale(1.05);
     }
 
     span {
@@ -193,8 +193,7 @@
   font-size: 15px;
   font-weight: 700;
   color: $text-muted;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   position: relative;
   z-index: 1;
 
@@ -395,7 +394,7 @@
     &:focus {
       outline: none;
       border-color: $brand;
-      box-shadow: 0 0 0 4px $border-focus;
+      box-shadow: 0 0 0 2px $border-focus;
     }
 
     &:focus ~ .input-icon {
@@ -469,7 +468,7 @@
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease;
   box-shadow: $shadow-md, 0 1px 0 0 rgba($color-white, 0.1) inset;
   position: relative;
   overflow: hidden;
@@ -547,7 +546,7 @@
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
 
   svg {
@@ -620,27 +619,26 @@
     rgba($color-white, 0.15) 0%,
     transparent 70%
   );
-  filter: blur(40px);
+  filter: blur(12px);
 
   &.circle-1 {
-    width: 400px;
-    height: 400px;
+    width: 260px;
+    height: 260px;
     top: -100px;
     left: -100px;
     animation-delay: 0s;
   }
 
   &.circle-2 {
-    width: 300px;
-    height: 300px;
+    width: 200px;
+    height: 200px;
     bottom: -80px;
     right: -80px;
     animation-delay: 5s;
   }
 
   &.circle-3 {
-    width: 200px;
-    height: 200px;
+    display: none;
     top: 50%;
     right: -50px;
     animation-delay: 10s;
@@ -750,7 +748,7 @@
     &:focus {
       outline: none;
       border-color: $brand;
-      box-shadow: 0 0 0 4px $border-focus;
+      box-shadow: 0 0 0 2px $border-focus;
     }
 
     &:focus ~ .input-icon {
@@ -817,7 +815,7 @@
   background: $bg-primary;
   border: 1.5px solid $border;
   border-radius: 12px;
-  transition: all $transition-base;
+  transition: border-color $transition-base, box-shadow $transition-base;
   font-family: inherit;
 
   &::placeholder {
