@@ -998,3 +998,89 @@
     }
   }
 }
+
+.adm-table-skeleton,
+.adm-sessions-skeleton,
+.adm-workload-skeleton {
+  padding: 1.25rem 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.adm-session-card-skeleton {
+  min-height: 120px;
+}
+
+.adm-empty {
+  padding: 1.5rem;
+  border-radius: 0.875rem;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--admin-text-secondary);
+}
+
+/* If you don't already have global skeleton utilities, add a minimal version: */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.16),
+      transparent
+    );
+    animation: adm-skeleton-shimmer 1.1s ease-in-out infinite;
+  }
+}
+
+.skeleton--row {
+  height: 16px;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton--title {
+  height: 20px;
+  width: 60%;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton--text {
+  height: 14px;
+  width: 80%;
+  margin-bottom: 0.35rem;
+}
+
+.skeleton--chip {
+  height: 20px;
+  width: 90px;
+  border-radius: 999px;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-card {
+  padding: 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+@keyframes adm-skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}

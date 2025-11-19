@@ -458,132 +458,144 @@ function Admin() {
         </div>
 
         <div className="adm-data-table">
-          <table>
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usersAdmin.map((u) => (
-                <tr key={u.id}>
-                  <td>
-                    <div className="adm-user-cell">
-                      <div className="adm-user-avatar">
-                        {u.name?.charAt(0) || u.email.charAt(0)}
-                      </div>
-                      <div className="adm-user-info">
-                        <div className="adm-user-name">{u.name || "—"}</div>
-                        <div className="adm-user-email">{u.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <select
-                      className="adm-role-select"
-                      value={u.role}
-                      onChange={(e) => changeRole(u, e.target.value)}
-                    >
-                      <option value="learner">Learner</option>
-                      <option value="teacher">Teacher</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </td>
-                  <td>
-                    <span
-                      className={`adm-status-badge ${
-                        u.isDisabled
-                          ? "adm-status-badge--inactive"
-                          : "adm-status-badge--active"
-                      }`}
-                    >
-                      <span className="adm-status-badge__dot" />
-                      {u.isDisabled ? "Inactive" : "Active"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="adm-action-buttons">
-                      <button
-                        className="adm-btn-action"
-                        onClick={() => sendReset(u)}
-                        title="Reset Password"
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 16 16"
-                          fill="none"
-                        >
-                          <path
-                            d="M12 8C12 10.2091 10.2091 12 8 12C5.79086 12 4 10.2091 4 8C4 5.79086 5.79086 4 8 4"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                          />
-                          <path
-                            d="M8 1V4L10 2"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        className="adm-btn-action"
-                        onClick={() => impersonate(u)}
-                        title="View As"
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 16 16"
-                          fill="none"
-                        >
-                          <path
-                            d="M1 8C1 8 3.5 3 8 3C12.5 3 15 8 15 8C15 8 12.5 13 8 13C3.5 13 1 8 1 8Z"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                          />
-                          <circle
-                            cx="8"
-                            cy="8"
-                            r="2"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        className={`adm-btn-action ${
-                          !u.isDisabled ? "adm-btn-action--danger" : ""
-                        }`}
-                        onClick={() => toggleDisabled(u)}
-                        title={u.isDisabled ? "Enable" : "Disable"}
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 16 16"
-                          fill="none"
-                        >
-                          <path
-                            d="M2 2L14 14M14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8Z"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+          {usersBusy ? (
+            <div className="adm-table-skeleton">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="skeleton skeleton--row" />
               ))}
-            </tbody>
-          </table>
+            </div>
+          ) : usersAdmin.length === 0 ? (
+            <div className="adm-empty">
+              No users found. Try changing the search or filters.
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usersAdmin.map((u) => (
+                  <tr key={u.id}>
+                    <td>
+                      <div className="adm-user-cell">
+                        <div className="adm-user-avatar">
+                          {u.name?.charAt(0) || u.email.charAt(0)}
+                        </div>
+                        <div className="adm-user-info">
+                          <div className="adm-user-name">{u.name || "—"}</div>
+                          <div className="adm-user-email">{u.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <select
+                        className="adm-role-select"
+                        value={u.role}
+                        onChange={(e) => changeRole(u, e.target.value)}
+                      >
+                        <option value="learner">Learner</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                    <td>
+                      <span
+                        className={`adm-status-badge ${
+                          u.isDisabled
+                            ? "adm-status-badge--inactive"
+                            : "adm-status-badge--active"
+                        }`}
+                      >
+                        <span className="adm-status-badge__dot" />
+                        {u.isDisabled ? "Inactive" : "Active"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="adm-action-buttons">
+                        <button
+                          className="adm-btn-action"
+                          onClick={() => sendReset(u)}
+                          title="Reset Password"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <path
+                              d="M12 8C12 10.2091 10.2091 12 8 12C5.79086 12 4 10.2091 4 8C4 5.79086 5.79086 4 8 4"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                            />
+                            <path
+                              d="M8 1V4L10 2"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          className="adm-btn-action"
+                          onClick={() => impersonate(u)}
+                          title="View As"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <path
+                              d="M1 8C1 8 3.5 3 8 3C12.5 3 15 8 15 8C15 8 12.5 13 8 13C3.5 13 1 8 1 8Z"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                            />
+                            <circle
+                              cx="8"
+                              cy="8"
+                              r="2"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          className={`adm-btn-action ${
+                            !u.isDisabled ? "adm-btn-action--danger" : ""
+                          }`}
+                          onClick={() => toggleDisabled(u)}
+                          title={u.isDisabled ? "Enable" : "Disable"}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <path
+                              d="M2 2L14 14M14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8Z"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </section>
 
@@ -854,146 +866,32 @@ function Admin() {
         </div>
 
         <div className="adm-sessions-grid">
-          {sessions.map((s) =>
-            editingId === s.id ? (
-              <div key={s.id} className="adm-session-edit-card">
-                <div className="adm-session-edit-header">
-                  <h3>Edit Session #{s.id}</h3>
-                  <button className="adm-btn-close" onClick={cancelEdit}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M12 4L4 12M4 4L12 12"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
+          {loading ? (
+            <div className="adm-sessions-skeleton">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="adm-session-card-skeleton skeleton-card"
+                >
+                  <div className="skeleton skeleton--chip" />
+                  <div className="skeleton skeleton--title" />
+                  <div className="skeleton skeleton--text" />
+                  <div className="skeleton skeleton--text" />
                 </div>
-                <div className="adm-form-grid">
-                  <div className="adm-form-field">
-                    <label className="adm-form-label">Learner</label>
-                    <select
-                      name="userId"
-                      className="adm-form-input"
-                      value={editForm.userId}
-                      onChange={onEditChange}
-                    >
-                      {users.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name ? `${u.name} — ${u.email}` : u.email}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="adm-form-field">
-                    <label className="adm-form-label">Teacher</label>
-                    <select
-                      name="teacherId"
-                      className="adm-form-input"
-                      value={editForm.teacherId}
-                      onChange={onEditChange}
-                    >
-                      <option value="">Unassigned</option>
-                      {teachers.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name || t.email}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="adm-form-field adm-form-field--full">
-                    <label className="adm-form-label">Title</label>
-                    <input
-                      name="title"
-                      className="adm-form-input"
-                      value={editForm.title}
-                      onChange={onEditChange}
-                    />
-                  </div>
-                  <div className="adm-form-field">
-                    <label className="adm-form-label">Date</label>
-                    <input
-                      type="date"
-                      name="date"
-                      className="adm-form-input"
-                      value={editForm.date}
-                      onChange={onEditChange}
-                    />
-                  </div>
-                  <div className="adm-form-field">
-                    <label className="adm-form-label">Start Time</label>
-                    <input
-                      type="time"
-                      name="startTime"
-                      className="adm-form-input"
-                      value={editForm.startTime}
-                      onChange={onEditChange}
-                    />
-                  </div>
-                  <div className="adm-form-field">
-                    <label className="adm-form-label">End Time</label>
-                    <input
-                      type="time"
-                      name="endTime"
-                      className="adm-form-input"
-                      value={editForm.endTime}
-                      onChange={onEditChange}
-                    />
-                  </div>
-                  <div className="adm-form-field">
-                    <label className="adm-form-label">Duration (minutes)</label>
-                    <input
-                      type="number"
-                      name="duration"
-                      className="adm-form-input"
-                      value={editForm.duration}
-                      onChange={onEditChange}
-                      min="15"
-                      step="15"
-                      disabled={!!editForm.endTime}
-                    />
-                  </div>
-                  <div className="adm-form-field adm-form-field--full">
-                    <label className="adm-form-label">Meeting URL</label>
-                    <input
-                      name="meetingUrl"
-                      className="adm-form-input"
-                      value={editForm.meetingUrl}
-                      onChange={onEditChange}
-                    />
-                  </div>
-                </div>
-                <div className="adm-session-edit-actions">
-                  <button className="adm-btn-secondary" onClick={cancelEdit}>
-                    Cancel
-                  </button>
-                  <button
-                    className="adm-btn-danger"
-                    onClick={() => deleteSession(s.id)}
-                  >
-                    Delete
-                  </button>
-                  <button
-                    className="adm-btn-primary"
-                    onClick={() => updateSession(s.id)}
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div key={s.id} className="adm-session-card-modern">
-                <div className="adm-session-card-modern__header">
-                  <div className="adm-session-card-modern__badge">
-                    Session #{s.id}
-                  </div>
-                  <div className="adm-action-buttons">
-                    <button
-                      className="adm-btn-action"
-                      onClick={() => startEdit(s)}
-                      title="Edit"
-                    >
+              ))}
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="adm-empty">
+              No sessions found for this filter. Try changing the search, date
+              range, or teacher.
+            </div>
+          ) : (
+            sessions.map((s) =>
+              editingId === s.id ? (
+                <div key={s.id} className="adm-session-edit-card">
+                  <div className="adm-session-edit-header">
+                    <h3>Edit Session #{s.id}</h3>
+                    <button className="adm-btn-close" onClick={cancelEdit}>
                       <svg
                         width="16"
                         height="16"
@@ -1001,73 +899,179 @@ function Admin() {
                         fill="none"
                       >
                         <path
-                          d="M11.5 1.5L14.5 4.5L5 14H2V11L11.5 1.5Z"
+                          d="M12 4L4 12M4 4L12 12"
                           stroke="currentColor"
                           strokeWidth="1.5"
                           strokeLinecap="round"
-                          strokeLinejoin="round"
                         />
                       </svg>
                     </button>
+                  </div>
+                  <div className="adm-form-grid">
+                    <div className="adm-form-field">
+                      <label className="adm-form-label">Learner</label>
+                      <select
+                        name="userId"
+                        className="adm-form-input"
+                        value={editForm.userId}
+                        onChange={onEditChange}
+                      >
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name ? `${u.name} — ${u.email}` : u.email}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="adm-form-field">
+                      <label className="adm-form-label">Teacher</label>
+                      <select
+                        name="teacherId"
+                        className="adm-form-input"
+                        value={editForm.teacherId}
+                        onChange={onEditChange}
+                      >
+                        <option value="">Unassigned</option>
+                        {teachers.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name || t.email}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="adm-form-field adm-form-field--full">
+                      <label className="adm-form-label">Title</label>
+                      <input
+                        name="title"
+                        className="adm-form-input"
+                        value={editForm.title}
+                        onChange={onEditChange}
+                      />
+                    </div>
+                    <div className="adm-form-field">
+                      <label className="adm-form-label">Date</label>
+                      <input
+                        type="date"
+                        name="date"
+                        className="adm-form-input"
+                        value={editForm.date}
+                        onChange={onEditChange}
+                      />
+                    </div>
+                    <div className="adm-form-field">
+                      <label className="adm-form-label">Start Time</label>
+                      <input
+                        type="time"
+                        name="startTime"
+                        className="adm-form-input"
+                        value={editForm.startTime}
+                        onChange={onEditChange}
+                      />
+                    </div>
+                    <div className="adm-form-field">
+                      <label className="adm-form-label">End Time</label>
+                      <input
+                        type="time"
+                        name="endTime"
+                        className="adm-form-input"
+                        value={editForm.endTime}
+                        onChange={onEditChange}
+                      />
+                    </div>
+                    <div className="adm-form-field">
+                      <label className="adm-form-label">
+                        Duration (minutes)
+                      </label>
+                      <input
+                        type="number"
+                        name="duration"
+                        className="adm-form-input"
+                        value={editForm.duration}
+                        onChange={onEditChange}
+                        min="15"
+                        step="15"
+                        disabled={!!editForm.endTime}
+                      />
+                    </div>
+                    <div className="adm-form-field adm-form-field--full">
+                      <label className="adm-form-label">Meeting URL</label>
+                      <input
+                        name="meetingUrl"
+                        className="adm-form-input"
+                        value={editForm.meetingUrl}
+                        onChange={onEditChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="adm-session-edit-actions">
+                    <button className="adm-btn-secondary" onClick={cancelEdit}>
+                      Cancel
+                    </button>
                     <button
-                      className="adm-btn-action adm-btn-action--danger"
+                      className="adm-btn-danger"
                       onClick={() => deleteSession(s.id)}
-                      title="Delete"
                     >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                      >
-                        <path
-                          d="M2 4H14M6 7V11M10 7V11M3 4L4 13C4 13.5304 4.21071 14.0391 4.58579 14.4142C4.96086 14.7893 5.46957 15 6 15H10C10.5304 15 11.0391 14.7893 11.4142 14.4142C11.7893 14.0391 12 13.5304 12 13L13 4M5 4V2C5 1.73478 5.10536 1.48043 5.29289 1.29289C5.48043 1.10536 5.73478 1 6 1H10C10.2652 1 10.5196 1.10536 10.7071 1.29289C10.8946 1.48043 11 1.73478 11 2V4"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                      Delete
+                    </button>
+                    <button
+                      className="adm-btn-primary"
+                      onClick={() => updateSession(s.id)}
+                    >
+                      Save Changes
                     </button>
                   </div>
                 </div>
-                <h3 className="adm-session-card-modern__title">{s.title}</h3>
-                <div className="adm-session-card-modern__info">
-                  <div className="adm-info-row">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M8 4V8H11"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span>{fmt(s.startAt)}</span>
+              ) : (
+                <div key={s.id} className="adm-session-card-modern">
+                  <div className="adm-session-card-modern__header">
+                    <div className="adm-session-card-modern__badge">
+                      Session #{s.id}
+                    </div>
+                    <div className="adm-action-buttons">
+                      <button
+                        className="adm-btn-action"
+                        onClick={() => startEdit(s)}
+                        title="Edit"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                        >
+                          <path
+                            d="M11.5 1.5L14.5 4.5L5 14H2V11L11.5 1.5Z"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        className="adm-btn-action adm-btn-action--danger"
+                        onClick={() => deleteSession(s.id)}
+                        title="Delete"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                        >
+                          <path
+                            d="M2 4H14M6 7V11M10 7V11M3 4L4 13C4 13.5304 4.21071 14.0391 4.58579 14.4142C4.96086 14.7893 5.46957 15 6 15H10C10.5304 15 11.0391 14.7893 11.4142 14.4142C11.7893 14.0391 12 13.5304 12 13L13 4M5 4V2C5 1.73478 5.10536 1.48043 5.29289 1.29289C5.48043 1.10536 5.73478 1 6 1H10C10.2652 1 10.5196 1.10536 10.7071 1.29289C10.8946 1.48043 11 1.73478 11 2V4"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  <div className="adm-info-row">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <circle
-                        cx="8"
-                        cy="5"
-                        r="2.5"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M2 13C2 11 5 9 8 9C11 9 14 11 14 13"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span>{s.user?.name || s.user?.email}</span>
-                  </div>
-                  {s.teacher && (
+                  <h3 className="adm-session-card-modern__title">{s.title}</h3>
+                  <div className="adm-session-card-modern__info">
                     <div className="adm-info-row">
                       <svg
                         width="16"
@@ -1076,48 +1080,94 @@ function Admin() {
                         fill="none"
                       >
                         <path
-                          d="M8 1L14 4L8 7L2 4L8 1Z"
+                          d="M8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z"
                           stroke="currentColor"
                           strokeWidth="1.5"
-                          strokeLinejoin="round"
                         />
                         <path
-                          d="M2 12L8 15L14 12M2 8L8 11L14 8"
+                          d="M8 4V8H11"
                           stroke="currentColor"
                           strokeWidth="1.5"
                           strokeLinecap="round"
-                          strokeLinejoin="round"
                         />
                       </svg>
-                      <span>{s.teacher?.name || s.teacher?.email}</span>
+                      <span>{fmt(s.startAt)}</span>
                     </div>
-                  )}
-                  {s.meetingUrl && (
-                    <a
-                      href={s.meetingUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="adm-meeting-link"
-                    >
+                    <div className="adm-info-row">
                       <svg
                         width="16"
                         height="16"
                         viewBox="0 0 16 16"
                         fill="none"
                       >
+                        <circle
+                          cx="8"
+                          cy="5"
+                          r="2.5"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                        />
                         <path
-                          d="M10 6L14 3.5V12.5L10 10M2 4C2 3.44772 2.44772 3 3 3H10C10.5523 3 11 3.44772 11 4V12C11 12.5523 10.5523 13 10 13H3C2.44772 13 2 12.5523 2 12V4Z"
+                          d="M2 13C2 11 5 9 8 9C11 9 14 11 14 13"
                           stroke="currentColor"
                           strokeWidth="1.5"
                           strokeLinecap="round"
-                          strokeLinejoin="round"
                         />
                       </svg>
-                      Join Meeting
-                    </a>
-                  )}
+                      <span>{s.user?.name || s.user?.email}</span>
+                    </div>
+                    {s.teacher && (
+                      <div className="adm-info-row">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                        >
+                          <path
+                            d="M8 1L14 4L8 7L2 4L8 1Z"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M2 12L8 15L14 12M2 8L8 11L14 8"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span>{s.teacher?.name || s.teacher?.email}</span>
+                      </div>
+                    )}
+                    {s.meetingUrl && (
+                      <a
+                        href={s.meetingUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="adm-meeting-link"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                        >
+                          <path
+                            d="M10 6L14 3.5V12.5L10 10M2 4C2 3.44772 2.44772 3 3 3H10C10.5523 3 11 3.44772 11 4V12C11 12.5523 10.5523 13 10 13H3C2.44772 13 2 12.5523 2 12V4Z"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        Join Meeting
+                      </a>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )
             )
           )}
         </div>
@@ -1208,28 +1258,23 @@ function TeacherWorkload({ teacherId, from, to }) {
 
   if (busy) {
     return (
-      <div
-        style={{
-          padding: "2rem",
-          textAlign: "center",
-          color: "var(--admin-text-secondary)",
-        }}
-      >
-        Loading workload data...
+      <div className="adm-workload-skeleton">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="adm-workload-card skeleton-card">
+            <div className="skeleton skeleton--chip" />
+            <div className="skeleton skeleton--text" />
+            <div className="skeleton skeleton--row" />
+            <div className="skeleton skeleton--row" />
+          </div>
+        ))}
       </div>
     );
   }
 
   if (rows.length === 0) {
     return (
-      <div
-        style={{
-          padding: "2rem",
-          textAlign: "center",
-          color: "var(--admin-text-secondary)",
-        }}
-      >
-        No workload data available
+      <div className="adm-empty">
+        No workload data available for this filter.
       </div>
     );
   }
