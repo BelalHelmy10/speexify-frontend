@@ -8,6 +8,7 @@ let idCounter = 0;
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+  const [confirmState, setConfirmState] = useState(null); // <- for confirm()
 
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -27,16 +28,31 @@ export function ToastProvider({ children }) {
     [removeToast]
   );
 
+  // Promise-based confirm modal
+  const confirmModal = useCallback((message) => {
+    return new Promise((resolve) => {
+      setConfirmState({ message, resolve });
+    });
+  }, []);
+
+  const handleConfirm = (result) => {
+    if (!confirmState) return;
+    confirmState.resolve(result);
+    setConfirmState(null);
+  };
+
   const value = {
     show: showToast,
     success: (msg, opts) => showToast(msg, { ...opts, type: "success" }),
     error: (msg, opts) => showToast(msg, { ...opts, type: "error" }),
     info: (msg, opts) => showToast(msg, { ...opts, type: "info" }),
+    confirmModal, // <- used by useConfirm()
   };
 
   return (
     <ToastContext.Provider value={value}>
       {children}
+
       {/* Toast container */}
       <div
         aria-live="polite"
@@ -92,6 +108,69 @@ export function ToastProvider({ children }) {
           </div>
         ))}
       </div>
+
+      {/* Confirm dialog */}
+      {confirmState && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15,23,42,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              background: "white",
+              padding: "16px 20px",
+              borderRadius: 12,
+              maxWidth: 360,
+              width: "90%",
+              boxShadow: "0 18px 45px rgba(15,23,42,0.4)",
+            }}
+          >
+            <p style={{ marginBottom: 16 }}>{confirmState.message}</p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+              }}
+            >
+              <button
+                onClick={() => handleConfirm(false)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  border: "1px solid #cbd5f5",
+                  background: "white",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleConfirm(true)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  border: "none",
+                  background: "#2563eb",
+                  color: "white",
+                  cursor: "pointer",
+                }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ToastContext.Provider>
   );
 }
@@ -102,4 +181,12 @@ export function useToast() {
     throw new Error("useToast must be used inside <ToastProvider>");
   }
   return ctx;
+}
+
+export function useConfirm() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) {
+    throw new Error("useConfirm must be used inside <ToastProvider>");
+  }
+  return { confirmModal: ctx.confirmModal };
 }
