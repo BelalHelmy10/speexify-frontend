@@ -1,4 +1,3 @@
-// app/dashboard/sessions/[id]/feedback/page.jsx
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -6,6 +5,7 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/components/ToastProvider";
+import "@/styles/session-feedback.scss";
 
 export default function SessionFeedbackPage({ params }) {
   const { id } = params;
@@ -17,7 +17,6 @@ export default function SessionFeedbackPage({ params }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Feedback fields
   const [messageToLearner, setMessageToLearner] = useState("");
   const [commentsOnSession, setCommentsOnSession] = useState("");
   const [futureSteps, setFutureSteps] = useState("");
@@ -27,8 +26,7 @@ export default function SessionFeedbackPage({ params }) {
 
   const canEdit = useMemo(() => {
     if (!session) return false;
-    // Teacher only; you can also require status === "completed" if you like:
-    // return isTeacher && session.status === "completed";
+    // could restrict to completed sessions if you want
     return isTeacher;
   }, [session, isTeacher]);
 
@@ -105,146 +103,171 @@ export default function SessionFeedbackPage({ params }) {
     });
   };
 
+  // ───────────────── LOADING ─────────────────
   if (checking || loading) {
     return (
-      <div className="container-narrow page-session-detail">
-        <button
-          onClick={handleBack}
-          className="btn btn--ghost"
-          style={{ marginTop: 16 }}
-        >
-          ← Back to session
-        </button>
-        <h2 style={{ marginTop: 24 }}>Loading feedback…</h2>
+      <div className="page-session-feedback">
+        <div className="page-session-feedback__inner container-narrow">
+          <button
+            onClick={handleBack}
+            className="btn btn--ghost page-session-feedback__back"
+          >
+            ← Back to session
+          </button>
+
+          <div className="session-feedback-card session-feedback-card--state">
+            <header className="session-feedback-header">
+              <div>
+                <h1 className="session-feedback-title">Loading feedback…</h1>
+                <p className="session-feedback-subtitle">
+                  We’re preparing the feedback editor for this session.
+                </p>
+              </div>
+              <span className="session-feedback-status session-feedback-status--loading">
+                Loading
+              </span>
+            </header>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // ───────────────── NOT FOUND / ERROR ─────────────────
   if (!session) {
     return (
-      <div className="container-narrow page-session-detail">
-        <button
-          onClick={handleBack}
-          className="btn btn--ghost"
-          style={{ marginTop: 16 }}
-        >
-          ← Back to session
-        </button>
-        <h2 style={{ marginTop: 24 }}>Session not found</h2>
-        {error && (
-          <p style={{ marginTop: 8, color: "#b91c1c" }}>
-            {error || "Could not load session."}
-          </p>
-        )}
+      <div className="page-session-feedback">
+        <div className="page-session-feedback__inner container-narrow">
+          <button
+            onClick={handleBack}
+            className="btn btn--ghost page-session-feedback__back"
+          >
+            ← Back to session
+          </button>
+
+          <div className="session-feedback-card session-feedback-card--state">
+            <header className="session-feedback-header">
+              <div>
+                <h1 className="session-feedback-title">Session not found</h1>
+                <p className="session-feedback-subtitle">
+                  We couldn’t find this session or load its feedback.
+                </p>
+              </div>
+              <span className="session-feedback-status session-feedback-status--error">
+                Error
+              </span>
+            </header>
+
+            {error && (
+              <p className="session-feedback-error">
+                {error || "Could not load session."}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
 
+  // ───────────────── NORMAL STATE ─────────────────
   const sessionDateLabel = formatSessionDate();
 
   return (
-    <div className="container-narrow page-session-detail">
-      <button
-        onClick={handleBack}
-        className="btn btn--ghost"
-        style={{ marginTop: 16 }}
-      >
-        ← Back to session
-      </button>
-
-      <header style={{ marginTop: 24, marginBottom: 16 }}>
-        <h1>Session feedback</h1>
-        <p style={{ marginTop: 4, opacity: 0.8 }}>
-          Session
-          {sessionDateLabel ? ` · ${sessionDateLabel}` : ""}
-        </p>
-
-        <p
-          style={{
-            marginTop: 8,
-            fontStyle: "italic",
-            opacity: 0.8,
-          }}
+    <div className="page-session-feedback">
+      <div className="page-session-feedback__inner container-narrow">
+        <button
+          onClick={handleBack}
+          className="btn btn--ghost page-session-feedback__back"
         >
-          {canEdit
-            ? "You can edit and save feedback for this session. The learner will see it as read-only."
-            : "This feedback is read-only. Only the teacher can edit it."}
-        </p>
-      </header>
+          ← Back to session
+        </button>
 
-      {error && (
-        <div
-          style={{
-            marginBottom: 16,
-            padding: 12,
-            borderRadius: 8,
-            background: "#fef2f2",
-            color: "#b91c1c",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      <div
-        className="panel"
-        style={{
-          padding: 24,
-          borderRadius: 16,
-          boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
-        }}
-      >
-        <div
-          className="form-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 20,
-            marginBottom: 16,
-          }}
-        >
-          <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span>Message to the learner</span>
-            <textarea
-              rows={4}
-              value={messageToLearner}
-              onChange={(e) => setMessageToLearner(e.target.value)}
-              readOnly={!canEdit}
-            />
-          </label>
-
-          <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span>Comments on the session</span>
-            <textarea
-              rows={4}
-              value={commentsOnSession}
-              onChange={(e) => setCommentsOnSession(e.target.value)}
-              readOnly={!canEdit}
-            />
-          </label>
-        </div>
-
-        <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <span>Future steps</span>
-          <textarea
-            rows={4}
-            value={futureSteps}
-            onChange={(e) => setFutureSteps(e.target.value)}
-            readOnly={!canEdit}
-          />
-        </label>
-
-        {canEdit && (
-          <div className="button-row" style={{ marginTop: 20 }}>
-            <button
-              className="btn btn--primary"
-              onClick={handleSave}
-              disabled={saving}
+        <div className="session-feedback-card">
+          <header className="session-feedback-header">
+            <div>
+              <h1 className="session-feedback-title">Session feedback</h1>
+              <p className="session-feedback-subtitle">
+                Session
+                {sessionDateLabel ? ` · ${sessionDateLabel}` : ""}
+              </p>
+              <p className="session-feedback-context">
+                {canEdit
+                  ? "You can edit and save feedback for this session. The learner will see it as read-only."
+                  : "This feedback is read-only. Only the teacher can edit it."}
+              </p>
+            </div>
+            <span
+              className={`session-feedback-status ${
+                canEdit
+                  ? "session-feedback-status--editable"
+                  : "session-feedback-status--readonly"
+              }`}
             >
-              {saving ? "Saving…" : "Save feedback"}
-            </button>
+              {canEdit ? "Editable" : "Read-only"}
+            </span>
+          </header>
+
+          {error && <div className="session-feedback-alert">{error}</div>}
+
+          <div className="session-feedback-form-card">
+            <div className="session-feedback-grid">
+              <label className="session-feedback-field">
+                <span className="session-feedback-label">
+                  Message to the learner
+                </span>
+                <textarea
+                  rows={4}
+                  value={messageToLearner}
+                  onChange={(e) => setMessageToLearner(e.target.value)}
+                  readOnly={!canEdit}
+                  className={`session-feedback-textarea${
+                    !canEdit ? " session-feedback-textarea--readonly" : ""
+                  }`}
+                />
+              </label>
+
+              <label className="session-feedback-field">
+                <span className="session-feedback-label">
+                  Comments on the session
+                </span>
+                <textarea
+                  rows={4}
+                  value={commentsOnSession}
+                  onChange={(e) => setCommentsOnSession(e.target.value)}
+                  readOnly={!canEdit}
+                  className={`session-feedback-textarea${
+                    !canEdit ? " session-feedback-textarea--readonly" : ""
+                  }`}
+                />
+              </label>
+            </div>
+
+            <label className="session-feedback-field">
+              <span className="session-feedback-label">Future steps</span>
+              <textarea
+                rows={4}
+                value={futureSteps}
+                onChange={(e) => setFutureSteps(e.target.value)}
+                readOnly={!canEdit}
+                className={`session-feedback-textarea${
+                  !canEdit ? " session-feedback-textarea--readonly" : ""
+                }`}
+              />
+            </label>
+
+            {canEdit && (
+              <div className="session-feedback-actions">
+                <button
+                  className="btn btn--primary"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? "Saving…" : "Save feedback"}
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
