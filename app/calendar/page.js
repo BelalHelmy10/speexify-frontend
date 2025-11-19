@@ -199,7 +199,6 @@ export default function CalendarPage() {
     <div className="calendar-premium-container">
       {/* Animated gradient background */}
       <div className="calendar-bg-gradient"></div>
-
       {/* Header Section */}
       <div className="calendar-header">
         <div className="calendar-header-content">
@@ -213,13 +212,18 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      {events.length === 0 && (
+        <p className="calendar-empty">
+          No sessions in this date range yet. Once you book a session, it will
+          appear here on the calendar.
+        </p>
+      )}
       {error && (
         <div className="calendar-error-banner">
           <span className="error-icon">⚠️</span>
           <span>{error}</span>
         </div>
       )}
-
       <div className="calendar-two-pane">
         <div className="calendar-two-pane__wrap">
           {/* Left: Mini Calendar Sidebar */}

@@ -272,15 +272,15 @@
   &.spx-logout-btn {
     box-shadow: 0 8px 16px rgba($muted, 0.25);
     .spx-cta-bg {
-      background: linear-gradient(135deg, $muted 0%, darken($muted, 10%) 100%);
+      background: linear-gradient(135deg, $muted 0%, ($muted, 10%) 100%);
     }
     &:hover {
       box-shadow: 0 10px 20px rgba($muted, 0.32);
       .spx-cta-bg {
         background: linear-gradient(
           135deg,
-          darken($muted, 10%) 0%,
-          darken($muted, 20%) 100%
+          ($muted, 10%) 0%,
+          ($muted, 20%) 100%
         );
       }
     }
@@ -580,15 +580,15 @@
   &.spx-logout-btn {
     box-shadow: 0 8px 16px rgba($muted, 0.25);
     .spx-mobile-cta-bg {
-      background: linear-gradient(135deg, $muted 0%, darken($muted, 10%) 100%);
+      background: linear-gradient(135deg, $muted 0%, ($muted, 10%) 100%);
     }
     &:hover {
       box-shadow: 0 10px 20px rgba($muted, 0.32);
       .spx-mobile-cta-bg {
         background: linear-gradient(
           135deg,
-          darken($muted, 10%) 0%,
-          darken($muted, 20%) 100%
+          ($muted, 10%) 0%,
+          ($muted, 20%) 100%
         );
       }
     }
