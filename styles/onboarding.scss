@@ -2,21 +2,18 @@
 // Onboarding Page Styles
 // ============================================================================
 
-// Import your variables (assuming they're available)
-// @import 'variables';
+@use "variables" as *;
 
 // ============================================================================
 // Layout & Container
 // ============================================================================
 
-@use "variables" as *;
-
 .onboarding-wrapper {
   min-height: 100vh;
   background: linear-gradient(
     135deg,
-    rgba(14, 165, 233, 0.03) 0%,
-    rgba(14, 165, 233, 0.08) 100%
+    rgba($brand, 0.03) 0%,
+    rgba($brand, 0.08) 100%
   );
   padding: $space-8 $spacing-md;
 
@@ -30,9 +27,8 @@
   margin: 0 auto;
   background: $bg-primary;
   border-radius: 24px;
-  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.06),
-    0 20px 40px -8px rgba(14, 165, 233, 0.12),
-    0 0 0 1px rgba(14, 165, 233, 0.04);
+  box-shadow: 0 4px 6px -1px rgba($brand, 0.06),
+    0 20px 40px -8px rgba($brand, 0.12), 0 0 0 1px rgba($brand, 0.04);
   overflow: hidden;
 
   @media (max-width: $bp-sm) {
@@ -61,7 +57,7 @@
     height: 400px;
     background: radial-gradient(
       circle,
-      rgba(255, 255, 255, 0.1) 0%,
+      rgba($color-white, 0.1) 0%,
       transparent 70%
     );
     border-radius: 50%;
@@ -86,7 +82,7 @@
 }
 
 .onboarding-header__subtitle {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba($color-white, 0.9);
   font-size: 1.125rem;
   line-height: 1.6;
   max-width: 600px;
@@ -220,13 +216,13 @@
   }
 
   &:hover {
-    border-color: darken($border, 8%);
+    border-color: $ring;
   }
 
   &:focus {
     outline: none;
     border-color: $brand;
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    box-shadow: 0 0 0 3px rgba($brand, 0.1);
     background: $color-white;
   }
 
@@ -267,13 +263,13 @@
   font-family: inherit;
 
   &:hover {
-    border-color: darken($border, 8%);
+    border-color: $ring;
   }
 
   &:focus {
     outline: none;
     border-color: $brand;
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    box-shadow: 0 0 0 3px rgba($brand, 0.1);
   }
 }
 
@@ -282,12 +278,13 @@
   right: 14px;
   pointer-events: none;
   color: $text-muted;
-  transition: transform $transition-base;
+  transition: transform $transition-base, color $transition-base;
+}
 
-  .onboarding-field__select:focus ~ & {
-    transform: rotate(180deg);
-    color: $brand;
-  }
+// rotate icon when select is focused (expects: select + icon)
+.onboarding-field__select:focus + .onboarding-field__select-icon {
+  transform: rotate(180deg);
+  color: $brand;
 }
 
 // ============================================================================
@@ -317,7 +314,7 @@
 
   &:hover {
     border-color: $brand-light;
-    background: rgba(14, 165, 233, 0.02);
+    background: rgba($brand, 0.02);
   }
 
   &--inline {
@@ -358,7 +355,7 @@
         top: 2px;
         width: 5px;
         height: 9px;
-        border: solid white;
+        border: solid $color-white;
         border-width: 0 2px 2px 0;
         transform: rotate(45deg);
       }
@@ -366,7 +363,7 @@
 
     &:focus {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+      box-shadow: 0 0 0 3px rgba($brand, 0.1);
     }
   }
 
@@ -446,13 +443,13 @@
     border-radius: 50%;
     background: $brand;
     border: 3px solid $color-white;
-    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+    box-shadow: 0 2px 8px rgba($brand, 0.3);
     cursor: pointer;
     transition: all $transition-base;
 
     &:hover {
       transform: scale(1.15);
-      box-shadow: 0 3px 12px rgba(14, 165, 233, 0.4);
+      box-shadow: 0 3px 12px rgba($brand, 0.4);
     }
   }
 
@@ -462,23 +459,23 @@
     border-radius: 50%;
     background: $brand;
     border: 3px solid $color-white;
-    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+    box-shadow: 0 2px 8px rgba($brand, 0.3);
     cursor: pointer;
     transition: all $transition-base;
 
     &:hover {
       transform: scale(1.15);
-      box-shadow: 0 3px 12px rgba(14, 165, 233, 0.4);
+      box-shadow: 0 3px 12px rgba($brand, 0.4);
     }
   }
 
   &:focus {
     &::-webkit-slider-thumb {
-      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.2);
+      box-shadow: 0 0 0 4px rgba($brand, 0.2);
     }
 
     &::-moz-range-thumb {
-      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.2);
+      box-shadow: 0 0 0 4px rgba($brand, 0.2);
     }
   }
 }
@@ -537,13 +534,11 @@
   &--primary {
     background: linear-gradient(135deg, $brand 0%, $brand-dark 100%);
     color: $color-white;
-    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2),
-      0 1px 2px rgba(14, 165, 233, 0.1);
+    box-shadow: 0 2px 8px rgba($brand, 0.2), 0 1px 2px rgba($brand, 0.1);
 
     &:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3),
-        0 2px 4px rgba(14, 165, 233, 0.15);
+      box-shadow: 0 4px 12px rgba($brand, 0.3), 0 2px 4px rgba($brand, 0.15);
     }
 
     &:active:not(:disabled) {
@@ -557,8 +552,7 @@
     }
 
     &:focus-visible {
-      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2),
-        0 0 0 4px rgba(14, 165, 233, 0.2);
+      box-shadow: 0 2px 8px rgba($brand, 0.2), 0 0 0 4px rgba($brand, 0.2);
     }
   }
 
@@ -569,12 +563,12 @@
 
     &:hover {
       background: $bg-soft;
-      border-color: darken($border, 8%);
+      border-color: $ring;
       color: $text-primary;
     }
 
     &:focus-visible {
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+      box-shadow: 0 0 0 3px rgba($brand, 0.1);
     }
   }
 }
@@ -582,8 +576,8 @@
 .onboarding-btn__spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border: 2px solid rgba($color-white, 0.3);
+  border-top-color: $color-white;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -608,7 +602,7 @@
   border-radius: 10px;
   font-size: 0.9375rem;
   font-weight: 500;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba($success, 0.2);
   animation: slideIn 0.3s ease-out;
 
   @media (max-width: $bp-sm) {
@@ -661,12 +655,12 @@
 
 @media print {
   .onboarding-wrapper {
-    background: white;
+    background: $color-white;
   }
 
   .onboarding-header {
-    background: white;
-    color: black;
+    background: $color-white;
+    color: $color-black;
 
     &::before {
       display: none;
@@ -675,7 +669,7 @@
 
   .onboarding-header__title,
   .onboarding-header__subtitle {
-    color: black;
+    color: $color-black;
   }
 
   .onboarding-actions {

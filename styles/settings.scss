@@ -6,8 +6,8 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Base Layout
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Base Layout
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .settings-modern {
   min-height: 100vh;
@@ -27,8 +27,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Loading State
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Loading State
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .settings-loading {
   display: flex;
@@ -36,13 +36,13 @@
   align-items: center;
   justify-content: center;
   min-height: 60vh;
-  color: white;
+  color: $color-white;
 
   .spinner {
     width: 48px;
     height: 48px;
-    border: 4px solid rgba(255, 255, 255, 0.2);
-    border-top-color: white;
+    border: 4px solid rgba($color-white, 0.2);
+    border-top-color: $color-white;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     margin-bottom: 1rem;
@@ -61,8 +61,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Header
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Header
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .settings-header {
   display: flex;
@@ -76,7 +76,7 @@
 .settings-title {
   font-size: 2.5rem;
   font-weight: 800;
-  color: white;
+  color: $color-white;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -94,21 +94,21 @@
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #60a5fa, #a78bfa);
+  background: linear-gradient(135deg, $brand-light, $calendar-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2rem;
   font-weight: 700;
-  color: white;
+  color: $color-white;
   text-transform: uppercase;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  border: 4px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 24px rgba($color-black, 0.2);
+  border: 4px solid rgba($color-white, 0.3);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Cards
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Cards
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .settings-card {
   background: var(--settings-surface);
@@ -121,10 +121,10 @@
   &--info {
     background: linear-gradient(
       135deg,
-      rgba(59, 130, 246, 0.1),
-      rgba(139, 92, 246, 0.1)
+      rgba($blue-600, 0.1),
+      rgba($calendar-secondary, 0.1)
     );
-    border-color: rgba(59, 130, 246, 0.3);
+    border-color: rgba($blue-600, 0.3);
   }
 }
 
@@ -145,15 +145,23 @@
   flex-shrink: 0;
 
   &--primary {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
-    color: white;
+    background: linear-gradient(
+      135deg,
+      var(--settings-primary),
+      var(--settings-primary-dark)
+    );
+    box-shadow: 0 8px 24px rgba($blue-600, 0.3);
+    color: $color-white;
   }
 
   &--warning {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);
-    color: white;
+    background: linear-gradient(
+      135deg,
+      var(--settings-warning),
+      var(--settings-warning-dark)
+    );
+    box-shadow: 0 8px 24px rgba($yellow-400, 0.3);
+    color: $color-white;
   }
 }
 
@@ -171,8 +179,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Forms
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Forms
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .settings-form {
   display: flex;
@@ -219,7 +227,7 @@
 .form-select {
   width: 100%;
   padding: 0.875rem 1rem 0.875rem 3rem;
-  background: white;
+  background: $card-bg;
   border: 2px solid var(--settings-border);
   border-radius: 12px;
   font-size: 0.938rem;
@@ -230,11 +238,11 @@
   &:focus {
     outline: none;
     border-color: var(--settings-primary);
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 4px rgba($blue-600, 0.1);
   }
 
   &:disabled {
-    background: #f1f5f9;
+    background: $bg-soft;
     color: var(--settings-text-muted);
     cursor: not-allowed;
   }
@@ -253,8 +261,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Form Actions
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Form Actions
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .form-actions {
   display: flex;
@@ -297,21 +305,25 @@
     var(--settings-primary),
     var(--settings-primary-dark)
   );
-  color: white;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  color: $color-white;
+  box-shadow: 0 4px 16px rgba($blue-600, 0.3);
 
   &:not(:disabled):hover {
-    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 8px 24px rgba($blue-600, 0.4);
   }
 }
 
 .btn-warning {
-  background: linear-gradient(135deg, var(--settings-warning), #d97706);
-  color: white;
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+  background: linear-gradient(
+    135deg,
+    var(--settings-warning),
+    var(--settings-warning-dark)
+  );
+  color: $color-white;
+  box-shadow: 0 4px 16px rgba($yellow-400, 0.3);
 
   &:not(:disabled):hover {
-    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 8px 24px rgba($yellow-400, 0.4);
   }
 }
 
@@ -320,8 +332,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba($success, 0.1);
+  border: 1px solid rgba($success, 0.3);
   border-radius: 999px;
   color: var(--settings-success);
   font-size: 0.875rem;
@@ -345,8 +357,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Info Grid
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Info Grid
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .info-grid {
   display: grid;
@@ -359,7 +371,7 @@
   align-items: center;
   gap: 1rem;
   padding: 1.25rem;
-  background: white;
+  background: $card-bg;
   border-radius: 16px;
   border: 1px solid var(--settings-border);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -376,8 +388,8 @@
   border-radius: 12px;
   background: linear-gradient(
     135deg,
-    rgba(59, 130, 246, 0.1),
-    rgba(139, 92, 246, 0.1)
+    rgba($blue-600, 0.1),
+    rgba($calendar-secondary, 0.1)
   );
   display: flex;
   align-items: center;
@@ -412,8 +424,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-     Responsive Design
-     ═══════════════════════════════════════════════════════════════════════════ */
+   Responsive Design
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
   .settings-modern {

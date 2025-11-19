@@ -1,46 +1,30 @@
 @use "variables" as *;
 
-/* -------------------------------------------------------
-   SPACING SYSTEM (rem-based, consistent vertical rhythm)
-   Scale: 2xs:0.25  xs:0.5  sm:0.75  md:1.0  lg:1.5  xl:2.0  2xl:3.0
---------------------------------------------------------*/
-:root {
-  --space-2xs: 0.25rem;
-  --space-xs: 0.5rem;
-  --space-sm: 0.75rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2rem;
-  --space-2xl: 3rem;
-
-  --radius-lg: 1.25rem; // 20px
-  --radius-md: 0.75rem; // 12px
-
-  --container-max: 72rem; // 1152px
-  --container-pad: 1.25rem; // 20px
-}
-
-/* Simple stack utilities to control vertical spacing without extra wrappers */
+/* ---------------------------------------
+   UTILITIES
+----------------------------------------*/
 .stack-2xs > * + * {
-  margin-top: var(--space-2xs);
+  margin-top: $space-2xs;
 }
 .stack-xs > * + * {
-  margin-top: var(--space-xs);
+  margin-top: $space-xs;
 }
 .stack-sm > * + * {
-  margin-top: var(--space-sm);
+  margin-top: $space-sm;
 }
 .stack-md > * + * {
-  margin-top: var(--space-md);
+  margin-top: $space-md;
 }
 .stack-lg > * + * {
-  margin-top: var(--space-lg);
+  margin-top: $space-lg;
 }
+
 .row-gap-xs {
   display: flex;
-  gap: var(--space-xs);
+  gap: $space-xs;
   flex-wrap: wrap;
 }
+
 .center {
   display: flex;
   flex-direction: column;
@@ -48,12 +32,12 @@
   justify-content: center;
 }
 
-/* Sections share consistent top/bottom rhythm */
 .section {
-  padding-block: var(--space-2xl);
+  padding-block: $space-2xl;
 }
+
 .section--tight {
-  padding-block: var(--space-xl);
+  padding-block: $space-xl;
 }
 
 /* ---------------------------------------
@@ -63,9 +47,9 @@
   overflow-x: hidden;
 
   .container {
-    max-width: var(--container-max);
+    max-width: $container-max;
     margin-inline: auto;
-    padding-inline: var(--container-pad);
+    padding-inline: $container-pad;
   }
 }
 
@@ -75,16 +59,16 @@
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-xs);
-  padding: 0.75rem 1.25rem; // 12px 20px
-  border-radius: var(--radius-md);
+  gap: $space-xs;
+  padding: 0.75rem 1.25rem;
+  border-radius: $radius-md;
   font-weight: 600;
-  font-size: 0.9375rem; // 15px
+  font-size: 0.9375rem;
   text-decoration: none;
   border: none;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease,
-    border-color 0.2s ease;
+  transition: transform $transition-fast, box-shadow $transition-fast,
+    background $transition-fast, border-color $transition-fast;
   position: relative;
   overflow: hidden;
 
@@ -100,10 +84,10 @@
     );
     color: #fff;
     box-shadow: 0 4px 12px rgba($color-primary, 0.25);
+
     &:hover {
       box-shadow: 0 8px 20px rgba($color-primary, 0.35);
       transform: translateY(-1px);
-      text-decoration: none;
     }
   }
 
@@ -111,10 +95,10 @@
     background: transparent;
     color: $color-primary;
     border: 2px solid $color-primary;
+
     &:hover {
       background: rgba($color-primary, 0.08);
       border-color: $color-primary-ink;
-      text-decoration: none;
     }
   }
 
@@ -138,8 +122,9 @@
   }
 
   &__arrow {
-    transition: transform 0.2s ease;
+    transition: transform $transition-fast;
   }
+
   &:hover &__arrow {
     transform: translateX(4px);
   }
@@ -154,15 +139,15 @@
   display: flex;
   align-items: center;
 
-  &__background {
+  &__background,
+  &__gradient,
+  &__pattern {
     position: absolute;
     inset: 0;
     z-index: 0;
-    overflow: hidden;
   }
+
   &__gradient {
-    position: absolute;
-    inset: 0;
     background: radial-gradient(
         ellipse 80% 50% at 50% -20%,
         rgba($color-primary, 0.12),
@@ -170,9 +155,8 @@
       ),
       linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
   }
+
   &__pattern {
-    position: absolute;
-    inset: 0;
     background-image: linear-gradient(
         rgba($color-primary, 0.02) 1px,
         transparent 1px
@@ -191,7 +175,7 @@
   &__badge {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-xs);
+    gap: $space-xs;
     padding: 0.5rem 0.875rem;
     background: linear-gradient(
       135deg,
@@ -206,29 +190,24 @@
     animation: fadeInUp 0.6s ease both;
   }
 
-  &__badge-icon {
-    font-size: 1rem;
-  }
-
   &__title {
     font-size: clamp(2.25rem, 6vw, 3.5rem);
-    line-height: 1.1;
     margin: 0;
     font-weight: 900;
+    line-height: 1.1;
     color: $color-black;
-    animation: fadeInUp 0.6s ease 0.05s both;
+  }
 
-    &-accent {
-      background: linear-gradient(
-        135deg,
-        $color-primary 0%,
-        $color-primary-light 100%
-      );
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-left: 0.25ch;
-    }
+  &__title-accent {
+    background: linear-gradient(
+      135deg,
+      $color-primary 0%,
+      $color-primary-light 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-left: 0.25ch;
   }
 
   &__subtitle {
@@ -237,21 +216,16 @@
     color: $color-muted;
     max-width: 36rem;
     margin: 0;
-    animation: fadeInUp 0.6s ease 0.1s both;
-  }
-
-  &__actions {
-    animation: fadeInUp 0.6s ease 0.15s both;
   }
 }
 
 /* ---------------------------------------
-   GRID (Form + Sidebar)
+   GRID
 ----------------------------------------*/
 .contact-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 22.5rem; // 360px
-  gap: var(--space-xl);
+  grid-template-columns: minmax(0, 1fr) 22.5rem;
+  gap: $space-xl;
 
   @media (max-width: $bp-md) {
     grid-template-columns: 1fr;
@@ -264,66 +238,58 @@
 .card {
   background: $color-white;
   border: 1px solid $color-border;
-  border-radius: var(--radius-lg);
-  padding: var(--space-xl);
+  border-radius: $radius-lg;
+  padding: $space-xl;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-  }
-  &__icon {
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 0.75rem;
-    background: linear-gradient(
-      135deg,
-      rgba($color-primary, 0.1),
-      rgba($color-primary-light, 0.1)
-    );
-    display: grid;
-    place-items: center;
-    color: $color-primary;
-    flex-shrink: 0;
-  }
-  &__title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 700;
-  }
-  &__subtitle {
-    color: $color-muted;
-    margin: 0;
-    font-size: 0.9375rem;
-  }
 }
 
-.contact-form form {
-  margin: 0;
+.card__header {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
 }
 
+.card__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: $radius-md;
+  background: linear-gradient(
+    135deg,
+    rgba($color-primary, 0.1),
+    rgba($color-primary-light, 0.1)
+  );
+  display: grid;
+  place-items: center;
+  color: $color-primary;
+}
+
+.card__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.card__subtitle {
+  color: $color-muted;
+  font-size: 0.9375rem;
+}
+
+/* ---------------------------------------
+   FIELDS
+----------------------------------------*/
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-lg);
+  gap: $space-lg;
 
   @media (max-width: $bp-sm) {
     grid-template-columns: 1fr;
-  }
-
-  &--3 {
-    grid-template-columns: 1fr 1fr 1fr;
-    @media (max-width: $bp-md) {
-      grid-template-columns: 1fr;
-    }
   }
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: $space-xs;
 }
 
 .label {
@@ -337,24 +303,23 @@
 .textarea {
   padding: 0.75rem 1rem;
   border: 2px solid $color-border;
-  border-radius: var(--radius-md);
-  font-size: 0.9375rem;
+  border-radius: $radius-md;
   background: $color-white;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  color: $color-black;
+  font-size: 0.9375rem;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
 
   &:focus {
     border-color: $color-primary;
     box-shadow: 0 0 0 3px rgba($color-primary, 0.15);
   }
+
   &::placeholder {
     color: $color-muted;
   }
 }
 
 .select {
-  cursor: pointer;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -365,53 +330,6 @@
 .textarea {
   resize: vertical;
   min-height: 8rem;
-  line-height: 1.6;
-}
-
-.checkbox {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  cursor: pointer;
-  margin-top: var(--space-sm);
-
-  input[type="checkbox"] {
-    width: 1.125rem;
-    height: 1.125rem;
-    cursor: pointer;
-    accent-color: $color-primary;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  span {
-    font-size: 0.875rem;
-    color: $color-muted;
-    line-height: 1.5;
-  }
-}
-
-.link {
-  color: $color-primary;
-  text-decoration: none;
-  font-weight: 600;
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-  margin-top: var(--space-sm);
-}
-
-.form-status {
-  color: $color-primary-ink;
-  font-weight: 600;
-  font-size: 0.875rem;
 }
 
 /* ---------------------------------------
@@ -420,92 +338,12 @@
 .contact-sidebar {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: $space-lg;
 }
 
-.contact-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba($color-primary, 0.14);
-  }
-}
-
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-sm);
-
-  li {
-    padding-bottom: var(--space-sm);
-    border-bottom: 1px solid $color-border;
-    &:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-  }
-
-  &__title {
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    color: $color-black;
-    font-size: 0.875rem;
-  }
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  margin-top: var(--space-sm);
-  padding: 0.5rem 0.75rem;
-  border-radius: 999px;
-  background: linear-gradient(
-    135deg,
-    rgba($color-primary, 0.1),
-    rgba($color-primary-light, 0.1)
-  );
-  border: 1px solid rgba($color-primary, 0.2);
-  color: $color-primary-ink;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  svg {
-    color: $color-primary;
-  }
-}
-
-.kvs {
-  display: grid;
-  gap: var(--space-sm);
-
-  > div {
-    display: flex;
-    justify-content: space-between;
-    color: $color-black;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid $color-border;
-    &:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-  }
-
-  span {
-    color: $color-muted;
-    font-weight: 600;
-    font-size: 0.875rem;
-  }
-  strong {
-    font-weight: 700;
-  }
-}
-
-.social {
-  display: flex;
-  gap: var(--space-xs);
-  flex-wrap: wrap;
+.contact-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba($color-primary, 0.14);
 }
 
 /* ---------------------------------------
@@ -514,7 +352,7 @@
 .lanes {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-lg);
+  gap: $space-lg;
 
   @media (max-width: $bp-md) {
     grid-template-columns: 1fr;
@@ -524,35 +362,13 @@
 .lane {
   background: $color-white;
   border: 1px solid $color-border;
-  border-radius: var(--radius-lg);
-  padding: var(--space-xl);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border-radius: $radius-lg;
+  padding: $space-xl;
+  transition: transform $transition-fast, box-shadow $transition-fast;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 24px rgba($color-primary, 0.14);
-    border-color: rgba($color-primary, 0.28);
-    .lane__icon {
-      transform: scale(1.06);
-    }
-  }
-
-  &__icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    display: inline-block;
-    transition: transform 0.2s ease;
-  }
-
-  h3 {
-    margin: 0 0 0.25rem;
-    font-size: 1.25rem;
-    font-weight: 700;
-  }
-  p {
-    color: $color-muted;
-    margin: 0;
-    line-height: 1.6;
   }
 }
 
@@ -566,79 +382,39 @@
   &__inner {
     display: grid;
     grid-template-columns: 22.5rem 1fr;
-    gap: var(--space-xl);
+    gap: $space-xl;
 
     @media (max-width: $bp-md) {
       grid-template-columns: 1fr;
     }
   }
 
-  &__panel {
-    h3 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin: 0;
-    }
-    p {
-      color: $color-muted;
-      margin: 0;
-      line-height: 1.6;
-    }
-  }
-
   &__canvas {
-    border-radius: var(--radius-lg);
+    border-radius: $radius-lg;
     overflow: hidden;
   }
 }
 
 .map-placeholder {
   height: 20rem;
-  border-radius: var(--radius-lg);
+  border-radius: $radius-lg;
   border: 2px dashed $color-border;
   background: $color-white;
-  gap: var(--space-sm);
-  color: $color-muted;
   text-align: center;
-  svg {
-    opacity: 0.5;
-  }
-  span {
-    font-weight: 600;
-  }
-}
-
-.bullets {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-sm);
-  li {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    color: $color-black;
-    font-weight: 600;
-    svg {
-      color: $color-primary;
-      flex-shrink: 0;
-    }
-  }
+  color: $color-muted;
 }
 
 /* ---------------------------------------
    FAQ
 ----------------------------------------*/
 .faq {
-  max-width: 56.25rem; // 900px
+  max-width: 56.25rem;
   margin-inline: auto;
 
   &__title {
-    margin: 0 0 var(--space-lg);
+    margin-bottom: $space-lg;
     font-size: clamp(1.75rem, 4vw, 2.5rem);
     font-weight: 800;
-    text-align: center;
     background: linear-gradient(
       135deg,
       $color-black 0%,
@@ -646,56 +422,29 @@
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    background-clip: text;
   }
 }
 
 .accordion {
   display: grid;
-  gap: var(--space-sm);
+  gap: $space-sm;
 
   &__item {
     background: $color-white;
     border: 1px solid $color-border;
     border-radius: 1rem;
-    overflow: hidden;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
     &:hover {
       border-color: rgba($color-primary, 0.28);
       box-shadow: 0 4px 12px rgba($color-primary, 0.1);
     }
-
-    &[open] .accordion__q::after {
-      transform: rotate(-135deg);
-      margin-top: -4px;
-    }
-
-    summary {
-      list-style: none;
-      &::-webkit-details-marker {
-        display: none;
-      }
-    }
   }
 
   &__q {
-    width: 100%;
-    text-align: left;
-    background: transparent;
-    border: none;
     padding: 1rem 1.25rem;
     font-weight: 700;
     font-size: 1.0625rem;
-    color: $color-black;
-    cursor: pointer;
     position: relative;
-    transition: color 0.2s ease;
-    display: block;
-
-    &:hover {
-      color: $color-primary;
-    }
 
     &::after {
       content: "";
@@ -704,26 +453,21 @@
       top: 50%;
       width: 12px;
       height: 12px;
-      margin-top: -8px;
       border-right: 2px solid $color-primary;
       border-bottom: 2px solid $color-primary;
-      transform: rotate(45deg);
-      transition: transform 0.2s ease;
+      transform: translateY(-50%) rotate(45deg);
+      transition: transform $transition-fast;
     }
   }
 
   &__a {
     padding: 0 1.25rem 1rem;
     color: $color-muted;
-    line-height: 1.7;
-    p {
-      margin: 0;
-    }
   }
 }
 
 /* ---------------------------------------
-   ANIMATIONS & REDUCED MOTION
+   ANIMATIONS
 ----------------------------------------*/
 @keyframes fadeInUp {
   from {
@@ -735,21 +479,12 @@
     transform: translateY(0);
   }
 }
+
 @keyframes shine {
   from {
     transform: translateX(-120%);
   }
   to {
     transform: translateX(120%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
   }
 }

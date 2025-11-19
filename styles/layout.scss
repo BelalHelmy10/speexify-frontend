@@ -1,8 +1,8 @@
 @use "variables" as *;
 
 .site-header {
-  border-bottom: 1px solid #eee;
-  background: #fff;
+  border-bottom: 1px solid $color-border;
+  background: $bg-primary;
 
   .container {
     display: flex;
@@ -14,6 +14,7 @@
   .brand {
     font-weight: 700;
     font-size: 1.1rem;
+    color: $text-primary;
   }
 
   .nav {
@@ -25,13 +26,15 @@
 
 .site-main {
   padding: 24px 0 48px;
+  background: $bg;
+  color: $text;
 }
 
 .site-footer {
-  border-top: 1px solid #eee;
+  border-top: 1px solid $color-border;
   padding: 16px 0;
-  background: #fafafa;
-  color: #555;
+  background: $bg-light;
+  color: $text-secondary;
 }
 
 .container-narrow {
@@ -50,10 +53,12 @@
   padding: 16px;
   border: 1px solid $color-border;
   border-radius: $radius;
-  background: white;
+  background: $card-bg;
+  box-shadow: $shadow-sm;
 
   h3 {
     margin-top: 0;
+    color: $text-primary;
   }
 }
 

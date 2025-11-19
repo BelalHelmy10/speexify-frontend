@@ -1,4 +1,5 @@
 @use "variables" as *;
+
 .payment-result {
   min-height: 100vh;
   display: flex;
@@ -8,17 +9,17 @@
 
   // Success background
   &--success {
-    background: $payment-green-50;
+    background: $success-bg;
   }
 
   // Failed background
   &--failed {
-    background: $payment-red-50;
+    background: $error-bg;
   }
 
   // Loading background
   &--loading {
-    background: #f9fafb;
+    background: $bg-soft;
   }
 }
 
@@ -34,7 +35,7 @@
 
 .payment-result__loading-text {
   margin-top: 1rem;
-  color: $payment-gray-600;
+  color: $text-secondary;
   font-size: 1rem;
 }
 
@@ -43,7 +44,7 @@
   width: 3rem;
   height: 3rem;
   margin: 0 auto;
-  border: 2px solid $payment-gray-600;
+  border: 2px solid $ring;
   border-bottom-color: transparent;
   border-radius: 50%;
   animation: payment-spin 0.8s linear infinite;
@@ -57,11 +58,11 @@
 
 // Card
 .payment-result__card {
-  background: $payment-white;
+  background: $card-bg;
   padding: 2rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-radius: $radius-card;
+  box-shadow: $shadow-lg;
+  border: 1px solid $border;
   text-align: center;
 }
 
@@ -76,11 +77,11 @@
   margin: 0 auto 1rem;
 
   &--success {
-    background: $payment-green-100;
+    background: rgba($success, 0.1);
   }
 
   &--failed {
-    background: $payment-red-100;
+    background: rgba($error, 0.1);
   }
 }
 
@@ -89,11 +90,11 @@
   height: 2rem;
 
   .payment-result__icon--success & {
-    color: $payment-green-600;
+    color: $success;
   }
 
   .payment-result__icon--failed & {
-    color: $payment-red-600;
+    color: $error;
   }
 }
 
@@ -101,13 +102,13 @@
 .payment-result__title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: $payment-gray-900;
+  color: $text-primary;
   margin-bottom: 0.5rem;
 }
 
 // Message
 .payment-result__message {
-  color: $payment-gray-600;
+  color: $text-secondary;
   margin-bottom: 1.5rem;
   line-height: 1.5;
 }
@@ -117,7 +118,7 @@
   margin-top: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: $payment-gray-900;
+  color: $text-primary;
 }
 
 // Button
@@ -130,18 +131,19 @@
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, box-shadow 0.2s;
 
   &--primary {
-    background: $payment-primary;
-    color: $payment-white;
+    background: $brand;
+    color: $color-white;
 
     &:hover {
-      background: $payment-primary-hover;
+      background: $brand-dark;
+      box-shadow: 0 4px 10px rgba($brand, 0.3);
     }
 
     &:focus {
-      outline: 2px solid $payment-primary;
+      outline: 2px solid $brand;
       outline-offset: 2px;
     }
   }

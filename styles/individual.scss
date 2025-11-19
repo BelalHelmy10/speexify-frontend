@@ -1,7 +1,4 @@
 @use "variables" as *;
-// ========================================
-// VARIABLES
-// ========================================
 
 // ========================================
 // ANIMATIONS
@@ -134,7 +131,7 @@
 
   &--primary {
     background: linear-gradient(135deg, $brand 0%, $brand-ink 100%);
-    color: #fff;
+    color: $color-white;
     box-shadow: 0 4px 12px rgba($brand, 0.3);
 
     &:hover {
@@ -233,7 +230,8 @@
   font-size: 15px;
   outline: none;
   transition: all 0.3s ease;
-  background: #fff;
+  background: $bg-primary;
+  color: $text-primary;
 
   &:focus {
     border-color: $brand;
@@ -313,7 +311,7 @@
         rgba($brand, 0.12),
         transparent 50%
       ),
-      linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+      linear-gradient(180deg, $bg-soft 0%, $bg-primary 100%);
   }
 
   &__pattern {
@@ -460,7 +458,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba($color-white, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 999px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
@@ -474,7 +472,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #10b981;
+    background: $success;
     animation: pulse 2s ease-in-out infinite;
   }
 }
@@ -590,6 +588,7 @@
     margin: 0 0 12px;
     font-weight: 700;
     font-size: 20px;
+    color: $ink;
   }
 
   &__p {
@@ -638,7 +637,7 @@
 .step {
   display: flex;
   gap: 16px;
-  background: #fff;
+  background: $card-bg;
   border: 1px solid $border;
   border-radius: 20px;
   padding: 28px;
@@ -666,7 +665,7 @@
     height: 48px;
     border-radius: 50%;
     background: $brand;
-    color: #fff;
+    color: $color-white;
     display: grid;
     place-items: center;
     font-weight: 800;
@@ -683,6 +682,7 @@
     font-weight: 700;
     font-size: 18px;
     margin-bottom: 8px;
+    color: $ink;
   }
 
   &__p {
@@ -713,7 +713,7 @@
     font-size: 15px;
     font-weight: 600;
     color: $ink;
-    background: #fff;
+    background: $card-bg;
     border: 2px solid $border;
     border-radius: 999px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -771,7 +771,7 @@
     height: 56px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #fff;
+    border: 3px solid $color-white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
@@ -781,7 +781,7 @@
   }
 
   .testi__star {
-    color: #fbbf24;
+    color: $color-secondary-light;
     font-size: 16px;
   }
 
@@ -818,7 +818,7 @@
 // ========================================
 .ind-trial {
   &__card {
-    background: linear-gradient(135deg, #f9fafb 0%, #fff 100%);
+    background: linear-gradient(135deg, $bg-soft 0%, $bg-primary 100%);
     border: 1px solid $border;
     border-radius: 24px;
     padding: $space-10;
@@ -874,7 +874,7 @@
   padding: 100px 0;
   position: relative;
   overflow: hidden;
-  color: #fff;
+  color: $color-white;
   margin-top: $space-10;
 
   &__background {
@@ -907,7 +907,7 @@
     border-radius: 50%;
     background: radial-gradient(
       circle,
-      rgba(255, 255, 255, 0.1),
+      rgba($color-white, 0.1),
       transparent 70%
     );
 
@@ -969,22 +969,22 @@
   }
 
   .btn--primary {
-    background: #fff;
+    background: $bg-primary;
     color: $brand;
 
     &:hover {
-      background: #f0f9ff;
+      background: $bg-soft;
       box-shadow: 0 8px 24px rgba(255, 255, 255, 0.3);
     }
   }
 
   .btn--ghost {
-    color: #fff;
+    color: $color-white;
     border-color: rgba(255, 255, 255, 0.5);
 
     &:hover {
       background: rgba(255, 255, 255, 0.15);
-      border-color: #fff;
+      border-color: $color-white;
     }
   }
 }

@@ -16,7 +16,7 @@
     font-size: clamp(28px, 3.2vw, 36px);
     font-weight: 700;
     letter-spacing: -0.03em;
-    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+    background: linear-gradient(135deg, $text-primary 0%, $muted 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -34,7 +34,7 @@
 .dashboard__subtitle {
   margin: 0;
   font-size: 15px;
-  color: #64748b;
+  color: $text-secondary;
   font-weight: 400;
 }
 
@@ -55,11 +55,11 @@
 
 .panel {
   padding: 24px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  border: 1px solid rgba($border, 0.8);
   border-radius: 16px;
-  background: white;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03),
-    0 10px 40px rgba(15, 23, 42, 0.04);
+  background: $card-bg;
+  box-shadow: 0 1px 3px rgba($color-black, 0.03),
+    0 10px 40px rgba($color-black, 0.04);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
@@ -71,15 +71,20 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+    background: linear-gradient(
+      90deg,
+      $brand 0%,
+      $calendar-secondary 50%,
+      $color-secondary-light 100%
+    );
     opacity: 0;
     transition: opacity 0.3s ease;
   }
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(15, 23, 42, 0.05),
-      0 20px 60px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 4px 6px rgba($color-black, 0.05),
+      0 20px 60px rgba($color-black, 0.08);
 
     &::before {
       opacity: 1;
@@ -94,7 +99,7 @@
     margin: 0 0 16px;
     font-size: 18px;
     font-weight: 600;
-    color: #0f172a;
+    color: $text-primary;
     letter-spacing: -0.01em;
   }
 
@@ -116,8 +121,8 @@
     gap: 6px;
     padding: 4px 12px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    color: #1e40af;
+    background: linear-gradient(135deg, $blue-50 0%, $gray-100 100%);
+    color: $blue-800;
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -127,11 +132,11 @@
 }
 
 .panel--featured {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: linear-gradient(135deg, $card-bg 0%, $bg-soft 100%);
+  border: 1px solid rgba($text-muted, 0.2);
 
   &::before {
-    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    background: linear-gradient(90deg, $blue-600 0%, $brand 100%);
   }
 }
 
@@ -147,10 +152,10 @@
   min-height: 110px;
   padding: 20px;
   border-radius: 16px;
-  border: 1px solid rgba(226, 232, 240, 0.6);
-  background: white;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03),
-    0 10px 30px rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba($border, 0.6);
+  background: $card-bg;
+  box-shadow: 0 1px 3px rgba($color-black, 0.03),
+    0 10px 30px rgba($color-black, 0.04);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
@@ -164,7 +169,7 @@
     height: 200%;
     background: radial-gradient(
       circle,
-      rgba(255, 255, 255, 0.8) 0%,
+      rgba($color-white, 0.8) 0%,
       transparent 70%
     );
     opacity: 0;
@@ -173,8 +178,8 @@
 
   &:hover {
     transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06),
-      0 20px 60px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 8px 16px rgba($color-black, 0.06),
+      0 20px 60px rgba($color-black, 0.1);
 
     &::before {
       opacity: 1;
@@ -219,7 +224,7 @@
   .card__title {
     font-size: 13px;
     font-weight: 600;
-    color: #64748b;
+    color: $text-secondary;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -234,11 +239,11 @@
   // Gradient variations
   &.card--blue {
     .card__icon {
-      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-      color: #1e40af;
+      background: linear-gradient(135deg, $blue-50 0%, $gray-100 100%);
+      color: $blue-800;
     }
     .card__value {
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: linear-gradient(135deg, $blue-600 0%, $blue-800 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -247,11 +252,11 @@
 
   &.card--green {
     .card__icon {
-      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-      color: #065f46;
+      background: linear-gradient(135deg, $success-bg 0%, rgba($success, 0.18));
+      color: $success;
     }
     .card__value {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: linear-gradient(135deg, $success 0%, $payment-green-600 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -260,11 +265,19 @@
 
   &.card--purple {
     .card__icon {
-      background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%);
-      color: #6b21a8;
+      background: linear-gradient(
+        135deg,
+        rgba($calendar-primary, 0.12) 0%,
+        rgba($calendar-secondary, 0.18) 100%
+      );
+      color: $calendar-secondary;
     }
     .card__value {
-      background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+      background: linear-gradient(
+        135deg,
+        $calendar-secondary 0%,
+        $accent-light 100%
+      );
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -281,14 +294,14 @@
   gap: 12px;
   padding: 20px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border: 1px solid rgba(203, 213, 225, 0.5);
+  background: linear-gradient(135deg, $bg-soft 0%, $surface 100%);
+  border: 1px solid rgba($border, 0.5);
   margin-bottom: 20px;
 
   &__title {
     font-size: 20px;
     font-weight: 700;
-    color: #0f172a;
+    color: $text-primary;
     letter-spacing: -0.01em;
   }
 
@@ -297,7 +310,7 @@
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    color: #475569;
+    color: $color-muted;
     font-weight: 500;
 
     svg {
@@ -311,7 +324,7 @@
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    color: #64748b;
+    color: $text-secondary;
 
     svg {
       flex-shrink: 0;
@@ -327,7 +340,7 @@
   justify-content: center;
   padding: 48px 20px;
   text-align: center;
-  color: #94a3b8;
+  color: $text-muted;
 
   svg {
     margin-bottom: 16px;
@@ -337,7 +350,7 @@
   p {
     margin: 0;
     font-size: 15px;
-    color: #64748b;
+    color: $text-secondary;
   }
 
   &--compact {
@@ -355,13 +368,13 @@
   gap: 6px;
   padding: 8px 14px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  color: #92400e;
+  background: linear-gradient(135deg, $yellow-50 0%, $yellow-200 100%);
+  color: $yellow-800;
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 12px;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba($yellow-400, 0.3);
+  box-shadow: 0 2px 8px rgba($yellow-400, 0.15);
 
   svg {
     flex-shrink: 0;
@@ -380,9 +393,9 @@
 }
 
 .session-item {
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  border: 1px solid rgba($border, 0.8);
   border-radius: 12px;
-  background: #fff;
+  background: $card-bg;
   display: flex;
   gap: 0;
   align-items: stretch;
@@ -392,18 +405,22 @@
 
   &:hover {
     transform: translateX(4px);
-    box-shadow: 0 4px 6px rgba(15, 23, 42, 0.04),
-      0 12px 40px rgba(15, 23, 42, 0.06);
-    border-color: rgba(148, 163, 184, 0.4);
+    box-shadow: 0 4px 6px rgba($color-black, 0.04),
+      0 12px 40px rgba($color-black, 0.06);
+    border-color: rgba($text-muted, 0.4);
 
     .session-item__indicator {
-      background: linear-gradient(180deg, #3b82f6 0%, #8b5cf6 100%);
+      background: linear-gradient(
+        180deg,
+        $blue-600 0%,
+        $calendar-secondary 100%
+      );
     }
   }
 
   &__indicator {
     width: 4px;
-    background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%);
+    background: linear-gradient(180deg, $border 0%, $ring 100%);
     flex-shrink: 0;
     transition: all 0.3s ease;
   }
@@ -414,7 +431,7 @@
     grid-template-columns: 1fr auto;
     gap: 16px;
     align-items: center;
-    padding: 16px 16px 16px 16px;
+    padding: 16px;
   }
 
   &__main {
@@ -424,7 +441,7 @@
   &__title {
     font-weight: 600;
     font-size: 15px;
-    color: #0f172a;
+    color: $text-primary;
     margin-bottom: 8px;
     letter-spacing: -0.01em;
   }
@@ -483,38 +500,42 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   border: 1px solid rgba(0, 0, 0, 0.06);
-  background: #f8fafc;
-  color: #475569;
+  background: $bg-soft;
+  color: $color-muted;
   transition: all 0.2s ease;
 
   &--scheduled {
-    background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
-    color: #0369a1;
-    border-color: rgba(6, 182, 212, 0.3);
+    background: linear-gradient(135deg, $blue-50 0%, $gray-100 100%);
+    color: $blue-800;
+    border-color: rgba($blue-600, 0.3);
   }
 
   &--completed {
-    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-    color: #047857;
-    border-color: rgba(16, 185, 129, 0.3);
+    background: linear-gradient(135deg, $success-bg 0%, rgba($success, 0.18));
+    color: $success;
+    border-color: rgba($success, 0.3);
   }
 
   &--canceled {
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    color: #b91c1c;
-    border-color: rgba(239, 68, 68, 0.3);
+    background: linear-gradient(
+      135deg,
+      $payment-red-50 0%,
+      $payment-red-100 100%
+    );
+    color: $error;
+    border-color: rgba($error, 0.3);
   }
 
   &--muted {
-    background: #f1f5f9;
-    color: #475569;
-    border-color: rgba(148, 163, 184, 0.2);
+    background: $surface;
+    color: $color-muted;
+    border-color: rgba($text-muted, 0.2);
   }
 
   &--feedback {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    color: #92400e;
-    border-color: rgba(245, 158, 11, 0.3);
+    background: linear-gradient(135deg, $yellow-50 0%, $yellow-200 100%);
+    color: $yellow-800;
+    border-color: rgba($yellow-400, 0.3);
 
     svg {
       width: 12px;
@@ -571,7 +592,7 @@
       width: 0;
       height: 0;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.5);
+      background: rgba($color-white, 0.5);
       transform: translate(-50%, -50%);
       transition: width 0.6s ease, height 0.6s ease;
     }
@@ -592,14 +613,14 @@
   }
 
   &--danger {
-    border-color: rgba(239, 68, 68, 0.3);
-    color: #dc2626;
+    border-color: rgba($error, 0.3);
+    color: $payment-red-600;
 
     &:hover {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      color: #fff;
-      border-color: #dc2626;
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      background: linear-gradient(135deg, $error 0%, $payment-red-600 100%);
+      color: $color-white;
+      border-color: $payment-red-600;
+      box-shadow: 0 4px 12px rgba($error, 0.3);
     }
   }
 }
@@ -607,10 +628,10 @@
 @keyframes btnPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 0 0 rgba($error, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    box-shadow: 0 0 0 8px rgba($error, 0);
   }
 }
 
@@ -634,7 +655,7 @@
   &__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba($color-black, 0.5);
     backdrop-filter: blur(8px);
     animation: backdropFadeIn 0.3s ease;
   }
@@ -646,12 +667,12 @@
     transform: translate(-50%, -50%);
     width: min(560px, 92vw);
     max-height: 90vh;
-    background: rgba(255, 255, 255, 0.98);
+    background: rgba($card-bg, 0.98);
     backdrop-filter: blur(20px);
     border-radius: 20px;
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    box-shadow: 0 25px 50px rgba(15, 23, 42, 0.2),
-      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    border: 1px solid rgba($border, 0.8);
+    box-shadow: 0 25px 50px rgba($color-black, 0.2),
+      0 0 0 1px rgba($color-white, 0.1) inset;
     animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
   }
@@ -661,14 +682,14 @@
     align-items: center;
     justify-content: space-between;
     padding: 20px 24px;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-bottom: 1px solid rgba($border, 0.6);
+    background: linear-gradient(135deg, $card-bg 0%, $bg-soft 100%);
 
     h4 {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
-      color: #0f172a;
+      color: $text-primary;
       letter-spacing: -0.01em;
     }
   }
@@ -690,8 +711,8 @@
     transition: all 0.2s ease;
 
     &:hover {
-      background: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background: rgba($error, 0.1);
+      color: $payment-red-600;
       transform: rotate(90deg);
     }
 
@@ -747,26 +768,26 @@
     span {
       font-size: 13px;
       font-weight: 600;
-      color: #475569;
+      color: $color-muted;
       letter-spacing: 0.01em;
     }
 
     input {
-      border: 1px solid rgba(203, 213, 225, 0.8);
+      border: 1px solid rgba($border, 0.8);
       border-radius: 10px;
       padding: 11px 14px;
       font-size: 14px;
-      background: white;
+      background: $card-bg;
       transition: all 0.2s ease;
 
       &:focus {
         outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        border-color: $blue-600;
+        box-shadow: 0 0 0 3px rgba($blue-600, 0.1);
       }
 
       &:hover {
-        border-color: rgba(148, 163, 184, 0.6);
+        border-color: rgba($text-muted, 0.6);
       }
     }
   }
@@ -786,7 +807,7 @@
   justify-content: center;
   min-height: 400px;
   font-size: 15px;
-  color: #64748b;
+  color: $text-secondary;
   animation: pulse 2s ease-in-out infinite;
 }
 
