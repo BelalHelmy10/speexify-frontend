@@ -72,6 +72,7 @@ export default function Header() {
     { to: "/dashboard", label: "Dashboard" },
     { to: "/calendar", label: "Calendar" },
     { to: "/dashboard/progress", label: "Progress" },
+    { to: "/resources", label: "Resources" },
     { to: "/settings", label: "Settings" },
   ];
 
