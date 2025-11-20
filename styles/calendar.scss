@@ -888,12 +888,55 @@
 
 // ─── RESPONSIVE ADJUSTMENTS ────────────────────────────────────────────────
 @media (max-width: 768px) {
+  .calendar-premium-container {
+    padding: 1.5rem 0.75rem 1.5rem;
+  }
+
+  .calendar-bg-gradient {
+    height: 40vh;
+  }
+
+  .calendar-header {
+    margin-bottom: 1.25rem;
+    padding: 0 0.25rem;
+  }
+
+  .calendar-header-content {
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    border-radius: 20px;
+  }
+
   .calendar-title {
     font-size: 2rem;
   }
 
-  .calendar-header-content {
-    padding: 1.5rem 2rem;
+  .calendar-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .calendar-two-pane .calendar-two-pane__wrap {
+    gap: 1.25rem;
+  }
+
+  .calendar-two-pane .calendar-two-pane__left,
+  .calendar-two-pane .calendar-two-pane__right {
+    padding: 1.25rem;
+    border-radius: 20px;
+  }
+
+  .mini-stats-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+
+    .stat-divider {
+      display: none;
+    }
+
+    .stat-item {
+      align-items: flex-start;
+    }
   }
 
   .rbc-toolbar {
@@ -909,11 +952,19 @@
     .rbc-btn-group {
       width: 100%;
       justify-content: center;
+      flex-wrap: wrap;
     }
   }
 
+  .rbc-month-view,
+  .rbc-time-view,
+  .rbc-agenda-view {
+    border-radius: 16px;
+  }
+
   .rbc-time-view .rbc-time-content {
-    height: 500px;
+    height: 420px;
+    overflow-y: auto;
   }
 }
 
