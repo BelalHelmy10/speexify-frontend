@@ -288,14 +288,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Social Auth
 .auth-social {
-  width: 100% !important;
-}
-
-.auth-social div,
-.auth-social iframe {
-  width: 100% !important;
-  min-width: 100% !important;
-  max-width: 100% !important;
+  margin-bottom: 24px;
+  width: 100%;
 }
 
 /* GoogleLogin renders a div + iframe inside .auth-social */
