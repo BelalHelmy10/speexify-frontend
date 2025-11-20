@@ -157,8 +157,8 @@
   &--warning {
     background: linear-gradient(
       135deg,
-      var(--settings-warning),
-      var(--settings-warning-dark)
+      var(--settings-primary),
+      var(--settings-primary-dark)
     );
     box-shadow: 0 8px 24px rgba($yellow-400, 0.3);
     color: $color-white;
@@ -316,8 +316,8 @@
 .btn-warning {
   background: linear-gradient(
     135deg,
-    var(--settings-warning),
-    var(--settings-warning-dark)
+    var(--settings-primary),
+    var(--settings-primary-dark)
   );
   color: $color-white;
   box-shadow: 0 4px 16px rgba($yellow-400, 0.3);
