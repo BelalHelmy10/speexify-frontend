@@ -292,16 +292,6 @@
   width: 100%;
 }
 
-/* GoogleLogin renders a div + iframe inside .auth-social */
-.auth-social > div {
-  width: 100%;
-}
-
-.auth-social iframe {
-  width: 100% !important; // override inline width from Google
-  max-width: 100%;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Divider
 // ─────────────────────────────────────────────────────────────────────────────

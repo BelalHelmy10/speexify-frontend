@@ -7,12 +7,13 @@ import { GoogleLogin } from "@react-oauth/google";
 /**
  * Responsive Google button:
  * - Measures its container width
- * - Passes that width (in px) to GoogleLogin
- * - So it stays as wide as the inputs, even when it says "Sign in as ..."
+ * - Clamps it into Google's preferred range (300–400px)
+ * - Passes that width to Google so the "Sign in as ..." variant
+ *   renders correctly without being squashed or cut.
  */
 export default function GoogleButton({ onSuccess, onError, ...rest }) {
   const containerRef = useRef(null);
-  const [buttonWidth, setButtonWidth] = useState(0);
+  const [buttonWidth, setButtonWidth] = useState(null);
 
   const handleSuccess = (resp) => {
     if (typeof onSuccess === "function") onSuccess(resp);
@@ -28,8 +29,10 @@ export default function GoogleButton({ onSuccess, onError, ...rest }) {
     function updateWidth() {
       if (!containerRef.current) return;
       const w = containerRef.current.getBoundingClientRect().width;
-      // round and clamp just in case
-      const clamped = Math.max(200, Math.round(w));
+
+      // Google recommends 200–400; we clamp to 300–400 so text
+      // doesn't get tiny, but still fits nicely in your card.
+      const clamped = Math.min(400, Math.max(300, Math.round(w)));
       setButtonWidth(clamped);
     }
 
@@ -40,7 +43,7 @@ export default function GoogleButton({ onSuccess, onError, ...rest }) {
 
   return (
     <div ref={containerRef} style={{ width: "100%" }}>
-      {buttonWidth > 0 && (
+      {buttonWidth && (
         <GoogleLogin
           useOneTap={false}
           ux_mode="popup"
@@ -50,7 +53,7 @@ export default function GoogleButton({ onSuccess, onError, ...rest }) {
           size="large"
           shape="rectangular"
           text="signin_with"
-          width={String(buttonWidth)} // Google expects pixels as a string
+          width={String(buttonWidth)} // pixels, as a string
           {...rest}
         />
       )}
