@@ -288,8 +288,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Social Auth
 .auth-social {
-  margin-bottom: 24px;
-  display: flex; // make the wrapper flex so children can stretch
+  width: 100% !important;
+}
+
+.auth-social div,
+.auth-social iframe {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* GoogleLogin renders a div + iframe inside .auth-social */
