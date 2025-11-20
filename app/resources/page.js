@@ -1,5 +1,6 @@
 // app/resources/page.jsx
 import { sanityClient } from "@/lib/sanity";
+import Link from "next/link";
 
 const RESOURCES_TREE_QUERY = `
 *[_type == "track"] | order(order asc) {
@@ -138,9 +139,10 @@ export default async function ResourcesPage() {
 
                         <div className="grid md:grid-cols-2 gap-2">
                           {sl.units?.map((u) => (
-                            <div
+                            <Link
                               key={u._id}
-                              className="bg-white border border-gray-200 rounded-md px-3 py-2 text-xs"
+                              href={`/resources/units/${u.slug}`}
+                              className="bg-white border border-gray-200 rounded-md px-3 py-2 text-xs hover:border-gray-300 hover:shadow-sm transition"
                             >
                               <div className="flex justify-between items-center mb-1">
                                 <div className="font-semibold">{u.title}</div>
@@ -156,7 +158,7 @@ export default async function ResourcesPage() {
                                   {u.summary}
                                 </p>
                               )}
-                            </div>
+                            </Link>
                           ))}
                         </div>
                       </div>
