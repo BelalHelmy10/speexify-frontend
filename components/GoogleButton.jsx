@@ -31,7 +31,6 @@ export default function GoogleButton({ onSuccess, onError, ...rest }) {
       size="large"
       shape="rectangular"
       text="signin_with"
-      width="280"
       {...rest}
     />
   );
