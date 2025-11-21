@@ -10,6 +10,9 @@ const TOOL_PEN = "pen";
 const TOOL_HIGHLIGHTER = "highlighter";
 const TOOL_NOTE = "note";
 const TOOL_POINTER = "pointer";
+const TOOL_ERASER = "eraser";
+
+const PEN_COLORS = ["#f9fafb", "#fbbf24", "#60a5fa", "#f97316", "#22c55e"];
 
 export default function PrepShell({ resource, viewer }) {
   const [focusMode, setFocusMode] = useState(false);
@@ -17,6 +20,7 @@ export default function PrepShell({ resource, viewer }) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [pointerPos, setPointerPos] = useState(null);
   const [stickyNotes, setStickyNotes] = useState([]);
+  const [penColor, setPenColor] = useState(PEN_COLORS[0]); // multiple pen colors
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -109,7 +113,7 @@ export default function PrepShell({ resource, viewer }) {
 
       const data = {
         canvasData: canvasData || null,
-        stickyNotes,
+        stickyNotes: opts.stickyNotes ?? stickyNotes,
       };
 
       window.localStorage.setItem(storageKey, JSON.stringify(data));
@@ -134,7 +138,8 @@ export default function PrepShell({ resource, viewer }) {
   }
 
   function startDrawing(e) {
-    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER) return;
+    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
+      return;
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
 
@@ -153,7 +158,10 @@ export default function PrepShell({ resource, viewer }) {
       }
       return;
     }
-    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER) return;
+
+    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
+      return;
+
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
 
@@ -164,7 +172,7 @@ export default function PrepShell({ resource, viewer }) {
     ctx.lineJoin = "round";
 
     if (tool === TOOL_PEN) {
-      ctx.strokeStyle = "rgba(249, 250, 251, 0.95)";
+      ctx.strokeStyle = penColor;
       ctx.lineWidth = 3;
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
@@ -173,6 +181,12 @@ export default function PrepShell({ resource, viewer }) {
       ctx.lineWidth = 10;
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "multiply";
+    } else if (tool === TOOL_ERASER) {
+      // erase by drawing with destination-out
+      ctx.strokeStyle = "rgba(0,0,0,1)";
+      ctx.lineWidth = 18;
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "destination-out";
     }
 
     ctx.lineTo(coords.x, coords.y);
@@ -182,7 +196,7 @@ export default function PrepShell({ resource, viewer }) {
   function stopDrawing() {
     if (!isDrawing) return;
     setIsDrawing(false);
-    saveAnnotations(); // save current canvas
+    saveAnnotations(); // save current canvas + notes
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -207,70 +221,70 @@ export default function PrepShell({ resource, viewer }) {
   // ─────────────────────────────────────────────────────────────
   function handleClickForNote(e) {
     if (tool !== TOOL_NOTE) return;
+
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
     const { x, y, width, height } = coords;
 
     const note = {
       id: `note_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-      // store as fractions to keep responsive
       x: x / width,
-      y: y / height,
+      y: y / height, // store as fractions to keep responsive
       text: "",
     };
 
-    setStickyNotes((prev) => {
-      const next = [...prev, note];
-      try {
-        const canvas = canvasRef.current;
-        const canvasData = canvas ? canvas.toDataURL("image/png") : undefined;
-        window.localStorage.setItem(
-          storageKey,
-          JSON.stringify({
-            canvasData: canvasData || null,
-            stickyNotes: next,
-          })
-        );
-      } catch (err) {
-        console.warn("Failed to save sticky note", err);
-      }
-      return next;
-    });
+    const nextNotes = [...stickyNotes, note];
+    setStickyNotes(nextNotes);
+    saveAnnotations({ stickyNotes: nextNotes });
+
+    // After placing one note, auto-exit note tool so next click edits
+    setTool(TOOL_NONE);
   }
 
   function updateNoteText(id, text) {
-    setStickyNotes((prev) => {
-      const next = prev.map((n) => (n.id === id ? { ...n, text } : n));
-      try {
-        const canvas = canvasRef.current;
-        const canvasData = canvas ? canvas.toDataURL("image/png") : undefined;
-        window.localStorage.setItem(
-          storageKey,
-          JSON.stringify({
-            canvasData: canvasData || null,
-            stickyNotes: next,
-          })
-        );
-      } catch (err) {
-        console.warn("Failed to update sticky note text", err);
-      }
-      return next;
-    });
+    const next = stickyNotes.map((n) => (n.id === id ? { ...n, text } : n));
+    setStickyNotes(next);
+    saveAnnotations({ stickyNotes: next });
   }
 
-  function clearCanvas() {
+  function deleteNote(id) {
+    const next = stickyNotes.filter((n) => n.id !== id);
+    setStickyNotes(next);
+    saveAnnotations({ stickyNotes: next });
+  }
+
+  function clearCanvasAndNotes() {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    saveAnnotations({ canvasData: null });
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    setStickyNotes([]);
+    // wipe everything for this resource
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ canvasData: null, stickyNotes: [] })
+      );
+    } catch (err) {
+      console.warn("Failed to clear annotations", err);
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
   // Combined mouse handlers for container
   // ─────────────────────────────────────────────────────────────
   function handleMouseDown(e) {
-    if (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER) {
+    // If clicking on a sticky note, don't create a new one / draw
+    if (e.target.closest && e.target.closest(".prep-sticky-note")) {
+      return;
+    }
+
+    if (
+      tool === TOOL_PEN ||
+      tool === TOOL_HIGHLIGHTER ||
+      tool === TOOL_ERASER
+    ) {
       e.preventDefault();
       startDrawing(e);
     } else if (tool === TOOL_NOTE) {
@@ -285,7 +299,11 @@ export default function PrepShell({ resource, viewer }) {
     } else {
       setPointerPos(null);
     }
-    if (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER) {
+    if (
+      tool === TOOL_PEN ||
+      tool === TOOL_HIGHLIGHTER ||
+      tool === TOOL_ERASER
+    ) {
       e.preventDefault();
       draw(e);
     }
@@ -469,6 +487,16 @@ export default function PrepShell({ resource, viewer }) {
                   type="button"
                   className={
                     "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_ERASER ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_ERASER)}
+                >
+                  🧽 <span>Eraser</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
                     (tool === TOOL_NOTE ? " is-active" : "")
                   }
                   onClick={() => setToolSafe(TOOL_NOTE)}
@@ -488,10 +516,26 @@ export default function PrepShell({ resource, viewer }) {
                 <button
                   type="button"
                   className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--danger"
-                  onClick={clearCanvas}
+                  onClick={clearCanvasAndNotes}
                 >
-                  🗑️ <span>Clear</span>
+                  🗑️ <span>Clear all</span>
                 </button>
+
+                {/* Pen color picker */}
+                <div className="prep-annotate-colors">
+                  {PEN_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={
+                        "prep-annotate-color" +
+                        (penColor === c ? " is-active" : "")
+                      }
+                      style={{ backgroundColor: c }}
+                      onClick={() => setPenColor(c)}
+                    />
+                  ))}
+                </div>
               </div>
 
               <div className="prep-viewer__frame-wrapper">
@@ -518,7 +562,9 @@ export default function PrepShell({ resource, viewer }) {
                     ref={canvasRef}
                     className={
                       "prep-annotate-canvas" +
-                      (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER
+                      (tool === TOOL_PEN ||
+                      tool === TOOL_HIGHLIGHTER ||
+                      tool === TOOL_ERASER
                         ? " prep-annotate-canvas--drawing"
                         : "")
                     }
@@ -533,7 +579,23 @@ export default function PrepShell({ resource, viewer }) {
                         left: `${note.x * 100}%`,
                         top: `${note.y * 100}%`,
                       }}
+                      onMouseDown={(e) => {
+                        // don't start drawing / create note when grabbing note
+                        e.stopPropagation();
+                      }}
                     >
+                      <div className="prep-sticky-note__header">
+                        <button
+                          type="button"
+                          className="prep-sticky-note__close"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNote(note.id);
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
                       <textarea
                         className="prep-sticky-note__textarea"
                         placeholder="Note..."
@@ -541,6 +603,7 @@ export default function PrepShell({ resource, viewer }) {
                         onChange={(e) =>
                           updateNoteText(note.id, e.target.value)
                         }
+                        onMouseDown={(e) => e.stopPropagation()}
                       />
                     </div>
                   ))}

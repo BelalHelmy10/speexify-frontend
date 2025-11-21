@@ -1050,6 +1050,37 @@
   }
 }
 
+.prep-annotate-colors {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.25rem;
+  padding-left: 0.35rem;
+  border-left: 1px solid rgba(55, 65, 81, 0.9);
+}
+
+.prep-annotate-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.8);
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.6);
+  transition: transform 0.08s ease, box-shadow 0.12s ease;
+}
+
+.prep-annotate-color:hover {
+  transform: translateY(-0.5px) scale(1.05);
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.9);
+}
+
+.prep-annotate-color.is-active {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.9),
+    0 0 10px rgba(59, 130, 246, 0.8);
+}
+
 /* Sticky notes */
 
 .prep-sticky-note {
@@ -1061,8 +1092,25 @@
   border: 1px solid rgba(234, 179, 8, 0.7);
   border-radius: 10px;
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.65);
-  padding: 0.3rem 0.35rem;
+  padding: 0.25rem 0.3rem 0.35rem;
   z-index: 4;
+  pointer-events: auto;
+}
+
+.prep-sticky-note__header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.1rem;
+}
+
+.prep-sticky-note__close {
+  border: none;
+  background: transparent;
+  color: #92400e;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
 }
 
 .prep-sticky-note__textarea {
