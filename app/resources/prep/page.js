@@ -1,6 +1,7 @@
 // app/resources/prep/page.jsx
 import { sanityClient } from "@/lib/sanity";
 import Link from "next/link";
+import PrepNotes from "./PrepNotes";
 
 export const dynamic = "force-dynamic";
 
@@ -222,18 +223,7 @@ export default async function PrepRoomPage({ searchParams }) {
               )}
             </div>
 
-            <div className="prep-notes">
-              <div className="prep-notes__header">
-                <span className="prep-notes__label">Session notes</span>
-                <span className="prep-notes__hint">
-                  Jot down key points while you&apos;re teaching.
-                </span>
-              </div>
-              <textarea
-                className="prep-notes__textarea"
-                placeholder="Warm-up, key questions, pronunciation points, follow-up homework..."
-              />
-            </div>
+            <PrepNotes resourceId={resource._id} />
           </aside>
 
           {/* RIGHT: viewer */}
