@@ -232,14 +232,22 @@ export default async function UnitResourcesPage({ params }) {
 
                   <div className="unit-resource-card__actions">
                     {url ? (
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="resources-button resources-button--primary"
-                      >
-                        Open resource
-                      </a>
+                      <>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="resources-button resources-button--primary"
+                        >
+                          Open resource
+                        </a>
+                        <a
+                          href={`/resources/prep?resourceId=${r._id}`}
+                          className="resources-button resources-button--ghost"
+                        >
+                          Open in Prep Room
+                        </a>
+                      </>
                     ) : (
                       <button
                         type="button"

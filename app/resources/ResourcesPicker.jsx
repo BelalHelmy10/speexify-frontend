@@ -305,6 +305,15 @@ export default function ResourcesPicker({ tracks }) {
                 </button>
               )}
 
+              {selectedResource && (
+                <a
+                  href={`/resources/prep?resourceId=${selectedResource._id}`}
+                  className="resources-button resources-button--ghost"
+                >
+                  Open in Prep Room
+                </a>
+              )}
+
               {unit?.slug && (
                 <a
                   href={`/resources/units/${unit.slug}`}
