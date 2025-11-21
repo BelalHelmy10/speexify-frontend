@@ -204,7 +204,7 @@ export default function ResourcesPicker({ tracks }) {
       {/* RIGHT: preview card */}
       <section className="resources-preview">
         {!selectedUnitId ? (
-          <div className="resources-preview__card resources-preview__card--empty">
+          <div className="resources-preview__card resources-preview__card--empty resources-preview__card--animated">
             <h3>Choose a level & unit</h3>
             <p>
               Once you pick a level and unit, we’ll show you the resources
@@ -212,7 +212,7 @@ export default function ResourcesPicker({ tracks }) {
             </p>
           </div>
         ) : !resources.length ? (
-          <div className="resources-preview__card resources-preview__card--empty">
+          <div className="resources-preview__card resources-preview__card--empty resources-preview__card--animated">
             <h3>No resources yet</h3>
             <p>
               This unit doesn&apos;t have any resources configured in Sanity
@@ -220,7 +220,10 @@ export default function ResourcesPicker({ tracks }) {
             </p>
           </div>
         ) : (
-          <div className="resources-preview__card">
+          <div
+            key={selectedResource?._id || unit?._id}
+            className="resources-preview__card resources-preview__card--animated"
+          >
             <div className="resources-preview__breadcrumbs">
               {track && <span>{track.name}</span>}
               {level && (
