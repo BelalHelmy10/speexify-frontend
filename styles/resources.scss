@@ -1096,10 +1096,11 @@
   z-index: 4;
   pointer-events: auto;
 }
-
 .prep-sticky-note__header {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  cursor: grab;
   margin-bottom: 0.1rem;
 }
 
@@ -1137,5 +1138,23 @@
     0 0 32px rgba(248, 153, 72, 0.8);
   transform: translate(-50%, -50%);
   pointer-events: none;
+  z-index: 4;
+}
+
+.prep-text-input {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 120px;
+  max-width: 60%;
+  min-height: 32px;
+  padding: 0.25rem 0.4rem;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.9);
+  background: rgba(15, 23, 42, 0.95);
+  color: #f9fafb;
+  font-size: 0.75rem;
+  font-family: inherit;
+  resize: none;
+  outline: none;
   z-index: 4;
 }

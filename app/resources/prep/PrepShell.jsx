@@ -11,6 +11,7 @@ const TOOL_HIGHLIGHTER = "highlighter";
 const TOOL_NOTE = "note";
 const TOOL_POINTER = "pointer";
 const TOOL_ERASER = "eraser";
+const TOOL_TEXT = "text";
 
 const PEN_COLORS = ["#f9fafb", "#fbbf24", "#60a5fa", "#f97316", "#22c55e"];
 
@@ -20,10 +21,13 @@ export default function PrepShell({ resource, viewer }) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [pointerPos, setPointerPos] = useState(null);
   const [stickyNotes, setStickyNotes] = useState([]);
-  const [penColor, setPenColor] = useState(PEN_COLORS[0]); // multiple pen colors
+  const [penColor, setPenColor] = useState(PEN_COLORS[0]);
+  const [draggingNote, setDraggingNote] = useState(null); // {id, offsetX, offsetY}
+  const [textInput, setTextInput] = useState(null); // {x, y, value}
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+  const textInputRef = useRef(null);
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -32,6 +36,13 @@ export default function PrepShell({ resource, viewer }) {
   const subLevel = unit?.subLevel;
   const level = subLevel?.level;
   const track = level?.track;
+
+  // Focus text input when created
+  useEffect(() => {
+    if (textInput && textInputRef.current) {
+      textInputRef.current.focus();
+    }
+  }, [textInput]);
 
   // ─────────────────────────────────────────────────────────────
   // Load annotations from localStorage on mount
@@ -151,9 +162,30 @@ export default function PrepShell({ resource, viewer }) {
   }
 
   function draw(e) {
+    if (draggingNote) {
+      // dragging note instead of drawing
+      const coords = getCanvasCoordinates(e);
+      if (!coords) return;
+
+      setStickyNotes((prev) => {
+        const updated = prev.map((n) => {
+          if (n.id !== draggingNote.id) return n;
+          const x = (coords.x + draggingNote.offsetX) / coords.width;
+          const y = (coords.y + draggingNote.offsetY) / coords.height;
+          return {
+            ...n,
+            x: Math.min(0.98, Math.max(0.02, x)),
+            y: Math.min(0.98, Math.max(0.02, y)),
+          };
+        });
+        saveAnnotations({ stickyNotes: updated });
+        return updated;
+      });
+      return;
+    }
+
     if (!isDrawing) {
       if (tool === TOOL_POINTER) {
-        // update pointer position only
         updatePointer(e);
       }
       return;
@@ -177,12 +209,12 @@ export default function PrepShell({ resource, viewer }) {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
     } else if (tool === TOOL_HIGHLIGHTER) {
-      ctx.strokeStyle = "rgba(250, 204, 21, 0.6)"; // yellow-ish
-      ctx.lineWidth = 10;
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "multiply";
+      // Softer, more transparent highlighter
+      ctx.strokeStyle = "rgba(250, 204, 21, 0.35)";
+      ctx.lineWidth = 16;
+      ctx.globalAlpha = 0.35;
+      ctx.globalCompositeOperation = "source-over";
     } else if (tool === TOOL_ERASER) {
-      // erase by drawing with destination-out
       ctx.strokeStyle = "rgba(0,0,0,1)";
       ctx.lineWidth = 18;
       ctx.globalAlpha = 1;
@@ -217,7 +249,7 @@ export default function PrepShell({ resource, viewer }) {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Sticky notes
+  // Sticky notes: create / update / delete / drag
   // ─────────────────────────────────────────────────────────────
   function handleClickForNote(e) {
     if (tool !== TOOL_NOTE) return;
@@ -229,7 +261,7 @@ export default function PrepShell({ resource, viewer }) {
     const note = {
       id: `note_${Date.now()}_${Math.random().toString(16).slice(2)}`,
       x: x / width,
-      y: y / height, // store as fractions to keep responsive
+      y: y / height, // fractions
       text: "",
     };
 
@@ -237,7 +269,7 @@ export default function PrepShell({ resource, viewer }) {
     setStickyNotes(nextNotes);
     saveAnnotations({ stickyNotes: nextNotes });
 
-    // After placing one note, auto-exit note tool so next click edits
+    // after placing one note, exit note tool
     setTool(TOOL_NONE);
   }
 
@@ -253,6 +285,82 @@ export default function PrepShell({ resource, viewer }) {
     saveAnnotations({ stickyNotes: next });
   }
 
+  function startNoteDrag(e, note) {
+    e.stopPropagation();
+    e.preventDefault();
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+    const { x, y, width, height } = coords;
+    const currentX = note.x * width;
+    const currentY = note.y * height;
+
+    setDraggingNote({
+      id: note.id,
+      offsetX: currentX - x,
+      offsetY: currentY - y,
+    });
+  }
+
+  function endNoteDrag() {
+    if (!draggingNote) return;
+    setDraggingNote(null);
+    saveAnnotations();
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Text tool: writing directly on canvas
+  // ─────────────────────────────────────────────────────────────
+  function createTextInput(e) {
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+    const { x, y, width, height } = coords;
+
+    setTextInput({
+      x: x / width,
+      y: y / height,
+      value: "",
+    });
+  }
+
+  function commitText() {
+    if (!textInput) return;
+    const value = textInput.value.trim();
+    if (!value) {
+      setTextInput(null);
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      setTextInput(null);
+      return;
+    }
+
+    const ctx = canvas.getContext("2d");
+    const x = textInput.x * canvas.width;
+    const y = textInput.y * canvas.height;
+
+    ctx.save();
+    ctx.fillStyle = penColor;
+    ctx.font =
+      "14px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    ctx.textBaseline = "top";
+
+    const lines = value.split("\n");
+    const lineHeight = 18;
+    lines.forEach((line, i) => {
+      ctx.fillText(line, x, y + i * lineHeight);
+    });
+    ctx.restore();
+
+    setTextInput(null);
+    setTool(TOOL_NONE);
+    saveAnnotations();
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Clear all
+  // ─────────────────────────────────────────────────────────────
   function clearCanvasAndNotes() {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -260,7 +368,8 @@ export default function PrepShell({ resource, viewer }) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
     setStickyNotes([]);
-    // wipe everything for this resource
+    setTextInput(null);
+    setDraggingNote(null);
     try {
       window.localStorage.setItem(
         storageKey,
@@ -275,7 +384,7 @@ export default function PrepShell({ resource, viewer }) {
   // Combined mouse handlers for container
   // ─────────────────────────────────────────────────────────────
   function handleMouseDown(e) {
-    // If clicking on a sticky note, don't create a new one / draw
+    // clicks on notes should not create new notes / draw
     if (e.target.closest && e.target.closest(".prep-sticky-note")) {
       return;
     }
@@ -290,15 +399,25 @@ export default function PrepShell({ resource, viewer }) {
     } else if (tool === TOOL_NOTE) {
       e.preventDefault();
       handleClickForNote(e);
+    } else if (tool === TOOL_TEXT) {
+      e.preventDefault();
+      createTextInput(e);
     }
   }
 
   function handleMouseMove(e) {
+    if (draggingNote) {
+      e.preventDefault();
+      draw(e);
+      return;
+    }
+
     if (tool === TOOL_POINTER) {
       updatePointer(e);
     } else {
       setPointerPos(null);
     }
+
     if (
       tool === TOOL_PEN ||
       tool === TOOL_HIGHLIGHTER ||
@@ -311,6 +430,7 @@ export default function PrepShell({ resource, viewer }) {
 
   function handleMouseUp() {
     stopDrawing();
+    endNoteDrag();
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -487,6 +607,16 @@ export default function PrepShell({ resource, viewer }) {
                   type="button"
                   className={
                     "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_TEXT ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_TEXT)}
+                >
+                  ✍️ <span>Text</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
                     (tool === TOOL_ERASER ? " is-active" : "")
                   }
                   onClick={() => setToolSafe(TOOL_ERASER)}
@@ -579,12 +709,11 @@ export default function PrepShell({ resource, viewer }) {
                         left: `${note.x * 100}%`,
                         top: `${note.y * 100}%`,
                       }}
-                      onMouseDown={(e) => {
-                        // don't start drawing / create note when grabbing note
-                        e.stopPropagation();
-                      }}
                     >
-                      <div className="prep-sticky-note__header">
+                      <div
+                        className="prep-sticky-note__header"
+                        onMouseDown={(e) => startNoteDrag(e, note)}
+                      >
                         <button
                           type="button"
                           className="prep-sticky-note__close"
@@ -607,6 +736,33 @@ export default function PrepShell({ resource, viewer }) {
                       />
                     </div>
                   ))}
+
+                  {/* Text overlay for Text tool */}
+                  {textInput && (
+                    <textarea
+                      ref={textInputRef}
+                      className="prep-text-input"
+                      style={{
+                        left: `${textInput.x * 100}%`,
+                        top: `${textInput.y * 100}%`,
+                      }}
+                      value={textInput.value}
+                      placeholder="Type…"
+                      onChange={(e) =>
+                        setTextInput((prev) => ({
+                          ...prev,
+                          value: e.target.value,
+                        }))
+                      }
+                      onBlur={commitText}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          commitText();
+                        }
+                      }}
+                    />
+                  )}
 
                   {/* Pointer indicator */}
                   {tool === TOOL_POINTER && pointerPos && (
