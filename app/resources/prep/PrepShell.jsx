@@ -819,6 +819,7 @@ export default function PrepShell({ resource, viewer }) {
 
                   {/* Text boxes */}
                   {/* Text boxes */}
+                  {/* Text boxes */}
                   {textBoxes.map((box) => (
                     <div
                       key={box.id}
@@ -831,44 +832,48 @@ export default function PrepShell({ resource, viewer }) {
                         top: `${box.y * 100}%`,
                       }}
                     >
-                      <div
-                        className="prep-text-box__header"
-                        onMouseDown={(e) => startTextDrag(e, box)}
-                      >
-                        <span className="prep-text-box__drag-handle" />
-                        <button
-                          type="button"
-                          className="prep-text-box__close"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteTextBox(box.id);
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-
                       {box.editing ? (
-                        <textarea
-                          data-textbox-id={box.id}
-                          className="prep-text-box__textarea"
-                          style={{ color: box.color }}
-                          placeholder="Type…"
-                          value={box.text}
-                          onFocus={() => setActiveTextId(box.id)}
-                          onChange={(e) =>
-                            updateTextBoxText(box.id, e.target.value)
-                          }
-                          onBlur={(e) => finishTextEdit(box.id, e.target.value)} // <── click outside → freeze text
-                          onMouseDown={(e) => e.stopPropagation()}
-                        />
+                        <>
+                          <div
+                            className="prep-text-box__header"
+                            onMouseDown={(e) => startTextDrag(e, box)}
+                          >
+                            <span className="prep-text-box__drag-handle" />
+                            <button
+                              type="button"
+                              className="prep-text-box__close"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteTextBox(box.id);
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <textarea
+                            data-textbox-id={box.id}
+                            className="prep-text-box__textarea"
+                            style={{ color: box.color }}
+                            placeholder="Type…"
+                            value={box.text}
+                            onFocus={() => setActiveTextId(box.id)}
+                            onChange={(e) =>
+                              updateTextBoxText(box.id, e.target.value)
+                            }
+                            onBlur={(e) =>
+                              finishTextEdit(box.id, e.target.value)
+                            }
+                            onMouseDown={(e) => e.stopPropagation()}
+                          />
+                        </>
                       ) : (
                         <div
                           className="prep-text-box__label"
                           style={{ color: box.color }}
+                          onMouseDown={(e) => startTextDrag(e, box)} // drag by text
                           onDoubleClick={(e) => {
                             e.stopPropagation();
-                            setTextEditing(box.id, true); // double-click to re-edit
+                            setTextEditing(box.id, true); // double-click → edit again
                           }}
                         >
                           {box.text}

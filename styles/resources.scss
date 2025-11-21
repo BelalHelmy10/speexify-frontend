@@ -1175,27 +1175,31 @@
 .prep-text-box {
   position: absolute;
   transform: translate(-50%, -50%);
+  z-index: 4;
+  pointer-events: auto;
+}
+
+/* Editing = dark card (like your first screenshot) */
+.prep-text-box--editing {
   min-width: 120px;
   max-width: 50%;
   background: rgba(15, 23, 42, 0.92);
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.9);
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.8);
-  padding: 0.25rem 0.35rem 0.35rem;
-  z-index: 4;
-  pointer-events: auto;
+  padding: 0.25rem 0.4rem 0.4rem;
 }
 
 .prep-text-box__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.1rem;
+  margin-bottom: 0.12rem;
   cursor: grab;
 }
 
 .prep-text-box__drag-handle {
-  width: 18px;
+  width: 22px;
   height: 3px;
   border-radius: 999px;
   background: rgba(148, 163, 184, 0.9);
@@ -1218,7 +1222,7 @@
   outline: none;
   resize: none;
   background: transparent;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #f9fafb;
   font-family: inherit;
@@ -1232,14 +1236,11 @@
 }
 
 .prep-text-box__label {
-  min-width: 60px;
-  padding: 0.25rem 0.45rem 0.3rem;
-  border-radius: 6px;
-  background: transparent; // background is the card itself
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #f9fafb;
+  padding: 0.1rem 0.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #9b1c2e; // tweak this to your favourite accent color
   cursor: move;
   white-space: nowrap;
-  text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.7);
 }
