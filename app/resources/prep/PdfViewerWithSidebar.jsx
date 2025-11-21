@@ -2,6 +2,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs";
+
+// Tell pdf.js where the worker lives (ESM-friendly)
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export default function PdfViewerWithSidebar({
   fileUrl,
@@ -15,22 +20,21 @@ export default function PdfViewerWithSidebar({
   const [pdfDoc, setPdfDoc] = useState(null);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [error, setError] = useState(null);
 
-  // Load pdf.js + document
+  // Load the PDF document
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
+      if (!fileUrl) return;
+
+      setError(null);
+      setNumPages(0);
+      setPdfDoc(null);
+
       try {
-        const pdfjs = await import("pdfjs-dist/build/pdf");
-        const worker = await import("pdfjs-dist/build/pdf.worker.entry");
-
-        // configure worker
-        pdfjs.GlobalWorkerOptions.workerSrc = worker;
-
-        if (cancelled) return;
-
-        const loadingTask = pdfjs.getDocument(fileUrl);
+        const loadingTask = pdfjsLib.getDocument(fileUrl);
         const doc = await loadingTask.promise;
         if (cancelled) return;
 
@@ -39,17 +43,20 @@ export default function PdfViewerWithSidebar({
         setCurrentPage(1);
       } catch (err) {
         console.error("Failed to load PDF", err);
+        if (!cancelled) {
+          setError("Couldn’t load PDF file.");
+        }
       }
     }
 
-    if (fileUrl) load();
+    load();
 
     return () => {
       cancelled = true;
     };
   }, [fileUrl]);
 
-  // Render current page and rerender on resize
+  // Render current page (and on resize)
   useEffect(() => {
     if (!pdfDoc || !pdfCanvasRef.current || !containerRef?.current) return;
 
@@ -69,12 +76,16 @@ export default function PdfViewerWithSidebar({
 
         const canvas = pdfCanvasRef.current;
         const ctx = canvas.getContext("2d");
+
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
         await page.render({ canvasContext: ctx, viewport }).promise;
       } catch (err) {
-        if (!cancelled) console.error("Failed to render PDF page", err);
+        if (!cancelled) {
+          console.error("Failed to render PDF page", err);
+          setError("Couldn’t render this page.");
+        }
       }
     }
 
@@ -109,12 +120,14 @@ export default function PdfViewerWithSidebar({
         onMouseLeave={onMouseUp}
       >
         <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
-        {/* Annotation overlay from PrepShell */}
+        {/* Annotation overlay from PrepShell (canvas + notes + text + pointer) */}
         {children}
       </div>
 
       <aside className="prep-pdf-sidebar">
-        {numPages === 0 ? (
+        {error ? (
+          <div className="prep-pdf-sidebar__empty">{error}</div>
+        ) : numPages === 0 ? (
           <div className="prep-pdf-sidebar__empty">Loading pages…</div>
         ) : (
           <div className="prep-pdf-sidebar__pages">
