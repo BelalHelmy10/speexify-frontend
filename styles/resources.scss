@@ -914,3 +914,52 @@
 .prep-viewer__badge-text {
   white-space: nowrap;
 }
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* PREP ROOM FOCUS MODE                                                      */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+.prep-viewer__focus-toggle {
+  position: absolute;
+  top: 0.85rem;
+  right: 1.1rem;
+  z-index: 3;
+  padding: 0.22rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.7);
+  transition: background-color 0.12s ease, transform 0.08s ease,
+    box-shadow 0.12s ease;
+
+  &:hover {
+    background: rgba(15, 23, 42, 1);
+    transform: translateY(-0.5px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.85);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.8);
+  }
+}
+
+.prep-layout--focus {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 900px) {
+  .prep-layout--focus .prep-info-card {
+    display: none;
+  }
+}
+
+.prep-layout--focus .prep-viewer__frame {
+  height: min(85vh, 820px);
+}
