@@ -21,13 +21,13 @@ export default function PrepShell({ resource, viewer }) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [pointerPos, setPointerPos] = useState(null);
   const [stickyNotes, setStickyNotes] = useState([]);
+  const [textBoxes, setTextBoxes] = useState([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
-  const [draggingNote, setDraggingNote] = useState(null); // {id, offsetX, offsetY}
-  const [textInput, setTextInput] = useState(null); // {x, y, value}
+  const [dragState, setDragState] = useState(null); // {kind: "note"|"text", id, offsetX, offsetY}
+  const [activeTextId, setActiveTextId] = useState(null);
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const textInputRef = useRef(null);
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -37,12 +37,14 @@ export default function PrepShell({ resource, viewer }) {
   const level = subLevel?.level;
   const track = level?.track;
 
-  // Focus text input when created
+  // Focus newly-created / activated text box
   useEffect(() => {
-    if (textInput && textInputRef.current) {
-      textInputRef.current.focus();
+    if (!activeTextId) return;
+    const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
+    if (el instanceof HTMLTextAreaElement) {
+      el.focus();
     }
-  }, [textInput]);
+  }, [activeTextId]);
 
   // ─────────────────────────────────────────────────────────────
   // Load annotations from localStorage on mount
@@ -58,12 +60,18 @@ export default function PrepShell({ resource, viewer }) {
       if (Array.isArray(parsed.stickyNotes)) {
         setStickyNotes(parsed.stickyNotes);
       }
+      if (Array.isArray(parsed.textBoxes)) {
+        setTextBoxes(parsed.textBoxes);
+      }
 
       if (parsed.canvasData && canvasRef.current) {
         const img = new Image();
         img.onload = () => {
           const canvas = canvasRef.current;
+          if (!canvas) return;
           const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         };
@@ -93,6 +101,8 @@ export default function PrepShell({ resource, viewer }) {
         const img = new Image();
         img.onload = () => {
           const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         };
@@ -113,7 +123,7 @@ export default function PrepShell({ resource, viewer }) {
   }, []);
 
   // ─────────────────────────────────────────────────────────────
-  // Helper: save current canvas + notes to localStorage
+  // Helper: save current canvas + notes + text to localStorage
   // ─────────────────────────────────────────────────────────────
   function saveAnnotations(opts = {}) {
     if (!storageKey) return;
@@ -125,6 +135,7 @@ export default function PrepShell({ resource, viewer }) {
       const data = {
         canvasData: canvasData || null,
         stickyNotes: opts.stickyNotes ?? stickyNotes,
+        textBoxes: opts.textBoxes ?? textBoxes,
       };
 
       window.localStorage.setItem(storageKey, JSON.stringify(data));
@@ -134,7 +145,7 @@ export default function PrepShell({ resource, viewer }) {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Drawing helpers
+  // Geometry helpers
   // ─────────────────────────────────────────────────────────────
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
@@ -148,6 +159,9 @@ export default function PrepShell({ resource, viewer }) {
     };
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Drawing (pen / highlighter / eraser)
+  // ─────────────────────────────────────────────────────────────
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
@@ -155,32 +169,53 @@ export default function PrepShell({ resource, viewer }) {
     if (!coords) return;
 
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
     setIsDrawing(true);
   }
 
   function draw(e) {
-    if (draggingNote) {
-      // dragging note instead of drawing
+    // dragging notes / text
+    if (dragState) {
       const coords = getCanvasCoordinates(e);
       if (!coords) return;
+      const { width, x, y } = coords;
 
-      setStickyNotes((prev) => {
-        const updated = prev.map((n) => {
-          if (n.id !== draggingNote.id) return n;
-          const x = (coords.x + draggingNote.offsetX) / coords.width;
-          const y = (coords.y + draggingNote.offsetY) / coords.height;
-          return {
-            ...n,
-            x: Math.min(0.98, Math.max(0.02, x)),
-            y: Math.min(0.98, Math.max(0.02, y)),
-          };
+      if (dragState.kind === "note") {
+        setStickyNotes((prev) => {
+          const updated = prev.map((n) => {
+            if (n.id !== dragState.id) return n;
+            const nx = (x + dragState.offsetX) / width;
+            const ny = (y + dragState.offsetY) / coords.height;
+            return {
+              ...n,
+              x: Math.min(0.98, Math.max(0.02, nx)),
+              y: Math.min(0.98, Math.max(0.02, ny)),
+            };
+          });
+          saveAnnotations({ stickyNotes: updated });
+          return updated;
         });
-        saveAnnotations({ stickyNotes: updated });
-        return updated;
-      });
+      } else if (dragState.kind === "text") {
+        setTextBoxes((prev) => {
+          const updated = prev.map((t) => {
+            if (t.id !== dragState.id) return t;
+            const nx = (x + dragState.offsetX) / width;
+            const ny = (y + dragState.offsetY) / coords.height;
+            return {
+              ...t,
+              x: Math.min(0.98, Math.max(0.02, nx)),
+              y: Math.min(0.98, Math.max(0.02, ny)),
+            };
+          });
+          saveAnnotations({ textBoxes: updated });
+          return updated;
+        });
+      }
       return;
     }
 
@@ -198,7 +233,9 @@ export default function PrepShell({ resource, viewer }) {
     if (!coords) return;
 
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -209,14 +246,14 @@ export default function PrepShell({ resource, viewer }) {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
     } else if (tool === TOOL_HIGHLIGHTER) {
-      // Softer, more transparent highlighter
-      ctx.strokeStyle = "rgba(250, 204, 21, 0.35)";
-      ctx.lineWidth = 16;
-      ctx.globalAlpha = 0.35;
+      // much softer highlighter
+      ctx.strokeStyle = "rgba(250, 224, 120, 0.2)";
+      ctx.lineWidth = 18;
+      ctx.globalAlpha = 0.2;
       ctx.globalCompositeOperation = "source-over";
     } else if (tool === TOOL_ERASER) {
       ctx.strokeStyle = "rgba(0,0,0,1)";
-      ctx.lineWidth = 18;
+      ctx.lineWidth = 20;
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "destination-out";
     }
@@ -228,11 +265,11 @@ export default function PrepShell({ resource, viewer }) {
   function stopDrawing() {
     if (!isDrawing) return;
     setIsDrawing(false);
-    saveAnnotations(); // save current canvas + notes
+    saveAnnotations(); // save canvas + current notes/text
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Pointer helper
+  // Pointer (arrow)
   // ─────────────────────────────────────────────────────────────
   function updatePointer(e) {
     if (tool !== TOOL_POINTER) {
@@ -249,7 +286,7 @@ export default function PrepShell({ resource, viewer }) {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Sticky notes: create / update / delete / drag
+  // Sticky notes
   // ─────────────────────────────────────────────────────────────
   function handleClickForNote(e) {
     if (tool !== TOOL_NOTE) return;
@@ -261,7 +298,7 @@ export default function PrepShell({ resource, viewer }) {
     const note = {
       id: `note_${Date.now()}_${Math.random().toString(16).slice(2)}`,
       x: x / width,
-      y: y / height, // fractions
+      y: y / height,
       text: "",
     };
 
@@ -269,7 +306,7 @@ export default function PrepShell({ resource, viewer }) {
     setStickyNotes(nextNotes);
     saveAnnotations({ stickyNotes: nextNotes });
 
-    // after placing one note, exit note tool
+    // auto-exit note tool
     setTool(TOOL_NONE);
   }
 
@@ -294,68 +331,64 @@ export default function PrepShell({ resource, viewer }) {
     const currentX = note.x * width;
     const currentY = note.y * height;
 
-    setDraggingNote({
+    setDragState({
+      kind: "note",
       id: note.id,
       offsetX: currentX - x,
       offsetY: currentY - y,
     });
   }
 
-  function endNoteDrag() {
-    if (!draggingNote) return;
-    setDraggingNote(null);
-    saveAnnotations();
-  }
-
   // ─────────────────────────────────────────────────────────────
-  // Text tool: writing directly on canvas
+  // Text boxes (writing tool)
   // ─────────────────────────────────────────────────────────────
-  function createTextInput(e) {
+  function createTextBox(e) {
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
     const { x, y, width, height } = coords;
 
-    setTextInput({
+    const box = {
+      id: `text_${Date.now()}_${Math.random().toString(16).slice(2)}`,
       x: x / width,
       y: y / height,
-      value: "",
-    });
+      text: "",
+      color: penColor,
+    };
+
+    const next = [...textBoxes, box];
+    setTextBoxes(next);
+    setActiveTextId(box.id);
+    saveAnnotations({ textBoxes: next });
   }
 
-  function commitText() {
-    if (!textInput) return;
-    const value = textInput.value.trim();
-    if (!value) {
-      setTextInput(null);
-      return;
-    }
+  function updateTextBoxText(id, text) {
+    const next = textBoxes.map((t) => (t.id === id ? { ...t, text } : t));
+    setTextBoxes(next);
+    saveAnnotations({ textBoxes: next });
+  }
 
-    const canvas = canvasRef.current;
-    if (!canvas) {
-      setTextInput(null);
-      return;
-    }
+  function deleteTextBox(id) {
+    const next = textBoxes.filter((t) => t.id !== id);
+    setTextBoxes(next);
+    saveAnnotations({ textBoxes: next });
+    if (activeTextId === id) setActiveTextId(null);
+  }
 
-    const ctx = canvas.getContext("2d");
-    const x = textInput.x * canvas.width;
-    const y = textInput.y * canvas.height;
+  function startTextDrag(e, box) {
+    e.stopPropagation();
+    e.preventDefault();
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+    const { x, y, width, height } = coords;
+    const currentX = box.x * width;
+    const currentY = box.y * height;
 
-    ctx.save();
-    ctx.fillStyle = penColor;
-    ctx.font =
-      "14px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-    ctx.textBaseline = "top";
-
-    const lines = value.split("\n");
-    const lineHeight = 18;
-    lines.forEach((line, i) => {
-      ctx.fillText(line, x, y + i * lineHeight);
+    setDragState({
+      kind: "text",
+      id: box.id,
+      offsetX: currentX - x,
+      offsetY: currentY - y,
     });
-    ctx.restore();
-
-    setTextInput(null);
-    setTool(TOOL_NONE);
-    saveAnnotations();
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -365,15 +398,18 @@ export default function PrepShell({ resource, viewer }) {
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
     }
     setStickyNotes([]);
-    setTextInput(null);
-    setDraggingNote(null);
+    setTextBoxes([]);
+    setDragState(null);
+    setActiveTextId(null);
     try {
       window.localStorage.setItem(
         storageKey,
-        JSON.stringify({ canvasData: null, stickyNotes: [] })
+        JSON.stringify({ canvasData: null, stickyNotes: [], textBoxes: [] })
       );
     } catch (err) {
       console.warn("Failed to clear annotations", err);
@@ -384,8 +420,12 @@ export default function PrepShell({ resource, viewer }) {
   // Combined mouse handlers for container
   // ─────────────────────────────────────────────────────────────
   function handleMouseDown(e) {
-    // clicks on notes should not create new notes / draw
-    if (e.target.closest && e.target.closest(".prep-sticky-note")) {
+    // clicks on notes or text boxes should not start drawing / new elements
+    if (
+      e.target.closest &&
+      (e.target.closest(".prep-sticky-note") ||
+        e.target.closest(".prep-text-box"))
+    ) {
       return;
     }
 
@@ -401,12 +441,12 @@ export default function PrepShell({ resource, viewer }) {
       handleClickForNote(e);
     } else if (tool === TOOL_TEXT) {
       e.preventDefault();
-      createTextInput(e);
+      createTextBox(e);
     }
   }
 
   function handleMouseMove(e) {
-    if (draggingNote) {
+    if (dragState) {
       e.preventDefault();
       draw(e);
       return;
@@ -430,7 +470,10 @@ export default function PrepShell({ resource, viewer }) {
 
   function handleMouseUp() {
     stopDrawing();
-    endNoteDrag();
+    if (dragState) {
+      setDragState(null);
+      saveAnnotations();
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -561,7 +604,6 @@ export default function PrepShell({ resource, viewer }) {
 
         {/* RIGHT: viewer */}
         <section className="prep-viewer">
-          {/* Focus toggle */}
           {viewerActive && (
             <button
               type="button"
@@ -641,7 +683,7 @@ export default function PrepShell({ resource, viewer }) {
                   }
                   onClick={() => setToolSafe(TOOL_POINTER)}
                 >
-                  🔴 <span>Pointer</span>
+                  ➤ <span>Pointer</span>
                 </button>
                 <button
                   type="button"
@@ -737,34 +779,48 @@ export default function PrepShell({ resource, viewer }) {
                     </div>
                   ))}
 
-                  {/* Text overlay for Text tool */}
-                  {textInput && (
-                    <textarea
-                      ref={textInputRef}
-                      className="prep-text-input"
+                  {/* Text boxes */}
+                  {textBoxes.map((box) => (
+                    <div
+                      key={box.id}
+                      className="prep-text-box"
                       style={{
-                        left: `${textInput.x * 100}%`,
-                        top: `${textInput.y * 100}%`,
+                        left: `${box.x * 100}%`,
+                        top: `${box.y * 100}%`,
                       }}
-                      value={textInput.value}
-                      placeholder="Type…"
-                      onChange={(e) =>
-                        setTextInput((prev) => ({
-                          ...prev,
-                          value: e.target.value,
-                        }))
-                      }
-                      onBlur={commitText}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          commitText();
+                    >
+                      <div
+                        className="prep-text-box__header"
+                        onMouseDown={(e) => startTextDrag(e, box)}
+                      >
+                        <span className="prep-text-box__drag-handle" />
+                        <button
+                          type="button"
+                          className="prep-text-box__close"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTextBox(box.id);
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <textarea
+                        data-textbox-id={box.id}
+                        className="prep-text-box__textarea"
+                        style={{ color: box.color }}
+                        placeholder="Type…"
+                        value={box.text}
+                        onFocus={() => setActiveTextId(box.id)}
+                        onChange={(e) =>
+                          updateTextBoxText(box.id, e.target.value)
                         }
-                      }}
-                    />
-                  )}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  ))}
 
-                  {/* Pointer indicator */}
+                  {/* Pointer arrow */}
                   {tool === TOOL_POINTER && pointerPos && (
                     <div
                       className="prep-pointer"
