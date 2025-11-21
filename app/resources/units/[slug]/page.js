@@ -11,7 +11,6 @@ const UNIT_WITH_RESOURCES_QUERY = `
   "slug": slug.current,
   summary,
   order,
-  // Sublevel + level + track for breadcrumbs (if your schema matches)
   subLevel->{
     _id,
     title,
@@ -27,7 +26,6 @@ const UNIT_WITH_RESOURCES_QUERY = `
       }
     }
   },
-  // All resources linked to this unit
   "resources": *[_type == "resource" && references(^._id)] | order(order asc){
     _id,
     title,
@@ -52,6 +50,7 @@ async function getUnit(slug) {
 
 // Helper to decide which URL to open for a resource
 function getPrimaryUrl(resource) {
+  if (!resource) return null;
   if (resource.googleSlidesUrl) return resource.googleSlidesUrl;
   if (resource.youtubeUrl) return resource.youtubeUrl;
   if (resource.externalUrl) return resource.externalUrl;
@@ -65,15 +64,22 @@ export default async function UnitResourcesPage({ params }) {
 
   if (!unit) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-semibold mb-3">Unit not found</h1>
-        <p className="text-sm text-gray-600 mb-4">
-          We couldn&apos;t find this unit. It might have been removed or the
-          link is incorrect.
-        </p>
-        <Link href="/resources" className="text-sm text-blue-600 underline">
-          ← Back to Resources
-        </Link>
+      <div className="resources-page">
+        <div className="resources-page__inner">
+          <div className="unit-not-found">
+            <h1 className="unit-not-found__title">Unit not found</h1>
+            <p className="unit-not-found__text">
+              We couldn&apos;t find this unit. It might have been removed or the
+              link is incorrect.
+            </p>
+            <Link
+              href="/resources"
+              className="resources-button resources-button--primary"
+            >
+              ← Back to Resources
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -83,125 +89,173 @@ export default async function UnitResourcesPage({ params }) {
   const track = level?.track;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      {/* Breadcrumbs */}
-      <nav className="text-xs text-gray-500 mb-4 flex flex-wrap gap-1 items-center">
-        <Link href="/resources" className="hover:underline">
-          Resources
-        </Link>
-        {track && (
-          <>
-            <span>/</span>
-            <span>{track.name}</span>
-          </>
-        )}
-        {level && (
-          <>
-            <span>/</span>
-            <span>{level.name}</span>
-          </>
-        )}
-        {subLevel && (
-          <>
-            <span>/</span>
-            <span>
-              {subLevel.code} – {subLevel.title}
+    <div className="resources-page">
+      <div className="resources-page__inner unit-page">
+        {/* Breadcrumbs */}
+        <nav className="unit-breadcrumbs">
+          <Link href="/resources" className="unit-breadcrumbs__link">
+            Resources
+          </Link>
+          {track && (
+            <>
+              <span className="unit-breadcrumbs__separator">/</span>
+              <span className="unit-breadcrumbs__crumb">{track.name}</span>
+            </>
+          )}
+          {level && (
+            <>
+              <span className="unit-breadcrumbs__separator">/</span>
+              <span className="unit-breadcrumbs__crumb">{level.name}</span>
+            </>
+          )}
+          {subLevel && (
+            <>
+              <span className="unit-breadcrumbs__separator">/</span>
+              <span className="unit-breadcrumbs__crumb">
+                {subLevel.code} – {subLevel.title}
+              </span>
+            </>
+          )}
+        </nav>
+
+        {/* Unit Header Card */}
+        <header className="unit-header-card">
+          <div className="unit-header-card__top-row">
+            <span className="unit-header-card__eyebrow">
+              {track?.code || "Track"} · {level?.code || "Level"} ·{" "}
+              {subLevel?.code || "Sublevel"}
             </span>
-          </>
-        )}
-      </nav>
+            {typeof unit.order === "number" && (
+              <span className="unit-header-card__order">Unit {unit.order}</span>
+            )}
+          </div>
 
-      {/* Unit Header */}
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold mb-1">{unit.title}</h1>
-        {unit.summary && (
-          <p className="text-sm text-gray-600 max-w-2xl">{unit.summary}</p>
-        )}
-      </header>
+          <h1 className="unit-header-card__title">{unit.title}</h1>
 
-      {/* Resources List */}
-      <section>
-        <h2 className="text-lg font-medium mb-3">Resources</h2>
+          {unit.summary && (
+            <p className="unit-header-card__summary">{unit.summary}</p>
+          )}
 
-        {(!unit.resources || unit.resources.length === 0) && (
-          <p className="text-sm text-gray-500">
-            No resources have been added to this unit yet.
-          </p>
-        )}
+          <div className="unit-header-card__meta">
+            {track && (
+              <span className="unit-header-card__meta-item">{track.name}</span>
+            )}
+            {level && (
+              <>
+                <span className="unit-header-card__dot">•</span>
+                <span className="unit-header-card__meta-item">
+                  {level.name}
+                </span>
+              </>
+            )}
+            {subLevel && (
+              <>
+                <span className="unit-header-card__dot">•</span>
+                <span className="unit-header-card__meta-item">
+                  {subLevel.code} – {subLevel.title}
+                </span>
+              </>
+            )}
+          </div>
+        </header>
 
-        <div className="space-y-3">
-          {unit.resources?.map((r) => {
-            const url = getPrimaryUrl(r);
-            const disabled = !url;
+        {/* Resources List */}
+        <section className="unit-resources">
+          <div className="unit-resources__header">
+            <div>
+              <h2 className="unit-resources__title">Resources</h2>
+              <p className="unit-resources__subtitle">
+                All PDFs, slides, and videos linked to this unit.
+              </p>
+            </div>
+            <Link
+              href="/resources"
+              className="resources-button resources-button--ghost unit-resources__back"
+            >
+              Back to picker
+            </Link>
+          </div>
 
-            return (
-              <div
-                key={r._id}
-                className="border border-gray-200 rounded-lg p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-              >
-                <div>
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold">{r.title}</h3>
-                    {r.kind && (
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                        {r.kind}
-                      </span>
+          {(!unit.resources || unit.resources.length === 0) && (
+            <p className="unit-resources__empty">
+              No resources have been added to this unit yet.
+            </p>
+          )}
+
+          <div className="unit-resources-list">
+            {unit.resources?.map((r) => {
+              const url = getPrimaryUrl(r);
+              const disabled = !url;
+
+              return (
+                <article key={r._id} className="unit-resource-card">
+                  <div className="unit-resource-card__main">
+                    <div className="unit-resource-card__title-row">
+                      <h3 className="unit-resource-card__title">{r.title}</h3>
+                      <div className="unit-resource-card__chips">
+                        {r.kind && (
+                          <span className="resources-chip">{r.kind}</span>
+                        )}
+                        {r.cecrLevel && (
+                          <span className="resources-chip resources-chip--primary">
+                            CEFR {r.cecrLevel}
+                          </span>
+                        )}
+                        {r.sourceType && (
+                          <span className="resources-chip">{r.sourceType}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {r.description && (
+                      <p className="unit-resource-card__description">
+                        {r.description}
+                      </p>
                     )}
-                    {r.cecrLevel && (
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
-                        CEFR {r.cecrLevel}
-                      </span>
+
+                    {Array.isArray(r.tags) && r.tags.length > 0 && (
+                      <div className="unit-resource-card__tags">
+                        {r.tags.map((tag) => (
+                          <span key={tag} className="resources-tag">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {r.fileName && (
+                      <p className="unit-resource-card__filename">
+                        {r.fileName}
+                      </p>
                     )}
                   </div>
-                  {r.description && (
-                    <p className="text-xs text-gray-600 mb-1">
-                      {r.description}
-                    </p>
-                  )}
-                  {Array.isArray(r.tags) && r.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {r.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-[10px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-500"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {r.fileName && (
-                    <p className="text-[11px] text-gray-400 mt-1">
-                      {r.fileName}
-                    </p>
-                  )}
-                </div>
 
-                <div className="flex items-center gap-2">
-                  {url ? (
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition"
-                    >
-                      Open resource
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md bg-gray-200 text-gray-500 cursor-not-allowed"
-                    >
-                      No URL configured
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+                  <div className="unit-resource-card__actions">
+                    {url ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="resources-button resources-button--primary"
+                      >
+                        Open resource
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="resources-button resources-button--disabled"
+                      >
+                        No URL configured
+                      </button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
