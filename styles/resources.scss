@@ -1224,3 +1224,22 @@
   font-family: inherit;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
 }
+
+.prep-text-box--editing {
+  .prep-text-box__header {
+    cursor: default;
+  }
+}
+
+.prep-text-box__label {
+  min-width: 60px;
+  padding: 0.25rem 0.45rem 0.3rem;
+  border-radius: 6px;
+  background: transparent; // background is the card itself
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f9fafb;
+  cursor: move;
+  white-space: nowrap;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+}

@@ -342,6 +342,7 @@ export default function PrepShell({ resource, viewer }) {
   // ─────────────────────────────────────────────────────────────
   // Text boxes (writing tool)
   // ─────────────────────────────────────────────────────────────
+  // Text boxes (writing tool)
   function createTextBox(e) {
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
@@ -353,11 +354,13 @@ export default function PrepShell({ resource, viewer }) {
       y: y / height,
       text: "",
       color: penColor,
+      editing: true, // <── start in edit mode
     };
 
     const next = [...textBoxes, box];
     setTextBoxes(next);
     setActiveTextId(box.id);
+    setTool(TOOL_NONE); // <── stop creating new boxes on every click
     saveAnnotations({ textBoxes: next });
   }
 
@@ -374,7 +377,42 @@ export default function PrepShell({ resource, viewer }) {
     if (activeTextId === id) setActiveTextId(null);
   }
 
+  function finishTextEdit(id, rawValue) {
+    const value = (rawValue || "").trim();
+
+    // if empty, delete the box
+    if (!value) {
+      deleteTextBox(id);
+      return;
+    }
+
+    setTextBoxes((prev) => {
+      const next = prev.map((t) =>
+        t.id === id ? { ...t, text: value, editing: false } : t
+      );
+      saveAnnotations({ textBoxes: next });
+      return next;
+    });
+
+    setActiveTextId(null);
+  }
+
+  function setTextEditing(id, editing) {
+    setTextBoxes((prev) => {
+      const next = prev.map((t) => (t.id === id ? { ...t, editing } : t));
+      saveAnnotations({ textBoxes: next });
+      return next;
+    });
+
+    if (editing) {
+      setActiveTextId(id);
+    } else if (activeTextId === id) {
+      setActiveTextId(null);
+    }
+  }
+
   function startTextDrag(e, box) {
+    if (box.editing) return; // <── no drag while editing
     e.stopPropagation();
     e.preventDefault();
     const coords = getCanvasCoordinates(e);
@@ -780,10 +818,14 @@ export default function PrepShell({ resource, viewer }) {
                   ))}
 
                   {/* Text boxes */}
+                  {/* Text boxes */}
                   {textBoxes.map((box) => (
                     <div
                       key={box.id}
-                      className="prep-text-box"
+                      className={
+                        "prep-text-box" +
+                        (box.editing ? " prep-text-box--editing" : "")
+                      }
                       style={{
                         left: `${box.x * 100}%`,
                         top: `${box.y * 100}%`,
@@ -805,18 +847,33 @@ export default function PrepShell({ resource, viewer }) {
                           ×
                         </button>
                       </div>
-                      <textarea
-                        data-textbox-id={box.id}
-                        className="prep-text-box__textarea"
-                        style={{ color: box.color }}
-                        placeholder="Type…"
-                        value={box.text}
-                        onFocus={() => setActiveTextId(box.id)}
-                        onChange={(e) =>
-                          updateTextBoxText(box.id, e.target.value)
-                        }
-                        onMouseDown={(e) => e.stopPropagation()}
-                      />
+
+                      {box.editing ? (
+                        <textarea
+                          data-textbox-id={box.id}
+                          className="prep-text-box__textarea"
+                          style={{ color: box.color }}
+                          placeholder="Type…"
+                          value={box.text}
+                          onFocus={() => setActiveTextId(box.id)}
+                          onChange={(e) =>
+                            updateTextBoxText(box.id, e.target.value)
+                          }
+                          onBlur={(e) => finishTextEdit(box.id, e.target.value)} // <── click outside → freeze text
+                          onMouseDown={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <div
+                          className="prep-text-box__label"
+                          style={{ color: box.color }}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            setTextEditing(box.id, true); // double-click to re-edit
+                          }}
+                        >
+                          {box.text}
+                        </div>
+                      )}
                     </div>
                   ))}
 
