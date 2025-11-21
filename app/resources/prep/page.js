@@ -51,14 +51,94 @@ async function getResource(resourceId) {
   return resource || null;
 }
 
-// Helper to decide which URL to open for a resource
-function getPrimaryUrl(resource) {
+// Helpers to decide how to embed the resource
+function normalizeYouTubeEmbed(url) {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace("www.", "");
+
+    // https://youtu.be/VIDEO_ID
+    if (host === "youtu.be") {
+      const videoId = u.pathname.replace("/", "");
+      if (!videoId) return url;
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+
+    // https://youtube.com/watch?v=VIDEO_ID
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      if (u.pathname === "/watch" && u.searchParams.get("v")) {
+        const videoId = u.searchParams.get("v");
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+      // already /embed or other format
+      if (u.pathname.startsWith("/embed/")) {
+        return url;
+      }
+    }
+
+    return url;
+  } catch {
+    return url;
+  }
+}
+
+function normalizeGoogleSlidesEmbed(url) {
+  // Convert /edit to /preview if present
+  if (!url) return url;
+  if (url.includes("/edit")) {
+    return url.replace("/edit", "/preview");
+  }
+  return url;
+}
+
+function getViewerInfo(resource) {
   if (!resource) return null;
-  if (resource.googleSlidesUrl) return resource.googleSlidesUrl;
-  if (resource.youtubeUrl) return resource.youtubeUrl;
-  if (resource.externalUrl) return resource.externalUrl;
-  if (resource.fileUrl) return resource.fileUrl;
-  return null;
+
+  // Prioritize type-specific URLs first
+  if (resource.youtubeUrl) {
+    const viewerUrl = normalizeYouTubeEmbed(resource.youtubeUrl);
+    return {
+      type: "youtube",
+      label: "YouTube",
+      viewerUrl,
+      rawUrl: resource.youtubeUrl,
+    };
+  }
+
+  if (resource.googleSlidesUrl) {
+    const viewerUrl = normalizeGoogleSlidesEmbed(resource.googleSlidesUrl);
+    return {
+      type: "slides",
+      label: "Google Slides",
+      viewerUrl,
+      rawUrl: resource.googleSlidesUrl,
+    };
+  }
+
+  if (resource.externalUrl) {
+    return {
+      type: "external",
+      label: "External page",
+      viewerUrl: resource.externalUrl,
+      rawUrl: resource.externalUrl,
+    };
+  }
+
+  if (resource.fileUrl) {
+    return {
+      type: "file",
+      label: "File",
+      viewerUrl: resource.fileUrl,
+      rawUrl: resource.fileUrl,
+    };
+  }
+
+  return {
+    type: "unknown",
+    label: "Resource",
+    viewerUrl: null,
+    rawUrl: null,
+  };
 }
 
 export default async function PrepRoomPage({ searchParams }) {
@@ -110,7 +190,8 @@ export default async function PrepRoomPage({ searchParams }) {
     );
   }
 
-  const url = getPrimaryUrl(resource);
+  const viewer = getViewerInfo(resource);
+  const viewerUrl = viewer?.viewerUrl;
   const unit = resource.unit;
   const subLevel = unit?.subLevel;
   const level = subLevel?.level;
@@ -211,9 +292,9 @@ export default async function PrepRoomPage({ searchParams }) {
                   View unit page
                 </Link>
               )}
-              {url && (
+              {viewer?.rawUrl && (
                 <a
-                  href={url}
+                  href={viewer.rawUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="resources-button resources-button--primary"
@@ -228,22 +309,35 @@ export default async function PrepRoomPage({ searchParams }) {
 
           {/* RIGHT: viewer */}
           <section className="prep-viewer">
-            {!url ? (
+            {viewerUrl ? (
+              <>
+                <div className="prep-viewer__badge">
+                  <span className="prep-viewer__badge-dot" />
+                  <span className="prep-viewer__badge-text">
+                    Live preview · {viewer.label}
+                  </span>
+                </div>
+                <div className="prep-viewer__frame-wrapper">
+                  <iframe
+                    src={viewerUrl}
+                    className="prep-viewer__frame"
+                    title={`${resource.title} – ${viewer.label}`}
+                    allow={
+                      viewer.type === "youtube"
+                        ? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        : undefined
+                    }
+                    allowFullScreen
+                  />
+                </div>
+              </>
+            ) : (
               <div className="prep-viewer__placeholder">
                 <h2>No preview available</h2>
                 <p>
-                  This resource doesn&apos;t have a URL configured. Use the
-                  session notes on the left or go back to the picker.
+                  This resource doesn&apos;t have an embeddable URL. Use the
+                  session notes on the left or open the raw link instead.
                 </p>
-              </div>
-            ) : (
-              <div className="prep-viewer__frame-wrapper">
-                <iframe
-                  src={url}
-                  className="prep-viewer__frame"
-                  title={resource.title}
-                  allowFullScreen
-                />
               </div>
             )}
           </section>
