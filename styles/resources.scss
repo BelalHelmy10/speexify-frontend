@@ -823,26 +823,28 @@
 
 .prep-viewer__frame-wrapper {
   position: relative;
-  width: 100%;
-  max-width: 100%;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #020617;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.7);
 }
 
 .prep-viewer__canvas-container {
   position: relative;
-  width: 100%;
-  height: min(75vh, 720px);
+  border-radius: 22px;
+  overflow: hidden;
 }
 
-.prep-viewer__frame,
+.prep-viewer__frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* Canvas overlay */
 .prep-annotate-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none; // <── clicks go through to iframe by default
 }
 
 .prep-viewer__frame {
@@ -856,6 +858,7 @@
 }
 
 .prep-annotate-canvas--drawing {
+  pointer-events: auto; // <── now the canvas catches clicks
   cursor: crosshair;
 }
 
@@ -1137,8 +1140,8 @@
   box-shadow: 0 0 0 3px rgba(248, 153, 72, 0.25),
     0 0 22px rgba(248, 153, 72, 0.9);
   transform: translate(-50%, -50%);
-  pointer-events: none;
   z-index: 4;
+  pointer-events: auto;
 }
 
 .prep-pointer::after {
