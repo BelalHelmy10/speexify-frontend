@@ -51,7 +51,10 @@ async function getResource(resourceId) {
   return resource || null;
 }
 
+// ───────────────────────────────────────────────────────────────────────────
 // Helpers to decide how to embed the resource
+// ───────────────────────────────────────────────────────────────────────────
+
 function normalizeYouTubeEmbed(url) {
   if (!url) return null;
 
@@ -99,31 +102,69 @@ function normalizeGoogleSlidesEmbed(url) {
   return url;
 }
 
+function isYouTubeUrl(url) {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace("www.", "");
+    return host.includes("youtube.com") || host.includes("youtu.be");
+  } catch {
+    return false;
+  }
+}
+
+function isGoogleSlidesUrl(url) {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace("www.", "");
+    return (
+      host.includes("docs.google.com") && u.pathname.includes("/presentation")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function getViewerInfo(resource) {
   if (!resource) return null;
 
-  // Prioritize type-specific URLs first
-  if (resource.youtubeUrl) {
-    const viewerUrl = normalizeYouTubeEmbed(resource.youtubeUrl);
+  // 1) Prefer explicit YouTube field; fall back to externalUrl if it's YouTube
+  const youtubeCandidate =
+    resource.youtubeUrl ||
+    (isYouTubeUrl(resource.externalUrl) ? resource.externalUrl : null);
+
+  if (youtubeCandidate) {
+    const viewerUrl = normalizeYouTubeEmbed(youtubeCandidate);
     return {
       type: "youtube",
       label: "YouTube",
       viewerUrl,
-      rawUrl: resource.youtubeUrl,
+      rawUrl: youtubeCandidate,
     };
   }
 
-  if (resource.googleSlidesUrl) {
-    const viewerUrl = normalizeGoogleSlidesEmbed(resource.googleSlidesUrl);
+  // 2) Google Slides (explicit or stored as externalUrl)
+  const slidesCandidate =
+    resource.googleSlidesUrl ||
+    (isGoogleSlidesUrl(resource.externalUrl) ? resource.externalUrl : null);
+
+  if (slidesCandidate) {
+    const viewerUrl = normalizeGoogleSlidesEmbed(slidesCandidate);
     return {
       type: "slides",
       label: "Google Slides",
       viewerUrl,
-      rawUrl: resource.googleSlidesUrl,
+      rawUrl: slidesCandidate,
     };
   }
 
-  if (resource.externalUrl) {
+  // 3) Generic external page (only if it's NOT YouTube / Slides)
+  if (
+    resource.externalUrl &&
+    !isYouTubeUrl(resource.externalUrl) &&
+    !isGoogleSlidesUrl(resource.externalUrl)
+  ) {
     return {
       type: "external",
       label: "External page",
@@ -132,6 +173,7 @@ function getViewerInfo(resource) {
     };
   }
 
+  // 4) Direct file URL
   if (resource.fileUrl) {
     return {
       type: "file",
@@ -148,6 +190,8 @@ function getViewerInfo(resource) {
     rawUrl: null,
   };
 }
+
+// ───────────────────────────────────────────────────────────────────────────
 
 export default async function PrepRoomPage({ searchParams }) {
   const resourceId = searchParams?.resourceId;
