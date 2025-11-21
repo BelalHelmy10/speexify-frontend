@@ -1,18 +1,316 @@
 // app/resources/prep/PrepShell.jsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PrepNotes from "./PrepNotes";
 
+const TOOL_NONE = "none";
+const TOOL_PEN = "pen";
+const TOOL_HIGHLIGHTER = "highlighter";
+const TOOL_NOTE = "note";
+const TOOL_POINTER = "pointer";
+
 export default function PrepShell({ resource, viewer }) {
   const [focusMode, setFocusMode] = useState(false);
+  const [tool, setTool] = useState(TOOL_NONE);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [pointerPos, setPointerPos] = useState(null);
+  const [stickyNotes, setStickyNotes] = useState([]);
+
+  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const storageKey = `prep_annotations_${resource._id}`;
 
   const viewerUrl = viewer?.viewerUrl;
   const unit = resource.unit;
   const subLevel = unit?.subLevel;
   const level = subLevel?.level;
   const track = level?.track;
+
+  // ─────────────────────────────────────────────────────────────
+  // Load annotations from localStorage on mount
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!storageKey) return;
+
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.stickyNotes)) {
+        setStickyNotes(parsed.stickyNotes);
+      }
+
+      if (parsed.canvasData && canvasRef.current) {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext("2d");
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = parsed.canvasData;
+      }
+    } catch (err) {
+      console.warn("Failed to load annotations", err);
+    }
+  }, [storageKey]);
+
+  // ─────────────────────────────────────────────────────────────
+  // Canvas resize to match container
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+
+    function resizeCanvas() {
+      const rect = container.getBoundingClientRect();
+      const prev = canvas.toDataURL("image/png");
+
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      if (prev) {
+        const img = new Image();
+        img.onload = () => {
+          const ctx = canvas.getContext("2d");
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = prev;
+      }
+    }
+
+    resizeCanvas();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(() => resizeCanvas());
+      observer.observe(container);
+      return () => observer.disconnect();
+    } else {
+      window.addEventListener("resize", resizeCanvas);
+      return () => window.removeEventListener("resize", resizeCanvas);
+    }
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────
+  // Helper: save current canvas + notes to localStorage
+  // ─────────────────────────────────────────────────────────────
+  function saveAnnotations(opts = {}) {
+    if (!storageKey) return;
+    try {
+      const canvas = canvasRef.current;
+      const canvasData =
+        opts.canvasData ?? (canvas ? canvas.toDataURL("image/png") : undefined);
+
+      const data = {
+        canvasData: canvasData || null,
+        stickyNotes,
+      };
+
+      window.localStorage.setItem(storageKey, JSON.stringify(data));
+    } catch (err) {
+      console.warn("Failed to save annotations", err);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Drawing helpers
+  // ─────────────────────────────────────────────────────────────
+  function getCanvasCoordinates(event) {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+      width: rect.width,
+      height: rect.height,
+    };
+  }
+
+  function startDrawing(e) {
+    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER) return;
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.moveTo(coords.x, coords.y);
+    setIsDrawing(true);
+  }
+
+  function draw(e) {
+    if (!isDrawing) {
+      if (tool === TOOL_POINTER) {
+        // update pointer position only
+        updatePointer(e);
+      }
+      return;
+    }
+    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER) return;
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (tool === TOOL_PEN) {
+      ctx.strokeStyle = "rgba(249, 250, 251, 0.95)";
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+    } else if (tool === TOOL_HIGHLIGHTER) {
+      ctx.strokeStyle = "rgba(250, 204, 21, 0.6)"; // yellow-ish
+      ctx.lineWidth = 10;
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "multiply";
+    }
+
+    ctx.lineTo(coords.x, coords.y);
+    ctx.stroke();
+  }
+
+  function stopDrawing() {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    saveAnnotations(); // save current canvas
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Pointer helper
+  // ─────────────────────────────────────────────────────────────
+  function updatePointer(e) {
+    if (tool !== TOOL_POINTER) {
+      setPointerPos(null);
+      return;
+    }
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    setPointerPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Sticky notes
+  // ─────────────────────────────────────────────────────────────
+  function handleClickForNote(e) {
+    if (tool !== TOOL_NOTE) return;
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+    const { x, y, width, height } = coords;
+
+    const note = {
+      id: `note_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      // store as fractions to keep responsive
+      x: x / width,
+      y: y / height,
+      text: "",
+    };
+
+    setStickyNotes((prev) => {
+      const next = [...prev, note];
+      try {
+        const canvas = canvasRef.current;
+        const canvasData = canvas ? canvas.toDataURL("image/png") : undefined;
+        window.localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            canvasData: canvasData || null,
+            stickyNotes: next,
+          })
+        );
+      } catch (err) {
+        console.warn("Failed to save sticky note", err);
+      }
+      return next;
+    });
+  }
+
+  function updateNoteText(id, text) {
+    setStickyNotes((prev) => {
+      const next = prev.map((n) => (n.id === id ? { ...n, text } : n));
+      try {
+        const canvas = canvasRef.current;
+        const canvasData = canvas ? canvas.toDataURL("image/png") : undefined;
+        window.localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            canvasData: canvasData || null,
+            stickyNotes: next,
+          })
+        );
+      } catch (err) {
+        console.warn("Failed to update sticky note text", err);
+      }
+      return next;
+    });
+  }
+
+  function clearCanvas() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    saveAnnotations({ canvasData: null });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Combined mouse handlers for container
+  // ─────────────────────────────────────────────────────────────
+  function handleMouseDown(e) {
+    if (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER) {
+      e.preventDefault();
+      startDrawing(e);
+    } else if (tool === TOOL_NOTE) {
+      e.preventDefault();
+      handleClickForNote(e);
+    }
+  }
+
+  function handleMouseMove(e) {
+    if (tool === TOOL_POINTER) {
+      updatePointer(e);
+    } else {
+      setPointerPos(null);
+    }
+    if (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER) {
+      e.preventDefault();
+      draw(e);
+    }
+  }
+
+  function handleMouseUp() {
+    stopDrawing();
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // UI helpers
+  // ─────────────────────────────────────────────────────────────
+  function setToolSafe(nextTool) {
+    if (tool === nextTool) {
+      setTool(TOOL_NONE);
+      setPointerPos(null);
+    } else {
+      setTool(nextTool);
+      if (nextTool !== TOOL_POINTER) {
+        setPointerPos(null);
+      }
+    }
+  }
+
+  const viewerActive = Boolean(viewerUrl);
 
   return (
     <>
@@ -126,15 +424,17 @@ export default function PrepShell({ resource, viewer }) {
         {/* RIGHT: viewer */}
         <section className="prep-viewer">
           {/* Focus toggle */}
-          <button
-            type="button"
-            className="prep-viewer__focus-toggle"
-            onClick={() => setFocusMode((v) => !v)}
-          >
-            {focusMode ? "Exit focus" : "Focus viewer"}
-          </button>
+          {viewerActive && (
+            <button
+              type="button"
+              className="prep-viewer__focus-toggle"
+              onClick={() => setFocusMode((v) => !v)}
+            >
+              {focusMode ? "Exit focus" : "Focus viewer"}
+            </button>
+          )}
 
-          {viewerUrl ? (
+          {viewerActive ? (
             <>
               <div className="prep-viewer__badge">
                 <span className="prep-viewer__badge-dot" />
@@ -142,18 +442,120 @@ export default function PrepShell({ resource, viewer }) {
                   Live preview · {viewer.label}
                 </span>
               </div>
-              <div className="prep-viewer__frame-wrapper">
-                <iframe
-                  src={viewerUrl}
-                  className="prep-viewer__frame"
-                  title={`${resource.title} – ${viewer.label}`}
-                  allow={
-                    viewer.type === "youtube"
-                      ? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      : undefined
+
+              {/* Annotation toolbar */}
+              <div className="prep-annotate-toolbar">
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_PEN ? " is-active" : "")
                   }
-                  allowFullScreen
-                />
+                  onClick={() => setToolSafe(TOOL_PEN)}
+                >
+                  🖊️ <span>Pen</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_HIGHLIGHTER ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_HIGHLIGHTER)}
+                >
+                  ✨ <span>Highlighter</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_NOTE ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_NOTE)}
+                >
+                  🗒️ <span>Note</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_POINTER ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_POINTER)}
+                >
+                  🔴 <span>Pointer</span>
+                </button>
+                <button
+                  type="button"
+                  className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--danger"
+                  onClick={clearCanvas}
+                >
+                  🗑️ <span>Clear</span>
+                </button>
+              </div>
+
+              <div className="prep-viewer__frame-wrapper">
+                <div
+                  className="prep-viewer__canvas-container"
+                  ref={containerRef}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                >
+                  <iframe
+                    src={viewerUrl}
+                    className="prep-viewer__frame"
+                    title={`${resource.title} – ${viewer.label}`}
+                    allow={
+                      viewer.type === "youtube"
+                        ? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        : undefined
+                    }
+                    allowFullScreen
+                  />
+                  <canvas
+                    ref={canvasRef}
+                    className={
+                      "prep-annotate-canvas" +
+                      (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER
+                        ? " prep-annotate-canvas--drawing"
+                        : "")
+                    }
+                  />
+
+                  {/* Sticky notes */}
+                  {stickyNotes.map((note) => (
+                    <div
+                      key={note.id}
+                      className="prep-sticky-note"
+                      style={{
+                        left: `${note.x * 100}%`,
+                        top: `${note.y * 100}%`,
+                      }}
+                    >
+                      <textarea
+                        className="prep-sticky-note__textarea"
+                        placeholder="Note..."
+                        value={note.text}
+                        onChange={(e) =>
+                          updateNoteText(note.id, e.target.value)
+                        }
+                      />
+                    </div>
+                  ))}
+
+                  {/* Pointer indicator */}
+                  {tool === TOOL_POINTER && pointerPos && (
+                    <div
+                      className="prep-pointer"
+                      style={{
+                        left: `${pointerPos.x}px`,
+                        top: `${pointerPos.y}px`,
+                      }}
+                    />
+                  )}
+                </div>
               </div>
             </>
           ) : (

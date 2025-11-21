@@ -822,6 +822,7 @@
 }
 
 .prep-viewer__frame-wrapper {
+  position: relative;
   width: 100%;
   max-width: 100%;
   border-radius: 16px;
@@ -830,11 +831,32 @@
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.7);
 }
 
-.prep-viewer__frame {
+.prep-viewer__canvas-container {
+  position: relative;
   width: 100%;
   height: min(75vh, 720px);
+}
+
+.prep-viewer__frame,
+.prep-annotate-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.prep-viewer__frame {
   border: none;
   background: #020617;
+}
+
+.prep-annotate-canvas {
+  pointer-events: auto;
+  background: transparent;
+}
+
+.prep-annotate-canvas--drawing {
+  cursor: crosshair;
 }
 
 .prep-viewer__placeholder {
@@ -962,4 +984,110 @@
 
 .prep-layout--focus .prep-viewer__frame {
   height: min(85vh, 820px);
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* PREP ROOM ANNOTATION TOOLS                                                */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+.prep-annotate-toolbar {
+  position: absolute;
+  bottom: 0.9rem;
+  right: 1.1rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.95);
+}
+
+.prep-annotate-toolbar__btn {
+  border: none;
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: background-color 0.12s ease, color 0.12s ease,
+    transform 0.08s ease;
+
+  span {
+    display: none;
+
+    @media (min-width: 900px) {
+      display: inline;
+    }
+  }
+
+  &:hover {
+    background: rgba(31, 41, 55, 0.9);
+    transform: translateY(-0.5px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.prep-annotate-toolbar__btn.is-active {
+  background: rgba(59, 130, 246, 0.18);
+  color: #bfdbfe;
+}
+
+.prep-annotate-toolbar__btn--danger {
+  color: #fecaca;
+
+  &:hover {
+    background: rgba(248, 113, 113, 0.2);
+  }
+}
+
+/* Sticky notes */
+
+.prep-sticky-note {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  max-width: 40%;
+  background: #fef9c3;
+  border: 1px solid rgba(234, 179, 8, 0.7);
+  border-radius: 10px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.65);
+  padding: 0.3rem 0.35rem;
+  z-index: 4;
+}
+
+.prep-sticky-note__textarea {
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-size: 0.72rem;
+  color: #78350f;
+  font-family: inherit;
+}
+
+/* Pointer */
+
+.prep-pointer {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #f97316;
+  box-shadow: 0 0 0 4px rgba(248, 153, 72, 0.25),
+    0 0 32px rgba(248, 153, 72, 0.8);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 4;
 }
