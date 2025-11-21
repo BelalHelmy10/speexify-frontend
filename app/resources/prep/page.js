@@ -129,42 +129,50 @@ function isGoogleSlidesUrl(url) {
 function getViewerInfo(resource) {
   if (!resource) return null;
 
-  // 1) Prefer explicit YouTube field; fall back to externalUrl if it's YouTube
-  const youtubeCandidate =
-    resource.youtubeUrl ||
-    (isYouTubeUrl(resource.externalUrl) ? resource.externalUrl : null);
+  const isPdfUrl = (url) =>
+    typeof url === "string" && url.toLowerCase().endsWith(".pdf");
 
-  if (youtubeCandidate) {
-    const viewerUrl = normalizeYouTubeEmbed(youtubeCandidate);
+  // Prioritize type-specific URLs first
+  if (resource.youtubeUrl) {
+    const viewerUrl = normalizeYouTubeEmbed(resource.youtubeUrl);
     return {
       type: "youtube",
       label: "YouTube",
       viewerUrl,
-      rawUrl: youtubeCandidate,
+      rawUrl: resource.youtubeUrl,
     };
   }
 
-  // 2) Google Slides (explicit or stored as externalUrl)
-  const slidesCandidate =
-    resource.googleSlidesUrl ||
-    (isGoogleSlidesUrl(resource.externalUrl) ? resource.externalUrl : null);
-
-  if (slidesCandidate) {
-    const viewerUrl = normalizeGoogleSlidesEmbed(slidesCandidate);
+  if (resource.googleSlidesUrl) {
+    const viewerUrl = normalizeGoogleSlidesEmbed(resource.googleSlidesUrl);
     return {
       type: "slides",
       label: "Google Slides",
       viewerUrl,
-      rawUrl: slidesCandidate,
+      rawUrl: resource.googleSlidesUrl,
     };
   }
 
-  // 3) Generic external page (only if it's NOT YouTube / Slides)
-  if (
-    resource.externalUrl &&
-    !isYouTubeUrl(resource.externalUrl) &&
-    !isGoogleSlidesUrl(resource.externalUrl)
-  ) {
+  // PDF via externalUrl or fileUrl
+  if (resource.externalUrl && isPdfUrl(resource.externalUrl)) {
+    return {
+      type: "pdf",
+      label: "File",
+      viewerUrl: resource.externalUrl,
+      rawUrl: resource.externalUrl,
+    };
+  }
+
+  if (resource.fileUrl && isPdfUrl(resource.fileUrl)) {
+    return {
+      type: "pdf",
+      label: "File",
+      viewerUrl: resource.fileUrl,
+      rawUrl: resource.fileUrl,
+    };
+  }
+
+  if (resource.externalUrl) {
     return {
       type: "external",
       label: "External page",
@@ -173,7 +181,6 @@ function getViewerInfo(resource) {
     };
   }
 
-  // 4) Direct file URL
   if (resource.fileUrl) {
     return {
       type: "file",

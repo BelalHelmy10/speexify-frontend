@@ -823,10 +823,14 @@
 
 .prep-viewer__frame-wrapper {
   position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .prep-viewer__canvas-container {
   position: relative;
+  width: 100%;
+  height: 100%;
   border-radius: 22px;
   overflow: hidden;
 }
@@ -844,7 +848,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none; // <── clicks go through to iframe by default
+  pointer-events: none; // default: let clicks go to the iframe
 }
 
 .prep-viewer__frame {
@@ -858,7 +862,7 @@
 }
 
 .prep-annotate-canvas--drawing {
-  pointer-events: auto; // <── now the canvas catches clicks
+  pointer-events: auto; // now the canvas catches the mouse
   cursor: crosshair;
 }
 
@@ -1246,4 +1250,71 @@
   cursor: move;
   white-space: nowrap;
   text-shadow: 0 0 3px rgba(255, 255, 255, 0.7);
+}
+
+/* PDF layout inside the dark viewer */
+.prep-pdf-layout {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  height: 100%;
+}
+
+/* Left: main canvas area (reuses existing container styles) */
+.prep-pdf-layout .prep-viewer__canvas-container {
+  flex: 1 1 auto;
+}
+
+/* PDF content canvas (under the annotation canvas) */
+.prep-pdf-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #0b1120;
+}
+
+/* Right: vertical page strip */
+.prep-pdf-sidebar {
+  width: 64px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0.6rem 0.4rem;
+}
+
+.prep-pdf-sidebar__empty {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.prep-pdf-sidebar__pages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.prep-pdf-sidebar__page-button {
+  width: 40px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease,
+    transform 0.07s ease;
+}
+
+.prep-pdf-sidebar__page-button:hover {
+  background: rgba(37, 99, 235, 0.9);
+  border-color: #60a5fa;
+  transform: translateY(-1px);
+}
+
+.prep-pdf-sidebar__page-button.is-active {
+  background: #3b82f6;
+  border-color: #93c5fd;
 }
