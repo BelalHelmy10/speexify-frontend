@@ -10,6 +10,7 @@ export default function PdfViewerWithSidebar({
   onMouseMove,
   onMouseUp,
   children, // annotation overlay from PrepShell
+  onFatalError, // <- new optional callback
 }) {
   const pdfCanvasRef = useRef(null);
 
@@ -19,9 +20,7 @@ export default function PdfViewerWithSidebar({
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
 
-  // ─────────────────────────────────────────────────────────────
   // Load pdf.js + the PDF document
-  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
@@ -33,12 +32,9 @@ export default function PdfViewerWithSidebar({
       setPdfDoc(null);
 
       try {
-        // Load pdf.js only on the client
         const pdfjsModule = await import("pdfjs-dist/build/pdf");
 
-        // IMPORTANT: workerSrc MUST be a string URL
-        // (otherwise you get "Invalid `workerSrc` type")
-        // Using a CDN worker keeps our Next config simple.
+        // Worker must be a string URL
         pdfjsModule.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsModule.version}/pdf.worker.min.js`;
 
         if (cancelled) return;
@@ -55,6 +51,8 @@ export default function PdfViewerWithSidebar({
         console.error("Failed to load PDF", err);
         if (!cancelled) {
           setError("Couldn’t load PDF file.");
+          // Tell parent so it can fall back to iframe
+          if (onFatalError) onFatalError(err);
         }
       }
     }
@@ -64,11 +62,9 @@ export default function PdfViewerWithSidebar({
     return () => {
       cancelled = true;
     };
-  }, [fileUrl]);
+  }, [fileUrl, onFatalError]);
 
-  // ─────────────────────────────────────────────────────────────
   // Render current page (and re-render on resize)
-  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!pdfjs || !pdfDoc || !pdfCanvasRef.current || !containerRef?.current) {
       return;
@@ -99,6 +95,7 @@ export default function PdfViewerWithSidebar({
         if (!cancelled) {
           console.error("Failed to render PDF page", err);
           setError("Couldn’t render this page.");
+          if (onFatalError) onFatalError(err);
         }
       }
     }
@@ -117,7 +114,7 @@ export default function PdfViewerWithSidebar({
       cancelled = true;
       if (observer) observer.disconnect();
     };
-  }, [pdfjs, pdfDoc, currentPage, containerRef]);
+  }, [pdfjs, pdfDoc, currentPage, containerRef, onFatalError]);
 
   const handlePageClick = (pageNum) => {
     setCurrentPage(pageNum);
@@ -136,7 +133,7 @@ export default function PdfViewerWithSidebar({
         {/* PDF content canvas */}
         <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
 
-        {/* Annotation overlay from PrepShell (canvas + notes + text + pointer) */}
+        {/* Annotation overlay */}
         {children}
       </div>
 

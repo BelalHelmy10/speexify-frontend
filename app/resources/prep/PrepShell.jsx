@@ -26,6 +26,7 @@ export default function PrepShell({ resource, viewer }) {
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
   const [dragState, setDragState] = useState(null); // {kind: "note"|"text", id, offsetX, offsetY}
   const [activeTextId, setActiveTextId] = useState(null);
+  const [pdfFallback, setPdfFallback] = useState(false);
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -531,7 +532,7 @@ export default function PrepShell({ resource, viewer }) {
   }
 
   const viewerActive = Boolean(viewerUrl);
-  const isPdfViewer = viewer?.type === "pdf";
+  const isPdfViewer = viewer?.type === "pdf" && !pdfFallback;
 
   return (
     <>
@@ -672,6 +673,7 @@ export default function PrepShell({ resource, viewer }) {
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
+                    onFatalError={() => setPdfFallback(true)} // <── HERE
                   >
                     {/* Annotation overlay (same as before, but without iframe) */}
                     <canvas
