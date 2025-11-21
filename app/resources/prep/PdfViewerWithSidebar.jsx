@@ -2,11 +2,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs";
-
-// Tell pdf.js where the worker lives (ESM-friendly)
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export default function PdfViewerWithSidebar({
   fileUrl,
@@ -17,12 +12,16 @@ export default function PdfViewerWithSidebar({
   children, // annotation overlay from PrepShell
 }) {
   const pdfCanvasRef = useRef(null);
+
+  const [pdfjs, setPdfjs] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
 
-  // Load the PDF document
+  // ─────────────────────────────────────────────────────────────
+  // Load pdf.js + the PDF document
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
@@ -34,7 +33,18 @@ export default function PdfViewerWithSidebar({
       setPdfDoc(null);
 
       try {
-        const loadingTask = pdfjsLib.getDocument(fileUrl);
+        // Load pdf.js only on the client
+        const pdfjsModule = await import("pdfjs-dist/build/pdf");
+
+        // IMPORTANT: workerSrc MUST be a string URL
+        // (otherwise you get "Invalid `workerSrc` type")
+        // Using a CDN worker keeps our Next config simple.
+        pdfjsModule.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsModule.version}/pdf.worker.min.js`;
+
+        if (cancelled) return;
+        setPdfjs(pdfjsModule);
+
+        const loadingTask = pdfjsModule.getDocument(fileUrl);
         const doc = await loadingTask.promise;
         if (cancelled) return;
 
@@ -56,9 +66,13 @@ export default function PdfViewerWithSidebar({
     };
   }, [fileUrl]);
 
-  // Render current page (and on resize)
+  // ─────────────────────────────────────────────────────────────
+  // Render current page (and re-render on resize)
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!pdfDoc || !pdfCanvasRef.current || !containerRef?.current) return;
+    if (!pdfjs || !pdfDoc || !pdfCanvasRef.current || !containerRef?.current) {
+      return;
+    }
 
     let cancelled = false;
 
@@ -103,7 +117,7 @@ export default function PdfViewerWithSidebar({
       cancelled = true;
       if (observer) observer.disconnect();
     };
-  }, [pdfDoc, currentPage, containerRef]);
+  }, [pdfjs, pdfDoc, currentPage, containerRef]);
 
   const handlePageClick = (pageNum) => {
     setCurrentPage(pageNum);
@@ -119,7 +133,9 @@ export default function PdfViewerWithSidebar({
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
       >
+        {/* PDF content canvas */}
         <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
+
         {/* Annotation overlay from PrepShell (canvas + notes + text + pointer) */}
         {children}
       </div>
