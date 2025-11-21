@@ -53,27 +53,35 @@ async function getResource(resourceId) {
 
 // Helpers to decide how to embed the resource
 function normalizeYouTubeEmbed(url) {
+  if (!url) return null;
+
   try {
     const u = new URL(url);
-    const host = u.hostname.replace("www.", "");
+    let videoId = null;
 
-    // https://youtu.be/VIDEO_ID
-    if (host === "youtu.be") {
-      const videoId = u.pathname.replace("/", "");
-      if (!videoId) return url;
-      return `https://www.youtube.com/embed/${videoId}`;
+    // 1) youtu.be/<id>
+    if (u.hostname.includes("youtu.be")) {
+      videoId = u.pathname.replace("/", "");
     }
 
-    // https://youtube.com/watch?v=VIDEO_ID
-    if (host === "youtube.com" || host === "m.youtube.com") {
-      if (u.pathname === "/watch" && u.searchParams.get("v")) {
-        const videoId = u.searchParams.get("v");
-        return `https://www.youtube.com/embed/${videoId}`;
+    // 2) youtube.com/watch?v=<id>
+    if (
+      u.hostname.includes("youtube.com") ||
+      u.hostname.includes("m.youtube.com")
+    ) {
+      if (u.searchParams.get("v")) {
+        videoId = u.searchParams.get("v");
       }
-      // already /embed or other format
+
+      // 3) youtube.com/embed/<id>
       if (u.pathname.startsWith("/embed/")) {
-        return url;
+        return url; // already embed-friendly
       }
+    }
+
+    // If we extracted a video ID
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}`;
     }
 
     return url;
