@@ -475,12 +475,12 @@ export default function PrepShell({ resource, viewer }) {
           ref={canvasRef}
           className={
             "prep-annotate-canvas" +
-            (tool === TOOL_PEN ||
-            tool === TOOL_HIGHLIGHTER ||
-            tool === TOOL_ERASER
-              ? " prep-annotate-canvas--drawing"
-              : "")
+            (tool !== TOOL_NONE ? " prep-annotate-canvas--drawing" : "")
           }
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
         />
 
         {/* Sticky notes */}
@@ -816,10 +816,6 @@ export default function PrepShell({ resource, viewer }) {
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
                   >
                     <PdfViewerWithSidebar
                       fileUrl={viewerUrl}
