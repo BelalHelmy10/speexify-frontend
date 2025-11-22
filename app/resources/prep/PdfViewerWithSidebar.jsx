@@ -3,15 +3,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function PdfViewerWithSidebar({
-  fileUrl,
-  containerRef,
-  onMouseDown,
-  onMouseMove,
-  onMouseUp,
-  children, // annotation overlay from PrepShell
-  onFatalError, // <- new optional callback
-}) {
+export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
+  const mainRef = useRef(null);
   const pdfCanvasRef = useRef(null);
 
   const [pdfjs, setPdfjs] = useState(null);
@@ -34,7 +27,7 @@ export default function PdfViewerWithSidebar({
       try {
         const pdfjsModule = await import("pdfjs-dist/build/pdf");
 
-        // Worker must be a string URL
+        // pdf.js worker from CDN (must be a plain string URL)
         pdfjsModule.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsModule.version}/pdf.worker.min.js`;
 
         if (cancelled) return;
@@ -51,7 +44,6 @@ export default function PdfViewerWithSidebar({
         console.error("Failed to load PDF", err);
         if (!cancelled) {
           setError("Couldn’t load PDF file.");
-          // Tell parent so it can fall back to iframe
           if (onFatalError) onFatalError(err);
         }
       }
@@ -66,7 +58,7 @@ export default function PdfViewerWithSidebar({
 
   // Render current page (and re-render on resize)
   useEffect(() => {
-    if (!pdfjs || !pdfDoc || !pdfCanvasRef.current || !containerRef?.current) {
+    if (!pdfjs || !pdfDoc || !pdfCanvasRef.current || !mainRef.current) {
       return;
     }
 
@@ -77,10 +69,12 @@ export default function PdfViewerWithSidebar({
         const page = await pdfDoc.getPage(currentPage);
         if (cancelled) return;
 
-        const container = containerRef.current;
+        const container = mainRef.current;
         const rect = container.getBoundingClientRect();
 
         const unscaledViewport = page.getViewport({ scale: 1 });
+
+        // Fit width; height can overflow, but container can scroll if needed
         const scale = rect.width / unscaledViewport.width;
         const viewport = page.getViewport({ scale });
 
@@ -89,6 +83,10 @@ export default function PdfViewerWithSidebar({
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
+
+        // Let CSS control display size; keep drawing at canvas pixel size
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
 
         await page.render({ canvasContext: ctx, viewport }).promise;
       } catch (err) {
@@ -103,38 +101,31 @@ export default function PdfViewerWithSidebar({
     renderPage();
 
     let observer;
-    if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+    if (typeof ResizeObserver !== "undefined" && mainRef.current) {
       observer = new ResizeObserver(() => {
         renderPage();
       });
-      observer.observe(containerRef.current);
+      observer.observe(mainRef.current);
     }
 
     return () => {
       cancelled = true;
       if (observer) observer.disconnect();
     };
-  }, [pdfjs, pdfDoc, currentPage, containerRef, onFatalError]);
+  }, [pdfjs, pdfDoc, currentPage, onFatalError]);
 
-  const handlePageClick = (pageNum) => {
+  function handlePageClick(pageNum) {
     setCurrentPage(pageNum);
-  };
+  }
 
   return (
     <div className="prep-pdf-layout">
-      <div
-        className="prep-viewer__canvas-container"
-        ref={containerRef}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
-      >
-        {/* PDF content canvas */}
-        <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
-
-        {/* Annotation overlay */}
-        {children}
+      <div className="prep-pdf-main" ref={mainRef}>
+        {error ? (
+          <div className="prep-pdf-error">{error}</div>
+        ) : (
+          <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
+        )}
       </div>
 
       <aside className="prep-pdf-sidebar">

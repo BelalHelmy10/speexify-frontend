@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PrepNotes from "./PrepNotes";
+import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
 
 const TOOL_NONE = "none";
 const TOOL_PEN = "pen";
@@ -23,8 +24,9 @@ export default function PrepShell({ resource, viewer }) {
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
-  const [dragState, setDragState] = useState(null); // {kind: "note"|"text", id, offsetX, offsetY}
+  const [dragState, setDragState] = useState(null);
   const [activeTextId, setActiveTextId] = useState(null);
+  const [pdfFallback, setPdfFallback] = useState(false); // if pdf.js fails, fall back to iframe
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -46,9 +48,7 @@ export default function PrepShell({ resource, viewer }) {
     if (el) el.focus();
   }, [activeTextId]);
 
-  // ─────────────────────────────────────────
   // Load annotations from localStorage
-  // ─────────────────────────────────────────
   useEffect(() => {
     if (!storageKey) return;
 
@@ -81,9 +81,7 @@ export default function PrepShell({ resource, viewer }) {
     }
   }, [storageKey]);
 
-  // ─────────────────────────────────────────
-  // Resize canvas to match container
-  // ─────────────────────────────────────────
+  // Resize annotation canvas to match container
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -120,9 +118,7 @@ export default function PrepShell({ resource, viewer }) {
     }
   }, []);
 
-  // ─────────────────────────────────────────
-  // Save annotations
-  // ─────────────────────────────────────────
+  // Save annotations (canvas + notes + text)
   function saveAnnotations(opts = {}) {
     if (!storageKey) return;
     try {
@@ -142,9 +138,7 @@ export default function PrepShell({ resource, viewer }) {
     }
   }
 
-  // ─────────────────────────────────────────
   // Geometry helper
-  // ─────────────────────────────────────────
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -157,9 +151,7 @@ export default function PrepShell({ resource, viewer }) {
     };
   }
 
-  // ─────────────────────────────────────────
   // Drawing (pen / highlighter / eraser)
-  // ─────────────────────────────────────────
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
@@ -239,7 +231,6 @@ export default function PrepShell({ resource, viewer }) {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
     } else if (tool === TOOL_HIGHLIGHTER) {
-      // softer, more transparent highlighter
       ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
       ctx.lineWidth = 18;
       ctx.globalAlpha = 0.3;
@@ -261,9 +252,7 @@ export default function PrepShell({ resource, viewer }) {
     saveAnnotations();
   }
 
-  // ─────────────────────────────────────────
   // Pointer
-  // ─────────────────────────────────────────
   function updatePointer(e) {
     if (tool !== TOOL_POINTER) {
       setPointerPos(null);
@@ -278,9 +267,7 @@ export default function PrepShell({ resource, viewer }) {
     });
   }
 
-  // ─────────────────────────────────────────
   // Sticky notes
-  // ─────────────────────────────────────────
   function handleClickForNote(e) {
     if (tool !== TOOL_NOTE) return;
 
@@ -331,9 +318,7 @@ export default function PrepShell({ resource, viewer }) {
     });
   }
 
-  // ─────────────────────────────────────────
   // Text boxes
-  // ─────────────────────────────────────────
   function createTextBox(e) {
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
@@ -383,9 +368,7 @@ export default function PrepShell({ resource, viewer }) {
     });
   }
 
-  // ─────────────────────────────────────────
   // Clear all
-  // ─────────────────────────────────────────
   function clearCanvasAndNotes() {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -406,9 +389,7 @@ export default function PrepShell({ resource, viewer }) {
     }
   }
 
-  // ─────────────────────────────────────────
   // Mouse handlers
-  // ─────────────────────────────────────────
   function handleMouseDown(e) {
     const target = e.target;
     if (
@@ -418,13 +399,9 @@ export default function PrepShell({ resource, viewer }) {
       return;
     }
 
-    // TEXT TOOL BEHAVIOUR:
-    // - first click (after choosing Text) creates a box
-    // - if a text box is active, a click on empty canvas just exits text mode
     if (tool === TOOL_TEXT) {
       e.preventDefault();
       if (activeTextId) {
-        // finish editing and leave text mode
         setActiveTextId(null);
         setTool(TOOL_NONE);
         return;
@@ -477,9 +454,7 @@ export default function PrepShell({ resource, viewer }) {
     }
   }
 
-  // ─────────────────────────────────────────
-  // UI helpers
-  // ─────────────────────────────────────────
+  // UI helper
   function setToolSafe(nextTool) {
     if (tool === nextTool) {
       setTool(TOOL_NONE);
@@ -491,6 +466,133 @@ export default function PrepShell({ resource, viewer }) {
       }
     }
   }
+
+  // Shared annotation overlay (canvas + notes + text + pointer)
+  function renderAnnotationsOverlay() {
+    return (
+      <>
+        <canvas
+          ref={canvasRef}
+          className={
+            "prep-annotate-canvas" +
+            (tool === TOOL_PEN ||
+            tool === TOOL_HIGHLIGHTER ||
+            tool === TOOL_ERASER
+              ? " prep-annotate-canvas--drawing"
+              : "")
+          }
+        />
+
+        {/* Sticky notes */}
+        {stickyNotes.map((note) => (
+          <div
+            key={note.id}
+            className="prep-sticky-note"
+            style={{
+              left: `${note.x * 100}%`,
+              top: `${note.y * 100}%`,
+            }}
+          >
+            <div
+              className="prep-sticky-note__header"
+              onMouseDown={(e) => startNoteDrag(e, note)}
+            >
+              <button
+                type="button"
+                className="prep-sticky-note__close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteNote(note.id);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <textarea
+              className="prep-sticky-note__textarea"
+              placeholder="Note..."
+              value={note.text}
+              onChange={(e) => updateNoteText(note.id, e.target.value)}
+              onMouseDown={(e) => e.stopPropagation()}
+            />
+          </div>
+        ))}
+
+        {/* Text boxes */}
+        {textBoxes.map((box) => {
+          const isEditing = activeTextId === box.id;
+          return (
+            <div
+              key={box.id}
+              className={
+                "prep-text-box" + (isEditing ? " prep-text-box--editing" : "")
+              }
+              style={{
+                left: `${box.x * 100}%`,
+                top: `${box.y * 100}%`,
+              }}
+            >
+              {isEditing ? (
+                <>
+                  <div
+                    className="prep-text-box__header"
+                    onMouseDown={(e) => startTextDrag(e, box)}
+                  >
+                    <span className="prep-text-box__drag-handle" />
+                    <button
+                      type="button"
+                      className="prep-text-box__close"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTextBox(box.id);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <textarea
+                    data-textbox-id={box.id}
+                    className="prep-text-box__textarea"
+                    style={{ color: box.color }}
+                    placeholder="Type…"
+                    value={box.text}
+                    onChange={(e) => updateTextBoxText(box.id, e.target.value)}
+                    onBlur={() => setActiveTextId(null)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  />
+                </>
+              ) : (
+                <div
+                  className="prep-text-box__label"
+                  style={{ color: box.color }}
+                  onMouseDown={(e) => startTextDrag(e, box)}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setActiveTextId(box.id);
+                  }}
+                >
+                  {box.text}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Pointer arrow */}
+        {tool === TOOL_POINTER && pointerPos && (
+          <div
+            className="prep-pointer"
+            style={{
+              left: `${pointerPos.x}px`,
+              top: `${pointerPos.y}px`,
+            }}
+          />
+        )}
+      </>
+    );
+  }
+
+  const isPdf = viewer?.type === "file" && !pdfFallback;
 
   return (
     <>
@@ -622,7 +724,7 @@ export default function PrepShell({ resource, viewer }) {
                 </span>
               </div>
 
-              {/* Annotation toolbar */}
+              {/* Toolbar */}
               <div className="prep-annotate-toolbar">
                 <button
                   type="button"
@@ -709,149 +811,46 @@ export default function PrepShell({ resource, viewer }) {
               </div>
 
               <div className="prep-viewer__frame-wrapper">
-                <div
-                  className="prep-viewer__canvas-container"
-                  ref={containerRef}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                >
-                  <iframe
-                    src={viewerUrl}
-                    className="prep-viewer__frame"
-                    title={`${resource.title} – ${viewer.label}`}
-                    allow={
-                      viewer.type === "youtube"
-                        ? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        : undefined
-                    }
-                    allowFullScreen
-                  />
-
-                  <canvas
-                    ref={canvasRef}
-                    className={
-                      "prep-annotate-canvas" +
-                      (tool === TOOL_PEN ||
-                      tool === TOOL_HIGHLIGHTER ||
-                      tool === TOOL_ERASER
-                        ? " prep-annotate-canvas--drawing"
-                        : "")
-                    }
-                  />
-
-                  {/* Sticky notes */}
-                  {stickyNotes.map((note) => (
-                    <div
-                      key={note.id}
-                      className="prep-sticky-note"
-                      style={{
-                        left: `${note.x * 100}%`,
-                        top: `${note.y * 100}%`,
-                      }}
-                    >
-                      <div
-                        className="prep-sticky-note__header"
-                        onMouseDown={(e) => startNoteDrag(e, note)}
-                      >
-                        <button
-                          type="button"
-                          className="prep-sticky-note__close"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteNote(note.id);
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                      <textarea
-                        className="prep-sticky-note__textarea"
-                        placeholder="Note..."
-                        value={note.text}
-                        onChange={(e) =>
-                          updateNoteText(note.id, e.target.value)
-                        }
-                        onMouseDown={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                  ))}
-
-                  {/* Text boxes */}
-                  {textBoxes.map((box) => {
-                    const isEditing = activeTextId === box.id;
-                    return (
-                      <div
-                        key={box.id}
-                        className={
-                          "prep-text-box" +
-                          (isEditing ? " prep-text-box--editing" : "")
-                        }
-                        style={{
-                          left: `${box.x * 100}%`,
-                          top: `${box.y * 100}%`,
-                        }}
-                      >
-                        {isEditing ? (
-                          <>
-                            <div
-                              className="prep-text-box__header"
-                              onMouseDown={(e) => startTextDrag(e, box)}
-                            >
-                              <span className="prep-text-box__drag-handle" />
-                              <button
-                                type="button"
-                                className="prep-text-box__close"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteTextBox(box.id);
-                                }}
-                              >
-                                ×
-                              </button>
-                            </div>
-                            <textarea
-                              data-textbox-id={box.id}
-                              className="prep-text-box__textarea"
-                              style={{ color: box.color }}
-                              placeholder="Type…"
-                              value={box.text}
-                              onChange={(e) =>
-                                updateTextBoxText(box.id, e.target.value)
-                              }
-                              onBlur={() => setActiveTextId(null)}
-                              onMouseDown={(e) => e.stopPropagation()}
-                            />
-                          </>
-                        ) : (
-                          <div
-                            className="prep-text-box__label"
-                            style={{ color: box.color }}
-                            onMouseDown={(e) => startTextDrag(e, box)}
-                            onDoubleClick={(e) => {
-                              e.stopPropagation();
-                              setActiveTextId(box.id);
-                            }}
-                          >
-                            {box.text}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {/* Pointer arrow */}
-                  {tool === TOOL_POINTER && pointerPos && (
-                    <div
-                      className="prep-pointer"
-                      style={{
-                        left: `${pointerPos.x}px`,
-                        top: `${pointerPos.y}px`,
-                      }}
+                {isPdf ? (
+                  // PDF + sidebar (pdf.js)
+                  <div
+                    className="prep-viewer__canvas-container"
+                    ref={containerRef}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                  >
+                    <PdfViewerWithSidebar
+                      fileUrl={viewerUrl}
+                      onFatalError={() => setPdfFallback(true)}
                     />
-                  )}
-                </div>
+                    {renderAnnotationsOverlay()}
+                  </div>
+                ) : (
+                  // Fallback: iframe viewer (YouTube, Slides, external or PDF if pdf.js failed)
+                  <div
+                    className="prep-viewer__canvas-container"
+                    ref={containerRef}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                  >
+                    <iframe
+                      src={viewerUrl}
+                      className="prep-viewer__frame"
+                      title={`${resource.title} – ${viewer.label}`}
+                      allow={
+                        viewer.type === "youtube"
+                          ? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          : undefined
+                      }
+                      allowFullScreen
+                    />
+                    {renderAnnotationsOverlay()}
+                  </div>
+                )}
               </div>
             </>
           ) : (
