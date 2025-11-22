@@ -1,7 +1,7 @@
 // app/resources/prep/PrepShell.jsx
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PrepNotes from "./PrepNotes";
 
@@ -23,9 +23,8 @@ export default function PrepShell({ resource, viewer }) {
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
-  const [dragState, setDragState] = useState(null); // {kind:"note"|"text",id,offsetX,offsetY}
+  const [dragState, setDragState] = useState(null); // {kind: "note"|"text", id, offsetX, offsetY}
   const [activeTextId, setActiveTextId] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1); // page picker
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -40,40 +39,16 @@ export default function PrepShell({ resource, viewer }) {
 
   const viewerActive = !!viewerUrl;
 
-  // detect PDFs to show page picker
-  const isPdf = useMemo(() => {
-    if (!viewerUrl) return false;
-    const lower = viewerUrl.toLowerCase();
-    if (lower.endsWith(".pdf")) return true;
-    if (resource.fileName && resource.fileName.toLowerCase().endsWith(".pdf"))
-      return true;
-    return false;
-  }, [viewerUrl, resource.fileName]);
-
-  // base URL without any #page= hash
-  const baseViewerUrl = useMemo(() => {
-    if (!viewerUrl) return "";
-    if (!isPdf) return viewerUrl;
-    const hashIndex = viewerUrl.indexOf("#");
-    return hashIndex >= 0 ? viewerUrl.slice(0, hashIndex) : viewerUrl;
-  }, [viewerUrl, isPdf]);
-
-  // iframe src we actually use
-  const iframeSrc = useMemo(() => {
-    if (!isPdf) return viewerUrl || "";
-    return `${baseViewerUrl}#page=${currentPage}`;
-  }, [isPdf, baseViewerUrl, viewerUrl, currentPage]);
-
-  // Focus newly-created / activated text box
+  // focus newly-activated text box
   useEffect(() => {
     if (!activeTextId) return;
     const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
     if (el) el.focus();
   }, [activeTextId]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Load annotations from localStorage on mount
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // Load annotations from localStorage
+  // ─────────────────────────────────────────
   useEffect(() => {
     if (!storageKey) return;
 
@@ -106,9 +81,9 @@ export default function PrepShell({ resource, viewer }) {
     }
   }, [storageKey]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Canvas resize to match container
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // Resize canvas to match container
+  // ─────────────────────────────────────────
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -145,9 +120,9 @@ export default function PrepShell({ resource, viewer }) {
     }
   }, []);
 
-  // ─────────────────────────────────────────────────────────────
-  // Helper: save current canvas + notes + text to localStorage
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // Save annotations
+  // ─────────────────────────────────────────
   function saveAnnotations(opts = {}) {
     if (!storageKey) return;
     try {
@@ -167,9 +142,9 @@ export default function PrepShell({ resource, viewer }) {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Geometry helpers
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // Geometry helper
+  // ─────────────────────────────────────────
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -182,9 +157,9 @@ export default function PrepShell({ resource, viewer }) {
     };
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
   // Drawing (pen / highlighter / eraser)
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
@@ -264,7 +239,7 @@ export default function PrepShell({ resource, viewer }) {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
     } else if (tool === TOOL_HIGHLIGHTER) {
-      // softer highlighter (transparent)
+      // softer, more transparent highlighter
       ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
       ctx.lineWidth = 18;
       ctx.globalAlpha = 0.3;
@@ -286,9 +261,9 @@ export default function PrepShell({ resource, viewer }) {
     saveAnnotations();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Pointer (arrow)
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // Pointer
+  // ─────────────────────────────────────────
   function updatePointer(e) {
     if (tool !== TOOL_POINTER) {
       setPointerPos(null);
@@ -303,9 +278,9 @@ export default function PrepShell({ resource, viewer }) {
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
   // Sticky notes
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
   function handleClickForNote(e) {
     if (tool !== TOOL_NOTE) return;
 
@@ -356,9 +331,9 @@ export default function PrepShell({ resource, viewer }) {
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Text boxes (writing tool)
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // Text boxes
+  // ─────────────────────────────────────────
   function createTextBox(e) {
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
@@ -408,9 +383,9 @@ export default function PrepShell({ resource, viewer }) {
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
   // Clear all
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
   function clearCanvasAndNotes() {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -431,15 +406,30 @@ export default function PrepShell({ resource, viewer }) {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Combined mouse handlers for container
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // Mouse handlers
+  // ─────────────────────────────────────────
   function handleMouseDown(e) {
+    const target = e.target;
     if (
-      e.target.closest &&
-      (e.target.closest(".prep-sticky-note") ||
-        e.target.closest(".prep-text-box"))
+      target.closest &&
+      (target.closest(".prep-sticky-note") || target.closest(".prep-text-box"))
     ) {
+      return;
+    }
+
+    // TEXT TOOL BEHAVIOUR:
+    // - first click (after choosing Text) creates a box
+    // - if a text box is active, a click on empty canvas just exits text mode
+    if (tool === TOOL_TEXT) {
+      e.preventDefault();
+      if (activeTextId) {
+        // finish editing and leave text mode
+        setActiveTextId(null);
+        setTool(TOOL_NONE);
+        return;
+      }
+      createTextBox(e);
       return;
     }
 
@@ -453,9 +443,6 @@ export default function PrepShell({ resource, viewer }) {
     } else if (tool === TOOL_NOTE) {
       e.preventDefault();
       handleClickForNote(e);
-    } else if (tool === TOOL_TEXT) {
-      e.preventDefault();
-      createTextBox(e);
     }
   }
 
@@ -490,9 +477,9 @@ export default function PrepShell({ resource, viewer }) {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
   // UI helpers
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
   function setToolSafe(nextTool) {
     if (tool === nextTool) {
       setTool(TOOL_NONE);
@@ -635,7 +622,7 @@ export default function PrepShell({ resource, viewer }) {
                 </span>
               </div>
 
-              {/* Annotation toolbar at bottom of viewer */}
+              {/* Annotation toolbar */}
               <div className="prep-annotate-toolbar">
                 <button
                   type="button"
@@ -722,35 +709,6 @@ export default function PrepShell({ resource, viewer }) {
               </div>
 
               <div className="prep-viewer__frame-wrapper">
-                {/* Page picker on right for PDFs */}
-                {isPdf && (
-                  <div className="prep-page-picker">
-                    <button
-                      type="button"
-                      className="prep-page-picker__btn"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    >
-                      ‹
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      value={currentPage}
-                      onChange={(e) =>
-                        setCurrentPage(Math.max(1, Number(e.target.value) || 1))
-                      }
-                      className="prep-page-picker__input"
-                    />
-                    <button
-                      type="button"
-                      className="prep-page-picker__btn"
-                      onClick={() => setCurrentPage((p) => p + 1)}
-                    >
-                      ›
-                    </button>
-                  </div>
-                )}
-
                 <div
                   className="prep-viewer__canvas-container"
                   ref={containerRef}
@@ -760,7 +718,7 @@ export default function PrepShell({ resource, viewer }) {
                   onMouseLeave={handleMouseUp}
                 >
                   <iframe
-                    src={iframeSrc}
+                    src={viewerUrl}
                     className="prep-viewer__frame"
                     title={`${resource.title} – ${viewer.label}`}
                     allow={
@@ -771,7 +729,6 @@ export default function PrepShell({ resource, viewer }) {
                     allowFullScreen
                   />
 
-                  {/* Drawing canvas */}
                   <canvas
                     ref={canvasRef}
                     className={
@@ -821,7 +778,7 @@ export default function PrepShell({ resource, viewer }) {
                     </div>
                   ))}
 
-                  {/* Text boxes (label view + editable on double click) */}
+                  {/* Text boxes */}
                   {textBoxes.map((box) => {
                     const isEditing = activeTextId === box.id;
                     return (
@@ -877,7 +834,7 @@ export default function PrepShell({ resource, viewer }) {
                               setActiveTextId(box.id);
                             }}
                           >
-                            {box.text || "Text"}
+                            {box.text}
                           </div>
                         )}
                       </div>
