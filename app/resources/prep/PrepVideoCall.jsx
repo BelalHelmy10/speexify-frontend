@@ -17,7 +17,7 @@ export default function PrepVideoCall({ roomId }) {
   const [screenOn, setScreenOn] = useState(false);
 
   const [isInitiator, setIsInitiator] = useState(false);
-  const isInitiatorRef = useRef(false); // keep in sync with isInitiator
+  const isInitiatorRef = useRef(false); // <- authoritative flag used in ws handlers
   const [peerJoined, setPeerJoined] = useState(false);
 
   const wsRef = useRef(null);
@@ -56,7 +56,7 @@ export default function PrepVideoCall({ roomId }) {
         state === "disconnected" ||
         state === "closed"
       ) {
-        // could auto-cleanup here if desired
+        // optional: add reconnection logic later
       }
     };
 
@@ -72,6 +72,7 @@ export default function PrepVideoCall({ roomId }) {
         video: true,
         audio: true,
       });
+
       localStreamRef.current = stream;
 
       if (localVideoRef.current) {
@@ -83,7 +84,6 @@ export default function PrepVideoCall({ roomId }) {
         pc.addTrack(track, stream);
       });
 
-      // respect current mic/cam toggles
       toggleTracksEnabled(stream.getAudioTracks(), micOn);
       toggleTracksEnabled(stream.getVideoTracks(), camOn);
 
@@ -126,7 +126,6 @@ export default function PrepVideoCall({ roomId }) {
     setError("");
     setStatus("connecting");
 
-    // Build WebSocket URL pointing to the *backend*
     let wsUrl = "";
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
 
@@ -137,7 +136,6 @@ export default function PrepVideoCall({ roomId }) {
       url.search = "";
       wsUrl = url.toString();
     } else {
-      // Fallback: same origin (only works if frontend & backend share host)
       const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       wsUrl = `${wsProtocol}//${window.location.host}/ws/prep`;
     }
@@ -151,7 +149,7 @@ export default function PrepVideoCall({ roomId }) {
       ws.send(
         JSON.stringify({
           type: "join",
-          roomId, // this will be the sessionId in your classroom URLs
+          roomId, // this is the sessionId for the classroom
         })
       );
     };
@@ -159,6 +157,7 @@ export default function PrepVideoCall({ roomId }) {
     ws.onerror = (ev) => {
       console.error("WebSocket error", ev);
       setError("Connection error.");
+      setStatus("idle");
     };
 
     ws.onclose = () => {
@@ -181,16 +180,16 @@ export default function PrepVideoCall({ roomId }) {
           break;
 
         case "joined": {
-          const initiatorFlag = !!msg.isInitiator;
-          setIsInitiator(initiatorFlag);
-          isInitiatorRef.current = initiatorFlag;
+          const flag = !!msg.isInitiator;
+          setIsInitiator(flag);
+          isInitiatorRef.current = flag; // keep ref in sync
           await startLocalMedia();
           break;
         }
 
         case "peer-joined":
           setPeerJoined(true);
-          // IMPORTANT: use ref, not state, so we don't get a stale value
+          // use ref (immediately updated) instead of async state
           if (isInitiatorRef.current && localStreamRef.current) {
             await createAndSendOffer();
           }
@@ -200,6 +199,7 @@ export default function PrepVideoCall({ roomId }) {
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = null;
           }
+          setPeerJoined(false);
           break;
 
         case "signal":
@@ -260,7 +260,6 @@ export default function PrepVideoCall({ roomId }) {
 
   function cleanupCall() {
     setStatus("idle");
-    setError("");
     setIsInitiator(false);
     isInitiatorRef.current = false;
     setPeerJoined(false);
@@ -374,7 +373,6 @@ export default function PrepVideoCall({ roomId }) {
     }
   }
 
-  // Cleanup when component unmounts
   useEffect(() => {
     return () => {
       leaveCall();
@@ -397,14 +395,14 @@ export default function PrepVideoCall({ roomId }) {
 
       <div className="prep-video__body">
         <div className="prep-video__frame-wrapper">
-          {/* Remote video (main) */}
+          {/* Remote video */}
           <video
             ref={remoteVideoRef}
             className="prep-video__remote"
             autoPlay
             playsInline
           />
-          {/* Local preview (small) */}
+          {/* Local preview */}
           <video
             ref={localVideoRef}
             className="prep-video__local"
