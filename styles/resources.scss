@@ -911,6 +911,69 @@
   color: #6b7280;
 }
 
+/* ───────────────────────────────────────────────────────────── */
+/* Prep Room – page picker                                       */
+/* ───────────────────────────────────────────────────────────── */
+
+.prep-page-picker {
+  position: absolute;
+  top: 50%;
+  right: 1.1rem;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.86);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  z-index: 4;
+}
+
+.prep-page-picker__btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.12s ease, border-color 0.12s ease,
+    transform 0.07s ease;
+}
+
+.prep-page-picker__btn:hover {
+  background: #3b82f6;
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+}
+
+.prep-page-picker__input {
+  width: 32px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.9);
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  text-align: center;
+  outline: none;
+}
+
+.prep-page-picker__input::-webkit-inner-spin-button,
+.prep-page-picker__input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* ────────────────────────────────────────────────────────────────────────── */
 /* PREP ROOM VIEWER BADGE                                                    */
 /* ────────────────────────────────────────────────────────────────────────── */

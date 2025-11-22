@@ -1,10 +1,9 @@
 // app/resources/prep/PrepShell.jsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import PrepNotes from "./PrepNotes";
-import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
 
 const TOOL_NONE = "none";
 const TOOL_PEN = "pen";
@@ -24,28 +23,52 @@ export default function PrepShell({ resource, viewer }) {
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
-  const [dragState, setDragState] = useState(null); // {kind: "note"|"text", id, offsetX, offsetY}
+  const [dragState, setDragState] = useState(null); // {kind:"note"|"text",id,offsetX,offsetY}
   const [activeTextId, setActiveTextId] = useState(null);
-  const [pdfFallback, setPdfFallback] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); // page picker
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
 
   const storageKey = `prep_annotations_${resource._id}`;
 
-  const viewerUrl = viewer?.viewerUrl;
+  const viewerUrl = viewer?.viewerUrl || null;
   const unit = resource.unit;
   const subLevel = unit?.subLevel;
   const level = subLevel?.level;
   const track = level?.track;
 
+  const viewerActive = !!viewerUrl;
+
+  // detect PDFs to show page picker
+  const isPdf = useMemo(() => {
+    if (!viewerUrl) return false;
+    const lower = viewerUrl.toLowerCase();
+    if (lower.endsWith(".pdf")) return true;
+    if (resource.fileName && resource.fileName.toLowerCase().endsWith(".pdf"))
+      return true;
+    return false;
+  }, [viewerUrl, resource.fileName]);
+
+  // base URL without any #page= hash
+  const baseViewerUrl = useMemo(() => {
+    if (!viewerUrl) return "";
+    if (!isPdf) return viewerUrl;
+    const hashIndex = viewerUrl.indexOf("#");
+    return hashIndex >= 0 ? viewerUrl.slice(0, hashIndex) : viewerUrl;
+  }, [viewerUrl, isPdf]);
+
+  // iframe src we actually use
+  const iframeSrc = useMemo(() => {
+    if (!isPdf) return viewerUrl || "";
+    return `${baseViewerUrl}#page=${currentPage}`;
+  }, [isPdf, baseViewerUrl, viewerUrl, currentPage]);
+
   // Focus newly-created / activated text box
   useEffect(() => {
     if (!activeTextId) return;
     const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
-    if (el instanceof HTMLTextAreaElement) {
-      el.focus();
-    }
+    if (el) el.focus();
   }, [activeTextId]);
 
   // ─────────────────────────────────────────────────────────────
@@ -73,7 +96,6 @@ export default function PrepShell({ resource, viewer }) {
           if (!canvas) return;
           const ctx = canvas.getContext("2d");
           if (!ctx) return;
-
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         };
@@ -104,7 +126,6 @@ export default function PrepShell({ resource, viewer }) {
         img.onload = () => {
           const ctx = canvas.getContext("2d");
           if (!ctx) return;
-
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         };
@@ -171,10 +192,7 @@ export default function PrepShell({ resource, viewer }) {
     if (!coords) return;
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
     setIsDrawing(true);
@@ -185,14 +203,14 @@ export default function PrepShell({ resource, viewer }) {
     if (dragState) {
       const coords = getCanvasCoordinates(e);
       if (!coords) return;
-      const { width, x, y } = coords;
+      const { width, height, x, y } = coords;
 
       if (dragState.kind === "note") {
         setStickyNotes((prev) => {
           const updated = prev.map((n) => {
             if (n.id !== dragState.id) return n;
             const nx = (x + dragState.offsetX) / width;
-            const ny = (y + dragState.offsetY) / coords.height;
+            const ny = (y + dragState.offsetY) / height;
             return {
               ...n,
               x: Math.min(0.98, Math.max(0.02, nx)),
@@ -207,7 +225,7 @@ export default function PrepShell({ resource, viewer }) {
           const updated = prev.map((t) => {
             if (t.id !== dragState.id) return t;
             const nx = (x + dragState.offsetX) / width;
-            const ny = (y + dragState.offsetY) / coords.height;
+            const ny = (y + dragState.offsetY) / height;
             return {
               ...t,
               x: Math.min(0.98, Math.max(0.02, nx)),
@@ -235,9 +253,7 @@ export default function PrepShell({ resource, viewer }) {
     if (!coords) return;
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -248,10 +264,10 @@ export default function PrepShell({ resource, viewer }) {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
     } else if (tool === TOOL_HIGHLIGHTER) {
-      // much softer highlighter
-      ctx.strokeStyle = "rgba(250, 224, 120, 0.2)";
+      // softer highlighter (transparent)
+      ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
       ctx.lineWidth = 18;
-      ctx.globalAlpha = 0.2;
+      ctx.globalAlpha = 0.3;
       ctx.globalCompositeOperation = "source-over";
     } else if (tool === TOOL_ERASER) {
       ctx.strokeStyle = "rgba(0,0,0,1)";
@@ -267,7 +283,7 @@ export default function PrepShell({ resource, viewer }) {
   function stopDrawing() {
     if (!isDrawing) return;
     setIsDrawing(false);
-    saveAnnotations(); // save canvas + current notes/text
+    saveAnnotations();
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -308,7 +324,6 @@ export default function PrepShell({ resource, viewer }) {
     setStickyNotes(nextNotes);
     saveAnnotations({ stickyNotes: nextNotes });
 
-    // auto-exit note tool
     setTool(TOOL_NONE);
   }
 
@@ -344,7 +359,6 @@ export default function PrepShell({ resource, viewer }) {
   // ─────────────────────────────────────────────────────────────
   // Text boxes (writing tool)
   // ─────────────────────────────────────────────────────────────
-  // Text boxes (writing tool)
   function createTextBox(e) {
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
@@ -356,13 +370,11 @@ export default function PrepShell({ resource, viewer }) {
       y: y / height,
       text: "",
       color: penColor,
-      editing: true, // <── start in edit mode
     };
 
     const next = [...textBoxes, box];
     setTextBoxes(next);
     setActiveTextId(box.id);
-    setTool(TOOL_NONE); // <── stop creating new boxes on every click
     saveAnnotations({ textBoxes: next });
   }
 
@@ -379,42 +391,7 @@ export default function PrepShell({ resource, viewer }) {
     if (activeTextId === id) setActiveTextId(null);
   }
 
-  function finishTextEdit(id, rawValue) {
-    const value = (rawValue || "").trim();
-
-    // if empty, delete the box
-    if (!value) {
-      deleteTextBox(id);
-      return;
-    }
-
-    setTextBoxes((prev) => {
-      const next = prev.map((t) =>
-        t.id === id ? { ...t, text: value, editing: false } : t
-      );
-      saveAnnotations({ textBoxes: next });
-      return next;
-    });
-
-    setActiveTextId(null);
-  }
-
-  function setTextEditing(id, editing) {
-    setTextBoxes((prev) => {
-      const next = prev.map((t) => (t.id === id ? { ...t, editing } : t));
-      saveAnnotations({ textBoxes: next });
-      return next;
-    });
-
-    if (editing) {
-      setActiveTextId(id);
-    } else if (activeTextId === id) {
-      setActiveTextId(null);
-    }
-  }
-
   function startTextDrag(e, box) {
-    if (box.editing) return; // <── no drag while editing
     e.stopPropagation();
     e.preventDefault();
     const coords = getCanvasCoordinates(e);
@@ -438,9 +415,7 @@ export default function PrepShell({ resource, viewer }) {
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
     setStickyNotes([]);
     setTextBoxes([]);
@@ -460,7 +435,6 @@ export default function PrepShell({ resource, viewer }) {
   // Combined mouse handlers for container
   // ─────────────────────────────────────────────────────────────
   function handleMouseDown(e) {
-    // clicks on notes or text boxes should not start drawing / new elements
     if (
       e.target.closest &&
       (e.target.closest(".prep-sticky-note") ||
@@ -530,9 +504,6 @@ export default function PrepShell({ resource, viewer }) {
       }
     }
   }
-
-  const viewerActive = Boolean(viewerUrl);
-  const isPdfViewer = viewer?.type === "pdf" && !pdfFallback;
 
   return (
     <>
@@ -664,81 +635,208 @@ export default function PrepShell({ resource, viewer }) {
                 </span>
               </div>
 
-              <div className="prep-viewer__frame-wrapper">
-                {isPdfViewer ? (
-                  // ─── PDF (no scrolling, right-hand page strip) ───────────────
-                  <PdfViewerWithSidebar
-                    fileUrl={viewerUrl}
-                    containerRef={containerRef}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onFatalError={() => setPdfFallback(true)} // <── HERE
-                  >
-                    {/* Annotation overlay (same as before, but without iframe) */}
-                    <canvas
-                      ref={canvasRef}
+              {/* Annotation toolbar at bottom of viewer */}
+              <div className="prep-annotate-toolbar">
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_PEN ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_PEN)}
+                >
+                  🖊️ <span>Pen</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_HIGHLIGHTER ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_HIGHLIGHTER)}
+                >
+                  ✨ <span>Highlighter</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_TEXT ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_TEXT)}
+                >
+                  ✍️ <span>Text</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_ERASER ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_ERASER)}
+                >
+                  🧽 <span>Eraser</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_NOTE ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_NOTE)}
+                >
+                  🗒️ <span>Note</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_POINTER ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_POINTER)}
+                >
+                  ➤ <span>Pointer</span>
+                </button>
+                <button
+                  type="button"
+                  className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--danger"
+                  onClick={clearCanvasAndNotes}
+                >
+                  🗑️ <span>Clear all</span>
+                </button>
+
+                <div className="prep-annotate-colors">
+                  {PEN_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
                       className={
-                        "prep-annotate-canvas" +
-                        (tool === TOOL_PEN ||
-                        tool === TOOL_HIGHLIGHTER ||
-                        tool === TOOL_ERASER
-                          ? " prep-annotate-canvas--drawing"
-                          : "")
+                        "prep-annotate-color" +
+                        (penColor === c ? " is-active" : "")
                       }
+                      style={{ backgroundColor: c }}
+                      onClick={() => setPenColor(c)}
                     />
+                  ))}
+                </div>
+              </div>
 
-                    {/* Sticky notes */}
-                    {stickyNotes.map((note) => (
+              <div className="prep-viewer__frame-wrapper">
+                {/* Page picker on right for PDFs */}
+                {isPdf && (
+                  <div className="prep-page-picker">
+                    <button
+                      type="button"
+                      className="prep-page-picker__btn"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    >
+                      ‹
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      value={currentPage}
+                      onChange={(e) =>
+                        setCurrentPage(Math.max(1, Number(e.target.value) || 1))
+                      }
+                      className="prep-page-picker__input"
+                    />
+                    <button
+                      type="button"
+                      className="prep-page-picker__btn"
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                    >
+                      ›
+                    </button>
+                  </div>
+                )}
+
+                <div
+                  className="prep-viewer__canvas-container"
+                  ref={containerRef}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                >
+                  <iframe
+                    src={iframeSrc}
+                    className="prep-viewer__frame"
+                    title={`${resource.title} – ${viewer.label}`}
+                    allow={
+                      viewer.type === "youtube"
+                        ? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        : undefined
+                    }
+                    allowFullScreen
+                  />
+
+                  {/* Drawing canvas */}
+                  <canvas
+                    ref={canvasRef}
+                    className={
+                      "prep-annotate-canvas" +
+                      (tool === TOOL_PEN ||
+                      tool === TOOL_HIGHLIGHTER ||
+                      tool === TOOL_ERASER
+                        ? " prep-annotate-canvas--drawing"
+                        : "")
+                    }
+                  />
+
+                  {/* Sticky notes */}
+                  {stickyNotes.map((note) => (
+                    <div
+                      key={note.id}
+                      className="prep-sticky-note"
+                      style={{
+                        left: `${note.x * 100}%`,
+                        top: `${note.y * 100}%`,
+                      }}
+                    >
                       <div
-                        key={note.id}
-                        className="prep-sticky-note"
-                        style={{
-                          left: `${note.x * 100}%`,
-                          top: `${note.y * 100}%`,
-                        }}
+                        className="prep-sticky-note__header"
+                        onMouseDown={(e) => startNoteDrag(e, note)}
                       >
-                        <div
-                          className="prep-sticky-note__header"
-                          onMouseDown={(e) => startNoteDrag(e, note)}
+                        <button
+                          type="button"
+                          className="prep-sticky-note__close"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNote(note.id);
+                          }}
                         >
-                          <button
-                            type="button"
-                            className="prep-sticky-note__close"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteNote(note.id);
-                            }}
-                          >
-                            ×
-                          </button>
-                        </div>
-                        <textarea
-                          className="prep-sticky-note__textarea"
-                          placeholder="Note..."
-                          value={note.text}
-                          onChange={(e) =>
-                            updateNoteText(note.id, e.target.value)
-                          }
-                          onMouseDown={(e) => e.stopPropagation()}
-                        />
+                          ×
+                        </button>
                       </div>
-                    ))}
+                      <textarea
+                        className="prep-sticky-note__textarea"
+                        placeholder="Note..."
+                        value={note.text}
+                        onChange={(e) =>
+                          updateNoteText(note.id, e.target.value)
+                        }
+                        onMouseDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  ))}
 
-                    {/* Text boxes */}
-                    {textBoxes.map((box) => (
+                  {/* Text boxes (label view + editable on double click) */}
+                  {textBoxes.map((box) => {
+                    const isEditing = activeTextId === box.id;
+                    return (
                       <div
                         key={box.id}
                         className={
                           "prep-text-box" +
-                          (box.editing ? " prep-text-box--editing" : "")
+                          (isEditing ? " prep-text-box--editing" : "")
                         }
                         style={{
                           left: `${box.x * 100}%`,
                           top: `${box.y * 100}%`,
                         }}
                       >
-                        {box.editing ? (
+                        {isEditing ? (
                           <>
                             <div
                               className="prep-text-box__header"
@@ -762,13 +860,10 @@ export default function PrepShell({ resource, viewer }) {
                               style={{ color: box.color }}
                               placeholder="Type…"
                               value={box.text}
-                              onFocus={() => setActiveTextId(box.id)}
                               onChange={(e) =>
                                 updateTextBoxText(box.id, e.target.value)
                               }
-                              onBlur={(e) =>
-                                finishTextEdit(box.id, e.target.value)
-                              }
+                              onBlur={() => setActiveTextId(null)}
                               onMouseDown={(e) => e.stopPropagation()}
                             />
                           </>
@@ -779,65 +874,27 @@ export default function PrepShell({ resource, viewer }) {
                             onMouseDown={(e) => startTextDrag(e, box)}
                             onDoubleClick={(e) => {
                               e.stopPropagation();
-                              setTextEditing(box.id, true);
+                              setActiveTextId(box.id);
                             }}
                           >
-                            {box.text}
+                            {box.text || "Text"}
                           </div>
                         )}
                       </div>
-                    ))}
+                    );
+                  })}
 
-                    {/* Pointer arrow */}
-                    {tool === TOOL_POINTER && pointerPos && (
-                      <div
-                        className="prep-pointer"
-                        style={{
-                          left: `${pointerPos.x}px`,
-                          top: `${pointerPos.y}px`,
-                        }}
-                      />
-                    )}
-                  </PdfViewerWithSidebar>
-                ) : (
-                  // ─── Non-PDF: keep existing iframe-based viewer ──────────────
-                  <div
-                    className="prep-viewer__canvas-container"
-                    ref={containerRef}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                  >
-                    <iframe
-                      src={viewerUrl}
-                      className="prep-viewer__frame"
-                      title={`${resource.title} – ${viewer.label}`}
-                      allow={
-                        viewer.type === "youtube"
-                          ? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          : undefined
-                      }
-                      allowFullScreen
+                  {/* Pointer arrow */}
+                  {tool === TOOL_POINTER && pointerPos && (
+                    <div
+                      className="prep-pointer"
+                      style={{
+                        left: `${pointerPos.x}px`,
+                        top: `${pointerPos.y}px`,
+                      }}
                     />
-                    <canvas
-                      ref={canvasRef}
-                      className={
-                        "prep-annotate-canvas" +
-                        (tool === TOOL_PEN ||
-                        tool === TOOL_HIGHLIGHTER ||
-                        tool === TOOL_ERASER
-                          ? " prep-annotate-canvas--drawing"
-                          : "")
-                      }
-                    />
-
-                    {/* Sticky notes, text boxes, pointer (same as above) */}
-                    {/* You can keep your previous versions here or DRY them up
-                by extracting the overlay into a small component. */}
-                    {/* ... */}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </>
           ) : (
