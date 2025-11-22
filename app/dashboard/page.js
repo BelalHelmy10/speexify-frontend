@@ -108,21 +108,34 @@ function SessionRow({
         <div className="session-item__actions">
           {isUpcoming ? (
             <>
+              {/* NEW: built-in classroom join button */}
+              <Link
+                href={`/classroom/${s.id}`}
+                className={`btn ${
+                  joinable ? "btn--primary btn--glow" : "btn--ghost"
+                }`}
+                title={
+                  joinable
+                    ? "Join Speexify classroom"
+                    : "Classroom opens shortly before start time"
+                }
+              >
+                {joinable ? "Join classroom" : countdown || "Classroom soon"}
+              </Link>
+
+              {/* Optional external meeting link (Zoom/Teams, etc.) */}
               {s.meetingUrl && (
                 <a
                   href={getSafeExternalUrl(s.meetingUrl)}
                   target="_blank"
                   rel="noreferrer"
-                  className={`btn ${
-                    joinable ? "btn--primary btn--glow" : "btn--ghost"
-                  }`}
-                  title={
-                    joinable ? "Join now" : "Join becomes active near start"
-                  }
+                  className="btn btn--ghost"
+                  title="Open external meeting link"
                 >
-                  {joinable ? <>Join session</> : countdown || "Join soon"}
+                  External link
                 </a>
               )}
+
               <button
                 className="btn btn--ghost"
                 onClick={() => onRescheduleClick(s)}
@@ -156,7 +169,6 @@ function SessionRow({
                 </svg>
               </Link>
 
-              {/* Teacher: Give feedback (dedicated page, only if completed & no feedback yet) */}
               {/* Teacher: give OR edit feedback on completed sessions */}
               {isTeacher && s.status === "completed" && (
                 <Link
@@ -184,6 +196,7 @@ function SessionRow({
   );
 }
 
+// --- rest of the file is unchanged ---
 function Modal({ title, children, onClose }) {
   return (
     <div className="modal">

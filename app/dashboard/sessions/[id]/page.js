@@ -1,7 +1,9 @@
+// app/dashboard/sessions/[id]/page.jsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import api from "@/lib/api";
 import "@/styles/session-detail.scss";
 
@@ -206,24 +208,39 @@ export default function SessionDetailPage({ params }) {
             </section>
           </div>
 
+          {/* UPDATED JOIN SECTION */}
           <section className="session-detail-section session-detail-section--wide">
             <div className="session-detail-section__header">
               <h3 className="session-detail-section__title">Join link</h3>
             </div>
-            {meetingUrl ? (
-              <a
-                href={meetingUrl}
-                target="_blank"
-                rel="noreferrer"
+
+            <div className="session-detail-join-actions">
+              {/* Classroom is always available for this session */}
+              <Link
+                href={`/classroom/${session.id}`}
                 className="btn btn--primary session-detail-join-btn"
               >
-                Join session
-              </a>
-            ) : (
-              <p className="session-detail-section__body">
-                No join link set yet.
-              </p>
-            )}
+                Open Speexify classroom
+              </Link>
+
+              {meetingUrl && (
+                <a
+                  href={meetingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn--ghost session-detail-join-btn"
+                >
+                  External meeting link
+                </a>
+              )}
+
+              {!meetingUrl && (
+                <p className="session-detail-section__body">
+                  No external meeting link set; use the Speexify classroom
+                  above.
+                </p>
+              )}
+            </div>
           </section>
 
           <section className="session-detail-section session-detail-section--wide">

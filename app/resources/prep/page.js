@@ -51,9 +51,9 @@ async function getResource(resourceId) {
   return resource || null;
 }
 
-// ───────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 // Helpers to decide how to embed the resource
-// ───────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 
 function normalizeYouTubeEmbed(url) {
   if (!url) return null;
@@ -100,30 +100,6 @@ function normalizeGoogleSlidesEmbed(url) {
     return url.replace("/edit", "/preview");
   }
   return url;
-}
-
-function isYouTubeUrl(url) {
-  if (!url) return false;
-  try {
-    const u = new URL(url);
-    const host = u.hostname.replace("www.", "");
-    return host.includes("youtube.com") || host.includes("youtu.be");
-  } catch {
-    return false;
-  }
-}
-
-function isGoogleSlidesUrl(url) {
-  if (!url) return false;
-  try {
-    const u = new URL(url);
-    const host = u.hostname.replace("www.", "");
-    return (
-      host.includes("docs.google.com") && u.pathname.includes("/presentation")
-    );
-  } catch {
-    return false;
-  }
 }
 
 function getViewerInfo(resource) {
@@ -198,10 +174,12 @@ function getViewerInfo(resource) {
   };
 }
 
-// ───────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 
 export default async function PrepRoomPage({ searchParams }) {
+  // from query string: /resources/prep?resourceId=...&sessionId=...
   const resourceId = searchParams?.resourceId;
+  const sessionId = searchParams?.sessionId ?? null;
 
   if (!resourceId) {
     return (
@@ -254,7 +232,8 @@ export default async function PrepRoomPage({ searchParams }) {
   return (
     <div className="resources-page">
       <div className="resources-page__inner prep-page">
-        <PrepShell resource={resource} viewer={viewer} />
+        {/* Pass sessionId so PrepShell (and PrepVideoCall) can use it as the room key */}
+        <PrepShell resource={resource} viewer={viewer} sessionId={sessionId} />
       </div>
     </div>
   );

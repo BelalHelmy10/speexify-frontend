@@ -17,7 +17,7 @@ const TOOL_TEXT = "text";
 
 const PEN_COLORS = ["#f9fafb", "#fbbf24", "#60a5fa", "#f97316", "#22c55e"];
 
-export default function PrepShell({ resource, viewer }) {
+export default function PrepShell({ resource, viewer, sessionId }) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -31,6 +31,9 @@ export default function PrepShell({ resource, viewer }) {
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+
+  // WebRTC room id: per-session if provided, otherwise per-resource
+  const roomId = sessionId || `resource-${resource._id}`;
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -701,7 +704,8 @@ export default function PrepShell({ resource, viewer }) {
             )}
           </div>
 
-          <PrepVideoCall resourceId={resource._id} />
+          {/* WebRTC call – uses per-session room if available */}
+          <PrepVideoCall resourceId={roomId} />
 
           <PrepNotes resourceId={resource._id} />
         </aside>
