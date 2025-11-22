@@ -9,7 +9,8 @@ const STUN_SERVERS = [
 ];
 
 export default function PrepVideoCall({ resourceId }) {
-  const [status, setStatus] = useState("idle"); // idle | connecting | in-call
+  // idle | connecting | waiting | in-call
+  const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
 
   const [micOn, setMicOn] = useState(true);
@@ -30,6 +31,12 @@ export default function PrepVideoCall({ resourceId }) {
   // ─────────────────────────────────────────────────────────────
   // Helpers for WebRTC
   // ─────────────────────────────────────────────────────────────
+  function toggleTracksEnabled(tracks, enabled) {
+    tracks.forEach((t) => {
+      t.enabled = enabled;
+    });
+  }
+
   function createPeerConnection() {
     if (pcRef.current) return pcRef.current;
 
@@ -50,12 +57,12 @@ export default function PrepVideoCall({ resourceId }) {
 
     pc.onconnectionstatechange = () => {
       const state = pc.connectionState;
-      if (
-        state === "failed" ||
-        state === "disconnected" ||
-        state === "closed"
-      ) {
-        // We could try reconnection here later
+      if (state === "connected") {
+        setStatus("in-call");
+        setPeerJoined(true);
+      } else if (state === "failed" || state === "disconnected") {
+        // We could try reconnection later; for now just log
+        console.warn("Peer connection state:", state);
       }
     };
 
@@ -73,6 +80,7 @@ export default function PrepVideoCall({ resourceId }) {
       });
       localStreamRef.current = stream;
 
+      // Show local preview
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
@@ -91,14 +99,9 @@ export default function PrepVideoCall({ resourceId }) {
     } catch (err) {
       console.error("Failed to get user media", err);
       setError("Could not access camera/microphone.");
+      setStatus("idle");
       throw err;
     }
-  }
-
-  function toggleTracksEnabled(tracks, enabled) {
-    tracks.forEach((t) => {
-      t.enabled = enabled;
-    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -116,156 +119,25 @@ export default function PrepVideoCall({ resourceId }) {
     );
   }
 
-  async function startCall() {
-    if (!resourceId) {
-      setError("Missing resourceId.");
-      return;
-    }
-    if (status !== "idle") return;
-
-    setError("");
-    setStatus("connecting");
-
-    async function startCall() {
-      if (!resourceId) {
-        setError("Missing resourceId.");
-        return;
-      }
-      if (status !== "idle") return;
-
-      setError("");
-      setStatus("connecting");
-
-      // Build WebSocket URL pointing to the backend, not the Next.js frontend
-      let wsUrl = "";
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-      if (apiBase) {
-        const url = new URL(apiBase);
-        url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-        url.pathname = "/ws/prep";
-        url.search = "";
-        wsUrl = url.toString();
-      } else {
-        // Fallback: same-origin (only works if frontend and backend share host)
-        const wsProtocol =
-          window.location.protocol === "https:" ? "wss:" : "ws:";
-        wsUrl = `${wsProtocol}//${window.location.host}/ws/prep`;
-      }
-
-      console.log("[PrepVideoCall] connecting to", wsUrl);
-
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        ws.send(
-          JSON.stringify({
-            type: "join",
-            roomId: resourceId,
-          })
-        );
-      };
-
-      ws.onerror = (ev) => {
-        console.error("WebSocket error", ev);
-        setError("Connection error.");
-      };
-
-      ws.onclose = () => {
-        cleanupCall();
-      };
-
-      ws.onmessage = async (event) => {
-        // … keep the rest of your existing onmessage handler exactly as we wrote before …
-      };
-    }
-
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          type: "join",
-          roomId: resourceId,
-        })
-      );
-    };
-
-    ws.onerror = (ev) => {
-      console.error("WebSocket error", ev);
-      setError("Connection error.");
-    };
-
-    ws.onclose = () => {
-      cleanupCall();
-    };
-
-    ws.onmessage = async (event) => {
-      let msg;
-      try {
-        msg = JSON.parse(event.data);
-      } catch {
-        return;
-      }
-
-      if (!msg || !msg.type) return;
-
-      switch (msg.type) {
-        case "room-full":
-          setError("This prep room already has two participants.");
-          setStatus("idle");
-          break;
-
-        case "joined":
-          setIsInitiator(!!msg.isInitiator);
-          // Start camera/mic immediately
-          await startLocalMedia();
-          // If we are initiator and peer already in, we’ll send offer
-          break;
-
-        case "peer-joined":
-          setPeerJoined(true);
-          // If we’re the initiator and we already have local media → create offer
-          if (isInitiator && localStreamRef.current) {
-            await createAndSendOffer();
-          }
-          break;
-
-        case "peer-left":
-          // remote disconnected
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = null;
-          }
-          break;
-
-        case "signal":
-          await handleSignalMessage(msg);
-          break;
-
-        default:
-          break;
-      }
-    };
-  }
-
   async function handleSignalMessage(msg) {
     const { signalType, data } = msg;
     const pc = createPeerConnection();
 
     if (signalType === "offer") {
-      // ensure we have local media added before setting remote description
+      // Ensure we have local media before answering
       if (!localStreamRef.current) {
         await startLocalMedia();
       }
-      await pc.setRemoteDescription(new RTCSessionDescription(data));
+      await pc.setRemoteDescription(
+        new RTCPeerConnection.prototype.remoteDescription.constructor(data)
+      );
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       sendSignal("answer", pc.localDescription);
-      setStatus("in-call");
     } else if (signalType === "answer") {
-      await pc.setRemoteDescription(new RTCSessionDescription(data));
-      setStatus("in-call");
+      await pc.setRemoteDescription(
+        new RTCPeerConnection.prototype.remoteDescription.constructor(data)
+      );
     } else if (signalType === "candidate") {
       try {
         await pc.addIceCandidate(new RTCIceCandidate(data));
@@ -283,7 +155,112 @@ export default function PrepVideoCall({ resourceId }) {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     sendSignal("offer", pc.localDescription);
-    setStatus("in-call");
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Start / leave / cleanup
+  // ─────────────────────────────────────────────────────────────
+  async function startCall() {
+    if (!resourceId) {
+      setError("Missing resourceId.");
+      return;
+    }
+    if (status !== "idle") return;
+
+    setError("");
+    setStatus("connecting");
+
+    // Start local media immediately so we see ourselves while waiting
+    try {
+      await startLocalMedia();
+    } catch {
+      return;
+    }
+
+    // Build WebSocket URL pointing to backend (NEXT_PUBLIC_API_BASE_URL)
+    let wsUrl = "";
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+    if (apiBase) {
+      const url = new URL(apiBase);
+      url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+      url.pathname = "/ws/prep";
+      url.search = "";
+      wsUrl = url.toString();
+    } else {
+      // Fallback: same-origin (only works if frontend and backend share host)
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      wsUrl = `${wsProtocol}//${window.location.host}/ws/prep`;
+    }
+
+    console.log("[PrepVideoCall] connecting to", wsUrl);
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setStatus("waiting");
+      ws.send(
+        JSON.stringify({
+          type: "join",
+          roomId: resourceId,
+        })
+      );
+    };
+
+    ws.onerror = (ev) => {
+      console.error("WebSocket error", ev);
+      setError("Connection error.");
+      setStatus("idle");
+    };
+
+    ws.onclose = () => {
+      cleanupCall();
+    };
+
+    ws.onmessage = async (event) => {
+      let msg;
+      try {
+        msg = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      if (!msg || !msg.type) return;
+
+      switch (msg.type) {
+        case "room-full":
+          setError("This prep room already has two participants.");
+          setStatus("idle");
+          break;
+
+        case "joined":
+          // Server tells us whether we're first or second in the room
+          setIsInitiator(!!msg.isInitiator);
+          setPeerJoined(false);
+          break;
+
+        case "peer-joined":
+          setPeerJoined(true);
+          // If we're the initiator and we already have local media, create offer
+          if (isInitiator && localStreamRef.current) {
+            await createAndSendOffer();
+          }
+          break;
+
+        case "peer-left":
+          setPeerJoined(false);
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = null;
+          }
+          break;
+
+        case "signal":
+          await handleSignalMessage(msg);
+          break;
+
+        default:
+          break;
+      }
+    };
   }
 
   function leaveCall() {
@@ -355,7 +332,7 @@ export default function PrepVideoCall({ resourceId }) {
       const pc = pcRef.current;
       if (!pc) return;
 
-      // Replace the outgoing video track
+      // Replace outgoing video track
       const sender = pc
         .getSenders()
         .find((s) => s.track && s.track.kind === "video");
@@ -386,7 +363,6 @@ export default function PrepVideoCall({ resourceId }) {
       screenStreamRef.current = null;
     }
 
-    // Restore camera video track
     const pc = pcRef.current;
     const cameraStream = localStreamRef.current;
     if (pc && cameraStream) {
@@ -423,6 +399,9 @@ export default function PrepVideoCall({ resourceId }) {
 
   const inCall = status === "in-call";
 
+  // ─────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────
   return (
     <section className="prep-video">
       <header className="prep-video__header">
@@ -477,7 +456,7 @@ export default function PrepVideoCall({ resourceId }) {
             type="button"
             className="prep-video__icon-btn"
             onClick={toggleMic}
-            disabled={!inCall && status === "idle"}
+            disabled={status === "idle"}
           >
             {micOn ? "🔊 Mic on" : "🔇 Mic off"}
           </button>
@@ -486,7 +465,7 @@ export default function PrepVideoCall({ resourceId }) {
             type="button"
             className="prep-video__icon-btn"
             onClick={toggleCamera}
-            disabled={!inCall && status === "idle"}
+            disabled={status === "idle"}
           >
             {camOn ? "📷 Cam on" : "📷 Cam off"}
           </button>
@@ -502,11 +481,16 @@ export default function PrepVideoCall({ resourceId }) {
         </div>
 
         {status === "connecting" && (
-          <p className="prep-video__hint">Connecting…</p>
+          <p className="prep-video__hint">Connecting to server…</p>
+        )}
+        {status === "waiting" && (
+          <p className="prep-video__hint">
+            Waiting for another person to join this prep room…
+          </p>
         )}
         {inCall && !peerJoined && (
           <p className="prep-video__hint">
-            Waiting for the other person to join this prep room…
+            In call. Waiting for the other side to connect…
           </p>
         )}
       </div>
