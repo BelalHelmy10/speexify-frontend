@@ -3,17 +3,25 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
-  const mainRef = useRef(null);
+export default function PdfViewerWithSidebar({
+  fileUrl,
+  containerRef,
+  onMouseDown,
+  onMouseMove,
+  onMouseUp,
+  children, // overlay (annotation canvas + notes/text/pointer)
+  onFatalError,
+  currentPage,
+  onChangePage,
+}) {
   const pdfCanvasRef = useRef(null);
 
   const [pdfjs, setPdfjs] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
   const [numPages, setNumPages] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
 
-  // Load pdf.js + the PDF document
+  // Load pdf.js + PDF document
   useEffect(() => {
     let cancelled = false;
 
@@ -21,13 +29,13 @@ export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
       if (!fileUrl) return;
 
       setError(null);
-      setNumPages(0);
       setPdfDoc(null);
+      setNumPages(0);
 
       try {
         const pdfjsModule = await import("pdfjs-dist/build/pdf");
 
-        // pdf.js worker from CDN (must be a plain string URL)
+        // pdf.js worker – must be a URL string
         pdfjsModule.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsModule.version}/pdf.worker.min.js`;
 
         if (cancelled) return;
@@ -39,7 +47,11 @@ export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
 
         setPdfDoc(doc);
         setNumPages(doc.numPages || 0);
-        setCurrentPage(1);
+
+        // Reset to page 1 on new file
+        if (onChangePage) {
+          onChangePage(1);
+        }
       } catch (err) {
         console.error("Failed to load PDF", err);
         if (!cancelled) {
@@ -54,11 +66,11 @@ export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
     return () => {
       cancelled = true;
     };
-  }, [fileUrl, onFatalError]);
+  }, [fileUrl, onChangePage, onFatalError]);
 
-  // Render current page (and re-render on resize)
+  // Render the current page (and re-render on resize)
   useEffect(() => {
-    if (!pdfjs || !pdfDoc || !pdfCanvasRef.current || !mainRef.current) {
+    if (!pdfjs || !pdfDoc || !pdfCanvasRef.current || !containerRef?.current) {
       return;
     }
 
@@ -66,15 +78,15 @@ export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
 
     async function renderPage() {
       try {
-        const page = await pdfDoc.getPage(currentPage);
+        const pageNumber = currentPage || 1;
+        const page = await pdfDoc.getPage(pageNumber);
         if (cancelled) return;
 
-        const container = mainRef.current;
-        const rect = container.getBoundingClientRect();
+        const containerEl = containerRef.current;
+        const rect = containerEl.getBoundingClientRect();
 
+        // Fit page width to container width
         const unscaledViewport = page.getViewport({ scale: 1 });
-
-        // Fit width; height can overflow, but container can scroll if needed
         const scale = rect.width / unscaledViewport.width;
         const viewport = page.getViewport({ scale });
 
@@ -83,10 +95,6 @@ export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
-
-        // Let CSS control display size; keep drawing at canvas pixel size
-        canvas.style.width = `${viewport.width}px`;
-        canvas.style.height = `${viewport.height}px`;
 
         await page.render({ canvasContext: ctx, viewport }).promise;
       } catch (err) {
@@ -101,31 +109,38 @@ export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
     renderPage();
 
     let observer;
-    if (typeof ResizeObserver !== "undefined" && mainRef.current) {
+    if (typeof ResizeObserver !== "undefined" && containerRef.current) {
       observer = new ResizeObserver(() => {
         renderPage();
       });
-      observer.observe(mainRef.current);
+      observer.observe(containerRef.current);
     }
 
     return () => {
       cancelled = true;
       if (observer) observer.disconnect();
     };
-  }, [pdfjs, pdfDoc, currentPage, onFatalError]);
+  }, [pdfjs, pdfDoc, currentPage, containerRef, onFatalError]);
 
-  function handlePageClick(pageNum) {
-    setCurrentPage(pageNum);
-  }
+  const handlePageClick = (pageNum) => {
+    if (onChangePage) onChangePage(pageNum);
+  };
 
   return (
     <div className="prep-pdf-layout">
-      <div className="prep-pdf-main" ref={mainRef}>
-        {error ? (
-          <div className="prep-pdf-error">{error}</div>
-        ) : (
-          <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
-        )}
+      <div
+        className="prep-viewer__canvas-container"
+        ref={containerRef}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+      >
+        {/* PDF base canvas */}
+        <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
+
+        {/* Annotation overlay (canvas + notes + text + pointer) */}
+        {children}
       </div>
 
       <aside className="prep-pdf-sidebar">
