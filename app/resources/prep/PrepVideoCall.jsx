@@ -16,9 +16,8 @@ export default function PrepVideoCall({ resourceId }) {
   const [camOn, setCamOn] = useState(true);
   const [screenOn, setScreenOn] = useState(false);
 
-  const [peerJoined, setPeerJoined] = useState(false);
   const [isInitiator, setIsInitiator] = useState(false);
-  const isInitiatorRef = useRef(false);
+  const [peerJoined, setPeerJoined] = useState(false);
 
   const wsRef = useRef(null);
   const pcRef = useRef(null);
@@ -29,14 +28,8 @@ export default function PrepVideoCall({ resourceId }) {
   const remoteVideoRef = useRef(null);
 
   // ─────────────────────────────────────────────────────────────
-  // Utility helpers
+  // Helpers for WebRTC
   // ─────────────────────────────────────────────────────────────
-  function toggleTracksEnabled(tracks, enabled) {
-    tracks.forEach((t) => {
-      t.enabled = enabled;
-    });
-  }
-
   function createPeerConnection() {
     if (pcRef.current) return pcRef.current;
 
@@ -57,13 +50,12 @@ export default function PrepVideoCall({ resourceId }) {
 
     pc.onconnectionstatechange = () => {
       const state = pc.connectionState;
-      console.log("[PrepVideoCall] PC state:", state);
       if (
         state === "failed" ||
         state === "disconnected" ||
         state === "closed"
       ) {
-        // We leave cleanup to explicit leave / ws close for now
+        // Optionally: auto-cleanup later
       }
     };
 
@@ -79,14 +71,12 @@ export default function PrepVideoCall({ resourceId }) {
         video: true,
         audio: true,
       });
-
       localStreamRef.current = stream;
 
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
 
-      // Add tracks to peer connection
       const pc = createPeerConnection();
       stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
@@ -97,30 +87,21 @@ export default function PrepVideoCall({ resourceId }) {
 
       return stream;
     } catch (err) {
-      console.error("[PrepVideoCall] Failed to get user media", err);
+      console.error("Failed to get user media", err);
       setError("Could not access camera/microphone.");
-      setStatus("idle");
       throw err;
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // WebSocket signaling helpers
-  // ─────────────────────────────────────────────────────────────
-  function buildWsUrl() {
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (apiBase) {
-      const url = new URL(apiBase);
-      url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-      url.pathname = "/ws/prep";
-      url.search = "";
-      return url.toString();
-    } else {
-      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      return `${wsProtocol}//${window.location.host}/ws/prep`;
-    }
+  function toggleTracksEnabled(tracks, enabled) {
+    tracks.forEach((t) => {
+      t.enabled = enabled;
+    });
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // WebSocket signaling
+  // ─────────────────────────────────────────────────────────────
   function sendSignal(signalType, data) {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
@@ -131,6 +112,98 @@ export default function PrepVideoCall({ resourceId }) {
         data,
       })
     );
+  }
+
+  async function startCall() {
+    if (!resourceId) {
+      setError("Missing resourceId.");
+      return;
+    }
+    if (status !== "idle") return;
+
+    setError("");
+    setStatus("connecting");
+
+    // Build WebSocket URL pointing to the *backend* (NEXT_PUBLIC_API_URL)
+    let wsUrl = "";
+    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+
+    if (apiBase) {
+      const url = new URL(apiBase);
+      url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+      url.pathname = "/ws/prep";
+      url.search = "";
+      wsUrl = url.toString();
+    } else {
+      // Fallback: same origin (only works if frontend & backend are same host)
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      wsUrl = `${wsProtocol}//${window.location.host}/ws/prep`;
+    }
+
+    console.log("[PrepVideoCall] connecting to", wsUrl);
+
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      ws.send(
+        JSON.stringify({
+          type: "join",
+          roomId: resourceId,
+        })
+      );
+    };
+
+    ws.onerror = (ev) => {
+      console.error("WebSocket error", ev);
+      setError("Connection error.");
+    };
+
+    ws.onclose = () => {
+      cleanupCall();
+    };
+
+    ws.onmessage = async (event) => {
+      let msg;
+      try {
+        msg = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      if (!msg || !msg.type) return;
+
+      switch (msg.type) {
+        case "room-full":
+          setError("This prep room already has two participants.");
+          setStatus("idle");
+          break;
+
+        case "joined":
+          setIsInitiator(!!msg.isInitiator);
+          await startLocalMedia();
+          break;
+
+        case "peer-joined":
+          setPeerJoined(true);
+          if (isInitiator && localStreamRef.current) {
+            await createAndSendOffer();
+          }
+          break;
+
+        case "peer-left":
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = null;
+          }
+          break;
+
+        case "signal":
+          await handleSignalMessage(msg);
+          break;
+
+        default:
+          break;
+      }
+    };
   }
 
   async function handleSignalMessage(msg) {
@@ -153,7 +226,7 @@ export default function PrepVideoCall({ resourceId }) {
       try {
         await pc.addIceCandidate(new RTCIceCandidate(data));
       } catch (err) {
-        console.warn("[PrepVideoCall] Error adding ICE candidate", err);
+        console.warn("Error adding ICE candidate", err);
       }
     }
   }
@@ -169,110 +242,6 @@ export default function PrepVideoCall({ resourceId }) {
     setStatus("in-call");
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Start / leave call
-  // ─────────────────────────────────────────────────────────────
-  async function startCall() {
-    if (!resourceId) {
-      setError("Missing resourceId.");
-      return;
-    }
-    if (status !== "idle") return;
-
-    setError("");
-    setStatus("connecting");
-
-    const wsUrl = buildWsUrl();
-    console.log("[PrepVideoCall] connecting to", wsUrl);
-
-    let ws;
-    try {
-      ws = new WebSocket(wsUrl);
-    } catch (err) {
-      console.error("[PrepVideoCall] WebSocket constructor error", err);
-      setError("Connection error.");
-      setStatus("idle");
-      return;
-    }
-
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log("[PrepVideoCall] WebSocket open");
-      ws.send(
-        JSON.stringify({
-          type: "join",
-          roomId: resourceId,
-        })
-      );
-    };
-
-    ws.onerror = (ev) => {
-      console.error("[PrepVideoCall] WebSocket error", ev);
-      setError("Connection error.");
-    };
-
-    ws.onclose = (ev) => {
-      console.log("[PrepVideoCall] WebSocket closed", ev.code, ev.reason);
-      cleanupCall();
-    };
-
-    ws.onmessage = async (event) => {
-      let msg;
-      try {
-        msg = JSON.parse(event.data);
-      } catch {
-        return;
-      }
-
-      if (!msg || !msg.type) return;
-
-      switch (msg.type) {
-        case "room-full":
-          setError("This prep room already has two participants.");
-          setStatus("idle");
-          break;
-
-        case "joined": {
-          const initiator = !!msg.isInitiator;
-          isInitiatorRef.current = initiator;
-          setIsInitiator(initiator);
-
-          console.log(
-            "[PrepVideoCall] joined room as",
-            initiator ? "initiator" : "peer"
-          );
-
-          await startLocalMedia();
-          break;
-        }
-
-        case "peer-joined":
-          console.log("[PrepVideoCall] peer joined");
-          setPeerJoined(true);
-          if (isInitiatorRef.current && localStreamRef.current) {
-            await createAndSendOffer();
-          }
-          break;
-
-        case "peer-left":
-          console.log("[PrepVideoCall] peer left");
-          setPeerJoined(false);
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = null;
-          }
-          break;
-
-        case "signal":
-          await handleSignalMessage(msg);
-          break;
-
-        default:
-          break;
-      }
-    };
-  }
-
   function leaveCall() {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -286,7 +255,6 @@ export default function PrepVideoCall({ resourceId }) {
   function cleanupCall() {
     setStatus("idle");
     setIsInitiator(false);
-    isInitiatorRef.current = false;
     setPeerJoined(false);
     setScreenOn(false);
 
@@ -314,7 +282,7 @@ export default function PrepVideoCall({ resourceId }) {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Controls: mic / camera / screen
+  // Controls: mic, camera, screen share
   // ─────────────────────────────────────────────────────────────
   function toggleMic() {
     const next = !micOn;
@@ -360,7 +328,7 @@ export default function PrepVideoCall({ resourceId }) {
         stopScreenShare();
       };
     } catch (err) {
-      console.error("[PrepVideoCall] Screen share failed", err);
+      console.error("Screen share failed", err);
       setError("Could not start screen sharing.");
     }
   }
@@ -398,7 +366,6 @@ export default function PrepVideoCall({ resourceId }) {
     }
   }
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       leaveCall();
@@ -421,14 +388,12 @@ export default function PrepVideoCall({ resourceId }) {
 
       <div className="prep-video__body">
         <div className="prep-video__frame-wrapper">
-          {/* Remote video (main) */}
           <video
             ref={remoteVideoRef}
             className="prep-video__remote"
             autoPlay
             playsInline
           />
-          {/* Local preview (small) */}
           <video
             ref={localVideoRef}
             className="prep-video__local"
@@ -461,7 +426,7 @@ export default function PrepVideoCall({ resourceId }) {
             type="button"
             className="prep-video__icon-btn"
             onClick={toggleMic}
-            disabled={status === "idle"}
+            disabled={!inCall && status === "idle"}
           >
             {micOn ? "🔊 Mic on" : "🔇 Mic off"}
           </button>
@@ -470,7 +435,7 @@ export default function PrepVideoCall({ resourceId }) {
             type="button"
             className="prep-video__icon-btn"
             onClick={toggleCamera}
-            disabled={status === "idle"}
+            disabled={!inCall && status === "idle"}
           >
             {camOn ? "📷 Cam on" : "📷 Cam off"}
           </button>
