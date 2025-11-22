@@ -126,10 +126,61 @@ export default function PrepVideoCall({ resourceId }) {
     setError("");
     setStatus("connecting");
 
-    const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const wsUrl = `${wsProtocol}://${window.location.host}/ws/prep`;
+    async function startCall() {
+      if (!resourceId) {
+        setError("Missing resourceId.");
+        return;
+      }
+      if (status !== "idle") return;
 
-    const ws = new WebSocket(wsUrl);
+      setError("");
+      setStatus("connecting");
+
+      // Build WebSocket URL pointing to the backend, not the Next.js frontend
+      let wsUrl = "";
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+      if (apiBase) {
+        const url = new URL(apiBase);
+        url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+        url.pathname = "/ws/prep";
+        url.search = "";
+        wsUrl = url.toString();
+      } else {
+        // Fallback: same-origin (only works if frontend and backend share host)
+        const wsProtocol =
+          window.location.protocol === "https:" ? "wss:" : "ws:";
+        wsUrl = `${wsProtocol}//${window.location.host}/ws/prep`;
+      }
+
+      console.log("[PrepVideoCall] connecting to", wsUrl);
+
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        ws.send(
+          JSON.stringify({
+            type: "join",
+            roomId: resourceId,
+          })
+        );
+      };
+
+      ws.onerror = (ev) => {
+        console.error("WebSocket error", ev);
+        setError("Connection error.");
+      };
+
+      ws.onclose = () => {
+        cleanupCall();
+      };
+
+      ws.onmessage = async (event) => {
+        // … keep the rest of your existing onmessage handler exactly as we wrote before …
+      };
+    }
+
     wsRef.current = ws;
 
     ws.onopen = () => {
