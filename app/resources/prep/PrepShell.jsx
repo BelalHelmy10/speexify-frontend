@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PrepNotes from "./PrepNotes";
 import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
+import PrepVideoCall from "./PrepVideoCall";
 
 const TOOL_NONE = "none";
 const TOOL_PEN = "pen";
@@ -699,6 +700,8 @@ export default function PrepShell({ resource, viewer }) {
               </a>
             )}
           </div>
+
+          <PrepVideoCall resourceId={resource._id} />
 
           <PrepNotes resourceId={resource._id} />
         </aside>
