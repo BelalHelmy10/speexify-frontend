@@ -1512,12 +1512,15 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  align-items: center; // center frame + controls
 }
-
 .prep-video__frame-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  max-width: 720px; // limit how wide it can get on desktop
+  margin: 0 auto; // center it in the card
+  aspect-ratio: 16 / 9; // more “screen-like” ratio
+  max-height: 60vh; // never taller than 60% of viewport
   border-radius: 16px;
   overflow: hidden;
   background: #020617;
@@ -1546,10 +1549,8 @@
 }
 
 .prep-video__controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  align-items: center;
+  width: 100%;
+  max-width: 720px; // match the video width
 }
 
 .prep-video__icon-btn {
