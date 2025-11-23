@@ -3,10 +3,59 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const STUN_SERVERS = [
+/**
+ * Build ICE server list:
+ * - Always include Google STUN as a fallback
+ * - If Xirsys env vars are set, add their STUN/TURN servers as well
+ *
+ * Env vars (set in .env.local and Vercel):
+ *   NEXT_PUBLIC_ICE_URLS        => comma-separated list from Xirsys (stun:...,turn:...,turns:...)
+ *   NEXT_PUBLIC_ICE_USERNAME    => Xirsys username
+ *   NEXT_PUBLIC_ICE_CREDENTIAL  => Xirsys credential
+ */
+const BASE_STUN = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
 ];
+
+function buildIceServers() {
+  const urlsEnv = process.env.NEXT_PUBLIC_ICE_URLS || "";
+  const username = process.env.NEXT_PUBLIC_ICE_USERNAME || "";
+  const credential = process.env.NEXT_PUBLIC_ICE_CREDENTIAL || "";
+
+  if (!urlsEnv) {
+    // No Xirsys config – just Google STUN
+    return BASE_STUN;
+  }
+
+  const allUrls = urlsEnv
+    .split(",")
+    .map((u) => u.trim())
+    .filter(Boolean);
+
+  const stunUrls = allUrls.filter((u) => u.startsWith("stun:"));
+  const turnUrls = allUrls.filter(
+    (u) => u.startsWith("turn:") || u.startsWith("turns:")
+  );
+
+  const iceServers = [...BASE_STUN];
+
+  if (stunUrls.length) {
+    iceServers.push({ urls: stunUrls });
+  }
+
+  if (turnUrls.length && username && credential) {
+    iceServers.push({
+      urls: turnUrls,
+      username,
+      credential,
+    });
+  }
+
+  return iceServers;
+}
+
+const ICE_SERVERS = buildIceServers();
 
 export default function PrepVideoCall({ roomId }) {
   const [status, setStatus] = useState("idle"); // idle | connecting | in-call
@@ -17,7 +66,7 @@ export default function PrepVideoCall({ roomId }) {
   const [screenOn, setScreenOn] = useState(false);
 
   const [isInitiator, setIsInitiator] = useState(false);
-  const isInitiatorRef = useRef(false); // <- authoritative flag used in ws handlers
+  const isInitiatorRef = useRef(false); // authoritative flag used in ws handlers
   const [peerJoined, setPeerJoined] = useState(false);
 
   const wsRef = useRef(null);
@@ -34,7 +83,9 @@ export default function PrepVideoCall({ roomId }) {
   function createPeerConnection() {
     if (pcRef.current) return pcRef.current;
 
-    const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
+    console.log("[PrepVideoCall] creating RTCPeerConnection with", ICE_SERVERS);
+
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -51,12 +102,13 @@ export default function PrepVideoCall({ roomId }) {
 
     pc.onconnectionstatechange = () => {
       const state = pc.connectionState;
+      console.log("[PrepVideoCall] connection state:", state);
       if (
         state === "failed" ||
         state === "disconnected" ||
         state === "closed"
       ) {
-        // optional: add reconnection logic later
+        // optional: reconnection logic later
       }
     };
 
