@@ -189,8 +189,8 @@ export default function PrepVideoCall({ roomId }) {
 
         case "peer-joined":
           setPeerJoined(true);
-          // use ref (immediately updated) instead of async state
-          if (isInitiatorRef.current && localStreamRef.current) {
+          // initiator creates the offer; createAndSendOffer will start media if needed
+          if (isInitiatorRef.current) {
             await createAndSendOffer();
           }
           break;
