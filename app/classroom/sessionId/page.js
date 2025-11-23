@@ -3,155 +3,130 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import api from "@/lib/api";
 import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
+import api from "@/lib/api";
 
 export default function ClassroomPage({ params }) {
   const { sessionId } = params;
 
   const [session, setSession] = useState(null);
-  const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"
+  const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error" | "not-found"
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!sessionId) return;
-
     let cancelled = false;
 
     async function load() {
+      if (!sessionId) return;
       try {
         setStatus("loading");
         setError("");
 
-        // Same pattern as your dashboard/session-detail page,
-        // but hitting the same endpoint:
-        const { data } = await api.get(`/sessions/${sessionId}`, {
-          params: { t: Date.now() },
-        });
-
+        const { data } = await api.get(`/sessions/${sessionId}`);
         if (cancelled) return;
 
-        const s = data?.session || data || null;
-        if (!s) {
-          setError("Session not found.");
-          setStatus("error");
+        if (!data || !data.session) {
+          setStatus("not-found");
           return;
         }
 
-        setSession(s);
+        setSession(data.session);
         setStatus("ok");
       } catch (err) {
-        console.error("[classroom] Failed to load session", err);
         if (cancelled) return;
 
-        setError(
-          err?.response?.data?.error ||
-            "We couldn’t load this classroom. Please try again."
-        );
-        setStatus("error");
+        // 404 from backend → treat as not found
+        if (err?.response?.status === 404) {
+          setStatus("not-found");
+        } else {
+          console.error("Failed to load classroom session", err);
+          setError(
+            err?.response?.data?.error ||
+              "Failed to load this classroom session."
+          );
+          setStatus("error");
+        }
       }
     }
 
     load();
-
     return () => {
       cancelled = true;
     };
   }, [sessionId]);
 
   // ─────────────────────────────────────
-  // LOADING STATE
+  // STATES
   // ─────────────────────────────────────
+
   if (status === "loading") {
     return (
-      <div className="resources-page">
-        <div className="resources-page__inner prep-page">
-          <div className="prep-empty-card">
-            <h1 className="prep-empty-card__title">Loading classroom…</h1>
-            <p className="prep-empty-card__text">
-              We’re fetching the latest details for this session.
-            </p>
-          </div>
+      <div className="classroom-page classroom-page--state">
+        <div className="container-narrow">
+          <h1>Opening classroom…</h1>
+          <p>We’re loading the session for this room.</p>
         </div>
       </div>
     );
   }
 
-  // ─────────────────────────────────────
-  // ERROR / NOT FOUND
-  // ─────────────────────────────────────
-  if (status === "error" || !session) {
+  if (status === "not-found") {
     return (
-      <div className="resources-page">
-        <div className="resources-page__inner prep-page">
-          <div className="prep-empty-card">
-            <h1 className="prep-empty-card__title">Session not found</h1>
-            <p className="prep-empty-card__text">
-              Unable to load this classroom.
-            </p>
-            <Link
-              href="/dashboard"
-              className="resources-button resources-button--primary"
-            >
-              ← Back to dashboard
-            </Link>
-          </div>
+      <div className="classroom-page classroom-page--state">
+        <div className="container-narrow">
+          <h1>Session not found</h1>
+          <p>Unable to load this classroom.</p>
+          <Link href="/dashboard" className="btn btn--primary">
+            Back to dashboard
+          </Link>
         </div>
       </div>
     );
   }
 
-  // ─────────────────────────────────────
-  // NORMAL STATE
-  // ─────────────────────────────────────
-  const { title } = session;
+  if (status === "error") {
+    return (
+      <div className="classroom-page classroom-page--state">
+        <div className="container-narrow">
+          <h1>Something went wrong</h1>
+          <p>{error}</p>
+          <Link href="/dashboard" className="btn btn--ghost">
+            Back to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // At this point we have a valid session
+  const title = session?.title || `Classroom #${sessionId}`;
 
   return (
-    <div className="resources-page">
-      <div className="resources-page__inner prep-page">
-        {/* Simple header / breadcrumb */}
-        <nav className="unit-breadcrumbs prep-breadcrumbs">
-          <Link href="/dashboard" className="unit-breadcrumbs__link">
-            Dashboard
-          </Link>
-          <span className="unit-breadcrumbs__separator">/</span>
-          <span className="unit-breadcrumbs__crumb prep-breadcrumbs__current">
-            {title || "Classroom"}
-          </span>
-        </nav>
+    <div className="classroom-page">
+      <div className="classroom-page__inner container-narrow">
+        <header className="classroom-page__header">
+          <div>
+            <h1 className="classroom-page__title">{title}</h1>
+            <p className="classroom-page__subtitle">
+              This is your private room for this session. Both teacher and
+              learner join the same video room (session #{sessionId}).
+            </p>
+          </div>
+          <div className="classroom-page__header-actions">
+            <Link href="/dashboard" className="btn btn--ghost">
+              Back to dashboard
+            </Link>
+            <Link
+              href={`/dashboard/sessions/${sessionId}`}
+              className="btn btn--ghost"
+            >
+              View session details
+            </Link>
+          </div>
+        </header>
 
-        <div className="prep-layout">
-          <aside className="prep-info-card">
-            <div className="prep-info-card__header">
-              <h1 className="prep-info-card__title">
-                {title || "Live classroom"}
-              </h1>
-              <p className="prep-info-card__description">
-                This is your private room for this session. Both teacher and
-                learner see the same video room (session #{sessionId}).
-              </p>
-            </div>
-
-            <div className="prep-info-card__actions">
-              <Link
-                href="/dashboard"
-                className="resources-button resources-button--ghost"
-              >
-                Back to dashboard
-              </Link>
-              <Link
-                href={`/dashboard/sessions/${sessionId}`}
-                className="resources-button resources-button--ghost"
-              >
-                View session details
-              </Link>
-            </div>
-          </aside>
-
-          <section className="prep-viewer">
-            {/* Just the video call for now. 
-               WebRTC room id = sessionId, so teacher & learner
-               who hit the same /classroom/[id] URL share the call. */}
+        <div className="classroom-page__layout">
+          <section className="classroom-page__video">
             <PrepVideoCall roomId={sessionId} />
           </section>
         </div>
