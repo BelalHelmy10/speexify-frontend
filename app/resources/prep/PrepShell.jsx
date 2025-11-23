@@ -705,7 +705,7 @@ export default function PrepShell({ resource, viewer, sessionId }) {
           </div>
 
           {/* WebRTC call – uses per-session room if available */}
-          <PrepVideoCall resourceId={roomId} />
+          <PrepVideoCall roomId={roomId} />
 
           <PrepNotes resourceId={resource._id} />
         </aside>
