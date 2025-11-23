@@ -51,10 +51,7 @@ async function getResource(resourceId) {
   return resource || null;
 }
 
-// ─────────────────────────────────────────────────────────────
 // Helpers to decide how to embed the resource
-// ─────────────────────────────────────────────────────────────
-
 function normalizeYouTubeEmbed(url) {
   if (!url) return null;
 
@@ -62,12 +59,10 @@ function normalizeYouTubeEmbed(url) {
     const u = new URL(url);
     let videoId = null;
 
-    // 1) youtu.be/<id>
     if (u.hostname.includes("youtu.be")) {
       videoId = u.pathname.replace("/", "");
     }
 
-    // 2) youtube.com/watch?v=<id>
     if (
       u.hostname.includes("youtube.com") ||
       u.hostname.includes("m.youtube.com")
@@ -76,13 +71,11 @@ function normalizeYouTubeEmbed(url) {
         videoId = u.searchParams.get("v");
       }
 
-      // 3) youtube.com/embed/<id>
       if (u.pathname.startsWith("/embed/")) {
         return url; // already embed-friendly
       }
     }
 
-    // If we extracted a video ID
     if (videoId) {
       return `https://www.youtube.com/embed/${videoId}`;
     }
@@ -94,7 +87,6 @@ function normalizeYouTubeEmbed(url) {
 }
 
 function normalizeGoogleSlidesEmbed(url) {
-  // Convert /edit to /preview if present
   if (!url) return url;
   if (url.includes("/edit")) {
     return url.replace("/edit", "/preview");
@@ -108,7 +100,6 @@ function getViewerInfo(resource) {
   const isPdfUrl = (url) =>
     typeof url === "string" && url.toLowerCase().endsWith(".pdf");
 
-  // Prioritize type-specific URLs first
   if (resource.youtubeUrl) {
     const viewerUrl = normalizeYouTubeEmbed(resource.youtubeUrl);
     return {
@@ -129,7 +120,6 @@ function getViewerInfo(resource) {
     };
   }
 
-  // PDF via externalUrl or fileUrl
   if (resource.externalUrl && isPdfUrl(resource.externalUrl)) {
     return {
       type: "pdf",
@@ -177,9 +167,8 @@ function getViewerInfo(resource) {
 // ─────────────────────────────────────────────────────────────
 
 export default async function PrepRoomPage({ searchParams }) {
-  // from query string: /resources/prep?resourceId=...&sessionId=...
+  // from query string: /resources/prep?resourceId=...
   const resourceId = searchParams?.resourceId;
-  const sessionId = searchParams?.sessionId ?? null;
 
   if (!resourceId) {
     return (
@@ -232,8 +221,8 @@ export default async function PrepRoomPage({ searchParams }) {
   return (
     <div className="resources-page">
       <div className="resources-page__inner prep-page">
-        {/* Pass sessionId so PrepShell (and PrepVideoCall) can use it as the room key */}
-        <PrepShell resource={resource} viewer={viewer} sessionId={sessionId} />
+        {/* No video call here anymore – just the prep shell */}
+        <PrepShell resource={resource} viewer={viewer} />
       </div>
     </div>
   );

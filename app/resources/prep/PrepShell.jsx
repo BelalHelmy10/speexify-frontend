@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PrepNotes from "./PrepNotes";
 import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
-import PrepVideoCall from "./PrepVideoCall";
+// ❌ removed: import PrepVideoCall from "./PrepVideoCall";
 
 const TOOL_NONE = "none";
 const TOOL_PEN = "pen";
@@ -17,7 +17,7 @@ const TOOL_TEXT = "text";
 
 const PEN_COLORS = ["#f9fafb", "#fbbf24", "#60a5fa", "#f97316", "#22c55e"];
 
-export default function PrepShell({ resource, viewer, sessionId }) {
+export default function PrepShell({ resource, viewer }) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -32,8 +32,8 @@ export default function PrepShell({ resource, viewer, sessionId }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
 
-  // WebRTC room id: per-session if provided, otherwise per-resource
-  const roomId = sessionId || `resource-${resource._id}`;
+  // ❌ removed: WebRTC room id – no video in this view anymore
+  // const roomId = sessionId || `resource-${resource._id}`;
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -638,7 +638,7 @@ export default function PrepShell({ resource, viewer, sessionId }) {
       </nav>
 
       <div className={"prep-layout" + (focusMode ? " prep-layout--focus" : "")}>
-        {/* LEFT: info + notes */}
+        {/* LEFT: info + notes (no video here now) */}
         <aside className="prep-info-card">
           <div className="prep-info-card__header">
             <h1 className="prep-info-card__title">{resource.title}</h1>
@@ -704,8 +704,7 @@ export default function PrepShell({ resource, viewer, sessionId }) {
             )}
           </div>
 
-          {/* WebRTC call – uses per-session room if available */}
-          <PrepVideoCall roomId={roomId} />
+          {/* ❌ removed <PrepVideoCall roomId={roomId} /> */}
 
           <PrepNotes resourceId={resource._id} />
         </aside>
