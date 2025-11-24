@@ -4,30 +4,19 @@ import ResourcesPicker from "./ResourcesPicker";
 
 export const dynamic = "force-dynamic";
 
-// We keep the old hierarchy so the current ResourcesPicker keeps working,
-// and we ALSO expose books + unit.book so we can upgrade the UI to:
-// Track → Book → Unit → Resource.
+// Track → Book → Book level → Unit → Resource
 const RESOURCES_PICKER_QUERY = `
 *[_type == "track"] | order(order asc) {
   _id,
   name,
   code,
   order,
-
-  // NEW: all books/series for this track
   "books": *[_type == "book" && references(^._id)] | order(order asc) {
     _id,
     title,
     code,
-    order,
-    // these fields are optional – they’ll just be undefined if you
-    // didn’t add them on the book schema
-    cecrMin,
-    cecrMax,
-    description,
+    order
   },
-
-  // EXISTING: full level → subLevel → unit → resource tree
   "levels": *[_type == "level" && references(^._id)] | order(order asc) {
     _id,
     name,
@@ -44,18 +33,18 @@ const RESOURCES_PICKER_QUERY = `
         "slug": slug.current,
         order,
         summary,
-
-        // NEW: dereference the book linked on the Unit
-        "book": book->{
+        "bookLevel": bookLevel->{
           _id,
           title,
           code,
           order,
-          cecrMin,
-          cecrMax,
-          description
+          "book": book->{
+            _id,
+            title,
+            code,
+            order
+          }
         },
-
         "resources": *[_type == "resource" && references(^._id)] | order(order asc) {
           _id,
           title,
@@ -93,15 +82,16 @@ export default async function ResourcesPage() {
             Prepare your lessons in seconds
           </h1>
           <p className="resources-hero__subtitle">
-            Pick a track, then a book, then a unit and resource. We’ll surface
-            the right PDFs, slides, and videos for your next session.
+            Pick a track, then a book/series, then the book level, unit, and
+            resource. We’ll surface the right PDFs, slides, and videos for your
+            next session.
           </p>
         </header>
 
         {tracks.length === 0 ? (
           <p className="resources-empty">
-            No tracks found yet. Add Track / Level / Sublevel / Unit / Book /
-            Resource documents in Sanity.
+            No tracks found yet. Add Track / Book / Book level / Unit / Resource
+            documents in Sanity.
           </p>
         ) : (
           <ResourcesPicker tracks={tracks} />

@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 
-// Helper: choose the best URL for a resource
+// Choose the best URL for a resource
 function getPrimaryUrl(resource) {
   if (!resource) return null;
   if (resource.googleSlidesUrl) return resource.googleSlidesUrl;
@@ -13,92 +13,127 @@ function getPrimaryUrl(resource) {
   return null;
 }
 
-// Find a unit (and its context) by ID inside the tracks tree
+// Find a unit (and its context) by ID inside the tree
 function findUnitWithContext(tracks, unitId) {
   for (const track of tracks || []) {
     for (const level of track.levels || []) {
       for (const subLevel of level.subLevels || []) {
         for (const unit of subLevel.units || []) {
           if (unit._id === unitId) {
-            return { track, level, subLevel, unit };
+            const bookLevel = unit.bookLevel || null;
+            const book = bookLevel?.book || null;
+            return { track, level, subLevel, unit, bookLevel, book };
           }
         }
       }
     }
   }
-  return null;
+  return {
+    track: null,
+    level: null,
+    subLevel: null,
+    unit: null,
+    bookLevel: null,
+    book: null,
+  };
 }
 
 export default function ResourcesPicker({ tracks }) {
-  // Build options:
-  // - trackOptions: [{ value, label }]
-  // - bookOptionsByTrackId: { [trackId]: [{ value, label, code }] }
-  // - unitOptionsByBookId: { [bookId]: [{ value, label, summary, resources, ... }] }
-  const { trackOptions, bookOptionsByTrackId, unitOptionsByBookId } =
-    useMemo(() => {
-      const trackOptions = [];
-      const bookOptionsByTrackId = {};
-      const unitOptionsByBookId = {};
+  const {
+    trackOptions,
+    booksByTrackId,
+    bookLevelsByBookId,
+    unitOptionsByBookLevelId,
+  } = useMemo(() => {
+    const trackOptions = [];
+    const booksByTrackId = {};
+    const bookLevelsByBookId = {};
+    const unitOptionsByBookLevelId = {};
 
-      (tracks || []).forEach((track) => {
-        // Track option
-        trackOptions.push({
-          value: track._id,
-          label: track.name,
-        });
+    (tracks || []).forEach((track) => {
+      // Track dropdown option
+      trackOptions.push({
+        value: track._id,
+        label: `${track.order}) ${track.name}`,
+      });
 
-        // Books for this track
-        const books = track.books || [];
-        bookOptionsByTrackId[track._id] = books.map((book) => ({
+      // Books for this track
+      const booksForTrack = [];
+      (track.books || []).forEach((book) => {
+        booksForTrack.push({
           value: book._id,
           label: book.title,
-          code: book.code,
-        }));
+        });
+      });
+      booksByTrackId[track._id] = booksForTrack;
 
-        // Units grouped by book
-        (track.levels || []).forEach((level) => {
-          (level.subLevels || []).forEach((subLevel) => {
-            (subLevel.units || []).forEach((unit) => {
-              const book = unit.book;
-              if (!book || !book._id) return;
+      // Book levels + units (we get them by walking levels/subLevels/units)
+      (track.levels || []).forEach((level) => {
+        (level.subLevels || []).forEach((subLevel) => {
+          (subLevel.units || []).forEach((unit) => {
+            const bookLevel = unit.bookLevel;
+            const book = bookLevel?.book;
+            if (!book || !book._id || !bookLevel || !bookLevel._id) return;
 
-              if (!unitOptionsByBookId[book._id]) {
-                unitOptionsByBookId[book._id] = [];
-              }
-
-              unitOptionsByBookId[book._id].push({
-                value: unit._id,
-                label: `${subLevel.code ? subLevel.code + " · " : ""}${
-                  unit.title
-                }`,
-                subLevelTitle: subLevel.title,
-                summary: unit.summary,
-                resources: unit.resources || [],
+            // Ensure book → bookLevels mapping exists
+            if (!bookLevelsByBookId[book._id]) {
+              bookLevelsByBookId[book._id] = [];
+            }
+            if (
+              !bookLevelsByBookId[book._id].some(
+                (b) => b.value === bookLevel._id
+              )
+            ) {
+              bookLevelsByBookId[book._id].push({
+                value: bookLevel._id,
+                label: bookLevel.title,
+                code: bookLevel.code,
               });
+            }
+
+            // Units per bookLevel
+            if (!unitOptionsByBookLevelId[bookLevel._id]) {
+              unitOptionsByBookLevelId[bookLevel._id] = [];
+            }
+            unitOptionsByBookLevelId[bookLevel._id].push({
+              value: unit._id,
+              label: unit.title,
+              subLevelTitle: subLevel.title,
+              summary: unit.summary,
+              resources: unit.resources || [],
             });
           });
         });
       });
+    });
 
-      return { trackOptions, bookOptionsByTrackId, unitOptionsByBookId };
-    }, [tracks]);
+    return {
+      trackOptions,
+      booksByTrackId,
+      bookLevelsByBookId,
+      unitOptionsByBookLevelId,
+    };
+  }, [tracks]);
 
-  // ─────────────────────────────────────────
-  // Selection state
-  // ─────────────────────────────────────────
+  // ── Selection state ────────────────────────────────────────
   const [selectedTrackId, setSelectedTrackId] = useState(
     trackOptions[0]?.value || ""
   );
   const [selectedBookId, setSelectedBookId] = useState("");
+  const [selectedBookLevelId, setSelectedBookLevelId] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState("");
   const [selectedResourceId, setSelectedResourceId] = useState("");
 
   const bookOptions = selectedTrackId
-    ? bookOptionsByTrackId[selectedTrackId] || []
+    ? booksByTrackId[selectedTrackId] || []
     : [];
 
-  const unitOptions = selectedBookId
-    ? unitOptionsByBookId[selectedBookId] || []
+  const bookLevelOptions = selectedBookId
+    ? bookLevelsByBookId[selectedBookId] || []
+    : [];
+
+  const unitOptions = selectedBookLevelId
+    ? unitOptionsByBookLevelId[selectedBookLevelId] || []
     : [];
 
   // Keep track selection valid when options change
@@ -113,14 +148,15 @@ export default function ResourcesPicker({ tracks }) {
     });
   }, [trackOptions]);
 
-  // When track changes, update book selection
+  // Track → Book
   useEffect(() => {
     const booksForTrack = selectedTrackId
-      ? bookOptionsByTrackId[selectedTrackId] || []
+      ? booksByTrackId[selectedTrackId] || []
       : [];
 
     if (!booksForTrack.length) {
       setSelectedBookId("");
+      setSelectedBookLevelId("");
       setSelectedUnitId("");
       setSelectedResourceId("");
       return;
@@ -130,9 +166,28 @@ export default function ResourcesPicker({ tracks }) {
       const stillExists = booksForTrack.some((b) => b.value === prev);
       return stillExists ? prev : booksForTrack[0].value;
     });
-  }, [selectedTrackId, bookOptionsByTrackId]);
+  }, [selectedTrackId, booksByTrackId]);
 
-  // When book changes, update unit selection
+  // Book → Book level
+  useEffect(() => {
+    const levelsForBook = selectedBookId
+      ? bookLevelsByBookId[selectedBookId] || []
+      : [];
+
+    if (!levelsForBook.length) {
+      setSelectedBookLevelId("");
+      setSelectedUnitId("");
+      setSelectedResourceId("");
+      return;
+    }
+
+    setSelectedBookLevelId((prev) => {
+      const stillExists = levelsForBook.some((l) => l.value === prev);
+      return stillExists ? prev : levelsForBook[0].value;
+    });
+  }, [selectedBookId, bookLevelsByBookId]);
+
+  // Book level → Unit
   useEffect(() => {
     if (!unitOptions.length) {
       setSelectedUnitId("");
@@ -145,15 +200,22 @@ export default function ResourcesPicker({ tracks }) {
     });
   }, [unitOptions]);
 
-  // Get unit + context (track/level/subLevel) from tree
-  const { unit, level, track, subLevel } = useMemo(() => {
-    if (!selectedUnitId)
-      return { unit: null, level: null, track: null, subLevel: null };
-    const ctx = findUnitWithContext(tracks, selectedUnitId);
-    return ctx || { unit: null, level: null, track: null, subLevel: null };
-  }, [tracks, selectedUnitId]);
+  // Get unit + context for preview
+  const { track, level, subLevel, unit, bookLevel, book } = useMemo(
+    () =>
+      selectedUnitId
+        ? findUnitWithContext(tracks, selectedUnitId)
+        : {
+            track: null,
+            level: null,
+            subLevel: null,
+            unit: null,
+            bookLevel: null,
+            book: null,
+          },
+    [tracks, selectedUnitId]
+  );
 
-  const book = unit?.book || null;
   const resources = unit?.resources || [];
 
   // Keep resource selection valid when resources change
@@ -173,9 +235,7 @@ export default function ResourcesPicker({ tracks }) {
 
   const resourceUrl = getPrimaryUrl(selectedResource);
 
-  // ─────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────
+  // ── UI ─────────────────────────────────────────────────────
   return (
     <div className="resources-layout">
       {/* LEFT: picker card */}
@@ -183,8 +243,8 @@ export default function ResourcesPicker({ tracks }) {
         <div className="resources-picker__header">
           <h2 className="resources-picker__title">Quick resource finder</h2>
           <p className="resources-picker__subtitle">
-            Pick a track, then a book/series, then the exact unit and resource
-            you want to use.
+            Pick a track, then a book/series, then the book level, unit, and
+            resource you want to use.
           </p>
         </div>
 
@@ -229,7 +289,31 @@ export default function ResourcesPicker({ tracks }) {
               </select>
             </div>
             <p className="resources-picker__hint">
-              Then choose the coursebook / series you’re using.
+              Then choose the coursebook / series you&apos;re using.
+            </p>
+          </div>
+
+          {/* Book level select */}
+          <div className="resources-picker__field">
+            <label className="resources-picker__label">Book level</label>
+            <div className="resources-picker__control">
+              <select
+                value={selectedBookLevelId}
+                onChange={(e) => setSelectedBookLevelId(e.target.value)}
+                disabled={!bookLevelOptions.length}
+              >
+                {!bookLevelOptions.length && (
+                  <option value="">No levels for this book yet</option>
+                )}
+                {bookLevelOptions.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="resources-picker__hint">
+              Then pick the specific level (e.g. Starter, A2, B2).
             </p>
           </div>
 
@@ -242,12 +326,12 @@ export default function ResourcesPicker({ tracks }) {
                 onChange={(e) => setSelectedUnitId(e.target.value)}
                 disabled={!unitOptions.length}
               >
-                {unitOptions.length === 0 && (
-                  <option value="">No units for this book yet</option>
+                {!unitOptions.length && (
+                  <option value="">No units for this level yet</option>
                 )}
-                {unitOptions.map((unitOpt) => (
-                  <option key={unitOpt.value} value={unitOpt.value}>
-                    {unitOpt.label}
+                {unitOptions.map((u) => (
+                  <option key={u.value} value={u.value}>
+                    {u.label}
                   </option>
                 ))}
               </select>
@@ -287,10 +371,10 @@ export default function ResourcesPicker({ tracks }) {
       <section className="resources-preview">
         {!selectedUnitId ? (
           <div className="resources-preview__card resources-preview__card--empty resources-preview__card--animated">
-            <h3>Choose a track, book & unit</h3>
+            <h3>Choose a track, book, level & unit</h3>
             <p>
-              Once you pick a book and unit, we’ll show you the resources
-              available here.
+              Once you pick a book level and unit, we&apos;ll show you the
+              resources available here.
             </p>
           </div>
         ) : !resources.length ? (
@@ -312,6 +396,12 @@ export default function ResourcesPicker({ tracks }) {
                 <>
                   <span>•</span>
                   <span>{book.title}</span>
+                </>
+              )}
+              {bookLevel && (
+                <>
+                  <span>•</span>
+                  <span>{bookLevel.title}</span>
                 </>
               )}
               {subLevel && (
