@@ -1,147 +1,78 @@
 // app/classroom/[sessionId]/page.jsx
-"use client";
+import { sanityClient } from "@/lib/sanity";
+import ClassroomPageClient from "./ClassroomPageClient";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import api from "@/lib/api";
-import PrepVideoCall from "../../resources/prep/PrepVideoCall";
+export const dynamic = "force-dynamic";
 
-export default function ClassroomPage({ params }) {
-  const sessionId = params.sessionId;
-
-  const [session, setSession] = useState(null);
-  const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!sessionId) return;
-
-    let cancelled = false;
-
-    async function load() {
-      try {
-        setStatus("loading");
-        setError("");
-        const { data } = await api.get(`/sessions/${sessionId}`);
-        if (cancelled) return;
-        setSession(data?.session || null);
-        setStatus("ok");
-      } catch (err) {
-        console.error("Failed to load session for classroom", err);
-        if (cancelled) return;
-        setError(
-          err?.response?.data?.error || "Failed to load session for classroom"
-        );
-        setStatus("error");
+// Same query shape as app/resources/page.jsx
+const CLASSROOM_RESOURCES_QUERY = `
+*[_type == "track"] | order(order asc) {
+  _id,
+  name,
+  code,
+  order,
+  "books": *[_type == "book" && references(^._id)] | order(order asc) {
+    _id,
+    title,
+    code,
+    order
+  },
+  "levels": *[_type == "level" && references(^._id)] | order(order asc) {
+    _id,
+    name,
+    code,
+    order,
+    "subLevels": *[_type == "subLevel" && references(^._id)] | order(order asc) {
+      _id,
+      title,
+      code,
+      order,
+      "units": *[_type == "unit" && references(^._id)] | order(order asc) {
+        _id,
+        title,
+        "slug": slug.current,
+        order,
+        summary,
+        "bookLevel": bookLevel->{
+          _id,
+          title,
+          code,
+          order,
+          "book": book->{
+            _id,
+            title,
+            code,
+            order
+          }
+        },
+        "resources": *[_type == "resource" && references(^._id)] | order(order asc) {
+          _id,
+          title,
+          description,
+          kind,
+          cecrLevel,
+          tags,
+          sourceType,
+          "fileUrl": file.asset->url,
+          "fileName": file.asset->originalFilename,
+          externalUrl,
+          googleSlidesUrl,
+          youtubeUrl
+        }
       }
     }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId]);
-
-  // ─────────────────────────
-  // LOADING STATE
-  // ─────────────────────────
-  if (status === "loading") {
-    return (
-      <div className="resources-page">
-        <div className="resources-page__inner prep-page">
-          <div className="prep-empty-card">
-            <h1 className="prep-empty-card__title">Loading classroom…</h1>
-            <p className="prep-empty-card__text">
-              We’re fetching the latest details for this session.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
   }
+}
+`;
 
-  // ─────────────────────────
-  // ERROR / NOT FOUND STATE
-  // ─────────────────────────
-  if (status === "error" || !session) {
-    return (
-      <div className="resources-page">
-        <div className="resources-page__inner prep-page">
-          <div className="prep-empty-card">
-            <h1 className="prep-empty-card__title">Session not found</h1>
-            <p className="prep-empty-card__text">
-              {error ||
-                `Unable to load this classroom (session #${sessionId}).`}
-            </p>
-            <Link
-              href="/dashboard"
-              className="resources-button resources-button--primary"
-            >
-              ← Back to dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+async function getResourcesTree() {
+  const data = await sanityClient.fetch(CLASSROOM_RESOURCES_QUERY);
+  return data || [];
+}
 
-  // ─────────────────────────
-  // NORMAL STATE
-  // ─────────────────────────
-  return (
-    <div className="resources-page">
-      <div className="resources-page__inner prep-page">
-        {/* NEW: use the same 2-column layout as PrepShell */}
-        <div className="prep-layout">
-          {/* LEFT: info + live video */}
-          <aside className="prep-info-card">
-            <div className="prep-info-card__header">
-              <h1 className="prep-info-card__title">
-                {session.title || "Classroom"}
-              </h1>
-              <p className="prep-info-card__description">
-                This is your private room for this session. Both teacher and
-                learner join the same video room (session #{sessionId}).
-              </p>
-            </div>
+export default async function ClassroomPage({ params }) {
+  const sessionId = params.sessionId;
+  const tracks = await getResourcesTree();
 
-            <div className="prep-info-card__actions">
-              <Link
-                href="/dashboard"
-                className="resources-button resources-button--ghost"
-              >
-                ← Back to dashboard
-              </Link>
-              <Link
-                href={`/dashboard/sessions/${session.id}`}
-                className="resources-button resources-button--ghost"
-              >
-                View session details
-              </Link>
-            </div>
-
-            {/* WebRTC call – uses sessionId as room id */}
-            <PrepVideoCall roomId={String(sessionId)} />
-          </aside>
-
-          {/* RIGHT: lesson materials area (for now a placeholder) */}
-          <section className="prep-viewer">
-            <div className="prep-viewer__placeholder">
-              <h2>Lesson materials</h2>
-              <p>
-                This right-hand side will become the shared prep room:
-                resources, PDFs, slides, and annotations synced between teacher
-                and learner.
-              </p>
-              <p>
-                The video room is already live on the left. Next step is wiring
-                this classroom to your Resources picker and PrepShell so you can
-                choose a resource and see it here.
-              </p>
-            </div>
-          </section>
-        </div>
-      </div>
-    </div>
-  );
+  return <ClassroomPageClient sessionId={String(sessionId)} tracks={tracks} />;
 }
