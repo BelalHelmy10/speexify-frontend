@@ -9,7 +9,7 @@ import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 // helpers we’ll define in a moment
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
-  const isTeacher = session.role === "teacher" || session.isTeacher;
+  const isTeacher = !!session.isTeacher;
 
   // Build the same index you use on /resources,
   // but here we only need to be able to go from selected resourceId
