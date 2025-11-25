@@ -1590,3 +1590,17 @@
   font-size: 0.76rem;
   color: #6b7280;
 }
+
+.classroom-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.3fr);
+  gap: 24px;
+  height: calc(100vh - 80px); // minus navbar
+}
+
+.classroom-video-pane,
+.classroom-prep-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}

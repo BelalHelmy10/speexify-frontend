@@ -6,6 +6,8 @@ import Link from "next/link";
 import api from "@/lib/api";
 import PrepVideoCall from "../../resources/prep/PrepVideoCall";
 
+// ⬅️ we’ll later import PrepShell + a classroom picker here
+
 export default function ClassroomPage({ params }) {
   const sessionId = params.sessionId;
 
@@ -91,15 +93,15 @@ export default function ClassroomPage({ params }) {
   return (
     <div className="resources-page">
       <div className="resources-page__inner prep-page">
-        {/* LEFT: info + call */}
-        <aside className="prep-info-card">
+        {/* LEFT: live video room */}
+        <aside className="prep-info-card classroom-video-pane">
           <div className="prep-info-card__header">
             <h1 className="prep-info-card__title">
               {session.title || "Classroom"}
             </h1>
             <p className="prep-info-card__description">
               This is your private room for this session. Both teacher and
-              learner see the same video room (session #{sessionId}).
+              learner join the same video room (session #{sessionId}).
             </p>
           </div>
 
@@ -122,14 +124,25 @@ export default function ClassroomPage({ params }) {
           <PrepVideoCall roomId={String(sessionId)} />
         </aside>
 
-        {/* RIGHT: for now just a placeholder area */}
-        <section className="prep-viewer">
+        {/* RIGHT: prep / materials pane */}
+        <section className="prep-viewer classroom-prep-pane">
+          {/* 
+            ⬇️ PLACEHOLDER
+
+            This is exactly where we’ll embed:
+            - Teacher: small dropdown picker (track → book → level → unit → resource)
+            - Teacher + learner: <PrepShell resource={...} viewer={...} sessionId={sessionId} collaborative />
+          */}
+
           <div className="prep-viewer__placeholder">
-            <h2>Classroom ready</h2>
+            <h2>Lesson materials</h2>
             <p>
-              The video room is active on the left. We can wire in shared
-              resources here later if you want the full prep UI inside the
-              classroom.
+              This right-hand side will become the shared prep room: PDFs,
+              slides, and annotations synced between teacher and learner.
+            </p>
+            <p>
+              The video room is already live on the left. Next step is wiring
+              the classroom to your Resources data and PrepShell.
             </p>
           </div>
         </section>

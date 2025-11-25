@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PrepNotes from "./PrepNotes";
 import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
-// ❌ removed: import PrepVideoCall from "./PrepVideoCall";
 
 const TOOL_NONE = "none";
 const TOOL_PEN = "pen";
@@ -32,9 +31,6 @@ export default function PrepShell({ resource, viewer }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
 
-  // ❌ removed: WebRTC room id – no video in this view anymore
-  // const roomId = sessionId || `resource-${resource._id}`;
-
   const storageKey = `prep_annotations_${resource._id}`;
 
   const viewerUrl = viewer?.viewerUrl || null;
@@ -45,7 +41,7 @@ export default function PrepShell({ resource, viewer }) {
 
   const viewerActive = !!viewerUrl;
 
-  // focus newly-activated text box
+  // Focus newly-activated text box
   useEffect(() => {
     if (!activeTextId) return;
     const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
@@ -596,7 +592,8 @@ export default function PrepShell({ resource, viewer }) {
     );
   }
 
-  const isPdf = viewer?.type === "file" && !pdfFallback;
+  // NOTE: Your viewer types use "pdf" for PDF resources.
+  const isPdf = viewer?.type === "pdf" && !pdfFallback;
 
   return (
     <>
@@ -703,8 +700,6 @@ export default function PrepShell({ resource, viewer }) {
               </a>
             )}
           </div>
-
-          {/* ❌ removed <PrepVideoCall roomId={roomId} /> */}
 
           <PrepNotes resourceId={resource._id} />
         </aside>
