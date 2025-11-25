@@ -846,6 +846,8 @@
   height: 100%;
   border: 0;
   display: block;
+  border: none;
+  background: #020617;
 }
 
 /* Canvas overlay */
@@ -854,21 +856,12 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none; // default: let clicks go to the iframe
-}
-
-.prep-viewer__frame {
-  border: none;
-  background: #020617;
-}
-
-.prep-annotate-canvas {
-  pointer-events: auto;
+  pointer-events: none;
   background: transparent;
 }
 
 .prep-annotate-canvas--drawing {
-  pointer-events: auto; // now the canvas catches the mouse
+  pointer-events: auto;
   cursor: crosshair;
 }
 
@@ -917,9 +910,7 @@
   color: #6b7280;
 }
 
-/* ───────────────────────────────────────────────────────────── */
-/* Prep Room – page picker                                       */
-/* ───────────────────────────────────────────────────────────── */
+/* Prep page picker (PDF pages) */
 
 .prep-page-picker {
   position: absolute;
@@ -980,9 +971,7 @@
   margin: 0;
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
-/* PREP ROOM VIEWER BADGE                                                    */
-/* ────────────────────────────────────────────────────────────────────────── */
+/* Viewer badge */
 
 .prep-viewer__badge {
   position: absolute;
@@ -1013,9 +1002,7 @@
   white-space: nowrap;
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
-/* PREP ROOM FOCUS MODE                                                      */
-/* ────────────────────────────────────────────────────────────────────────── */
+/* Focus mode */
 
 .prep-viewer__focus-toggle {
   position: absolute;
@@ -1062,9 +1049,7 @@
   height: min(85vh, 820px);
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
-/* PREP ROOM ANNOTATION TOOLS                                                */
-/* ────────────────────────────────────────────────────────────────────────── */
+/* Annotation toolbar */
 
 .prep-annotate-toolbar {
   position: absolute;
@@ -1172,6 +1157,7 @@
   z-index: 4;
   pointer-events: auto;
 }
+
 .prep-sticky-note__header {
   display: flex;
   justify-content: flex-end;
@@ -1255,7 +1241,8 @@
   pointer-events: auto;
 }
 
-/* Editing = dark card (like your first screenshot) */
+/* Editing = dark card */
+
 .prep-text-box--editing {
   min-width: 120px;
   max-width: 50%;
@@ -1305,117 +1292,47 @@
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
 }
 
-.prep-text-box--editing {
-  .prep-text-box__header {
-    cursor: default;
-  }
+.prep-text-box--editing .prep-text-box__header {
+  cursor: default;
 }
 
 .prep-text-box__label {
   padding: 0.1rem 0.2rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #9b1c2e; // tweak this to your favourite accent color
+  color: #9b1c2e;
   cursor: move;
   white-space: nowrap;
   text-shadow: 0 0 3px rgba(255, 255, 255, 0.7);
 }
 
-/* PDF layout inside the dark viewer */
+/* PDF layout helpers */
+
 .prep-pdf-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   height: 100%;
 }
 
-/* Left: main canvas area (reuses existing container styles) */
-.prep-pdf-layout .prep-viewer__canvas-container {
-  flex: 1 1 auto;
-}
-
-/* PDF content canvas (under the annotation canvas) */
-.prep-pdf-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  background: #0b1120;
-}
-
-/* Right: vertical page strip */
-.prep-pdf-sidebar {
-  width: 64px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 0.6rem 0.4rem;
-}
-
-.prep-pdf-sidebar__empty {
-  font-size: 0.7rem;
-  color: #9ca3af;
-}
-
-.prep-pdf-sidebar__pages {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.prep-pdf-sidebar__page-button {
-  width: 40px;
-  height: 32px;
-  border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.6);
-  background: rgba(15, 23, 42, 0.9);
-  color: #e5e7eb;
-  font-size: 0.7rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease,
-    transform 0.07s ease;
-}
-
-.prep-pdf-sidebar__page-button:hover {
-  background: rgba(37, 99, 235, 0.9);
-  border-color: #60a5fa;
-  transform: translateY(-1px);
-}
-
-.prep-pdf-sidebar__page-button.is-active {
-  background: #3b82f6;
-  border-color: #93c5fd;
-}
-
-/* Container that holds pdf main + sidebar */
-.prep-pdf-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  height: 100%;
-}
-
-/* Main pdf page area */
 .prep-pdf-main {
   position: relative;
-  overflow: auto; // if page taller than container, you can scroll inside
+  overflow: auto;
   border-radius: 18px;
 }
 
-/* The canvas that pdf.js draws into */
 .prep-pdf-canvas {
   display: block;
   max-width: 100%;
   height: auto;
+  background: #0b1120;
 }
 
-/* Error text over pdf area */
 .prep-pdf-error {
   padding: 1rem;
   font-size: 0.85rem;
   color: #fecaca;
 }
 
-/* Sidebar with page buttons */
 .prep-pdf-sidebar {
   display: flex;
   flex-direction: column;
@@ -1460,30 +1377,9 @@
   }
 }
 
-/* Make sure overlay canvas does NOT permanently block the viewer */
-.prep-viewer__canvas-container {
-  position: relative;
-}
-
-.prep-viewer__frame {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.prep-annotate-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none; // viewer remains interactive by default
-}
-
-.prep-annotate-canvas--drawing {
-  pointer-events: auto; // only while drawing with pen/highlighter/eraser
-}
-
-/* resources.scss */
+/* ────────────────────────────────────────────────────────────────────────── */
+/* VIDEO CALL                                                                */
+/* ────────────────────────────────────────────────────────────────────────── */
 
 .prep-video {
   margin-top: 1.25rem;
@@ -1518,15 +1414,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  align-items: center; // center frame + controls
+  align-items: center;
 }
+
 .prep-video__frame-wrapper {
   position: relative;
   width: 100%;
-  max-width: 720px; // limit how wide it can get on desktop
-  margin: 0 auto; // center it in the card
-  aspect-ratio: 16 / 9; // more “screen-like” ratio
-  max-height: 60vh; // never taller than 60% of viewport
+  max-width: 720px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  max-height: 60vh;
   border-radius: 16px;
   overflow: hidden;
   background: #020617;
@@ -1556,7 +1453,7 @@
 
 .prep-video__controls {
   width: 100%;
-  max-width: 720px; // match the video width
+  max-width: 720px;
 }
 
 .prep-video__icon-btn {
@@ -1591,67 +1488,126 @@
   color: #6b7280;
 }
 
+/* ────────────────────────────────────── */
+/* CLASSROOM LAYOUT + PICKER             */
+/* ────────────────────────────────────── */
+
 .classroom-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.3fr);
-  gap: 24px;
-  height: calc(100vh - 80px); // minus navbar
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr);
+  gap: 32px;
+  align-items: flex-start;
+  margin-top: 24px;
 }
 
-.classroom-video-pane,
+.classroom-video-pane {
+  /* uses the existing prep-video styles inside */
+}
+
 .classroom-prep-pane {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  align-items: stretch;
 }
 
-/* Make the viewer full-width when we hide the sidebar */
+/* PrepShell area under the selector */
+.classroom-prep-pane__content {
+  margin-top: 16px;
+}
+
+/* Stack on small screens */
+@media (max-width: 960px) {
+  .classroom-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .classroom-prep-pane__content {
+    margin-top: 12px;
+  }
+}
+
+/* When we hide the left sidebar (no info card) */
 .prep-layout.prep-layout--no-sidebar {
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* Classroom resource picker bar */
+/* Top pill bar for picking track/book/unit/resource */
 .classroom-picker {
-  display: flex;
-  justify-content: flex-end;
-  margin: 0 0 16px;
+  width: 100%;
+  max-width: 1120px;
+  margin: 8px auto 4px;
 }
 
 .classroom-picker__row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  padding: 6px 10px;
-  background: rgba(15, 23, 42, 0.92); // dark navy like other cards
+  padding: 8px 12px;
   border-radius: 999px;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.45);
+  background: radial-gradient(circle at top left, #101828, #020617);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35),
+    0 0 0 1px rgba(148, 163, 184, 0.1);
 }
 
 .classroom-picker__select {
+  position: relative;
+}
+
+/* pill-like select */
+.classroom-picker__select select {
   appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
   border: none;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  line-height: 1.4;
-  background: rgba(15, 23, 42, 0.9);
-  color: #e5f0ff;
-  outline: 1px solid rgba(148, 163, 184, 0.7);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.classroom-picker__select:focus {
-  outline: 2px solid #38bdf8; // cyan-ish focus ring
-}
-
-.classroom-picker__select:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.classroom-picker__select--resource {
-  background: #0ea5e9; // primary blue
-  color: #ffffff;
-  font-weight: 600;
   outline: none;
+  border-radius: 999px;
+  padding: 6px 26px 6px 14px;
+
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.35),
+    0 6px 16px rgba(15, 23, 42, 0.45);
+
+  white-space: nowrap;
+  max-width: 220px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* caret */
+.classroom-picker__select::after {
+  content: "▾";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  pointer-events: none;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+/* dimmed pills when there is "No X" */
+.classroom-picker__select--empty select {
+  background: rgba(15, 23, 42, 0.5);
+  color: rgba(156, 163, 175, 0.9);
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.3);
+}
+
+/* hover / focus */
+.classroom-picker__select select:hover:not(:disabled),
+.classroom-picker__select select:focus-visible {
+  box-shadow: 0 0 0 1px #38bdf8, 0 10px 26px rgba(8, 47, 73, 0.7);
+}
+
+/* disabled */
+.classroom-picker__select select:disabled {
+  cursor: not-allowed;
 }

@@ -29,7 +29,7 @@ export default function ClassroomResourcePicker({
     : [];
   const resourceOptions = unitId ? resourcesByUnitId[unitId] || [] : [];
 
-  // cascade selection: track → book → level → unit → resource
+  // cascade selection logic (unchanged) …
   useEffect(() => {
     if (!trackOptions.length) return;
     setTrackId((prev) =>
@@ -90,73 +90,100 @@ export default function ClassroomResourcePicker({
   return (
     <div className="classroom-picker">
       <div className="classroom-picker__row">
-        <select
-          className="classroom-picker__select"
-          value={trackId}
-          onChange={(e) => setTrackId(e.target.value)}
-        >
-          {trackOptions.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+        {/* Track */}
+        <div className="classroom-picker__select">
+          <select value={trackId} onChange={(e) => setTrackId(e.target.value)}>
+            {trackOptions.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          className="classroom-picker__select"
-          value={bookId}
-          onChange={(e) => setBookId(e.target.value)}
-          disabled={!bookOptions.length}
+        {/* Book */}
+        <div
+          className={
+            "classroom-picker__select" +
+            (!bookOptions.length ? " classroom-picker__select--empty" : "")
+          }
         >
-          {!bookOptions.length && <option>No books</option>}
-          {bookOptions.map((b) => (
-            <option key={b.value} value={b.value}>
-              {b.label}
-            </option>
-          ))}
-        </select>
+          <select
+            value={bookId}
+            onChange={(e) => setBookId(e.target.value)}
+            disabled={!bookOptions.length}
+          >
+            {!bookOptions.length && <option>No books</option>}
+            {bookOptions.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          className="classroom-picker__select"
-          value={bookLevelId}
-          onChange={(e) => setBookLevelId(e.target.value)}
-          disabled={!bookLevelOptions.length}
+        {/* Book level */}
+        <div
+          className={
+            "classroom-picker__select" +
+            (!bookLevelOptions.length ? " classroom-picker__select--empty" : "")
+          }
         >
-          {!bookLevelOptions.length && <option>No levels</option>}
-          {bookLevelOptions.map((l) => (
-            <option key={l.value} value={l.value}>
-              {l.label}
-            </option>
-          ))}
-        </select>
+          <select
+            value={bookLevelId}
+            onChange={(e) => setBookLevelId(e.target.value)}
+            disabled={!bookLevelOptions.length}
+          >
+            {!bookLevelOptions.length && <option>No levels</option>}
+            {bookLevelOptions.map((l) => (
+              <option key={l.value} value={l.value}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          className="classroom-picker__select"
-          value={unitId}
-          onChange={(e) => setUnitId(e.target.value)}
-          disabled={!unitOptions.length}
+        {/* Unit */}
+        <div
+          className={
+            "classroom-picker__select" +
+            (!unitOptions.length ? " classroom-picker__select--empty" : "")
+          }
         >
-          {!unitOptions.length && <option>No units</option>}
-          {unitOptions.map((u) => (
-            <option key={u.value} value={u.value}>
-              {u.label}
-            </option>
-          ))}
-        </select>
+          <select
+            value={unitId}
+            onChange={(e) => setUnitId(e.target.value)}
+            disabled={!unitOptions.length}
+          >
+            {!unitOptions.length && <option>No units</option>}
+            {unitOptions.map((u) => (
+              <option key={u.value} value={u.value}>
+                {u.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          className="classroom-picker__select classroom-picker__select--resource"
-          value={selectedResourceId || ""}
-          onChange={(e) => onChangeResourceId(e.target.value)}
-          disabled={!resourceOptions.length}
+        {/* Resource */}
+        <div
+          className={
+            "classroom-picker__select" +
+            (!resourceOptions.length ? " classroom-picker__select--empty" : "")
+          }
         >
-          {!resourceOptions.length && <option>No resources</option>}
-          {resourceOptions.map((r) => (
-            <option key={r._id} value={r._id}>
-              {r.title}
-            </option>
-          ))}
-        </select>
+          <select
+            value={selectedResourceId || ""}
+            onChange={(e) => onChangeResourceId(e.target.value)}
+            disabled={!resourceOptions.length}
+          >
+            {!resourceOptions.length && <option>No resources</option>}
+            {resourceOptions.map((r) => (
+              <option key={r._id} value={r._id}>
+                {r.title}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );

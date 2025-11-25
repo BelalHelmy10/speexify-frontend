@@ -8,12 +8,10 @@ import ClassroomResourcePicker from "./ClassroomResourcePicker";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
-  const isTeacher =
-    session.teacherId === session.currentUserId ||
-    session.role === "teacher" ||
-    session.isTeacher;
+  const isTeacher = session.role === "teacher" || session.isTeacher;
 
   const { resourcesById } = useMemo(() => buildResourceIndex(tracks), [tracks]);
+
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
   useEffect(() => {
@@ -33,7 +31,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     <div className="classroom-layout">
       {/* LEFT: video */}
       <section className="classroom-video-pane">
-        <PrepVideoCall roomId={String(sessionId)} />
+        <PrepVideoCall roomId={sessionId} />
       </section>
 
       {/* RIGHT: picker (teacher only) + prep viewer */}
@@ -46,23 +44,25 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           />
         )}
 
-        {resource ? (
-          <PrepShell
-            resource={resource}
-            viewer={viewer}
-            hideSidebar
-            hideBreadcrumbs
-          />
-        ) : (
-          <div className="prep-viewer__placeholder">
-            <h2>No resource selected</h2>
-            <p>
-              {isTeacher
-                ? "Use the picker above to choose a unit and resource."
-                : "Waiting for your teacher to pick a resource."}
-            </p>
-          </div>
-        )}
+        <div className="classroom-prep-pane__content">
+          {resource ? (
+            <PrepShell
+              resource={resource}
+              viewer={viewer}
+              // you already hid the left info card in classroom mode earlier
+              inClassroom
+            />
+          ) : (
+            <div className="prep-viewer__placeholder">
+              <h2>No resource selected</h2>
+              <p>
+                {isTeacher
+                  ? "Use the bar above to choose a unit and resource."
+                  : "Waiting for your teacher to pick a resource."}
+              </p>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
