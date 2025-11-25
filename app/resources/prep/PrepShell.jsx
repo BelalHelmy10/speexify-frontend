@@ -16,7 +16,18 @@ const TOOL_TEXT = "text";
 
 const PEN_COLORS = ["#f9fafb", "#fbbf24", "#60a5fa", "#f97316", "#22c55e"];
 
-export default function PrepShell({ resource, viewer }) {
+/**
+ * Props:
+ *  - resource, viewer: as before
+ *  - hideSidebar (optional): when true, do NOT render the left info/notes column
+ *  - hideBreadcrumbs (optional): when true, no breadcrumbs row
+ */
+export default function PrepShell({
+  resource,
+  viewer,
+  hideSidebar = false,
+  hideBreadcrumbs = false,
+}) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -595,114 +606,127 @@ export default function PrepShell({ resource, viewer }) {
   // NOTE: Your viewer types use "pdf" for PDF resources.
   const isPdf = viewer?.type === "pdf" && !pdfFallback;
 
+  const showSidebar = !hideSidebar;
+  const showBreadcrumbs = !hideBreadcrumbs;
+
   return (
     <>
-      {/* Breadcrumbs */}
-      <nav className="unit-breadcrumbs prep-breadcrumbs">
-        <Link href="/resources" className="unit-breadcrumbs__link">
-          Resources
-        </Link>
-        {track && (
-          <>
-            <span className="unit-breadcrumbs__separator">/</span>
-            <span className="unit-breadcrumbs__crumb">{track.name}</span>
-          </>
-        )}
-        {level && (
-          <>
-            <span className="unit-breadcrumbs__separator">/</span>
-            <span className="unit-breadcrumbs__crumb">{level.name}</span>
-          </>
-        )}
-        {subLevel && (
-          <>
-            <span className="unit-breadcrumbs__separator">/</span>
-            <span className="unit-breadcrumbs__crumb">
-              {subLevel.code} – {subLevel.title}
-            </span>
-          </>
-        )}
-        {unit && (
-          <>
-            <span className="unit-breadcrumbs__separator">/</span>
-            <span className="unit-breadcrumbs__crumb">{unit.title}</span>
-          </>
-        )}
-        <span className="unit-breadcrumbs__separator">/</span>
-        <span className="unit-breadcrumbs__crumb prep-breadcrumbs__current">
-          Prep Room
-        </span>
-      </nav>
-
-      <div className={"prep-layout" + (focusMode ? " prep-layout--focus" : "")}>
-        {/* LEFT: info + notes (no video here now) */}
-        <aside className="prep-info-card">
-          <div className="prep-info-card__header">
-            <h1 className="prep-info-card__title">{resource.title}</h1>
-            {resource.fileName && (
-              <p className="prep-info-card__filename">{resource.fileName}</p>
-            )}
-          </div>
-
-          {resource.description && (
-            <p className="prep-info-card__description">
-              {resource.description}
-            </p>
+      {/* Breadcrumbs (optional) */}
+      {showBreadcrumbs && (
+        <nav className="unit-breadcrumbs prep-breadcrumbs">
+          <Link href="/resources" className="unit-breadcrumbs__link">
+            Resources
+          </Link>
+          {track && (
+            <>
+              <span className="unit-breadcrumbs__separator">/</span>
+              <span className="unit-breadcrumbs__crumb">{track.name}</span>
+            </>
           )}
-
-          <div className="prep-info-card__meta">
-            {resource.kind && (
-              <span className="resources-chip">{resource.kind}</span>
-            )}
-            {resource.cecrLevel && (
-              <span className="resources-chip resources-chip--primary">
-                CEFR {resource.cecrLevel}
+          {level && (
+            <>
+              <span className="unit-breadcrumbs__separator">/</span>
+              <span className="unit-breadcrumbs__crumb">{level.name}</span>
+            </>
+          )}
+          {subLevel && (
+            <>
+              <span className="unit-breadcrumbs__separator">/</span>
+              <span className="unit-breadcrumbs__crumb">
+                {subLevel.code} – {subLevel.title}
               </span>
-            )}
-            {resource.sourceType && (
-              <span className="resources-chip">{resource.sourceType}</span>
-            )}
-          </div>
-
-          {Array.isArray(resource.tags) && resource.tags.length > 0 && (
-            <div className="prep-info-card__tags">
-              {resource.tags.map((tag) => (
-                <span key={tag} className="resources-tag">
-                  {tag}
-                </span>
-              ))}
-            </div>
+            </>
           )}
+          {unit && (
+            <>
+              <span className="unit-breadcrumbs__separator">/</span>
+              <span className="unit-breadcrumbs__crumb">{unit.title}</span>
+            </>
+          )}
+          <span className="unit-breadcrumbs__separator">/</span>
+          <span className="unit-breadcrumbs__crumb prep-breadcrumbs__current">
+            Prep Room
+          </span>
+        </nav>
+      )}
 
-          <div className="prep-info-card__actions">
-            <Link
-              href="/resources"
-              className="resources-button resources-button--ghost"
-            >
-              Back to picker
-            </Link>
-            {unit?.slug && (
+      <div
+        className={
+          "prep-layout" +
+          (focusMode ? " prep-layout--focus" : "") +
+          (hideSidebar ? " prep-layout--no-sidebar" : "")
+        }
+      >
+        {/* LEFT: info + notes (hidden in classroom mode) */}
+        {showSidebar && (
+          <aside className="prep-info-card">
+            <div className="prep-info-card__header">
+              <h1 className="prep-info-card__title">{resource.title}</h1>
+              {resource.fileName && (
+                <p className="prep-info-card__filename">{resource.fileName}</p>
+              )}
+            </div>
+
+            {resource.description && (
+              <p className="prep-info-card__description">
+                {resource.description}
+              </p>
+            )}
+
+            <div className="prep-info-card__meta">
+              {resource.kind && (
+                <span className="resources-chip">{resource.kind}</span>
+              )}
+              {resource.cecrLevel && (
+                <span className="resources-chip resources-chip--primary">
+                  CEFR {resource.cecrLevel}
+                </span>
+              )}
+              {resource.sourceType && (
+                <span className="resources-chip">{resource.sourceType}</span>
+              )}
+            </div>
+
+            {Array.isArray(resource.tags) && resource.tags.length > 0 && (
+              <div className="prep-info-card__tags">
+                {resource.tags.map((tag) => (
+                  <span key={tag} className="resources-tag">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="prep-info-card__actions">
               <Link
-                href={`/resources/units/${unit.slug}`}
+                href="/resources"
                 className="resources-button resources-button--ghost"
               >
-                View unit page
+                Back to picker
               </Link>
-            )}
-            {viewer?.rawUrl && (
-              <a
-                href={viewer.rawUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="resources-button resources-button--primary"
-              >
-                Open raw link
-              </a>
-            )}
-          </div>
+              {unit?.slug && (
+                <Link
+                  href={`/resources/units/${unit.slug}`}
+                  className="resources-button resources-button--ghost"
+                >
+                  View unit page
+                </Link>
+              )}
+              {viewer?.rawUrl && (
+                <a
+                  href={viewer.rawUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="resources-button resources-button--primary"
+                >
+                  Open raw link
+                </a>
+              )}
+            </div>
 
-          <PrepNotes resourceId={resource._id} />
-        </aside>
+            <PrepNotes resourceId={resource._id} />
+          </aside>
+        )}
 
         {/* RIGHT: viewer */}
         <section className="prep-viewer">

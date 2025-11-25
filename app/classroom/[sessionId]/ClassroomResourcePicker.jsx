@@ -90,7 +90,11 @@ export default function ClassroomResourcePicker({
   return (
     <div className="classroom-picker">
       <div className="classroom-picker__row">
-        <select value={trackId} onChange={(e) => setTrackId(e.target.value)}>
+        <select
+          className="classroom-picker__select"
+          value={trackId}
+          onChange={(e) => setTrackId(e.target.value)}
+        >
           {trackOptions.map((t) => (
             <option key={t.value} value={t.value}>
               {t.label}
@@ -99,6 +103,7 @@ export default function ClassroomResourcePicker({
         </select>
 
         <select
+          className="classroom-picker__select"
           value={bookId}
           onChange={(e) => setBookId(e.target.value)}
           disabled={!bookOptions.length}
@@ -112,6 +117,7 @@ export default function ClassroomResourcePicker({
         </select>
 
         <select
+          className="classroom-picker__select"
           value={bookLevelId}
           onChange={(e) => setBookLevelId(e.target.value)}
           disabled={!bookLevelOptions.length}
@@ -125,6 +131,7 @@ export default function ClassroomResourcePicker({
         </select>
 
         <select
+          className="classroom-picker__select"
           value={unitId}
           onChange={(e) => setUnitId(e.target.value)}
           disabled={!unitOptions.length}
@@ -138,6 +145,7 @@ export default function ClassroomResourcePicker({
         </select>
 
         <select
+          className="classroom-picker__select classroom-picker__select--resource"
           value={selectedResourceId || ""}
           onChange={(e) => onChangeResourceId(e.target.value)}
           disabled={!resourceOptions.length}

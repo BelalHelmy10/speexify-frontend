@@ -1604,3 +1604,54 @@
   flex-direction: column;
   min-height: 0;
 }
+
+/* Make the viewer full-width when we hide the sidebar */
+.prep-layout.prep-layout--no-sidebar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Classroom resource picker bar */
+.classroom-picker {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 16px;
+}
+
+.classroom-picker__row {
+  display: flex;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(15, 23, 42, 0.92); // dark navy like other cards
+  border-radius: 999px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.45);
+}
+
+.classroom-picker__select {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  line-height: 1.4;
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5f0ff;
+  outline: 1px solid rgba(148, 163, 184, 0.7);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.classroom-picker__select:focus {
+  outline: 2px solid #38bdf8; // cyan-ish focus ring
+}
+
+.classroom-picker__select:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.classroom-picker__select--resource {
+  background: #0ea5e9; // primary blue
+  color: #ffffff;
+  font-weight: 600;
+  outline: none;
+}

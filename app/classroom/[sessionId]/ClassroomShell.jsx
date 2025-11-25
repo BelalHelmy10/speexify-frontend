@@ -6,19 +6,16 @@ import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
 import PrepShell from "@/app/resources/prep/PrepShell";
 import ClassroomResourcePicker from "./ClassroomResourcePicker";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
-// helpers we’ll define in a moment
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
-  const isTeacher = !!session.isTeacher;
+  const isTeacher =
+    session.teacherId === session.currentUserId ||
+    session.role === "teacher" ||
+    session.isTeacher;
 
-  // Build the same index you use on /resources,
-  // but here we only need to be able to go from selected resourceId
-  // to the full resource object.
   const { resourcesById } = useMemo(() => buildResourceIndex(tracks), [tracks]);
-
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
-  // default: if there is at least one resource in the tree, auto-select it
   useEffect(() => {
     if (!selectedResourceId) {
       const first = Object.values(resourcesById)[0];
@@ -36,7 +33,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     <div className="classroom-layout">
       {/* LEFT: video */}
       <section className="classroom-video-pane">
-        <PrepVideoCall roomId={sessionId} />
+        <PrepVideoCall roomId={String(sessionId)} />
       </section>
 
       {/* RIGHT: picker (teacher only) + prep viewer */}
@@ -53,8 +50,8 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           <PrepShell
             resource={resource}
             viewer={viewer}
-            sessionId={sessionId} // same room id for collaboration
-            collaborative
+            hideSidebar
+            hideBreadcrumbs
           />
         ) : (
           <div className="prep-viewer__placeholder">
