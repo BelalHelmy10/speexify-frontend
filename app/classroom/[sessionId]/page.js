@@ -6,8 +6,6 @@ import Link from "next/link";
 import api from "@/lib/api";
 import PrepVideoCall from "../../resources/prep/PrepVideoCall";
 
-// ⬅️ we’ll later import PrepShell + a classroom picker here
-
 export default function ClassroomPage({ params }) {
   const sessionId = params.sessionId;
 
@@ -93,59 +91,56 @@ export default function ClassroomPage({ params }) {
   return (
     <div className="resources-page">
       <div className="resources-page__inner prep-page">
-        {/* LEFT: live video room */}
-        <aside className="prep-info-card classroom-video-pane">
-          <div className="prep-info-card__header">
-            <h1 className="prep-info-card__title">
-              {session.title || "Classroom"}
-            </h1>
-            <p className="prep-info-card__description">
-              This is your private room for this session. Both teacher and
-              learner join the same video room (session #{sessionId}).
-            </p>
-          </div>
+        {/* NEW: use the same 2-column layout as PrepShell */}
+        <div className="prep-layout">
+          {/* LEFT: info + live video */}
+          <aside className="prep-info-card">
+            <div className="prep-info-card__header">
+              <h1 className="prep-info-card__title">
+                {session.title || "Classroom"}
+              </h1>
+              <p className="prep-info-card__description">
+                This is your private room for this session. Both teacher and
+                learner join the same video room (session #{sessionId}).
+              </p>
+            </div>
 
-          <div className="prep-info-card__actions">
-            <Link
-              href="/dashboard"
-              className="resources-button resources-button--ghost"
-            >
-              ← Back to dashboard
-            </Link>
-            <Link
-              href={`/dashboard/sessions/${session.id}`}
-              className="resources-button resources-button--ghost"
-            >
-              View session details
-            </Link>
-          </div>
+            <div className="prep-info-card__actions">
+              <Link
+                href="/dashboard"
+                className="resources-button resources-button--ghost"
+              >
+                ← Back to dashboard
+              </Link>
+              <Link
+                href={`/dashboard/sessions/${session.id}`}
+                className="resources-button resources-button--ghost"
+              >
+                View session details
+              </Link>
+            </div>
 
-          {/* WebRTC call – uses sessionId as room id */}
-          <PrepVideoCall roomId={String(sessionId)} />
-        </aside>
+            {/* WebRTC call – uses sessionId as room id */}
+            <PrepVideoCall roomId={String(sessionId)} />
+          </aside>
 
-        {/* RIGHT: prep / materials pane */}
-        <section className="prep-viewer classroom-prep-pane">
-          {/* 
-            ⬇️ PLACEHOLDER
-
-            This is exactly where we’ll embed:
-            - Teacher: small dropdown picker (track → book → level → unit → resource)
-            - Teacher + learner: <PrepShell resource={...} viewer={...} sessionId={sessionId} collaborative />
-          */}
-
-          <div className="prep-viewer__placeholder">
-            <h2>Lesson materials</h2>
-            <p>
-              This right-hand side will become the shared prep room: PDFs,
-              slides, and annotations synced between teacher and learner.
-            </p>
-            <p>
-              The video room is already live on the left. Next step is wiring
-              the classroom to your Resources data and PrepShell.
-            </p>
-          </div>
-        </section>
+          {/* RIGHT: lesson materials area (for now a placeholder) */}
+          <section className="prep-viewer">
+            <div className="prep-viewer__placeholder">
+              <h2>Lesson materials</h2>
+              <p>
+                This right-hand side will become the shared prep room:
+                resources, PDFs, slides, and annotations synced between teacher
+                and learner.
+              </p>
+              <p>
+                The video room is already live on the left. Next step is wiring
+                this classroom to your Resources picker and PrepShell so you can
+                choose a resource and see it here.
+              </p>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );
