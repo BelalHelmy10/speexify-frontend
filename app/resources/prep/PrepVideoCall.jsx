@@ -6,12 +6,12 @@ import { useEffect, useRef, useState } from "react";
 /**
  * Build ICE server list:
  * - Always include Google STUN as a fallback
- * - If Xirsys env vars are set, add their STUN/TURN servers as well
+ * - If custom ICE env vars are set, add their STUN/TURN servers as well
  *
- * Env vars (set in .env.local and Vercel):
- *   NEXT_PUBLIC_ICE_URLS        => comma-separated list from Xirsys (stun:...,turn:...,turns:...)
- *   NEXT_PUBLIC_ICE_USERNAME    => Xirsys username
- *   NEXT_PUBLIC_ICE_CREDENTIAL  => Xirsys credential
+ * Env vars (set in .env.local and hosting dashboard):
+ *   NEXT_PUBLIC_ICE_URLS        => comma-separated list (stun:...,turn:...,turns:...)
+ *   NEXT_PUBLIC_ICE_USERNAME    => TURN username
+ *   NEXT_PUBLIC_ICE_CREDENTIAL  => TURN password or credential
  */
 const BASE_STUN = [
   { urls: "stun:stun.l.google.com:19302" },
