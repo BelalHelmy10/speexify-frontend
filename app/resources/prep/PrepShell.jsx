@@ -18,7 +18,7 @@ const PEN_COLORS = ["#f9fafb", "#fbbf24", "#60a5fa", "#f97316", "#22c55e"];
 
 /**
  * Props:
- *  - resource, viewer: as before
+ *  - resource, viewer: as before (prep room)
  *  - hideSidebar (optional): when true, do NOT render the left info/notes column
  *  - hideBreadcrumbs (optional): when true, no breadcrumbs row
  */
@@ -317,9 +317,9 @@ export default function PrepShell({
     e.preventDefault();
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
-    const { x, y, width, height } = coords;
+    const { x, y, width } = coords;
     const currentX = note.x * width;
-    const currentY = note.y * height;
+    const currentY = note.y * coords.height;
 
     setDragState({
       kind: "note",
@@ -609,6 +609,11 @@ export default function PrepShell({
   const showSidebar = !hideSidebar;
   const showBreadcrumbs = !hideBreadcrumbs;
 
+  const layoutClasses =
+    "prep-layout" +
+    (focusMode ? " prep-layout--focus" : "") +
+    (hideSidebar ? " prep-layout--no-sidebar" : "");
+
   return (
     <>
       {/* Breadcrumbs (optional) */}
@@ -650,13 +655,7 @@ export default function PrepShell({
         </nav>
       )}
 
-      <div
-        className={
-          "prep-layout" +
-          (focusMode ? " prep-layout--focus" : "") +
-          (hideSidebar ? " prep-layout--no-sidebar" : "")
-        }
-      >
+      <div className={layoutClasses}>
         {/* LEFT: info + notes (hidden in classroom mode) */}
         {showSidebar && (
           <aside className="prep-info-card">

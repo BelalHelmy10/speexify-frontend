@@ -14,6 +14,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
+  // Default to the first resource in the catalogue (mainly for teacher)
   useEffect(() => {
     if (!selectedResourceId) {
       const first = Object.values(resourcesById)[0];
@@ -49,15 +50,16 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
             <PrepShell
               resource={resource}
               viewer={viewer}
-              // you already hid the left info card in classroom mode earlier
-              inClassroom
+              // In the live classroom we only want the dark viewer with tools:
+              hideSidebar
+              hideBreadcrumbs
             />
           ) : (
-            <div className="prep-viewer__placeholder">
+            <div className="prep-viewer prep-viewer__placeholder">
               <h2>No resource selected</h2>
               <p>
                 {isTeacher
-                  ? "Use the bar above to choose a unit and resource."
+                  ? "Use the bar above to choose a track, book, level, unit and resource."
                   : "Waiting for your teacher to pick a resource."}
               </p>
             </div>
