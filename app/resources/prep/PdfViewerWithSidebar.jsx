@@ -3,7 +3,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
+export default function PdfViewerWithSidebar({
+  fileUrl,
+  onFatalError,
+  children,
+}) {
   const mainRef = useRef(null);
   const pdfCanvasRef = useRef(null);
 
@@ -121,11 +125,17 @@ export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
   return (
     <div className="prep-pdf-layout">
       <div className="prep-pdf-main" ref={mainRef}>
-        {error ? (
-          <div className="prep-pdf-error">{error}</div>
-        ) : (
-          <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
-        )}
+        {/* Inner wrapper is relative so annotations can be absolutely positioned */}
+        <div className="prep-pdf-main-inner" style={{ position: "relative" }}>
+          {error ? (
+            <div className="prep-pdf-error">{error}</div>
+          ) : (
+            <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
+          )}
+
+          {/* 🔥 Annotations (canvas, text, etc.) are rendered here */}
+          {children}
+        </div>
       </div>
 
       <aside className="prep-pdf-sidebar">
