@@ -9,22 +9,23 @@ import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
-  // Determine if current viewer is teacher
+  // Who is the current viewer?
   const isTeacher =
     session.role === "teacher" ||
     session.isTeacher ||
     session.userType === "teacher";
 
-  // Build lookup
+  // Build { resourceId -> full resource + context }
   const { resourcesById } = useMemo(() => buildResourceIndex(tracks), [tracks]);
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
-  // Shared classroom channel (resources + annotations)
-  const classroomChannel = useClassroomChannel(String(sessionId));
-  const { ready, send, subscribe } = classroomChannel;
+  // Realtime classroom channel (separate from video)
+  const { ready, send, subscribe } = useClassroomChannel(String(sessionId));
 
-  // Receive updates from teacher → student
+  // ───────────────────────────────────────────────
+  // 1) Learner listens for teacher changes
+  // ───────────────────────────────────────────────
   useEffect(() => {
     if (!ready) return;
 
@@ -38,38 +39,55 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           setSelectedResourceId(resourceId);
         }
       }
-      // Annotation messages are handled inside PrepShell
     });
 
     return unsubscribe;
   }, [ready, resourcesById, subscribe]);
 
-  // Teacher: auto-select first resource ONCE
+  // ───────────────────────────────────────────────
+  // 2) Teacher: auto-select first resource when ready
+  // ───────────────────────────────────────────────
   useEffect(() => {
     if (!isTeacher) return;
+    if (selectedResourceId) return;
 
-    if (!selectedResourceId) {
-      const first = Object.values(resourcesById)[0];
-      if (first) {
-        setSelectedResourceId(first._id);
-        if (ready) {
-          send({ type: "SET_RESOURCE", resourceId: first._id });
-        }
-      }
-    }
-  }, [isTeacher, resourcesById, selectedResourceId, ready, send]);
+    const allResources = Object.values(resourcesById || {});
+    if (!allResources.length) return;
 
-  // Teacher: change resource manually via Picker
+    const first = allResources[0];
+    if (!first?._id) return;
+
+    setSelectedResourceId(first._id);
+  }, [isTeacher, resourcesById, selectedResourceId]);
+
+  // ───────────────────────────────────────────────
+  // 3) Teacher: whenever selection changes AND WS is ready -> broadcast
+  //    This covers:
+  //      - auto-select first resource
+  //      - manual changes in the picker
+  //      - changes made before the socket was ready
+  // ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!isTeacher) return;
+    if (!ready) return;
+    if (!selectedResourceId) return;
+
+    console.log(
+      "[Classroom] broadcasting selected resource",
+      selectedResourceId
+    );
+    send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
+  }, [isTeacher, ready, selectedResourceId, send]);
+
+  // ───────────────────────────────────────────────
+  // 4) Teacher changes resource via picker
+  // ───────────────────────────────────────────────
   function handleChangeResourceId(nextId) {
-    setSelectedResourceId(nextId);
-
-    if (isTeacher && ready && nextId) {
-      console.log("[Classroom] teacher sending resource", nextId);
-      send({ type: "SET_RESOURCE", resourceId: nextId });
-    }
+    // Just update state – the effect above will broadcast when ready
+    setSelectedResourceId(nextId || null);
   }
 
-  // Resolve resource and viewer details
+  // Resolve the actual resource + viewer info
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId] || null
     : null;
@@ -83,9 +101,9 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         <PrepVideoCall roomId={sessionId} />
       </section>
 
-      {/* RIGHT: teacher picker + viewer */}
+      {/* RIGHT: picker (teacher only) + viewer */}
       <section className="classroom-prep-pane">
-        {/* ✅ Picker visible only for teachers */}
+        {/* ✅ Only teachers see the picker at all */}
         {isTeacher && (
           <ClassroomResourcePicker
             isTeacher={isTeacher}
@@ -102,7 +120,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
               viewer={viewer}
               hideSidebar
               hideBreadcrumbs
-              classroomChannel={classroomChannel} // 🔥 shared annotations here
             />
           ) : (
             <div className="prep-viewer prep-viewer__placeholder">
