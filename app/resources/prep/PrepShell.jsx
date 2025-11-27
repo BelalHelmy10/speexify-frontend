@@ -34,6 +34,7 @@ export default function PrepShell({
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
   const [pointerPos, setPointerPos] = useState(null);
+  const [remotePointerPos, setRemotePointerPos] = useState(null); // 🔥 remote pointer
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
@@ -42,14 +43,6 @@ export default function PrepShell({
   const [pdfFallback, setPdfFallback] = useState(false); // if pdf.js fails, fall back to iframe
 
   const canvasRef = useRef(null);
-
-  // 🔥 remote drawing state (for strokes coming from the other side)
-  const remoteDrawRef = useRef({
-    isDrawing: false,
-    last: null, // { nx, ny }
-    tool: null,
-    color: null,
-  });
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -60,7 +53,11 @@ export default function PrepShell({
   const track = level?.track;
 
   const viewerActive = !!viewerUrl;
-  const hasChannel = !!classroomChannel?.ready;
+
+  // Classroom channel helpers
+  const channelReady = classroomChannel?.ready || false;
+  const channelSend = classroomChannel?.send || null;
+  const channelSubscribe = classroomChannel?.subscribe || null;
 
   // Focus newly-activated text box
   useEffect(() => {
@@ -102,7 +99,7 @@ export default function PrepShell({
     }
   }, [storageKey]);
 
-  // Resize annotation canvas to match its container (overlay parent)
+  // Resize annotation canvas to match its parent container
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -161,7 +158,7 @@ export default function PrepShell({
     }
   }
 
-  // Geometry helper – use overlay parent container
+  // Geometry helper – relative to the overlay parent, not the PDF canvas
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -173,29 +170,6 @@ export default function PrepShell({
       width: rect.width,
       height: rect.height,
     };
-  }
-
-  // Apply stroke style (local + remote)
-  function applyStrokeStyle(ctx, strokeTool, color) {
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    if (strokeTool === TOOL_PEN) {
-      ctx.strokeStyle = color || penColor;
-      ctx.lineWidth = 3;
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
-    } else if (strokeTool === TOOL_HIGHLIGHTER) {
-      ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
-      ctx.lineWidth = 18;
-      ctx.globalAlpha = 0.3;
-      ctx.globalCompositeOperation = "source-over";
-    } else if (strokeTool === TOOL_ERASER) {
-      ctx.strokeStyle = "rgba(0,0,0,1)";
-      ctx.lineWidth = 20;
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "destination-out";
-    }
   }
 
   // Drawing (pen / highlighter / eraser)
@@ -210,22 +184,6 @@ export default function PrepShell({
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
     setIsDrawing(true);
-
-    // 🔥 broadcast start of stroke (normalized)
-    if (
-      hasChannel &&
-      (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER || tool === TOOL_ERASER)
-    ) {
-      const nx = coords.x / coords.width;
-      const ny = coords.y / coords.height;
-      classroomChannel.send({
-        type: "ANNOTATION_DRAW_START",
-        tool,
-        color: penColor,
-        nx,
-        ny,
-      });
-    }
   }
 
   function draw(e) {
@@ -285,53 +243,88 @@ export default function PrepShell({
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    applyStrokeStyle(ctx, tool, penColor);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (tool === TOOL_PEN) {
+      ctx.strokeStyle = penColor;
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+    } else if (tool === TOOL_HIGHLIGHTER) {
+      ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
+      ctx.lineWidth = 18;
+      ctx.globalAlpha = 0.3;
+      ctx.globalCompositeOperation = "source-over";
+    } else if (tool === TOOL_ERASER) {
+      ctx.strokeStyle = "rgba(0,0,0,1)";
+      ctx.lineWidth = 20;
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "destination-out";
+    }
 
     ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
-
-    // 🔥 broadcast stroke segment (normalized)
-    if (hasChannel) {
-      const nx = coords.x / coords.width;
-      const ny = coords.y / coords.height;
-      classroomChannel.send({
-        type: "ANNOTATION_DRAW_MOVE",
-        tool,
-        color: penColor,
-        nx,
-        ny,
-      });
-    }
   }
 
   function stopDrawing() {
     if (!isDrawing) return;
     setIsDrawing(false);
     saveAnnotations();
+  }
 
-    // 🔥 broadcast stroke end
-    if (hasChannel) {
-      classroomChannel.send({
-        type: "ANNOTATION_DRAW_END",
+  // Pointer (local + sync)
+  function updatePointer(e) {
+    if (tool !== TOOL_POINTER) {
+      setPointerPos(null);
+      if (channelReady && channelSend) {
+        channelSend({ type: "ANNOTATION_POINTER_HIDE" });
+      }
+      return;
+    }
+
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+
+    setPointerPos({ x: coords.x, y: coords.y });
+
+    if (channelReady && channelSend) {
+      const nx = coords.x / coords.width;
+      const ny = coords.y / coords.height;
+      channelSend({
+        type: "ANNOTATION_POINTER_MOVE",
+        nx,
+        ny,
       });
     }
   }
 
-  // Pointer
-  function updatePointer(e) {
-    if (tool !== TOOL_POINTER) {
-      setPointerPos(null);
-      return;
-    }
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const container = canvas.parentElement || canvas;
-    const rect = container.getBoundingClientRect();
-    setPointerPos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+  // Receive remote pointer events
+  useEffect(() => {
+    if (!channelSubscribe) return;
+
+    const unsubscribe = channelSubscribe((message) => {
+      if (!message || !message.type) return;
+
+      if (message.type === "ANNOTATION_POINTER_MOVE") {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const container = canvas.parentElement || canvas;
+        const rect = container.getBoundingClientRect();
+        const { nx, ny } = message;
+
+        setRemotePointerPos({
+          x: nx * rect.width,
+          y: ny * rect.height,
+        });
+      } else if (message.type === "ANNOTATION_POINTER_HIDE") {
+        setRemotePointerPos(null);
+      }
+      // 🔜 we can add TEXT / DRAW messages here later
     });
-  }
+
+    return unsubscribe;
+  }, [channelSubscribe]);
 
   // Sticky notes
   function handleClickForNote(e) {
@@ -372,9 +365,9 @@ export default function PrepShell({
     e.preventDefault();
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
-    const { x, y, width } = coords;
+    const { x, y, width, height } = coords;
     const currentX = note.x * width;
-    const currentY = note.y * coords.height;
+    const currentY = note.y * height;
 
     setDragState({
       kind: "note",
@@ -384,7 +377,7 @@ export default function PrepShell({
     });
   }
 
-  // Text boxes
+  // Text boxes (local only for now)
   function createTextBox(e) {
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
@@ -445,6 +438,8 @@ export default function PrepShell({
     setTextBoxes([]);
     setDragState(null);
     setActiveTextId(null);
+    setPointerPos(null);
+    setRemotePointerPos(null);
     try {
       window.localStorage.setItem(
         storageKey,
@@ -525,98 +520,19 @@ export default function PrepShell({
     if (tool === nextTool) {
       setTool(TOOL_NONE);
       setPointerPos(null);
+      if (channelReady && channelSend && nextTool === TOOL_POINTER) {
+        channelSend({ type: "ANNOTATION_POINTER_HIDE" });
+      }
     } else {
       setTool(nextTool);
       if (nextTool !== TOOL_POINTER) {
         setPointerPos(null);
+        if (channelReady && channelSend) {
+          channelSend({ type: "ANNOTATION_POINTER_HIDE" });
+        }
       }
     }
   }
-
-  // 🔥 Subscribe to remote draw events
-  useEffect(() => {
-    if (!classroomChannel) return;
-    if (!classroomChannel.subscribe) return;
-
-    const unsubscribe = classroomChannel.subscribe((msg) => {
-      if (!canvasRef.current) return;
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      const container = canvas.parentElement || canvas;
-      const rect = container.getBoundingClientRect();
-
-      if (msg.type === "ANNOTATION_DRAW_START") {
-        const { nx, ny, tool: remoteTool, color } = msg;
-        if (typeof nx !== "number" || typeof ny !== "number") return;
-
-        const x = nx * rect.width;
-        const y = ny * rect.height;
-
-        applyStrokeStyle(ctx, remoteTool, color);
-
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-
-        remoteDrawRef.current = {
-          isDrawing: true,
-          last: { nx, ny },
-          tool: remoteTool,
-          color: color || PEN_COLORS[0],
-        };
-      }
-
-      if (msg.type === "ANNOTATION_DRAW_MOVE") {
-        const { nx, ny, tool: remoteTool, color } = msg;
-        if (typeof nx !== "number" || typeof ny !== "number") return;
-
-        const state = remoteDrawRef.current;
-        const prev = state.last;
-
-        const x = nx * rect.width;
-        const y = ny * rect.height;
-
-        applyStrokeStyle(ctx, remoteTool, color);
-
-        ctx.beginPath();
-        if (
-          prev &&
-          typeof prev.nx === "number" &&
-          typeof prev.ny === "number"
-        ) {
-          const px = prev.nx * rect.width;
-          const py = prev.ny * rect.height;
-          ctx.moveTo(px, py);
-        } else {
-          ctx.moveTo(x, y);
-        }
-        ctx.lineTo(x, y);
-        ctx.stroke();
-
-        remoteDrawRef.current = {
-          isDrawing: true,
-          last: { nx, ny },
-          tool: remoteTool,
-          color: color || PEN_COLORS[0],
-        };
-      }
-
-      if (msg.type === "ANNOTATION_DRAW_END") {
-        remoteDrawRef.current = {
-          isDrawing: false,
-          last: null,
-          tool: null,
-          color: null,
-        };
-        // Persist whatever is now on the canvas along with local notes/text
-        saveAnnotations();
-      }
-    });
-
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [classroomChannel]);
 
   // Shared annotation overlay (canvas + notes + text + pointer)
   function renderAnnotationsOverlay() {
@@ -729,13 +645,24 @@ export default function PrepShell({
           );
         })}
 
-        {/* Pointer arrow (local only for now) */}
+        {/* Local pointer arrow */}
         {tool === TOOL_POINTER && pointerPos && (
           <div
             className="prep-pointer"
             style={{
               left: `${pointerPos.x}px`,
               top: `${pointerPos.y}px`,
+            }}
+          />
+        )}
+
+        {/* Remote pointer arrow */}
+        {remotePointerPos && (
+          <div
+            className="prep-pointer prep-pointer--remote"
+            style={{
+              left: `${remotePointerPos.x}px`,
+              top: `${remotePointerPos.y}px`,
             }}
           />
         )}
@@ -976,7 +903,7 @@ export default function PrepShell({
 
               <div className="prep-viewer__frame-wrapper">
                 {isPdf ? (
-                  // PDF + sidebar (pdf.js) – overlay lives INSIDE PdfViewerWithSidebar
+                  // PDF + sidebar (pdf.js) – overlay INSIDE the PDF scroller
                   <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={viewerUrl}
@@ -987,13 +914,7 @@ export default function PrepShell({
                   </div>
                 ) : (
                   // Fallback: iframe viewer (YouTube, Slides, external or PDF if pdf.js failed)
-                  <div
-                    className="prep-viewer__canvas-container"
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                  >
+                  <div className="prep-viewer__canvas-container">
                     <iframe
                       src={viewerUrl}
                       className="prep-viewer__frame"
