@@ -6,6 +6,7 @@ import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
 import PrepShell from "@/app/resources/prep/PrepShell";
 import ClassroomResourcePicker from "./ClassroomResourcePicker";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
+import api from "@/lib/api"; // ⭐ use the same axios instance as the rest of the app
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
   const isTeacher = session.role === "teacher" || session.isTeacher;
@@ -13,7 +14,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   // Build lookup of all resources
   const { resourcesById } = useMemo(() => buildResourceIndex(tracks), [tracks]);
 
-  // Shared classroom state (what should be the same for teacher & learner)
+  // Shared classroom state (same for teacher & learner)
   const [classroomState, setClassroomState] = useState({
     selectedResourceId: null,
     currentPage: 1,
@@ -30,14 +31,13 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         const next = { ...prev, ...patch };
 
         if (isTeacher) {
-          // Fire-and-forget POST to your backend
-          fetch(`/sessions/${sessionId}/classroom-state`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ classroomState: next }),
-          }).catch((err) => {
-            console.error("Failed to update classroom state", err);
-          });
+          api
+            .post(`/sessions/${sessionId}/classroom-state`, {
+              classroomState: next,
+            })
+            .catch((err) => {
+              console.error("Failed to update classroom state", err);
+            });
         }
 
         return next;
@@ -53,11 +53,11 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
     async function loadState() {
       try {
-        const res = await fetch(`/sessions/${sessionId}/classroom-state`);
-        if (!res.ok) return;
+        const { data } = await api.get(
+          `/sessions/${sessionId}/classroom-state`
+        );
 
-        const json = await res.json();
-        const remote = json.classroomState || {};
+        const remote = data?.classroomState || {};
 
         if (isCancelled) return;
 
@@ -85,7 +85,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
     const first = Object.values(resourcesById)[0];
     if (first) {
-      updateClassroomState({ selectedResourceId: first._id });
+      updateClassroomState({ selectedResourceId: first._id, currentPage: 1 });
     }
   }, [
     hasLoadedInitialState,
@@ -104,7 +104,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   // Picker callback (teacher changes resource)
   function handleChangeResourceId(newId) {
-    updateClassroomState({ selectedResourceId: newId });
+    updateClassroomState({ selectedResourceId: newId, currentPage: 1 });
   }
 
   return (
@@ -129,7 +129,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
             <PrepShell
               resource={resource}
               viewer={viewer}
-              // In the live classroom we only want the dark viewer with tools:
               hideSidebar
               hideBreadcrumbs
             />
