@@ -4,17 +4,18 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Classroom channel implemented using the SAME websocket signaling server as video,
- * but with a custom message type: "classroom-event".
+ * Classroom channel using the SAME WebSocket signaling server as PrepVideoCall.
  *
- * This avoids interfering with WebRTC signaling ("offer", "answer", "candidate")
- * while still using the same roomId system.
+ * We wrap our payload in a "signal" message with signalType="classroom-event"
+ * so the backend forwards it to the other peer:
+ *
+ *   { type: "signal", signalType: "classroom-event", data: {...} }
  */
 
 export function useClassroomChannel(roomId) {
   const [ready, setReady] = useState(false);
-  const handlersRef = useRef([]);
   const wsRef = useRef(null);
+  const handlersRef = useRef([]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -26,6 +27,7 @@ export function useClassroomChannel(roomId) {
       const url = new URL(apiBase);
       url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
       url.pathname = "/ws/prep";
+      url.search = "";
       wsUrl = url.toString();
     } else {
       const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -34,10 +36,19 @@ export function useClassroomChannel(roomId) {
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
-    window.__ws_debug = ws; // DEBUG only
+
+    // debug handle
+    if (typeof window !== "undefined") {
+      window.__ws_debug = ws;
+    }
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({ type: "join", roomId }));
+      ws.send(
+        JSON.stringify({
+          type: "join",
+          roomId: String(roomId),
+        })
+      );
       setReady(true);
     };
 
@@ -49,19 +60,36 @@ export function useClassroomChannel(roomId) {
         return;
       }
 
-      // We only listen for classroom events
-      if (msg.type === "classroom-event") {
-        handlersRef.current.forEach((fn) => fn(msg.payload));
+      // Only handle our classroom events
+      if (
+        msg.type === "signal" &&
+        msg.signalType === "classroom-event" &&
+        msg.data
+      ) {
+        handlersRef.current.forEach((fn) => {
+          try {
+            fn(msg.data);
+          } catch (err) {
+            console.warn("Classroom handler error", err);
+          }
+        });
       }
     };
 
     ws.onclose = () => {
       setReady(false);
+      if (wsRef.current === ws) wsRef.current = null;
+    };
+
+    ws.onerror = () => {
+      setReady(false);
     };
 
     return () => {
-      ws.close();
-      setReady(false);
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+      if (wsRef.current === ws) wsRef.current = null;
     };
   }, [roomId]);
 
@@ -71,8 +99,9 @@ export function useClassroomChannel(roomId) {
 
     ws.send(
       JSON.stringify({
-        type: "classroom-event", // custom type
-        payload,
+        type: "signal",
+        signalType: "classroom-event",
+        data: payload,
       })
     );
   }
