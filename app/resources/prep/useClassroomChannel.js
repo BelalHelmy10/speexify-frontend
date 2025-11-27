@@ -34,6 +34,7 @@ export function useClassroomChannel(roomId) {
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
+    window.__ws_debug = ws; // DEBUG only
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: "join", roomId }));
