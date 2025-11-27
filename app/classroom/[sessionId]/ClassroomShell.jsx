@@ -15,17 +15,15 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     session.isTeacher ||
     session.userType === "teacher";
 
-  // Build the track → book → unit → resource lookup
+  // Build lookup
   const { resourcesById } = useMemo(() => buildResourceIndex(tracks), [tracks]);
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
-  // Realtime channel for classroom sync (same roomId as video)
+  // Realtime channel
   const { ready, send, subscribe } = useClassroomChannel(String(sessionId));
 
-  // ───────────────────────────────────────────────
-  // Receive updates from teacher → student updates
-  // ───────────────────────────────────────────────
+  // Receive updates from teacher
   useEffect(() => {
     if (!ready) return;
 
@@ -44,11 +42,9 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     return unsubscribe;
   }, [ready, resourcesById, subscribe]);
 
-  // ───────────────────────────────────────────────
-  // Teacher: auto-select first resource ONCE
-  // ───────────────────────────────────────────────
+  // Teacher: auto-select first resource
   useEffect(() => {
-    if (!isTeacher) return; // learners do nothing
+    if (!isTeacher) return;
 
     if (!selectedResourceId) {
       const first = Object.values(resourcesById)[0];
@@ -61,9 +57,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     }
   }, [isTeacher, resourcesById, selectedResourceId, ready, send]);
 
-  // ───────────────────────────────────────────────
-  // Teacher: change resource manually via Picker
-  // ───────────────────────────────────────────────
+  // Teacher: selections
   function handleChangeResourceId(nextId) {
     setSelectedResourceId(nextId);
 
@@ -73,7 +67,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     }
   }
 
-  // Current resolved resource viewer info
+  // Resolve resource and viewer details
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId] || null
     : null;
@@ -87,16 +81,14 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         <PrepVideoCall roomId={sessionId} />
       </section>
 
-      {/* RIGHT: picker (teacher only) + classroom viewer */}
+      {/* RIGHT: teacher picker + viewer */}
       <section className="classroom-prep-pane">
-        {/* 🚀 Only teachers see the Picker */}
-        {isTeacher && (
-          <ClassroomResourcePicker
-            tracks={tracks}
-            selectedResourceId={selectedResourceId}
-            onChangeResourceId={handleChangeResourceId}
-          />
-        )}
+        <ClassroomResourcePicker
+          isTeacher={isTeacher} // 🔥 pass it here
+          tracks={tracks}
+          selectedResourceId={selectedResourceId}
+          onChangeResourceId={handleChangeResourceId}
+        />
 
         <div className="classroom-prep-pane__content">
           {resource ? (
