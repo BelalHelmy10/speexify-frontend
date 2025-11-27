@@ -9,24 +9,33 @@ import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
-  const isTeacher = session.role === "teacher" || session.isTeacher;
+  // Determine if current viewer is teacher
+  const isTeacher =
+    session.role === "teacher" ||
+    session.isTeacher ||
+    session.userType === "teacher";
 
+  // Build the track → book → unit → resource lookup
   const { resourcesById } = useMemo(() => buildResourceIndex(tracks), [tracks]);
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
-  // Classroom realtime channel uses the same roomId as video call
+  // Realtime channel for classroom sync (same roomId as video)
   const { ready, send, subscribe } = useClassroomChannel(String(sessionId));
 
-  // Listen for remote resource changes (teacher -> learners)
+  // ───────────────────────────────────────────────
+  // Receive updates from teacher → student updates
+  // ───────────────────────────────────────────────
   useEffect(() => {
     if (!ready) return;
 
     const unsubscribe = subscribe((message) => {
       console.log("[Classroom] message received", message);
+
       if (message?.type === "SET_RESOURCE") {
         const { resourceId } = message;
         if (resourceId && resourcesById[resourceId]) {
+          console.log("[Classroom] applying teacher resource:", resourceId);
           setSelectedResourceId(resourceId);
         }
       }
@@ -35,11 +44,13 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     return unsubscribe;
   }, [ready, resourcesById, subscribe]);
 
-  // Teacher: default to first resource and broadcast it
+  // ───────────────────────────────────────────────
+  // Teacher: auto-select first resource ONCE
+  // ───────────────────────────────────────────────
   useEffect(() => {
-    if (!isTeacher) return;
+    if (!isTeacher) return; // learners do nothing
 
-    if (!selectedResourceId && Object.keys(resourcesById || {}).length > 0) {
+    if (!selectedResourceId) {
       const first = Object.values(resourcesById)[0];
       if (first) {
         setSelectedResourceId(first._id);
@@ -50,15 +61,19 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     }
   }, [isTeacher, resourcesById, selectedResourceId, ready, send]);
 
-  // Teacher: whenever they change selection, broadcast it
+  // ───────────────────────────────────────────────
+  // Teacher: change resource manually via Picker
+  // ───────────────────────────────────────────────
   function handleChangeResourceId(nextId) {
     setSelectedResourceId(nextId);
+
     if (isTeacher && ready && nextId) {
       console.log("[Classroom] teacher sending resource", nextId);
       send({ type: "SET_RESOURCE", resourceId: nextId });
     }
   }
 
+  // Current resolved resource viewer info
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId] || null
     : null;
@@ -72,8 +87,9 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         <PrepVideoCall roomId={sessionId} />
       </section>
 
-      {/* RIGHT: picker (teacher only) + prep viewer */}
+      {/* RIGHT: picker (teacher only) + classroom viewer */}
       <section className="classroom-prep-pane">
+        {/* 🚀 Only teachers see the Picker */}
         {isTeacher && (
           <ClassroomResourcePicker
             tracks={tracks}
