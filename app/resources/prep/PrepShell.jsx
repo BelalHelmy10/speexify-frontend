@@ -21,12 +21,14 @@ const PEN_COLORS = ["#f9fafb", "#fbbf24", "#60a5fa", "#f97316", "#22c55e"];
  *  - resource, viewer: as before (prep room)
  *  - hideSidebar (optional): when true, do NOT render the left info/notes column
  *  - hideBreadcrumbs (optional): when true, no breadcrumbs row
+ *  - classroomChannel (optional): { ready, send, subscribe } for classroom sync
  */
 export default function PrepShell({
   resource,
   viewer,
   hideSidebar = false,
   hideBreadcrumbs = false,
+  classroomChannel = null,
 }) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
@@ -40,7 +42,14 @@ export default function PrepShell({
   const [pdfFallback, setPdfFallback] = useState(false); // if pdf.js fails, fall back to iframe
 
   const canvasRef = useRef(null);
-  const containerRef = useRef(null);
+
+  // 🔥 remote drawing state (for strokes coming from the other side)
+  const remoteDrawRef = useRef({
+    isDrawing: false,
+    last: null, // { nx, ny }
+    tool: null,
+    color: null,
+  });
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -51,6 +60,7 @@ export default function PrepShell({
   const track = level?.track;
 
   const viewerActive = !!viewerUrl;
+  const hasChannel = !!classroomChannel?.ready;
 
   // Focus newly-activated text box
   useEffect(() => {
@@ -92,11 +102,13 @@ export default function PrepShell({
     }
   }, [storageKey]);
 
-  // Resize annotation canvas to match container
+  // Resize annotation canvas to match its container (overlay parent)
   useEffect(() => {
-    const container = containerRef.current;
     const canvas = canvasRef.current;
-    if (!container || !canvas) return;
+    if (!canvas) return;
+
+    const container = canvas.parentElement || canvas;
+    if (!container) return;
 
     function resizeCanvas() {
       const rect = container.getBoundingClientRect();
@@ -149,17 +161,41 @@ export default function PrepShell({
     }
   }
 
-  // Geometry helper
+  // Geometry helper – use overlay parent container
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
+    const container = canvas.parentElement || canvas;
+    const rect = container.getBoundingClientRect();
     return {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
       width: rect.width,
       height: rect.height,
     };
+  }
+
+  // Apply stroke style (local + remote)
+  function applyStrokeStyle(ctx, strokeTool, color) {
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (strokeTool === TOOL_PEN) {
+      ctx.strokeStyle = color || penColor;
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+    } else if (strokeTool === TOOL_HIGHLIGHTER) {
+      ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
+      ctx.lineWidth = 18;
+      ctx.globalAlpha = 0.3;
+      ctx.globalCompositeOperation = "source-over";
+    } else if (strokeTool === TOOL_ERASER) {
+      ctx.strokeStyle = "rgba(0,0,0,1)";
+      ctx.lineWidth = 20;
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "destination-out";
+    }
   }
 
   // Drawing (pen / highlighter / eraser)
@@ -174,6 +210,22 @@ export default function PrepShell({
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
     setIsDrawing(true);
+
+    // 🔥 broadcast start of stroke (normalized)
+    if (
+      hasChannel &&
+      (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER || tool === TOOL_ERASER)
+    ) {
+      const nx = coords.x / coords.width;
+      const ny = coords.y / coords.height;
+      classroomChannel.send({
+        type: "ANNOTATION_DRAW_START",
+        tool,
+        color: penColor,
+        nx,
+        ny,
+      });
+    }
   }
 
   function draw(e) {
@@ -233,34 +285,36 @@ export default function PrepShell({
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    if (tool === TOOL_PEN) {
-      ctx.strokeStyle = penColor;
-      ctx.lineWidth = 3;
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
-    } else if (tool === TOOL_HIGHLIGHTER) {
-      ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
-      ctx.lineWidth = 18;
-      ctx.globalAlpha = 0.3;
-      ctx.globalCompositeOperation = "source-over";
-    } else if (tool === TOOL_ERASER) {
-      ctx.strokeStyle = "rgba(0,0,0,1)";
-      ctx.lineWidth = 20;
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "destination-out";
-    }
+    applyStrokeStyle(ctx, tool, penColor);
 
     ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
+
+    // 🔥 broadcast stroke segment (normalized)
+    if (hasChannel) {
+      const nx = coords.x / coords.width;
+      const ny = coords.y / coords.height;
+      classroomChannel.send({
+        type: "ANNOTATION_DRAW_MOVE",
+        tool,
+        color: penColor,
+        nx,
+        ny,
+      });
+    }
   }
 
   function stopDrawing() {
     if (!isDrawing) return;
     setIsDrawing(false);
     saveAnnotations();
+
+    // 🔥 broadcast stroke end
+    if (hasChannel) {
+      classroomChannel.send({
+        type: "ANNOTATION_DRAW_END",
+      });
+    }
   }
 
   // Pointer
@@ -269,8 +323,9 @@ export default function PrepShell({
       setPointerPos(null);
       return;
     }
-    const container = containerRef.current;
-    if (!container) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const container = canvas.parentElement || canvas;
     const rect = container.getBoundingClientRect();
     setPointerPos({
       x: e.clientX - rect.left,
@@ -478,6 +533,91 @@ export default function PrepShell({
     }
   }
 
+  // 🔥 Subscribe to remote draw events
+  useEffect(() => {
+    if (!classroomChannel) return;
+    if (!classroomChannel.subscribe) return;
+
+    const unsubscribe = classroomChannel.subscribe((msg) => {
+      if (!canvasRef.current) return;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const container = canvas.parentElement || canvas;
+      const rect = container.getBoundingClientRect();
+
+      if (msg.type === "ANNOTATION_DRAW_START") {
+        const { nx, ny, tool: remoteTool, color } = msg;
+        if (typeof nx !== "number" || typeof ny !== "number") return;
+
+        const x = nx * rect.width;
+        const y = ny * rect.height;
+
+        applyStrokeStyle(ctx, remoteTool, color);
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+
+        remoteDrawRef.current = {
+          isDrawing: true,
+          last: { nx, ny },
+          tool: remoteTool,
+          color: color || PEN_COLORS[0],
+        };
+      }
+
+      if (msg.type === "ANNOTATION_DRAW_MOVE") {
+        const { nx, ny, tool: remoteTool, color } = msg;
+        if (typeof nx !== "number" || typeof ny !== "number") return;
+
+        const state = remoteDrawRef.current;
+        const prev = state.last;
+
+        const x = nx * rect.width;
+        const y = ny * rect.height;
+
+        applyStrokeStyle(ctx, remoteTool, color);
+
+        ctx.beginPath();
+        if (
+          prev &&
+          typeof prev.nx === "number" &&
+          typeof prev.ny === "number"
+        ) {
+          const px = prev.nx * rect.width;
+          const py = prev.ny * rect.height;
+          ctx.moveTo(px, py);
+        } else {
+          ctx.moveTo(x, y);
+        }
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        remoteDrawRef.current = {
+          isDrawing: true,
+          last: { nx, ny },
+          tool: remoteTool,
+          color: color || PEN_COLORS[0],
+        };
+      }
+
+      if (msg.type === "ANNOTATION_DRAW_END") {
+        remoteDrawRef.current = {
+          isDrawing: false,
+          last: null,
+          tool: null,
+          color: null,
+        };
+        // Persist whatever is now on the canvas along with local notes/text
+        saveAnnotations();
+      }
+    });
+
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classroomChannel]);
+
   // Shared annotation overlay (canvas + notes + text + pointer)
   function renderAnnotationsOverlay() {
     return (
@@ -589,7 +729,7 @@ export default function PrepShell({
           );
         })}
 
-        {/* Pointer arrow */}
+        {/* Pointer arrow (local only for now) */}
         {tool === TOOL_POINTER && pointerPos && (
           <div
             className="prep-pointer"
@@ -836,22 +976,19 @@ export default function PrepShell({
 
               <div className="prep-viewer__frame-wrapper">
                 {isPdf ? (
-                  // PDF + sidebar (pdf.js)
-                  <div
-                    className="prep-viewer__canvas-container"
-                    ref={containerRef}
-                  >
+                  // PDF + sidebar (pdf.js) – overlay lives INSIDE PdfViewerWithSidebar
+                  <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={viewerUrl}
                       onFatalError={() => setPdfFallback(true)}
-                    />
-                    {renderAnnotationsOverlay()}
+                    >
+                      {renderAnnotationsOverlay()}
+                    </PdfViewerWithSidebar>
                   </div>
                 ) : (
                   // Fallback: iframe viewer (YouTube, Slides, external or PDF if pdf.js failed)
                   <div
                     className="prep-viewer__canvas-container"
-                    ref={containerRef}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
