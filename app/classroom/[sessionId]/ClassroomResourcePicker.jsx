@@ -8,7 +8,7 @@ export default function ClassroomResourcePicker({
   tracks,
   selectedResourceId,
   onChangeResourceId,
-  isTeacher, // 🔥 added
+  isTeacher,
 }) {
   const {
     trackOptions,
@@ -30,15 +30,8 @@ export default function ClassroomResourcePicker({
     : [];
   const resourceOptions = unitId ? resourcesByUnitId[unitId] || [] : [];
 
-  /* 
-  -------------------------------------------------------------------
-  🔥 THIS IS THE TRUE FIX:
-  ALL cascade effects must only run for TEACHERS.
-  Learner should NEVER auto-select anything.
-  -------------------------------------------------------------------
-  */
+  // All cascades are TEACHER-ONLY
 
-  // Track auto-select
   useEffect(() => {
     if (!isTeacher) return;
     if (!trackOptions.length) return;
@@ -48,7 +41,6 @@ export default function ClassroomResourcePicker({
     );
   }, [trackOptions, isTeacher]);
 
-  // Book auto-select
   useEffect(() => {
     if (!isTeacher) return;
 
@@ -66,7 +58,6 @@ export default function ClassroomResourcePicker({
     );
   }, [trackId, booksByTrackId, onChangeResourceId, isTeacher]);
 
-  // Book level auto-select
   useEffect(() => {
     if (!isTeacher) return;
 
@@ -83,7 +74,6 @@ export default function ClassroomResourcePicker({
     );
   }, [bookId, bookLevelsByBookId, onChangeResourceId, isTeacher]);
 
-  // Unit auto-select
   useEffect(() => {
     if (!isTeacher) return;
 
@@ -99,7 +89,6 @@ export default function ClassroomResourcePicker({
     );
   }, [bookLevelId, unitOptionsByBookLevelId, onChangeResourceId, isTeacher]);
 
-  // Resource auto-select
   useEffect(() => {
     if (!isTeacher) return;
 
