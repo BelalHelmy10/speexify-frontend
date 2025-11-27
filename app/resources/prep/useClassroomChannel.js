@@ -2,43 +2,78 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getRoomConnection } from "./webrtcClient";
-// This is pseudo-code – whatever you already use to join the room.
 
-export function useClassroomChannel(roomId, topic) {
+/**
+ * Classroom channel implemented using the SAME websocket signaling server as video,
+ * but with a custom message type: "classroom-event".
+ *
+ * This avoids interfering with WebRTC signaling ("offer", "answer", "candidate")
+ * while still using the same roomId system.
+ */
+
+export function useClassroomChannel(roomId) {
   const [ready, setReady] = useState(false);
   const handlersRef = useRef([]);
+  const wsRef = useRef(null);
 
   useEffect(() => {
-    const room = getRoomConnection(roomId); // join / reuse existing room
-    const channel = room.getOrCreateDataChannel(topic);
+    if (!roomId) return;
 
-    channel.on("message", (msg) => {
-      let data = msg;
+    let wsUrl = "";
+    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+
+    if (apiBase) {
+      const url = new URL(apiBase);
+      url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+      url.pathname = "/ws/prep";
+      wsUrl = url.toString();
+    } else {
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      wsUrl = `${wsProtocol}//${window.location.host}/ws/prep`;
+    }
+
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: "join", roomId }));
+      setReady(true);
+    };
+
+    ws.onmessage = (event) => {
+      let msg;
       try {
-        if (typeof msg === "string") data = JSON.parse(msg);
-      } catch {}
-      handlersRef.current.forEach((fn) => fn(data));
-    });
+        msg = JSON.parse(event.data);
+      } catch {
+        return;
+      }
 
-    channel.on("open", () => setReady(true));
+      // We only listen for classroom events
+      if (msg.type === "classroom-event") {
+        handlersRef.current.forEach((fn) => fn(msg.payload));
+      }
+    };
+
+    ws.onclose = () => {
+      setReady(false);
+    };
 
     return () => {
-      channel.close?.();
+      ws.close();
+      setReady(false);
     };
-  }, [roomId, topic]);
+  }, [roomId]);
 
-  function send(data) {
-    try {
-      const payload = typeof data === "string" ? data : JSON.stringify(data);
-      // channel might not be ready yet
-      if (ready) {
-        const room = getRoomConnection(roomId);
-        room.getOrCreateDataChannel(topic).send(payload);
-      }
-    } catch (err) {
-      console.warn("Failed to send classroom message", err);
-    }
+  function send(payload) {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+    ws.send(
+      JSON.stringify({
+        type: "classroom-event", // custom type
+        payload,
+      })
+    );
   }
 
   function subscribe(handler) {
