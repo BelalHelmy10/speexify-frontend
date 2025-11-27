@@ -6,6 +6,7 @@ import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
 import PrepShell from "@/app/resources/prep/PrepShell";
 import ClassroomResourcePicker from "./ClassroomResourcePicker";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
+import api from "@/lib/api"; // ⭐ use the same API client as the rest of the app
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
   const isTeacher = session.role === "teacher" || session.isTeacher;
@@ -18,6 +19,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     selectedResourceId: null,
     currentPage: 1,
   });
+
   const [hasLoadedInitialState, setHasLoadedInitialState] = useState(false);
 
   const selectedResourceId = classroomState.selectedResourceId;
@@ -29,14 +31,14 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         const next = { ...prev, ...patch };
 
         if (isTeacher) {
-          // Fire-and-forget POST to your backend
-          fetch(`/sessions/${sessionId}/classroom-state`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ classroomState: next }),
-          }).catch((err) => {
-            console.error("Failed to update classroom state", err);
-          });
+          // Fire-and-forget POST to your backend API
+          api
+            .post(`/sessions/${sessionId}/classroom-state`, {
+              classroomState: next,
+            })
+            .catch((err) => {
+              console.error("Failed to update classroom state", err);
+            });
         }
 
         return next;
@@ -45,47 +47,49 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     [isTeacher, sessionId]
   );
 
-  // Load/poll classroom state from backend
+  // Poll backend for classroom state so teacher & learner stay in sync
   useEffect(() => {
     let isCancelled = false;
     let intervalId;
 
-    async function loadStateOnce() {
+    async function loadState() {
       try {
-        const res = await fetch(`/sessions/${sessionId}/classroom-state`);
-        if (!res.ok) return;
-        const json = await res.json();
-        const remote = json.classroomState || {};
+        const res = await api.get(`/sessions/${sessionId}/classroom-state`);
 
         if (isCancelled) return;
 
-        setClassroomState((prev) => ({ ...prev, ...remote }));
-        setHasLoadedInitialState(true);
+        const remote = res.data?.classroomState || {};
+
+        setClassroomState((prev) => ({
+          ...prev,
+          ...remote,
+        }));
       } catch (err) {
         console.error("Failed to fetch classroom state", err);
+      } finally {
+        // ✅ even if it fails, allow the teacher to pick the first resource locally
+        if (!isCancelled) {
+          setHasLoadedInitialState(true);
+        }
       }
     }
 
-    // Teacher: load once (to reuse any existing state), no polling.
-    // Learner: load now + poll every few seconds.
-    if (isTeacher) {
-      loadStateOnce();
-    } else {
-      loadStateOnce();
-      intervalId = setInterval(loadStateOnce, 5000); // poll every 5s
-    }
+    // initial load
+    loadState();
+
+    // slow polling to avoid killing the DB
+    intervalId = setInterval(loadState, 5000); // every 5s
 
     return () => {
       isCancelled = true;
-      if (intervalId) clearInterval(intervalId);
+      clearInterval(intervalId);
     };
-  }, [sessionId, isTeacher]);
+  }, [sessionId]);
 
-  // For the teacher: if no resource is selected yet *after* initial load,
-  // default to the first available resource and propagate to backend.
+  // For the teacher: if no resource is selected yet, default to the first one
   useEffect(() => {
+    if (!hasLoadedInitialState) return; // wait until we tried to load remote state
     if (!isTeacher) return;
-    if (!hasLoadedInitialState) return;
     if (classroomState.selectedResourceId) return;
 
     const first = Object.values(resourcesById)[0];
@@ -93,8 +97,8 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
       updateClassroomState({ selectedResourceId: first._id });
     }
   }, [
-    isTeacher,
     hasLoadedInitialState,
+    isTeacher,
     classroomState.selectedResourceId,
     resourcesById,
     updateClassroomState,
@@ -109,7 +113,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   // Picker callback (teacher changes resource)
   function handleChangeResourceId(newId) {
-    if (!isTeacher) return;
     updateClassroomState({ selectedResourceId: newId });
   }
 
