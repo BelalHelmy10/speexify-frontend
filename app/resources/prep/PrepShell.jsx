@@ -34,7 +34,7 @@ export default function PrepShell({
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
   const [pointerPos, setPointerPos] = useState(null);
-  const [remotePointerPos, setRemotePointerPos] = useState(null); // 🔥 remote pointer
+  const [remotePointerPos, setRemotePointerPos] = useState(null); // remote pointer
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
@@ -172,7 +172,7 @@ export default function PrepShell({
     };
   }
 
-  // Drawing (pen / highlighter / eraser)
+  // Drawing (pen / highlighter / eraser) – still local for now
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
@@ -206,6 +206,20 @@ export default function PrepShell({
             };
           });
           saveAnnotations({ stickyNotes: updated });
+
+          // broadcast NOTE_MOVE
+          if (channelReady && channelSend) {
+            const moved = updated.find((n) => n.id === dragState.id);
+            if (moved) {
+              channelSend({
+                type: "ANNOTATION_NOTE_MOVE",
+                id: moved.id,
+                x: moved.x,
+                y: moved.y,
+              });
+            }
+          }
+
           return updated;
         });
       } else if (dragState.kind === "text") {
@@ -221,6 +235,20 @@ export default function PrepShell({
             };
           });
           saveAnnotations({ textBoxes: updated });
+
+          // broadcast TEXT_MOVE
+          if (channelReady && channelSend) {
+            const moved = updated.find((t) => t.id === dragState.id);
+            if (moved) {
+              channelSend({
+                type: "ANNOTATION_TEXT_MOVE",
+                id: moved.id,
+                x: moved.x,
+                y: moved.y,
+              });
+            }
+          }
+
           return updated;
         });
       }
@@ -299,14 +327,16 @@ export default function PrepShell({
     }
   }
 
-  // Receive remote pointer events
+  // Receive remote pointer + notes + text + clear events
   useEffect(() => {
     if (!channelSubscribe) return;
 
     const unsubscribe = channelSubscribe((message) => {
       if (!message || !message.type) return;
 
-      if (message.type === "ANNOTATION_POINTER_MOVE") {
+      const t = message.type;
+
+      if (t === "ANNOTATION_POINTER_MOVE") {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const container = canvas.parentElement || canvas;
@@ -317,10 +347,94 @@ export default function PrepShell({
           x: nx * rect.width,
           y: ny * rect.height,
         });
-      } else if (message.type === "ANNOTATION_POINTER_HIDE") {
+      } else if (t === "ANNOTATION_POINTER_HIDE") {
         setRemotePointerPos(null);
       }
-      // 🔜 we can add TEXT / DRAW messages here later
+
+      // NOTES
+      else if (t === "ANNOTATION_NOTE_CREATE") {
+        const { id, x, y, text = "" } = message;
+        if (!id) return;
+        setStickyNotes((prev) => {
+          if (prev.some((n) => n.id === id)) return prev;
+          const next = [...prev, { id, x, y, text }];
+          saveAnnotations({ stickyNotes: next });
+          return next;
+        });
+      } else if (t === "ANNOTATION_NOTE_UPDATE") {
+        const { id, text = "" } = message;
+        if (!id) return;
+        setStickyNotes((prev) => {
+          const next = prev.map((n) => (n.id === id ? { ...n, text } : n));
+          saveAnnotations({ stickyNotes: next });
+          return next;
+        });
+      } else if (t === "ANNOTATION_NOTE_MOVE") {
+        const { id, x, y } = message;
+        if (!id) return;
+        setStickyNotes((prev) => {
+          const next = prev.map((n) => (n.id === id ? { ...n, x, y } : n));
+          saveAnnotations({ stickyNotes: next });
+          return next;
+        });
+      } else if (t === "ANNOTATION_NOTE_DELETE") {
+        const { id } = message;
+        if (!id) return;
+        setStickyNotes((prev) => {
+          const next = prev.filter((n) => n.id !== id);
+          saveAnnotations({ stickyNotes: next });
+          return next;
+        });
+      }
+
+      // TEXT BOXES
+      else if (t === "ANNOTATION_TEXT_CREATE") {
+        const { id, x, y, text = "", color = PEN_COLORS[0] } = message;
+        if (!id) return;
+        setTextBoxes((prev) => {
+          if (prev.some((b) => b.id === id)) return prev;
+          const next = [...prev, { id, x, y, text, color }];
+          saveAnnotations({ textBoxes: next });
+          return next;
+        });
+      } else if (t === "ANNOTATION_TEXT_UPDATE") {
+        const { id, text = "" } = message;
+        if (!id) return;
+        setTextBoxes((prev) => {
+          const next = prev.map((b) => (b.id === id ? { ...b, text } : b));
+          saveAnnotations({ textBoxes: next });
+          return next;
+        });
+      } else if (t === "ANNOTATION_TEXT_MOVE") {
+        const { id, x, y } = message;
+        if (!id) return;
+        setTextBoxes((prev) => {
+          const next = prev.map((b) => (b.id === id ? { ...b, x, y } : b));
+          saveAnnotations({ textBoxes: next });
+          return next;
+        });
+      } else if (t === "ANNOTATION_TEXT_DELETE") {
+        const { id } = message;
+        if (!id) return;
+        setTextBoxes((prev) => {
+          const next = prev.filter((b) => b.id !== id);
+          saveAnnotations({ textBoxes: next });
+          return next;
+        });
+      }
+
+      // CLEAR ALL
+      else if (t === "ANNOTATION_CLEAR_ALL") {
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        setStickyNotes([]);
+        setTextBoxes([]);
+        setRemotePointerPos(null);
+        saveAnnotations({ canvasData: null, stickyNotes: [], textBoxes: [] });
+      }
     });
 
     return unsubscribe;
@@ -345,6 +459,16 @@ export default function PrepShell({
     setStickyNotes(nextNotes);
     saveAnnotations({ stickyNotes: nextNotes });
 
+    if (channelReady && channelSend) {
+      channelSend({
+        type: "ANNOTATION_NOTE_CREATE",
+        id: note.id,
+        x: note.x,
+        y: note.y,
+        text: note.text,
+      });
+    }
+
     setTool(TOOL_NONE);
   }
 
@@ -352,12 +476,27 @@ export default function PrepShell({
     const next = stickyNotes.map((n) => (n.id === id ? { ...n, text } : n));
     setStickyNotes(next);
     saveAnnotations({ stickyNotes: next });
+
+    if (channelReady && channelSend) {
+      channelSend({
+        type: "ANNOTATION_NOTE_UPDATE",
+        id,
+        text,
+      });
+    }
   }
 
   function deleteNote(id) {
     const next = stickyNotes.filter((n) => n.id !== id);
     setStickyNotes(next);
     saveAnnotations({ stickyNotes: next });
+
+    if (channelReady && channelSend) {
+      channelSend({
+        type: "ANNOTATION_NOTE_DELETE",
+        id,
+      });
+    }
   }
 
   function startNoteDrag(e, note) {
@@ -377,7 +516,7 @@ export default function PrepShell({
     });
   }
 
-  // Text boxes (local only for now)
+  // Text boxes
   function createTextBox(e) {
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
@@ -395,12 +534,31 @@ export default function PrepShell({
     setTextBoxes(next);
     setActiveTextId(box.id);
     saveAnnotations({ textBoxes: next });
+
+    if (channelReady && channelSend) {
+      channelSend({
+        type: "ANNOTATION_TEXT_CREATE",
+        id: box.id,
+        x: box.x,
+        y: box.y,
+        text: box.text,
+        color: box.color,
+      });
+    }
   }
 
   function updateTextBoxText(id, text) {
     const next = textBoxes.map((t) => (t.id === id ? { ...t, text } : t));
     setTextBoxes(next);
     saveAnnotations({ textBoxes: next });
+
+    if (channelReady && channelSend) {
+      channelSend({
+        type: "ANNOTATION_TEXT_UPDATE",
+        id,
+        text,
+      });
+    }
   }
 
   function deleteTextBox(id) {
@@ -408,6 +566,13 @@ export default function PrepShell({
     setTextBoxes(next);
     saveAnnotations({ textBoxes: next });
     if (activeTextId === id) setActiveTextId(null);
+
+    if (channelReady && channelSend) {
+      channelSend({
+        type: "ANNOTATION_TEXT_DELETE",
+        id,
+      });
+    }
   }
 
   function startTextDrag(e, box) {
@@ -440,13 +605,11 @@ export default function PrepShell({
     setActiveTextId(null);
     setPointerPos(null);
     setRemotePointerPos(null);
-    try {
-      window.localStorage.setItem(
-        storageKey,
-        JSON.stringify({ canvasData: null, stickyNotes: [], textBoxes: [] })
-      );
-    } catch (err) {
-      console.warn("Failed to clear annotations", err);
+
+    saveAnnotations({ canvasData: null, stickyNotes: [], textBoxes: [] });
+
+    if (channelReady && channelSend) {
+      channelSend({ type: "ANNOTATION_CLEAR_ALL" });
     }
   }
 
