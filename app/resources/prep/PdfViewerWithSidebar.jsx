@@ -1,79 +1,23 @@
 // app/resources/prep/PdfViewerWithSidebar.jsx
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  forwardRef,
-  useImperativeHandle,
-  useCallback,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 
-/**
- * PdfViewerWithSidebar - PDF viewer with annotation support
- *
- * CRITICAL: Annotations must be rendered as children of this component
- * so they scroll with the PDF content.
- *
- * Props:
- *  - fileUrl: URL of the PDF file
- *  - onFatalError: callback when PDF fails to load
- *  - onPageChange(pageNum, numPages): called when page changes
- *  - onCanvasSizeChange({ width, height }): called when PDF canvas resizes
- *  - renderAnnotations({ width, height }): render prop for annotation overlay
- */
-const PdfViewerWithSidebar = forwardRef(function PdfViewerWithSidebar(
-  {
-    fileUrl,
-    onFatalError,
-    onPageChange,
-    onCanvasSizeChange,
-    renderAnnotations,
-  },
-  ref
-) {
-  const scrollContainerRef = useRef(null);
+export default function PdfViewerWithSidebar({
+  fileUrl,
+  onFatalError,
+  children, // 🔥 overlay from PrepShell will be rendered here
+}) {
+  const mainRef = useRef(null);
   const pdfCanvasRef = useRef(null);
 
   const [pdfjs, setPdfjs] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [error, setError] = useState(null);
 
-  // Expose to parent
-  useImperativeHandle(
-    ref,
-    () => ({
-      currentPage,
-      numPages,
-      canvasSize,
-      goToPage: (pageNum) => {
-        if (pageNum >= 1 && pageNum <= numPages) {
-          setCurrentPage(pageNum);
-        }
-      },
-    }),
-    [currentPage, numPages, canvasSize]
-  );
-
-  // Notify parent of page changes
-  useEffect(() => {
-    if (onPageChange && numPages > 0) {
-      onPageChange(currentPage, numPages);
-    }
-  }, [currentPage, numPages, onPageChange]);
-
-  // Notify parent of canvas size changes
-  useEffect(() => {
-    if (onCanvasSizeChange && canvasSize.width > 0) {
-      onCanvasSizeChange(canvasSize);
-    }
-  }, [canvasSize, onCanvasSizeChange]);
-
-  // Load PDF.js and document
+  // Load pdf.js + the PDF document
   useEffect(() => {
     let cancelled = false;
 
@@ -83,11 +27,11 @@ const PdfViewerWithSidebar = forwardRef(function PdfViewerWithSidebar(
       setError(null);
       setNumPages(0);
       setPdfDoc(null);
-      setCurrentPage(1);
-      setCanvasSize({ width: 0, height: 0 });
 
       try {
         const pdfjsModule = await import("pdfjs-dist/build/pdf");
+
+        // pdf.js worker from CDN (must be a plain string URL)
         pdfjsModule.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsModule.version}/pdf.worker.min.js`;
 
         if (cancelled) return;
@@ -103,228 +47,124 @@ const PdfViewerWithSidebar = forwardRef(function PdfViewerWithSidebar(
       } catch (err) {
         console.error("Failed to load PDF", err);
         if (!cancelled) {
-          setError("Couldn't load PDF file.");
+          setError("Couldn’t load PDF file.");
           if (onFatalError) onFatalError(err);
         }
       }
     }
 
     load();
+
     return () => {
       cancelled = true;
     };
   }, [fileUrl, onFatalError]);
 
-  // Render PDF page
-  const renderPage = useCallback(async () => {
-    if (
-      !pdfjs ||
-      !pdfDoc ||
-      !pdfCanvasRef.current ||
-      !scrollContainerRef.current
-    ) {
+  // Render current page (and re-render on resize)
+  useEffect(() => {
+    if (!pdfjs || !pdfDoc || !pdfCanvasRef.current || !mainRef.current) {
       return;
     }
 
-    try {
-      const page = await pdfDoc.getPage(currentPage);
-      const containerRect = scrollContainerRef.current.getBoundingClientRect();
-
-      const unscaledViewport = page.getViewport({ scale: 1 });
-      const scale = containerRect.width / unscaledViewport.width;
-      const viewport = page.getViewport({ scale });
-
-      const canvas = pdfCanvasRef.current;
-      const ctx = canvas.getContext("2d");
-
-      // Set canvas resolution
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-
-      // Update size state BEFORE render
-      setCanvasSize({ width: viewport.width, height: viewport.height });
-
-      await page.render({ canvasContext: ctx, viewport }).promise;
-    } catch (err) {
-      console.error("Failed to render PDF page", err);
-      setError("Couldn't render this page.");
-      if (onFatalError) onFatalError(err);
-    }
-  }, [pdfjs, pdfDoc, currentPage, onFatalError]);
-
-  useEffect(() => {
     let cancelled = false;
 
-    const doRender = async () => {
-      if (!cancelled) await renderPage();
-    };
-    doRender();
+    async function renderPage() {
+      try {
+        const page = await pdfDoc.getPage(currentPage);
+        if (cancelled) return;
+
+        const container = mainRef.current;
+        const rect = container.getBoundingClientRect();
+
+        const unscaledViewport = page.getViewport({ scale: 1 });
+
+        // Fit width; height can overflow, container can scroll
+        const scale = rect.width / unscaledViewport.width;
+        const viewport = page.getViewport({ scale });
+
+        const canvas = pdfCanvasRef.current;
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to render PDF page", err);
+          setError("Couldn’t render this page.");
+          if (onFatalError) onFatalError(err);
+        }
+      }
+    }
+
+    renderPage();
 
     let observer;
-    if (typeof ResizeObserver !== "undefined" && scrollContainerRef.current) {
+    if (typeof ResizeObserver !== "undefined" && mainRef.current) {
       observer = new ResizeObserver(() => {
-        if (!cancelled) renderPage();
+        renderPage();
       });
-      observer.observe(scrollContainerRef.current);
+      observer.observe(mainRef.current);
     }
 
     return () => {
       cancelled = true;
       if (observer) observer.disconnect();
     };
-  }, [renderPage]);
+  }, [pdfjs, pdfDoc, currentPage, onFatalError]);
 
   function handlePageClick(pageNum) {
     setCurrentPage(pageNum);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // INLINE STYLES - to prevent any CSS conflicts
-  // ─────────────────────────────────────────────────────────────
-  const layoutStyle = {
-    display: "flex",
-    width: "100%",
-    height: "100%",
-    minHeight: "400px",
-  };
-
-  const scrollContainerStyle = {
-    flex: 1,
-    overflow: "auto", // THIS IS THE SCROLLABLE CONTAINER
-    position: "relative", // For any absolutely positioned children
-    backgroundColor: "#1f2937",
-  };
-
-  // This wrapper contains BOTH the PDF canvas AND annotations
-  // It's sized to match the PDF canvas exactly
-  const contentWrapperStyle = {
-    position: "relative", // CRITICAL: annotations position relative to this
-    width: canvasSize.width > 0 ? `${canvasSize.width}px` : "100%",
-    height: canvasSize.height > 0 ? `${canvasSize.height}px` : "auto",
-    margin: "0 auto", // Center if narrower than container
-  };
-
-  const canvasStyle = {
-    display: "block", // Remove any inline spacing
-    width: canvasSize.width > 0 ? `${canvasSize.width}px` : "100%",
-    height: canvasSize.height > 0 ? `${canvasSize.height}px` : "auto",
-  };
-
-  // Annotation layer - positioned absolutely to cover the PDF exactly
-  const annotationLayerStyle = {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: canvasSize.width > 0 ? `${canvasSize.width}px` : "100%",
-    height: canvasSize.height > 0 ? `${canvasSize.height}px` : "100%",
-    pointerEvents: "none", // Let clicks pass through by default
-    zIndex: 10,
-  };
-
-  const sidebarStyle = {
-    width: "60px",
-    backgroundColor: "#111827",
-    borderLeft: "1px solid #374151",
-    overflowY: "auto",
-    padding: "8px 4px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  };
-
-  const pageButtonStyle = (isActive) => ({
-    width: "100%",
-    padding: "8px 4px",
-    border: "none",
-    borderRadius: "4px",
-    backgroundColor: isActive ? "#3b82f6" : "#374151",
-    color: isActive ? "#fff" : "#9ca3af",
-    cursor: "pointer",
-    fontSize: "12px",
-    fontWeight: isActive ? "600" : "400",
-  });
-
-  const errorStyle = {
-    padding: "20px",
-    color: "#ef4444",
-    textAlign: "center",
-  };
-
-  const loadingStyle = {
-    padding: "20px",
-    color: "#9ca3af",
-    textAlign: "center",
-  };
-
   return (
-    <div style={layoutStyle} className="prep-pdf-layout">
-      {/* SCROLLABLE CONTAINER */}
-      <div
-        ref={scrollContainerRef}
-        style={scrollContainerStyle}
-        className="prep-pdf-main"
-      >
-        {/* 
-          CONTENT WRAPPER - Contains both PDF canvas and annotation layer
-          This div is sized to match the PDF canvas.
-          When user scrolls, BOTH the canvas and annotations move together.
-        */}
-        <div style={contentWrapperStyle}>
+    <div className="prep-pdf-layout">
+      <div className="prep-pdf-main" ref={mainRef}>
+        <div
+          className="prep-pdf-main-inner"
+          style={{ position: "relative" }} // 🔥 overlay + pdf in same scroll container
+        >
           {error ? (
-            <div style={errorStyle}>{error}</div>
+            <div className="prep-pdf-error">{error}</div>
           ) : (
             <>
-              {/* PDF CANVAS */}
-              <canvas
-                ref={pdfCanvasRef}
-                style={canvasStyle}
-                className="prep-pdf-canvas"
-              />
-
-              {/* ANNOTATION LAYER - absolutely positioned, scrolls with PDF */}
-              {renderAnnotations &&
-                canvasSize.width > 0 &&
-                canvasSize.height > 0 && (
-                  <div style={annotationLayerStyle}>
-                    {renderAnnotations({
-                      width: canvasSize.width,
-                      height: canvasSize.height,
-                    })}
-                  </div>
-                )}
+              <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
+              {children}
             </>
           )}
         </div>
       </div>
 
-      {/* PAGE SIDEBAR */}
-      <aside style={sidebarStyle} className="prep-pdf-sidebar">
+      <aside className="prep-pdf-sidebar">
         {error ? (
-          <div style={errorStyle}>Error</div>
+          <div className="prep-pdf-sidebar__empty">{error}</div>
         ) : numPages === 0 ? (
-          <div style={loadingStyle}>...</div>
+          <div className="prep-pdf-sidebar__empty">Loading pages…</div>
         ) : (
-          Array.from({ length: numPages }, (_, i) => {
-            const pageNum = i + 1;
-            return (
-              <button
-                key={pageNum}
-                type="button"
-                style={pageButtonStyle(pageNum === currentPage)}
-                onClick={() => handlePageClick(pageNum)}
-                className={
-                  "prep-pdf-sidebar__page-button" +
-                  (pageNum === currentPage ? " is-active" : "")
-                }
-              >
-                {pageNum}
-              </button>
-            );
-          })
+          <div className="prep-pdf-sidebar__pages">
+            {Array.from({ length: numPages }, (_, i) => {
+              const pageNum = i + 1;
+              return (
+                <button
+                  key={pageNum}
+                  type="button"
+                  className={
+                    "prep-pdf-sidebar__page-button" +
+                    (pageNum === currentPage ? " is-active" : "")
+                  }
+                  onClick={() => handlePageClick(pageNum)}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
         )}
       </aside>
     </div>
   );
-});
-
-export default PdfViewerWithSidebar;
+}
