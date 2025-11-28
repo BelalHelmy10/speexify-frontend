@@ -14,7 +14,6 @@ const TOOL_POINTER = "pointer";
 const TOOL_ERASER = "eraser";
 const TOOL_TEXT = "text";
 
-// ✅ Added black as a color option, kept your others
 const PEN_COLORS = [
   "#000000",
   "#f9fafb",
@@ -24,19 +23,12 @@ const PEN_COLORS = [
   "#22c55e",
 ];
 
-/**
- * Props:
- *  - resource, viewer: as before (prep room)
- *  - hideSidebar (optional): when true, do NOT render the left info/notes column
- *  - hideBreadcrumbs (optional): when true, no breadcrumbs row
- *  - classroomChannel (optional): in classroom mode, used to sync annotations
- */
 export default function PrepShell({
   resource,
   viewer,
   hideSidebar = false,
   hideBreadcrumbs = false,
-  classroomChannel, // 🔥 new optional prop
+  classroomChannel, // optional
 }) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
@@ -50,21 +42,32 @@ export default function PrepShell({
   const [pdfFallback, setPdfFallback] = useState(false); // if pdf.js fails, fall back to iframe
 
   const canvasRef = useRef(null);
+  // NOTE: containerRef is no longer used for geometry; we keep it to avoid bigger diffs
   const containerRef = useRef(null);
-  const applyingRemoteRef = useRef(false); // ✅ avoid re-broadcast loops
+  const applyingRemoteRef = useRef(false); // avoid re-broadcast loops
 
   const storageKey = `prep_annotations_${resource._id}`;
 
   const viewerUrl = viewer?.viewerUrl || null;
+  const rawUrl = viewer?.rawUrl || null;
+
   const unit = resource.unit;
   const subLevel = unit?.subLevel;
   const level = subLevel?.level;
   const track = level?.track;
 
-  const viewerActive = !!viewerUrl;
+  const viewerActive = !!(viewerUrl || rawUrl);
 
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
+
+  // CHANGED: derive a proper PDF URL (prefer viewerUrl if type==="pdf", otherwise rawUrl when it ends with .pdf)
+  const pdfUrl =
+    !pdfFallback &&
+    ((viewer?.type === "pdf" && viewerUrl) ||
+      (rawUrl && /\.pdf($|\?)/i.test(rawUrl) ? rawUrl : null));
+
+  const isPdf = !!pdfUrl;
 
   // Focus newly-activated text box
   useEffect(() => {
@@ -106,10 +109,17 @@ export default function PrepShell({
     }
   }, [storageKey]);
 
+  // Helper: get the DOM element we use as coordinate system
+  function getOverlayContainer() {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    return canvas.parentElement || canvas;
+  }
+
   // Resize annotation canvas to match container
   useEffect(() => {
-    const container = containerRef.current;
     const canvas = canvasRef.current;
+    const container = getOverlayContainer();
     if (!container || !canvas) return;
 
     function resizeCanvas() {
@@ -164,7 +174,7 @@ export default function PrepShell({
     }
   }
 
-  // 🔥 Broadcast whole annotation state over classroomChannel (optional)
+  // Broadcast whole annotation state over classroomChannel (optional)
   function broadcastAnnotations(custom = {}) {
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return; // don't echo back remote updates
@@ -188,7 +198,7 @@ export default function PrepShell({
     }
   }
 
-  // 🔥 Broadcast pointer in normalized coordinates
+  // Broadcast pointer in normalized coordinates
   function broadcastPointer(normalizedPosOrNull) {
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return;
@@ -210,7 +220,7 @@ export default function PrepShell({
     });
   }
 
-  // 🔥 Apply remote annotation snapshot
+  // Apply remote annotation snapshot
   function applyRemoteAnnotationState(message) {
     if (!message || message.resourceId !== resource._id) return;
 
@@ -260,7 +270,7 @@ export default function PrepShell({
     }
   }
 
-  // 🔥 Subscribe to classroomChannel (remote annotations + pointer)
+  // Subscribe to classroomChannel (remote annotations + pointer)
   useEffect(() => {
     if (!classroomChannel || !classroomChannel.ready) return;
     if (!classroomChannel.subscribe) return;
@@ -271,7 +281,7 @@ export default function PrepShell({
       if (msg.type === "ANNOTATION_STATE") {
         applyRemoteAnnotationState(msg);
       } else if (msg.type === "POINTER_MOVE") {
-        const container = containerRef.current;
+        const container = getOverlayContainer();
         if (!container) return;
         const rect = container.getBoundingClientRect();
         const x = msg.xNorm * rect.width;
@@ -285,12 +295,11 @@ export default function PrepShell({
     return unsubscribe;
   }, [classroomChannel, resource._id]);
 
-  // Geometry helper
+  // Geometry helper for mouse events
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
-    // ✅ Use the canvas' parent as the reference box
     const container = canvas.parentElement || canvas;
     const rect = container.getBoundingClientRect();
 
@@ -413,7 +422,7 @@ export default function PrepShell({
       broadcastPointer(null);
       return;
     }
-    const container = containerRef.current;
+    const container = getOverlayContainer();
     if (!container) return;
     const rect = container.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -771,9 +780,6 @@ export default function PrepShell({
     );
   }
 
-  // NOTE: Your viewer types use "pdf" for PDF resources.
-  const isPdf = viewer?.type === "pdf" && !pdfFallback;
-
   const showSidebar = !hideSidebar;
   const showBreadcrumbs = !hideBreadcrumbs;
 
@@ -1005,24 +1011,23 @@ export default function PrepShell({
               <div className="prep-viewer__frame-wrapper">
                 {isPdf ? (
                   // PDF + sidebar (pdf.js)
-                  <div
-                    className="prep-viewer__canvas-container"
-                    ref={containerRef}
-                  >
+                  <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
-                      fileUrl={viewerUrl}
+                      fileUrl={pdfUrl}
                       onFatalError={() => setPdfFallback(true)}
-                    />
-                    {renderAnnotationsOverlay()}
+                    >
+                      {/* annotations overlay lives INSIDE the scrollable PDF container */}
+                      {renderAnnotationsOverlay()}
+                    </PdfViewerWithSidebar>
                   </div>
                 ) : (
-                  // Fallback: iframe viewer (YouTube, Slides, external or PDF if pdf.js failed)
+                  // Fallback: iframe viewer (YouTube, Slides, external, etc.)
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
                   >
                     <iframe
-                      src={viewerUrl}
+                      src={viewerUrl || rawUrl}
                       className="prep-viewer__frame"
                       title={`${resource.title} – ${viewer.label}`}
                       allow={
