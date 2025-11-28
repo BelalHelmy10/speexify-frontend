@@ -3,6 +3,14 @@
 
 import { useEffect, useRef, useState } from "react";
 
+/**
+ * Classroom channel using its own WebSocket server at /ws/classroom.
+ *
+ * We wrap our payload in a "signal" message with signalType="classroom-event"
+ * so the backend forwards it to the other peer:
+ *
+ *   { type: "signal", signalType: "classroom-event", data: {...} }
+ */
 export function useClassroomChannel(roomId) {
   const [ready, setReady] = useState(false);
   const wsRef = useRef(null);
@@ -22,14 +30,14 @@ export function useClassroomChannel(roomId) {
       wsUrl = url.toString();
     } else {
       const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      wsUrl = `${wsProtocol}//${window.location.host}/ws/classroom`; // ✅
+      wsUrl = `${wsProtocol}//${window.location.host}/ws/classroom`;
     }
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     if (typeof window !== "undefined") {
-      window.__ws_classroom = ws;
+      window.__ws_classroom = ws; // debug handle
     }
 
     ws.onopen = () => {
