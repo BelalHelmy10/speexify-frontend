@@ -36,7 +36,7 @@ export default function PrepShell({
   viewer,
   hideSidebar = false,
   hideBreadcrumbs = false,
-  classroomChannel, // 🔥 new optional prop
+  classroomChannel, // 🔥 optional prop for sync
 }) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
@@ -50,7 +50,7 @@ export default function PrepShell({
   const [pdfFallback, setPdfFallback] = useState(false); // if pdf.js fails, fall back to iframe
 
   const canvasRef = useRef(null);
-  const containerRef = useRef(null);
+  const containerRef = useRef(null); // used for iframe case
   const applyingRemoteRef = useRef(false); // ✅ avoid re-broadcast loops
 
   const storageKey = `prep_annotations_${resource._id}`;
@@ -65,6 +65,17 @@ export default function PrepShell({
 
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
+
+  // 🔍 Helper: find the container we should use for coordinates / resize
+  // For PDFs → canvas.parentElement (inside PdfViewerWithSidebar, scrolls with PDF)
+  // For iframe/resources → containerRef (prep-viewer__canvas-container)
+  function getAnnotationContainer() {
+    const canvas = canvasRef.current;
+    if (canvas && canvas.parentElement) {
+      return canvas.parentElement;
+    }
+    return containerRef.current || null;
+  }
 
   // Focus newly-activated text box
   useEffect(() => {
@@ -108,8 +119,8 @@ export default function PrepShell({
 
   // Resize annotation canvas to match container
   useEffect(() => {
-    const container = containerRef.current;
     const canvas = canvasRef.current;
+    const container = getAnnotationContainer();
     if (!container || !canvas) return;
 
     function resizeCanvas() {
@@ -271,7 +282,7 @@ export default function PrepShell({
       if (msg.type === "ANNOTATION_STATE") {
         applyRemoteAnnotationState(msg);
       } else if (msg.type === "POINTER_MOVE") {
-        const container = containerRef.current;
+        const container = getAnnotationContainer();
         if (!container) return;
         const rect = container.getBoundingClientRect();
         const x = msg.xNorm * rect.width;
@@ -413,7 +424,8 @@ export default function PrepShell({
       broadcastPointer(null);
       return;
     }
-    const container = containerRef.current;
+
+    const container = getAnnotationContainer();
     if (!container) return;
     const rect = container.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -1005,18 +1017,17 @@ export default function PrepShell({
               <div className="prep-viewer__frame-wrapper">
                 {isPdf ? (
                   // PDF + sidebar (pdf.js)
-                  <div
-                    className="prep-viewer__canvas-container"
-                    ref={containerRef}
-                  >
+                  <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={viewerUrl}
                       onFatalError={() => setPdfFallback(true)}
-                    />
-                    {renderAnnotationsOverlay()}
+                    >
+                      {/* 🔥 annotations overlay now lives INSIDE the scrollable PDF container */}
+                      {renderAnnotationsOverlay()}
+                    </PdfViewerWithSidebar>
                   </div>
                 ) : (
-                  // Fallback: iframe viewer (YouTube, Slides, external or PDF if pdf.js failed)
+                  // Fallback: iframe viewer (YouTube, Slides, etc.)
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
