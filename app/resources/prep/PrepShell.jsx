@@ -784,7 +784,10 @@ export default function PrepShell({
   }
 
   // NOTE: Your viewer types use "pdf" for PDF resources.
-  const isPdf = viewer?.type === "pdf" && !pdfFallback;
+  // NEW – treat real .pdf URLs as PDFs too
+  const isPdf =
+    !pdfFallback &&
+    (viewer?.type === "pdf" || (viewerUrl && /\.pdf($|\?)/i.test(viewerUrl)));
 
   const showSidebar = !hideSidebar;
   const showBreadcrumbs = !hideBreadcrumbs;
