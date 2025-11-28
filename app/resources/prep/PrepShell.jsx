@@ -49,7 +49,8 @@ export default function PrepShell({
   const [activeTextId, setActiveTextId] = useState(null);
   const [pdfFallback, setPdfFallback] = useState(false); // if pdf.js fails, fall back to iframe
 
-  const canvasRef = useRef(null);
+  const canvasRef = useRef(null); // drawing canvas
+  const containerRef = useRef(null); // scroll container for overlay
   const applyingRemoteRef = useRef(false); // ✅ avoid re-broadcast loops
 
   const storageKey = `prep_annotations_${resource._id}`;
@@ -105,13 +106,18 @@ export default function PrepShell({
     }
   }, [storageKey]);
 
-  // Resize annotation canvas to match its container
+  // Resize annotation canvas to match container (or its parent)
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
 
-    const container = canvas.parentElement || canvas;
-    if (!container) return;
+    function getContainer() {
+      if (containerRef.current) return containerRef.current;
+      if (!canvasRef.current) return null;
+      return canvasRef.current.parentElement || canvasRef.current;
+    }
+
+    const container = getContainer();
+    if (!container || !canvas) return;
 
     function resizeCanvas() {
       const rect = container.getBoundingClientRect();
@@ -272,9 +278,8 @@ export default function PrepShell({
       if (msg.type === "ANNOTATION_STATE") {
         applyRemoteAnnotationState(msg);
       } else if (msg.type === "POINTER_MOVE") {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const container = canvas.parentElement || canvas;
+        const container = containerRef.current;
+        if (!container) return;
         const rect = container.getBoundingClientRect();
         const x = msg.xNorm * rect.width;
         const y = msg.yNorm * rect.height;
@@ -292,6 +297,7 @@ export default function PrepShell({
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
+    // ✅ Use the canvas' parent as the reference box
     const container = canvas.parentElement || canvas;
     const rect = container.getBoundingClientRect();
 
@@ -414,15 +420,16 @@ export default function PrepShell({
       broadcastPointer(null);
       return;
     }
-
-    const coords = getCanvasCoordinates(e);
-    if (!coords) return;
-    const { x, y, width, height } = coords;
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
     setPointerPos({ x, y });
     const normalized = {
-      x: width ? x / width : 0,
-      y: height ? y / height : 0,
+      x: rect.width ? x / rect.width : 0,
+      y: rect.height ? y / rect.height : 0,
     };
     broadcastPointer(normalized);
   }
@@ -562,14 +569,13 @@ export default function PrepShell({
     });
   }
 
-  // Mouse handlers (attached to the whole overlay layer)
+  // Mouse handlers
   function handleMouseDown(e) {
     const target = e.target;
     if (
       target.closest &&
       (target.closest(".prep-sticky-note") || target.closest(".prep-text-box"))
     ) {
-      // let note/text handle its own mousedown (drag start)
       return;
     }
 
@@ -650,19 +656,17 @@ export default function PrepShell({
   // Shared annotation overlay (canvas + notes + text + pointer)
   function renderAnnotationsOverlay() {
     return (
-      <div
-        className="prep-annotate-layer"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
+      <>
         <canvas
           ref={canvasRef}
           className={
             "prep-annotate-canvas" +
             (tool !== TOOL_NONE ? " prep-annotate-canvas--drawing" : "")
           }
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
         />
 
         {/* Sticky notes */}
@@ -760,7 +764,7 @@ export default function PrepShell({
           );
         })}
 
-        {/* Pointer arrow (local + remote, unified) */}
+        {/* Pointer arrow */}
         {pointerPos && (
           <div
             className="prep-pointer"
@@ -770,7 +774,7 @@ export default function PrepShell({
             }}
           />
         )}
-      </div>
+      </>
     );
   }
 
@@ -1007,18 +1011,25 @@ export default function PrepShell({
 
               <div className="prep-viewer__frame-wrapper">
                 {isPdf ? (
-                  // PDF + sidebar (pdf.js) – overlay is INSIDE PdfViewer so it scrolls with the PDF
+                  // PDF + sidebar (pdf.js) – overlay is a child of the scrolling PDF container
                   <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={viewerUrl}
                       onFatalError={() => setPdfFallback(true)}
+                      onContainerReady={(el) => {
+                        // el is .prep-pdf-main-inner (scroll container for PDF + overlay)
+                        containerRef.current = el;
+                      }}
                     >
                       {renderAnnotationsOverlay()}
                     </PdfViewerWithSidebar>
                   </div>
                 ) : (
                   // Fallback: iframe viewer (YouTube, Slides, external or PDF if pdf.js failed)
-                  <div className="prep-viewer__canvas-container">
+                  <div
+                    className="prep-viewer__canvas-container"
+                    ref={containerRef}
+                  >
                     <iframe
                       src={viewerUrl}
                       className="prep-viewer__frame"
