@@ -14,7 +14,7 @@ const TOOL_POINTER = "pointer";
 const TOOL_ERASER = "eraser";
 const TOOL_TEXT = "text";
 
-const PEN_COLORS = ["#f9fafb", "#fbbf24", "#60a5fa", "#f97316", "#22c55e"];
+const PEN_COLORS = ["#000000", "#fbbf24", "#60a5fa", "#FF0000", "#22c55e"];
 
 /**
  * Props:
