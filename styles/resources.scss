@@ -1492,12 +1492,12 @@
 /* ────────────────────────────────────── */
 
 /* two-column layout:
-   - left ~1/3 (video)
-   - right ~2/3 (classroom viewer)
+   - left ≈ 30% (video)
+   - right ≈ 70% (classroom viewer – ~10% bigger than before)
 */
 .classroom-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); // ~33% / 67%
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.9fr);
   gap: 24px;
   align-items: stretch;
   margin-top: 16px;
@@ -1510,10 +1510,10 @@
   align-items: flex-start;
 }
 
-/* shrink the video a bit vs. prep room so the classroom gets more space */
+/* shrink video a bit more so the classroom feels larger */
 .classroom-video-pane .prep-video__frame-wrapper {
   width: 100%;
-  max-width: 520px; // was 720 → smaller, so the right side feels bigger
+  max-width: 480px; /* was 520px */
   margin-left: 0;
   margin-right: auto;
 }
@@ -1524,19 +1524,22 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding-top: 56px; // space reserved for the pill bar
+
+  /* reserve taller space for the pill bar so the viewer starts lower
+     (this keeps a clear gap between bar and viewer even when pills wrap) */
+  padding-top: 96px;
 }
 
 /* area under the selector bar (viewer lives here) */
 .classroom-prep-pane__content {
   flex: 1 1 auto;
-  margin-top: 0; // the vertical offset is now handled by padding-top
+  margin-top: 0; // offset handled by padding-top above
 }
 
 /* make the viewer tall and comfy but still within the page */
 .classroom-prep-pane .prep-viewer {
   width: 100%;
-  height: min(76vh, 680px);
+  height: min(80vh, 720px); // a bit taller than before
 }
 
 .classroom-prep-pane .prep-viewer__frame-wrapper,
@@ -1552,7 +1555,7 @@
   }
 
   .classroom-prep-pane {
-    padding-top: 64px; // a bit more room for wrapped pills
+    padding-top: 104px; // extra room for wrapped pills on small screens
   }
 
   .classroom-prep-pane .prep-viewer {
@@ -1571,14 +1574,14 @@
 
 /* Top pill bar for picking track/book/unit/resource */
 .classroom-picker {
-  position: absolute; // float above the viewer instead of pushing it down
-  top: 0;
+  position: absolute; /* float above the viewer instead of pushing it down */
+  top: -24px; /* visually closer to the navbar */
   left: 0;
   right: 0;
   z-index: 5;
   width: 100%;
   max-width: 1120px;
-  margin: 0 auto; // keep it nicely centered under the navbar
+  margin: 0 auto; /* keep it nicely centered under the navbar */
 }
 
 .classroom-picker__row {
