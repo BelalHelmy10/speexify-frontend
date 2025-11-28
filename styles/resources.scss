@@ -1487,47 +1487,56 @@
   font-size: 0.76rem;
   color: #6b7280;
 }
-
 /* ────────────────────────────────────── */
 /* CLASSROOM LAYOUT + PICKER             */
 /* ────────────────────────────────────── */
 
+/* two-column layout:
+   - left ~1/3 (video)
+   - right ~2/3 (classroom viewer)
+*/
 .classroom-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.35fr); // ~40% / 60%
-  gap: 28px;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); // ~33% / 67%
+  gap: 24px;
   align-items: stretch;
   margin-top: 16px;
 }
 
-/* LEFT: video column (slightly smaller and aligned left) */
+/* LEFT: video column (hug the left side) */
 .classroom-video-pane {
   display: flex;
   justify-content: flex-start;
+  align-items: flex-start;
 }
 
-/* shrink the video wrapper compared to prep page */
+/* shrink the video a bit vs. prep room so the classroom gets more space */
 .classroom-video-pane .prep-video__frame-wrapper {
   width: 100%;
-  max-width: 560px; // ~20–25% smaller than 720px
+  max-width: 520px; // was 720 → smaller, so the right side feels bigger
+  margin-left: 0;
+  margin-right: auto;
 }
 
 /* RIGHT: classroom + viewer */
 .classroom-prep-pane {
+  position: relative; // so the pill bar can float over it
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  padding-top: 56px; // space reserved for the pill bar
 }
 
-/* area under the selector bar */
+/* area under the selector bar (viewer lives here) */
 .classroom-prep-pane__content {
-  margin-top: 16px;
+  flex: 1 1 auto;
+  margin-top: 0; // the vertical offset is now handled by padding-top
 }
 
-/* give the viewer a good height but not taller than the page */
+/* make the viewer tall and comfy but still within the page */
 .classroom-prep-pane .prep-viewer {
   width: 100%;
-  height: min(72vh, 640px);
+  height: min(76vh, 680px);
 }
 
 .classroom-prep-pane .prep-viewer__frame-wrapper,
@@ -1542,8 +1551,8 @@
     gap: 20px;
   }
 
-  .classroom-prep-pane__content {
-    margin-top: 12px;
+  .classroom-prep-pane {
+    padding-top: 64px; // a bit more room for wrapped pills
   }
 
   .classroom-prep-pane .prep-viewer {
@@ -1562,9 +1571,14 @@
 
 /* Top pill bar for picking track/book/unit/resource */
 .classroom-picker {
+  position: absolute; // float above the viewer instead of pushing it down
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
   width: 100%;
   max-width: 1120px;
-  margin: 4px auto 8px; // nudged closer to the navbar
+  margin: 0 auto; // keep it nicely centered under the navbar
 }
 
 .classroom-picker__row {
