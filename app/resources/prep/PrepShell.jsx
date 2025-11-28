@@ -14,27 +14,32 @@ const TOOL_POINTER = "pointer";
 const TOOL_ERASER = "eraser";
 const TOOL_TEXT = "text";
 
-const PEN_COLORS = ["#000000", "#fbbf24", "#60a5fa", "#FF0000", "#22c55e"];
+// ✅ Added black as a color option, kept your others
+const PEN_COLORS = [
+  "#000000",
+  "#f9fafb",
+  "#fbbf24",
+  "#60a5fa",
+  "#f97316",
+  "#22c55e",
+];
 
 /**
  * Props:
  *  - resource, viewer: as before (prep room)
  *  - hideSidebar (optional): when true, do NOT render the left info/notes column
  *  - hideBreadcrumbs (optional): when true, no breadcrumbs row
- *  - classroomChannel (optional): { ready, send, subscribe } for classroom sync
  */
 export default function PrepShell({
   resource,
   viewer,
   hideSidebar = false,
   hideBreadcrumbs = false,
-  classroomChannel = null,
 }) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
   const [pointerPos, setPointerPos] = useState(null);
-  const [remotePointerPos, setRemotePointerPos] = useState(null); // remote pointer
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
@@ -43,6 +48,7 @@ export default function PrepShell({
   const [pdfFallback, setPdfFallback] = useState(false); // if pdf.js fails, fall back to iframe
 
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -53,11 +59,6 @@ export default function PrepShell({
   const track = level?.track;
 
   const viewerActive = !!viewerUrl;
-
-  // Classroom channel helpers
-  const channelReady = classroomChannel?.ready || false;
-  const channelSend = classroomChannel?.send || null;
-  const channelSubscribe = classroomChannel?.subscribe || null;
 
   // Focus newly-activated text box
   useEffect(() => {
@@ -99,17 +100,16 @@ export default function PrepShell({
     }
   }, [storageKey]);
 
-  // Resize annotation canvas to match its parent container
+  // Resize annotation canvas to match container
   useEffect(() => {
+    const container = containerRef.current;
     const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const container = canvas.parentElement || canvas;
-    if (!container) return;
+    if (!container || !canvas) return;
 
     function resizeCanvas() {
       const rect = container.getBoundingClientRect();
-      const prev = canvas.toDataURL("image/png");
+      const prev =
+        canvas.width && canvas.height ? canvas.toDataURL("image/png") : null;
 
       canvas.width = rect.width;
       canvas.height = rect.height;
@@ -158,12 +158,15 @@ export default function PrepShell({
     }
   }
 
-  // Geometry helper – relative to the overlay parent, not the PDF canvas
+  // Geometry helper
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
+
+    // ✅ Use the canvas' parent as the reference box
     const container = canvas.parentElement || canvas;
     const rect = container.getBoundingClientRect();
+
     return {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
@@ -172,7 +175,7 @@ export default function PrepShell({
     };
   }
 
-  // Drawing (pen / highlighter / eraser) – still local for now
+  // Drawing (pen / highlighter / eraser)
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
@@ -206,20 +209,6 @@ export default function PrepShell({
             };
           });
           saveAnnotations({ stickyNotes: updated });
-
-          // broadcast NOTE_MOVE
-          if (channelReady && channelSend) {
-            const moved = updated.find((n) => n.id === dragState.id);
-            if (moved) {
-              channelSend({
-                type: "ANNOTATION_NOTE_MOVE",
-                id: moved.id,
-                x: moved.x,
-                y: moved.y,
-              });
-            }
-          }
-
           return updated;
         });
       } else if (dragState.kind === "text") {
@@ -235,20 +224,6 @@ export default function PrepShell({
             };
           });
           saveAnnotations({ textBoxes: updated });
-
-          // broadcast TEXT_MOVE
-          if (channelReady && channelSend) {
-            const moved = updated.find((t) => t.id === dragState.id);
-            if (moved) {
-              channelSend({
-                type: "ANNOTATION_TEXT_MOVE",
-                id: moved.id,
-                x: moved.x,
-                y: moved.y,
-              });
-            }
-          }
-
           return updated;
         });
       }
@@ -301,144 +276,20 @@ export default function PrepShell({
     saveAnnotations();
   }
 
-  // Pointer (local + sync)
+  // Pointer
   function updatePointer(e) {
     if (tool !== TOOL_POINTER) {
       setPointerPos(null);
-      if (channelReady && channelSend) {
-        channelSend({ type: "ANNOTATION_POINTER_HIDE" });
-      }
       return;
     }
-
-    const coords = getCanvasCoordinates(e);
-    if (!coords) return;
-
-    setPointerPos({ x: coords.x, y: coords.y });
-
-    if (channelReady && channelSend) {
-      const nx = coords.x / coords.width;
-      const ny = coords.y / coords.height;
-      channelSend({
-        type: "ANNOTATION_POINTER_MOVE",
-        nx,
-        ny,
-      });
-    }
-  }
-
-  // Receive remote pointer + notes + text + clear events
-  useEffect(() => {
-    if (!channelSubscribe) return;
-
-    const unsubscribe = channelSubscribe((message) => {
-      if (!message || !message.type) return;
-
-      const t = message.type;
-
-      if (t === "ANNOTATION_POINTER_MOVE") {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const container = canvas.parentElement || canvas;
-        const rect = container.getBoundingClientRect();
-        const { nx, ny } = message;
-
-        setRemotePointerPos({
-          x: nx * rect.width,
-          y: ny * rect.height,
-        });
-      } else if (t === "ANNOTATION_POINTER_HIDE") {
-        setRemotePointerPos(null);
-      }
-
-      // NOTES
-      else if (t === "ANNOTATION_NOTE_CREATE") {
-        const { id, x, y, text = "" } = message;
-        if (!id) return;
-        setStickyNotes((prev) => {
-          if (prev.some((n) => n.id === id)) return prev;
-          const next = [...prev, { id, x, y, text }];
-          saveAnnotations({ stickyNotes: next });
-          return next;
-        });
-      } else if (t === "ANNOTATION_NOTE_UPDATE") {
-        const { id, text = "" } = message;
-        if (!id) return;
-        setStickyNotes((prev) => {
-          const next = prev.map((n) => (n.id === id ? { ...n, text } : n));
-          saveAnnotations({ stickyNotes: next });
-          return next;
-        });
-      } else if (t === "ANNOTATION_NOTE_MOVE") {
-        const { id, x, y } = message;
-        if (!id) return;
-        setStickyNotes((prev) => {
-          const next = prev.map((n) => (n.id === id ? { ...n, x, y } : n));
-          saveAnnotations({ stickyNotes: next });
-          return next;
-        });
-      } else if (t === "ANNOTATION_NOTE_DELETE") {
-        const { id } = message;
-        if (!id) return;
-        setStickyNotes((prev) => {
-          const next = prev.filter((n) => n.id !== id);
-          saveAnnotations({ stickyNotes: next });
-          return next;
-        });
-      }
-
-      // TEXT BOXES
-      else if (t === "ANNOTATION_TEXT_CREATE") {
-        const { id, x, y, text = "", color = PEN_COLORS[0] } = message;
-        if (!id) return;
-        setTextBoxes((prev) => {
-          if (prev.some((b) => b.id === id)) return prev;
-          const next = [...prev, { id, x, y, text, color }];
-          saveAnnotations({ textBoxes: next });
-          return next;
-        });
-      } else if (t === "ANNOTATION_TEXT_UPDATE") {
-        const { id, text = "" } = message;
-        if (!id) return;
-        setTextBoxes((prev) => {
-          const next = prev.map((b) => (b.id === id ? { ...b, text } : b));
-          saveAnnotations({ textBoxes: next });
-          return next;
-        });
-      } else if (t === "ANNOTATION_TEXT_MOVE") {
-        const { id, x, y } = message;
-        if (!id) return;
-        setTextBoxes((prev) => {
-          const next = prev.map((b) => (b.id === id ? { ...b, x, y } : b));
-          saveAnnotations({ textBoxes: next });
-          return next;
-        });
-      } else if (t === "ANNOTATION_TEXT_DELETE") {
-        const { id } = message;
-        if (!id) return;
-        setTextBoxes((prev) => {
-          const next = prev.filter((b) => b.id !== id);
-          saveAnnotations({ textBoxes: next });
-          return next;
-        });
-      }
-
-      // CLEAR ALL
-      else if (t === "ANNOTATION_CLEAR_ALL") {
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext("2d");
-          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-        setStickyNotes([]);
-        setTextBoxes([]);
-        setRemotePointerPos(null);
-        saveAnnotations({ canvasData: null, stickyNotes: [], textBoxes: [] });
-      }
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    setPointerPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
     });
-
-    return unsubscribe;
-  }, [channelSubscribe]);
+  }
 
   // Sticky notes
   function handleClickForNote(e) {
@@ -459,16 +310,6 @@ export default function PrepShell({
     setStickyNotes(nextNotes);
     saveAnnotations({ stickyNotes: nextNotes });
 
-    if (channelReady && channelSend) {
-      channelSend({
-        type: "ANNOTATION_NOTE_CREATE",
-        id: note.id,
-        x: note.x,
-        y: note.y,
-        text: note.text,
-      });
-    }
-
     setTool(TOOL_NONE);
   }
 
@@ -476,27 +317,12 @@ export default function PrepShell({
     const next = stickyNotes.map((n) => (n.id === id ? { ...n, text } : n));
     setStickyNotes(next);
     saveAnnotations({ stickyNotes: next });
-
-    if (channelReady && channelSend) {
-      channelSend({
-        type: "ANNOTATION_NOTE_UPDATE",
-        id,
-        text,
-      });
-    }
   }
 
   function deleteNote(id) {
     const next = stickyNotes.filter((n) => n.id !== id);
     setStickyNotes(next);
     saveAnnotations({ stickyNotes: next });
-
-    if (channelReady && channelSend) {
-      channelSend({
-        type: "ANNOTATION_NOTE_DELETE",
-        id,
-      });
-    }
   }
 
   function startNoteDrag(e, note) {
@@ -534,31 +360,12 @@ export default function PrepShell({
     setTextBoxes(next);
     setActiveTextId(box.id);
     saveAnnotations({ textBoxes: next });
-
-    if (channelReady && channelSend) {
-      channelSend({
-        type: "ANNOTATION_TEXT_CREATE",
-        id: box.id,
-        x: box.x,
-        y: box.y,
-        text: box.text,
-        color: box.color,
-      });
-    }
   }
 
   function updateTextBoxText(id, text) {
     const next = textBoxes.map((t) => (t.id === id ? { ...t, text } : t));
     setTextBoxes(next);
     saveAnnotations({ textBoxes: next });
-
-    if (channelReady && channelSend) {
-      channelSend({
-        type: "ANNOTATION_TEXT_UPDATE",
-        id,
-        text,
-      });
-    }
   }
 
   function deleteTextBox(id) {
@@ -566,13 +373,6 @@ export default function PrepShell({
     setTextBoxes(next);
     saveAnnotations({ textBoxes: next });
     if (activeTextId === id) setActiveTextId(null);
-
-    if (channelReady && channelSend) {
-      channelSend({
-        type: "ANNOTATION_TEXT_DELETE",
-        id,
-      });
-    }
   }
 
   function startTextDrag(e, box) {
@@ -603,13 +403,13 @@ export default function PrepShell({
     setTextBoxes([]);
     setDragState(null);
     setActiveTextId(null);
-    setPointerPos(null);
-    setRemotePointerPos(null);
-
-    saveAnnotations({ canvasData: null, stickyNotes: [], textBoxes: [] });
-
-    if (channelReady && channelSend) {
-      channelSend({ type: "ANNOTATION_CLEAR_ALL" });
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ canvasData: null, stickyNotes: [], textBoxes: [] })
+      );
+    } catch (err) {
+      console.warn("Failed to clear annotations", err);
     }
   }
 
@@ -683,16 +483,10 @@ export default function PrepShell({
     if (tool === nextTool) {
       setTool(TOOL_NONE);
       setPointerPos(null);
-      if (channelReady && channelSend && nextTool === TOOL_POINTER) {
-        channelSend({ type: "ANNOTATION_POINTER_HIDE" });
-      }
     } else {
       setTool(nextTool);
       if (nextTool !== TOOL_POINTER) {
         setPointerPos(null);
-        if (channelReady && channelSend) {
-          channelSend({ type: "ANNOTATION_POINTER_HIDE" });
-        }
       }
     }
   }
@@ -808,24 +602,13 @@ export default function PrepShell({
           );
         })}
 
-        {/* Local pointer arrow */}
+        {/* Pointer arrow */}
         {tool === TOOL_POINTER && pointerPos && (
           <div
             className="prep-pointer"
             style={{
               left: `${pointerPos.x}px`,
               top: `${pointerPos.y}px`,
-            }}
-          />
-        )}
-
-        {/* Remote pointer arrow */}
-        {remotePointerPos && (
-          <div
-            className="prep-pointer prep-pointer--remote"
-            style={{
-              left: `${remotePointerPos.x}px`,
-              top: `${remotePointerPos.y}px`,
             }}
           />
         )}
@@ -1066,18 +849,23 @@ export default function PrepShell({
 
               <div className="prep-viewer__frame-wrapper">
                 {isPdf ? (
-                  // PDF + sidebar (pdf.js) – overlay INSIDE the PDF scroller
-                  <div className="prep-viewer__canvas-container">
+                  // PDF + sidebar (pdf.js)
+                  <div
+                    className="prep-viewer__canvas-container"
+                    ref={containerRef}
+                  >
                     <PdfViewerWithSidebar
                       fileUrl={viewerUrl}
                       onFatalError={() => setPdfFallback(true)}
-                    >
-                      {renderAnnotationsOverlay()}
-                    </PdfViewerWithSidebar>
+                    />
+                    {renderAnnotationsOverlay()}
                   </div>
                 ) : (
                   // Fallback: iframe viewer (YouTube, Slides, external or PDF if pdf.js failed)
-                  <div className="prep-viewer__canvas-container">
+                  <div
+                    className="prep-viewer__canvas-container"
+                    ref={containerRef}
+                  >
                     <iframe
                       src={viewerUrl}
                       className="prep-viewer__frame"

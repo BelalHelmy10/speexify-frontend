@@ -3,15 +3,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/**
- * Classroom channel using the SAME WebSocket signaling server as PrepVideoCall.
- *
- * We wrap our payload in a "signal" message with signalType="classroom-event"
- * so the backend forwards it to the other peer:
- *
- *   { type: "signal", signalType: "classroom-event", data: {...} }
- */
-
 export function useClassroomChannel(roomId) {
   const [ready, setReady] = useState(false);
   const wsRef = useRef(null);
@@ -26,20 +17,19 @@ export function useClassroomChannel(roomId) {
     if (apiBase) {
       const url = new URL(apiBase);
       url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-      url.pathname = "/ws/prep";
+      url.pathname = "/ws/classroom"; // ✅ separate path
       url.search = "";
       wsUrl = url.toString();
     } else {
       const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      wsUrl = `${wsProtocol}//${window.location.host}/ws/prep`;
+      wsUrl = `${wsProtocol}//${window.location.host}/ws/classroom`; // ✅
     }
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    // debug handle
     if (typeof window !== "undefined") {
-      window.__ws_debug = ws;
+      window.__ws_classroom = ws;
     }
 
     ws.onopen = () => {
@@ -60,7 +50,6 @@ export function useClassroomChannel(roomId) {
         return;
       }
 
-      // Only handle our classroom events
       if (
         msg.type === "signal" &&
         msg.signalType === "classroom-event" &&
