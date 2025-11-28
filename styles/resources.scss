@@ -1639,3 +1639,23 @@
 .classroom-picker__select select:disabled {
   cursor: not-allowed;
 }
+
+.prep-annotation-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.prep-annotation-layer .prep-annotate-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Ensure sticky notes and text boxes are above the canvas */
+.prep-sticky-note,
+.prep-text-box {
+  pointer-events: auto;
+  z-index: 10;
+}

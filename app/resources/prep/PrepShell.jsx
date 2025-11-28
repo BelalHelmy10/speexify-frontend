@@ -1,7 +1,7 @@
 // app/resources/prep/PrepShell.jsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import PrepNotes from "./PrepNotes";
 import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
@@ -14,7 +14,6 @@ const TOOL_POINTER = "pointer";
 const TOOL_ERASER = "eraser";
 const TOOL_TEXT = "text";
 
-// ✅ Added black as a color option, kept your others
 const PEN_COLORS = [
   "#000000",
   "#f9fafb",
@@ -36,24 +35,45 @@ export default function PrepShell({
   viewer,
   hideSidebar = false,
   hideBreadcrumbs = false,
-  classroomChannel, // 🔥 new optional prop
+  classroomChannel,
 }) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
   const [pointerPos, setPointerPos] = useState(null);
-  const [stickyNotes, setStickyNotes] = useState([]);
-  const [textBoxes, setTextBoxes] = useState([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
   const [dragState, setDragState] = useState(null);
   const [activeTextId, setActiveTextId] = useState(null);
-  const [pdfFallback, setPdfFallback] = useState(false); // if pdf.js fails, fall back to iframe
+  const [pdfFallback, setPdfFallback] = useState(false);
+
+  // ─────────────────────────────────────────────────────────────
+  // PDF page tracking (NEW)
+  // ─────────────────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const [numPages, setNumPages] = useState(0);
+  const [pdfCanvasSize, setPdfCanvasSize] = useState({ width: 0, height: 0 });
+  const pdfViewerRef = useRef(null);
+
+  // ─────────────────────────────────────────────────────────────
+  // Per-page annotation storage (NEW)
+  // Structure: { [pageNum]: { stickyNotes: [], textBoxes: [], canvasData: null } }
+  // ─────────────────────────────────────────────────────────────
+  const [annotationsByPage, setAnnotationsByPage] = useState({});
+
+  // Get current page's annotations
+  const currentAnnotations = annotationsByPage[currentPage] || {
+    stickyNotes: [],
+    textBoxes: [],
+    canvasData: null,
+  };
+  const stickyNotes = currentAnnotations.stickyNotes;
+  const textBoxes = currentAnnotations.textBoxes;
 
   const canvasRef = useRef(null);
-  const containerRef = useRef(null);
-  const applyingRemoteRef = useRef(false); // ✅ avoid re-broadcast loops
+  const containerRef = useRef(null); // Will be set to PDF inner container
+  const applyingRemoteRef = useRef(false);
 
-  const storageKey = `prep_annotations_${resource._id}`;
+  const storageKey = `prep_annotations_v2_${resource._id}`;
 
   const viewerUrl = viewer?.viewerUrl || null;
   const unit = resource.unit;
@@ -62,9 +82,96 @@ export default function PrepShell({
   const track = level?.track;
 
   const viewerActive = !!viewerUrl;
+  const isPdf = viewer?.type === "pdf" && !pdfFallback;
 
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
+
+  // ─────────────────────────────────────────────────────────────
+  // Helper: Update annotations for a specific page
+  // ─────────────────────────────────────────────────────────────
+  const updatePageAnnotations = useCallback((pageNum, updates) => {
+    setAnnotationsByPage((prev) => {
+      const current = prev[pageNum] || {
+        stickyNotes: [],
+        textBoxes: [],
+        canvasData: null,
+      };
+      return {
+        ...prev,
+        [pageNum]: { ...current, ...updates },
+      };
+    });
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────
+  // PDF page change handler
+  // ─────────────────────────────────────────────────────────────
+  const handlePageChange = useCallback(
+    (pageNum, totalPages) => {
+      // Save current page's canvas data before switching
+      if (canvasRef.current && currentPage !== pageNum) {
+        const canvasData = canvasRef.current.toDataURL("image/png");
+        updatePageAnnotations(currentPage, { canvasData });
+      }
+
+      setCurrentPage(pageNum);
+      setNumPages(totalPages);
+
+      // Broadcast page change to classroom
+      if (channelReady && sendOnChannel) {
+        sendOnChannel({
+          type: "SET_PAGE",
+          resourceId: resource._id,
+          pageNum,
+          totalPages,
+        });
+      }
+    },
+    [
+      currentPage,
+      channelReady,
+      sendOnChannel,
+      resource._id,
+      updatePageAnnotations,
+    ]
+  );
+
+  const handleCanvasSizeChange = useCallback((size) => {
+    setPdfCanvasSize(size);
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────
+  // Restore canvas drawing when page changes
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!canvasRef.current || !pdfCanvasSize.width) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    // Size canvas to match PDF
+    canvas.width = pdfCanvasSize.width;
+    canvas.height = pdfCanvasSize.height;
+    canvas.style.width = `${pdfCanvasSize.width}px`;
+    canvas.style.height = `${pdfCanvasSize.height}px`;
+
+    // Clear and restore page's drawing
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const pageData = annotationsByPage[currentPage];
+    if (pageData?.canvasData) {
+      const img = new Image();
+      img.onload = () => {
+        const c = canvasRef.current;
+        if (!c) return;
+        const context = c.getContext("2d");
+        context.clearRect(0, 0, c.width, c.height);
+        context.drawImage(img, 0, 0, c.width, c.height);
+      };
+      img.src = pageData.canvasData;
+    }
+  }, [currentPage, pdfCanvasSize, annotationsByPage]);
 
   // Focus newly-activated text box
   useEffect(() => {
@@ -73,7 +180,9 @@ export default function PrepShell({
     if (el) el.focus();
   }, [activeTextId]);
 
+  // ─────────────────────────────────────────────────────────────
   // Load annotations from localStorage
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!storageKey) return;
 
@@ -82,92 +191,62 @@ export default function PrepShell({
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed.stickyNotes)) {
-        setStickyNotes(parsed.stickyNotes);
-      }
-      if (Array.isArray(parsed.textBoxes)) {
-        setTextBoxes(parsed.textBoxes);
-      }
 
-      if (parsed.canvasData && canvasRef.current) {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = canvasRef.current;
-          if (!canvas) return;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        };
-        img.src = parsed.canvasData;
+      // New format: annotationsByPage
+      if (parsed.annotationsByPage) {
+        setAnnotationsByPage(parsed.annotationsByPage);
+      }
+      // Legacy format: migrate to per-page
+      else if (parsed.stickyNotes || parsed.textBoxes || parsed.canvasData) {
+        setAnnotationsByPage({
+          1: {
+            stickyNotes: parsed.stickyNotes || [],
+            textBoxes: parsed.textBoxes || [],
+            canvasData: parsed.canvasData || null,
+          },
+        });
       }
     } catch (err) {
       console.warn("Failed to load annotations", err);
     }
   }, [storageKey]);
 
-  // Resize annotation canvas to match container
-  useEffect(() => {
-    const container = containerRef.current;
-    const canvas = canvasRef.current;
-    if (!container || !canvas) return;
-
-    function resizeCanvas() {
-      const rect = container.getBoundingClientRect();
-      const prev =
-        canvas.width && canvas.height ? canvas.toDataURL("image/png") : null;
-
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-
-      if (prev) {
-        const img = new Image();
-        img.onload = () => {
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        };
-        img.src = prev;
-      }
-    }
-
-    resizeCanvas();
-
-    if (typeof ResizeObserver !== "undefined") {
-      const observer = new ResizeObserver(() => resizeCanvas());
-      observer.observe(container);
-      return () => observer.disconnect();
-    } else {
-      window.addEventListener("resize", resizeCanvas);
-      return () => window.removeEventListener("resize", resizeCanvas);
-    }
-  }, []);
-
-  // Save annotations (canvas + notes + text) locally
+  // ─────────────────────────────────────────────────────────────
+  // Save annotations
+  // ─────────────────────────────────────────────────────────────
   function saveAnnotations(opts = {}) {
     if (!storageKey) return;
     try {
+      // Get current canvas data
       const canvas = canvasRef.current;
       const canvasData =
-        opts.canvasData ?? (canvas ? canvas.toDataURL("image/png") : undefined);
+        opts.canvasData ?? (canvas ? canvas.toDataURL("image/png") : null);
 
-      const data = {
-        canvasData: canvasData || null,
-        stickyNotes: opts.stickyNotes ?? stickyNotes,
-        textBoxes: opts.textBoxes ?? textBoxes,
+      // Build updated annotations for current page
+      const updatedPageAnnotations = {
+        ...annotationsByPage,
+        [currentPage]: {
+          stickyNotes: opts.stickyNotes ?? stickyNotes,
+          textBoxes: opts.textBoxes ?? textBoxes,
+          canvasData: canvasData,
+        },
       };
 
-      window.localStorage.setItem(storageKey, JSON.stringify(data));
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ annotationsByPage: updatedPageAnnotations })
+      );
     } catch (err) {
       console.warn("Failed to save annotations", err);
     }
   }
 
-  // 🔥 Broadcast whole annotation state over classroomChannel (optional)
+  // ─────────────────────────────────────────────────────────────
+  // Broadcast annotations over classroom channel
+  // ─────────────────────────────────────────────────────────────
   function broadcastAnnotations(custom = {}) {
     if (!channelReady || !sendOnChannel) return;
-    if (applyingRemoteRef.current) return; // don't echo back remote updates
+    if (applyingRemoteRef.current) return;
 
     const canvas = canvasRef.current;
     const canvasData =
@@ -176,6 +255,7 @@ export default function PrepShell({
     const payload = {
       type: "ANNOTATION_STATE",
       resourceId: resource._id,
+      pageNum: currentPage,
       canvasData: canvasData || null,
       stickyNotes: custom.stickyNotes ?? stickyNotes,
       textBoxes: custom.textBoxes ?? textBoxes,
@@ -188,7 +268,9 @@ export default function PrepShell({
     }
   }
 
-  // 🔥 Broadcast pointer in normalized coordinates
+  // ─────────────────────────────────────────────────────────────
+  // Broadcast pointer (normalized to canvas size)
+  // ─────────────────────────────────────────────────────────────
   function broadcastPointer(normalizedPosOrNull) {
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return;
@@ -205,16 +287,20 @@ export default function PrepShell({
     sendOnChannel({
       type: "POINTER_MOVE",
       resourceId: resource._id,
+      pageNum: currentPage,
       xNorm: x,
       yNorm: y,
     });
   }
 
-  // 🔥 Apply remote annotation snapshot
+  // ─────────────────────────────────────────────────────────────
+  // Apply remote annotation state
+  // ─────────────────────────────────────────────────────────────
   function applyRemoteAnnotationState(message) {
     if (!message || message.resourceId !== resource._id) return;
 
     const {
+      pageNum,
       canvasData,
       stickyNotes: remoteNotes,
       textBoxes: remoteText,
@@ -222,14 +308,20 @@ export default function PrepShell({
 
     applyingRemoteRef.current = true;
     try {
-      if (Array.isArray(remoteNotes)) {
-        setStickyNotes(remoteNotes);
-      }
-      if (Array.isArray(remoteText)) {
-        setTextBoxes(remoteText);
-      }
+      // Update annotations for the specified page
+      const targetPage = pageNum || currentPage;
 
-      if (canvasRef.current) {
+      setAnnotationsByPage((prev) => ({
+        ...prev,
+        [targetPage]: {
+          stickyNotes: Array.isArray(remoteNotes) ? remoteNotes : [],
+          textBoxes: Array.isArray(remoteText) ? remoteText : [],
+          canvasData: canvasData || null,
+        },
+      }));
+
+      // If it's for the current page, also update the canvas
+      if (targetPage === currentPage && canvasRef.current) {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
         if (ctx) {
@@ -249,9 +341,9 @@ export default function PrepShell({
         }
       }
 
-      // Save locally too
+      // Save locally
       saveAnnotations({
-        canvasData: canvasData || null,
+        canvasData: targetPage === currentPage ? canvasData : undefined,
         stickyNotes: Array.isArray(remoteNotes) ? remoteNotes : stickyNotes,
         textBoxes: Array.isArray(remoteText) ? remoteText : textBoxes,
       });
@@ -260,7 +352,9 @@ export default function PrepShell({
     }
   }
 
-  // 🔥 Subscribe to classroomChannel (remote annotations + pointer)
+  // ─────────────────────────────────────────────────────────────
+  // Subscribe to classroom channel
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!classroomChannel || !classroomChannel.ready) return;
     if (!classroomChannel.subscribe) return;
@@ -270,29 +364,34 @@ export default function PrepShell({
 
       if (msg.type === "ANNOTATION_STATE") {
         applyRemoteAnnotationState(msg);
+      } else if (msg.type === "SET_PAGE") {
+        // Sync page change from teacher
+        if (msg.pageNum && pdfViewerRef.current) {
+          pdfViewerRef.current.goToPage(msg.pageNum);
+        }
       } else if (msg.type === "POINTER_MOVE") {
-        const container = containerRef.current;
-        if (!container) return;
-        const rect = container.getBoundingClientRect();
-        const x = msg.xNorm * rect.width;
-        const y = msg.yNorm * rect.height;
-        setPointerPos({ x, y });
+        // Only show pointer if on same page
+        if (msg.pageNum === currentPage && pdfCanvasSize.width > 0) {
+          const x = msg.xNorm * pdfCanvasSize.width;
+          const y = msg.yNorm * pdfCanvasSize.height;
+          setPointerPos({ x, y });
+        }
       } else if (msg.type === "POINTER_HIDE") {
         setPointerPos(null);
       }
     });
 
     return unsubscribe;
-  }, [classroomChannel, resource._id]);
+  }, [classroomChannel, resource._id, currentPage, pdfCanvasSize]);
 
-  // Geometry helper
+  // ─────────────────────────────────────────────────────────────
+  // Coordinate helpers - relative to PDF canvas
+  // ─────────────────────────────────────────────────────────────
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
-    // ✅ Use the canvas' parent as the reference box
-    const container = canvas.parentElement || canvas;
-    const rect = container.getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect();
 
     return {
       x: event.clientX - rect.left,
@@ -302,7 +401,9 @@ export default function PrepShell({
     };
   }
 
+  // ─────────────────────────────────────────────────────────────
   // Drawing (pen / highlighter / eraser)
+  // ─────────────────────────────────────────────────────────────
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
@@ -317,44 +418,40 @@ export default function PrepShell({
   }
 
   function draw(e) {
-    // dragging notes / text
+    // Dragging notes / text
     if (dragState) {
       const coords = getCanvasCoordinates(e);
       if (!coords) return;
       const { width, height, x, y } = coords;
 
       if (dragState.kind === "note") {
-        setStickyNotes((prev) => {
-          const updated = prev.map((n) => {
-            if (n.id !== dragState.id) return n;
-            const nx = (x + dragState.offsetX) / width;
-            const ny = (y + dragState.offsetY) / height;
-            return {
-              ...n,
-              x: Math.min(0.98, Math.max(0.02, nx)),
-              y: Math.min(0.98, Math.max(0.02, ny)),
-            };
-          });
-          saveAnnotations({ stickyNotes: updated });
-          broadcastAnnotations({ stickyNotes: updated });
-          return updated;
+        const updated = stickyNotes.map((n) => {
+          if (n.id !== dragState.id) return n;
+          const nx = (x + dragState.offsetX) / width;
+          const ny = (y + dragState.offsetY) / height;
+          return {
+            ...n,
+            x: Math.min(0.98, Math.max(0.02, nx)),
+            y: Math.min(0.98, Math.max(0.02, ny)),
+          };
         });
+        updatePageAnnotations(currentPage, { stickyNotes: updated });
+        saveAnnotations({ stickyNotes: updated });
+        broadcastAnnotations({ stickyNotes: updated });
       } else if (dragState.kind === "text") {
-        setTextBoxes((prev) => {
-          const updated = prev.map((t) => {
-            if (t.id !== dragState.id) return t;
-            const nx = (x + dragState.offsetX) / width;
-            const ny = (y + dragState.offsetY) / height;
-            return {
-              ...t,
-              x: Math.min(0.98, Math.max(0.02, nx)),
-              y: Math.min(0.98, Math.max(0.02, ny)),
-            };
-          });
-          saveAnnotations({ textBoxes: updated });
-          broadcastAnnotations({ textBoxes: updated });
-          return updated;
+        const updated = textBoxes.map((t) => {
+          if (t.id !== dragState.id) return t;
+          const nx = (x + dragState.offsetX) / width;
+          const ny = (y + dragState.offsetY) / height;
+          return {
+            ...t,
+            x: Math.min(0.98, Math.max(0.02, nx)),
+            y: Math.min(0.98, Math.max(0.02, ny)),
+          };
         });
+        updatePageAnnotations(currentPage, { textBoxes: updated });
+        saveAnnotations({ textBoxes: updated });
+        broadcastAnnotations({ textBoxes: updated });
       }
       return;
     }
@@ -402,32 +499,40 @@ export default function PrepShell({
   function stopDrawing() {
     if (!isDrawing) return;
     setIsDrawing(false);
-    saveAnnotations();
-    broadcastAnnotations();
+
+    // Save canvas data to current page's annotations
+    const canvas = canvasRef.current;
+    const canvasData = canvas ? canvas.toDataURL("image/png") : null;
+    updatePageAnnotations(currentPage, { canvasData });
+    saveAnnotations({ canvasData });
+    broadcastAnnotations({ canvasData });
   }
 
+  // ─────────────────────────────────────────────────────────────
   // Pointer
+  // ─────────────────────────────────────────────────────────────
   function updatePointer(e) {
     if (tool !== TOOL_POINTER) {
       setPointerPos(null);
       broadcastPointer(null);
       return;
     }
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
 
+    const { x, y, width, height } = coords;
     setPointerPos({ x, y });
+
     const normalized = {
-      x: rect.width ? x / rect.width : 0,
-      y: rect.height ? y / rect.height : 0,
+      x: width ? x / width : 0,
+      y: height ? y / height : 0,
     };
     broadcastPointer(normalized);
   }
 
+  // ─────────────────────────────────────────────────────────────
   // Sticky notes
+  // ─────────────────────────────────────────────────────────────
   function handleClickForNote(e) {
     if (tool !== TOOL_NOTE) return;
 
@@ -443,7 +548,7 @@ export default function PrepShell({
     };
 
     const nextNotes = [...stickyNotes, note];
-    setStickyNotes(nextNotes);
+    updatePageAnnotations(currentPage, { stickyNotes: nextNotes });
     saveAnnotations({ stickyNotes: nextNotes });
     broadcastAnnotations({ stickyNotes: nextNotes });
 
@@ -452,14 +557,14 @@ export default function PrepShell({
 
   function updateNoteText(id, text) {
     const next = stickyNotes.map((n) => (n.id === id ? { ...n, text } : n));
-    setStickyNotes(next);
+    updatePageAnnotations(currentPage, { stickyNotes: next });
     saveAnnotations({ stickyNotes: next });
     broadcastAnnotations({ stickyNotes: next });
   }
 
   function deleteNote(id) {
     const next = stickyNotes.filter((n) => n.id !== id);
-    setStickyNotes(next);
+    updatePageAnnotations(currentPage, { stickyNotes: next });
     saveAnnotations({ stickyNotes: next });
     broadcastAnnotations({ stickyNotes: next });
   }
@@ -481,7 +586,9 @@ export default function PrepShell({
     });
   }
 
+  // ─────────────────────────────────────────────────────────────
   // Text boxes
+  // ─────────────────────────────────────────────────────────────
   function createTextBox(e) {
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
@@ -496,7 +603,7 @@ export default function PrepShell({
     };
 
     const next = [...textBoxes, box];
-    setTextBoxes(next);
+    updatePageAnnotations(currentPage, { textBoxes: next });
     setActiveTextId(box.id);
     saveAnnotations({ textBoxes: next });
     broadcastAnnotations({ textBoxes: next });
@@ -504,14 +611,14 @@ export default function PrepShell({
 
   function updateTextBoxText(id, text) {
     const next = textBoxes.map((t) => (t.id === id ? { ...t, text } : t));
-    setTextBoxes(next);
+    updatePageAnnotations(currentPage, { textBoxes: next });
     saveAnnotations({ textBoxes: next });
     broadcastAnnotations({ textBoxes: next });
   }
 
   function deleteTextBox(id) {
     const next = textBoxes.filter((t) => t.id !== id);
-    setTextBoxes(next);
+    updatePageAnnotations(currentPage, { textBoxes: next });
     saveAnnotations({ textBoxes: next });
     broadcastAnnotations({ textBoxes: next });
     if (activeTextId === id) setActiveTextId(null);
@@ -534,27 +641,31 @@ export default function PrepShell({
     });
   }
 
-  // Clear all
+  // ─────────────────────────────────────────────────────────────
+  // Clear all (current page only)
+  // ─────────────────────────────────────────────────────────────
   function clearCanvasAndNotes() {
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext("2d");
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-    setStickyNotes([]);
-    setTextBoxes([]);
+
+    updatePageAnnotations(currentPage, {
+      stickyNotes: [],
+      textBoxes: [],
+      canvasData: null,
+    });
+
     setDragState(null);
     setActiveTextId(null);
-    try {
-      const empty = {
-        canvasData: null,
-        stickyNotes: [],
-        textBoxes: [],
-      };
-      window.localStorage.setItem(storageKey, JSON.stringify(empty));
-    } catch (err) {
-      console.warn("Failed to clear annotations", err);
-    }
+
+    saveAnnotations({
+      canvasData: null,
+      stickyNotes: [],
+      textBoxes: [],
+    });
+
     broadcastAnnotations({
       canvasData: null,
       stickyNotes: [],
@@ -562,7 +673,9 @@ export default function PrepShell({
     });
   }
 
+  // ─────────────────────────────────────────────────────────────
   // Mouse handlers
+  // ─────────────────────────────────────────────────────────────
   function handleMouseDown(e) {
     const target = e.target;
     if (
@@ -646,8 +759,162 @@ export default function PrepShell({
     }
   }
 
-  // Shared annotation overlay (canvas + notes + text + pointer)
+  // ─────────────────────────────────────────────────────────────
+  // Annotation overlay (rendered as children of PDF viewer)
+  // ─────────────────────────────────────────────────────────────
   function renderAnnotationsOverlay() {
+    return (
+      <div
+        className="prep-annotation-layer"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: pdfCanvasSize.width > 0 ? `${pdfCanvasSize.width}px` : "100%",
+          height:
+            pdfCanvasSize.height > 0 ? `${pdfCanvasSize.height}px` : "100%",
+          pointerEvents: tool !== TOOL_NONE ? "auto" : "none",
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          className={
+            "prep-annotate-canvas" +
+            (tool !== TOOL_NONE ? " prep-annotate-canvas--drawing" : "")
+          }
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: tool !== TOOL_NONE ? "auto" : "none",
+          }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        />
+
+        {/* Sticky notes */}
+        {stickyNotes.map((note) => (
+          <div
+            key={note.id}
+            className="prep-sticky-note"
+            style={{
+              position: "absolute",
+              left: `${note.x * 100}%`,
+              top: `${note.y * 100}%`,
+              pointerEvents: "auto",
+            }}
+          >
+            <div
+              className="prep-sticky-note__header"
+              onMouseDown={(e) => startNoteDrag(e, note)}
+            >
+              <button
+                type="button"
+                className="prep-sticky-note__close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteNote(note.id);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <textarea
+              className="prep-sticky-note__textarea"
+              placeholder="Note..."
+              value={note.text}
+              onChange={(e) => updateNoteText(note.id, e.target.value)}
+              onMouseDown={(e) => e.stopPropagation()}
+            />
+          </div>
+        ))}
+
+        {/* Text boxes */}
+        {textBoxes.map((box) => {
+          const isEditing = activeTextId === box.id;
+          return (
+            <div
+              key={box.id}
+              className={
+                "prep-text-box" + (isEditing ? " prep-text-box--editing" : "")
+              }
+              style={{
+                position: "absolute",
+                left: `${box.x * 100}%`,
+                top: `${box.y * 100}%`,
+                pointerEvents: "auto",
+              }}
+            >
+              {isEditing ? (
+                <>
+                  <div
+                    className="prep-text-box__header"
+                    onMouseDown={(e) => startTextDrag(e, box)}
+                  >
+                    <span className="prep-text-box__drag-handle" />
+                    <button
+                      type="button"
+                      className="prep-text-box__close"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTextBox(box.id);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <textarea
+                    data-textbox-id={box.id}
+                    className="prep-text-box__textarea"
+                    style={{ color: box.color }}
+                    placeholder="Type…"
+                    value={box.text}
+                    onChange={(e) => updateTextBoxText(box.id, e.target.value)}
+                    onBlur={() => setActiveTextId(null)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  />
+                </>
+              ) : (
+                <div
+                  className="prep-text-box__label"
+                  style={{ color: box.color }}
+                  onMouseDown={(e) => startTextDrag(e, box)}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setActiveTextId(box.id);
+                  }}
+                >
+                  {box.text}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Pointer arrow */}
+        {pointerPos && (
+          <div
+            className="prep-pointer"
+            style={{
+              position: "absolute",
+              left: `${pointerPos.x}px`,
+              top: `${pointerPos.y}px`,
+              pointerEvents: "none",
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Non-PDF annotation overlay (iframes)
+  // ─────────────────────────────────────────────────────────────
+  function renderIframeAnnotationsOverlay() {
     return (
       <>
         <canvas
@@ -771,8 +1038,45 @@ export default function PrepShell({
     );
   }
 
-  // NOTE: Your viewer types use "pdf" for PDF resources.
-  const isPdf = viewer?.type === "pdf" && !pdfFallback;
+  // Resize annotation canvas for non-PDF viewers
+  useEffect(() => {
+    if (isPdf) return; // PDF handles its own sizing
+
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+
+    function resizeCanvas() {
+      const rect = container.getBoundingClientRect();
+      const prev =
+        canvas.width && canvas.height ? canvas.toDataURL("image/png") : null;
+
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      if (prev) {
+        const img = new Image();
+        img.onload = () => {
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = prev;
+      }
+    }
+
+    resizeCanvas();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(() => resizeCanvas());
+      observer.observe(container);
+      return () => observer.disconnect();
+    } else {
+      window.addEventListener("resize", resizeCanvas);
+      return () => window.removeEventListener("resize", resizeCanvas);
+    }
+  }, [isPdf]);
 
   const showSidebar = !hideSidebar;
   const showBreadcrumbs = !hideBreadcrumbs;
@@ -913,6 +1217,9 @@ export default function PrepShell({
                 <span className="prep-viewer__badge-dot" />
                 <span className="prep-viewer__badge-text">
                   Live preview · {viewer.label}
+                  {isPdf &&
+                    numPages > 0 &&
+                    ` · Page ${currentPage} / ${numPages}`}
                 </span>
               </div>
 
@@ -1004,19 +1311,20 @@ export default function PrepShell({
 
               <div className="prep-viewer__frame-wrapper">
                 {isPdf ? (
-                  // PDF + sidebar (pdf.js)
-                  <div
-                    className="prep-viewer__canvas-container"
-                    ref={containerRef}
-                  >
+                  // PDF viewer with annotations as children
+                  <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
+                      ref={pdfViewerRef}
                       fileUrl={viewerUrl}
                       onFatalError={() => setPdfFallback(true)}
-                    />
-                    {renderAnnotationsOverlay()}
+                      onPageChange={handlePageChange}
+                      onCanvasSizeChange={handleCanvasSizeChange}
+                    >
+                      {renderAnnotationsOverlay()}
+                    </PdfViewerWithSidebar>
                   </div>
                 ) : (
-                  // Fallback: iframe viewer (YouTube, Slides, external or PDF if pdf.js failed)
+                  // Fallback: iframe viewer (YouTube, Slides, external)
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
@@ -1032,7 +1340,7 @@ export default function PrepShell({
                       }
                       allowFullScreen
                     />
-                    {renderAnnotationsOverlay()}
+                    {renderIframeAnnotationsOverlay()}
                   </div>
                 )}
               </div>
