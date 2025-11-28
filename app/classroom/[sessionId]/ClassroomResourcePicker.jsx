@@ -8,7 +8,6 @@ export default function ClassroomResourcePicker({
   tracks,
   selectedResourceId,
   onChangeResourceId,
-  isTeacher,
 }) {
   const {
     trackOptions,
@@ -30,20 +29,15 @@ export default function ClassroomResourcePicker({
     : [];
   const resourceOptions = unitId ? resourcesByUnitId[unitId] || [] : [];
 
-  // All cascades are TEACHER-ONLY
-
+  // cascade selection logic (unchanged) …
   useEffect(() => {
-    if (!isTeacher) return;
     if (!trackOptions.length) return;
-
     setTrackId((prev) =>
       trackOptions.some((t) => t.value === prev) ? prev : trackOptions[0].value
     );
-  }, [trackOptions, isTeacher]);
+  }, [trackOptions]);
 
   useEffect(() => {
-    if (!isTeacher) return;
-
     const list = booksByTrackId[trackId] || [];
     if (!list.length) {
       setBookId("");
@@ -52,15 +46,12 @@ export default function ClassroomResourcePicker({
       onChangeResourceId(null);
       return;
     }
-
     setBookId((prev) =>
       list.some((b) => b.value === prev) ? prev : list[0].value
     );
-  }, [trackId, booksByTrackId, onChangeResourceId, isTeacher]);
+  }, [trackId, booksByTrackId, onChangeResourceId]);
 
   useEffect(() => {
-    if (!isTeacher) return;
-
     const list = bookLevelsByBookId[bookId] || [];
     if (!list.length) {
       setBookLevelId("");
@@ -68,51 +59,40 @@ export default function ClassroomResourcePicker({
       onChangeResourceId(null);
       return;
     }
-
     setBookLevelId((prev) =>
       list.some((l) => l.value === prev) ? prev : list[0].value
     );
-  }, [bookId, bookLevelsByBookId, onChangeResourceId, isTeacher]);
+  }, [bookId, bookLevelsByBookId, onChangeResourceId]);
 
   useEffect(() => {
-    if (!isTeacher) return;
-
     const list = unitOptionsByBookLevelId[bookLevelId] || [];
     if (!list.length) {
       setUnitId("");
       onChangeResourceId(null);
       return;
     }
-
     setUnitId((prev) =>
       list.some((u) => u.value === prev) ? prev : list[0].value
     );
-  }, [bookLevelId, unitOptionsByBookLevelId, onChangeResourceId, isTeacher]);
+  }, [bookLevelId, unitOptionsByBookLevelId, onChangeResourceId]);
 
   useEffect(() => {
-    if (!isTeacher) return;
-
     const list = resourcesByUnitId[unitId] || [];
     if (!list.length) {
       onChangeResourceId(null);
       return;
     }
-
     onChangeResourceId((prev) =>
       list.some((r) => r._id === prev) ? prev : list[0]._id
     );
-  }, [unitId, resourcesByUnitId, onChangeResourceId, isTeacher]);
+  }, [unitId, resourcesByUnitId, onChangeResourceId]);
 
   return (
     <div className="classroom-picker">
       <div className="classroom-picker__row">
         {/* Track */}
         <div className="classroom-picker__select">
-          <select
-            value={trackId}
-            onChange={(e) => setTrackId(e.target.value)}
-            disabled={!isTeacher}
-          >
+          <select value={trackId} onChange={(e) => setTrackId(e.target.value)}>
             {trackOptions.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
@@ -131,7 +111,7 @@ export default function ClassroomResourcePicker({
           <select
             value={bookId}
             onChange={(e) => setBookId(e.target.value)}
-            disabled={!bookOptions.length || !isTeacher}
+            disabled={!bookOptions.length}
           >
             {!bookOptions.length && <option>No books</option>}
             {bookOptions.map((b) => (
@@ -152,7 +132,7 @@ export default function ClassroomResourcePicker({
           <select
             value={bookLevelId}
             onChange={(e) => setBookLevelId(e.target.value)}
-            disabled={!bookLevelOptions.length || !isTeacher}
+            disabled={!bookLevelOptions.length}
           >
             {!bookLevelOptions.length && <option>No levels</option>}
             {bookLevelOptions.map((l) => (
@@ -173,7 +153,7 @@ export default function ClassroomResourcePicker({
           <select
             value={unitId}
             onChange={(e) => setUnitId(e.target.value)}
-            disabled={!unitOptions.length || !isTeacher}
+            disabled={!unitOptions.length}
           >
             {!unitOptions.length && <option>No units</option>}
             {unitOptions.map((u) => (
@@ -194,7 +174,7 @@ export default function ClassroomResourcePicker({
           <select
             value={selectedResourceId || ""}
             onChange={(e) => onChangeResourceId(e.target.value)}
-            disabled={!resourceOptions.length || !isTeacher}
+            disabled={!resourceOptions.length}
           >
             {!resourceOptions.length && <option>No resources</option>}
             {resourceOptions.map((r) => (
