@@ -20,9 +20,8 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
-  // Classroom channel (shared with PrepShell later)
-  const classroomChannel = useClassroomChannel(String(sessionId));
-  const { ready, send, subscribe } = classroomChannel;
+  // Realtime classroom channel (separate from video)
+  const { ready, send, subscribe } = useClassroomChannel(String(sessionId));
 
   // ───────────────────────────────────────────────
   // 1) Learner listens for teacher changes
@@ -46,7 +45,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   }, [ready, resourcesById, subscribe]);
 
   // ───────────────────────────────────────────────
-  // 2) Teacher: auto-select first resource when none selected yet
+  // 2) Teacher: auto-select first resource when ready
   // ───────────────────────────────────────────────
   useEffect(() => {
     if (!isTeacher) return;
@@ -62,7 +61,11 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   }, [isTeacher, resourcesById, selectedResourceId]);
 
   // ───────────────────────────────────────────────
-  // 3) Teacher: broadcast whenever selection changes AND WS is ready
+  // 3) Teacher: whenever selection changes AND WS is ready -> broadcast
+  //    This covers:
+  //      - auto-select first resource
+  //      - manual changes in the picker
+  //      - changes made before the socket was ready
   // ───────────────────────────────────────────────
   useEffect(() => {
     if (!isTeacher) return;
@@ -77,14 +80,14 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   }, [isTeacher, ready, selectedResourceId, send]);
 
   // ───────────────────────────────────────────────
-  // 4) Teacher changes resource via Picker
+  // 4) Teacher changes resource via picker
   // ───────────────────────────────────────────────
   function handleChangeResourceId(nextId) {
-    // Just update state – broadcast happens in the effect
+    // Just update state – the effect above will broadcast when ready
     setSelectedResourceId(nextId || null);
   }
 
-  // Resolve current resource + viewer info
+  // Resolve the actual resource + viewer info
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId] || null
     : null;
@@ -98,9 +101,9 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         <PrepVideoCall roomId={sessionId} />
       </section>
 
-      {/* RIGHT: picker (teacher only) + classroom viewer */}
+      {/* RIGHT: picker (teacher only) + viewer */}
       <section className="classroom-prep-pane">
-        {/* ✅ Only teachers see the picker */}
+        {/* ✅ Only teachers see the picker at all */}
         {isTeacher && (
           <ClassroomResourcePicker
             isTeacher={isTeacher}
@@ -117,7 +120,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
               viewer={viewer}
               hideSidebar
               hideBreadcrumbs
-              classroomChannel={classroomChannel} // 🔥 new prop, safe to ignore in PrepShell for now
             />
           ) : (
             <div className="prep-viewer prep-viewer__placeholder">

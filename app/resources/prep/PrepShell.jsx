@@ -14,15 +14,7 @@ const TOOL_POINTER = "pointer";
 const TOOL_ERASER = "eraser";
 const TOOL_TEXT = "text";
 
-// ✅ Added black as a color option, kept your others
-const PEN_COLORS = [
-  "#000000",
-  "#f9fafb",
-  "#fbbf24",
-  "#60a5fa",
-  "#f97316",
-  "#22c55e",
-];
+const PEN_COLORS = ["#f9fafb", "#fbbf24", "#60a5fa", "#f97316", "#22c55e"];
 
 /**
  * Props:
@@ -108,8 +100,7 @@ export default function PrepShell({
 
     function resizeCanvas() {
       const rect = container.getBoundingClientRect();
-      const prev =
-        canvas.width && canvas.height ? canvas.toDataURL("image/png") : null;
+      const prev = canvas.toDataURL("image/png");
 
       canvas.width = rect.width;
       canvas.height = rect.height;
@@ -162,11 +153,7 @@ export default function PrepShell({
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-
-    // ✅ Use the canvas' parent as the reference box
-    const container = canvas.parentElement || canvas;
-    const rect = container.getBoundingClientRect();
-
+    const rect = canvas.getBoundingClientRect();
     return {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
@@ -330,9 +317,9 @@ export default function PrepShell({
     e.preventDefault();
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
-    const { x, y, width, height } = coords;
+    const { x, y, width } = coords;
     const currentX = note.x * width;
-    const currentY = note.y * height;
+    const currentY = note.y * coords.height;
 
     setDragState({
       kind: "note",
@@ -865,6 +852,10 @@ export default function PrepShell({
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
                   >
                     <iframe
                       src={viewerUrl}
