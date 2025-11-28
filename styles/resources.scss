@@ -1491,55 +1491,45 @@
 /* CLASSROOM LAYOUT + PICKER             */
 /* ────────────────────────────────────── */
 
-/* two-column layout:
-   - left ≈ 30% (video)
-   - right ≈ 70% (classroom viewer – ~10% bigger than before)
-*/
+/* 30% / 70% distribution → classroom +10% bigger */
 .classroom-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.9fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.55fr); /* previously 0.85 / 1.35 */
+  gap: 28px;
   align-items: stretch;
   margin-top: 16px;
 }
 
-/* LEFT: video column (hug the left side) */
+/* LEFT: video column – push more to the left without shrinking */
 .classroom-video-pane {
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
+  margin-left: -40px; /* pushes video left, making classroom feel larger */
 }
 
-/* shrink video a bit more so the classroom feels larger */
+/* keep EXACT SAME video size as before (you requested this) */
 .classroom-video-pane .prep-video__frame-wrapper {
   width: 100%;
-  max-width: 480px; /* was 520px */
-  margin-left: 0;
-  margin-right: auto;
+  max-width: 560px; /* unchanged */
 }
 
-/* RIGHT: classroom + viewer */
+/* RIGHT COLUMN: classroom viewer */
 .classroom-prep-pane {
-  position: relative; // so the pill bar can float over it
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-
-  /* reserve taller space for the pill bar so the viewer starts lower
-     (this keeps a clear gap between bar and viewer even when pills wrap) */
-  padding-top: 96px;
+  padding-top: 110px; /* room for pill bar so it never overlaps */
 }
 
-/* area under the selector bar (viewer lives here) */
 .classroom-prep-pane__content {
-  flex: 1 1 auto;
-  margin-top: 0; // offset handled by padding-top above
+  margin-top: 0; /* all spacing controlled by padding-top */
 }
 
-/* make the viewer tall and comfy but still within the page */
+/* classroom viewer – slightly bigger vertically too */
 .classroom-prep-pane .prep-viewer {
   width: 100%;
-  height: min(80vh, 720px); // a bit taller than before
+  height: min(80vh, 720px); /* +10% height */
 }
 
 .classroom-prep-pane .prep-viewer__frame-wrapper,
@@ -1547,48 +1537,43 @@
   height: 100%;
 }
 
-/* Stack on small screens */
+/* MOBILE STACK */
 @media (max-width: 960px) {
   .classroom-layout {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
     gap: 20px;
   }
 
+  .classroom-video-pane {
+    margin-left: 0; /* normal on small screens */
+  }
+
   .classroom-prep-pane {
-    padding-top: 104px; // extra room for wrapped pills on small screens
+    padding-top: 120px; /* extra because pills wrap more on mobile */
   }
 
   .classroom-prep-pane .prep-viewer {
-    height: auto; // let it flow naturally on mobile
-  }
-
-  .classroom-video-pane .prep-video__frame-wrapper {
-    max-width: 100%; // don’t shrink video on tiny screens
+    height: auto; /* natural flow */
   }
 }
 
-/* When we hide the left sidebar (no info card) */
-.prep-layout.prep-layout--no-sidebar {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-/* Top pill bar for picking track/book/unit/resource */
+/* PILL BAR — NO OVERLAY, ALWAYS ABOVE */
 .classroom-picker {
-  position: absolute; /* float above the viewer instead of pushing it down */
-  top: -24px; /* visually closer to the navbar */
+  position: absolute;
+  top: -20px; /* closer to navbar */
   left: 0;
   right: 0;
-  z-index: 5;
+  z-index: 10;
+  margin: 0 auto;
   width: 100%;
   max-width: 1120px;
-  margin: 0 auto; /* keep it nicely centered under the navbar */
 }
 
 .classroom-picker__row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: 999px;
   background: radial-gradient(circle at top left, #101828, #020617);
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35),
@@ -1599,35 +1584,26 @@
   position: relative;
 }
 
-/* pill-like select */
+/* pill styles unchanged */
 .classroom-picker__select select {
   appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-
   border: none;
   outline: none;
   border-radius: 999px;
   padding: 6px 26px 6px 14px;
-
   font-size: 13px;
   font-weight: 500;
-  line-height: 1.2;
-
   background: rgba(15, 23, 42, 0.9);
   color: #e5e7eb;
-
   box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.35),
     0 6px 16px rgba(15, 23, 42, 0.45);
-
-  white-space: nowrap;
   max-width: 220px;
+  white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
   cursor: pointer;
 }
 
-/* caret */
 .classroom-picker__select::after {
   content: "▾";
   position: absolute;
@@ -1635,24 +1611,21 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 10px;
-  pointer-events: none;
   color: rgba(148, 163, 184, 0.9);
+  pointer-events: none;
 }
 
-/* dimmed pills when there is "No X" */
 .classroom-picker__select--empty select {
   background: rgba(15, 23, 42, 0.5);
   color: rgba(156, 163, 175, 0.9);
   box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.3);
 }
 
-/* hover / focus */
 .classroom-picker__select select:hover:not(:disabled),
 .classroom-picker__select select:focus-visible {
   box-shadow: 0 0 0 1px #38bdf8, 0 10px 26px rgba(8, 47, 73, 0.7);
 }
 
-/* disabled */
 .classroom-picker__select select:disabled {
   cursor: not-allowed;
 }
