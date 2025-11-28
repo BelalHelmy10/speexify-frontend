@@ -11,7 +11,6 @@
 
 .resources-page__inner {
   width: 100%;
-  max-width: 1120px;
 }
 
 /* ─── HERO ─────────────────────────────────────────────────────────────── */
@@ -1508,6 +1507,7 @@
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
+  padding-top: 1rem;
 }
 
 /* shrink video a bit more so the classroom feels larger */

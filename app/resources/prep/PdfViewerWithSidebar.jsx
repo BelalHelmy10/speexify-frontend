@@ -7,6 +7,7 @@ export default function PdfViewerWithSidebar({
   fileUrl,
   onFatalError,
   children, // 🔥 overlay from PrepShell will be rendered here
+  onContainerReady, // ✅ NEW: optional callback to expose the scroll container
 }) {
   const mainRef = useRef(null);
   const pdfCanvasRef = useRef(null);
@@ -16,6 +17,18 @@ export default function PdfViewerWithSidebar({
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
+
+  // 🔥 EXPOSE the scroll container to the parent (PrepShell) once mounted
+  useEffect(() => {
+    if (typeof onContainerReady === "function" && mainRef.current) {
+      // mainRef points to .prep-pdf-main
+      // The actual scroll container for pdf+overlay is its inner div:
+      const inner = mainRef.current.querySelector(".prep-pdf-main-inner");
+      if (inner) {
+        onContainerReady(inner);
+      }
+    }
+  }, [onContainerReady]);
 
   // Load pdf.js + the PDF document
   useEffect(() => {

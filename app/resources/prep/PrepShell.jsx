@@ -36,7 +36,7 @@ export default function PrepShell({
   viewer,
   hideSidebar = false,
   hideBreadcrumbs = false,
-  classroomChannel, // 🔥 new optional prop
+  classroomChannel, // 🔥 optional prop for classroom sync
 }) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
@@ -49,8 +49,8 @@ export default function PrepShell({
   const [activeTextId, setActiveTextId] = useState(null);
   const [pdfFallback, setPdfFallback] = useState(false); // if pdf.js fails, fall back to iframe
 
-  const canvasRef = useRef(null);
-  const containerRef = useRef(null);
+  const canvasRef = useRef(null); // drawing canvas
+  const containerRef = useRef(null); // scroll container for overlay
   const applyingRemoteRef = useRef(false); // ✅ avoid re-broadcast loops
 
   const storageKey = `prep_annotations_${resource._id}`;
@@ -106,10 +106,17 @@ export default function PrepShell({
     }
   }, [storageKey]);
 
-  // Resize annotation canvas to match container
+  // Resize annotation canvas to match container (or its parent)
   useEffect(() => {
-    const container = containerRef.current;
     const canvas = canvasRef.current;
+
+    function getContainer() {
+      if (containerRef.current) return containerRef.current;
+      if (!canvasRef.current) return null;
+      return canvasRef.current.parentElement || canvasRef.current;
+    }
+
+    const container = getContainer();
     if (!container || !canvas) return;
 
     function resizeCanvas() {
@@ -1004,16 +1011,18 @@ export default function PrepShell({
 
               <div className="prep-viewer__frame-wrapper">
                 {isPdf ? (
-                  // PDF + sidebar (pdf.js)
-                  <div
-                    className="prep-viewer__canvas-container"
-                    ref={containerRef}
-                  >
+                  // PDF + sidebar (pdf.js) – overlay is a child of the scrolling PDF container
+                  <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={viewerUrl}
                       onFatalError={() => setPdfFallback(true)}
-                    />
-                    {renderAnnotationsOverlay()}
+                      onContainerReady={(el) => {
+                        // el is .prep-pdf-main-inner (scroll container for PDF + overlay)
+                        containerRef.current = el;
+                      }}
+                    >
+                      {renderAnnotationsOverlay()}
+                    </PdfViewerWithSidebar>
                   </div>
                 ) : (
                   // Fallback: iframe viewer (YouTube, Slides, external or PDF if pdf.js failed)
