@@ -5,33 +5,36 @@ import {
   useEffect,
   useRef,
   useState,
-  useCallback,
   forwardRef,
   useImperativeHandle,
+  useCallback,
 } from "react";
 
 /**
  * PdfViewerWithSidebar
  *
+ * This component renders a PDF with a page sidebar. The annotation overlay
+ * is passed as a render prop so it can access the PDF canvas dimensions
+ * and be properly positioned inside the scrollable container.
+ *
  * Props:
  *  - fileUrl: URL of the PDF file
  *  - onFatalError: callback when PDF fails to load
  *  - onPageChange: callback(pageNum, numPages) when page changes
- *  - onCanvasSizeChange: callback({ width, height }) when PDF canvas resizes
- *  - children: annotation overlay elements (rendered inside scroll container)
+ *  - renderOverlay: function({ canvasWidth, canvasHeight }) => ReactNode
+ *                   Returns the annotation overlay to render inside the scroll container.
  *
  * Ref exposes:
  *  - currentPage: number
  *  - numPages: number
  *  - canvasSize: { width, height }
- *  - getInnerContainer(): HTMLElement - the scrollable inner container
+ *  - goToPage(pageNum): navigate to a specific page
  */
 const PdfViewerWithSidebar = forwardRef(function PdfViewerWithSidebar(
-  { fileUrl, onFatalError, onPageChange, onCanvasSizeChange, children },
+  { fileUrl, onFatalError, onPageChange, renderOverlay },
   ref
 ) {
   const mainRef = useRef(null);
-  const innerRef = useRef(null);
   const pdfCanvasRef = useRef(null);
 
   const [pdfjs, setPdfjs] = useState(null);
@@ -48,7 +51,6 @@ const PdfViewerWithSidebar = forwardRef(function PdfViewerWithSidebar(
       currentPage,
       numPages,
       canvasSize,
-      getInnerContainer: () => innerRef.current,
       goToPage: (pageNum) => {
         if (pageNum >= 1 && pageNum <= numPages) {
           setCurrentPage(pageNum);
@@ -65,13 +67,6 @@ const PdfViewerWithSidebar = forwardRef(function PdfViewerWithSidebar(
     }
   }, [currentPage, numPages, onPageChange]);
 
-  // Notify parent when canvas size changes
-  useEffect(() => {
-    if (onCanvasSizeChange && canvasSize.width > 0) {
-      onCanvasSizeChange(canvasSize);
-    }
-  }, [canvasSize, onCanvasSizeChange]);
-
   // Load pdf.js + the PDF document
   useEffect(() => {
     let cancelled = false;
@@ -83,6 +78,7 @@ const PdfViewerWithSidebar = forwardRef(function PdfViewerWithSidebar(
       setNumPages(0);
       setPdfDoc(null);
       setCurrentPage(1);
+      setCanvasSize({ width: 0, height: 0 });
 
       try {
         const pdfjsModule = await import("pdfjs-dist/build/pdf");
@@ -116,7 +112,7 @@ const PdfViewerWithSidebar = forwardRef(function PdfViewerWithSidebar(
     };
   }, [fileUrl, onFatalError]);
 
-  // Render current page (and re-render on resize)
+  // Render current page
   const renderPage = useCallback(async () => {
     if (!pdfjs || !pdfDoc || !pdfCanvasRef.current || !mainRef.current) {
       return;
@@ -142,7 +138,7 @@ const PdfViewerWithSidebar = forwardRef(function PdfViewerWithSidebar(
       canvas.style.width = `${viewport.width}px`;
       canvas.style.height = `${viewport.height}px`;
 
-      // Update canvas size state for parent
+      // Update canvas size for overlay
       setCanvasSize({ width: viewport.width, height: viewport.height });
 
       await page.render({ canvasContext: ctx, viewport }).promise;
@@ -186,40 +182,69 @@ const PdfViewerWithSidebar = forwardRef(function PdfViewerWithSidebar(
 
   return (
     <div className="prep-pdf-layout">
+      {/* 
+        This is the SCROLLABLE container (.prep-pdf-main has overflow: auto/scroll).
+        The inner wrapper has position:relative so annotations position correctly.
+        When user scrolls, both the PDF canvas and annotations move together.
+      */}
       <div className="prep-pdf-main" ref={mainRef}>
         {/* 
-          IMPORTANT: This inner div has position:relative so annotations 
-          are positioned relative to the PDF content, not the viewport.
-          When the user scrolls, annotations move with the PDF.
+          CRITICAL: This wrapper is position:relative and sized to match the PDF.
+          Annotations are absolutely positioned inside this wrapper.
         */}
         <div
-          className="prep-pdf-main-inner"
-          ref={innerRef}
+          className="prep-pdf-content-wrapper"
           style={{
             position: "relative",
-            // Make inner container match PDF canvas size so annotations
-            // positioned at bottom of page work correctly
-            minWidth:
-              canvasSize.width > 0 ? `${canvasSize.width}px` : undefined,
-            minHeight:
-              canvasSize.height > 0 ? `${canvasSize.height}px` : undefined,
+            width: canvasSize.width > 0 ? canvasSize.width : "100%",
+            height: canvasSize.height > 0 ? canvasSize.height : "auto",
           }}
         >
           {error ? (
             <div className="prep-pdf-error">{error}</div>
           ) : (
             <>
-              <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
+              {/* PDF Canvas - the actual rendered PDF page */}
+              <canvas
+                ref={pdfCanvasRef}
+                className="prep-pdf-canvas"
+                style={{
+                  display: "block",
+                }}
+              />
+
               {/* 
-                Children (annotations) are rendered HERE, inside the scrollable
-                container, so they scroll with the PDF content 
+                Annotation Overlay Container
+                - Absolutely positioned to cover the PDF canvas exactly
+                - Scrolls WITH the PDF because it's inside the same relative container
               */}
-              {children}
+              {renderOverlay &&
+                canvasSize.width > 0 &&
+                canvasSize.height > 0 && (
+                  <div
+                    className="prep-pdf-annotation-container"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: canvasSize.width,
+                      height: canvasSize.height,
+                      pointerEvents: "none", // Let events pass through by default
+                      zIndex: 10,
+                    }}
+                  >
+                    {renderOverlay({
+                      canvasWidth: canvasSize.width,
+                      canvasHeight: canvasSize.height,
+                    })}
+                  </div>
+                )}
             </>
           )}
         </div>
       </div>
 
+      {/* Page sidebar */}
       <aside className="prep-pdf-sidebar">
         {error ? (
           <div className="prep-pdf-sidebar__empty">{error}</div>
