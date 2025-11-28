@@ -1,3 +1,4 @@
+// app/resources/ResourcesPicker.jsx
 "use client";
 
 import { useMemo, useState, useEffect } from "react";

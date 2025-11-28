@@ -3,7 +3,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
+export default function PdfViewerWithSidebar({
+  fileUrl,
+  onFatalError,
+  children, // 🔥 overlay from PrepShell will be rendered here
+}) {
   const mainRef = useRef(null);
   const pdfCanvasRef = useRef(null);
 
@@ -74,7 +78,7 @@ export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
 
         const unscaledViewport = page.getViewport({ scale: 1 });
 
-        // Fit width; height can overflow, but container can scroll if needed
+        // Fit width; height can overflow, container can scroll
         const scale = rect.width / unscaledViewport.width;
         const viewport = page.getViewport({ scale });
 
@@ -84,7 +88,6 @@ export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // Let CSS control display size; keep drawing at canvas pixel size
         canvas.style.width = `${viewport.width}px`;
         canvas.style.height = `${viewport.height}px`;
 
@@ -121,11 +124,19 @@ export default function PdfViewerWithSidebar({ fileUrl, onFatalError }) {
   return (
     <div className="prep-pdf-layout">
       <div className="prep-pdf-main" ref={mainRef}>
-        {error ? (
-          <div className="prep-pdf-error">{error}</div>
-        ) : (
-          <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
-        )}
+        <div
+          className="prep-pdf-main-inner"
+          style={{ position: "relative" }} // 🔥 overlay + pdf in same scroll container
+        >
+          {error ? (
+            <div className="prep-pdf-error">{error}</div>
+          ) : (
+            <>
+              <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
+              {children}
+            </>
+          )}
+        </div>
       </div>
 
       <aside className="prep-pdf-sidebar">
