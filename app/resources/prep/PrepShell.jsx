@@ -29,12 +29,14 @@ const PEN_COLORS = [
  *  - resource, viewer: as before (prep room)
  *  - hideSidebar (optional): when true, do NOT render the left info/notes column
  *  - hideBreadcrumbs (optional): when true, no breadcrumbs row
+ *  - classroomChannel (optional): in classroom mode, used to sync annotations
  */
 export default function PrepShell({
   resource,
   viewer,
   hideSidebar = false,
   hideBreadcrumbs = false,
+  classroomChannel, // 🔥 new optional prop
 }) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
@@ -49,6 +51,7 @@ export default function PrepShell({
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+  const applyingRemoteRef = useRef(false); // ✅ avoid re-broadcast loops
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -59,6 +62,9 @@ export default function PrepShell({
   const track = level?.track;
 
   const viewerActive = !!viewerUrl;
+
+  const channelReady = !!classroomChannel?.ready;
+  const sendOnChannel = classroomChannel?.send;
 
   // Focus newly-activated text box
   useEffect(() => {
@@ -138,7 +144,7 @@ export default function PrepShell({
     }
   }, []);
 
-  // Save annotations (canvas + notes + text)
+  // Save annotations (canvas + notes + text) locally
   function saveAnnotations(opts = {}) {
     if (!storageKey) return;
     try {
@@ -157,6 +163,127 @@ export default function PrepShell({
       console.warn("Failed to save annotations", err);
     }
   }
+
+  // 🔥 Broadcast whole annotation state over classroomChannel (optional)
+  function broadcastAnnotations(custom = {}) {
+    if (!channelReady || !sendOnChannel) return;
+    if (applyingRemoteRef.current) return; // don't echo back remote updates
+
+    const canvas = canvasRef.current;
+    const canvasData =
+      custom.canvasData ?? (canvas ? canvas.toDataURL("image/png") : null);
+
+    const payload = {
+      type: "ANNOTATION_STATE",
+      resourceId: resource._id,
+      canvasData: canvasData || null,
+      stickyNotes: custom.stickyNotes ?? stickyNotes,
+      textBoxes: custom.textBoxes ?? textBoxes,
+    };
+
+    try {
+      sendOnChannel(payload);
+    } catch (err) {
+      console.warn("Failed to broadcast annotations", err);
+    }
+  }
+
+  // 🔥 Broadcast pointer in normalized coordinates
+  function broadcastPointer(normalizedPosOrNull) {
+    if (!channelReady || !sendOnChannel) return;
+    if (applyingRemoteRef.current) return;
+
+    if (!normalizedPosOrNull) {
+      sendOnChannel({
+        type: "POINTER_HIDE",
+        resourceId: resource._id,
+      });
+      return;
+    }
+
+    const { x, y } = normalizedPosOrNull;
+    sendOnChannel({
+      type: "POINTER_MOVE",
+      resourceId: resource._id,
+      xNorm: x,
+      yNorm: y,
+    });
+  }
+
+  // 🔥 Apply remote annotation snapshot
+  function applyRemoteAnnotationState(message) {
+    if (!message || message.resourceId !== resource._id) return;
+
+    const {
+      canvasData,
+      stickyNotes: remoteNotes,
+      textBoxes: remoteText,
+    } = message;
+
+    applyingRemoteRef.current = true;
+    try {
+      if (Array.isArray(remoteNotes)) {
+        setStickyNotes(remoteNotes);
+      }
+      if (Array.isArray(remoteText)) {
+        setTextBoxes(remoteText);
+      }
+
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          if (canvasData) {
+            const img = new Image();
+            img.onload = () => {
+              const c = canvasRef.current;
+              if (!c) return;
+              const context = c.getContext("2d");
+              if (!context) return;
+              context.clearRect(0, 0, c.width, c.height);
+              context.drawImage(img, 0, 0, c.width, c.height);
+            };
+            img.src = canvasData;
+          }
+        }
+      }
+
+      // Save locally too
+      saveAnnotations({
+        canvasData: canvasData || null,
+        stickyNotes: Array.isArray(remoteNotes) ? remoteNotes : stickyNotes,
+        textBoxes: Array.isArray(remoteText) ? remoteText : textBoxes,
+      });
+    } finally {
+      applyingRemoteRef.current = false;
+    }
+  }
+
+  // 🔥 Subscribe to classroomChannel (remote annotations + pointer)
+  useEffect(() => {
+    if (!classroomChannel || !classroomChannel.ready) return;
+    if (!classroomChannel.subscribe) return;
+
+    const unsubscribe = classroomChannel.subscribe((msg) => {
+      if (!msg || msg.resourceId !== resource._id) return;
+
+      if (msg.type === "ANNOTATION_STATE") {
+        applyRemoteAnnotationState(msg);
+      } else if (msg.type === "POINTER_MOVE") {
+        const container = containerRef.current;
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        const x = msg.xNorm * rect.width;
+        const y = msg.yNorm * rect.height;
+        setPointerPos({ x, y });
+      } else if (msg.type === "POINTER_HIDE") {
+        setPointerPos(null);
+      }
+    });
+
+    return unsubscribe;
+  }, [classroomChannel, resource._id]);
 
   // Geometry helper
   function getCanvasCoordinates(event) {
@@ -209,6 +336,7 @@ export default function PrepShell({
             };
           });
           saveAnnotations({ stickyNotes: updated });
+          broadcastAnnotations({ stickyNotes: updated });
           return updated;
         });
       } else if (dragState.kind === "text") {
@@ -224,6 +352,7 @@ export default function PrepShell({
             };
           });
           saveAnnotations({ textBoxes: updated });
+          broadcastAnnotations({ textBoxes: updated });
           return updated;
         });
       }
@@ -274,21 +403,28 @@ export default function PrepShell({
     if (!isDrawing) return;
     setIsDrawing(false);
     saveAnnotations();
+    broadcastAnnotations();
   }
 
   // Pointer
   function updatePointer(e) {
     if (tool !== TOOL_POINTER) {
       setPointerPos(null);
+      broadcastPointer(null);
       return;
     }
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
-    setPointerPos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setPointerPos({ x, y });
+    const normalized = {
+      x: rect.width ? x / rect.width : 0,
+      y: rect.height ? y / rect.height : 0,
+    };
+    broadcastPointer(normalized);
   }
 
   // Sticky notes
@@ -309,6 +445,7 @@ export default function PrepShell({
     const nextNotes = [...stickyNotes, note];
     setStickyNotes(nextNotes);
     saveAnnotations({ stickyNotes: nextNotes });
+    broadcastAnnotations({ stickyNotes: nextNotes });
 
     setTool(TOOL_NONE);
   }
@@ -317,12 +454,14 @@ export default function PrepShell({
     const next = stickyNotes.map((n) => (n.id === id ? { ...n, text } : n));
     setStickyNotes(next);
     saveAnnotations({ stickyNotes: next });
+    broadcastAnnotations({ stickyNotes: next });
   }
 
   function deleteNote(id) {
     const next = stickyNotes.filter((n) => n.id !== id);
     setStickyNotes(next);
     saveAnnotations({ stickyNotes: next });
+    broadcastAnnotations({ stickyNotes: next });
   }
 
   function startNoteDrag(e, note) {
@@ -360,18 +499,21 @@ export default function PrepShell({
     setTextBoxes(next);
     setActiveTextId(box.id);
     saveAnnotations({ textBoxes: next });
+    broadcastAnnotations({ textBoxes: next });
   }
 
   function updateTextBoxText(id, text) {
     const next = textBoxes.map((t) => (t.id === id ? { ...t, text } : t));
     setTextBoxes(next);
     saveAnnotations({ textBoxes: next });
+    broadcastAnnotations({ textBoxes: next });
   }
 
   function deleteTextBox(id) {
     const next = textBoxes.filter((t) => t.id !== id);
     setTextBoxes(next);
     saveAnnotations({ textBoxes: next });
+    broadcastAnnotations({ textBoxes: next });
     if (activeTextId === id) setActiveTextId(null);
   }
 
@@ -404,13 +546,20 @@ export default function PrepShell({
     setDragState(null);
     setActiveTextId(null);
     try {
-      window.localStorage.setItem(
-        storageKey,
-        JSON.stringify({ canvasData: null, stickyNotes: [], textBoxes: [] })
-      );
+      const empty = {
+        canvasData: null,
+        stickyNotes: [],
+        textBoxes: [],
+      };
+      window.localStorage.setItem(storageKey, JSON.stringify(empty));
     } catch (err) {
       console.warn("Failed to clear annotations", err);
     }
+    broadcastAnnotations({
+      canvasData: null,
+      stickyNotes: [],
+      textBoxes: [],
+    });
   }
 
   // Mouse handlers
@@ -457,7 +606,10 @@ export default function PrepShell({
     if (tool === TOOL_POINTER) {
       updatePointer(e);
     } else {
-      setPointerPos(null);
+      if (pointerPos) {
+        setPointerPos(null);
+        broadcastPointer(null);
+      }
     }
 
     if (
@@ -475,6 +627,7 @@ export default function PrepShell({
     if (dragState) {
       setDragState(null);
       saveAnnotations();
+      broadcastAnnotations();
     }
   }
 
@@ -483,10 +636,12 @@ export default function PrepShell({
     if (tool === nextTool) {
       setTool(TOOL_NONE);
       setPointerPos(null);
+      broadcastPointer(null);
     } else {
       setTool(nextTool);
       if (nextTool !== TOOL_POINTER) {
         setPointerPos(null);
+        broadcastPointer(null);
       }
     }
   }
@@ -603,7 +758,7 @@ export default function PrepShell({
         })}
 
         {/* Pointer arrow */}
-        {tool === TOOL_POINTER && pointerPos && (
+        {pointerPos && (
           <div
             className="prep-pointer"
             style={{
