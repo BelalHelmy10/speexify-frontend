@@ -23,13 +23,6 @@ const PEN_COLORS = [
   "#22c55e",
 ];
 
-/**
- * Props:
- *  - resource, viewer: as before (prep room)
- *  - hideSidebar (optional): when true, do NOT render the left info/notes column
- *  - hideBreadcrumbs (optional): when true, no breadcrumbs row
- *  - classroomChannel (optional): in classroom mode, used to sync annotations
- */
 export default function PrepShell({
   resource,
   viewer,
@@ -46,75 +39,66 @@ export default function PrepShell({
   const [activeTextId, setActiveTextId] = useState(null);
   const [pdfFallback, setPdfFallback] = useState(false);
 
-  // PDF page tracking
+  // PDF state
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [pdfCanvasSize, setPdfCanvasSize] = useState({ width: 0, height: 0 });
   const pdfViewerRef = useRef(null);
 
-  // Per-page annotation storage
-  // Structure: { [pageNum]: { stickyNotes: [], textBoxes: [], canvasData: null } }
+  // Per-page annotations: { [page]: { stickyNotes, textBoxes, canvasData } }
   const [annotationsByPage, setAnnotationsByPage] = useState({});
 
-  // Get current page's annotations
-  const currentAnnotations = annotationsByPage[currentPage] || {
+  // Current page's annotations
+  const pageAnnotations = annotationsByPage[currentPage] || {
     stickyNotes: [],
     textBoxes: [],
     canvasData: null,
   };
-  const stickyNotes = currentAnnotations.stickyNotes;
-  const textBoxes = currentAnnotations.textBoxes;
+  const stickyNotes = pageAnnotations.stickyNotes;
+  const textBoxes = pageAnnotations.textBoxes;
 
   const canvasRef = useRef(null);
-  const containerRef = useRef(null); // For non-PDF viewers
+  const containerRef = useRef(null);
   const applyingRemoteRef = useRef(false);
 
-  const storageKey = `prep_annotations_v2_${resource._id}`;
-
+  const storageKey = `prep_annotations_v3_${resource._id}`;
   const viewerUrl = viewer?.viewerUrl || null;
   const unit = resource.unit;
   const subLevel = unit?.subLevel;
   const level = subLevel?.level;
   const track = level?.track;
-
   const viewerActive = !!viewerUrl;
   const isPdf = viewer?.type === "pdf" && !pdfFallback;
-
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
 
-  // ─────────────────────────────────────────────────────────────
-  // Helper: Update annotations for a specific page
-  // ─────────────────────────────────────────────────────────────
-  const updatePageAnnotations = useCallback((pageNum, updates) => {
-    setAnnotationsByPage((prev) => {
-      const current = prev[pageNum] || {
-        stickyNotes: [],
-        textBoxes: [],
-        canvasData: null,
-      };
-      return {
-        ...prev,
-        [pageNum]: { ...current, ...updates },
-      };
-    });
+  // ───────────────────────────────────────────────────────────
+  // Helpers
+  // ───────────────────────────────────────────────────────────
+  const updatePageAnnotations = useCallback((page, updates) => {
+    setAnnotationsByPage((prev) => ({
+      ...prev,
+      [page]: {
+        ...(prev[page] || { stickyNotes: [], textBoxes: [], canvasData: null }),
+        ...updates,
+      },
+    }));
   }, []);
 
-  // ─────────────────────────────────────────────────────────────
-  // PDF page change handler
-  // ─────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────
+  // PDF callbacks
+  // ───────────────────────────────────────────────────────────
   const handlePageChange = useCallback(
     (pageNum, totalPages) => {
-      // Save current page's canvas before switching
+      // Save current canvas before switching
       if (canvasRef.current && currentPage !== pageNum && currentPage > 0) {
-        const canvasData = canvasRef.current.toDataURL("image/png");
-        updatePageAnnotations(currentPage, { canvasData });
+        const data = canvasRef.current.toDataURL("image/png");
+        updatePageAnnotations(currentPage, { canvasData: data });
       }
-
       setCurrentPage(pageNum);
       setNumPages(totalPages);
 
-      // Broadcast page change to classroom
+      // Broadcast to classroom
       if (channelReady && sendOnChannel) {
         sendOnChannel({
           type: "SET_PAGE",
@@ -133,17 +117,18 @@ export default function PrepShell({
     ]
   );
 
-  // ─────────────────────────────────────────────────────────────
-  // Restore canvas when page changes or canvas size updates
-  // ─────────────────────────────────────────────────────────────
+  const handleCanvasSizeChange = useCallback((size) => {
+    setPdfCanvasSize(size);
+  }, []);
+
+  // ───────────────────────────────────────────────────────────
+  // Restore canvas when page/size changes
+  // ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!canvasRef.current || !pdfCanvasSize.width || !pdfCanvasSize.height)
-      return;
-
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    if (!canvas || !pdfCanvasSize.width || !pdfCanvasSize.height) return;
 
-    // Resize canvas to match PDF
+    // Resize canvas
     if (
       canvas.width !== pdfCanvasSize.width ||
       canvas.height !== pdfCanvasSize.height
@@ -152,142 +137,120 @@ export default function PrepShell({
       canvas.height = pdfCanvasSize.height;
     }
 
-    // Clear and restore page's drawing
+    // Clear and restore
+    const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const pageData = annotationsByPage[currentPage];
-    if (pageData?.canvasData) {
+    const data = annotationsByPage[currentPage]?.canvasData;
+    if (data) {
       const img = new Image();
       img.onload = () => {
-        const c = canvasRef.current;
-        if (!c) return;
-        const context = c.getContext("2d");
-        context.drawImage(img, 0, 0, c.width, c.height);
+        if (canvasRef.current) {
+          canvasRef.current
+            .getContext("2d")
+            .drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
       };
-      img.src = pageData.canvasData;
+      img.src = data;
     }
   }, [currentPage, pdfCanvasSize, annotationsByPage]);
 
-  // Focus newly-activated text box
+  // Focus text box
   useEffect(() => {
-    if (!activeTextId) return;
-    const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
-    if (el) el.focus();
+    if (activeTextId) {
+      const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
+      if (el) el.focus();
+    }
   }, [activeTextId]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Load annotations from localStorage
-  // ─────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────
+  // Load/save localStorage
+  // ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!storageKey) return;
-
     try {
       const raw = window.localStorage.getItem(storageKey);
       if (!raw) return;
-
       const parsed = JSON.parse(raw);
-
-      // New format: annotationsByPage
       if (parsed.annotationsByPage) {
         setAnnotationsByPage(parsed.annotationsByPage);
-      }
-      // Legacy format: migrate to per-page (put on page 1)
-      else if (parsed.stickyNotes || parsed.textBoxes || parsed.canvasData) {
+      } else if (parsed.stickyNotes || parsed.textBoxes || parsed.canvasData) {
+        // Legacy migration
         setAnnotationsByPage({
           1: {
             stickyNotes: parsed.stickyNotes || [],
             textBoxes: parsed.textBoxes || [],
-            canvasData: parsed.canvasData || null,
+            canvasData: parsed.canvasData,
           },
         });
       }
-    } catch (err) {
-      console.warn("Failed to load annotations", err);
+    } catch (e) {
+      console.warn("Failed to load annotations", e);
     }
   }, [storageKey]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Save annotations
-  // ─────────────────────────────────────────────────────────────
   function saveAnnotations(opts = {}) {
     if (!storageKey) return;
     try {
       const canvas = canvasRef.current;
       const canvasData =
         opts.canvasData ?? (canvas ? canvas.toDataURL("image/png") : null);
-
-      const updatedPageAnnotations = {
+      const updated = {
         ...annotationsByPage,
         [currentPage]: {
           stickyNotes: opts.stickyNotes ?? stickyNotes,
           textBoxes: opts.textBoxes ?? textBoxes,
-          canvasData: canvasData,
+          canvasData,
         },
       };
-
       window.localStorage.setItem(
         storageKey,
-        JSON.stringify({ annotationsByPage: updatedPageAnnotations })
+        JSON.stringify({ annotationsByPage: updated })
       );
-    } catch (err) {
-      console.warn("Failed to save annotations", err);
+    } catch (e) {
+      console.warn("Failed to save annotations", e);
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Broadcast annotations
-  // ─────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────
+  // Broadcast
+  // ───────────────────────────────────────────────────────────
   function broadcastAnnotations(custom = {}) {
-    if (!channelReady || !sendOnChannel) return;
-    if (applyingRemoteRef.current) return;
-
+    if (!channelReady || !sendOnChannel || applyingRemoteRef.current) return;
     const canvas = canvasRef.current;
     const canvasData =
       custom.canvasData ?? (canvas ? canvas.toDataURL("image/png") : null);
-
     sendOnChannel({
       type: "ANNOTATION_STATE",
       resourceId: resource._id,
       pageNum: currentPage,
-      canvasData: canvasData || null,
+      canvasData,
       stickyNotes: custom.stickyNotes ?? stickyNotes,
       textBoxes: custom.textBoxes ?? textBoxes,
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Broadcast pointer
-  // ─────────────────────────────────────────────────────────────
-  function broadcastPointer(normalizedPosOrNull) {
-    if (!channelReady || !sendOnChannel) return;
-    if (applyingRemoteRef.current) return;
-
-    if (!normalizedPosOrNull) {
+  function broadcastPointer(pos) {
+    if (!channelReady || !sendOnChannel || applyingRemoteRef.current) return;
+    if (!pos) {
       sendOnChannel({ type: "POINTER_HIDE", resourceId: resource._id });
-      return;
+    } else {
+      sendOnChannel({
+        type: "POINTER_MOVE",
+        resourceId: resource._id,
+        pageNum: currentPage,
+        xNorm: pos.x,
+        yNorm: pos.y,
+      });
     }
-
-    sendOnChannel({
-      type: "POINTER_MOVE",
-      resourceId: resource._id,
-      pageNum: currentPage,
-      xNorm: normalizedPosOrNull.x,
-      yNorm: normalizedPosOrNull.y,
-    });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Apply remote annotation state
-  // ─────────────────────────────────────────────────────────────
-  function applyRemoteAnnotationState(message) {
-    if (!message || message.resourceId !== resource._id) return;
-
-    const {
-      pageNum,
-      canvasData,
-      stickyNotes: remoteNotes,
-      textBoxes: remoteText,
-    } = message;
+  // ───────────────────────────────────────────────────────────
+  // Apply remote state
+  // ───────────────────────────────────────────────────────────
+  function applyRemoteState(msg) {
+    if (!msg || msg.resourceId !== resource._id) return;
+    const { pageNum, canvasData, stickyNotes: rNotes, textBoxes: rText } = msg;
     const targetPage = pageNum || currentPage;
 
     applyingRemoteRef.current = true;
@@ -295,23 +258,20 @@ export default function PrepShell({
       setAnnotationsByPage((prev) => ({
         ...prev,
         [targetPage]: {
-          stickyNotes: Array.isArray(remoteNotes) ? remoteNotes : [],
-          textBoxes: Array.isArray(remoteText) ? remoteText : [],
+          stickyNotes: Array.isArray(rNotes) ? rNotes : [],
+          textBoxes: Array.isArray(rText) ? rText : [],
           canvasData: canvasData || null,
         },
       }));
 
-      // If for current page, update canvas
       if (targetPage === currentPage && canvasRef.current && canvasData) {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         const img = new Image();
         img.onload = () => {
-          const c = canvasRef.current;
-          if (!c) return;
-          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          if (canvasRef.current) {
+            canvasRef.current.getContext("2d").drawImage(img, 0, 0);
+          }
         };
         img.src = canvasData;
       }
@@ -320,94 +280,89 @@ export default function PrepShell({
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Subscribe to classroom channel
-  // ─────────────────────────────────────────────────────────────
+  // Subscribe to classroom
   useEffect(() => {
     if (!classroomChannel?.ready || !classroomChannel?.subscribe) return;
-
-    const unsubscribe = classroomChannel.subscribe((msg) => {
+    const unsub = classroomChannel.subscribe((msg) => {
       if (!msg || msg.resourceId !== resource._id) return;
-
-      if (msg.type === "ANNOTATION_STATE") {
-        applyRemoteAnnotationState(msg);
-      } else if (
-        msg.type === "SET_PAGE" &&
-        msg.pageNum &&
-        pdfViewerRef.current
-      ) {
+      if (msg.type === "ANNOTATION_STATE") applyRemoteState(msg);
+      else if (msg.type === "SET_PAGE" && msg.pageNum && pdfViewerRef.current)
         pdfViewerRef.current.goToPage(msg.pageNum);
-      } else if (msg.type === "POINTER_MOVE" && msg.pageNum === currentPage) {
-        const w = pdfCanvasSize.width || 1;
-        const h = pdfCanvasSize.height || 1;
-        setPointerPos({ x: msg.xNorm * w, y: msg.yNorm * h });
-      } else if (msg.type === "POINTER_HIDE") {
-        setPointerPos(null);
-      }
+      else if (msg.type === "POINTER_MOVE" && msg.pageNum === currentPage) {
+        setPointerPos({
+          x: msg.xNorm * pdfCanvasSize.width,
+          y: msg.yNorm * pdfCanvasSize.height,
+        });
+      } else if (msg.type === "POINTER_HIDE") setPointerPos(null);
     });
-
-    return unsubscribe;
+    return unsub;
   }, [classroomChannel, resource._id, currentPage, pdfCanvasSize]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Coordinate helpers
-  // ─────────────────────────────────────────────────────────────
-  function getCanvasCoordinates(event, canvasWidth, canvasHeight) {
+  // ───────────────────────────────────────────────────────────
+  // Drawing handlers
+  // ───────────────────────────────────────────────────────────
+  function getCoords(e, w, h) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-
     const rect = canvas.getBoundingClientRect();
     return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-      width: canvasWidth || rect.width,
-      height: canvasHeight || rect.height,
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      width: w || rect.width,
+      height: h || rect.height,
     };
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Drawing
-  // ─────────────────────────────────────────────────────────────
-  function startDrawing(e, canvasWidth, canvasHeight) {
-    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
-      return;
-    const coords = getCanvasCoordinates(e, canvasWidth, canvasHeight);
+  function startDrawing(e, w, h) {
+    if (![TOOL_PEN, TOOL_HIGHLIGHTER, TOOL_ERASER].includes(tool)) return;
+    const coords = getCoords(e, w, h);
     if (!coords) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvasRef.current.getContext("2d");
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
     setIsDrawing(true);
   }
 
-  function draw(e, canvasWidth, canvasHeight) {
-    if (dragState) {
-      const coords = getCanvasCoordinates(e, canvasWidth, canvasHeight);
-      if (!coords) return;
-      const { width, height, x, y } = coords;
+  function draw(e, w, h) {
+    const coords = getCoords(e, w, h);
+    if (!coords) return;
 
+    if (dragState) {
       if (dragState.kind === "note") {
-        const updated = stickyNotes.map((n) => {
-          if (n.id !== dragState.id) return n;
-          return {
-            ...n,
-            x: Math.min(0.95, Math.max(0.02, (x + dragState.offsetX) / width)),
-            y: Math.min(0.95, Math.max(0.02, (y + dragState.offsetY) / height)),
-          };
-        });
+        const updated = stickyNotes.map((n) =>
+          n.id !== dragState.id
+            ? n
+            : {
+                ...n,
+                x: Math.min(
+                  0.95,
+                  Math.max(0.02, (coords.x + dragState.offsetX) / coords.width)
+                ),
+                y: Math.min(
+                  0.95,
+                  Math.max(0.02, (coords.y + dragState.offsetY) / coords.height)
+                ),
+              }
+        );
         updatePageAnnotations(currentPage, { stickyNotes: updated });
         saveAnnotations({ stickyNotes: updated });
         broadcastAnnotations({ stickyNotes: updated });
       } else if (dragState.kind === "text") {
-        const updated = textBoxes.map((t) => {
-          if (t.id !== dragState.id) return t;
-          return {
-            ...t,
-            x: Math.min(0.95, Math.max(0.02, (x + dragState.offsetX) / width)),
-            y: Math.min(0.95, Math.max(0.02, (y + dragState.offsetY) / height)),
-          };
-        });
+        const updated = textBoxes.map((t) =>
+          t.id !== dragState.id
+            ? t
+            : {
+                ...t,
+                x: Math.min(
+                  0.95,
+                  Math.max(0.02, (coords.x + dragState.offsetX) / coords.width)
+                ),
+                y: Math.min(
+                  0.95,
+                  Math.max(0.02, (coords.y + dragState.offsetY) / coords.height)
+                ),
+              }
+        );
         updatePageAnnotations(currentPage, { textBoxes: updated });
         saveAnnotations({ textBoxes: updated });
         broadcastAnnotations({ textBoxes: updated });
@@ -416,21 +371,13 @@ export default function PrepShell({
     }
 
     if (!isDrawing) {
-      if (tool === TOOL_POINTER) {
-        updatePointer(e, canvasWidth, canvasHeight);
-      }
+      if (tool === TOOL_POINTER) updatePointer(e, w, h);
       return;
     }
 
-    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
-      return;
+    if (![TOOL_PEN, TOOL_HIGHLIGHTER, TOOL_ERASER].includes(tool)) return;
 
-    const coords = getCanvasCoordinates(e, canvasWidth, canvasHeight);
-    if (!coords) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
+    const ctx = canvasRef.current.getContext("2d");
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
@@ -458,53 +405,44 @@ export default function PrepShell({
   function stopDrawing() {
     if (!isDrawing) return;
     setIsDrawing(false);
-
-    const canvas = canvasRef.current;
-    const canvasData = canvas ? canvas.toDataURL("image/png") : null;
+    const canvasData = canvasRef.current?.toDataURL("image/png") || null;
     updatePageAnnotations(currentPage, { canvasData });
     saveAnnotations({ canvasData });
     broadcastAnnotations({ canvasData });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Pointer
-  // ─────────────────────────────────────────────────────────────
-  function updatePointer(e, canvasWidth, canvasHeight) {
+  function updatePointer(e, w, h) {
     if (tool !== TOOL_POINTER) {
       setPointerPos(null);
       broadcastPointer(null);
       return;
     }
-    const coords = getCanvasCoordinates(e, canvasWidth, canvasHeight);
+    const coords = getCoords(e, w, h);
     if (!coords) return;
-
     setPointerPos({ x: coords.x, y: coords.y });
     broadcastPointer({
-      x: coords.width ? coords.x / coords.width : 0,
-      y: coords.height ? coords.y / coords.height : 0,
+      x: coords.x / coords.width,
+      y: coords.y / coords.height,
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Sticky notes
-  // ─────────────────────────────────────────────────────────────
-  function handleClickForNote(e, canvasWidth, canvasHeight) {
+  // ───────────────────────────────────────────────────────────
+  // Notes & Text
+  // ───────────────────────────────────────────────────────────
+  function addNote(e, w, h) {
     if (tool !== TOOL_NOTE) return;
-
-    const coords = getCanvasCoordinates(e, canvasWidth, canvasHeight);
+    const coords = getCoords(e, w, h);
     if (!coords) return;
-
     const note = {
-      id: `note_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      id: `note_${Date.now()}`,
       x: coords.x / coords.width,
       y: coords.y / coords.height,
       text: "",
     };
-
-    const nextNotes = [...stickyNotes, note];
-    updatePageAnnotations(currentPage, { stickyNotes: nextNotes });
-    saveAnnotations({ stickyNotes: nextNotes });
-    broadcastAnnotations({ stickyNotes: nextNotes });
+    const next = [...stickyNotes, note];
+    updatePageAnnotations(currentPage, { stickyNotes: next });
+    saveAnnotations({ stickyNotes: next });
+    broadcastAnnotations({ stickyNotes: next });
     setTool(TOOL_NONE);
   }
 
@@ -522,12 +460,11 @@ export default function PrepShell({
     broadcastAnnotations({ stickyNotes: next });
   }
 
-  function startNoteDrag(e, note, canvasWidth, canvasHeight) {
+  function startNoteDrag(e, note, w, h) {
     e.stopPropagation();
     e.preventDefault();
-    const coords = getCanvasCoordinates(e, canvasWidth, canvasHeight);
+    const coords = getCoords(e, w, h);
     if (!coords) return;
-
     setDragState({
       kind: "note",
       id: note.id,
@@ -536,21 +473,16 @@ export default function PrepShell({
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Text boxes
-  // ─────────────────────────────────────────────────────────────
-  function createTextBox(e, canvasWidth, canvasHeight) {
-    const coords = getCanvasCoordinates(e, canvasWidth, canvasHeight);
+  function addTextBox(e, w, h) {
+    const coords = getCoords(e, w, h);
     if (!coords) return;
-
     const box = {
-      id: `text_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      id: `text_${Date.now()}`,
       x: coords.x / coords.width,
       y: coords.y / coords.height,
       text: "",
       color: penColor,
     };
-
     const next = [...textBoxes, box];
     updatePageAnnotations(currentPage, { textBoxes: next });
     setActiveTextId(box.id);
@@ -573,12 +505,11 @@ export default function PrepShell({
     if (activeTextId === id) setActiveTextId(null);
   }
 
-  function startTextDrag(e, box, canvasWidth, canvasHeight) {
+  function startTextDrag(e, box, w, h) {
     e.stopPropagation();
     e.preventDefault();
-    const coords = getCanvasCoordinates(e, canvasWidth, canvasHeight);
+    const coords = getCoords(e, w, h);
     if (!coords) return;
-
     setDragState({
       kind: "text",
       id: box.id,
@@ -587,92 +518,66 @@ export default function PrepShell({
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Clear all (current page)
-  // ─────────────────────────────────────────────────────────────
-  function clearCanvasAndNotes() {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  function clearAll() {
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext("2d");
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-
     updatePageAnnotations(currentPage, {
       stickyNotes: [],
       textBoxes: [],
       canvasData: null,
     });
-
     setDragState(null);
     setActiveTextId(null);
-
     saveAnnotations({ canvasData: null, stickyNotes: [], textBoxes: [] });
     broadcastAnnotations({ canvasData: null, stickyNotes: [], textBoxes: [] });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Mouse handlers (receive canvas dimensions)
-  // ─────────────────────────────────────────────────────────────
-  function createMouseHandlers(canvasWidth, canvasHeight) {
+  // ───────────────────────────────────────────────────────────
+  // Mouse handlers factory
+  // ───────────────────────────────────────────────────────────
+  function createMouseHandlers(w, h) {
     return {
-      handleMouseDown: (e) => {
-        const target = e.target;
+      onMouseDown: (e) => {
         if (
-          target.closest?.(".prep-sticky-note") ||
-          target.closest?.(".prep-text-box")
-        ) {
+          e.target.closest?.(".prep-sticky-note") ||
+          e.target.closest?.(".prep-text-box")
+        )
           return;
-        }
-
         if (tool === TOOL_TEXT) {
           e.preventDefault();
           if (activeTextId) {
             setActiveTextId(null);
             setTool(TOOL_NONE);
-            return;
-          }
-          createTextBox(e, canvasWidth, canvasHeight);
+          } else addTextBox(e, w, h);
           return;
         }
-
-        if (
-          tool === TOOL_PEN ||
-          tool === TOOL_HIGHLIGHTER ||
-          tool === TOOL_ERASER
-        ) {
+        if ([TOOL_PEN, TOOL_HIGHLIGHTER, TOOL_ERASER].includes(tool)) {
           e.preventDefault();
-          startDrawing(e, canvasWidth, canvasHeight);
+          startDrawing(e, w, h);
         } else if (tool === TOOL_NOTE) {
           e.preventDefault();
-          handleClickForNote(e, canvasWidth, canvasHeight);
+          addNote(e, w, h);
         }
       },
-
-      handleMouseMove: (e) => {
+      onMouseMove: (e) => {
         if (dragState) {
           e.preventDefault();
-          draw(e, canvasWidth, canvasHeight);
+          draw(e, w, h);
           return;
         }
-
-        if (tool === TOOL_POINTER) {
-          updatePointer(e, canvasWidth, canvasHeight);
-        } else if (pointerPos) {
+        if (tool === TOOL_POINTER) updatePointer(e, w, h);
+        else if (pointerPos) {
           setPointerPos(null);
           broadcastPointer(null);
         }
-
-        if (
-          tool === TOOL_PEN ||
-          tool === TOOL_HIGHLIGHTER ||
-          tool === TOOL_ERASER
-        ) {
+        if ([TOOL_PEN, TOOL_HIGHLIGHTER, TOOL_ERASER].includes(tool)) {
           e.preventDefault();
-          draw(e, canvasWidth, canvasHeight);
+          draw(e, w, h);
         }
       },
-
-      handleMouseUp: () => {
+      onMouseUp: () => {
         stopDrawing();
         if (dragState) {
           setDragState(null);
@@ -680,280 +585,239 @@ export default function PrepShell({
           broadcastAnnotations();
         }
       },
+      onMouseLeave: () => {
+        stopDrawing();
+        if (dragState) {
+          setDragState(null);
+        }
+      },
     };
   }
 
-  // Tool toggle
-  function setToolSafe(nextTool) {
-    if (tool === nextTool) {
+  function setToolSafe(t) {
+    if (tool === t) {
       setTool(TOOL_NONE);
       setPointerPos(null);
       broadcastPointer(null);
     } else {
-      setTool(nextTool);
-      if (nextTool !== TOOL_POINTER) {
+      setTool(t);
+      if (t !== TOOL_POINTER) {
         setPointerPos(null);
         broadcastPointer(null);
       }
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Render annotation overlay for PDF (via render prop)
-  // ─────────────────────────────────────────────────────────────
-  function renderPdfAnnotationOverlay({ canvasWidth, canvasHeight }) {
-    // Store dimensions for coordinate calculations
-    if (
-      canvasWidth !== pdfCanvasSize.width ||
-      canvasHeight !== pdfCanvasSize.height
-    ) {
-      setPdfCanvasSize({ width: canvasWidth, height: canvasHeight });
-    }
+  // ───────────────────────────────────────────────────────────
+  // RENDER ANNOTATIONS - This is passed to PdfViewerWithSidebar
+  // ───────────────────────────────────────────────────────────
+  const renderAnnotations = useCallback(
+    ({ width, height }) => {
+      // Store size for coordinate calculations
+      if (width !== pdfCanvasSize.width || height !== pdfCanvasSize.height) {
+        setPdfCanvasSize({ width, height });
+      }
 
-    const handlers = createMouseHandlers(canvasWidth, canvasHeight);
+      const handlers = createMouseHandlers(width, height);
 
-    return (
-      <>
-        {/* Drawing canvas */}
-        <canvas
-          ref={canvasRef}
-          width={canvasWidth}
-          height={canvasHeight}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: canvasWidth,
-            height: canvasHeight,
-            pointerEvents: tool !== TOOL_NONE ? "auto" : "none",
-            cursor:
-              tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER
-                ? "crosshair"
-                : tool === TOOL_ERASER
-                ? "cell"
-                : tool === TOOL_TEXT
-                ? "text"
-                : tool === TOOL_NOTE
-                ? "copy"
-                : tool === TOOL_POINTER
-                ? "pointer"
-                : "default",
-          }}
-          onMouseDown={handlers.handleMouseDown}
-          onMouseMove={handlers.handleMouseMove}
-          onMouseUp={handlers.handleMouseUp}
-          onMouseLeave={handlers.handleMouseUp}
-        />
+      // Inline styles for annotation elements
+      const canvasStyle = {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: `${width}px`,
+        height: `${height}px`,
+        pointerEvents: tool !== TOOL_NONE ? "auto" : "none",
+        cursor:
+          tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER
+            ? "crosshair"
+            : tool === TOOL_ERASER
+            ? "cell"
+            : tool === TOOL_TEXT
+            ? "text"
+            : tool === TOOL_NOTE
+            ? "copy"
+            : tool === TOOL_POINTER
+            ? "pointer"
+            : "default",
+      };
 
-        {/* Sticky notes */}
-        {stickyNotes.map((note) => (
-          <div
-            key={note.id}
-            className="prep-sticky-note"
-            style={{
-              position: "absolute",
-              left: `${note.x * 100}%`,
-              top: `${note.y * 100}%`,
-              pointerEvents: "auto",
-              zIndex: 20,
-            }}
-          >
-            <div
-              className="prep-sticky-note__header"
-              onMouseDown={(e) =>
-                startNoteDrag(e, note, canvasWidth, canvasHeight)
-              }
-            >
-              <button
-                type="button"
-                className="prep-sticky-note__close"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteNote(note.id);
-                }}
-              >
-                ×
-              </button>
-            </div>
-            <textarea
-              className="prep-sticky-note__textarea"
-              placeholder="Note..."
-              value={note.text}
-              onChange={(e) => updateNoteText(note.id, e.target.value)}
-              onMouseDown={(e) => e.stopPropagation()}
-            />
-          </div>
-        ))}
+      const noteStyle = (note) => ({
+        position: "absolute",
+        left: `${note.x * 100}%`,
+        top: `${note.y * 100}%`,
+        transform: "translate(-5px, -5px)",
+        minWidth: "140px",
+        maxWidth: "220px",
+        background: "#fef3c7",
+        borderRadius: "4px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+        pointerEvents: "auto",
+        zIndex: 20,
+      });
 
-        {/* Text boxes */}
-        {textBoxes.map((box) => {
-          const isEditing = activeTextId === box.id;
-          return (
-            <div
-              key={box.id}
-              className={
-                "prep-text-box" + (isEditing ? " prep-text-box--editing" : "")
-              }
-              style={{
-                position: "absolute",
-                left: `${box.x * 100}%`,
-                top: `${box.y * 100}%`,
-                pointerEvents: "auto",
-                zIndex: 20,
-              }}
-            >
-              {isEditing ? (
-                <>
-                  <div
-                    className="prep-text-box__header"
-                    onMouseDown={(e) =>
-                      startTextDrag(e, box, canvasWidth, canvasHeight)
-                    }
-                  >
-                    <span className="prep-text-box__drag-handle" />
-                    <button
-                      type="button"
-                      className="prep-text-box__close"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteTextBox(box.id);
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <textarea
-                    data-textbox-id={box.id}
-                    className="prep-text-box__textarea"
-                    style={{ color: box.color }}
-                    placeholder="Type…"
-                    value={box.text}
-                    onChange={(e) => updateTextBoxText(box.id, e.target.value)}
-                    onBlur={() => setActiveTextId(null)}
-                    onMouseDown={(e) => e.stopPropagation()}
-                  />
-                </>
-              ) : (
-                <div
-                  className="prep-text-box__label"
-                  style={{ color: box.color }}
-                  onMouseDown={(e) =>
-                    startTextDrag(e, box, canvasWidth, canvasHeight)
-                  }
-                  onDoubleClick={(e) => {
-                    e.stopPropagation();
-                    setActiveTextId(box.id);
-                  }}
-                >
-                  {box.text || "(empty)"}
-                </div>
-              )}
-            </div>
-          );
-        })}
+      const noteHeaderStyle = {
+        display: "flex",
+        justifyContent: "flex-end",
+        padding: "4px",
+        background: "#fde68a",
+        borderRadius: "4px 4px 0 0",
+        cursor: "grab",
+      };
 
-        {/* Pointer */}
-        {pointerPos && (
-          <div
-            className="prep-pointer"
-            style={{
-              position: "absolute",
-              left: pointerPos.x,
-              top: pointerPos.y,
-              pointerEvents: "none",
-              zIndex: 30,
-            }}
+      const noteCloseStyle = {
+        width: "18px",
+        height: "18px",
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+        fontSize: "14px",
+        color: "#92400e",
+      };
+
+      const noteTextareaStyle = {
+        width: "100%",
+        minHeight: "60px",
+        padding: "8px",
+        border: "none",
+        background: "transparent",
+        resize: "vertical",
+        fontFamily: "inherit",
+        fontSize: "13px",
+      };
+
+      const textLabelStyle = (box) => ({
+        position: "absolute",
+        left: `${box.x * 100}%`,
+        top: `${box.y * 100}%`,
+        color: box.color,
+        fontSize: "18px",
+        fontWeight: "600",
+        cursor: "grab",
+        whiteSpace: "nowrap",
+        textShadow:
+          "1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white",
+        pointerEvents: "auto",
+        zIndex: 20,
+      });
+
+      const textEditStyle = (box) => ({
+        position: "absolute",
+        left: `${box.x * 100}%`,
+        top: `${box.y * 100}%`,
+        minWidth: "120px",
+        background: "white",
+        borderRadius: "4px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+        pointerEvents: "auto",
+        zIndex: 20,
+      });
+
+      const textHeaderStyle = {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "4px",
+        background: "#e5e7eb",
+        borderRadius: "4px 4px 0 0",
+        cursor: "grab",
+      };
+
+      const textTextareaStyle = (color) => ({
+        width: "100%",
+        minHeight: "30px",
+        padding: "6px",
+        border: "none",
+        background: "transparent",
+        color: color,
+        fontSize: "18px",
+        fontWeight: "600",
+        resize: "both",
+        fontFamily: "inherit",
+      });
+
+      const pointerStyle = {
+        position: "absolute",
+        left: `${pointerPos?.x || 0}px`,
+        top: `${pointerPos?.y || 0}px`,
+        width: 0,
+        height: 0,
+        borderLeft: "12px solid #ef4444",
+        borderTop: "8px solid transparent",
+        borderBottom: "8px solid transparent",
+        transform: "translate(-2px, -8px)",
+        pointerEvents: "none",
+        zIndex: 30,
+      };
+
+      return (
+        <>
+          {/* Drawing canvas */}
+          <canvas
+            ref={canvasRef}
+            width={width}
+            height={height}
+            style={canvasStyle}
+            onMouseDown={handlers.onMouseDown}
+            onMouseMove={handlers.onMouseMove}
+            onMouseUp={handlers.onMouseUp}
+            onMouseLeave={handlers.onMouseLeave}
           />
-        )}
-      </>
-    );
-  }
 
-  // ─────────────────────────────────────────────────────────────
-  // Non-PDF annotation overlay (for iframes)
-  // ─────────────────────────────────────────────────────────────
-  function renderIframeAnnotationsOverlay() {
-    const handlers = createMouseHandlers(
-      containerRef.current?.clientWidth || 800,
-      containerRef.current?.clientHeight || 600
-    );
-
-    return (
-      <>
-        <canvas
-          ref={canvasRef}
-          className={
-            "prep-annotate-canvas" +
-            (tool !== TOOL_NONE ? " prep-annotate-canvas--drawing" : "")
-          }
-          onMouseDown={handlers.handleMouseDown}
-          onMouseMove={handlers.handleMouseMove}
-          onMouseUp={handlers.handleMouseUp}
-          onMouseLeave={handlers.handleMouseUp}
-        />
-
-        {stickyNotes.map((note) => (
-          <div
-            key={note.id}
-            className="prep-sticky-note"
-            style={{ left: `${note.x * 100}%`, top: `${note.y * 100}%` }}
-          >
+          {/* Sticky notes */}
+          {stickyNotes.map((note) => (
             <div
-              className="prep-sticky-note__header"
-              onMouseDown={(e) =>
-                startNoteDrag(
-                  e,
-                  note,
-                  containerRef.current?.clientWidth,
-                  containerRef.current?.clientHeight
-                )
-              }
+              key={note.id}
+              className="prep-sticky-note"
+              style={noteStyle(note)}
             >
-              <button
-                type="button"
-                className="prep-sticky-note__close"
-                onClick={() => deleteNote(note.id)}
+              <div
+                style={noteHeaderStyle}
+                onMouseDown={(e) => startNoteDrag(e, note, width, height)}
               >
-                ×
-              </button>
+                <button
+                  type="button"
+                  style={noteCloseStyle}
+                  onClick={() => deleteNote(note.id)}
+                >
+                  ×
+                </button>
+              </div>
+              <textarea
+                style={noteTextareaStyle}
+                placeholder="Note..."
+                value={note.text}
+                onChange={(e) => updateNoteText(note.id, e.target.value)}
+                onMouseDown={(e) => e.stopPropagation()}
+              />
             </div>
-            <textarea
-              className="prep-sticky-note__textarea"
-              placeholder="Note..."
-              value={note.text}
-              onChange={(e) => updateNoteText(note.id, e.target.value)}
-              onMouseDown={(e) => e.stopPropagation()}
-            />
-          </div>
-        ))}
+          ))}
 
-        {textBoxes.map((box) => {
-          const isEditing = activeTextId === box.id;
-          return (
-            <div
-              key={box.id}
-              className={
-                "prep-text-box" + (isEditing ? " prep-text-box--editing" : "")
-              }
-              style={{ left: `${box.x * 100}%`, top: `${box.y * 100}%` }}
-            >
-              {isEditing ? (
-                <>
+          {/* Text boxes */}
+          {textBoxes.map((box) => {
+            const isEditing = activeTextId === box.id;
+            if (isEditing) {
+              return (
+                <div
+                  key={box.id}
+                  className="prep-text-box"
+                  style={textEditStyle(box)}
+                >
                   <div
-                    className="prep-text-box__header"
-                    onMouseDown={(e) =>
-                      startTextDrag(
-                        e,
-                        box,
-                        containerRef.current?.clientWidth,
-                        containerRef.current?.clientHeight
-                      )
-                    }
+                    style={textHeaderStyle}
+                    onMouseDown={(e) => startTextDrag(e, box, width, height)}
                   >
-                    <span className="prep-text-box__drag-handle" />
+                    <span
+                      style={{
+                        width: "20px",
+                        height: "10px",
+                        background:
+                          "repeating-linear-gradient(0deg, #9ca3af, #9ca3af 2px, transparent 2px, transparent 4px)",
+                      }}
+                    />
                     <button
                       type="button"
-                      className="prep-text-box__close"
+                      style={noteCloseStyle}
                       onClick={() => deleteTextBox(box.id)}
                     >
                       ×
@@ -961,84 +825,83 @@ export default function PrepShell({
                   </div>
                   <textarea
                     data-textbox-id={box.id}
-                    className="prep-text-box__textarea"
-                    style={{ color: box.color }}
+                    style={textTextareaStyle(box.color)}
                     placeholder="Type…"
                     value={box.text}
                     onChange={(e) => updateTextBoxText(box.id, e.target.value)}
                     onBlur={() => setActiveTextId(null)}
                     onMouseDown={(e) => e.stopPropagation()}
                   />
-                </>
-              ) : (
-                <div
-                  className="prep-text-box__label"
-                  style={{ color: box.color }}
-                  onMouseDown={(e) =>
-                    startTextDrag(
-                      e,
-                      box,
-                      containerRef.current?.clientWidth,
-                      containerRef.current?.clientHeight
-                    )
-                  }
-                  onDoubleClick={() => setActiveTextId(box.id)}
-                >
-                  {box.text || "(empty)"}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            }
+            return (
+              <div
+                key={box.id}
+                className="prep-text-box"
+                style={textLabelStyle(box)}
+                onMouseDown={(e) => startTextDrag(e, box, width, height)}
+                onDoubleClick={() => setActiveTextId(box.id)}
+              >
+                {box.text || "(empty)"}
+              </div>
+            );
+          })}
 
-        {pointerPos && (
-          <div
-            className="prep-pointer"
-            style={{ left: pointerPos.x, top: pointerPos.y }}
-          />
-        )}
-      </>
-    );
-  }
+          {/* Pointer */}
+          {pointerPos && <div style={pointerStyle} />}
+        </>
+      );
+    },
+    [
+      tool,
+      penColor,
+      stickyNotes,
+      textBoxes,
+      pointerPos,
+      activeTextId,
+      dragState,
+      isDrawing,
+      pdfCanvasSize,
+      currentPage,
+    ]
+  );
 
-  // Resize canvas for non-PDF viewers
+  // ───────────────────────────────────────────────────────────
+  // Non-PDF overlay (same logic but for iframes)
+  // ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (isPdf) return;
-
     const container = containerRef.current;
     const canvas = canvasRef.current;
     if (!container || !canvas) return;
 
-    function resizeCanvas() {
+    function resize() {
       const rect = container.getBoundingClientRect();
       const prev =
         canvas.width && canvas.height ? canvas.toDataURL("image/png") : null;
-
       canvas.width = rect.width;
       canvas.height = rect.height;
-
       if (prev) {
         const img = new Image();
         img.onload = () => {
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas
+            .getContext("2d")
+            .drawImage(img, 0, 0, canvas.width, canvas.height);
         };
         img.src = prev;
       }
     }
-
-    resizeCanvas();
-
+    resize();
     if (typeof ResizeObserver !== "undefined") {
-      const observer = new ResizeObserver(resizeCanvas);
-      observer.observe(container);
-      return () => observer.disconnect();
+      const obs = new ResizeObserver(resize);
+      obs.observe(container);
+      return () => obs.disconnect();
     }
   }, [isPdf]);
 
   const showSidebar = !hideSidebar;
   const showBreadcrumbs = !hideBreadcrumbs;
-
   const layoutClasses =
     "prep-layout" +
     (focusMode ? " prep-layout--focus" : "") +
@@ -1093,13 +956,11 @@ export default function PrepShell({
                 <p className="prep-info-card__filename">{resource.fileName}</p>
               )}
             </div>
-
             {resource.description && (
               <p className="prep-info-card__description">
                 {resource.description}
               </p>
             )}
-
             <div className="prep-info-card__meta">
               {resource.kind && (
                 <span className="resources-chip">{resource.kind}</span>
@@ -1113,7 +974,6 @@ export default function PrepShell({
                 <span className="resources-chip">{resource.sourceType}</span>
               )}
             </div>
-
             {Array.isArray(resource.tags) && resource.tags.length > 0 && (
               <div className="prep-info-card__tags">
                 {resource.tags.map((tag) => (
@@ -1123,7 +983,6 @@ export default function PrepShell({
                 ))}
               </div>
             )}
-
             <div className="prep-info-card__actions">
               <Link
                 href="/resources"
@@ -1150,7 +1009,6 @@ export default function PrepShell({
                 </a>
               )}
             </div>
-
             <PrepNotes resourceId={resource._id} />
           </aside>
         )}
@@ -1242,11 +1100,10 @@ export default function PrepShell({
                 <button
                   type="button"
                   className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--danger"
-                  onClick={clearCanvasAndNotes}
+                  onClick={clearAll}
                 >
                   🗑️ <span>Clear all</span>
                 </button>
-
                 <div className="prep-annotate-colors">
                   {PEN_COLORS.map((c) => (
                     <button
@@ -1265,19 +1122,24 @@ export default function PrepShell({
 
               <div className="prep-viewer__frame-wrapper">
                 {isPdf ? (
-                  <div className="prep-viewer__canvas-container">
+                  <div
+                    className="prep-viewer__canvas-container"
+                    style={{ height: "100%", display: "flex" }}
+                  >
                     <PdfViewerWithSidebar
                       ref={pdfViewerRef}
                       fileUrl={viewerUrl}
                       onFatalError={() => setPdfFallback(true)}
                       onPageChange={handlePageChange}
-                      renderOverlay={renderPdfAnnotationOverlay}
+                      onCanvasSizeChange={handleCanvasSizeChange}
+                      renderAnnotations={renderAnnotations}
                     />
                   </div>
                 ) : (
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
+                    style={{ position: "relative" }}
                   >
                     <iframe
                       src={viewerUrl}
@@ -1290,7 +1152,7 @@ export default function PrepShell({
                       }
                       allowFullScreen
                     />
-                    {renderIframeAnnotationsOverlay()}
+                    {/* Non-PDF annotations rendered here - TODO: similar pattern */}
                   </div>
                 )}
               </div>
@@ -1298,10 +1160,7 @@ export default function PrepShell({
           ) : (
             <div className="prep-viewer__placeholder">
               <h2>No preview available</h2>
-              <p>
-                This resource doesn&apos;t have an embeddable URL. Use the
-                session notes on the left or open the raw link instead.
-              </p>
+              <p>This resource doesn&apos;t have an embeddable URL.</p>
             </div>
           )}
         </section>
