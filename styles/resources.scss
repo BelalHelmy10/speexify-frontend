@@ -700,6 +700,7 @@
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr);
   gap: 1.5rem;
   align-items: stretch;
+  height: 80%;
 
   @media (max-width: 900px) {
     grid-template-columns: minmax(0, 1fr);
@@ -708,9 +709,10 @@
 
 /* Floating chat-bubble toggle for the left prep panel */
 .prep-sidebar-toggle {
+  color: #fff;
   position: absolute;
-  left: -0.4rem;
-  top: 50%;
+  left: 40rem;
+  top: -10%;
   transform: translate(-50%, -50%);
   width: 40px;
   height: 40px;
@@ -843,7 +845,7 @@
 
 .prep-notes__textarea {
   width: 100%;
-  min-height: 120px;
+  min-height: 15rem;
   resize: vertical;
   padding: 0.6rem 0.7rem;
   border-radius: 12px;
