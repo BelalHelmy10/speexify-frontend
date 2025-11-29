@@ -71,49 +71,27 @@ export default function PrepShell({
     (hideSidebar ? " prep-layout--no-sidebar" : "");
 
   // ─────────────────────────────────────────────────────────────
-  // 🔥 Attach/detach screen share stream to video element
+  // Attach/detach screen share stream to video element
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    console.log("[PrepShell] screenShareStream effect triggered");
-    console.log("[PrepShell] hasScreenShare:", hasScreenShare);
-    console.log("[PrepShell] screenShareStream:", screenShareStream);
-
     const videoEl = screenVideoRef.current;
-
-    if (!videoEl) {
-      console.log(
-        "[PrepShell] screenVideoRef is null (element not mounted yet)"
-      );
-      return;
-    }
+    if (!videoEl) return;
 
     if (screenShareStream) {
-      console.log("[PrepShell] Attaching stream to video element");
-      console.log("[PrepShell] Stream ID:", screenShareStream.id);
-      console.log("[PrepShell] Stream active:", screenShareStream.active);
-      console.log("[PrepShell] Stream tracks:", screenShareStream.getTracks());
-
       videoEl.srcObject = screenShareStream;
-      videoEl.muted = isTeacher; // Mute for teacher to prevent echo
+      videoEl.muted = isTeacher; // Mute for teacher to prevent echo, learner hears audio
 
-      // Force play
       const playPromise = videoEl.play();
       if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            console.log("[PrepShell] Video playback started successfully");
-          })
-          .catch((err) => {
-            console.warn("[PrepShell] Video autoplay blocked:", err);
-            // Try again without muted for learner
-            if (!isTeacher) {
-              videoEl.muted = true;
-              videoEl.play().catch(() => {});
-            }
-          });
+        playPromise.catch(() => {
+          // Autoplay blocked - try muted
+          if (!isTeacher) {
+            videoEl.muted = true;
+            videoEl.play().catch(() => {});
+          }
+        });
       }
     } else {
-      console.log("[PrepShell] Clearing video element srcObject");
       videoEl.pause();
       videoEl.srcObject = null;
     }

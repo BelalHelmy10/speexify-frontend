@@ -30,7 +30,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
       if (message?.type === "SET_RESOURCE") {
         const { resourceId } = message;
         if (resourceId && resourcesById[resourceId]) {
-          console.log("[Classroom] Applying teacher resource:", resourceId);
           setSelectedResourceId(resourceId);
         }
       }
