@@ -57,7 +57,16 @@ function buildIceServers() {
 
 const ICE_SERVERS = buildIceServers();
 
-export default function PrepVideoCall({ roomId }) {
+/**
+ * NEW PROPS:
+ *  - onRemoteStream(stream|null): called when we get / lose the remote MediaStream
+ *  - onLocalScreenStreamChange(stream|null): called when teacher starts / stops screen share
+ */
+export default function PrepVideoCall({
+  roomId,
+  onRemoteStream,
+  onLocalScreenStreamChange,
+}) {
   const [status, setStatus] = useState("idle"); // idle | connecting | in-call
   const [error, setError] = useState("");
 
@@ -97,6 +106,10 @@ export default function PrepVideoCall({ roomId }) {
       const [remoteStream] = event.streams;
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
+      }
+      // 🔥 Expose remote stream to parent (used by learner classroom pane)
+      if (onRemoteStream) {
+        onRemoteStream(remoteStream);
       }
     };
 
@@ -251,6 +264,7 @@ export default function PrepVideoCall({ roomId }) {
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = null;
           }
+          if (onRemoteStream) onRemoteStream(null);
           setPeerJoined(false);
           break;
 
@@ -335,6 +349,9 @@ export default function PrepVideoCall({ roomId }) {
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
+    if (onRemoteStream) onRemoteStream(null);
+    if (onLocalScreenStreamChange) onLocalScreenStreamChange(null);
+
     if (wsRef.current) {
       wsRef.current = null;
     }
@@ -383,6 +400,11 @@ export default function PrepVideoCall({ roomId }) {
 
       setScreenOn(true);
 
+      // 🔥 Expose teacher's screen stream to parent (for teacher right pane)
+      if (onLocalScreenStreamChange) {
+        onLocalScreenStreamChange(displayStream);
+      }
+
       displayTrack.onended = () => {
         stopScreenShare();
       };
@@ -415,6 +437,10 @@ export default function PrepVideoCall({ roomId }) {
     }
 
     setScreenOn(false);
+
+    if (onLocalScreenStreamChange) {
+      onLocalScreenStreamChange(null);
+    }
   }
 
   function toggleScreen() {

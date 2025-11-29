@@ -14,7 +14,7 @@ const TOOL_POINTER = "pointer";
 const TOOL_ERASER = "eraser";
 const TOOL_TEXT = "text";
 
-// ✅ Added black as a color option, kept your others
+// Pen colors (now includes black)
 const PEN_COLORS = [
   "#000000",
   "#f9fafb",
@@ -30,13 +30,17 @@ const PEN_COLORS = [
  *  - hideSidebar (optional): when true, do NOT render the left info/notes column
  *  - hideBreadcrumbs (optional): when true, no breadcrumbs row
  *  - classroomChannel (optional): in classroom mode, used to sync annotations
+ *  - screenShareStream (optional): MediaStream when teacher is sharing screen
+ *  - isTeacher (optional): used to mute own screen share video
  */
 export default function PrepShell({
   resource,
   viewer,
   hideSidebar = false,
   hideBreadcrumbs = false,
-  classroomChannel, // 🔥 optional prop for classroom sync
+  classroomChannel,
+  screenShareStream = null,
+  isTeacher = false,
 }) {
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
@@ -51,7 +55,9 @@ export default function PrepShell({
 
   const canvasRef = useRef(null); // drawing canvas
   const containerRef = useRef(null); // scroll container for overlay
-  const applyingRemoteRef = useRef(false); // ✅ avoid re-broadcast loops
+  const screenVideoRef = useRef(null); // video element for shared screen
+
+  const applyingRemoteRef = useRef(false); // avoid re-broadcast loops
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -62,6 +68,7 @@ export default function PrepShell({
   const track = level?.track;
 
   const viewerActive = !!viewerUrl;
+  const hasAnyViewer = viewerActive || !!screenShareStream;
 
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
@@ -72,6 +79,16 @@ export default function PrepShell({
     const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
     if (el) el.focus();
   }, [activeTextId]);
+
+  // Attach shared screen stream to the video element
+  useEffect(() => {
+    if (!screenVideoRef.current) return;
+    if (screenShareStream) {
+      screenVideoRef.current.srcObject = screenShareStream;
+    } else {
+      screenVideoRef.current.srcObject = null;
+    }
+  }, [screenShareStream]);
 
   // Load annotations from localStorage
   useEffect(() => {
@@ -171,7 +188,7 @@ export default function PrepShell({
     }
   }
 
-  // 🔥 Broadcast whole annotation state over classroomChannel (optional)
+  // Broadcast whole annotation state over classroomChannel (optional)
   function broadcastAnnotations(custom = {}) {
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return; // don't echo back remote updates
@@ -195,7 +212,7 @@ export default function PrepShell({
     }
   }
 
-  // 🔥 Broadcast pointer in normalized coordinates
+  // Broadcast pointer in normalized coordinates
   function broadcastPointer(normalizedPosOrNull) {
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return;
@@ -217,7 +234,7 @@ export default function PrepShell({
     });
   }
 
-  // 🔥 Apply remote annotation snapshot
+  // Apply remote annotation snapshot
   function applyRemoteAnnotationState(message) {
     if (!message || message.resourceId !== resource._id) return;
 
@@ -267,7 +284,7 @@ export default function PrepShell({
     }
   }
 
-  // 🔥 Subscribe to classroomChannel (remote annotations + pointer)
+  // Subscribe to classroomChannel (remote annotations + pointer)
   useEffect(() => {
     if (!classroomChannel || !classroomChannel.ready) return;
     if (!classroomChannel.subscribe) return;
@@ -297,7 +314,7 @@ export default function PrepShell({
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
-    // ✅ Use the canvas' parent as the reference box
+    // Use the canvas' parent as the reference box
     const container = canvas.parentElement || canvas;
     const rect = container.getBoundingClientRect();
 
@@ -541,7 +558,7 @@ export default function PrepShell({
     });
   }
 
-  // Clear all
+  // Clear all annotations
   function clearCanvasAndNotes() {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -778,7 +795,7 @@ export default function PrepShell({
     );
   }
 
-  // NOTE: Your viewer types use "pdf" for PDF resources.
+  // viewer type
   const isPdf = viewer?.type === "pdf" && !pdfFallback;
 
   const showSidebar = !hideSidebar;
@@ -904,7 +921,7 @@ export default function PrepShell({
 
         {/* RIGHT: viewer */}
         <section className="prep-viewer">
-          {viewerActive && (
+          {hasAnyViewer && (
             <button
               type="button"
               className="prep-viewer__focus-toggle"
@@ -914,16 +931,18 @@ export default function PrepShell({
             </button>
           )}
 
-          {viewerActive ? (
+          {hasAnyViewer ? (
             <>
               <div className="prep-viewer__badge">
                 <span className="prep-viewer__badge-dot" />
                 <span className="prep-viewer__badge-text">
-                  Live preview · {viewer.label}
+                  {screenShareStream
+                    ? "Screen share"
+                    : `Live preview · ${viewer.label}`}
                 </span>
               </div>
 
-              {/* Toolbar */}
+              {/* Annotation toolbar */}
               <div className="prep-annotate-toolbar">
                 <button
                   type="button"
@@ -1010,14 +1029,29 @@ export default function PrepShell({
               </div>
 
               <div className="prep-viewer__frame-wrapper">
-                {isPdf ? (
-                  // PDF + sidebar (pdf.js) – overlay is a child of the scrolling PDF container
+                {screenShareStream ? (
+                  // Screen-share mode: show full-width video
+                  <div
+                    className="prep-viewer__canvas-container"
+                    ref={containerRef}
+                  >
+                    <video
+                      ref={screenVideoRef}
+                      className="prep-viewer__frame"
+                      autoPlay
+                      playsInline
+                      muted={isTeacher}
+                    />
+                    {renderAnnotationsOverlay()}
+                  </div>
+                ) : isPdf ? (
+                  // PDF + sidebar (pdf.js)
                   <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={viewerUrl}
                       onFatalError={() => setPdfFallback(true)}
                       onContainerReady={(el) => {
-                        // el is .prep-pdf-main-inner (scroll container for PDF + overlay)
+                        // el is the scroll container inside the PDF viewer
                         containerRef.current = el;
                       }}
                     >
@@ -1025,7 +1059,7 @@ export default function PrepShell({
                     </PdfViewerWithSidebar>
                   </div>
                 ) : (
-                  // Fallback: iframe viewer (YouTube, Slides, external or PDF if pdf.js failed)
+                  // Fallback: iframe viewer (YouTube, Slides, external, etc.)
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
