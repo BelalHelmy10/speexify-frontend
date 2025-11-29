@@ -9,48 +9,21 @@ import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import ClassroomChat from "./ClassroomChat";
 
-function getDisplayName(user = {}) {
-  if (!user) return "";
-  if (user.fullName) return user.fullName;
-  if (user.name) return user.name;
-  const first = user.firstName || user.givenName || "";
-  const last = user.lastName || user.familyName || "";
-  const combined = [first, last].filter(Boolean).join(" ");
-  return combined || "Unknown";
-}
-
 export default function ClassroomShell({ session, sessionId, tracks }) {
-  // current logged-in user
-  const currentUser = session?.user || session?.currentUser || {};
-
-  const userId = currentUser.id ?? currentUser._id ?? session?.userId ?? null;
-
-  const userName = getDisplayName(currentUser);
-
   const isTeacher =
-    currentUser.role === "teacher" ||
-    currentUser.isTeacher === true ||
-    currentUser.userType === "teacher" ||
-    session?.role === "teacher" ||
-    session?.isTeacher === true ||
-    session?.userType === "teacher";
+    session.role === "teacher" ||
+    session.isTeacher ||
+    session.userType === "teacher";
 
-  // ─── Resources index ────────────────────────────────────────
-  const { resourcesById } = useMemo(
-    () => buildResourceIndex(tracks || []),
-    [tracks]
-  );
+  const { resourcesById } = useMemo(() => buildResourceIndex(tracks), [tracks]);
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
   const [screenShareStream, setScreenShareStream] = useState(null);
 
-  // ─── Real-time channel ──────────────────────────────────────
   const classroomChannel = useClassroomChannel(String(sessionId));
-  const ready = classroomChannel?.ready ?? false;
-  const send = classroomChannel?.send ?? (() => {});
-  const subscribe = classroomChannel?.subscribe ?? (() => () => {});
+  const { ready, send, subscribe } = classroomChannel;
 
-  // Learner: listen for teacher resource changes
+  // Learner listens for teacher resource changes
   useEffect(() => {
     if (!ready) return;
 
@@ -101,33 +74,22 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   return (
     <div className="classroom-layout">
-      {/* LEFT: video + chat */}
+      {/* LEFT: video call */}
       <section className="classroom-video-pane">
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            width: "100%",
-          }}
-        >
-          <PrepVideoCall
-            roomId={sessionId}
-            isTeacher={isTeacher}
-            onScreenShareStreamChange={handleScreenShareStreamChange}
-          />
+        <PrepVideoCall
+          roomId={sessionId}
+          isTeacher={isTeacher}
+          onScreenShareStreamChange={setScreenShareStream}
+        />
 
-          <ClassroomChat
-            classroomChannel={classroomChannel}
-            sessionId={sessionId}
-            userId={userId}
-            userName={userName}
-            isTeacher={isTeacher}
-          />
-        </div>
+        <ClassroomChat
+          classroomChannel={classroomChannel}
+          sessionId={sessionId}
+          isTeacher={isTeacher}
+        />
       </section>
 
-      {/* RIGHT: picker + viewer */}
+      {/* RIGHT: resource picker + viewer */}
       <section className="classroom-prep-pane">
         {isTeacher && (
           <ClassroomResourcePicker
@@ -164,6 +126,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
                   : "Waiting for your teacher to pick a resource."}
               </p>
 
+              {/* 🔥 Fallback: show screen share even without a resource */}
               {screenShareStream && (
                 <div style={{ marginTop: "20px", width: "100%" }}>
                   <video
