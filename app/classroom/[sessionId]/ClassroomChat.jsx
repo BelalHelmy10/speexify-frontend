@@ -15,6 +15,8 @@ export default function ClassroomChat({
   classroomChannel,
   sessionId,
   isTeacher,
+  teacherName = "Teacher",
+  learnerName = "Learner",
 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -23,7 +25,10 @@ export default function ClassroomChat({
   // Scroll to bottom when new messages arrive
   useEffect(() => {
     if (!messagesEndRef.current) return;
-    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
   }, [messages]);
 
   // Listen for incoming chat messages on the classroom channel
@@ -76,7 +81,7 @@ export default function ClassroomChat({
       <div className="classroom-chat__messages">
         {messages.map((m, idx) => {
           const isSelf = m.fromRole === (isTeacher ? "teacher" : "learner");
-          const label = m.fromRole === "teacher" ? "Teacher" : "Learner";
+          const label = m.fromRole === "teacher" ? teacherName : learnerName;
 
           return (
             <div

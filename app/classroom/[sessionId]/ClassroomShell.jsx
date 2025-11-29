@@ -168,6 +168,8 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           classroomChannel={classroomChannel}
           sessionId={sessionId}
           isTeacher={isTeacher}
+          teacherName={teacherName}
+          learnerName={learnerName}
         />
       </section>
 
