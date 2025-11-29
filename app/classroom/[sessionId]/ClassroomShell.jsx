@@ -79,6 +79,7 @@ function getParticipantsFromSession(session) {
 export default function ClassroomShell({ session, sessionId, tracks }) {
   const { teacherId, learnerId, teacherName, learnerName } =
     getParticipantsFromSession(session);
+  console.log("Session object:", session);
 
   // Decide role (keep all the checks you had before)
   const isTeacher =
