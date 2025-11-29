@@ -158,28 +158,17 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     <div className="classroom-layout">
       {/* LEFT: video + chat */}
       <section className="classroom-video-pane">
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            width: "100%",
-          }}
-        >
-          <PrepVideoCall
-            roomId={sessionId}
-            isTeacher={isTeacher}
-            onScreenShareStreamChange={handleScreenShareStreamChange}
-          />
+        <PrepVideoCall
+          roomId={sessionId}
+          isTeacher={isTeacher}
+          onScreenShareStreamChange={setScreenShareStream}
+        />
 
-          <ClassroomChat
-            classroomChannel={classroomChannel}
-            sessionId={sessionId}
-            userId={userId}
-            userName={userName}
-            isTeacher={isTeacher}
-          />
-        </div>
+        <ClassroomChat
+          classroomChannel={classroomChannel}
+          sessionId={sessionId}
+          isTeacher={isTeacher}
+        />
       </section>
 
       {/* RIGHT: resource picker + viewer */}
