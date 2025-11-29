@@ -54,7 +54,7 @@ export default function PrepShell({
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const screenVideoRef = useRef(null); // 🔥 video element for screen share
+  const screenVideoRef = useRef(null);
 
   const applyingRemoteRef = useRef(false);
 
@@ -66,7 +66,7 @@ export default function PrepShell({
   const level = subLevel?.level;
   const track = level?.track;
 
-  const hasScreenShare = !!screenShareStream; // 🔥
+  const hasScreenShare = !!screenShareStream;
   const isPdf = viewer?.type === "pdf" && !pdfFallback;
   const showSidebar = !hideSidebar;
   const showBreadcrumbs = !hideBreadcrumbs;
@@ -80,20 +80,32 @@ export default function PrepShell({
     (hideSidebar ? " prep-layout--no-sidebar" : "");
 
   // ───────────────────────────────────────────────
-  // Attach screenShareStream to <video> when present
+  // 🔥 Attach screenShareStream to <video> when present
   // ───────────────────────────────────────────────
   useEffect(() => {
     const videoEl = screenVideoRef.current;
-    if (!videoEl) return;
+
+    console.log("[PrepShell] screenShareStream changed:", screenShareStream);
+    console.log("[PrepShell] videoEl:", videoEl);
+
+    if (!videoEl) {
+      console.log("[PrepShell] No video element ref yet");
+      return;
+    }
 
     if (screenShareStream) {
+      console.log("[PrepShell] Attaching screen share stream to video element");
+      console.log("[PrepShell] Stream tracks:", screenShareStream.getTracks());
+
       videoEl.srcObject = screenShareStream;
       videoEl.muted = isTeacher; // prevent echo for teacher
-      videoEl.play().catch(() => {
-        // autoplay might be blocked; ignore
+
+      videoEl.play().catch((err) => {
+        console.warn("[PrepShell] Video autoplay blocked:", err);
       });
     } else {
-      videoEl.pause?.();
+      console.log("[PrepShell] Clearing video element");
+      videoEl.pause();
       videoEl.srcObject = null;
     }
   }, [screenShareStream, isTeacher]);
@@ -181,7 +193,7 @@ export default function PrepShell({
       window.addEventListener("resize", resizeCanvas);
       return () => window.removeEventListener("resize", resizeCanvas);
     }
-  }, []);
+  }, [hasScreenShare]); // Re-run when screen share state changes
 
   // Save annotations
   function saveAnnotations(opts = {}) {
@@ -334,7 +346,7 @@ export default function PrepShell({
     };
   }
 
-  // Drawing + tools … (unchanged logic)
+  // Drawing + tools
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
@@ -454,11 +466,6 @@ export default function PrepShell({
     };
     broadcastPointer(normalized);
   }
-
-  // Notes / text / clear etc. (same as before) …
-
-  // [NOTE: to keep the answer under control I’m not re-commenting every
-  // little function; they’re identical to your last version, just moved.]
 
   function handleClickForNote(e) {
     if (tool !== TOOL_NOTE) return;
@@ -778,6 +785,7 @@ export default function PrepShell({
     );
   }
 
+  // 🔥 Show viewer if we have screen share OR a viewerUrl
   const viewerIsActive = hasScreenShare || !!viewerUrl;
 
   return (
@@ -913,7 +921,7 @@ export default function PrepShell({
                 </span>
               </div>
 
-              {/* Toolbar stays the same */}
+              {/* Toolbar */}
               <div className="prep-annotate-toolbar">
                 <button
                   type="button"
@@ -1000,16 +1008,17 @@ export default function PrepShell({
               </div>
 
               <div className="prep-viewer__frame-wrapper">
+                {/* 🔥 SCREEN SHARE MODE */}
                 {hasScreenShare ? (
-                  // 🔥 Screen share mode: big <video> with overlay
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
                   >
                     <video
                       ref={screenVideoRef}
-                      className="prep-viewer__frame"
+                      className="prep-viewer__frame prep-viewer__frame--screen-share"
                       playsInline
+                      autoPlay
                     />
                     {renderAnnotationsOverlay()}
                   </div>

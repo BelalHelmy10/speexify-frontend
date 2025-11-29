@@ -20,15 +20,32 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
-  // 🔥 NEW: shared screen stream (teacher local, learner remote)
+  // 🔥 Screen share stream (for both teacher's local share and learner's remote view)
   const [screenShareStream, setScreenShareStream] = useState(null);
 
-  // Classroom channel (shared with PrepShell later)
+  // Classroom channel (shared with PrepShell for annotations)
   const classroomChannel = useClassroomChannel(String(sessionId));
   const { ready, send, subscribe } = classroomChannel;
 
   // ───────────────────────────────────────────────
-  // 1) Learner listens for teacher changes
+  // Debug logging for screen share state
+  // ───────────────────────────────────────────────
+  useEffect(() => {
+    console.log(
+      "[ClassroomShell] screenShareStream changed:",
+      screenShareStream
+    );
+    if (screenShareStream) {
+      console.log("[ClassroomShell] Stream active:", screenShareStream.active);
+      console.log(
+        "[ClassroomShell] Stream tracks:",
+        screenShareStream.getTracks()
+      );
+    }
+  }, [screenShareStream]);
+
+  // ───────────────────────────────────────────────
+  // 1) Learner listens for teacher resource changes
   // ───────────────────────────────────────────────
   useEffect(() => {
     if (!ready) return;
@@ -86,6 +103,27 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     setSelectedResourceId(nextId || null);
   }
 
+  // ───────────────────────────────────────────────
+  // 5) 🔥 Handle screen share stream changes
+  // ───────────────────────────────────────────────
+  function handleScreenShareStreamChange(stream) {
+    console.log(
+      "[ClassroomShell] handleScreenShareStreamChange called with:",
+      stream
+    );
+
+    if (stream) {
+      console.log("[ClassroomShell] Setting screen share stream");
+      console.log("[ClassroomShell] Stream ID:", stream.id);
+      console.log("[ClassroomShell] Stream active:", stream.active);
+      console.log("[ClassroomShell] Video tracks:", stream.getVideoTracks());
+    } else {
+      console.log("[ClassroomShell] Clearing screen share stream");
+    }
+
+    setScreenShareStream(stream);
+  }
+
   // Resolve current resource + viewer info
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId] || null
@@ -95,14 +133,19 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   return (
     <div className="classroom-layout">
-      {/* LEFT: video */}
+      {/* LEFT: video call panel */}
       <section className="classroom-video-pane">
         <PrepVideoCall
           roomId={sessionId}
           isTeacher={isTeacher}
-          // 🔥 whenever a (local or remote) screen-share stream appears / disappears
-          onScreenShareStreamChange={setScreenShareStream}
+          onScreenShareStreamChange={handleScreenShareStreamChange}
         />
+
+        {/* 🔥 Debug info - remove in production */}
+        <div style={{ padding: "8px", fontSize: "12px", color: "#666" }}>
+          <div>Role: {isTeacher ? "Teacher" : "Learner"}</div>
+          <div>Screen share: {screenShareStream ? "Active" : "None"}</div>
+        </div>
       </section>
 
       {/* RIGHT: picker (teacher only) + classroom viewer */}
@@ -124,7 +167,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
               hideSidebar
               hideBreadcrumbs
               classroomChannel={classroomChannel}
-              // 🔥 pass the active screen-share stream down to the viewer
               screenShareStream={screenShareStream}
               isTeacher={isTeacher}
             />
@@ -136,6 +178,30 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
                   ? "Use the bar above to choose a track, book, level, unit and resource."
                   : "Waiting for your teacher to pick a resource."}
               </p>
+
+              {/* 🔥 Show screen share even without resource selected */}
+              {screenShareStream && (
+                <div style={{ marginTop: "20px" }}>
+                  <p>
+                    <strong>Screen share is active!</strong>
+                  </p>
+                  <video
+                    autoPlay
+                    playsInline
+                    muted={isTeacher}
+                    style={{
+                      width: "100%",
+                      maxHeight: "400px",
+                      background: "#000",
+                    }}
+                    ref={(el) => {
+                      if (el && screenShareStream) {
+                        el.srcObject = screenShareStream;
+                      }
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
