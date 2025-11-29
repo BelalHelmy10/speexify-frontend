@@ -57,8 +57,6 @@ export default function PrepVideoCall({
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [screenOn, setScreenOn] = useState(false);
-
-  // 🔥 Track remote screen sharing state
   const [remoteScreenSharing, setRemoteScreenSharing] = useState(false);
 
   const [isInitiator, setIsInitiator] = useState(false);
@@ -70,6 +68,12 @@ export default function PrepVideoCall({
   const localStreamRef = useRef(null);
   const screenStreamRef = useRef(null);
 
+  // 🔥 Store the screen share sender so we can remove it later
+  const screenSenderRef = useRef(null);
+
+  // 🔥 Store remote screen share stream separately
+  const remoteScreenStreamRef = useRef(null);
+
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
 
@@ -78,59 +82,15 @@ export default function PrepVideoCall({
     onScreenShareChangeRef.current = onScreenShareStreamChange;
   }, [onScreenShareStreamChange]);
 
-  // 🔥 When remote starts screen sharing, capture the stream from the video element
+  // 🔥 When we detect remote screen share stopped, clear it
   useEffect(() => {
-    if (!remoteScreenSharing) {
-      // Remote stopped sharing
+    if (!remoteScreenSharing && remoteScreenStreamRef.current) {
+      console.log("[PrepVideoCall] Clearing remote screen share stream");
+      remoteScreenStreamRef.current = null;
       if (onScreenShareChangeRef.current) {
         onScreenShareChangeRef.current(null);
       }
-      return;
     }
-
-    console.log(
-      "[PrepVideoCall] Remote screen share detected, will capture stream"
-    );
-
-    // Wait for video frames to actually update after replaceTrack
-    const captureStream = () => {
-      const videoEl = remoteVideoRef.current;
-      if (!videoEl) {
-        console.warn("[PrepVideoCall] No remote video element found");
-        return;
-      }
-
-      // Use captureStream to get a live stream from the video element
-      // This captures whatever is currently playing in the video
-      if (typeof videoEl.captureStream === "function") {
-        try {
-          const captured = videoEl.captureStream();
-          console.log("[PrepVideoCall] Captured stream:", captured);
-          console.log(
-            "[PrepVideoCall] Captured tracks:",
-            captured.getTracks().map((t) => t.kind)
-          );
-
-          if (onScreenShareChangeRef.current) {
-            onScreenShareChangeRef.current(captured);
-          }
-          return;
-        } catch (err) {
-          console.error("[PrepVideoCall] captureStream error:", err);
-        }
-      }
-
-      // Fallback: just use srcObject
-      const srcStream = videoEl.srcObject;
-      if (srcStream && onScreenShareChangeRef.current) {
-        console.log("[PrepVideoCall] Fallback: using srcObject");
-        onScreenShareChangeRef.current(srcStream);
-      }
-    };
-
-    // Delay to allow video frames to update after replaceTrack on sender side
-    const timer = setTimeout(captureStream, 500);
-    return () => clearTimeout(timer);
   }, [remoteScreenSharing]);
 
   function createPeerConnection() {
@@ -146,16 +106,101 @@ export default function PrepVideoCall({
       }
     };
 
+    // 🔥 Handle incoming tracks - detect screen share vs camera
     pc.ontrack = (event) => {
-      console.log("[PrepVideoCall] ontrack:", event.track.kind);
-      const [remoteStream] = event.streams;
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStream;
+      const track = event.track;
+      const streams = event.streams;
+
+      console.log(
+        "[PrepVideoCall] ontrack:",
+        track.kind,
+        "label:",
+        track.label,
+        "streams:",
+        streams.length
+      );
+
+      // Check if this is a screen share track
+      // Screen share tracks often have labels containing "screen" or "display"
+      // Or we check the stream ID to see if it's different from the main stream
+      const trackLabel = (track.label || "").toLowerCase();
+      const isScreenTrack =
+        trackLabel.includes("screen") ||
+        trackLabel.includes("display") ||
+        trackLabel.includes("window") ||
+        trackLabel.includes("monitor");
+
+      if (track.kind === "video") {
+        if (
+          isScreenTrack ||
+          (streams[0] &&
+            streams[0].id !== localStreamRef.current?.id &&
+            remoteScreenSharing)
+        ) {
+          // This is a screen share track
+          console.log("[PrepVideoCall] 🖥️ Received SCREEN SHARE track");
+
+          const screenStream = streams[0] || new MediaStream([track]);
+          remoteScreenStreamRef.current = screenStream;
+
+          if (onScreenShareChangeRef.current) {
+            console.log(
+              "[PrepVideoCall] Passing screen share stream to parent"
+            );
+            onScreenShareChangeRef.current(screenStream);
+          }
+
+          // When track ends, clear screen share
+          track.onended = () => {
+            console.log("[PrepVideoCall] Remote screen track ended");
+            remoteScreenStreamRef.current = null;
+            setRemoteScreenSharing(false);
+            if (onScreenShareChangeRef.current) {
+              onScreenShareChangeRef.current(null);
+            }
+          };
+        } else {
+          // This is a camera track - show in remote video
+          console.log("[PrepVideoCall] 📷 Received CAMERA track");
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject =
+              streams[0] || new MediaStream([track]);
+          }
+        }
+      } else if (track.kind === "audio") {
+        // Audio track - add to remote video if not already there
+        console.log("[PrepVideoCall] 🔊 Received AUDIO track");
+        if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
+          // Audio should go with the camera stream
+        } else if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject =
+            streams[0] || new MediaStream([track]);
+        }
       }
     };
 
     pc.onconnectionstatechange = () => {
       console.log("[PrepVideoCall] Connection state:", pc.connectionState);
+    };
+
+    // 🔥 Handle negotiation needed (when we add/remove tracks)
+    pc.onnegotiationneeded = async () => {
+      console.log("[PrepVideoCall] Negotiation needed");
+
+      // Only initiator creates offers
+      if (!isInitiatorRef.current) {
+        console.log("[PrepVideoCall] Not initiator, skipping offer creation");
+        return;
+      }
+
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        sendSignal("offer", pc.localDescription);
+        console.log("[PrepVideoCall] Sent renegotiation offer");
+      } catch (err) {
+        console.error("[PrepVideoCall] Renegotiation failed:", err);
+      }
     };
 
     pcRef.current = pc;
@@ -179,6 +224,7 @@ export default function PrepVideoCall({
 
       const pc = createPeerConnection();
       stream.getTracks().forEach((track) => {
+        console.log("[PrepVideoCall] Adding local track:", track.kind);
         pc.addTrack(track, stream);
       });
 
@@ -292,7 +338,11 @@ export default function PrepVideoCall({
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = null;
           }
+          remoteScreenStreamRef.current = null;
           setRemoteScreenSharing(false);
+          if (onScreenShareChangeRef.current) {
+            onScreenShareChangeRef.current(null);
+          }
           setPeerJoined(false);
           break;
 
@@ -331,13 +381,18 @@ export default function PrepVideoCall({
         console.warn("Error adding ICE candidate", err);
       }
     }
-    // 🔥 Screen share signals
+    // Screen share signals
     else if (signalType === "screen-share-start") {
       console.log("[PrepVideoCall] >>> REMOTE SCREEN SHARE STARTED <<<");
       setRemoteScreenSharing(true);
+      // The actual stream will come via ontrack
     } else if (signalType === "screen-share-stop") {
       console.log("[PrepVideoCall] >>> REMOTE SCREEN SHARE STOPPED <<<");
       setRemoteScreenSharing(false);
+      remoteScreenStreamRef.current = null;
+      if (onScreenShareChangeRef.current) {
+        onScreenShareChangeRef.current(null);
+      }
     }
   }
 
@@ -385,6 +440,9 @@ export default function PrepVideoCall({
       screenStreamRef.current = null;
     }
 
+    screenSenderRef.current = null;
+    remoteScreenStreamRef.current = null;
+
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
@@ -411,9 +469,10 @@ export default function PrepVideoCall({
     }
   }
 
+  // 🔥 NEW APPROACH: Add screen share as ADDITIONAL track (don't replace)
   async function startScreenShare() {
     try {
-      console.log("[PrepVideoCall] Starting screen share...");
+      console.log("[PrepVideoCall] ===== STARTING SCREEN SHARE =====");
 
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
@@ -425,35 +484,28 @@ export default function PrepVideoCall({
       const pc = pcRef.current;
 
       if (pc && displayTrack) {
-        const sender = pc.getSenders().find((s) => s.track?.kind === "video");
-        if (sender) {
-          console.log(
-            "[PrepVideoCall] Replacing camera track with screen track"
-          );
-          await sender.replaceTrack(displayTrack);
-        }
-      }
-
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = displayStream;
+        // 🔥 ADD the screen track as a NEW track (triggers renegotiation)
+        console.log(
+          "[PrepVideoCall] Adding screen share track to peer connection"
+        );
+        const sender = pc.addTrack(displayTrack, displayStream);
+        screenSenderRef.current = sender;
+        console.log("[PrepVideoCall] Screen track added, sender:", sender);
       }
 
       setScreenOn(true);
 
-      // 🔥 Notify parent (this is LOCAL screen share)
+      // Notify parent (local screen share)
       if (onScreenShareChangeRef.current) {
         console.log("[PrepVideoCall] Notifying parent of LOCAL screen share");
         onScreenShareChangeRef.current(displayStream);
       }
 
-      // 🔥 Signal remote peer after a small delay to ensure track is replaced
-      setTimeout(() => {
-        console.log("[PrepVideoCall] Signaling remote: screen-share-start");
-        sendSignal("screen-share-start", {});
-      }, 200);
+      // Signal remote peer
+      sendSignal("screen-share-start", {});
 
       displayTrack.onended = () => {
-        console.log("[PrepVideoCall] Display track ended (user clicked stop)");
+        console.log("[PrepVideoCall] Display track ended by user");
         stopScreenShare();
       };
     } catch (err) {
@@ -463,28 +515,31 @@ export default function PrepVideoCall({
   }
 
   async function stopScreenShare() {
-    console.log("[PrepVideoCall] Stopping screen share...");
+    console.log("[PrepVideoCall] ===== STOPPING SCREEN SHARE =====");
 
     // Signal remote first
     sendSignal("screen-share-stop", {});
 
+    const pc = pcRef.current;
+
+    // 🔥 Remove the screen share track from peer connection
+    if (pc && screenSenderRef.current) {
+      try {
+        console.log(
+          "[PrepVideoCall] Removing screen share track from peer connection"
+        );
+        pc.removeTrack(screenSenderRef.current);
+        screenSenderRef.current = null;
+      } catch (err) {
+        console.warn("[PrepVideoCall] Error removing track:", err);
+      }
+    }
+
+    // Stop the display stream
     const displayStream = screenStreamRef.current;
     if (displayStream) {
       displayStream.getTracks().forEach((t) => t.stop());
       screenStreamRef.current = null;
-    }
-
-    const pc = pcRef.current;
-    const cameraStream = localStreamRef.current;
-    if (pc && cameraStream) {
-      const cameraTrack = cameraStream.getVideoTracks()[0];
-      const sender = pc.getSenders().find((s) => s.track?.kind === "video");
-      if (sender && cameraTrack) {
-        await sender.replaceTrack(cameraTrack);
-      }
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = cameraStream;
-      }
     }
 
     setScreenOn(false);
@@ -595,7 +650,6 @@ export default function PrepVideoCall({
           </p>
         )}
 
-        {/* Debug info - remove in production */}
         <p
           className="prep-video__hint"
           style={{ fontSize: "10px", opacity: 0.6 }}
