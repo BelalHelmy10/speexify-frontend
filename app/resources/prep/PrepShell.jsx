@@ -23,15 +23,6 @@ const PEN_COLORS = [
   "#22c55e",
 ];
 
-/**
- * Props:
- *  - resource, viewer: as before (prep room)
- *  - hideSidebar (optional)
- *  - hideBreadcrumbs (optional)
- *  - classroomChannel (optional): sync annotations
- *  - screenShareStream (optional): MediaStream to show instead of resource
- *  - isTeacher (optional): to decide if we mute our own screen audio
- */
 export default function PrepShell({
   resource,
   viewer,
@@ -79,36 +70,54 @@ export default function PrepShell({
     (focusMode ? " prep-layout--focus" : "") +
     (hideSidebar ? " prep-layout--no-sidebar" : "");
 
-  // ───────────────────────────────────────────────
-  // 🔥 Attach screenShareStream to <video> when present
-  // ───────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // 🔥 Attach/detach screen share stream to video element
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
+    console.log("[PrepShell] screenShareStream effect triggered");
+    console.log("[PrepShell] hasScreenShare:", hasScreenShare);
+    console.log("[PrepShell] screenShareStream:", screenShareStream);
+
     const videoEl = screenVideoRef.current;
 
-    console.log("[PrepShell] screenShareStream changed:", screenShareStream);
-    console.log("[PrepShell] videoEl:", videoEl);
-
     if (!videoEl) {
-      console.log("[PrepShell] No video element ref yet");
+      console.log(
+        "[PrepShell] screenVideoRef is null (element not mounted yet)"
+      );
       return;
     }
 
     if (screenShareStream) {
-      console.log("[PrepShell] Attaching screen share stream to video element");
+      console.log("[PrepShell] Attaching stream to video element");
+      console.log("[PrepShell] Stream ID:", screenShareStream.id);
+      console.log("[PrepShell] Stream active:", screenShareStream.active);
       console.log("[PrepShell] Stream tracks:", screenShareStream.getTracks());
 
       videoEl.srcObject = screenShareStream;
-      videoEl.muted = isTeacher; // prevent echo for teacher
+      videoEl.muted = isTeacher; // Mute for teacher to prevent echo
 
-      videoEl.play().catch((err) => {
-        console.warn("[PrepShell] Video autoplay blocked:", err);
-      });
+      // Force play
+      const playPromise = videoEl.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log("[PrepShell] Video playback started successfully");
+          })
+          .catch((err) => {
+            console.warn("[PrepShell] Video autoplay blocked:", err);
+            // Try again without muted for learner
+            if (!isTeacher) {
+              videoEl.muted = true;
+              videoEl.play().catch(() => {});
+            }
+          });
+      }
     } else {
-      console.log("[PrepShell] Clearing video element");
+      console.log("[PrepShell] Clearing video element srcObject");
       videoEl.pause();
       videoEl.srcObject = null;
     }
-  }, [screenShareStream, isTeacher]);
+  }, [screenShareStream, isTeacher, hasScreenShare]);
 
   // Focus newly-activated text box
   useEffect(() => {
@@ -150,7 +159,7 @@ export default function PrepShell({
     }
   }, [storageKey]);
 
-  // Resize annotation canvas to match container
+  // Resize canvas
   useEffect(() => {
     const canvas = canvasRef.current;
 
@@ -193,9 +202,8 @@ export default function PrepShell({
       window.addEventListener("resize", resizeCanvas);
       return () => window.removeEventListener("resize", resizeCanvas);
     }
-  }, [hasScreenShare]); // Re-run when screen share state changes
+  }, [hasScreenShare]);
 
-  // Save annotations
   function saveAnnotations(opts = {}) {
     if (!storageKey) return;
     try {
@@ -215,7 +223,6 @@ export default function PrepShell({
     }
   }
 
-  // Broadcast state
   function broadcastAnnotations(custom = {}) {
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return;
@@ -244,10 +251,7 @@ export default function PrepShell({
     if (applyingRemoteRef.current) return;
 
     if (!normalizedPosOrNull) {
-      sendOnChannel({
-        type: "POINTER_HIDE",
-        resourceId: resource._id,
-      });
+      sendOnChannel({ type: "POINTER_HIDE", resourceId: resource._id });
       return;
     }
 
@@ -271,12 +275,8 @@ export default function PrepShell({
 
     applyingRemoteRef.current = true;
     try {
-      if (Array.isArray(remoteNotes)) {
-        setStickyNotes(remoteNotes);
-      }
-      if (Array.isArray(remoteText)) {
-        setTextBoxes(remoteText);
-      }
+      if (Array.isArray(remoteNotes)) setStickyNotes(remoteNotes);
+      if (Array.isArray(remoteText)) setTextBoxes(remoteText);
 
       if (canvasRef.current) {
         const canvas = canvasRef.current;
@@ -346,7 +346,6 @@ export default function PrepShell({
     };
   }
 
-  // Drawing + tools
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
@@ -460,11 +459,10 @@ export default function PrepShell({
     const y = e.clientY - rect.top;
 
     setPointerPos({ x, y });
-    const normalized = {
+    broadcastPointer({
       x: rect.width ? x / rect.width : 0,
       y: rect.height ? y / rect.height : 0,
-    };
-    broadcastPointer(normalized);
+    });
   }
 
   function handleClickForNote(e) {
@@ -581,16 +579,14 @@ export default function PrepShell({
     setDragState(null);
     setActiveTextId(null);
     try {
-      const empty = { canvasData: null, stickyNotes: [], textBoxes: [] };
-      window.localStorage.setItem(storageKey, JSON.stringify(empty));
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ canvasData: null, stickyNotes: [], textBoxes: [] })
+      );
     } catch (err) {
       console.warn("Failed to clear annotations", err);
     }
-    broadcastAnnotations({
-      canvasData: null,
-      stickyNotes: [],
-      textBoxes: [],
-    });
+    broadcastAnnotations({ canvasData: null, stickyNotes: [], textBoxes: [] });
   }
 
   function handleMouseDown(e) {
@@ -785,7 +781,6 @@ export default function PrepShell({
     );
   }
 
-  // 🔥 Show viewer if we have screen share OR a viewerUrl
   const viewerIsActive = hasScreenShare || !!viewerUrl;
 
   return (
@@ -916,7 +911,7 @@ export default function PrepShell({
                 <span className="prep-viewer__badge-dot" />
                 <span className="prep-viewer__badge-text">
                   {hasScreenShare
-                    ? "Screen share"
+                    ? "🖥 Screen share active"
                     : `Live preview · ${viewer.label}`}
                 </span>
               </div>

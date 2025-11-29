@@ -3,11 +3,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/**
- * Build ICE server list:
- * - Always include Google STUN as a fallback
- * - If custom ICE env vars are set, add their STUN/TURN servers as well
- */
 const BASE_STUN = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
@@ -51,24 +46,20 @@ function buildIceServers() {
 
 const ICE_SERVERS = buildIceServers();
 
-/**
- * Props:
- *  - roomId:        string (session id)
- *  - isTeacher:     boolean
- *  - onScreenShareStreamChange(stream|null):
- *        called whenever a screen-share MediaStream becomes active or stops
- */
 export default function PrepVideoCall({
   roomId,
   isTeacher = false,
   onScreenShareStreamChange,
 }) {
-  const [status, setStatus] = useState("idle"); // idle | connecting | in-call
+  const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
 
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [screenOn, setScreenOn] = useState(false);
+
+  // 🔥 Track remote screen sharing state
+  const [remoteScreenSharing, setRemoteScreenSharing] = useState(false);
 
   const [isInitiator, setIsInitiator] = useState(false);
   const isInitiatorRef = useRef(false);
@@ -82,19 +73,70 @@ export default function PrepVideoCall({
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
 
-  // Store the callback in a ref so we can access latest version in handlers
   const onScreenShareChangeRef = useRef(onScreenShareStreamChange);
   useEffect(() => {
     onScreenShareChangeRef.current = onScreenShareStreamChange;
   }, [onScreenShareStreamChange]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Helpers for WebRTC
-  // ─────────────────────────────────────────────────────────────
+  // 🔥 When remote starts screen sharing, capture the stream from the video element
+  useEffect(() => {
+    if (!remoteScreenSharing) {
+      // Remote stopped sharing
+      if (onScreenShareChangeRef.current) {
+        onScreenShareChangeRef.current(null);
+      }
+      return;
+    }
+
+    console.log(
+      "[PrepVideoCall] Remote screen share detected, will capture stream"
+    );
+
+    // Wait for video frames to actually update after replaceTrack
+    const captureStream = () => {
+      const videoEl = remoteVideoRef.current;
+      if (!videoEl) {
+        console.warn("[PrepVideoCall] No remote video element found");
+        return;
+      }
+
+      // Use captureStream to get a live stream from the video element
+      // This captures whatever is currently playing in the video
+      if (typeof videoEl.captureStream === "function") {
+        try {
+          const captured = videoEl.captureStream();
+          console.log("[PrepVideoCall] Captured stream:", captured);
+          console.log(
+            "[PrepVideoCall] Captured tracks:",
+            captured.getTracks().map((t) => t.kind)
+          );
+
+          if (onScreenShareChangeRef.current) {
+            onScreenShareChangeRef.current(captured);
+          }
+          return;
+        } catch (err) {
+          console.error("[PrepVideoCall] captureStream error:", err);
+        }
+      }
+
+      // Fallback: just use srcObject
+      const srcStream = videoEl.srcObject;
+      if (srcStream && onScreenShareChangeRef.current) {
+        console.log("[PrepVideoCall] Fallback: using srcObject");
+        onScreenShareChangeRef.current(srcStream);
+      }
+    };
+
+    // Delay to allow video frames to update after replaceTrack on sender side
+    const timer = setTimeout(captureStream, 500);
+    return () => clearTimeout(timer);
+  }, [remoteScreenSharing]);
+
   function createPeerConnection() {
     if (pcRef.current) return pcRef.current;
 
-    console.log("[PrepVideoCall] creating RTCPeerConnection with", ICE_SERVERS);
+    console.log("[PrepVideoCall] Creating RTCPeerConnection");
 
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
@@ -105,11 +147,7 @@ export default function PrepVideoCall({
     };
 
     pc.ontrack = (event) => {
-      console.log(
-        "[PrepVideoCall] ontrack fired",
-        event.track.kind,
-        event.track.label
-      );
+      console.log("[PrepVideoCall] ontrack:", event.track.kind);
       const [remoteStream] = event.streams;
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
@@ -117,8 +155,7 @@ export default function PrepVideoCall({
     };
 
     pc.onconnectionstatechange = () => {
-      const state = pc.connectionState;
-      console.log("[PrepVideoCall] connection state:", state);
+      console.log("[PrepVideoCall] Connection state:", pc.connectionState);
     };
 
     pcRef.current = pc;
@@ -162,16 +199,13 @@ export default function PrepVideoCall({
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // WebSocket signaling
-  // ─────────────────────────────────────────────────────────────
   function sendSignal(signalType, data) {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      console.warn("[PrepVideoCall] Cannot send signal, WS not open");
+      console.warn("[PrepVideoCall] WS not open, cannot send:", signalType);
       return;
     }
-    console.log("[PrepVideoCall] sending signal:", signalType);
+    console.log("[PrepVideoCall] Sending signal:", signalType);
     ws.send(
       JSON.stringify({
         type: "signal",
@@ -205,18 +239,13 @@ export default function PrepVideoCall({
       wsUrl = `${wsProtocol}//${window.location.host}/ws/prep`;
     }
 
-    console.log("[PrepVideoCall] connecting to", wsUrl);
+    console.log("[PrepVideoCall] Connecting to", wsUrl);
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          type: "join",
-          roomId,
-        })
-      );
+      ws.send(JSON.stringify({ type: "join", roomId }));
     };
 
     ws.onerror = (ev) => {
@@ -263,10 +292,7 @@ export default function PrepVideoCall({
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = null;
           }
-          // Clear screen share when peer leaves
-          if (onScreenShareChangeRef.current) {
-            onScreenShareChangeRef.current(null);
-          }
+          setRemoteScreenSharing(false);
           setPeerJoined(false);
           break;
 
@@ -284,7 +310,7 @@ export default function PrepVideoCall({
     const { signalType, data } = msg;
     const pc = createPeerConnection();
 
-    console.log("[PrepVideoCall] received signal:", signalType);
+    console.log("[PrepVideoCall] Received signal:", signalType);
 
     if (signalType === "offer") {
       if (!localStreamRef.current) {
@@ -305,32 +331,13 @@ export default function PrepVideoCall({
         console.warn("Error adding ICE candidate", err);
       }
     }
-    // ─────────────────────────────────────────────────────────────
-    // 🔥 SCREEN SHARE SIGNALS
-    // ─────────────────────────────────────────────────────────────
+    // 🔥 Screen share signals
     else if (signalType === "screen-share-start") {
-      console.log("[PrepVideoCall] Remote peer started screen share");
-
-      // Small delay to ensure the track has been replaced
-      setTimeout(() => {
-        const remoteStream = remoteVideoRef.current?.srcObject;
-        console.log(
-          "[PrepVideoCall] Remote stream for screen share:",
-          remoteStream
-        );
-
-        if (remoteStream && onScreenShareChangeRef.current) {
-          console.log(
-            "[PrepVideoCall] Calling onScreenShareStreamChange with remote stream"
-          );
-          onScreenShareChangeRef.current(remoteStream);
-        }
-      }, 100);
+      console.log("[PrepVideoCall] >>> REMOTE SCREEN SHARE STARTED <<<");
+      setRemoteScreenSharing(true);
     } else if (signalType === "screen-share-stop") {
-      console.log("[PrepVideoCall] Remote peer stopped screen share");
-      if (onScreenShareChangeRef.current) {
-        onScreenShareChangeRef.current(null);
-      }
+      console.log("[PrepVideoCall] >>> REMOTE SCREEN SHARE STOPPED <<<");
+      setRemoteScreenSharing(false);
     }
   }
 
@@ -361,6 +368,7 @@ export default function PrepVideoCall({
     isInitiatorRef.current = false;
     setPeerJoined(false);
     setScreenOn(false);
+    setRemoteScreenSharing(false);
 
     if (pcRef.current) {
       pcRef.current.close();
@@ -384,14 +392,9 @@ export default function PrepVideoCall({
       onScreenShareChangeRef.current(null);
     }
 
-    if (wsRef.current) {
-      wsRef.current = null;
-    }
+    wsRef.current = null;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Controls: mic, camera, screen share
-  // ─────────────────────────────────────────────────────────────
   function toggleMic() {
     const next = !micOn;
     setMicOn(next);
@@ -414,20 +417,18 @@ export default function PrepVideoCall({
 
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
+        audio: false,
       });
 
       screenStreamRef.current = displayStream;
-
       const displayTrack = displayStream.getVideoTracks()[0];
       const pc = pcRef.current;
 
       if (pc && displayTrack) {
-        const sender = pc
-          .getSenders()
-          .find((s) => s.track && s.track.kind === "video");
+        const sender = pc.getSenders().find((s) => s.track?.kind === "video");
         if (sender) {
           console.log(
-            "[PrepVideoCall] Replacing video track with screen share"
+            "[PrepVideoCall] Replacing camera track with screen track"
           );
           await sender.replaceTrack(displayTrack);
         }
@@ -439,19 +440,20 @@ export default function PrepVideoCall({
 
       setScreenOn(true);
 
-      // 🔥 Notify local UI (teacher side) about screen share
+      // 🔥 Notify parent (this is LOCAL screen share)
       if (onScreenShareChangeRef.current) {
-        console.log("[PrepVideoCall] Notifying local UI about screen share");
+        console.log("[PrepVideoCall] Notifying parent of LOCAL screen share");
         onScreenShareChangeRef.current(displayStream);
       }
 
-      // 🔥 Signal remote peer that screen share started
-      console.log("[PrepVideoCall] Sending screen-share-start signal");
-      sendSignal("screen-share-start", {});
+      // 🔥 Signal remote peer after a small delay to ensure track is replaced
+      setTimeout(() => {
+        console.log("[PrepVideoCall] Signaling remote: screen-share-start");
+        sendSignal("screen-share-start", {});
+      }, 200);
 
-      // Handle when user stops sharing via browser UI
       displayTrack.onended = () => {
-        console.log("[PrepVideoCall] Screen share track ended (user stopped)");
+        console.log("[PrepVideoCall] Display track ended (user clicked stop)");
         stopScreenShare();
       };
     } catch (err) {
@@ -463,6 +465,9 @@ export default function PrepVideoCall({
   async function stopScreenShare() {
     console.log("[PrepVideoCall] Stopping screen share...");
 
+    // Signal remote first
+    sendSignal("screen-share-stop", {});
+
     const displayStream = screenStreamRef.current;
     if (displayStream) {
       displayStream.getTracks().forEach((t) => t.stop());
@@ -473,11 +478,8 @@ export default function PrepVideoCall({
     const cameraStream = localStreamRef.current;
     if (pc && cameraStream) {
       const cameraTrack = cameraStream.getVideoTracks()[0];
-      const sender = pc
-        .getSenders()
-        .find((s) => s.track && s.track.kind === "video");
+      const sender = pc.getSenders().find((s) => s.track?.kind === "video");
       if (sender && cameraTrack) {
-        console.log("[PrepVideoCall] Replacing screen share with camera track");
         await sender.replaceTrack(cameraTrack);
       }
       if (localVideoRef.current) {
@@ -487,11 +489,6 @@ export default function PrepVideoCall({
 
     setScreenOn(false);
 
-    // 🔥 Signal remote peer that screen share stopped
-    console.log("[PrepVideoCall] Sending screen-share-stop signal");
-    sendSignal("screen-share-stop", {});
-
-    // 🔥 Notify local UI
     if (onScreenShareChangeRef.current) {
       onScreenShareChangeRef.current(null);
     }
@@ -527,14 +524,12 @@ export default function PrepVideoCall({
 
       <div className="prep-video__body">
         <div className="prep-video__frame-wrapper">
-          {/* Remote video */}
           <video
             ref={remoteVideoRef}
             className="prep-video__remote"
             autoPlay
             playsInline
           />
-          {/* Local preview */}
           <video
             ref={localVideoRef}
             className="prep-video__local"
@@ -599,6 +594,15 @@ export default function PrepVideoCall({
             Waiting for the other person to join this prep room…
           </p>
         )}
+
+        {/* Debug info - remove in production */}
+        <p
+          className="prep-video__hint"
+          style={{ fontSize: "10px", opacity: 0.6 }}
+        >
+          Screen: {screenOn ? "sharing" : "off"} | Remote:{" "}
+          {remoteScreenSharing ? "sharing" : "off"}
+        </p>
       </div>
     </section>
   );

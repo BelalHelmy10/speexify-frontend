@@ -9,30 +9,23 @@ import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
-  // Who is the current viewer?
   const isTeacher =
     session.role === "teacher" ||
     session.isTeacher ||
     session.userType === "teacher";
 
-  // Build { resourceId -> full resource + context }
   const { resourcesById } = useMemo(() => buildResourceIndex(tracks), [tracks]);
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
-
-  // 🔥 Screen share stream (for both teacher's local share and learner's remote view)
   const [screenShareStream, setScreenShareStream] = useState(null);
 
-  // Classroom channel (shared with PrepShell for annotations)
   const classroomChannel = useClassroomChannel(String(sessionId));
   const { ready, send, subscribe } = classroomChannel;
 
-  // ───────────────────────────────────────────────
-  // Debug logging for screen share state
-  // ───────────────────────────────────────────────
+  // Debug: log screen share state
   useEffect(() => {
     console.log(
-      "[ClassroomShell] screenShareStream changed:",
+      "[ClassroomShell] screenShareStream updated:",
       screenShareStream
     );
     if (screenShareStream) {
@@ -44,19 +37,15 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     }
   }, [screenShareStream]);
 
-  // ───────────────────────────────────────────────
-  // 1) Learner listens for teacher resource changes
-  // ───────────────────────────────────────────────
+  // Learner listens for teacher resource changes
   useEffect(() => {
     if (!ready) return;
 
     const unsubscribe = subscribe((message) => {
-      console.log("[Classroom] message received", message);
-
       if (message?.type === "SET_RESOURCE") {
         const { resourceId } = message;
         if (resourceId && resourcesById[resourceId]) {
-          console.log("[Classroom] applying teacher resource:", resourceId);
+          console.log("[Classroom] Applying teacher resource:", resourceId);
           setSelectedResourceId(resourceId);
         }
       }
@@ -65,9 +54,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     return unsubscribe;
   }, [ready, resourcesById, subscribe]);
 
-  // ───────────────────────────────────────────────
-  // 2) Teacher: auto-select first resource when none selected yet
-  // ───────────────────────────────────────────────
+  // Teacher: auto-select first resource
   useEffect(() => {
     if (!isTeacher) return;
     if (selectedResourceId) return;
@@ -81,59 +68,31 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     setSelectedResourceId(first._id);
   }, [isTeacher, resourcesById, selectedResourceId]);
 
-  // ───────────────────────────────────────────────
-  // 3) Teacher: broadcast whenever selection changes AND WS is ready
-  // ───────────────────────────────────────────────
+  // Teacher: broadcast resource changes
   useEffect(() => {
-    if (!isTeacher) return;
-    if (!ready) return;
-    if (!selectedResourceId) return;
+    if (!isTeacher || !ready || !selectedResourceId) return;
 
-    console.log(
-      "[Classroom] broadcasting selected resource",
-      selectedResourceId
-    );
+    console.log("[Classroom] Broadcasting resource:", selectedResourceId);
     send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
   }, [isTeacher, ready, selectedResourceId, send]);
 
-  // ───────────────────────────────────────────────
-  // 4) Teacher changes resource via Picker
-  // ───────────────────────────────────────────────
   function handleChangeResourceId(nextId) {
     setSelectedResourceId(nextId || null);
   }
 
-  // ───────────────────────────────────────────────
-  // 5) 🔥 Handle screen share stream changes
-  // ───────────────────────────────────────────────
   function handleScreenShareStreamChange(stream) {
-    console.log(
-      "[ClassroomShell] handleScreenShareStreamChange called with:",
-      stream
-    );
-
-    if (stream) {
-      console.log("[ClassroomShell] Setting screen share stream");
-      console.log("[ClassroomShell] Stream ID:", stream.id);
-      console.log("[ClassroomShell] Stream active:", stream.active);
-      console.log("[ClassroomShell] Video tracks:", stream.getVideoTracks());
-    } else {
-      console.log("[ClassroomShell] Clearing screen share stream");
-    }
-
+    console.log("[ClassroomShell] handleScreenShareStreamChange:", stream);
     setScreenShareStream(stream);
   }
 
-  // Resolve current resource + viewer info
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId] || null
     : null;
-
   const viewer = resource ? getViewerInfo(resource) : null;
 
   return (
     <div className="classroom-layout">
-      {/* LEFT: video call panel */}
+      {/* LEFT: video call */}
       <section className="classroom-video-pane">
         <PrepVideoCall
           roomId={sessionId}
@@ -141,14 +100,30 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           onScreenShareStreamChange={handleScreenShareStreamChange}
         />
 
-        {/* 🔥 Debug info - remove in production */}
-        <div style={{ padding: "8px", fontSize: "12px", color: "#666" }}>
+        {/* Debug panel */}
+        <div
+          style={{
+            padding: "8px",
+            fontSize: "11px",
+            color: "#888",
+            borderTop: "1px solid #eee",
+          }}
+        >
           <div>Role: {isTeacher ? "Teacher" : "Learner"}</div>
-          <div>Screen share: {screenShareStream ? "Active" : "None"}</div>
+          <div>Screen share: {screenShareStream ? "✅ Active" : "❌ None"}</div>
+          {screenShareStream && (
+            <div>
+              Tracks:{" "}
+              {screenShareStream
+                .getTracks()
+                .map((t) => t.kind)
+                .join(", ")}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* RIGHT: picker (teacher only) + classroom viewer */}
+      {/* RIGHT: resource picker + viewer */}
       <section className="classroom-prep-pane">
         {isTeacher && (
           <ClassroomResourcePicker
@@ -172,31 +147,36 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
             />
           ) : (
             <div className="prep-viewer prep-viewer__placeholder">
-              <h2>No resource selected</h2>
+              <h2>
+                {screenShareStream
+                  ? "Screen Share Active"
+                  : "No resource selected"}
+              </h2>
               <p>
-                {isTeacher
+                {screenShareStream
+                  ? "The screen share is being displayed."
+                  : isTeacher
                   ? "Use the bar above to choose a track, book, level, unit and resource."
                   : "Waiting for your teacher to pick a resource."}
               </p>
 
-              {/* 🔥 Show screen share even without resource selected */}
+              {/* 🔥 Fallback: show screen share even without a resource */}
               {screenShareStream && (
-                <div style={{ marginTop: "20px" }}>
-                  <p>
-                    <strong>Screen share is active!</strong>
-                  </p>
+                <div style={{ marginTop: "20px", width: "100%" }}>
                   <video
                     autoPlay
                     playsInline
                     muted={isTeacher}
                     style={{
                       width: "100%",
-                      maxHeight: "400px",
+                      maxHeight: "500px",
                       background: "#000",
+                      borderRadius: "8px",
                     }}
                     ref={(el) => {
                       if (el && screenShareStream) {
                         el.srcObject = screenShareStream;
+                        el.play().catch(() => {});
                       }
                     }}
                   />
