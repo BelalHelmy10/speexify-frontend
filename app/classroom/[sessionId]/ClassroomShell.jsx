@@ -236,4 +236,3 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     </div>
   );
 }
-a;
