@@ -48,7 +48,12 @@ function getParticipantsFromSession(session) {
     null;
 
   const learnerObj =
-    s.learnerUser || s.learner || s.student || s.learnerProfile || null;
+    s.learnerUser ||
+    s.learner ||
+    s.student ||
+    s.learnerProfile ||
+    s.user ||
+    null;
 
   const teacherId =
     (teacherObj && (teacherObj.id || teacherObj._id)) || s.teacherId || null;
@@ -79,7 +84,6 @@ function getParticipantsFromSession(session) {
 export default function ClassroomShell({ session, sessionId, tracks }) {
   const { teacherId, learnerId, teacherName, learnerName } =
     getParticipantsFromSession(session);
-  console.log("Session object:", session);
 
   // Decide role (keep all the checks you had before)
   const isTeacher =
