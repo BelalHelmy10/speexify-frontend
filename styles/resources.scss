@@ -1560,8 +1560,8 @@
 /* LEFT: video column */
 .classroom-video-pane {
   display: flex;
-  flex-direction: column; // stack video on top, chat under it
-  justify-content: flex-start;
+  flex-direction: column;
+  justify-content: space-between;
   align-items: stretch;
   gap: 0.75rem;
   padding-top: 0.25rem;
@@ -1762,7 +1762,7 @@
   padding-right: 0.15rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 1rem;
   margin-bottom: 0.4rem;
 }
 
