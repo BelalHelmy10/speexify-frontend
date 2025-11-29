@@ -6,95 +6,122 @@ import { useEffect, useRef, useState } from "react";
 export default function ClassroomChat({
   classroomChannel,
   sessionId,
-  userId,
+  isTeacher,
+  currentUserId,
   userName,
+  otherName,
 }) {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const [pending, setPending] = useState("");
   const listRef = useRef(null);
 
-  const ready = classroomChannel?.ready ?? false;
-  const send = classroomChannel?.send ?? (() => {});
-  const subscribe = classroomChannel?.subscribe ?? (() => () => {});
+  const role = isTeacher ? "teacher" : "learner";
 
-  // listen for chat messages
+  // Listen for incoming chat messages
   useEffect(() => {
-    if (!ready) return;
+    if (!classroomChannel?.ready || !classroomChannel.subscribe) return;
 
-    const unsubscribe = subscribe((msg) => {
-      if (!msg || msg.type !== "CHAT_MESSAGE") return;
-      if (String(msg.sessionId) !== String(sessionId)) return;
+    const unsubscribe = classroomChannel.subscribe((msg) => {
+      if (!msg) return;
 
-      setMessages((prev) => [...prev, msg]);
+      // We accept both old and new message types
+      const isChatType =
+        msg.type === "CHAT_MESSAGE" || msg.type === "CLASSROOM_CHAT_MESSAGE";
+      if (!isChatType) return;
+
+      // If sessionId is present, make sure it matches this classroom
+      if (msg.sessionId && msg.sessionId !== String(sessionId)) return;
+
+      setMessages((prev) => {
+        if (msg.id && prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
     });
 
     return unsubscribe;
-  }, [ready, sessionId, subscribe]);
+  }, [classroomChannel, sessionId]);
 
-  // auto-scroll to bottom on new message
+  // Always scroll to the newest message
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed || !ready) return;
+  function handleSend(e) {
+    if (e) e.preventDefault();
+    const text = pending.trim();
+    if (!text || !classroomChannel?.ready) return;
 
-    const msg = {
-      type: "CHAT_MESSAGE",
-      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    const message = {
+      type: "CHAT_MESSAGE", // keep this string to match the signaling layer
+      id,
       sessionId: String(sessionId),
-      userId: userId ?? null,
-      userName: userName || "Unknown",
-      text: trimmed,
+      senderId: currentUserId || role, // fallback if we DON'T have an id
+      senderRole: role,
+      senderName: userName,
+      text,
       createdAt: Date.now(),
     };
 
-    // send over channel + append locally
-    send(msg);
-    setMessages((prev) => [...prev, msg]);
-    setInput("");
+    // optimistic update
+    setMessages((prev) => [...prev, message]);
+    classroomChannel.send(message);
+    setPending("");
   }
 
   return (
     <div className="classroom-chat">
-      <div className="classroom-chat__messages" ref={listRef}>
-        {messages.map((m) => {
-          const isOwn =
-            userId && m.userId && String(m.userId) === String(userId);
-          const senderLabel = (m.userName || "Unknown").toUpperCase();
+      <div ref={listRef} className="classroom-chat__messages">
+        {messages.map((msg) => {
+          const isOwn = currentUserId
+            ? msg.senderId === currentUserId
+            : msg.senderRole === role;
+
+          const displayName =
+            msg.senderName ||
+            (isOwn ? userName : otherName) ||
+            (msg.senderRole === "teacher" ? "Teacher" : "Learner");
 
           return (
             <div
-              key={m.id}
+              key={msg.id || msg.createdAt}
               className={
-                "classroom-chat__message" +
+                "classroom-chat__message " +
                 (isOwn
-                  ? " classroom-chat__message--own"
-                  : " classroom-chat__message--other")
+                  ? "classroom-chat__message--own"
+                  : "classroom-chat__message--other")
               }
             >
-              <div className="classroom-chat__sender">{senderLabel}</div>
-              <div className="classroom-chat__bubble">{m.text}</div>
+              <div className="classroom-chat__sender">{displayName}</div>
+              <div
+                className={
+                  "classroom-chat__bubble " +
+                  (isOwn
+                    ? "classroom-chat__bubble--own"
+                    : "classroom-chat__bubble--other")
+                }
+              >
+                {msg.text}
+              </div>
             </div>
           );
         })}
       </div>
 
-      <form className="classroom-chat__form" onSubmit={handleSubmit}>
+      <form className="classroom-chat__input-row" onSubmit={handleSend}>
         <input
           className="classroom-chat__input"
-          placeholder="Type a message…"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type a message..."
+          value={pending}
+          onChange={(e) => setPending(e.target.value)}
         />
         <button
           type="submit"
-          className="classroom-chat__send"
-          disabled={!ready || !input.trim()}
+          className="classroom-chat__send-button"
+          disabled={!pending.trim()}
         >
           Send
         </button>
