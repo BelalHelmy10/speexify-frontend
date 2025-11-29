@@ -10,21 +10,53 @@ import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import ClassroomChat from "./ClassroomChat";
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
-  const isTeacher =
-    session.role === "teacher" ||
-    session.isTeacher ||
-    session.userType === "teacher";
+  // ─────────────────────────────────────────────────────────────
+  // ROLE + USER INFO (safe, no crashes if fields are missing)
+  // ─────────────────────────────────────────────────────────────
+  const userObj = session?.user || session || {};
 
-  const { resourcesById } = useMemo(() => buildResourceIndex(tracks), [tracks]);
+  const isTeacher =
+    userObj.role === "teacher" ||
+    userObj.isTeacher === true ||
+    userObj.userType === "teacher" ||
+    session?.role === "teacher" ||
+    session?.isTeacher === true ||
+    session?.userType === "teacher";
+
+  const userId = userObj.id ?? userObj._id ?? session?.userId ?? null;
+
+  const firstName =
+    userObj.firstName || userObj.givenName || userObj.name || "";
+
+  const lastName = userObj.lastName || userObj.familyName || "";
+
+  const userName =
+    [firstName, lastName].filter(Boolean).join(" ") ||
+    (isTeacher ? "Teacher" : "Learner");
+
+  // ─────────────────────────────────────────────────────────────
+  // RESOURCE INDEX
+  // ─────────────────────────────────────────────────────────────
+  const { resourcesById } = useMemo(
+    () => buildResourceIndex(tracks || []),
+    [tracks]
+  );
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
   const [screenShareStream, setScreenShareStream] = useState(null);
 
+  // ─────────────────────────────────────────────────────────────
+  // REAL-TIME CLASSROOM CHANNEL (defensive)
+  // ─────────────────────────────────────────────────────────────
   const classroomChannel = useClassroomChannel(String(sessionId));
-  const { ready, send, subscribe } = classroomChannel;
-  const userName = `${user.firstName} ${user.lastName}`;
 
-  // Learner listens for teacher resource changes
+  const ready = classroomChannel?.ready ?? false;
+  const send = classroomChannel?.send ?? (() => {});
+  const subscribe = classroomChannel?.subscribe ?? (() => () => {});
+
+  // ─────────────────────────────────────────────────────────────
+  // LEARNER: listen for teacher changing the resource
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!ready) return;
 
@@ -40,7 +72,9 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     return unsubscribe;
   }, [ready, resourcesById, subscribe]);
 
-  // Teacher: auto-select first resource
+  // ─────────────────────────────────────────────────────────────
+  // TEACHER: auto-select first resource on load
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isTeacher) return;
     if (selectedResourceId) return;
@@ -54,7 +88,9 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     setSelectedResourceId(first._id);
   }, [isTeacher, resourcesById, selectedResourceId]);
 
-  // Teacher: broadcast resource changes
+  // ─────────────────────────────────────────────────────────────
+  // TEACHER: broadcast resource changes
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isTeacher || !ready || !selectedResourceId) return;
     send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
@@ -73,23 +109,35 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     : null;
   const viewer = resource ? getViewerInfo(resource) : null;
 
+  // ─────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────
   return (
     <div className="classroom-layout">
-      {/* LEFT: video call */}
+      {/* LEFT: video call + chat */}
       <section className="classroom-video-pane">
-        <PrepVideoCall
-          roomId={sessionId}
-          isTeacher={isTeacher}
-          onScreenShareStreamChange={setScreenShareStream}
-        />
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+            width: "100%",
+          }}
+        >
+          <PrepVideoCall
+            roomId={sessionId}
+            isTeacher={isTeacher}
+            onScreenShareStreamChange={handleScreenShareStreamChange}
+          />
 
-        <ClassroomChat
-          classroomChannel={classroomChannel}
-          sessionId={sessionId}
-          isTeacher={isTeacher}
-          userName={userName}
-          otherName={otherName} // optional, not required yet
-        />
+          <ClassroomChat
+            classroomChannel={classroomChannel}
+            sessionId={sessionId}
+            userId={userId}
+            userName={userName}
+            isTeacher={isTeacher}
+          />
+        </div>
       </section>
 
       {/* RIGHT: resource picker + viewer */}
@@ -129,7 +177,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
                   : "Waiting for your teacher to pick a resource."}
               </p>
 
-              {/* 🔥 Fallback: show screen share even without a resource */}
+              {/* Fallback: show screen share even without a resource */}
               {screenShareStream && (
                 <div style={{ marginTop: "20px", width: "100%" }}>
                   <video
