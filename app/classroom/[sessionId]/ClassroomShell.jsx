@@ -7,6 +7,7 @@ import PrepShell from "@/app/resources/prep/PrepShell";
 import ClassroomResourcePicker from "./ClassroomResourcePicker";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
+import ClassroomChat from "./ClassroomChat";
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
   const isTeacher =
@@ -78,7 +79,13 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         <PrepVideoCall
           roomId={sessionId}
           isTeacher={isTeacher}
-          onScreenShareStreamChange={handleScreenShareStreamChange}
+          onScreenShareStreamChange={setScreenShareStream}
+        />
+
+        <ClassroomChat
+          classroomChannel={classroomChannel}
+          sessionId={sessionId}
+          isTeacher={isTeacher}
         />
       </section>
 
