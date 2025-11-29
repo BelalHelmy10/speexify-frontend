@@ -58,14 +58,17 @@ function buildIceServers() {
 const ICE_SERVERS = buildIceServers();
 
 /**
- * NEW PROPS:
- *  - onRemoteStream(stream|null): called when we get / lose the remote MediaStream
- *  - onLocalScreenStreamChange(stream|null): called when teacher starts / stops screen share
+ * Props:
+ *  - roomId:        string (session id)
+ *  - isTeacher:     boolean (for muting local screen share video, if needed)
+ *  - onScreenShareStreamChange(stream|null):
+ *        called whenever a *screen-share* MediaStream becomes active
+ *        (local teacher share OR remote teacher share) or stops
  */
 export default function PrepVideoCall({
   roomId,
-  onRemoteStream,
-  onLocalScreenStreamChange,
+  isTeacher = false,
+  onScreenShareStreamChange,
 }) {
   const [status, setStatus] = useState("idle"); // idle | connecting | in-call
   const [error, setError] = useState("");
@@ -75,7 +78,7 @@ export default function PrepVideoCall({
   const [screenOn, setScreenOn] = useState(false);
 
   const [isInitiator, setIsInitiator] = useState(false);
-  const isInitiatorRef = useRef(false); // authoritative flag used in ws handlers
+  const isInitiatorRef = useRef(false);
   const [peerJoined, setPeerJoined] = useState(false);
 
   const wsRef = useRef(null);
@@ -107,9 +110,28 @@ export default function PrepVideoCall({
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
       }
-      // 🔥 Expose remote stream to parent (used by learner classroom pane)
-      if (onRemoteStream) {
-        onRemoteStream(remoteStream);
+
+      // 🔥 Detect if this track looks like a screen-share video
+      const track = event.track;
+      const label = (track.label || "").toLowerCase();
+      const settings = track.getSettings ? track.getSettings() : {};
+
+      const looksLikeScreen =
+        track.kind === "video" &&
+        (label.includes("screen") ||
+          label.includes("display") ||
+          (settings.displaySurface && settings.displaySurface !== "camera"));
+
+      if (looksLikeScreen && onScreenShareStreamChange) {
+        console.log("[PrepVideoCall] remote screen share detected");
+        onScreenShareStreamChange(remoteStream);
+
+        track.addEventListener("ended", () => {
+          console.log("[PrepVideoCall] remote screen share track ended");
+          if (onScreenShareStreamChange) {
+            onScreenShareStreamChange(null);
+          }
+        });
       }
     };
 
@@ -247,14 +269,13 @@ export default function PrepVideoCall({
         case "joined": {
           const flag = !!msg.isInitiator;
           setIsInitiator(flag);
-          isInitiatorRef.current = flag; // keep ref in sync
+          isInitiatorRef.current = flag;
           await startLocalMedia();
           break;
         }
 
         case "peer-joined":
           setPeerJoined(true);
-          // initiator creates the offer; createAndSendOffer will start media if needed
           if (isInitiatorRef.current) {
             await createAndSendOffer();
           }
@@ -264,7 +285,7 @@ export default function PrepVideoCall({
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = null;
           }
-          if (onRemoteStream) onRemoteStream(null);
+          if (onScreenShareStreamChange) onScreenShareStreamChange(null);
           setPeerJoined(false);
           break;
 
@@ -349,8 +370,7 @@ export default function PrepVideoCall({
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
-    if (onRemoteStream) onRemoteStream(null);
-    if (onLocalScreenStreamChange) onLocalScreenStreamChange(null);
+    if (onScreenShareStreamChange) onScreenShareStreamChange(null);
 
     if (wsRef.current) {
       wsRef.current = null;
@@ -381,6 +401,7 @@ export default function PrepVideoCall({
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
       });
+
       screenStreamRef.current = displayStream;
 
       const displayTrack = displayStream.getVideoTracks()[0];
@@ -390,7 +411,7 @@ export default function PrepVideoCall({
       const sender = pc
         .getSenders()
         .find((s) => s.track && s.track.kind === "video");
-      if (sender) {
+      if (sender && displayTrack) {
         await sender.replaceTrack(displayTrack);
       }
 
@@ -400,9 +421,9 @@ export default function PrepVideoCall({
 
       setScreenOn(true);
 
-      // 🔥 Expose teacher's screen stream to parent (for teacher right pane)
-      if (onLocalScreenStreamChange) {
-        onLocalScreenStreamChange(displayStream);
+      // 🔥 Teacher local screen share -> classroom viewer
+      if (onScreenShareStreamChange) {
+        onScreenShareStreamChange(displayStream);
       }
 
       displayTrack.onended = () => {
@@ -438,8 +459,8 @@ export default function PrepVideoCall({
 
     setScreenOn(false);
 
-    if (onLocalScreenStreamChange) {
-      onLocalScreenStreamChange(null);
+    if (onScreenShareStreamChange) {
+      onScreenShareStreamChange(null);
     }
   }
 
@@ -515,7 +536,7 @@ export default function PrepVideoCall({
             onClick={toggleMic}
             disabled={!inCall && status === "idle"}
           >
-            {micOn ? "🔊 Mic on" : "🔇 Mic off"}
+            {micOn ? "🎙 Mic on" : "🎙 Mic off"}
           </button>
 
           <button

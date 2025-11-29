@@ -14,7 +14,6 @@ const TOOL_POINTER = "pointer";
 const TOOL_ERASER = "eraser";
 const TOOL_TEXT = "text";
 
-// Pen colors (now includes black)
 const PEN_COLORS = [
   "#000000",
   "#f9fafb",
@@ -27,11 +26,11 @@ const PEN_COLORS = [
 /**
  * Props:
  *  - resource, viewer: as before (prep room)
- *  - hideSidebar (optional): when true, do NOT render the left info/notes column
- *  - hideBreadcrumbs (optional): when true, no breadcrumbs row
- *  - classroomChannel (optional): in classroom mode, used to sync annotations
- *  - screenShareStream (optional): MediaStream when teacher is sharing screen
- *  - isTeacher (optional): used to mute own screen share video
+ *  - hideSidebar (optional)
+ *  - hideBreadcrumbs (optional)
+ *  - classroomChannel (optional): sync annotations
+ *  - screenShareStream (optional): MediaStream to show instead of resource
+ *  - isTeacher (optional): to decide if we mute our own screen audio
  */
 export default function PrepShell({
   resource,
@@ -51,13 +50,13 @@ export default function PrepShell({
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
   const [dragState, setDragState] = useState(null);
   const [activeTextId, setActiveTextId] = useState(null);
-  const [pdfFallback, setPdfFallback] = useState(false); // if pdf.js fails, fall back to iframe
+  const [pdfFallback, setPdfFallback] = useState(false);
 
-  const canvasRef = useRef(null); // drawing canvas
-  const containerRef = useRef(null); // scroll container for overlay
-  const screenVideoRef = useRef(null); // video element for shared screen
+  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const screenVideoRef = useRef(null); // 🔥 video element for screen share
 
-  const applyingRemoteRef = useRef(false); // avoid re-broadcast loops
+  const applyingRemoteRef = useRef(false);
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -67,11 +66,37 @@ export default function PrepShell({
   const level = subLevel?.level;
   const track = level?.track;
 
-  const viewerActive = !!viewerUrl;
-  const hasAnyViewer = viewerActive || !!screenShareStream;
+  const hasScreenShare = !!screenShareStream; // 🔥
+  const isPdf = viewer?.type === "pdf" && !pdfFallback;
+  const showSidebar = !hideSidebar;
+  const showBreadcrumbs = !hideBreadcrumbs;
 
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
+
+  const layoutClasses =
+    "prep-layout" +
+    (focusMode ? " prep-layout--focus" : "") +
+    (hideSidebar ? " prep-layout--no-sidebar" : "");
+
+  // ───────────────────────────────────────────────
+  // Attach screenShareStream to <video> when present
+  // ───────────────────────────────────────────────
+  useEffect(() => {
+    const videoEl = screenVideoRef.current;
+    if (!videoEl) return;
+
+    if (screenShareStream) {
+      videoEl.srcObject = screenShareStream;
+      videoEl.muted = isTeacher; // prevent echo for teacher
+      videoEl.play().catch(() => {
+        // autoplay might be blocked; ignore
+      });
+    } else {
+      videoEl.pause?.();
+      videoEl.srcObject = null;
+    }
+  }, [screenShareStream, isTeacher]);
 
   // Focus newly-activated text box
   useEffect(() => {
@@ -79,16 +104,6 @@ export default function PrepShell({
     const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
     if (el) el.focus();
   }, [activeTextId]);
-
-  // Attach shared screen stream to the video element
-  useEffect(() => {
-    if (!screenVideoRef.current) return;
-    if (screenShareStream) {
-      screenVideoRef.current.srcObject = screenShareStream;
-    } else {
-      screenVideoRef.current.srcObject = null;
-    }
-  }, [screenShareStream]);
 
   // Load annotations from localStorage
   useEffect(() => {
@@ -123,7 +138,7 @@ export default function PrepShell({
     }
   }, [storageKey]);
 
-  // Resize annotation canvas to match container (or its parent)
+  // Resize annotation canvas to match container
   useEffect(() => {
     const canvas = canvasRef.current;
 
@@ -168,7 +183,7 @@ export default function PrepShell({
     }
   }, []);
 
-  // Save annotations (canvas + notes + text) locally
+  // Save annotations
   function saveAnnotations(opts = {}) {
     if (!storageKey) return;
     try {
@@ -188,10 +203,10 @@ export default function PrepShell({
     }
   }
 
-  // Broadcast whole annotation state over classroomChannel (optional)
+  // Broadcast state
   function broadcastAnnotations(custom = {}) {
     if (!channelReady || !sendOnChannel) return;
-    if (applyingRemoteRef.current) return; // don't echo back remote updates
+    if (applyingRemoteRef.current) return;
 
     const canvas = canvasRef.current;
     const canvasData =
@@ -212,7 +227,6 @@ export default function PrepShell({
     }
   }
 
-  // Broadcast pointer in normalized coordinates
   function broadcastPointer(normalizedPosOrNull) {
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return;
@@ -234,7 +248,6 @@ export default function PrepShell({
     });
   }
 
-  // Apply remote annotation snapshot
   function applyRemoteAnnotationState(message) {
     if (!message || message.resourceId !== resource._id) return;
 
@@ -273,7 +286,6 @@ export default function PrepShell({
         }
       }
 
-      // Save locally too
       saveAnnotations({
         canvasData: canvasData || null,
         stickyNotes: Array.isArray(remoteNotes) ? remoteNotes : stickyNotes,
@@ -284,7 +296,6 @@ export default function PrepShell({
     }
   }
 
-  // Subscribe to classroomChannel (remote annotations + pointer)
   useEffect(() => {
     if (!classroomChannel || !classroomChannel.ready) return;
     if (!classroomChannel.subscribe) return;
@@ -309,12 +320,9 @@ export default function PrepShell({
     return unsubscribe;
   }, [classroomChannel, resource._id]);
 
-  // Geometry helper
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-
-    // Use the canvas' parent as the reference box
     const container = canvas.parentElement || canvas;
     const rect = container.getBoundingClientRect();
 
@@ -326,7 +334,7 @@ export default function PrepShell({
     };
   }
 
-  // Drawing (pen / highlighter / eraser)
+  // Drawing + tools … (unchanged logic)
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
@@ -341,7 +349,6 @@ export default function PrepShell({
   }
 
   function draw(e) {
-    // dragging notes / text
     if (dragState) {
       const coords = getCanvasCoordinates(e);
       if (!coords) return;
@@ -384,9 +391,7 @@ export default function PrepShell({
     }
 
     if (!isDrawing) {
-      if (tool === TOOL_POINTER) {
-        updatePointer(e);
-      }
+      if (tool === TOOL_POINTER) updatePointer(e);
       return;
     }
 
@@ -430,7 +435,6 @@ export default function PrepShell({
     broadcastAnnotations();
   }
 
-  // Pointer
   function updatePointer(e) {
     if (tool !== TOOL_POINTER) {
       setPointerPos(null);
@@ -451,10 +455,13 @@ export default function PrepShell({
     broadcastPointer(normalized);
   }
 
-  // Sticky notes
+  // Notes / text / clear etc. (same as before) …
+
+  // [NOTE: to keep the answer under control I’m not re-commenting every
+  // little function; they’re identical to your last version, just moved.]
+
   function handleClickForNote(e) {
     if (tool !== TOOL_NOTE) return;
-
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
     const { x, y, width, height } = coords;
@@ -470,7 +477,6 @@ export default function PrepShell({
     setStickyNotes(nextNotes);
     saveAnnotations({ stickyNotes: nextNotes });
     broadcastAnnotations({ stickyNotes: nextNotes });
-
     setTool(TOOL_NONE);
   }
 
@@ -505,7 +511,6 @@ export default function PrepShell({
     });
   }
 
-  // Text boxes
   function createTextBox(e) {
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
@@ -558,7 +563,6 @@ export default function PrepShell({
     });
   }
 
-  // Clear all annotations
   function clearCanvasAndNotes() {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -570,11 +574,7 @@ export default function PrepShell({
     setDragState(null);
     setActiveTextId(null);
     try {
-      const empty = {
-        canvasData: null,
-        stickyNotes: [],
-        textBoxes: [],
-      };
+      const empty = { canvasData: null, stickyNotes: [], textBoxes: [] };
       window.localStorage.setItem(storageKey, JSON.stringify(empty));
     } catch (err) {
       console.warn("Failed to clear annotations", err);
@@ -586,7 +586,6 @@ export default function PrepShell({
     });
   }
 
-  // Mouse handlers
   function handleMouseDown(e) {
     const target = e.target;
     if (
@@ -629,11 +628,9 @@ export default function PrepShell({
 
     if (tool === TOOL_POINTER) {
       updatePointer(e);
-    } else {
-      if (pointerPos) {
-        setPointerPos(null);
-        broadcastPointer(null);
-      }
+    } else if (pointerPos) {
+      setPointerPos(null);
+      broadcastPointer(null);
     }
 
     if (
@@ -655,7 +652,6 @@ export default function PrepShell({
     }
   }
 
-  // UI helper
   function setToolSafe(nextTool) {
     if (tool === nextTool) {
       setTool(TOOL_NONE);
@@ -670,7 +666,6 @@ export default function PrepShell({
     }
   }
 
-  // Shared annotation overlay (canvas + notes + text + pointer)
   function renderAnnotationsOverlay() {
     return (
       <>
@@ -686,15 +681,11 @@ export default function PrepShell({
           onMouseLeave={handleMouseUp}
         />
 
-        {/* Sticky notes */}
         {stickyNotes.map((note) => (
           <div
             key={note.id}
             className="prep-sticky-note"
-            style={{
-              left: `${note.x * 100}%`,
-              top: `${note.y * 100}%`,
-            }}
+            style={{ left: `${note.x * 100}%`, top: `${note.y * 100}%` }}
           >
             <div
               className="prep-sticky-note__header"
@@ -721,7 +712,6 @@ export default function PrepShell({
           </div>
         ))}
 
-        {/* Text boxes */}
         {textBoxes.map((box) => {
           const isEditing = activeTextId === box.id;
           return (
@@ -730,10 +720,7 @@ export default function PrepShell({
               className={
                 "prep-text-box" + (isEditing ? " prep-text-box--editing" : "")
               }
-              style={{
-                left: `${box.x * 100}%`,
-                top: `${box.y * 100}%`,
-              }}
+              style={{ left: `${box.x * 100}%`, top: `${box.y * 100}%` }}
             >
               {isEditing ? (
                 <>
@@ -781,34 +768,20 @@ export default function PrepShell({
           );
         })}
 
-        {/* Pointer arrow */}
         {pointerPos && (
           <div
             className="prep-pointer"
-            style={{
-              left: `${pointerPos.x}px`,
-              top: `${pointerPos.y}px`,
-            }}
+            style={{ left: `${pointerPos.x}px`, top: `${pointerPos.y}px` }}
           />
         )}
       </>
     );
   }
 
-  // viewer type
-  const isPdf = viewer?.type === "pdf" && !pdfFallback;
-
-  const showSidebar = !hideSidebar;
-  const showBreadcrumbs = !hideBreadcrumbs;
-
-  const layoutClasses =
-    "prep-layout" +
-    (focusMode ? " prep-layout--focus" : "") +
-    (hideSidebar ? " prep-layout--no-sidebar" : "");
+  const viewerIsActive = hasScreenShare || !!viewerUrl;
 
   return (
     <>
-      {/* Breadcrumbs (optional) */}
       {showBreadcrumbs && (
         <nav className="unit-breadcrumbs prep-breadcrumbs">
           <Link href="/resources" className="unit-breadcrumbs__link">
@@ -848,7 +821,6 @@ export default function PrepShell({
       )}
 
       <div className={layoutClasses}>
-        {/* LEFT: info + notes (hidden in classroom mode) */}
         {showSidebar && (
           <aside className="prep-info-card">
             <div className="prep-info-card__header">
@@ -919,9 +891,8 @@ export default function PrepShell({
           </aside>
         )}
 
-        {/* RIGHT: viewer */}
         <section className="prep-viewer">
-          {hasAnyViewer && (
+          {viewerIsActive && (
             <button
               type="button"
               className="prep-viewer__focus-toggle"
@@ -931,18 +902,18 @@ export default function PrepShell({
             </button>
           )}
 
-          {hasAnyViewer ? (
+          {viewerIsActive ? (
             <>
               <div className="prep-viewer__badge">
                 <span className="prep-viewer__badge-dot" />
                 <span className="prep-viewer__badge-text">
-                  {screenShareStream
+                  {hasScreenShare
                     ? "Screen share"
                     : `Live preview · ${viewer.label}`}
                 </span>
               </div>
 
-              {/* Annotation toolbar */}
+              {/* Toolbar stays the same */}
               <div className="prep-annotate-toolbar">
                 <button
                   type="button"
@@ -1029,8 +1000,8 @@ export default function PrepShell({
               </div>
 
               <div className="prep-viewer__frame-wrapper">
-                {screenShareStream ? (
-                  // Screen-share mode: show full-width video
+                {hasScreenShare ? (
+                  // 🔥 Screen share mode: big <video> with overlay
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
@@ -1038,20 +1009,16 @@ export default function PrepShell({
                     <video
                       ref={screenVideoRef}
                       className="prep-viewer__frame"
-                      autoPlay
                       playsInline
-                      muted={isTeacher}
                     />
                     {renderAnnotationsOverlay()}
                   </div>
                 ) : isPdf ? (
-                  // PDF + sidebar (pdf.js)
                   <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={viewerUrl}
                       onFatalError={() => setPdfFallback(true)}
                       onContainerReady={(el) => {
-                        // el is the scroll container inside the PDF viewer
                         containerRef.current = el;
                       }}
                     >
@@ -1059,7 +1026,6 @@ export default function PrepShell({
                     </PdfViewerWithSidebar>
                   </div>
                 ) : (
-                  // Fallback: iframe viewer (YouTube, Slides, external, etc.)
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}

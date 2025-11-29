@@ -20,12 +20,10 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
 
-  // 🔥 NEW: hold WebRTC streams + screen share state
-  const [remoteStream, setRemoteStream] = useState(null); // whatever we get from the other peer
-  const [teacherScreenStream, setTeacherScreenStream] = useState(null); // teacher's local screen stream
-  const [isScreenShared, setIsScreenShared] = useState(false);
+  // 🔥 NEW: shared screen stream (teacher local, learner remote)
+  const [screenShareStream, setScreenShareStream] = useState(null);
 
-  // Classroom channel
+  // Classroom channel (shared with PrepShell later)
   const classroomChannel = useClassroomChannel(String(sessionId));
   const { ready, send, subscribe } = classroomChannel;
 
@@ -44,10 +42,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           console.log("[Classroom] applying teacher resource:", resourceId);
           setSelectedResourceId(resourceId);
         }
-      }
-
-      if (message?.type === "SCREEN_SHARE_STATE") {
-        setIsScreenShared(!!message.screenOn);
       }
     });
 
@@ -89,7 +83,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   // 4) Teacher changes resource via Picker
   // ───────────────────────────────────────────────
   function handleChangeResourceId(nextId) {
-    // Just update state – broadcast happens in the effect
     setSelectedResourceId(nextId || null);
   }
 
@@ -100,34 +93,20 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   const viewer = resource ? getViewerInfo(resource) : null;
 
-  // 🔥 Decide what to show on the right when screen share is ON
-  const screenShareStream =
-    isScreenShared && (isTeacher ? teacherScreenStream : remoteStream);
-
   return (
     <div className="classroom-layout">
       {/* LEFT: video */}
       <section className="classroom-video-pane">
         <PrepVideoCall
           roomId={sessionId}
-          // learner + teacher both get whatever the other side sends
-          onRemoteStream={setRemoteStream}
-          // teacher will call this when starting / stopping screen share
-          onLocalScreenStreamChange={(stream) => {
-            setTeacherScreenStream(stream);
-            const on = !!stream;
-            setIsScreenShared(on);
-            // broadcast to learner
-            if (isTeacher && ready) {
-              send({ type: "SCREEN_SHARE_STATE", screenOn: on });
-            }
-          }}
+          isTeacher={isTeacher}
+          // 🔥 whenever a (local or remote) screen-share stream appears / disappears
+          onScreenShareStreamChange={setScreenShareStream}
         />
       </section>
 
       {/* RIGHT: picker (teacher only) + classroom viewer */}
       <section className="classroom-prep-pane">
-        {/* ✅ Only teachers see the picker */}
         {isTeacher && (
           <ClassroomResourcePicker
             isTeacher={isTeacher}
@@ -138,15 +117,15 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         )}
 
         <div className="classroom-prep-pane__content">
-          {resource || screenShareStream ? (
+          {resource ? (
             <PrepShell
               resource={resource}
               viewer={viewer}
               hideSidebar
               hideBreadcrumbs
               classroomChannel={classroomChannel}
-              // 🔥 NEW: screen share stream for right pane
-              screenShareStream={screenShareStream || null}
+              // 🔥 pass the active screen-share stream down to the viewer
+              screenShareStream={screenShareStream}
               isTeacher={isTeacher}
             />
           ) : (
