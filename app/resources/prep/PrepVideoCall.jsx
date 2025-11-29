@@ -661,14 +661,6 @@ export default function PrepVideoCall({
             Waiting for the other person to join this prep room…
           </p>
         )}
-
-        <p
-          className="prep-video__hint"
-          style={{ fontSize: "10px", opacity: 0.6 }}
-        >
-          Screen: {screenOn ? "sharing" : "off"} | Remote:{" "}
-          {remoteScreenSharing ? "sharing" : "off"}
-        </p>
       </div>
     </section>
   );

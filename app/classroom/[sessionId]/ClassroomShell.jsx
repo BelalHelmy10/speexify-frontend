@@ -22,21 +22,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const classroomChannel = useClassroomChannel(String(sessionId));
   const { ready, send, subscribe } = classroomChannel;
 
-  // Debug: log screen share state
-  useEffect(() => {
-    console.log(
-      "[ClassroomShell] screenShareStream updated:",
-      screenShareStream
-    );
-    if (screenShareStream) {
-      console.log("[ClassroomShell] Stream active:", screenShareStream.active);
-      console.log(
-        "[ClassroomShell] Stream tracks:",
-        screenShareStream.getTracks()
-      );
-    }
-  }, [screenShareStream]);
-
   // Learner listens for teacher resource changes
   useEffect(() => {
     if (!ready) return;
@@ -71,8 +56,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   // Teacher: broadcast resource changes
   useEffect(() => {
     if (!isTeacher || !ready || !selectedResourceId) return;
-
-    console.log("[Classroom] Broadcasting resource:", selectedResourceId);
     send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
   }, [isTeacher, ready, selectedResourceId, send]);
 
@@ -81,7 +64,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   }
 
   function handleScreenShareStreamChange(stream) {
-    console.log("[ClassroomShell] handleScreenShareStreamChange:", stream);
     setScreenShareStream(stream);
   }
 
@@ -99,28 +81,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           isTeacher={isTeacher}
           onScreenShareStreamChange={handleScreenShareStreamChange}
         />
-
-        {/* Debug panel */}
-        <div
-          style={{
-            padding: "8px",
-            fontSize: "11px",
-            color: "#888",
-            borderTop: "1px solid #eee",
-          }}
-        >
-          <div>Role: {isTeacher ? "Teacher" : "Learner"}</div>
-          <div>Screen share: {screenShareStream ? "✅ Active" : "❌ None"}</div>
-          {screenShareStream && (
-            <div>
-              Tracks:{" "}
-              {screenShareStream
-                .getTracks()
-                .map((t) => t.kind)
-                .join(", ")}
-            </div>
-          )}
-        </div>
       </section>
 
       {/* RIGHT: resource picker + viewer */}
