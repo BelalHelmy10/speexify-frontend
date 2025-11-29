@@ -322,6 +322,20 @@ export default function PrepVideoCall({
         console.warn("Error adding ICE candidate", err);
       }
     }
+    // 🔥 NEW: Handle screen share signals from remote peer
+    else if (signalType === "screen-share-start") {
+      console.log("[PrepVideoCall] remote peer started screen share");
+      // Use the existing remote stream as the screen share
+      const remoteStream = remoteVideoRef.current?.srcObject;
+      if (remoteStream && onScreenShareStreamChange) {
+        onScreenShareStreamChange(remoteStream);
+      }
+    } else if (signalType === "screen-share-stop") {
+      console.log("[PrepVideoCall] remote peer stopped screen share");
+      if (onScreenShareStreamChange) {
+        onScreenShareStreamChange(null);
+      }
+    }
   }
 
   async function createAndSendOffer() {
@@ -426,6 +440,9 @@ export default function PrepVideoCall({
         onScreenShareStreamChange(displayStream);
       }
 
+      // 🔥 NEW: Signal to remote peer that screen share started
+      sendSignal("screen-share-start", {});
+
       displayTrack.onended = () => {
         stopScreenShare();
       };
@@ -458,6 +475,9 @@ export default function PrepVideoCall({
     }
 
     setScreenOn(false);
+
+    // 🔥 NEW: Signal to remote peer that screen share stopped
+    sendSignal("screen-share-stop", {});
 
     if (onScreenShareStreamChange) {
       onScreenShareStreamChange(null);
