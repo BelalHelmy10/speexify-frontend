@@ -9,28 +9,23 @@ import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import ClassroomChat from "./ClassroomChat";
 
-function extractName(obj) {
-  if (!obj) return "";
-  if (obj.fullName) return obj.fullName;
-  if (obj.name) return obj.name;
-  const first = obj.firstName || obj.givenName || "";
-  const last = obj.lastName || obj.familyName || "";
-  return [first, last].filter(Boolean).join(" ");
+function getDisplayName(user = {}) {
+  if (!user) return "";
+  if (user.fullName) return user.fullName;
+  if (user.name) return user.name;
+  const first = user.firstName || user.givenName || "";
+  const last = user.lastName || user.familyName || "";
+  const combined = [first, last].filter(Boolean).join(" ");
+  return combined || "Unknown";
 }
 
 export default function ClassroomShell({ session, sessionId, tracks }) {
-  // ─────────────────────────────────────────────────────────────
-  // SESSION PARTICIPANTS
-  // ─────────────────────────────────────────────────────────────
-  const teacherUser =
-    session?.teacher?.user || session?.teacher || session?.tutor || null;
+  // current logged-in user
+  const currentUser = session?.user || session?.currentUser || {};
 
-  const learnerUser =
-    session?.learner?.user || session?.learner || session?.student || null;
+  const userId = currentUser.id ?? currentUser._id ?? session?.userId ?? null;
 
-  // who am *I*?
-  const currentUser =
-    session?.user || session?.currentUser || teacherUser || learnerUser || {};
+  const userName = getDisplayName(currentUser);
 
   const isTeacher =
     currentUser.role === "teacher" ||
@@ -40,18 +35,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     session?.isTeacher === true ||
     session?.userType === "teacher";
 
-  const userId = currentUser.id ?? currentUser._id ?? session?.userId ?? null;
-
-  const teacherName = extractName(teacherUser) || "Teacher";
-  const learnerName = extractName(learnerUser) || "Learner";
-
-  // this is the name we’ll stamp on messages we SEND
-  const userName = isTeacher ? teacherName : learnerName;
-  const otherName = isTeacher ? learnerName : teacherName;
-
-  // ─────────────────────────────────────────────────────────────
-  // RESOURCES
-  // ─────────────────────────────────────────────────────────────
+  // ─── Resources index ────────────────────────────────────────
   const { resourcesById } = useMemo(
     () => buildResourceIndex(tracks || []),
     [tracks]
@@ -60,15 +44,13 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const [selectedResourceId, setSelectedResourceId] = useState(null);
   const [screenShareStream, setScreenShareStream] = useState(null);
 
-  // ─────────────────────────────────────────────────────────────
-  // REAL-TIME CHANNEL
-  // ─────────────────────────────────────────────────────────────
+  // ─── Real-time channel ──────────────────────────────────────
   const classroomChannel = useClassroomChannel(String(sessionId));
   const ready = classroomChannel?.ready ?? false;
   const send = classroomChannel?.send ?? (() => {});
   const subscribe = classroomChannel?.subscribe ?? (() => () => {});
 
-  // Learner listens for teacher resource changes
+  // Learner: listen for teacher resource changes
   useEffect(() => {
     if (!ready) return;
 
@@ -117,12 +99,9 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     : null;
   const viewer = resource ? getViewerInfo(resource) : null;
 
-  // ─────────────────────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────────────────────
   return (
     <div className="classroom-layout">
-      {/* LEFT: video call + chat */}
+      {/* LEFT: video + chat */}
       <section className="classroom-video-pane">
         <div
           style={{
@@ -142,14 +121,13 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
             classroomChannel={classroomChannel}
             sessionId={sessionId}
             userId={userId}
-            userName={userName} // now Teacher vs Learner correctly
-            otherName={otherName} // optional, if you want it later
+            userName={userName}
             isTeacher={isTeacher}
           />
         </div>
       </section>
 
-      {/* RIGHT: resource picker + viewer */}
+      {/* RIGHT: picker + viewer */}
       <section className="classroom-prep-pane">
         {isTeacher && (
           <ClassroomResourcePicker
