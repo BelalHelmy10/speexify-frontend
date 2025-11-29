@@ -695,6 +695,7 @@
 /* Layout */
 
 .prep-layout {
+  position: relative; // so the chat bubble can sit on its edge
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr);
   gap: 1.5rem;
@@ -702,6 +703,56 @@
 
   @media (max-width: 900px) {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Floating chat-bubble toggle for the left prep panel */
+.prep-sidebar-toggle {
+  position: absolute;
+  left: -0.4rem;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  background: radial-gradient(circle at top left, #0b1120, #020617);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 6;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.75);
+  transition: background-color 0.15s ease, transform 0.1s ease,
+    box-shadow 0.15s ease, left 0.18s ease;
+}
+
+.prep-sidebar-toggle__icon {
+  font-size: 1.1rem;
+}
+
+.prep-sidebar-toggle:hover {
+  background: radial-gradient(circle at top left, #111827, #020617);
+  box-shadow: 0 22px 52px rgba(15, 23, 42, 0.9);
+  transform: translate(-50%, -52%);
+}
+
+/* when collapsed, nudge the bubble slightly inside */
+.prep-sidebar-toggle--collapsed {
+  left: 0.9rem;
+}
+
+/* mobile: move the bubble to bottom-left so it doesn’t overlap everything */
+@media (max-width: 900px) {
+  .prep-sidebar-toggle {
+    left: 1rem;
+    top: auto;
+    bottom: 1rem;
+    transform: translate(0, 0);
+  }
+
+  .prep-sidebar-toggle--collapsed {
+    left: 1rem;
   }
 }
 
@@ -1485,34 +1536,44 @@
   font-size: 0.76rem;
   color: #6b7280;
 }
+
 /* ────────────────────────────────────── */
 /* CLASSROOM LAYOUT + PICKER             */
 /* ────────────────────────────────────── */
 
 /* two-column layout:
    - left ≈ 30% (video)
-   - right ≈ 70% (classroom viewer – ~10% bigger than before)
+   - right ≈ 70% (classroom viewer)
+   - stretch to nearly full viewport height
 */
 .classroom-layout {
   display: grid;
   grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.9fr);
   gap: 24px;
   align-items: stretch;
-  margin-top: 16px;
+  margin-top: 12px;
+  min-height: calc(100vh - 120px); // navbar + top margin allowance
 }
 
-/* LEFT: video column (hug the left side) */
+/* LEFT: video column */
 .classroom-video-pane {
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
-  padding-top: 1rem;
+  padding-top: 0.25rem;
 }
 
-/* shrink video a bit more so the classroom feels larger */
+/* remove big prep-video margin when used inside classroom */
+.classroom-video-pane .prep-video {
+  margin-top: 0;
+  border-top: none;
+}
+
+/* shrink video a bit and limit height to viewport */
 .classroom-video-pane .prep-video__frame-wrapper {
   width: 100%;
-  max-width: 520px; /* was 520px */
+  max-width: 480px;
+  max-height: calc(100vh - 180px);
   margin-left: 0;
   margin-right: auto;
 }
@@ -1523,22 +1584,20 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-
-  /* reserve taller space for the pill bar so the viewer starts lower
-     (this keeps a clear gap between bar and viewer even when pills wrap) */
-  padding-top: 2rem;
+  padding-top: 2rem; // space under the pill bar
 }
 
 /* area under the selector bar (viewer lives here) */
 .classroom-prep-pane__content {
   flex: 1 1 auto;
-  margin-top: 0; // offset handled by padding-top above
+  margin-top: 0;
 }
 
-/* make the viewer tall and comfy but still within the page */
+/* make the viewer tall and within the page */
 .classroom-prep-pane .prep-viewer {
   width: 100%;
-  height: min(80vh, 720px); // a bit taller than before
+  height: calc(100vh - 180px);
+  max-height: 820px;
 }
 
 .classroom-prep-pane .prep-viewer__frame-wrapper,
@@ -1551,6 +1610,7 @@
   .classroom-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;
+    min-height: auto;
   }
 
   .classroom-prep-pane {
@@ -1558,11 +1618,13 @@
   }
 
   .classroom-prep-pane .prep-viewer {
-    height: auto; // let it flow naturally on mobile
+    height: auto;
+    max-height: none;
   }
 
   .classroom-video-pane .prep-video__frame-wrapper {
-    max-width: 100%; // don’t shrink video on tiny screens
+    max-width: 100%;
+    max-height: none;
   }
 }
 

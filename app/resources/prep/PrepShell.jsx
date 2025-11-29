@@ -42,6 +42,7 @@ export default function PrepShell({
   const [dragState, setDragState] = useState(null);
   const [activeTextId, setActiveTextId] = useState(null);
   const [pdfFallback, setPdfFallback] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -59,7 +60,7 @@ export default function PrepShell({
 
   const hasScreenShare = !!screenShareStream;
   const isPdf = viewer?.type === "pdf" && !pdfFallback;
-  const showSidebar = !hideSidebar;
+  const showSidebar = !hideSidebar && !sidebarCollapsed;
   const showBreadcrumbs = !hideBreadcrumbs;
 
   const channelReady = !!classroomChannel?.ready;
@@ -67,8 +68,7 @@ export default function PrepShell({
 
   const layoutClasses =
     "prep-layout" +
-    (focusMode ? " prep-layout--focus" : "") +
-    (hideSidebar ? " prep-layout--no-sidebar" : "");
+    (focusMode || sidebarCollapsed || hideSidebar ? " prep-layout--focus" : "");
 
   // ─────────────────────────────────────────────────────────────
   // Attach/detach screen share stream to video element
@@ -802,6 +802,26 @@ export default function PrepShell({
       )}
 
       <div className={layoutClasses}>
+        {!hideSidebar && (
+          <button
+            type="button"
+            className={
+              "prep-sidebar-toggle" +
+              (sidebarCollapsed ? " prep-sidebar-toggle--collapsed" : "")
+            }
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            aria-label={
+              sidebarCollapsed
+                ? "Open prep notes panel"
+                : "Hide prep notes panel"
+            }
+          >
+            <span className="prep-sidebar-toggle__icon">
+              {sidebarCollapsed ? "💬" : "←"}
+            </span>
+          </button>
+        )}
+
         {showSidebar && (
           <aside className="prep-info-card">
             <div className="prep-info-card__header">
