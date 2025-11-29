@@ -22,6 +22,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   const classroomChannel = useClassroomChannel(String(sessionId));
   const { ready, send, subscribe } = classroomChannel;
+  const userName = `${user.firstName} ${user.lastName}`;
 
   // Learner listens for teacher resource changes
   useEffect(() => {
@@ -86,6 +87,8 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           classroomChannel={classroomChannel}
           sessionId={sessionId}
           isTeacher={isTeacher}
+          userName={userName}
+          otherName={otherName} // optional, not required yet
         />
       </section>
 

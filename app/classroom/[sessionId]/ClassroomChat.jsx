@@ -15,6 +15,8 @@ export default function ClassroomChat({
   classroomChannel,
   sessionId,
   isTeacher,
+  userName,
+  otherName,
 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -42,7 +44,9 @@ export default function ClassroomChat({
   }, [classroomChannel, sessionId]);
 
   function handleSubmit(e) {
-    e.preventDefault();
+    e.preventDefault(); // <-- prevents scroll + form jump
+    e.stopPropagation(); // <-- extra safety
+
     const text = input.trim();
     if (!text) return;
 
@@ -50,16 +54,15 @@ export default function ClassroomChat({
       type: "CHAT_MESSAGE",
       sessionId: String(sessionId),
       fromRole: isTeacher ? "teacher" : "learner",
+      fromName: userName, // <-- add this
       text,
       ts: Date.now(),
     };
 
-    // send over websocket
     if (classroomChannel && classroomChannel.send) {
       classroomChannel.send(message);
     }
 
-    // optimistic local update
     setMessages((prev) => [...prev, message]);
     setInput("");
   }
@@ -76,7 +79,8 @@ export default function ClassroomChat({
       <div className="classroom-chat__messages">
         {messages.map((m, idx) => {
           const isSelf = m.fromRole === (isTeacher ? "teacher" : "learner");
-          const label = m.fromRole === "teacher" ? "Teacher" : "Learner";
+          const label =
+            m.fromName || (m.fromRole === "teacher" ? "Teacher" : "Learner");
 
           return (
             <div
