@@ -3,35 +3,25 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/**
- * Simple 1-to-1 chat between teacher and learner.
- *
- * Props:
- *  - classroomChannel: { ready, send, subscribe }
- *  - sessionId: string
- *  - isTeacher: boolean
- */
 export default function ClassroomChat({
   classroomChannel,
   sessionId,
-  isTeacher,
+  userId,
+  userName,
 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const messagesEndRef = useRef(null);
+  const listRef = useRef(null);
 
-  // Scroll to bottom when new messages arrive
+  const ready = classroomChannel?.ready ?? false;
+  const send = classroomChannel?.send ?? (() => {});
+  const subscribe = classroomChannel?.subscribe ?? (() => () => {});
+
+  // listen for chat messages
   useEffect(() => {
-    if (!messagesEndRef.current) return;
-    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!ready) return;
 
-  // Listen for incoming chat messages on the classroom channel
-  useEffect(() => {
-    if (!classroomChannel || !classroomChannel.ready) return;
-    if (!classroomChannel.subscribe) return;
-
-    const unsubscribe = classroomChannel.subscribe((msg) => {
+    const unsubscribe = subscribe((msg) => {
       if (!msg || msg.type !== "CHAT_MESSAGE") return;
       if (String(msg.sessionId) !== String(sessionId)) return;
 
@@ -39,72 +29,73 @@ export default function ClassroomChat({
     });
 
     return unsubscribe;
-  }, [classroomChannel, sessionId]);
+  }, [ready, sessionId, subscribe]);
+
+  // auto-scroll to bottom on new message
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages.length]);
 
   function handleSubmit(e) {
     e.preventDefault();
-    const text = input.trim();
-    if (!text) return;
+    const trimmed = input.trim();
+    if (!trimmed || !ready) return;
 
-    const message = {
+    const msg = {
       type: "CHAT_MESSAGE",
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       sessionId: String(sessionId),
-      fromRole: isTeacher ? "teacher" : "learner",
-      text,
-      ts: Date.now(),
+      userId: userId ?? null,
+      userName: userName || "Unknown",
+      text: trimmed,
+      createdAt: Date.now(),
     };
 
-    // send over websocket
-    if (classroomChannel && classroomChannel.send) {
-      classroomChannel.send(message);
-    }
-
-    // optimistic local update
-    setMessages((prev) => [...prev, message]);
+    // send over channel + append locally
+    send(msg);
+    setMessages((prev) => [...prev, msg]);
     setInput("");
   }
 
   return (
     <div className="classroom-chat">
-      <div className="classroom-chat__header">
-        <span className="classroom-chat__title">Classroom chat</span>
-        <span className="classroom-chat__role">
-          You are {isTeacher ? "Teacher" : "Learner"}
-        </span>
-      </div>
-
-      <div className="classroom-chat__messages">
-        {messages.map((m, idx) => {
-          const isSelf = m.fromRole === (isTeacher ? "teacher" : "learner");
-          const label = m.fromRole === "teacher" ? "Teacher" : "Learner";
+      <div className="classroom-chat__messages" ref={listRef}>
+        {messages.map((m) => {
+          const isOwn =
+            userId && m.userId && String(m.userId) === String(userId);
+          const senderLabel = (m.userName || "Unknown").toUpperCase();
 
           return (
             <div
-              key={m.ts ?? idx}
+              key={m.id}
               className={
                 "classroom-chat__message" +
-                (isSelf ? " classroom-chat__message--self" : "")
+                (isOwn
+                  ? " classroom-chat__message--own"
+                  : " classroom-chat__message--other")
               }
             >
-              <div className="classroom-chat__bubble">
-                <div className="classroom-chat__bubble-label">{label}</div>
-                <div className="classroom-chat__bubble-text">{m.text}</div>
-              </div>
+              <div className="classroom-chat__sender">{senderLabel}</div>
+              <div className="classroom-chat__bubble">{m.text}</div>
             </div>
           );
         })}
-        <div ref={messagesEndRef} />
       </div>
 
       <form className="classroom-chat__form" onSubmit={handleSubmit}>
         <input
           className="classroom-chat__input"
-          type="text"
           placeholder="Type a message…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-        <button className="classroom-chat__send" type="submit">
+        <button
+          type="submit"
+          className="classroom-chat__send"
+          disabled={!ready || !input.trim()}
+        >
           Send
         </button>
       </form>
