@@ -180,18 +180,9 @@ export default function PrepVideoCall({
     pc.onconnectionstatechange = () => {};
 
     // Handle negotiation needed (when we add/remove tracks)
-    pc.onnegotiationneeded = async () => {
-      if (!isInitiatorRef.current) {
-        return;
-      }
-
-      try {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        sendSignal("offer", pc.localDescription);
-      } catch (err) {
-        console.error("[PrepVideoCall] Renegotiation failed:", err);
-      }
+    pc.onnegotiationneeded = () => {
+      // Intentionally empty - renegotiation is handled explicitly
+      // in startScreenShare/stopScreenShare so it works from either peer.
     };
 
     pcRef.current = pc;
@@ -488,11 +479,19 @@ export default function PrepVideoCall({
         if (displayAudioTrack) {
           pc.addTrack(displayAudioTrack, displayStream);
         }
+
+        // 🔥 Explicit renegotiation so this works even if we're NOT the initiator
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          sendSignal("offer", pc.localDescription);
+        } catch (err) {
+          console.error("[PrepVideoCall] Renegotiation failed:", err);
+        }
       }
 
       setScreenOn(true);
 
-      // 🔥 LOCAL screen share - show in main viewer on teacher's side too
       if (onScreenShareChangeRef.current) {
         onScreenShareChangeRef.current(displayStream);
       }
@@ -516,6 +515,11 @@ export default function PrepVideoCall({
       try {
         pc.removeTrack(screenSenderRef.current);
         screenSenderRef.current = null;
+
+        // 🔥 Explicit renegotiation after removing the screen track
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        sendSignal("offer", pc.localDescription);
       } catch (err) {
         console.warn("[PrepVideoCall] Error removing track:", err);
       }
