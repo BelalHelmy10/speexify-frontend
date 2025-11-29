@@ -9,64 +9,103 @@ import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import ClassroomChat from "./ClassroomChat";
 
-export default function ClassroomShell({ session, sessionId, tracks }) {
-  // ─────────────────────────────────────────
-  // Who am I?
-  // ─────────────────────────────────────────
-  const isTeacher =
-    session.role === "teacher" ||
-    session.isTeacher ||
-    session.userType === "teacher";
+/**
+ * Safely build a display name from a user-like object or plain string.
+ */
+function buildDisplayName(source) {
+  if (!source) return "";
 
-  const me = session?.user || {};
+  if (typeof source === "string") {
+    return source;
+  }
 
-  const currentUserId =
-    (me.id && String(me.id)) ||
-    (me._id && String(me._id)) ||
-    (session?.userId && String(session.userId)) ||
-    (session?.id && String(session.id)) ||
+  // explicit fields first
+  if (source.fullName) return source.fullName;
+  if (source.name) return source.name;
+  if (source.displayName) return source.displayName;
+
+  const first = source.firstName || source.givenName || source.first_name || "";
+  const last = source.lastName || source.familyName || source.last_name || "";
+
+  const combined = [first, last].filter(Boolean).join(" ");
+  return combined || "";
+}
+
+/**
+ * Try to extract teacher / learner identities from the session object.
+ * This is defensive and will happily ignore fields that don't exist.
+ */
+function getParticipantsFromSession(session) {
+  const s = session || {};
+
+  // teacher-ish objects / ids / names
+  const teacherObj =
+    s.teacherUser ||
+    s.teacher ||
+    s.tutor ||
+    s.teacherProfile ||
+    s.teacherAccount ||
     null;
 
-  const userName =
-    (me.fullName && me.fullName.trim()) ||
-    (me.name && me.name.trim()) ||
-    [me.firstName, me.lastName].filter(Boolean).join(" ").trim() ||
-    session?.displayName ||
-    session?.name ||
-    (isTeacher ? "Teacher" : "Learner");
+  const learnerObj =
+    s.learnerUser || s.learner || s.student || s.learnerProfile || null;
 
-  const learnerNameFromSession =
-    session?.learnerName ||
-    session?.learner?.fullName ||
-    [session?.learner?.firstName, session?.learner?.lastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
+  const teacherId =
+    (teacherObj && (teacherObj.id || teacherObj._id)) || s.teacherId || null;
 
-  const teacherNameFromSession =
-    session?.teacherName ||
-    session?.teacher?.fullName ||
-    [session?.teacher?.firstName, session?.teacher?.lastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
+  const learnerId =
+    (learnerObj && (learnerObj.id || learnerObj._id)) || s.learnerId || null;
 
-  const otherName = isTeacher
-    ? learnerNameFromSession || "Learner"
-    : teacherNameFromSession || "Teacher";
+  const teacherName =
+    s.teacherName ||
+    s.teacherDisplayName ||
+    buildDisplayName(teacherObj) ||
+    "Teacher";
 
-  // ─────────────────────────────────────────
-  // Resources + viewer
-  // ─────────────────────────────────────────
-  const { resourcesById } = useMemo(() => buildResourceIndex(tracks), [tracks]);
+  const learnerName =
+    s.learnerName ||
+    s.learnerDisplayName ||
+    buildDisplayName(learnerObj) ||
+    "Learner";
+
+  return {
+    teacherId,
+    learnerId,
+    teacherName,
+    learnerName,
+  };
+}
+
+export default function ClassroomShell({ session, sessionId, tracks }) {
+  const { teacherId, learnerId, teacherName, learnerName } =
+    getParticipantsFromSession(session);
+
+  // Decide role (keep all the checks you had before)
+  const isTeacher =
+    session?.role === "teacher" ||
+    session?.isTeacher === true ||
+    session?.userType === "teacher" ||
+    (session?.currentUser && session.currentUser.role === "teacher");
+
+  const userId = isTeacher ? teacherId : learnerId;
+  const userName = isTeacher ? teacherName : learnerName;
+
+  // ─── Resources index ────────────────────────────────────────
+  const { resourcesById } = useMemo(
+    () => buildResourceIndex(tracks || []),
+    [tracks]
+  );
 
   const [selectedResourceId, setSelectedResourceId] = useState(null);
   const [screenShareStream, setScreenShareStream] = useState(null);
 
+  // ─── Real-time channel ──────────────────────────────────────
   const classroomChannel = useClassroomChannel(String(sessionId));
-  const { ready, send, subscribe } = classroomChannel;
+  const ready = classroomChannel?.ready ?? false;
+  const send = classroomChannel?.send ?? (() => {});
+  const subscribe = classroomChannel?.subscribe ?? (() => () => {});
 
-  // Learner listens for teacher resource changes
+  // Learner: listen for teacher resource changes
   useEffect(() => {
     if (!ready) return;
 
@@ -106,6 +145,10 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     setSelectedResourceId(nextId || null);
   }
 
+  function handleScreenShareStreamChange(stream) {
+    setScreenShareStream(stream);
+  }
+
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId] || null
     : null;
@@ -115,20 +158,28 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     <div className="classroom-layout">
       {/* LEFT: video + chat */}
       <section className="classroom-video-pane">
-        <PrepVideoCall
-          roomId={sessionId}
-          isTeacher={isTeacher}
-          onScreenShareStreamChange={setScreenShareStream}
-        />
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+            width: "100%",
+          }}
+        >
+          <PrepVideoCall
+            roomId={sessionId}
+            isTeacher={isTeacher}
+            onScreenShareStreamChange={handleScreenShareStreamChange}
+          />
 
-        <ClassroomChat
-          classroomChannel={classroomChannel}
-          sessionId={sessionId}
-          isTeacher={isTeacher}
-          currentUserId={currentUserId}
-          userName={userName}
-          otherName={otherName}
-        />
+          <ClassroomChat
+            classroomChannel={classroomChannel}
+            sessionId={sessionId}
+            userId={userId}
+            userName={userName}
+            isTeacher={isTeacher}
+          />
+        </div>
       </section>
 
       {/* RIGHT: resource picker + viewer */}
@@ -196,3 +247,4 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     </div>
   );
 }
+a;
