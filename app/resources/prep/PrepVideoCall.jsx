@@ -3,25 +3,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// ─────────────────────────────────────────────────────────────
-// PERFORMANCE CONFIGURATION
-// ─────────────────────────────────────────────────────────────
-const VIDEO_CONSTRAINTS = {
-  width: { ideal: 640, max: 1280 }, // Lower resolution = less lag
-  height: { ideal: 480, max: 720 },
-  frameRate: { ideal: 24, max: 30 }, // 24fps is smooth enough for video calls
-};
-
-const AUDIO_CONSTRAINTS = {
-  echoCancellation: true,
-  noiseSuppression: true,
-  autoGainControl: true,
-};
-
-// Max bitrate for video (in bits per second)
-// Lower = less lag but lower quality. 500kbps-1mbps is good for video calls
-const MAX_VIDEO_BITRATE = 800000; // 800 kbps
-
 const BASE_STUN = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
@@ -53,52 +34,17 @@ function buildIceServers() {
   }
 
   if (turnUrls.length && username && credential) {
-    // Prefer UDP TURN (faster), then TCP, then TLS
-    const udpUrls = turnUrls.filter(
-      (u) => u.includes("?transport=udp") || !u.includes("?transport=")
-    );
-    const tcpUrls = turnUrls.filter((u) => u.includes("?transport=tcp"));
-
-    // Add UDP TURN first (lower latency)
-    if (udpUrls.length) {
-      iceServers.push({
-        urls: udpUrls,
-        username,
-        credential,
-      });
-    }
-
-    // Add TCP TURN as fallback
-    if (tcpUrls.length) {
-      iceServers.push({
-        urls: tcpUrls,
-        username,
-        credential,
-      });
-    }
-
-    // If no transport specified, add all
-    if (!udpUrls.length && !tcpUrls.length && turnUrls.length) {
-      iceServers.push({
-        urls: turnUrls,
-        username,
-        credential,
-      });
-    }
+    iceServers.push({
+      urls: turnUrls,
+      username,
+      credential,
+    });
   }
 
   return iceServers;
 }
 
 const ICE_SERVERS = buildIceServers();
-
-// RTC Configuration with optimizations
-const RTC_CONFIG = {
-  iceServers: ICE_SERVERS,
-  iceCandidatePoolSize: 10, // Pre-gather candidates for faster connection
-  bundlePolicy: "max-bundle", // Bundle all media on one connection
-  rtcpMuxPolicy: "require", // Multiplex RTP and RTCP
-};
 
 export default function PrepVideoCall({
   roomId,
@@ -149,7 +95,7 @@ export default function PrepVideoCall({
   function createPeerConnection() {
     if (pcRef.current) return pcRef.current;
 
-    const pc = new RTCPeerConnection(RTC_CONFIG);
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -231,75 +177,16 @@ export default function PrepVideoCall({
       }
     };
 
-    pc.onconnectionstatechange = () => {
-      const state = pc.connectionState;
+    pc.onconnectionstatechange = () => {};
 
-      if (state === "failed") {
-        // Connection failed - need to recreate
-        setError("Connection failed. Reconnecting...");
-        // Reset peer connection for new attempt
-        if (pcRef.current === pc) {
-          pcRef.current = null;
-          remoteCameraStreamRef.current = null;
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = null;
-          }
-        }
-      } else if (state === "disconnected") {
-        // Peer temporarily disconnected - wait a bit then check
-        setTimeout(() => {
-          if (
-            pc.connectionState === "disconnected" ||
-            pc.connectionState === "failed"
-          ) {
-            setError("Peer disconnected. Waiting for reconnection...");
-          }
-        }, 3000);
-      } else if (state === "connected") {
-        // Clear any previous errors
-        setError("");
-      }
-    };
-
-    // Handle ICE connection state separately
-    pc.oniceconnectionstatechange = () => {
-      const state = pc.iceConnectionState;
-
-      if (state === "failed") {
-        // Try ICE restart
-        if (isInitiatorRef.current) {
-          pc.restartIce();
-        }
-      }
-    };
-
-    // Note: We handle renegotiation explicitly in startScreenShare/stopScreenShare
-    // to avoid issues with initiator/non-initiator roles
+    // Handle negotiation needed (when we add/remove tracks)
     pc.onnegotiationneeded = () => {
       // Intentionally empty - renegotiation is handled explicitly
+      // in startScreenShare/stopScreenShare so it works from either peer.
     };
 
     pcRef.current = pc;
     return pc;
-  }
-
-  // Apply bitrate limit to video sender
-  async function applyBitrateLimit(pc) {
-    const senders = pc.getSenders();
-    for (const sender of senders) {
-      if (sender.track?.kind === "video") {
-        const params = sender.getParameters();
-        if (!params.encodings || params.encodings.length === 0) {
-          params.encodings = [{}];
-        }
-        params.encodings[0].maxBitrate = MAX_VIDEO_BITRATE;
-        try {
-          await sender.setParameters(params);
-        } catch (err) {
-          // Some browsers don't support this
-        }
-      }
-    }
   }
 
   async function startLocalMedia() {
@@ -307,8 +194,8 @@ export default function PrepVideoCall({
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: VIDEO_CONSTRAINTS,
-        audio: AUDIO_CONSTRAINTS,
+        video: true,
+        audio: true,
       });
 
       localStreamRef.current = stream;
@@ -321,9 +208,6 @@ export default function PrepVideoCall({
       stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
       });
-
-      // Apply bitrate limit for lower latency
-      await applyBitrateLimit(pc);
 
       toggleTracksEnabled(stream.getAudioTracks(), micOn);
       toggleTracksEnabled(stream.getVideoTracks(), camOn);
@@ -362,18 +246,13 @@ export default function PrepVideoCall({
       setError("Missing room id.");
       return;
     }
-
-    // Force cleanup any existing connection before starting new one
-    if (status !== "idle") {
-      await forceCleanup();
-    }
+    if (status !== "idle") return;
 
     setError("");
     setStatus("connecting");
 
     // Reset tracking
     remoteCameraStreamRef.current = null;
-    remoteScreenStreamRef.current = null;
 
     let wsUrl = "";
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
@@ -392,33 +271,18 @@ export default function PrepVideoCall({
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    // Connection timeout - if not connected in 15 seconds, retry
-    const connectionTimeout = setTimeout(() => {
-      if (status === "connecting") {
-        setError("Connection timeout. Retrying...");
-        forceCleanup().then(() => {
-          setTimeout(() => startCall(), 1000);
-        });
-      }
-    }, 15000);
-
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: "join", roomId }));
     };
 
     ws.onerror = (ev) => {
-      clearTimeout(connectionTimeout);
       console.error("WebSocket error", ev);
-      setError("Connection error. Click Join to retry.");
+      setError("Connection error.");
       setStatus("idle");
     };
 
-    ws.onclose = (ev) => {
-      clearTimeout(connectionTimeout);
-      // Only cleanup if this is still our active WebSocket
-      if (wsRef.current === ws) {
-        cleanupCall();
-      }
+    ws.onclose = () => {
+      cleanupCall();
     };
 
     ws.onmessage = async (event) => {
@@ -445,33 +309,13 @@ export default function PrepVideoCall({
         }
 
         case "peer-joined":
-          // Reset old peer connection state if peer is reconnecting
-          if (pcRef.current) {
-            // Close old connection
-            pcRef.current.close();
-            pcRef.current = null;
-          }
-          remoteCameraStreamRef.current = null;
-          remoteScreenStreamRef.current = null;
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = null;
-          }
-          setRemoteScreenSharing(false);
-          remoteScreenSharingRef.current = false;
-          if (onScreenShareChangeRef.current) {
-            onScreenShareChangeRef.current(null);
-          }
-
           setPeerJoined(true);
-          setError(""); // Clear any previous errors
-
           if (isInitiatorRef.current) {
             await createAndSendOffer();
           }
           break;
 
         case "peer-left":
-          // Clean up remote streams
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = null;
           }
@@ -482,15 +326,7 @@ export default function PrepVideoCall({
           if (onScreenShareChangeRef.current) {
             onScreenShareChangeRef.current(null);
           }
-
-          // Reset peer connection for next peer
-          if (pcRef.current) {
-            pcRef.current.close();
-            pcRef.current = null;
-          }
-
           setPeerJoined(false);
-          setError(""); // Clear errors, waiting for peer
           break;
 
         case "signal":
@@ -505,25 +341,9 @@ export default function PrepVideoCall({
 
   async function handleSignalMessage(msg) {
     const { signalType, data } = msg;
+    const pc = createPeerConnection();
 
     if (signalType === "offer") {
-      // If we receive a new offer, we might be reconnecting
-      // Reset peer connection to accept the new offer
-      if (pcRef.current) {
-        const currentState = pcRef.current.connectionState;
-        // Only reset if connection is not healthy
-        if (
-          currentState === "failed" ||
-          currentState === "closed" ||
-          currentState === "disconnected"
-        ) {
-          pcRef.current.close();
-          pcRef.current = null;
-          remoteCameraStreamRef.current = null;
-        }
-      }
-
-      const pc = createPeerConnection();
       if (!localStreamRef.current) {
         await startLocalMedia();
       }
@@ -532,28 +352,20 @@ export default function PrepVideoCall({
       await pc.setLocalDescription(answer);
       sendSignal("answer", pc.localDescription);
       setStatus("in-call");
-      setError(""); // Clear any errors
     } else if (signalType === "answer") {
-      const pc = pcRef.current;
-      if (pc) {
-        await pc.setRemoteDescription(new RTCSessionDescription(data));
-        setStatus("in-call");
-        setError(""); // Clear any errors
-      }
+      await pc.setRemoteDescription(new RTCSessionDescription(data));
+      setStatus("in-call");
     } else if (signalType === "candidate") {
-      const pc = pcRef.current;
-      if (pc) {
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(data));
-        } catch (err) {
-          // Ignore errors for old candidates
-        }
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(data));
+      } catch (err) {
+        console.warn("Error adding ICE candidate", err);
       }
     }
-    // Screen share signals
+    // 🔥 Screen share signals
     else if (signalType === "screen-share-start") {
       setRemoteScreenSharing(true);
-      remoteScreenSharingRef.current = true;
+      remoteScreenSharingRef.current = true; // Update ref immediately for ontrack
     } else if (signalType === "screen-share-stop") {
       setRemoteScreenSharing(false);
       remoteScreenSharingRef.current = false;
@@ -582,77 +394,6 @@ export default function PrepVideoCall({
     } else {
       cleanupCall();
     }
-  }
-
-  // Force cleanup - used when reconnecting or when state is stuck
-  async function forceCleanup() {
-    return new Promise((resolve) => {
-      // Close WebSocket if open
-      if (wsRef.current) {
-        try {
-          wsRef.current.onclose = null; // Prevent recursive cleanup
-          wsRef.current.onerror = null;
-          wsRef.current.close();
-        } catch (e) {}
-        wsRef.current = null;
-      }
-
-      // Close peer connection
-      if (pcRef.current) {
-        try {
-          pcRef.current.ontrack = null;
-          pcRef.current.onicecandidate = null;
-          pcRef.current.onconnectionstatechange = null;
-          pcRef.current.close();
-        } catch (e) {}
-        pcRef.current = null;
-      }
-
-      // Stop local media
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach((t) => {
-          try {
-            t.stop();
-          } catch (e) {}
-        });
-        localStreamRef.current = null;
-      }
-
-      // Stop screen share
-      if (screenStreamRef.current) {
-        screenStreamRef.current.getTracks().forEach((t) => {
-          try {
-            t.stop();
-          } catch (e) {}
-        });
-        screenStreamRef.current = null;
-      }
-
-      // Reset all refs
-      screenSenderRef.current = null;
-      remoteCameraStreamRef.current = null;
-      remoteScreenStreamRef.current = null;
-      isInitiatorRef.current = false;
-      remoteScreenSharingRef.current = false;
-
-      // Reset video elements
-      if (localVideoRef.current) localVideoRef.current.srcObject = null;
-      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-
-      // Reset state
-      setStatus("idle");
-      setIsInitiator(false);
-      setPeerJoined(false);
-      setScreenOn(false);
-      setRemoteScreenSharing(false);
-
-      if (onScreenShareChangeRef.current) {
-        onScreenShareChangeRef.current(null);
-      }
-
-      // Small delay to ensure everything is cleaned up
-      setTimeout(resolve, 100);
-    });
   }
 
   function cleanupCall() {
@@ -713,12 +454,12 @@ export default function PrepVideoCall({
     try {
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
-        audio: true,
+        audio: true, // 🔊 Enable system audio sharing
       });
 
       screenStreamRef.current = displayStream;
       const displayTrack = displayStream.getVideoTracks()[0];
-      const displayAudioTrack = displayStream.getAudioTracks()[0];
+      const displayAudioTrack = displayStream.getAudioTracks()[0]; // May be null if user didn't check "Share audio"
       const pc = pcRef.current;
 
       // Signal remote FIRST so they know the next video track is screen share
@@ -739,19 +480,18 @@ export default function PrepVideoCall({
           pc.addTrack(displayAudioTrack, displayStream);
         }
 
-        // 🔥 EXPLICIT RENEGOTIATION - works regardless of who is initiator
+        // 🔥 Explicit renegotiation so this works even if we're NOT the initiator
         try {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
           sendSignal("offer", pc.localDescription);
         } catch (err) {
-          console.error("Renegotiation failed:", err);
+          console.error("[PrepVideoCall] Renegotiation failed:", err);
         }
       }
 
       setScreenOn(true);
 
-      // LOCAL screen share - show in main viewer on teacher's side too
       if (onScreenShareChangeRef.current) {
         onScreenShareChangeRef.current(displayStream);
       }
@@ -776,7 +516,7 @@ export default function PrepVideoCall({
         pc.removeTrack(screenSenderRef.current);
         screenSenderRef.current = null;
 
-        // Explicit renegotiation after removing track
+        // 🔥 Explicit renegotiation after removing the screen track
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         sendSignal("offer", pc.localDescription);
@@ -806,15 +546,6 @@ export default function PrepVideoCall({
     }
   }
 
-  // Auto-join when component mounts
-  useEffect(() => {
-    if (roomId) {
-      startCall();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
-
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       leaveCall();
@@ -861,15 +592,7 @@ export default function PrepVideoCall({
               className="resources-button resources-button--primary"
               onClick={startCall}
             >
-              {error ? "Retry" : "Join call"}
-            </button>
-          ) : status === "connecting" ? (
-            <button
-              type="button"
-              className="resources-button resources-button--ghost"
-              onClick={leaveCall}
-            >
-              Cancel
+              Join call
             </button>
           ) : (
             <button
