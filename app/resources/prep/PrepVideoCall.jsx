@@ -253,7 +253,6 @@ export default function PrepVideoCall({
 
     // Reset tracking
     remoteCameraStreamRef.current = null;
-    remoteScreenStreamRef.current = null;
 
     let wsUrl = "";
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
@@ -310,24 +309,7 @@ export default function PrepVideoCall({
         }
 
         case "peer-joined":
-          // Reset old peer connection state if peer is reconnecting
-          if (pcRef.current) {
-            pcRef.current.close();
-            pcRef.current = null;
-          }
-          remoteCameraStreamRef.current = null;
-          remoteScreenStreamRef.current = null;
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = null;
-          }
-          setRemoteScreenSharing(false);
-          remoteScreenSharingRef.current = false;
-          if (onScreenShareChangeRef.current) {
-            onScreenShareChangeRef.current(null);
-          }
-
           setPeerJoined(true);
-
           if (isInitiatorRef.current) {
             await createAndSendOffer();
           }
@@ -344,13 +326,6 @@ export default function PrepVideoCall({
           if (onScreenShareChangeRef.current) {
             onScreenShareChangeRef.current(null);
           }
-
-          // Reset peer connection for next peer
-          if (pcRef.current) {
-            pcRef.current.close();
-            pcRef.current = null;
-          }
-
           setPeerJoined(false);
           break;
 
@@ -387,7 +362,7 @@ export default function PrepVideoCall({
         console.warn("Error adding ICE candidate", err);
       }
     }
-    // Screen share signals
+    // 🔥 Screen share signals
     else if (signalType === "screen-share-start") {
       setRemoteScreenSharing(true);
       remoteScreenSharingRef.current = true; // Update ref immediately for ontrack
@@ -479,12 +454,12 @@ export default function PrepVideoCall({
     try {
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
-        audio: true,
+        audio: true, // 🔊 Enable system audio sharing
       });
 
       screenStreamRef.current = displayStream;
       const displayTrack = displayStream.getVideoTracks()[0];
-      const displayAudioTrack = displayStream.getAudioTracks()[0];
+      const displayAudioTrack = displayStream.getAudioTracks()[0]; // May be null if user didn't check "Share audio"
       const pc = pcRef.current;
 
       // Signal remote FIRST so they know the next video track is screen share
@@ -505,7 +480,7 @@ export default function PrepVideoCall({
           pc.addTrack(displayAudioTrack, displayStream);
         }
 
-        // Explicit renegotiation so this works even if we're NOT the initiator
+        // 🔥 Explicit renegotiation so this works even if we're NOT the initiator
         try {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
@@ -541,7 +516,7 @@ export default function PrepVideoCall({
         pc.removeTrack(screenSenderRef.current);
         screenSenderRef.current = null;
 
-        // Explicit renegotiation after removing the screen track
+        // 🔥 Explicit renegotiation after removing the screen track
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         sendSignal("offer", pc.localDescription);
