@@ -9,33 +9,48 @@ import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import ClassroomChat from "./ClassroomChat";
 
+function extractName(obj) {
+  if (!obj) return "";
+  if (obj.fullName) return obj.fullName;
+  if (obj.name) return obj.name;
+  const first = obj.firstName || obj.givenName || "";
+  const last = obj.lastName || obj.familyName || "";
+  return [first, last].filter(Boolean).join(" ");
+}
+
 export default function ClassroomShell({ session, sessionId, tracks }) {
   // ─────────────────────────────────────────────────────────────
-  // ROLE + USER INFO (safe, no crashes if fields are missing)
+  // SESSION PARTICIPANTS
   // ─────────────────────────────────────────────────────────────
-  const userObj = session?.user || session || {};
+  const teacherUser =
+    session?.teacher?.user || session?.teacher || session?.tutor || null;
+
+  const learnerUser =
+    session?.learner?.user || session?.learner || session?.student || null;
+
+  // who am *I*?
+  const currentUser =
+    session?.user || session?.currentUser || teacherUser || learnerUser || {};
 
   const isTeacher =
-    userObj.role === "teacher" ||
-    userObj.isTeacher === true ||
-    userObj.userType === "teacher" ||
+    currentUser.role === "teacher" ||
+    currentUser.isTeacher === true ||
+    currentUser.userType === "teacher" ||
     session?.role === "teacher" ||
     session?.isTeacher === true ||
     session?.userType === "teacher";
 
-  const userId = userObj.id ?? userObj._id ?? session?.userId ?? null;
+  const userId = currentUser.id ?? currentUser._id ?? session?.userId ?? null;
 
-  const firstName =
-    userObj.firstName || userObj.givenName || userObj.name || "";
+  const teacherName = extractName(teacherUser) || "Teacher";
+  const learnerName = extractName(learnerUser) || "Learner";
 
-  const lastName = userObj.lastName || userObj.familyName || "";
-
-  const userName =
-    [firstName, lastName].filter(Boolean).join(" ") ||
-    (isTeacher ? "Teacher" : "Learner");
+  // this is the name we’ll stamp on messages we SEND
+  const userName = isTeacher ? teacherName : learnerName;
+  const otherName = isTeacher ? learnerName : teacherName;
 
   // ─────────────────────────────────────────────────────────────
-  // RESOURCE INDEX
+  // RESOURCES
   // ─────────────────────────────────────────────────────────────
   const { resourcesById } = useMemo(
     () => buildResourceIndex(tracks || []),
@@ -46,17 +61,14 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const [screenShareStream, setScreenShareStream] = useState(null);
 
   // ─────────────────────────────────────────────────────────────
-  // REAL-TIME CLASSROOM CHANNEL (defensive)
+  // REAL-TIME CHANNEL
   // ─────────────────────────────────────────────────────────────
   const classroomChannel = useClassroomChannel(String(sessionId));
-
   const ready = classroomChannel?.ready ?? false;
   const send = classroomChannel?.send ?? (() => {});
   const subscribe = classroomChannel?.subscribe ?? (() => () => {});
 
-  // ─────────────────────────────────────────────────────────────
-  // LEARNER: listen for teacher changing the resource
-  // ─────────────────────────────────────────────────────────────
+  // Learner listens for teacher resource changes
   useEffect(() => {
     if (!ready) return;
 
@@ -72,9 +84,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     return unsubscribe;
   }, [ready, resourcesById, subscribe]);
 
-  // ─────────────────────────────────────────────────────────────
-  // TEACHER: auto-select first resource on load
-  // ─────────────────────────────────────────────────────────────
+  // Teacher: auto-select first resource
   useEffect(() => {
     if (!isTeacher) return;
     if (selectedResourceId) return;
@@ -88,9 +98,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     setSelectedResourceId(first._id);
   }, [isTeacher, resourcesById, selectedResourceId]);
 
-  // ─────────────────────────────────────────────────────────────
-  // TEACHER: broadcast resource changes
-  // ─────────────────────────────────────────────────────────────
+  // Teacher: broadcast resource changes
   useEffect(() => {
     if (!isTeacher || !ready || !selectedResourceId) return;
     send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
@@ -134,7 +142,8 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
             classroomChannel={classroomChannel}
             sessionId={sessionId}
             userId={userId}
-            userName={userName}
+            userName={userName} // now Teacher vs Learner correctly
+            otherName={otherName} // optional, if you want it later
             isTeacher={isTeacher}
           />
         </div>
@@ -177,7 +186,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
                   : "Waiting for your teacher to pick a resource."}
               </p>
 
-              {/* Fallback: show screen share even without a resource */}
               {screenShareStream && (
                 <div style={{ marginTop: "20px", width: "100%" }}>
                   <video
