@@ -109,7 +109,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const { teacherId, learnerId, teacherName, learnerName } =
     getParticipantsFromSession(session);
 
-  // Decide role for the *current viewer*
+  // Decide role (keep all the checks you had before)
   const isTeacher =
     session?.role === "teacher" ||
     session?.isTeacher === true ||
@@ -118,13 +118,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   const userId = isTeacher ? teacherId : learnerId;
   const userName = isTeacher ? teacherName : learnerName;
-
-  // This viewer object is what we pass to ClassroomChat
-  const classroomViewer = {
-    id: userId ?? null,
-    name: userName ?? "",
-    role: isTeacher ? "teacher" : "learner",
-  };
 
   // ─── Resources index ────────────────────────────────────────
   const { resourcesById } = useMemo(
@@ -188,9 +181,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId] || null
     : null;
-
-  // This viewer is for the PrepShell (resource viewer), so give it a different name
-  const resourceViewer = resource ? getViewerInfo(resource) : null;
+  const viewer = resource ? getViewerInfo(resource) : null;
 
   return (
     <div className="classroom-layout">
@@ -199,13 +190,13 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         <PrepVideoCall
           roomId={sessionId}
           isTeacher={isTeacher}
-          onScreenShareStreamChange={handleScreenShareStreamChange}
+          onScreenShareStreamChange={setScreenShareStream}
         />
 
         <ClassroomChat
           classroomChannel={classroomChannel}
           sessionId={sessionId}
-          viewer={classroomViewer}
+          isTeacher={isTeacher}
           teacherName={teacherName}
           learnerName={learnerName}
         />
@@ -226,7 +217,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           {resource ? (
             <PrepShell
               resource={resource}
-              viewer={resourceViewer}
+              viewer={viewer}
               hideSidebar
               hideBreadcrumbs
               classroomChannel={classroomChannel}
