@@ -725,23 +725,6 @@ export default function PrepVideoCall({
           >
             {screenOn ? "🖥 Stop share" : "🖥 Share screen"}
           </button>
-
-          {/* Quality selector – choose before starting call */}
-          <div className="prep-video__quality">
-            <label className="prep-video__quality-label">
-              Quality:
-              <select
-                className="prep-video__quality-select"
-                value={quality}
-                onChange={(e) => setQuality(e.target.value)}
-                disabled={!canChangeQuality}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </label>
-          </div>
         </div>
 
         {status === "connecting" && (
