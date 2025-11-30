@@ -1784,6 +1784,17 @@
   justify-content: flex-end;
 }
 
+/* Role-based colours (teacher vs learner) */
+.classroom-chat__message--teacher .classroom-chat__bubble {
+  background: #0f766e; /* teal */
+  border-color: #14b8a6;
+}
+
+.classroom-chat__message--learner .classroom-chat__bubble {
+  background: #1d4ed8; /* blue */
+  border-color: #60a5fa;
+}
+
 .classroom-chat__bubble {
   max-width: 80%;
   border-radius: 12px;
@@ -1791,11 +1802,6 @@
   background: rgba(15, 23, 42, 0.95);
   border: 1px solid rgba(55, 65, 81, 0.9);
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.6);
-}
-
-.classroom-chat__message--self .classroom-chat__bubble {
-  background: #0f766e;
-  border-color: #14b8a6;
 }
 
 .classroom-chat__bubble-label {
@@ -1807,8 +1813,12 @@
   margin-bottom: 0.05rem;
 }
 
-.classroom-chat__message--self .classroom-chat__bubble-label {
+.classroom-chat__message--teacher .classroom-chat__bubble-label {
   color: #d1fae5;
+}
+
+.classroom-chat__message--learner .classroom-chat__bubble-label {
+  color: #dbeafe;
 }
 
 .classroom-chat__bubble-text {

@@ -10,6 +10,8 @@ import { useEffect, useRef, useState } from "react";
  *  - classroomChannel: { ready, send, subscribe }
  *  - sessionId: string
  *  - isTeacher: boolean
+ *  - teacherName?: string
+ *  - learnerName?: string
  */
 export default function ClassroomChat({
   classroomChannel,
@@ -69,27 +71,45 @@ export default function ClassroomChat({
     setInput("");
   }
 
+  const viewerRole = isTeacher ? "teacher" : "learner";
+  const viewerLabel = isTeacher ? teacherName : learnerName;
+
   return (
-    <div className="classroom-chat">
+    <div className="classroom-chat" aria-label="Classroom chat panel">
       <div className="classroom-chat__header">
         <span className="classroom-chat__title">Classroom chat</span>
         <span className="classroom-chat__role">
-          You are {isTeacher ? "Teacher" : "Learner"}
+          You are{" "}
+          <strong>
+            {viewerLabel} ({isTeacher ? "Teacher" : "Learner"})
+          </strong>
         </span>
       </div>
 
-      <div className="classroom-chat__messages">
+      <div
+        className="classroom-chat__messages"
+        role="list"
+        aria-label="Chat messages"
+      >
         {messages.map((m, idx) => {
-          const isSelf = m.fromRole === (isTeacher ? "teacher" : "learner");
-          const label = m.fromRole === "teacher" ? teacherName : learnerName;
+          const isFromTeacher = m.fromRole === "teacher";
+          const isSelf = m.fromRole === viewerRole;
+          const label = isFromTeacher ? teacherName : learnerName;
+
+          const roleClass = isFromTeacher
+            ? " classroom-chat__message--teacher"
+            : " classroom-chat__message--learner";
 
           return (
             <div
               key={m.ts ?? idx}
               className={
                 "classroom-chat__message" +
-                (isSelf ? " classroom-chat__message--self" : "")
+                (isSelf ? " classroom-chat__message--self" : "") +
+                roleClass
               }
+              role="listitem"
+              aria-label={`${label}: ${m.text}`}
             >
               <div className="classroom-chat__bubble">
                 <div className="classroom-chat__bubble-label">{label}</div>
@@ -101,13 +121,18 @@ export default function ClassroomChat({
         <div ref={messagesEndRef} />
       </div>
 
-      <form className="classroom-chat__form" onSubmit={handleSubmit}>
+      <form
+        className="classroom-chat__form"
+        onSubmit={handleSubmit}
+        aria-label="Send a message"
+      >
         <input
           className="classroom-chat__input"
           type="text"
           placeholder="Type a message…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          aria-label="Chat message"
         />
         <button className="classroom-chat__send" type="submit">
           Send
