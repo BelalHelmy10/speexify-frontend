@@ -46,102 +46,6 @@ function buildIceServers() {
 
 const ICE_SERVERS = buildIceServers();
 
-/**
- * Media constraints per quality level.
- * We keep audio: true always, and tune video resolution / fps.
- */
-function getMediaConstraintsForQuality(quality) {
-  switch (quality) {
-    case "low":
-      return {
-        audio: true,
-        video: {
-          width: { ideal: 640, max: 960 },
-          height: { ideal: 360, max: 540 },
-          frameRate: { ideal: 20, max: 30 },
-        },
-      };
-    case "high":
-      return {
-        audio: true,
-        video: {
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 },
-          frameRate: { ideal: 30, max: 30 },
-        },
-      };
-    case "medium":
-    default:
-      return {
-        audio: true,
-        video: {
-          width: { ideal: 960, max: 1280 },
-          height: { ideal: 540, max: 720 },
-          frameRate: { ideal: 24, max: 30 },
-        },
-      };
-  }
-}
-
-/**
- * Max video bitrate per quality (in kbps).
- */
-function getMaxKbpsForQuality(quality) {
-  switch (quality) {
-    case "low":
-      return 600; // ~0.6 Mbps
-    case "high":
-      return 2500; // up to 2.5 Mbps for good connections
-    case "medium":
-    default:
-      return 1200; // ~1.2 Mbps
-  }
-}
-
-/**
- * Apply a bandwidth cap to outgoing video.
- */
-function applyBandwidthLimit(pc, maxKbps) {
-  if (!pc || !maxKbps) return;
-
-  pc.getSenders().forEach((sender) => {
-    if (!sender.track || sender.track.kind !== "video") return;
-
-    const params = sender.getParameters() || {};
-    if (!params.encodings || params.encodings.length === 0) {
-      params.encodings = [{}];
-    }
-
-    params.encodings[0].maxBitrate = maxKbps * 1000; // kbps → bps
-
-    sender
-      .setParameters(params)
-      .catch((err) =>
-        console.warn("[PrepVideoCall] Failed to set maxBitrate", err)
-      );
-  });
-}
-
-/**
- * Log connection state & try to recover from ICE failures.
- */
-function attachConnectionDebug(pc, label) {
-  pc.addEventListener("iceconnectionstatechange", () => {
-    console.log(`[${label}] iceConnectionState:`, pc.iceConnectionState);
-
-    if (pc.iceConnectionState === "failed") {
-      if (pc.restartIce) {
-        console.log(`[${label}] ICE failed, restarting ICE…`);
-        pc.restartIce();
-      }
-    }
-  });
-
-  pc.addEventListener("connectionstatechange", () => {
-    console.log(`[${label}] connectionState:`, pc.connectionState);
-  });
-}
-
 export default function PrepVideoCall({
   roomId,
   isTeacher = false,
@@ -158,8 +62,6 @@ export default function PrepVideoCall({
   const [isInitiator, setIsInitiator] = useState(false);
   const isInitiatorRef = useRef(false);
   const [peerJoined, setPeerJoined] = useState(false);
-
-  const [quality, setQuality] = useState("medium"); // "low" | "medium" | "high"
 
   const wsRef = useRef(null);
   const pcRef = useRef(null);
@@ -193,12 +95,7 @@ export default function PrepVideoCall({
   function createPeerConnection() {
     if (pcRef.current) return pcRef.current;
 
-    const pc = new RTCPeerConnection({
-      iceServers: ICE_SERVERS,
-      iceTransportPolicy: "all",
-    });
-
-    attachConnectionDebug(pc, isTeacher ? "teacher" : "learner");
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -214,14 +111,17 @@ export default function PrepVideoCall({
       const streamId = stream.id;
 
       if (track.kind === "audio") {
-        // Screen share audio (same stream as screen share video)
+        // Check if this audio belongs to a screen share stream (not camera)
+        // Screen share audio will come with the same stream as screen share video
         if (remoteScreenSharingRef.current && remoteScreenStreamRef.current) {
+          // If this audio is from the screen share stream, don't add to camera
           if (streamId === remoteScreenStreamRef.current.id) {
+            // Audio is already part of screen share stream, nothing to do
             return;
           }
         }
 
-        // Camera/mic audio → remote camera stream
+        // This is camera/microphone audio - add to camera stream
         if (remoteCameraStreamRef.current) {
           const existingAudio = remoteCameraStreamRef.current.getAudioTracks();
           if (existingAudio.length === 0) {
@@ -237,7 +137,9 @@ export default function PrepVideoCall({
       }
 
       if (track.kind === "video") {
-        // If we DON'T have a camera stream yet, treat this as camera
+        // KEY DECISION: Is this a camera or screen share?
+
+        // If we DON'T have a camera stream yet, this is the camera
         if (!remoteCameraStreamRef.current) {
           remoteCameraStreamRef.current = stream;
           if (remoteVideoRef.current) {
@@ -246,14 +148,18 @@ export default function PrepVideoCall({
           return;
         }
 
+        // We already have a camera stream...
         // If remote is screen sharing, this new track is the screen share
         if (remoteScreenSharingRef.current) {
+          // Store the screen share stream reference (for audio routing check)
           remoteScreenStreamRef.current = stream;
 
+          // Pass to parent for main viewer (right side)
           if (onScreenShareChangeRef.current) {
             onScreenShareChangeRef.current(stream);
           }
 
+          // When track ends, clear screen share
           track.onended = () => {
             remoteScreenStreamRef.current = null;
             if (onScreenShareChangeRef.current) {
@@ -263,7 +169,7 @@ export default function PrepVideoCall({
           return;
         }
 
-        // Not screen sharing - update camera stream
+        // Not screen sharing - might be camera renegotiation, update camera
         remoteCameraStreamRef.current = stream;
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = stream;
@@ -271,12 +177,13 @@ export default function PrepVideoCall({
       }
     };
 
-    pc.onconnectionstatechange = () => {
-      // handled in attachConnectionDebug
-    };
+    pc.onconnectionstatechange = () => {};
 
-    // We explicitly renegotiate for screen share; keep this no-op
-    pc.onnegotiationneeded = () => {};
+    // Handle negotiation needed (when we add/remove tracks)
+    pc.onnegotiationneeded = () => {
+      // Intentionally empty - renegotiation is handled explicitly
+      // in startScreenShare/stopScreenShare so it works from either peer.
+    };
 
     pcRef.current = pc;
     return pc;
@@ -286,8 +193,10 @@ export default function PrepVideoCall({
     if (localStreamRef.current) return localStreamRef.current;
 
     try {
-      const constraints = getMediaConstraintsForQuality(quality);
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
 
       localStreamRef.current = stream;
 
@@ -296,13 +205,9 @@ export default function PrepVideoCall({
       }
 
       const pc = createPeerConnection();
-
       stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
       });
-
-      // Apply bitrate cap based on selected quality
-      applyBandwidthLimit(pc, getMaxKbpsForQuality(quality));
 
       toggleTracksEnabled(stream.getAudioTracks(), micOn);
       toggleTracksEnabled(stream.getVideoTracks(), camOn);
@@ -554,7 +459,7 @@ export default function PrepVideoCall({
 
       screenStreamRef.current = displayStream;
       const displayTrack = displayStream.getVideoTracks()[0];
-      const displayAudioTrack = displayStream.getAudioTracks()[0]; // May be null
+      const displayAudioTrack = displayStream.getAudioTracks()[0]; // May be null if user didn't check "Share audio"
       const pc = pcRef.current;
 
       // Signal remote FIRST so they know the next video track is screen share
@@ -564,16 +469,18 @@ export default function PrepVideoCall({
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       if (pc) {
+        // Add video track
         if (displayTrack) {
           const sender = pc.addTrack(displayTrack, displayStream);
           screenSenderRef.current = sender;
         }
 
+        // Add audio track if available
         if (displayAudioTrack) {
           pc.addTrack(displayAudioTrack, displayStream);
         }
 
-        // Explicit renegotiation so this works even if we're NOT the initiator
+        // 🔥 Explicit renegotiation so this works even if we're NOT the initiator
         try {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
@@ -609,7 +516,7 @@ export default function PrepVideoCall({
         pc.removeTrack(screenSenderRef.current);
         screenSenderRef.current = null;
 
-        // Explicit renegotiation after removing the screen track
+        // 🔥 Explicit renegotiation after removing the screen track
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         sendSignal("offer", pc.localDescription);
@@ -647,8 +554,6 @@ export default function PrepVideoCall({
   }, []);
 
   const inCall = status === "in-call";
-
-  const canChangeQuality = status === "idle"; // keep it simple: change before joining
 
   return (
     <section className="prep-video">
@@ -725,23 +630,6 @@ export default function PrepVideoCall({
           >
             {screenOn ? "🖥 Stop share" : "🖥 Share screen"}
           </button>
-
-          {/* Quality selector – choose before starting call */}
-          <div className="prep-video__quality">
-            <label className="prep-video__quality-label">
-              Quality:
-              <select
-                className="prep-video__quality-select"
-                value={quality}
-                onChange={(e) => setQuality(e.target.value)}
-                disabled={!canChangeQuality}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </label>
-          </div>
         </div>
 
         {status === "connecting" && (
