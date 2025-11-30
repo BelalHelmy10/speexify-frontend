@@ -158,6 +158,10 @@ export default function PrepVideoCall({
   const [isInitiator, setIsInitiator] = useState(false);
   const isInitiatorRef = useRef(false);
   const [peerJoined, setPeerJoined] = useState(false);
+  const peerJoinedRef = useRef(false);
+  useEffect(() => {
+    peerJoinedRef.current = peerJoined;
+  }, [peerJoined]);
 
   const [quality, setQuality] = useState("medium"); // "low" | "medium" | "high"
 
@@ -395,24 +399,34 @@ export default function PrepVideoCall({
           setStatus("idle");
           break;
         case "joined": {
-          // We *always* make the teacher the initiator, learner is never initiator.
+          // Teacher is always the initiator; learner never is.
           const flag = !!isTeacher;
           setIsInitiator(flag);
           isInitiatorRef.current = flag;
 
           await startLocalMedia();
+
+          // 🔥 If we already know a peer is in the room (peer-joined came first),
+          // and we are the initiator (teacher), send the offer now.
+          if (flag && peerJoinedRef.current) {
+            await createAndSendOffer();
+          }
+
           break;
         }
 
         case "peer-joined":
           setPeerJoined(true);
+          peerJoinedRef.current = true;
+
+          // If we are initiator *already*, send the offer now.
+          // (If not, joined() will handle it when it runs.)
           if (isInitiatorRef.current) {
             await createAndSendOffer();
           }
           break;
 
         case "peer-left":
-          // Clear remote media
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = null;
           }
@@ -423,9 +437,11 @@ export default function PrepVideoCall({
           if (onScreenShareChangeRef.current) {
             onScreenShareChangeRef.current(null);
           }
-          setPeerJoined(false);
 
-          // Reset initiator strictly based on role (teacher = initiator, learner = not)
+          setPeerJoined(false);
+          peerJoinedRef.current = false;
+
+          // Teacher is initiator, learner is not
           setIsInitiator(!!isTeacher);
           isInitiatorRef.current = !!isTeacher;
 
