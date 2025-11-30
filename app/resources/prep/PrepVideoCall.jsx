@@ -394,11 +394,12 @@ export default function PrepVideoCall({
           setError("This prep room already has two participants.");
           setStatus("idle");
           break;
-
         case "joined": {
-          const flag = !!msg.isInitiator;
+          // We *always* make the teacher the initiator, learner is never initiator.
+          const flag = !!isTeacher;
           setIsInitiator(flag);
           isInitiatorRef.current = flag;
+
           await startLocalMedia();
           break;
         }
@@ -424,10 +425,9 @@ export default function PrepVideoCall({
           }
           setPeerJoined(false);
 
-          // 🔥 IMPORTANT:
-          // If the other side left, we become the initiator for the next peer that joins.
-          setIsInitiator(true);
-          isInitiatorRef.current = true;
+          // Reset initiator strictly based on role (teacher = initiator, learner = not)
+          setIsInitiator(!!isTeacher);
+          isInitiatorRef.current = !!isTeacher;
 
           break;
 
