@@ -411,6 +411,7 @@ export default function PrepVideoCall({
           break;
 
         case "peer-left":
+          // Clear remote media
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = null;
           }
@@ -422,6 +423,12 @@ export default function PrepVideoCall({
             onScreenShareChangeRef.current(null);
           }
           setPeerJoined(false);
+
+          // 🔥 IMPORTANT:
+          // If the other side left, we become the initiator for the next peer that joins.
+          setIsInitiator(true);
+          isInitiatorRef.current = true;
+
           break;
 
         case "signal":
