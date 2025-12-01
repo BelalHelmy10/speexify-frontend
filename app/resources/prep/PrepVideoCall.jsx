@@ -70,20 +70,16 @@ export default function PrepVideoCall({
 
   const screenSenderRef = useRef(null);
 
-  // Store the remote camera stream separately
+  // Track by TRACK ID (stable across renegotiation)
+  const remoteCameraTrackIdRef = useRef(null);
+  const remoteScreenTrackIdRef = useRef(null);
+
+  // Store streams for display
   const remoteCameraStreamRef = useRef(null);
-
-  // Store the camera stream ID so we can identify it later
-  const remoteCameraStreamIdRef = useRef(null);
-
-  // Store the remote screen share stream
   const remoteScreenStreamRef = useRef(null);
 
-  // Track remote screen sharing state in a ref for use in ontrack
+  // Track remote screen sharing state
   const remoteScreenSharingRef = useRef(false);
-
-  // Queue to hold video tracks that arrive before we know if they're screen share
-  const pendingVideoTracksRef = useRef([]);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -93,63 +89,9 @@ export default function PrepVideoCall({
     onScreenShareChangeRef.current = onScreenShareStreamChange;
   }, [onScreenShareStreamChange]);
 
-  // Keep ref in sync with state
   useEffect(() => {
     remoteScreenSharingRef.current = remoteScreenSharing;
   }, [remoteScreenSharing]);
-
-  // Process any pending video tracks when screen share signal arrives
-  function processPendingTracks() {
-    const pending = pendingVideoTracksRef.current;
-    pendingVideoTracksRef.current = [];
-
-    pending.forEach(({ track, stream }) => {
-      handleVideoTrack(track, stream);
-    });
-  }
-
-  // Centralized video track handling
-  function handleVideoTrack(track, stream) {
-    const streamId = stream.id;
-
-    // If we don't have a camera stream yet, this is the camera
-    if (!remoteCameraStreamRef.current) {
-      remoteCameraStreamRef.current = stream;
-      remoteCameraStreamIdRef.current = streamId;
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = stream;
-      }
-      return;
-    }
-
-    // If this is the same stream ID as camera, it's a camera update
-    if (streamId === remoteCameraStreamIdRef.current) {
-      remoteCameraStreamRef.current = stream;
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = stream;
-      }
-      return;
-    }
-
-    // Different stream ID - this is screen share!
-    // (Either we already got the signal, or we detect it by stream ID)
-    remoteScreenStreamRef.current = stream;
-
-    // Pass to parent for main viewer (right side)
-    if (onScreenShareChangeRef.current) {
-      onScreenShareChangeRef.current(stream);
-    }
-
-    // When track ends, clear screen share
-    track.onended = () => {
-      remoteScreenStreamRef.current = null;
-      setRemoteScreenSharing(false);
-      remoteScreenSharingRef.current = false;
-      if (onScreenShareChangeRef.current) {
-        onScreenShareChangeRef.current(null);
-      }
-    };
-  }
 
   function createPeerConnection() {
     if (pcRef.current) return pcRef.current;
@@ -162,49 +104,110 @@ export default function PrepVideoCall({
       }
     };
 
-    // Handle incoming tracks
     pc.ontrack = (event) => {
       const track = event.track;
+      const trackId = track.id;
       const streams = event.streams;
       const stream = streams[0] || new MediaStream([track]);
-      const streamId = stream.id;
+
+      console.log(
+        "[PrepVideoCall] ontrack:",
+        track.kind,
+        "trackId:",
+        trackId,
+        "remoteScreenSharing:",
+        remoteScreenSharingRef.current
+      );
 
       if (track.kind === "audio") {
-        // Check if this audio belongs to screen share stream
+        // If this is screen share audio (same stream as screen video), skip
         if (
           remoteScreenStreamRef.current &&
-          streamId === remoteScreenStreamRef.current.id
+          stream.id === remoteScreenStreamRef.current.id
         ) {
-          // Audio is part of screen share, already handled
           return;
         }
 
-        // This is camera/microphone audio
+        // Add audio to camera stream
         if (remoteCameraStreamRef.current) {
           const existingAudio = remoteCameraStreamRef.current.getAudioTracks();
           if (existingAudio.length === 0) {
             remoteCameraStreamRef.current.addTrack(track);
-          }
-        } else {
-          remoteCameraStreamRef.current = stream;
-          remoteCameraStreamIdRef.current = streamId;
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = stream;
           }
         }
         return;
       }
 
       if (track.kind === "video") {
-        handleVideoTrack(track, stream);
+        // Case 1: This is a track we've seen before (camera track ID matches)
+        if (trackId === remoteCameraTrackIdRef.current) {
+          console.log("[PrepVideoCall] Updating existing camera track");
+          remoteCameraStreamRef.current = stream;
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = stream;
+          }
+          return;
+        }
+
+        // Case 2: This is a track we've seen before (screen track ID matches)
+        if (trackId === remoteScreenTrackIdRef.current) {
+          console.log("[PrepVideoCall] Updating existing screen track");
+          remoteScreenStreamRef.current = stream;
+          if (onScreenShareChangeRef.current) {
+            onScreenShareChangeRef.current(stream);
+          }
+          return;
+        }
+
+        // Case 3: New track - determine if it's camera or screen share
+
+        // If we don't have a camera yet, this is the camera
+        if (!remoteCameraTrackIdRef.current) {
+          console.log("[PrepVideoCall] Setting as CAMERA track:", trackId);
+          remoteCameraTrackIdRef.current = trackId;
+          remoteCameraStreamRef.current = stream;
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = stream;
+          }
+          return;
+        }
+
+        // We already have a camera, and remote is screen sharing → this is screen share
+        if (remoteScreenSharingRef.current) {
+          console.log("[PrepVideoCall] Setting as SCREEN track:", trackId);
+          remoteScreenTrackIdRef.current = trackId;
+          remoteScreenStreamRef.current = stream;
+
+          if (onScreenShareChangeRef.current) {
+            onScreenShareChangeRef.current(stream);
+          }
+
+          track.onended = () => {
+            console.log("[PrepVideoCall] Screen track ended");
+            remoteScreenTrackIdRef.current = null;
+            remoteScreenStreamRef.current = null;
+            if (onScreenShareChangeRef.current) {
+              onScreenShareChangeRef.current(null);
+            }
+          };
+          return;
+        }
+
+        // Edge case: new track but not screen sharing - might be camera replacement
+        console.log(
+          "[PrepVideoCall] New track, not screen sharing - treating as camera update:",
+          trackId
+        );
+        remoteCameraTrackIdRef.current = trackId;
+        remoteCameraStreamRef.current = stream;
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = stream;
+        }
       }
     };
 
     pc.onconnectionstatechange = () => {};
-
-    pc.onnegotiationneeded = () => {
-      // Intentionally empty - renegotiation is handled explicitly
-    };
+    pc.onnegotiationneeded = () => {};
 
     pcRef.current = pc;
     return pc;
@@ -272,11 +275,11 @@ export default function PrepVideoCall({
     setError("");
     setStatus("connecting");
 
-    // Reset tracking
+    // Reset all tracking
+    remoteCameraTrackIdRef.current = null;
+    remoteScreenTrackIdRef.current = null;
     remoteCameraStreamRef.current = null;
-    remoteCameraStreamIdRef.current = null;
     remoteScreenStreamRef.current = null;
-    pendingVideoTracksRef.current = [];
 
     let wsUrl = "";
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
@@ -325,7 +328,6 @@ export default function PrepVideoCall({
           break;
 
         case "joined": {
-          // Use server's isInitiator flag
           const flag = !!msg.isInitiator;
           setIsInitiator(flag);
           isInitiatorRef.current = flag;
@@ -344,8 +346,9 @@ export default function PrepVideoCall({
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = null;
           }
+          remoteCameraTrackIdRef.current = null;
+          remoteScreenTrackIdRef.current = null;
           remoteCameraStreamRef.current = null;
-          remoteCameraStreamIdRef.current = null;
           remoteScreenStreamRef.current = null;
           setRemoteScreenSharing(false);
           remoteScreenSharingRef.current = false;
@@ -388,15 +391,16 @@ export default function PrepVideoCall({
         console.warn("Error adding ICE candidate", err);
       }
     }
-    // Screen share signals (still useful for UI state)
+    // Screen share signals - SET THE FLAG BEFORE TRACKS ARRIVE
     else if (signalType === "screen-share-start") {
+      console.log("[PrepVideoCall] Received screen-share-start signal");
       setRemoteScreenSharing(true);
       remoteScreenSharingRef.current = true;
-      // Process any tracks that arrived before this signal
-      processPendingTracks();
     } else if (signalType === "screen-share-stop") {
+      console.log("[PrepVideoCall] Received screen-share-stop signal");
       setRemoteScreenSharing(false);
       remoteScreenSharingRef.current = false;
+      remoteScreenTrackIdRef.current = null;
       remoteScreenStreamRef.current = null;
       if (onScreenShareChangeRef.current) {
         onScreenShareChangeRef.current(null);
@@ -433,10 +437,10 @@ export default function PrepVideoCall({
     setScreenOn(false);
     setRemoteScreenSharing(false);
     remoteScreenSharingRef.current = false;
+    remoteCameraTrackIdRef.current = null;
+    remoteScreenTrackIdRef.current = null;
     remoteCameraStreamRef.current = null;
-    remoteCameraStreamIdRef.current = null;
     remoteScreenStreamRef.current = null;
-    pendingVideoTracksRef.current = [];
 
     if (pcRef.current) {
       pcRef.current.close();
@@ -493,11 +497,11 @@ export default function PrepVideoCall({
       const displayAudioTrack = displayStream.getAudioTracks()[0];
       const pc = pcRef.current;
 
-      // Signal remote FIRST
+      // Signal remote FIRST - wait for it to be processed
       sendSignal("screen-share-start", {});
 
-      // Longer delay to ensure signal arrives before track
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // Wait longer to ensure signal arrives and is processed before track
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       if (pc) {
         if (displayTrack) {
