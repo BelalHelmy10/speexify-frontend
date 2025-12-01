@@ -108,7 +108,7 @@ function SessionRow({
         <div className="session-item__actions">
           {isUpcoming ? (
             <>
-              {/* NEW: built-in classroom join button */}
+              {/* built-in classroom join button */}
               <Link
                 href={`/classroom/${s.id}`}
                 className={`btn ${
@@ -196,7 +196,6 @@ function SessionRow({
   );
 }
 
-// --- rest of the file is unchanged ---
 function Modal({ title, children, onClose }) {
   return (
     <div className="modal">
@@ -523,7 +522,8 @@ export default function Dashboard() {
         />
       </div>
 
-      {outOfCredits && (
+      {/* Out-of-credits warning – learners only */}
+      {!isTeacher && outOfCredits && (
         <div
           className="panel panel--warning"
           style={{ borderLeft: "4px solid #f59e0b" }}
@@ -546,150 +546,153 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="panel panel--featured">
-        <div className="panel__badge">Your plan</div>
+      {/* Plan / packages panel – learners only */}
+      {!isTeacher && (
+        <div className="panel panel--featured">
+          <div className="panel__badge">Your plan</div>
 
-        {activePacks.length === 0 ? (
-          <div className="empty-state">
-            <svg
-              width="48"
-              height="48"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-            <p>No active packages yet.</p>
-            <div className="button-row">
-              <Link href="/packages" className="btn btn--primary">
-                Browse packages
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <>
-            <h3 className="next-session__title">
-              {primaryPack?.title || "Your plan"}
-            </h3>
-            <div className="next-session__time" style={{ marginTop: 6 }}>
+          {activePacks.length === 0 ? (
+            <div className="empty-state">
               <svg
-                width="16"
-                height="16"
+                width="48"
+                height="48"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="1.5"
               >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
               </svg>
-              {primaryPack?.minutesPerSession
-                ? `${primaryPack.minutesPerSession} min / session`
-                : "Flexible duration"}
-              {expiryLabel ? ` · Expires ${expiryLabel}` : ""}
-            </div>
-
-            <div className="progress" style={{ margin: "16px 0 8px" }}>
-              <div
-                className="progress__bar"
-                style={{
-                  height: 8,
-                  borderRadius: 999,
-                  background: "var(--surface-3, #eef1f4)",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    width: `${progressPct}%`,
-                    height: "100%",
-                    borderRadius: 999,
-                    background:
-                      "linear-gradient(90deg, rgba(58,123,213,1) 0%, rgba(58,213,180,1) 100%)",
-                    transition: "width .3s ease",
-                  }}
-                />
-              </div>
-              <div
-                className="progress__label"
-                style={{ fontSize: 12, marginTop: 6, opacity: 0.8 }}
-              >
-                {remainingSessions} of {totalSessions} sessions remaining
+              <p>No active packages yet.</p>
+              <div className="button-row">
+                <Link href="/packages" className="btn btn--primary">
+                  Browse packages
+                </Link>
               </div>
             </div>
-
-            {pendingActionsCount > 0 && (
-              <div className="alert-badge">
+          ) : (
+            <>
+              <h3 className="next-session__title">
+                {primaryPack?.title || "Your plan"}
+              </h3>
+              <div className="next-session__time" style={{ marginTop: 6 }}>
                 <svg
                   width="16"
                   height="16"
                   viewBox="0 0 24 24"
-                  fill="currentColor"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
                 >
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
                 </svg>
-                {pendingActionsCount === 2
-                  ? "2 required actions"
-                  : "1 required action"}
+                {primaryPack?.minutesPerSession
+                  ? `${primaryPack.minutesPerSession} min / session`
+                  : "Flexible duration"}
+                {expiryLabel ? ` · Expires ${expiryLabel}` : ""}
               </div>
-            )}
 
-            <div className="button-row" style={{ gap: 12, flexWrap: "wrap" }}>
-              <Link
-                href="/onboarding"
-                className={`btn ${
-                  onbComplete ? "btn--ghost" : "btn--primary btn--pulse"
-                }`}
-              >
-                {!onbComplete && (
+              <div className="progress" style={{ margin: "16px 0 8px" }}>
+                <div
+                  className="progress__bar"
+                  style={{
+                    height: 8,
+                    borderRadius: 999,
+                    background: "var(--surface-3, #eef1f4)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${progressPct}%`,
+                      height: "100%",
+                      borderRadius: 999,
+                      background:
+                        "linear-gradient(90deg, rgba(58,123,213,1) 0%, rgba(58,213,180,1) 100%)",
+                      transition: "width .3s ease",
+                    }}
+                  />
+                </div>
+                <div
+                  className="progress__label"
+                  style={{ fontSize: 12, marginTop: 6, opacity: 0.8 }}
+                >
+                  {remainingSessions} of {totalSessions} sessions remaining
+                </div>
+              </div>
+
+              {pendingActionsCount > 0 && (
+                <div className="alert-badge">
                   <svg
                     width="16"
                     height="16"
                     viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
+                    fill="currentColor"
                   >
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 8v4m0 4h.01" />
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
                   </svg>
-                )}
-                {onbComplete ? "View onboarding" : "Complete onboarding form"}
-              </Link>
+                  {pendingActionsCount === 2
+                    ? "2 required actions"
+                    : "1 required action"}
+                </div>
+              )}
 
-              <Link
-                href="/assessment"
-                className={`btn ${
-                  assComplete ? "btn--ghost" : "btn--primary btn--pulse"
-                }`}
-              >
-                {!assComplete && (
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 8v4m0 4h.01" />
-                  </svg>
-                )}
-                {assComplete ? "View assessment" : "Take written assessment"}
-              </Link>
+              <div className="button-row" style={{ gap: 12, flexWrap: "wrap" }}>
+                <Link
+                  href="/onboarding"
+                  className={`btn ${
+                    onbComplete ? "btn--ghost" : "btn--primary btn--pulse"
+                  }`}
+                >
+                  {!onbComplete && (
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 8v4m0 4h.01" />
+                    </svg>
+                  )}
+                  {onbComplete ? "View onboarding" : "Complete onboarding form"}
+                </Link>
 
-              <Link href="/packages" className="btn btn--ghost">
-                View all plans
-              </Link>
-            </div>
-          </>
-        )}
-      </div>
+                <Link
+                  href="/assessment"
+                  className={`btn ${
+                    assComplete ? "btn--ghost" : "btn--primary btn--pulse"
+                  }`}
+                >
+                  {!assComplete && (
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 8v4m0 4h.01" />
+                    </svg>
+                  )}
+                  {assComplete ? "View assessment" : "Take written assessment"}
+                </Link>
+
+                <Link href="/packages" className="btn btn--ghost">
+                  View all plans
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {isTeacher && (
         <div className="panel panel--featured">
