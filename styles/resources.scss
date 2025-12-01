@@ -581,7 +581,6 @@ $breakpoint-xl: 1280px;
 .resources-button--ghost {
   background: transparent;
   border-color: rgba(148, 163, 184, 0.8);
-  color: $text-light;
 
   &:hover:not(.resources-button--disabled) {
     background: rgba($color-slate-900, 0.75);
