@@ -870,7 +870,7 @@ export default function PrepShell({
               </Link>
               {unit?.slug && (
                 <Link
-                  href={`/resources/units/${unit.slug}`}
+                  href={`/resources/prep/units/${unit.slug}`}
                   className="resources-button resources-button--ghost"
                 >
                   View unit page
