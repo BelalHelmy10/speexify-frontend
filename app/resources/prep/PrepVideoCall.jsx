@@ -3,48 +3,19 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const BASE_STUN = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
+const ICE_SERVERS = [
+  { urls: "stun:167.172.34.31:3478" },
+  {
+    urls: "turn:167.172.34.31:3478",
+    username: "speexifyturn",
+    credential: "belalBILLYhelmy10b",
+  },
+  {
+    urls: "turn:167.172.34.31:3478?transport=tcp",
+    username: "speexifyturn",
+    credential: "belalBILLYhelmy10b",
+  },
 ];
-
-function buildIceServers() {
-  const urlsEnv = process.env.NEXT_PUBLIC_ICE_URLS || "";
-  const username = process.env.NEXT_PUBLIC_ICE_USERNAME || "";
-  const credential = process.env.NEXT_PUBLIC_ICE_CREDENTIAL || "";
-
-  if (!urlsEnv) {
-    return BASE_STUN;
-  }
-
-  const allUrls = urlsEnv
-    .split(",")
-    .map((u) => u.trim())
-    .filter(Boolean);
-
-  const stunUrls = allUrls.filter((u) => u.startsWith("stun:"));
-  const turnUrls = allUrls.filter(
-    (u) => u.startsWith("turn:") || u.startsWith("turns:")
-  );
-
-  const iceServers = [...BASE_STUN];
-
-  if (stunUrls.length) {
-    iceServers.push({ urls: stunUrls });
-  }
-
-  if (turnUrls.length && username && credential) {
-    iceServers.push({
-      urls: turnUrls,
-      username,
-      credential,
-    });
-  }
-
-  return iceServers;
-}
-
-const ICE_SERVERS = buildIceServers();
 
 export default function PrepVideoCall({
   roomId,
@@ -70,13 +41,8 @@ export default function PrepVideoCall({
 
   const screenSenderRef = useRef(null);
 
-  // Store the remote camera stream separately
   const remoteCameraStreamRef = useRef(null);
-
-  // Store the remote screen share stream (to check stream ID for audio routing)
   const remoteScreenStreamRef = useRef(null);
-
-  // Track remote screen sharing state in a ref for use in ontrack
   const remoteScreenSharingRef = useRef(false);
 
   const localVideoRef = useRef(null);
@@ -87,7 +53,6 @@ export default function PrepVideoCall({
     onScreenShareChangeRef.current = onScreenShareStreamChange;
   }, [onScreenShareStreamChange]);
 
-  // Keep ref in sync with state
   useEffect(() => {
     remoteScreenSharingRef.current = remoteScreenSharing;
   }, [remoteScreenSharing]);
@@ -103,7 +68,6 @@ export default function PrepVideoCall({
       }
     };
 
-    // Handle incoming tracks - CAMERA stays in video panel, SCREEN goes to main viewer
     pc.ontrack = (event) => {
       const track = event.track;
       const streams = event.streams;
@@ -111,17 +75,12 @@ export default function PrepVideoCall({
       const streamId = stream.id;
 
       if (track.kind === "audio") {
-        // Check if this audio belongs to a screen share stream (not camera)
-        // Screen share audio will come with the same stream as screen share video
         if (remoteScreenSharingRef.current && remoteScreenStreamRef.current) {
-          // If this audio is from the screen share stream, don't add to camera
           if (streamId === remoteScreenStreamRef.current.id) {
-            // Audio is already part of screen share stream, nothing to do
             return;
           }
         }
 
-        // This is camera/microphone audio - add to camera stream
         if (remoteCameraStreamRef.current) {
           const existingAudio = remoteCameraStreamRef.current.getAudioTracks();
           if (existingAudio.length === 0) {
@@ -137,9 +96,6 @@ export default function PrepVideoCall({
       }
 
       if (track.kind === "video") {
-        // KEY DECISION: Is this a camera or screen share?
-
-        // If we DON'T have a camera stream yet, this is the camera
         if (!remoteCameraStreamRef.current) {
           remoteCameraStreamRef.current = stream;
           if (remoteVideoRef.current) {
@@ -148,18 +104,13 @@ export default function PrepVideoCall({
           return;
         }
 
-        // We already have a camera stream...
-        // If remote is screen sharing, this new track is the screen share
         if (remoteScreenSharingRef.current) {
-          // Store the screen share stream reference (for audio routing check)
           remoteScreenStreamRef.current = stream;
 
-          // Pass to parent for main viewer (right side)
           if (onScreenShareChangeRef.current) {
             onScreenShareChangeRef.current(stream);
           }
 
-          // When track ends, clear screen share
           track.onended = () => {
             remoteScreenStreamRef.current = null;
             if (onScreenShareChangeRef.current) {
@@ -169,7 +120,6 @@ export default function PrepVideoCall({
           return;
         }
 
-        // Not screen sharing - might be camera renegotiation, update camera
         remoteCameraStreamRef.current = stream;
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = stream;
@@ -179,11 +129,7 @@ export default function PrepVideoCall({
 
     pc.onconnectionstatechange = () => {};
 
-    // Handle negotiation needed (when we add/remove tracks)
-    pc.onnegotiationneeded = () => {
-      // Intentionally empty - renegotiation is handled explicitly
-      // in startScreenShare/stopScreenShare so it works from either peer.
-    };
+    pc.onnegotiationneeded = () => {};
 
     pcRef.current = pc;
     return pc;
@@ -251,7 +197,6 @@ export default function PrepVideoCall({
     setError("");
     setStatus("connecting");
 
-    // Reset tracking
     remoteCameraStreamRef.current = null;
 
     let wsUrl = "";
@@ -361,11 +306,9 @@ export default function PrepVideoCall({
       } catch (err) {
         console.warn("Error adding ICE candidate", err);
       }
-    }
-    // 🔥 Screen share signals
-    else if (signalType === "screen-share-start") {
+    } else if (signalType === "screen-share-start") {
       setRemoteScreenSharing(true);
-      remoteScreenSharingRef.current = true; // Update ref immediately for ontrack
+      remoteScreenSharingRef.current = true;
     } else if (signalType === "screen-share-stop") {
       setRemoteScreenSharing(false);
       remoteScreenSharingRef.current = false;
@@ -454,33 +397,28 @@ export default function PrepVideoCall({
     try {
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
-        audio: true, // 🔊 Enable system audio sharing
+        audio: true,
       });
 
       screenStreamRef.current = displayStream;
       const displayTrack = displayStream.getVideoTracks()[0];
-      const displayAudioTrack = displayStream.getAudioTracks()[0]; // May be null if user didn't check "Share audio"
+      const displayAudioTrack = displayStream.getAudioTracks()[0];
       const pc = pcRef.current;
 
-      // Signal remote FIRST so they know the next video track is screen share
       sendSignal("screen-share-start", {});
 
-      // Small delay to ensure signal arrives before track
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       if (pc) {
-        // Add video track
         if (displayTrack) {
           const sender = pc.addTrack(displayTrack, displayStream);
           screenSenderRef.current = sender;
         }
 
-        // Add audio track if available
         if (displayAudioTrack) {
           pc.addTrack(displayAudioTrack, displayStream);
         }
 
-        // 🔥 Explicit renegotiation so this works even if we're NOT the initiator
         try {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
@@ -506,7 +444,6 @@ export default function PrepVideoCall({
   }
 
   async function stopScreenShare() {
-    // Signal remote first
     sendSignal("screen-share-stop", {});
 
     const pc = pcRef.current;
@@ -516,7 +453,6 @@ export default function PrepVideoCall({
         pc.removeTrack(screenSenderRef.current);
         screenSenderRef.current = null;
 
-        // 🔥 Explicit renegotiation after removing the screen track
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         sendSignal("offer", pc.localDescription);
@@ -568,14 +504,12 @@ export default function PrepVideoCall({
 
       <div className="prep-video__body">
         <div className="prep-video__frame-wrapper">
-          {/* Remote camera - always shows other person's face */}
           <video
             ref={remoteVideoRef}
             className="prep-video__remote"
             autoPlay
             playsInline
           />
-          {/* Local camera - always shows your face */}
           <video
             ref={localVideoRef}
             className="prep-video__local"
