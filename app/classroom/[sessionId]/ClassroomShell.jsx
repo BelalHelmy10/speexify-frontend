@@ -159,6 +159,20 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     : null;
   const viewer = resource ? getViewerInfo(resource) : null;
 
+  // 🔥 DEBUG LOGGING - Remove after fixing
+  useEffect(() => {
+    console.log("========== CLASSROOM DEBUG ==========");
+    console.log("isTeacher:", isTeacher);
+    console.log("selectedResourceId:", selectedResourceId);
+    console.log("resource:", resource);
+    console.log("resource.fileUrl:", resource?.fileUrl);
+    console.log("resource.externalUrl:", resource?.externalUrl);
+    console.log("viewer:", viewer);
+    console.log("viewer.type:", viewer?.type);
+    console.log("viewer.viewerUrl:", viewer?.viewerUrl);
+    console.log("======================================");
+  }, [isTeacher, selectedResourceId, resource, viewer]);
+
   return (
     <div className="classroom-layout">
       {/* LEFT: video + chat */}
