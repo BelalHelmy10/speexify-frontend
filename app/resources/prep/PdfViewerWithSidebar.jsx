@@ -44,8 +44,10 @@ export default function PdfViewerWithSidebar({
       try {
         const pdfjsModule = await import("pdfjs-dist/build/pdf");
 
-        // pdf.js worker from CDN (must be a plain string URL)
-        pdfjsModule.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsModule.version}/pdf.worker.min.js`;
+        // 🔥 FIX: Use unpkg CDN which has proper CORS headers
+        // unpkg works better across browsers than cdnjs for ES modules
+        const pdfjsVersion = pdfjsModule.version;
+        pdfjsModule.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`;
 
         if (cancelled) return;
         setPdfjs(pdfjsModule);
@@ -60,7 +62,7 @@ export default function PdfViewerWithSidebar({
       } catch (err) {
         console.error("Failed to load PDF", err);
         if (!cancelled) {
-          setError("Couldn’t load PDF file.");
+          setError("Couldn't load PDF file.");
           if (onFatalError) onFatalError(err);
         }
       }
@@ -108,7 +110,7 @@ export default function PdfViewerWithSidebar({
       } catch (err) {
         if (!cancelled) {
           console.error("Failed to render PDF page", err);
-          setError("Couldn’t render this page.");
+          setError("Couldn't render this page.");
           if (onFatalError) onFatalError(err);
         }
       }
