@@ -2,36 +2,12 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import dynamic from "next/dynamic";
+import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
+import PrepShell from "@/app/resources/prep/PrepShell";
 import ClassroomResourcePicker from "./ClassroomResourcePicker";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import ClassroomChat from "./ClassroomChat";
-
-// Lazy-load WebRTC video (heavy) – client only
-const PrepVideoCall = dynamic(
-  () => import("@/app/resources/prep/PrepVideoCall"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="prep-viewer prep-viewer__placeholder">
-        <h2>Connecting video…</h2>
-        <p>This will only take a moment.</p>
-      </div>
-    ),
-  }
-);
-
-// Lazy-load the full PrepShell (PDFs, annotations, etc.)
-const PrepShell = dynamic(() => import("@/app/resources/prep/PrepShell"), {
-  ssr: false,
-  loading: () => (
-    <div className="prep-viewer prep-viewer__placeholder">
-      <h2>Loading classroom material…</h2>
-      <p>Please wait while we prepare your resource.</p>
-    </div>
-  ),
-});
 
 /**
  * Safely build a display name from a user-like object or plain string.
