@@ -166,7 +166,8 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         <PrepVideoCall
           roomId={sessionId}
           isTeacher={isTeacher}
-          onScreenShareStreamChange={setScreenShareStream}
+          mode="group" // 👈 enable group WebRTC for this classroom
+          onScreenShareStreamChange={handleScreenShareStreamChange}
         />
 
         <ClassroomChat
