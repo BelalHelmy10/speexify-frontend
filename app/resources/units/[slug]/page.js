@@ -64,7 +64,7 @@ export default async function UnitResourcesPage({ params }) {
 
   if (!unit) {
     return (
-      <div className="resources-page">
+      <div className="resources-page resources-page--unit">
         <div className="resources-page__inner">
           <div className="unit-not-found">
             <h1 className="unit-not-found__title">Unit not found</h1>
@@ -89,7 +89,7 @@ export default async function UnitResourcesPage({ params }) {
   const track = level?.track;
 
   return (
-    <div className="resources-page">
+    <div className="resources-page resources-page--unit">
       <div className="resources-page__inner unit-page">
         {/* Breadcrumbs */}
         <nav className="unit-breadcrumbs">

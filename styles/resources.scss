@@ -181,16 +181,25 @@ $breakpoint-xl: 1280px;
 
 .resources-page {
   min-height: 100vh;
-  padding: $space-10 $space-5;
-  background: radial-gradient(circle at top left, #e0f2fe 0, transparent 55%),
-    radial-gradient(circle at bottom right, #ede9fe 0, transparent 55%),
-    $bg-page;
+  padding: $space-8 $space-4;
+  background: $bg-page;
+}
+
+.resources-page--unit {
   display: flex;
   justify-content: center;
+  background: linear-gradient(
+    180deg,
+    rgba(226, 232, 240, 0.9) 0%,
+    rgba(248, 250, 252, 0.95) 180px,
+    #f9fafb 100%
+  );
 }
 
 .resources-page__inner {
   width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -563,14 +572,14 @@ $breakpoint-xl: 1280px;
 }
 
 .resources-button--primary {
-  background: $accent-primary;
-  border-color: $color-blue-400;
+  background: linear-gradient(90deg, $color-blue-500, $color-sky-500);
+  border-color: transparent;
   color: $text-inverse;
-  box-shadow: $shadow-primary;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
 
   &:hover:not(.resources-button--disabled) {
-    background: $accent-primary-hover;
-    box-shadow: $shadow-primary-hover;
+    background: linear-gradient(90deg, $color-blue-600, $color-sky-500);
+    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.45);
   }
 
   &:active:not(.resources-button--disabled) {
@@ -579,11 +588,13 @@ $breakpoint-xl: 1280px;
 }
 
 .resources-button--ghost {
-  background: transparent;
-  border-color: rgba(148, 163, 184, 0.8);
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.6);
+  color: $color-gray-700;
 
   &:hover:not(.resources-button--disabled) {
-    background: rgba($color-slate-900, 0.75);
+    background: #e5edff;
+    border-color: rgba(59, 130, 246, 0.5);
   }
 }
 
@@ -628,22 +639,22 @@ $breakpoint-xl: 1280px;
 .unit-breadcrumbs {
   display: flex;
   flex-wrap: wrap;
-  gap: $space-2;
+  gap: $space-1;
   align-items: center;
   font-size: $text-xs;
   color: $text-secondary;
-  margin-bottom: $space-4;
+  margin-bottom: $space-3;
   line-height: $line-height-normal;
 }
 
 .unit-breadcrumbs__link {
-  color: $color-gray-600;
+  color: $color-blue-600;
   text-decoration: none;
   font-weight: 500;
   transition: color $transition-normal;
 
   &:hover {
-    color: $text-primary;
+    color: $color-blue-700;
     text-decoration: underline;
   }
 
@@ -660,14 +671,12 @@ $breakpoint-xl: 1280px;
   color: $text-secondary;
 }
 
-// ─── Unit Header Card ────────────────────────────────────────────────────────
-
 .unit-header-card {
   background: $bg-card;
-  border-radius: $radius-xl;
+  border-radius: 20px;
   padding: $space-5 $space-6;
-  border: 1px solid $border-default;
-  box-shadow: $shadow-lg;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
   margin-bottom: $space-6;
 }
 
@@ -766,10 +775,14 @@ $breakpoint-xl: 1280px;
   margin-bottom: $space-12;
 }
 
+.unit-resources {
+  margin-bottom: $space-12;
+}
+
 .unit-resources__header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   gap: $space-3;
   margin-bottom: $space-4;
 
@@ -781,7 +794,7 @@ $breakpoint-xl: 1280px;
 
 .unit-resources__title {
   margin: 0 0 $space-1;
-  font-size: $text-base;
+  font-size: 1.1rem;
   font-weight: 600;
   color: $text-primary;
   line-height: $line-height-tight;
@@ -822,10 +835,10 @@ $breakpoint-xl: 1280px;
   flex-direction: column;
   gap: $space-3;
   padding: $space-4;
-  border-radius: $radius-lg;
-  border: 1px solid rgba($color-gray-300, 0.9);
-  background: rgba($bg-card, 0.9);
-  box-shadow: $shadow-sm;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: $bg-card;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
   animation: resources-fade-up 0.18s ease-out;
   will-change: transform, opacity;
   transition: transform $transition-fast, box-shadow $transition-normal,
@@ -833,14 +846,14 @@ $breakpoint-xl: 1280px;
 
   &:hover {
     @include hover-lift;
-    box-shadow: $shadow-md;
-    border-color: rgba($accent-primary, 0.5);
-    background-color: $bg-card;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    border-color: rgba($accent-primary, 0.4);
+    background-color: #ffffff;
   }
 
   &:focus-within {
     border-color: $accent-primary;
-    box-shadow: 0 0 0 3px rgba($accent-primary, 0.15);
+    box-shadow: 0 0 0 3px rgba($accent-primary, 0.16);
   }
 
   @media (min-width: $breakpoint-md) {
