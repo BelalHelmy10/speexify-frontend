@@ -85,8 +85,40 @@ function normalizeGoogleSlidesEmbed(url) {
 export function getViewerInfo(resource) {
   if (!resource) return null;
 
-  const isPdfUrl = (url) =>
-    typeof url === "string" && url.toLowerCase().endsWith(".pdf");
+  // Enhanced PDF detection - checks multiple patterns
+  const isPdfUrl = (url) => {
+    if (typeof url !== "string") return false;
+    const lower = url.toLowerCase();
+
+    // Direct .pdf extension
+    if (lower.endsWith(".pdf")) return true;
+
+    // URL contains .pdf before query params (e.g., file.pdf?token=xxx)
+    if (lower.includes(".pdf?") || lower.includes(".pdf#")) return true;
+
+    // Sanity CDN PDF pattern
+    if (lower.includes("cdn.sanity.io") && lower.includes(".pdf")) return true;
+
+    return false;
+  };
+
+  // Detect Google Drive file URLs
+  const isGoogleDriveFile = (url) => {
+    if (typeof url !== "string") return false;
+    return (
+      url.includes("drive.google.com/file/d/") ||
+      url.includes("drive.google.com/uc?")
+    );
+  };
+
+  // Convert Google Drive URLs to embeddable preview URLs
+  const normalizeGoogleDriveEmbed = (url) => {
+    if (!url) return url;
+    if (url.includes("/preview")) return url;
+    if (url.includes("/view")) return url.replace("/view", "/preview");
+    if (url.includes("/edit")) return url.replace("/edit", "/preview");
+    return url;
+  };
 
   if (resource.youtubeUrl) {
     const viewerUrl = normalizeYouTubeEmbed(resource.youtubeUrl);
@@ -108,25 +140,27 @@ export function getViewerInfo(resource) {
     };
   }
 
-  if (resource.externalUrl && isPdfUrl(resource.externalUrl)) {
-    return {
-      type: "pdf",
-      label: "File",
-      viewerUrl: resource.externalUrl,
-      rawUrl: resource.externalUrl,
-    };
-  }
-
-  if (resource.fileUrl && isPdfUrl(resource.fileUrl)) {
-    return {
-      type: "pdf",
-      label: "File",
-      viewerUrl: resource.fileUrl,
-      rawUrl: resource.fileUrl,
-    };
-  }
-
+  // Check externalUrl first
   if (resource.externalUrl) {
+    if (isPdfUrl(resource.externalUrl)) {
+      return {
+        type: "pdf",
+        label: "File",
+        viewerUrl: resource.externalUrl,
+        rawUrl: resource.externalUrl,
+      };
+    }
+
+    // Google Drive files - use iframe embed (consistent for both users)
+    if (isGoogleDriveFile(resource.externalUrl)) {
+      return {
+        type: "gdrive",
+        label: "File",
+        viewerUrl: normalizeGoogleDriveEmbed(resource.externalUrl),
+        rawUrl: resource.externalUrl,
+      };
+    }
+
     return {
       type: "external",
       label: "External page",
@@ -135,7 +169,27 @@ export function getViewerInfo(resource) {
     };
   }
 
+  // Check fileUrl
   if (resource.fileUrl) {
+    if (isPdfUrl(resource.fileUrl)) {
+      return {
+        type: "pdf",
+        label: "File",
+        viewerUrl: resource.fileUrl,
+        rawUrl: resource.fileUrl,
+      };
+    }
+
+    // Google Drive files - use iframe embed
+    if (isGoogleDriveFile(resource.fileUrl)) {
+      return {
+        type: "gdrive",
+        label: "File",
+        viewerUrl: normalizeGoogleDriveEmbed(resource.fileUrl),
+        rawUrl: resource.fileUrl,
+      };
+    }
+
     return {
       type: "file",
       label: "File",
