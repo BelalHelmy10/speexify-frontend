@@ -140,10 +140,19 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     setSelectedResourceId(first._id);
   }, [isTeacher, resourcesById, selectedResourceId]);
 
-  // Teacher: broadcast resource changes
+  // Teacher: broadcast resource changes (with periodic re-broadcast for late joiners)
   useEffect(() => {
     if (!isTeacher || !ready || !selectedResourceId) return;
+
+    // Broadcast immediately
     send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
+
+    // Re-broadcast every 2 seconds to catch late-joining learners
+    const interval = setInterval(() => {
+      send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, [isTeacher, ready, selectedResourceId, send]);
 
   function handleChangeResourceId(nextId) {
