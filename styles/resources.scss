@@ -1573,16 +1573,11 @@
   border-top: none;
 }
 
-/* ───────────────────────────── */
-/* MATCH VIDEO & VIEWER HEIGHT   */
-/* ───────────────────────────── */
-
-/* shrink video a bit and make its height match the right viewer */
+/* shrink video a bit and limit height to viewport */
 .classroom-video-pane .prep-video__frame-wrapper {
   width: 100%;
   max-width: 480px;
-  height: calc(100vh - 180px); // same as .classroom-prep-pane .prep-viewer
-  max-height: 820px; // same cap as viewer
+  max-height: calc(100vh - 180px);
   margin-left: 0;
   margin-right: auto;
 }
@@ -1633,7 +1628,6 @@
 
   .classroom-video-pane .prep-video__frame-wrapper {
     max-width: 100%;
-    height: auto;
     max-height: none;
   }
 }
