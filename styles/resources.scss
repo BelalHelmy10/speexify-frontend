@@ -197,7 +197,7 @@ $breakpoint-xl: 1280px;
 
 .resources-page__inner {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -1958,7 +1958,7 @@ $breakpoint-xl: 1280px;
 
 .spx-classroom-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.75fr); // ~35% / 65%
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 2.3fr); // ~35% / 65%
   gap: $space-6;
   align-items: flex-start;
   margin-top: $space-3;
@@ -1979,7 +1979,7 @@ $breakpoint-xl: 1280px;
   justify-content: flex-start;
   align-items: stretch;
   gap: $space-3;
-  padding-top: $space-1;
+  padding-top: 0;
 
   .prep-video {
     margin-top: 0;
@@ -2014,13 +2014,13 @@ $breakpoint-xl: 1280px;
 
 .spx-classroom-layout__prep-content {
   flex: 1 1 auto;
-  margin-top: $space-3;
+  margin-top: 0;
 }
 
 // Make the embedded PrepShell viewer fill the right column nicely
 .spx-classroom-layout__prep-pane .prep-viewer {
   width: 100%;
-  height: calc(100vh - 210px);
+  height: calc(100vh - 190px);
   max-height: 820px;
 
   @media (max-width: 960px) {
