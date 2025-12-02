@@ -4,8 +4,6 @@
 // DESIGN TOKENS & VARIABLES (from variables.scss)
 // ════════════════════════════════════════════════════════════════════════════
 
-// (all the tokens you pasted, kept as-is)
-
 $color-white: #ffffff;
 $color-gray-50: #f9fafb;
 $color-gray-100: #f3f4f6;
@@ -2309,4 +2307,131 @@ $breakpoint-xl: 1280px;
       box-shadow: 0 8px 18px rgba($color-sky-900, 0.8);
     }
   }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SPX-PREFXIED CLASSNAME ALIASES (to match JSX)
+// ════════════════════════════════════════════════════════════════════════════
+
+// Resources page wrapper (spx-* in ResourcesPage + ClassroomPage)
+.spx-resources-page {
+  @extend .resources-page;
+}
+.spx-resources-page__inner {
+  @extend .resources-page__inner;
+}
+.spx-resources-page--unit {
+  @extend .resources-page--unit;
+}
+
+// Resources hero + empty
+.spx-resources-hero {
+  @extend .resources-hero;
+}
+.spx-resources-hero__eyebrow {
+  @extend .resources-hero__eyebrow;
+}
+.spx-resources-hero__title {
+  @extend .resources-hero__title;
+}
+.spx-resources-hero__subtitle {
+  @extend .resources-hero__subtitle;
+}
+.spx-resources-empty {
+  @extend .resources-empty;
+}
+
+// Prep page wrapper + empty card / viewer placeholder (used in classroom pages)
+.spx-prep-page {
+  @extend .prep-page;
+}
+.spx-prep-empty-card {
+  @extend .prep-empty-card;
+}
+.spx-prep-empty-card__title {
+  @extend .prep-empty-card__title;
+}
+.spx-prep-empty-card__text {
+  @extend .prep-empty-card__text;
+}
+.spx-prep-viewer {
+  @extend .prep-viewer;
+}
+.spx-prep-viewer__placeholder {
+  @extend .prep-viewer__placeholder;
+}
+
+// Classroom layout aliases (spx-classroom-layout*)
+.spx-classroom-layout {
+  @extend .classroom-layout;
+}
+.spx-classroom-layout__video-pane {
+  @extend .classroom-video-pane;
+}
+.spx-classroom-layout__prep-pane {
+  @extend .classroom-prep-pane;
+}
+.spx-classroom-layout__prep-content {
+  @extend .classroom-prep-pane__content;
+}
+
+// Classroom picker aliases (spx-classroom-picker*)
+.spx-classroom-picker {
+  @extend .classroom-picker;
+}
+.spx-classroom-picker__row {
+  @extend .classroom-picker__row;
+}
+.spx-classroom-picker__select {
+  @extend .classroom-picker__select;
+}
+.spx-classroom-picker__select--empty {
+  @extend .classroom-picker__select--empty;
+}
+
+// Classroom chat aliases (spx-classroom-chat*)
+.spx-classroom-chat {
+  @extend .classroom-chat;
+}
+.spx-classroom-chat__header {
+  @extend .classroom-chat__header;
+}
+.spx-classroom-chat__title {
+  @extend .classroom-chat__title;
+}
+.spx-classroom-chat__role {
+  @extend .classroom-chat__role;
+}
+.spx-classroom-chat__messages {
+  @extend .classroom-chat__messages;
+}
+.spx-classroom-chat__message {
+  @extend .classroom-chat__message;
+}
+.spx-classroom-chat__message--self {
+  @extend .classroom-chat__message--self;
+}
+.spx-classroom-chat__message--teacher {
+  @extend .classroom-chat__message--teacher;
+}
+.spx-classroom-chat__message--learner {
+  @extend .classroom-chat__message--learner;
+}
+.spx-classroom-chat__bubble {
+  @extend .classroom-chat__bubble;
+}
+.spx-classroom-chat__bubble-label {
+  @extend .classroom-chat__bubble-label;
+}
+.spx-classroom-chat__bubble-text {
+  @extend .classroom-chat__bubble-text;
+}
+.spx-classroom-chat__form {
+  @extend .classroom-chat__form;
+}
+.spx-classroom-chat__input {
+  @extend .classroom-chat__input;
+}
+.spx-classroom-chat__send {
+  @extend .classroom-chat__send;
 }
