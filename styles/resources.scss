@@ -942,8 +942,13 @@ $breakpoint-xl: 1280px;
 .prep-layout {
   position: relative;
   display: grid;
+  /* OLD:
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr);
   gap: $space-6;
+  */
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); // ~33% / 67%
+  gap: $space-5;
+
   align-items: stretch;
 
   @media (max-width: $breakpoint-lg) {
