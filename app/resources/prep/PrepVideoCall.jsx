@@ -19,10 +19,10 @@ const ICE_SERVERS = [
 
 export default function PrepVideoCall({
   roomId,
-  isTeacher = false,
+  isTeacher = false, // kept for API compatibility (e.g. muting logic or future tweaks)
   onScreenShareStreamChange,
 }) {
-  const [status, setStatus] = useState("idle");
+  const [status, setStatus] = useState("idle"); // idle | connecting | in-call
   const [error, setError] = useState("");
 
   const [micOn, setMicOn] = useState(true);
@@ -57,6 +57,9 @@ export default function PrepVideoCall({
     remoteScreenSharingRef.current = remoteScreenSharing;
   }, [remoteScreenSharing]);
 
+  // ─────────────────────────────────────────────────────────────
+  // PeerConnection
+  // ─────────────────────────────────────────────────────────────
   function createPeerConnection() {
     if (pcRef.current) return pcRef.current;
 
@@ -70,11 +73,13 @@ export default function PrepVideoCall({
 
     pc.ontrack = (event) => {
       const track = event.track;
-      const streams = event.streams;
-      const stream = streams[0] || new MediaStream([track]);
+      const stream = event.streams[0] || new MediaStream([track]);
       const streamId = stream.id;
 
+      // AUDIO TRACKS
       if (track.kind === "audio") {
+        // If we're already using a dedicated remote screen stream, avoid
+        // accidentally attaching its audio to the camera stream.
         if (remoteScreenSharingRef.current && remoteScreenStreamRef.current) {
           if (streamId === remoteScreenStreamRef.current.id) {
             return;
@@ -95,15 +100,11 @@ export default function PrepVideoCall({
         return;
       }
 
+      // VIDEO TRACKS
       if (track.kind === "video") {
-        if (!remoteCameraStreamRef.current) {
-          remoteCameraStreamRef.current = stream;
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = stream;
-          }
-          return;
-        }
-
+        // If we’re currently in “screen share” mode from remote,
+        // treat this as a separate screen stream and push it out
+        // to the classroom / prep shell via callback.
         if (remoteScreenSharingRef.current) {
           remoteScreenStreamRef.current = stream;
 
@@ -120,6 +121,7 @@ export default function PrepVideoCall({
           return;
         }
 
+        // Otherwise treat as the main remote camera stream.
         remoteCameraStreamRef.current = stream;
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = stream;
@@ -127,14 +129,22 @@ export default function PrepVideoCall({
       }
     };
 
-    pc.onconnectionstatechange = () => {};
+    pc.onconnectionstatechange = () => {
+      // You can log / show advanced statuses here if needed.
+    };
 
-    pc.onnegotiationneeded = () => {};
+    pc.onnegotiationneeded = () => {
+      // We explicitly drive renegotiation (e.g. for screen share)
+      // so we keep this empty to avoid double-offers.
+    };
 
     pcRef.current = pc;
     return pc;
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Local media
+  // ─────────────────────────────────────────────────────────────
   async function startLocalMedia() {
     if (localStreamRef.current) return localStreamRef.current;
 
@@ -172,6 +182,9 @@ export default function PrepVideoCall({
     });
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Signaling over WebSocket
+  // ─────────────────────────────────────────────────────────────
   function sendSignal(signalType, data) {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -329,6 +342,9 @@ export default function PrepVideoCall({
     setStatus("in-call");
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Leave / cleanup
+  // ─────────────────────────────────────────────────────────────
   function leaveCall() {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -377,6 +393,9 @@ export default function PrepVideoCall({
     wsRef.current = null;
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Controls
+  // ─────────────────────────────────────────────────────────────
   function toggleMic() {
     const next = !micOn;
     setMicOn(next);
@@ -407,6 +426,7 @@ export default function PrepVideoCall({
 
       sendSignal("screen-share-start", {});
 
+      // Small delay to avoid “offer collision”
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       if (pc) {
@@ -434,9 +454,11 @@ export default function PrepVideoCall({
         onScreenShareChangeRef.current(displayStream);
       }
 
-      displayTrack.onended = () => {
-        stopScreenShare();
-      };
+      if (displayTrack) {
+        displayTrack.onended = () => {
+          stopScreenShare();
+        };
+      }
     } catch (err) {
       console.error("Screen share failed", err);
       setError("Could not start screen sharing.");
@@ -482,6 +504,9 @@ export default function PrepVideoCall({
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Mount / unmount
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
       leaveCall();
@@ -491,6 +516,9 @@ export default function PrepVideoCall({
 
   const inCall = status === "in-call";
 
+  // ─────────────────────────────────────────────────────────────
+  // UI
+  // ─────────────────────────────────────────────────────────────
   return (
     <section className="prep-video">
       <header className="prep-video__header">
@@ -572,6 +600,12 @@ export default function PrepVideoCall({
         {inCall && !peerJoined && (
           <p className="prep-video__hint">
             Waiting for the other person to join this prep room…
+          </p>
+        )}
+        {inCall && peerJoined && remoteScreenSharing && (
+          <p className="prep-video__hint">
+            The other person is sharing their screen. You&apos;ll see it in the
+            main viewer.
           </p>
         )}
       </div>

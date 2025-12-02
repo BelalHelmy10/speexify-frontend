@@ -167,7 +167,7 @@ function getViewerInfo(resource) {
 // ─────────────────────────────────────────────────────────────
 
 export default async function PrepRoomPage({ searchParams }) {
-  // from query string: /resources/prep?resourceId=...
+  // From query string: /resources/prep?resourceId=...
   const resourceId = searchParams?.resourceId;
 
   if (!resourceId) {
@@ -221,7 +221,6 @@ export default async function PrepRoomPage({ searchParams }) {
   return (
     <div className="resources-page">
       <div className="resources-page__inner prep-page">
-        {/* No video call here anymore – just the prep shell */}
         <PrepShell resource={resource} viewer={viewer} />
       </div>
     </div>

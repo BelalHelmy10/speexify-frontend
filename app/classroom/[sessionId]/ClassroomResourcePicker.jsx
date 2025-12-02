@@ -115,10 +115,10 @@ export default function ClassroomResourcePicker({
   ]);
 
   return (
-    <div className="classroom-picker">
-      <div className="classroom-picker__row">
+    <div className="spx-classroom-picker">
+      <div className="spx-classroom-picker__row">
         {/* Track */}
-        <div className="classroom-picker__select">
+        <div className="spx-classroom-picker__select">
           <select
             value={trackId}
             onChange={(e) => setTrackId(e.target.value)}
@@ -135,8 +135,8 @@ export default function ClassroomResourcePicker({
         {/* Book */}
         <div
           className={
-            "classroom-picker__select" +
-            (!bookOptions.length ? " classroom-picker__select--empty" : "")
+            "spx-classroom-picker__select" +
+            (!bookOptions.length ? " spx-classroom-picker__select--empty" : "")
           }
         >
           <select
@@ -156,8 +156,10 @@ export default function ClassroomResourcePicker({
         {/* Book level */}
         <div
           className={
-            "classroom-picker__select" +
-            (!bookLevelOptions.length ? " classroom-picker__select--empty" : "")
+            "spx-classroom-picker__select" +
+            (!bookLevelOptions.length
+              ? " spx-classroom-picker__select--empty"
+              : "")
           }
         >
           <select
@@ -177,8 +179,8 @@ export default function ClassroomResourcePicker({
         {/* Unit */}
         <div
           className={
-            "classroom-picker__select" +
-            (!unitOptions.length ? " classroom-picker__select--empty" : "")
+            "spx-classroom-picker__select" +
+            (!unitOptions.length ? " spx-classroom-picker__select--empty" : "")
           }
         >
           <select
@@ -198,8 +200,10 @@ export default function ClassroomResourcePicker({
         {/* Resource */}
         <div
           className={
-            "classroom-picker__select" +
-            (!resourceOptions.length ? " classroom-picker__select--empty" : "")
+            "spx-classroom-picker__select" +
+            (!resourceOptions.length
+              ? " spx-classroom-picker__select--empty"
+              : "")
           }
         >
           <select

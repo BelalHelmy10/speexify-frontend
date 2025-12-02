@@ -74,14 +74,14 @@ export default async function ResourcesPage() {
   const tracks = await getResourcesTree();
 
   return (
-    <div className="resources-page">
-      <div className="resources-page__inner">
-        <header className="resources-hero">
-          <span className="resources-hero__eyebrow">Resources</span>
-          <h1 className="resources-hero__title">
+    <div className="spx-resources-page">
+      <div className="spx-resources-page__inner">
+        <header className="spx-resources-hero">
+          <span className="spx-resources-hero__eyebrow">Resources</span>
+          <h1 className="spx-resources-hero__title">
             Prepare your lessons in seconds
           </h1>
-          <p className="resources-hero__subtitle">
+          <p className="spx-resources-hero__subtitle">
             Pick a track, then a book/series, then the book level, unit, and
             resource. We’ll surface the right PDFs, slides, and videos for your
             next session.
@@ -89,7 +89,7 @@ export default async function ResourcesPage() {
         </header>
 
         {tracks.length === 0 ? (
-          <p className="resources-empty">
+          <p className="spx-resources-empty">
             No tracks found yet. Add Track / Book / Book level / Unit / Resource
             documents in Sanity.
           </p>

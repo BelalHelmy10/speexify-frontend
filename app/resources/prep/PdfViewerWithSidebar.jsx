@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from "react";
 export default function PdfViewerWithSidebar({
   fileUrl,
   onFatalError,
-  children, // 🔥 overlay from PrepShell will be rendered here
-  onContainerReady, // ✅ NEW: optional callback to expose the scroll container
+  children, // overlay from PrepShell will be rendered here
+  onContainerReady, // optional callback to expose the scroll container
 }) {
   const mainRef = useRef(null);
   const pdfCanvasRef = useRef(null);
@@ -18,7 +18,7 @@ export default function PdfViewerWithSidebar({
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
 
-  // 🔥 EXPOSE the scroll container to the parent (PrepShell) once mounted
+  // Expose the scroll container to the parent (PrepShell) once mounted
   useEffect(() => {
     if (typeof onContainerReady === "function" && mainRef.current) {
       // mainRef points to .prep-pdf-main
@@ -35,7 +35,12 @@ export default function PdfViewerWithSidebar({
     let cancelled = false;
 
     async function load() {
-      if (!fileUrl) return;
+      if (!fileUrl) {
+        setPdfDoc(null);
+        setNumPages(0);
+        setError("No PDF file URL provided.");
+        return;
+      }
 
       setError(null);
       setNumPages(0);
@@ -92,7 +97,9 @@ export default function PdfViewerWithSidebar({
         const unscaledViewport = page.getViewport({ scale: 1 });
 
         // Fit width; height can overflow, container can scroll
-        const scale = rect.width / unscaledViewport.width;
+        const scale =
+          unscaledViewport.width > 0 ? rect.width / unscaledViewport.width : 1;
+
         const viewport = page.getViewport({ scale });
 
         const canvas = pdfCanvasRef.current;
@@ -139,7 +146,7 @@ export default function PdfViewerWithSidebar({
       <div className="prep-pdf-main" ref={mainRef}>
         <div
           className="prep-pdf-main-inner"
-          style={{ position: "relative" }} // 🔥 overlay + pdf in same scroll container
+          style={{ position: "relative" }} // overlay + pdf in same scroll container
         >
           {error ? (
             <div className="prep-pdf-error">{error}</div>

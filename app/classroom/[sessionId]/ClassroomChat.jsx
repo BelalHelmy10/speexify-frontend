@@ -75,10 +75,10 @@ export default function ClassroomChat({
   const viewerLabel = isTeacher ? teacherName : learnerName;
 
   return (
-    <div className="classroom-chat" aria-label="Classroom chat panel">
-      <div className="classroom-chat__header">
-        <span className="classroom-chat__title">Classroom chat</span>
-        <span className="classroom-chat__role">
+    <div className="spx-classroom-chat" aria-label="Classroom chat panel">
+      <div className="spx-classroom-chat__header">
+        <span className="spx-classroom-chat__title">Classroom chat</span>
+        <span className="spx-classroom-chat__role">
           You are{" "}
           <strong>
             {viewerLabel} ({isTeacher ? "Teacher" : "Learner"})
@@ -87,7 +87,7 @@ export default function ClassroomChat({
       </div>
 
       <div
-        className="classroom-chat__messages"
+        className="spx-classroom-chat__messages"
         role="list"
         aria-label="Chat messages"
       >
@@ -97,23 +97,23 @@ export default function ClassroomChat({
           const label = isFromTeacher ? teacherName : learnerName;
 
           const roleClass = isFromTeacher
-            ? " classroom-chat__message--teacher"
-            : " classroom-chat__message--learner";
+            ? " spx-classroom-chat__message--teacher"
+            : " spx-classroom-chat__message--learner";
 
           return (
             <div
               key={m.ts ?? idx}
               className={
-                "classroom-chat__message" +
-                (isSelf ? " classroom-chat__message--self" : "") +
+                "spx-classroom-chat__message" +
+                (isSelf ? " spx-classroom-chat__message--self" : "") +
                 roleClass
               }
               role="listitem"
               aria-label={`${label}: ${m.text}`}
             >
-              <div className="classroom-chat__bubble">
-                <div className="classroom-chat__bubble-label">{label}</div>
-                <div className="classroom-chat__bubble-text">{m.text}</div>
+              <div className="spx-classroom-chat__bubble">
+                <div className="spx-classroom-chat__bubble-label">{label}</div>
+                <div className="spx-classroom-chat__bubble-text">{m.text}</div>
               </div>
             </div>
           );
@@ -122,19 +122,19 @@ export default function ClassroomChat({
       </div>
 
       <form
-        className="classroom-chat__form"
+        className="spx-classroom-chat__form"
         onSubmit={handleSubmit}
         aria-label="Send a message"
       >
         <input
-          className="classroom-chat__input"
+          className="spx-classroom-chat__input"
           type="text"
           placeholder="Type a message…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           aria-label="Chat message"
         />
-        <button className="classroom-chat__send" type="submit">
+        <button className="spx-classroom-chat__send" type="submit">
           Send
         </button>
       </form>

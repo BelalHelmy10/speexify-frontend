@@ -1,5 +1,9 @@
 // app/classroom/[sessionId]/classroomHelpers.js
 
+// ─────────────────────────────────────────────────────────────
+// Resource index
+// ─────────────────────────────────────────────────────────────
+
 // Build { resourcesById } so we can go from resourceId → full resource + context
 export function buildResourceIndex(tracks = []) {
   const resourcesById = {};
@@ -9,6 +13,8 @@ export function buildResourceIndex(tracks = []) {
       (level.subLevels || []).forEach((subLevel) => {
         (subLevel.units || []).forEach((unit) => {
           (unit.resources || []).forEach((resource) => {
+            if (!resource?._id) return;
+
             resourcesById[resource._id] = {
               ...resource,
               // Attach context so PrepShell can still show breadcrumbs, etc.
@@ -42,17 +48,23 @@ export function buildResourceIndex(tracks = []) {
   return { resourcesById };
 }
 
-// Exactly the same viewer logic as app/resources/prep/page.jsx
+// ─────────────────────────────────────────────────────────────
+// Viewer helpers (mirror app/resources/prep/page.jsx)
+// ─────────────────────────────────────────────────────────────
+
 function normalizeYouTubeEmbed(url) {
   if (!url) return null;
+
   try {
     const u = new URL(url);
     let videoId = null;
 
+    // youtu.be/<id>
     if (u.hostname.includes("youtu.be")) {
       videoId = u.pathname.replace("/", "");
     }
 
+    // youtube.com/watch?v=<id> or /embed/<id>
     if (
       u.hostname.includes("youtube.com") ||
       u.hostname.includes("m.youtube.com")
@@ -60,14 +72,16 @@ function normalizeYouTubeEmbed(url) {
       if (u.searchParams.get("v")) {
         videoId = u.searchParams.get("v");
       }
+
       if (u.pathname.startsWith("/embed/")) {
-        return url;
+        return url; // already embed-friendly
       }
     }
 
     if (videoId) {
       return `https://www.youtube.com/embed/${videoId}`;
     }
+
     return url;
   } catch {
     return url;
@@ -88,6 +102,7 @@ export function getViewerInfo(resource) {
   const isPdfUrl = (url) =>
     typeof url === "string" && url.toLowerCase().endsWith(".pdf");
 
+  // YouTube
   if (resource.youtubeUrl) {
     const viewerUrl = normalizeYouTubeEmbed(resource.youtubeUrl);
     return {
@@ -98,6 +113,7 @@ export function getViewerInfo(resource) {
     };
   }
 
+  // Google Slides
   if (resource.googleSlidesUrl) {
     const viewerUrl = normalizeGoogleSlidesEmbed(resource.googleSlidesUrl);
     return {
@@ -108,6 +124,7 @@ export function getViewerInfo(resource) {
     };
   }
 
+  // PDF via externalUrl
   if (resource.externalUrl && isPdfUrl(resource.externalUrl)) {
     return {
       type: "pdf",
@@ -117,6 +134,7 @@ export function getViewerInfo(resource) {
     };
   }
 
+  // PDF via fileUrl
   if (resource.fileUrl && isPdfUrl(resource.fileUrl)) {
     return {
       type: "pdf",
@@ -126,6 +144,7 @@ export function getViewerInfo(resource) {
     };
   }
 
+  // Generic external page
   if (resource.externalUrl) {
     return {
       type: "external",
@@ -135,6 +154,7 @@ export function getViewerInfo(resource) {
     };
   }
 
+  // Generic file (non-PDF)
   if (resource.fileUrl) {
     return {
       type: "file",
@@ -152,7 +172,10 @@ export function getViewerInfo(resource) {
   };
 }
 
-// Build the picker data structures for ClassroomResourcePicker
+// ─────────────────────────────────────────────────────────────
+// Picker index for ClassroomResourcePicker
+// ─────────────────────────────────────────────────────────────
+
 export function buildPickerIndex(tracks = []) {
   const trackOptions = [];
   const booksByTrackId = {};
@@ -161,7 +184,9 @@ export function buildPickerIndex(tracks = []) {
   const resourcesByUnitId = {};
 
   (tracks || []).forEach((track) => {
-    // Track options
+    if (!track?._id) return;
+
+    // Track options (simple label: just the name in classroom)
     trackOptions.push({
       value: track._id,
       label: track.name,
@@ -212,6 +237,7 @@ export function buildPickerIndex(tracks = []) {
             resourcesByUnitId[unit._id] = [];
           }
           (unit.resources || []).forEach((r) => {
+            if (!r?._id) return;
             resourcesByUnitId[unit._id].push(r);
           });
         });

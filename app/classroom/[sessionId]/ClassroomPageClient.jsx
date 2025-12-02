@@ -43,11 +43,11 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
   // LOADING
   if (status === "loading") {
     return (
-      <div className="resources-page">
-        <div className="resources-page__inner prep-page">
-          <div className="prep-empty-card">
-            <h1 className="prep-empty-card__title">Loading classroom…</h1>
-            <p className="prep-empty-card__text">
+      <div className="spx-resources-page">
+        <div className="spx-resources-page__inner spx-prep-page">
+          <div className="spx-prep-empty-card">
+            <h1 className="spx-prep-empty-card__title">Loading classroom…</h1>
+            <p className="spx-prep-empty-card__text">
               We’re fetching the latest details for this session.
             </p>
           </div>
@@ -59,18 +59,15 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
   // ERROR / NOT FOUND
   if (status === "error" || !session) {
     return (
-      <div className="resources-page">
-        <div className="resources-page__inner prep-page">
-          <div className="prep-empty-card">
-            <h1 className="prep-empty-card__title">Session not found</h1>
-            <p className="prep-empty-card__text">
+      <div className="spx-resources-page">
+        <div className="spx-resources-page__inner spx-prep-page">
+          <div className="spx-prep-empty-card">
+            <h1 className="spx-prep-empty-card__title">Session not found</h1>
+            <p className="spx-prep-empty-card__text">
               {error ||
                 `Unable to load this classroom (session #${sessionId}).`}
             </p>
-            <Link
-              href="/dashboard"
-              className="resources-button resources-button--primary"
-            >
+            <Link href="/dashboard" className="spx-button spx-button--primary">
               ← Back to dashboard
             </Link>
           </div>
@@ -81,8 +78,8 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
 
   // NORMAL STATE → now show ClassroomShell
   return (
-    <div className="resources-page">
-      <div className="resources-page__inner prep-page">
+    <div className="spx-resources-page">
+      <div className="spx-resources-page__inner spx-prep-page">
         <ClassroomShell
           session={session}
           sessionId={String(sessionId)}

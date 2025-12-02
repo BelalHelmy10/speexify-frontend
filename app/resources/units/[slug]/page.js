@@ -185,7 +185,6 @@ export default async function UnitResourcesPage({ params }) {
           <div className="unit-resources-list">
             {unit.resources?.map((r) => {
               const url = getPrimaryUrl(r);
-              const disabled = !url;
 
               return (
                 <article key={r._id} className="unit-resource-card">
@@ -241,12 +240,12 @@ export default async function UnitResourcesPage({ params }) {
                         >
                           Open resource
                         </a>
-                        <a
+                        <Link
                           href={`/resources/prep?resourceId=${r._id}`}
                           className="resources-button resources-button--ghost"
                         >
                           Open in Prep Room
-                        </a>
+                        </Link>
                       </>
                     ) : (
                       <button

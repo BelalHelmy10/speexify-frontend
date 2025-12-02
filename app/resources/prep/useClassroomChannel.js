@@ -25,7 +25,7 @@ export function useClassroomChannel(roomId) {
     if (apiBase) {
       const url = new URL(apiBase);
       url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-      url.pathname = "/ws/classroom"; // ✅ separate path
+      url.pathname = "/ws/classroom"; // separate path from prep signaling
       url.search = "";
       wsUrl = url.toString();
     } else {
@@ -36,8 +36,9 @@ export function useClassroomChannel(roomId) {
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
+    // Optional debug handle in the browser console
     if (typeof window !== "undefined") {
-      window.__ws_classroom = ws; // debug handle
+      window.__ws_classroom = ws;
     }
 
     ws.onopen = () => {

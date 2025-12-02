@@ -2,6 +2,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import Link from "next/link";
 
 // Choose the best URL for a resource
 function getPrimaryUrl(resource) {
@@ -38,7 +39,7 @@ function findUnitWithContext(tracks, unitId) {
   };
 }
 
-export default function ResourcesPicker({ tracks }) {
+export default function ResourcesPicker({ tracks = [] }) {
   const {
     trackOptions,
     booksByTrackId,
@@ -54,7 +55,10 @@ export default function ResourcesPicker({ tracks }) {
       // Track dropdown option
       trackOptions.push({
         value: track._id,
-        label: `${track.order}) ${track.name}`,
+        label:
+          typeof track.order === "number"
+            ? `${track.order}) ${track.name}`
+            : track.name,
       });
 
       // Books for this track
@@ -478,21 +482,21 @@ export default function ResourcesPicker({ tracks }) {
               )}
 
               {selectedResource && (
-                <a
+                <Link
                   href={`/resources/prep?resourceId=${selectedResource._id}`}
                   className="resources-button resources-button--ghost"
                 >
                   Open in Prep Room
-                </a>
+                </Link>
               )}
 
               {unit?.slug && (
-                <a
+                <Link
                   href={`/resources/units/${unit.slug}`}
                   className="resources-button resources-button--ghost"
                 >
                   View unit page
-                </a>
+                </Link>
               )}
             </div>
           </div>

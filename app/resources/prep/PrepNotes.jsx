@@ -8,7 +8,7 @@ export default function PrepNotes({ resourceId }) {
 
   const storageKey = `speexify_prep_notes_${resourceId}`;
 
-  // Load from localStorage on mount
+  // Load notes from localStorage
   useEffect(() => {
     if (!resourceId) return;
     try {
@@ -19,10 +19,9 @@ export default function PrepNotes({ resourceId }) {
     } catch (err) {
       console.warn("Failed to read prep notes from localStorage", err);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resourceId]);
 
-  // Save to localStorage whenever value changes
+  // Save notes to localStorage
   useEffect(() => {
     if (!resourceId) return;
     try {
@@ -37,10 +36,10 @@ export default function PrepNotes({ resourceId }) {
       <div className="prep-notes__header">
         <span className="prep-notes__label">Session notes</span>
         <span className="prep-notes__hint">
-          Jot down warm-ups, key questions, pronunciation points, and follow-up
-          homework.
+          Jot down warm-ups, questions, pronunciation points, follow-ups, etc.
         </span>
       </div>
+
       <textarea
         className="prep-notes__textarea"
         placeholder="Start writing your plan for this resource..."
