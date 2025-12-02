@@ -1186,10 +1186,12 @@ $breakpoint-xl: 1280px;
   background: transparent;
   cursor: default;
   z-index: $z-base;
+  pointer-events: none; // ⬅️ IMPORTANT: let clicks/scroll go through by default
 }
 
 .prep-annotate-canvas--drawing {
   cursor: crosshair;
+  pointer-events: auto; // ⬅️ Only when drawing mode is ON, we capture events
 }
 
 .prep-viewer__placeholder {
