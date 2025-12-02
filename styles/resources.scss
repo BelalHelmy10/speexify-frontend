@@ -202,7 +202,7 @@ $breakpoint-xl: 1280px;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// HERO SECTION
+– HERO SECTION
 // ════════════════════════════════════════════════════════════════════════════
 
 .resources-hero {
@@ -942,13 +942,8 @@ $breakpoint-xl: 1280px;
 .prep-layout {
   position: relative;
   display: grid;
-  /* OLD:
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr);
-  gap: $space-6;
-  */
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); // ~33% / 67%
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); // 33 / 67
   gap: $space-5;
-
   align-items: stretch;
 
   @media (max-width: $breakpoint-lg) {
@@ -1191,12 +1186,12 @@ $breakpoint-xl: 1280px;
   background: transparent;
   cursor: default;
   z-index: $z-base;
-  pointer-events: none; // ⬅️ IMPORTANT: let clicks/scroll go through by default
+  pointer-events: none;
 }
 
 .prep-annotate-canvas--drawing {
   cursor: crosshair;
-  pointer-events: auto; // ⬅️ Only when drawing mode is ON, we capture events
+  pointer-events: auto;
 }
 
 .prep-viewer__placeholder {
@@ -1958,27 +1953,27 @@ $breakpoint-xl: 1280px;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-/* CLASSROOM LAYOUT + PICKER */
+/* CLASSROOM LAYOUT + PICKER – NEW spx-* CLASSES */
 // ════════════════════════════════════════════════════════════════════════════
 
-.classroom-layout {
+.spx-classroom-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.9fr);
-  gap: 24px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.75fr); // ~35% / 65%
+  gap: $space-6;
+  align-items: flex-start;
   margin-top: $space-3;
-  min-height: calc(100vh - 120px);
+  min-height: calc(100vh - 140px);
 
   @media (max-width: 960px) {
     grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
+    gap: $space-4;
     min-height: auto;
   }
 }
 
 // ─── Left Video Column ───────────────────────────────────────────────────────
 
-.classroom-video-pane {
+.spx-classroom-layout__video-pane {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -1994,34 +1989,38 @@ $breakpoint-xl: 1280px;
   .prep-video__frame-wrapper {
     width: 100%;
     max-width: 480px;
-    max-height: calc(100vh - 180px);
+    aspect-ratio: 16 / 9;
+    max-height: 320px;
     margin-left: 0;
     margin-right: auto;
+  }
+
+  @media (max-width: 960px) {
+    .prep-video__frame-wrapper {
+      max-width: 100%;
+      max-height: none;
+    }
   }
 }
 
 // ─── Right Classroom + Viewer ────────────────────────────────────────────────
 
-.classroom-prep-pane {
+.spx-classroom-layout__prep-pane {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding-top: $space-8;
-
-  @media (max-width: 960px) {
-    padding-top: 104px;
-  }
 }
 
-.classroom-prep-pane__content {
+.spx-classroom-layout__prep-content {
   flex: 1 1 auto;
-  margin-top: 0;
+  margin-top: $space-3;
 }
 
-.classroom-prep-pane .prep-viewer {
+// Make the embedded PrepShell viewer fill the right column nicely
+.spx-classroom-layout__prep-pane .prep-viewer {
   width: 100%;
-  height: calc(100vh - 180px);
+  height: calc(100vh - 210px);
   max-height: 820px;
 
   @media (max-width: 960px) {
@@ -2030,46 +2029,29 @@ $breakpoint-xl: 1280px;
   }
 }
 
-.classroom-prep-pane .prep-viewer__frame-wrapper,
-.classroom-prep-pane .prep-viewer__canvas-container {
+.spx-classroom-layout__prep-pane .prep-viewer__frame-wrapper,
+.spx-classroom-layout__prep-pane .prep-viewer__canvas-container {
   height: 100%;
 }
 
-@media (max-width: 960px) {
-  .classroom-video-pane .prep-video__frame-wrapper {
-    max-width: 100%;
-    max-height: none;
-  }
-}
+// ─── Top Resource Picker (separate bar above viewer) ─────────────────────────
 
-.prep-layout.prep-layout--no-sidebar {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-// ─── Top Pill Bar for Picking ────────────────────────────────────────────────
-
-.classroom-picker {
-  position: absolute;
-  top: -24px;
-  left: 0;
-  right: 0;
-  z-index: $z-overlay;
+.spx-classroom-picker {
   width: 100%;
-  max-width: 1120px;
-  margin: 0 auto;
+  margin-bottom: $space-2;
 }
 
-.classroom-picker__row {
+.spx-classroom-picker__row {
   display: flex;
   flex-wrap: wrap;
   gap: $space-2;
   padding: $space-2 $space-3;
   border-radius: $radius-full;
   background: radial-gradient(circle at top left, #101828, $color-slate-950);
-  box-shadow: $shadow-dark-xl, 0 0 0 1px rgba(148, 163, 184, 0.1);
+  box-shadow: $shadow-dark-xl, 0 0 0 1px rgba(148, 163, 184, 0.12);
 }
 
-.classroom-picker__select {
+.spx-classroom-picker__select {
   position: relative;
 
   select {
@@ -2091,12 +2073,13 @@ $breakpoint-xl: 1280px;
     text-overflow: ellipsis;
     overflow: hidden;
     cursor: pointer;
-    transition: box-shadow $transition-normal;
+    transition: box-shadow $transition-normal,
+      background-color $transition-normal, transform $transition-fast;
 
-    &:hover:not(:disabled),
-    &:focus-visible {
+    &:hover:not(:disabled) {
       box-shadow: 0 0 0 1px $color-sky-400,
         0 10px 26px rgba($color-sky-900, 0.7);
+      transform: translateY(-1px);
     }
 
     &:focus-visible {
@@ -2121,10 +2104,36 @@ $breakpoint-xl: 1280px;
   }
 }
 
-.classroom-picker__select--empty select {
+.spx-classroom-picker__select--empty select {
   background: rgba($color-slate-900, 0.5);
   color: rgba($text-muted, 0.9);
   box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.3);
+}
+
+// Backwards-compatibility aliases for older .classroom-* usages
+.classroom-layout {
+  @extend .spx-classroom-layout;
+}
+.classroom-video-pane {
+  @extend .spx-classroom-layout__video-pane;
+}
+.classroom-prep-pane {
+  @extend .spx-classroom-layout__prep-pane;
+}
+.classroom-prep-pane__content {
+  @extend .spx-classroom-layout__prep-content;
+}
+.classroom-picker {
+  @extend .spx-classroom-picker;
+}
+.classroom-picker__row {
+  @extend .spx-classroom-picker__row;
+}
+.classroom-picker__select {
+  @extend .spx-classroom-picker__select;
+}
+.classroom-picker__select--empty {
+  @extend .spx-classroom-picker__select--empty;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -2317,7 +2326,7 @@ $breakpoint-xl: 1280px;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SPX-PREFXIED CLASSNAME ALIASES (to match JSX)
+// SPX-PREFXIED CLASSNAME ALIASES (to match JSX for non-classroom parts)
 // ════════════════════════════════════════════════════════════════════════════
 
 // Resources page wrapper (spx-* in ResourcesPage + ClassroomPage)
@@ -2366,34 +2375,6 @@ $breakpoint-xl: 1280px;
 }
 .spx-prep-viewer__placeholder {
   @extend .prep-viewer__placeholder;
-}
-
-// Classroom layout aliases (spx-classroom-layout*)
-.spx-classroom-layout {
-  @extend .classroom-layout;
-}
-.spx-classroom-layout__video-pane {
-  @extend .classroom-video-pane;
-}
-.spx-classroom-layout__prep-pane {
-  @extend .classroom-prep-pane;
-}
-.spx-classroom-layout__prep-content {
-  @extend .classroom-prep-pane__content;
-}
-
-// Classroom picker aliases (spx-classroom-picker*)
-.spx-classroom-picker {
-  @extend .classroom-picker;
-}
-.spx-classroom-picker__row {
-  @extend .classroom-picker__row;
-}
-.spx-classroom-picker__select {
-  @extend .classroom-picker__select;
-}
-.spx-classroom-picker__select--empty {
-  @extend .classroom-picker__select--empty;
 }
 
 // Classroom chat aliases (spx-classroom-chat*)
