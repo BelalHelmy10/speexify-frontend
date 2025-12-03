@@ -85,14 +85,14 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const { teacherId, learnerId, teacherName, learnerName } =
     getParticipantsFromSession(session);
 
-  // Decide role (keep all the checks you had before)
+  // Decide role
   const isTeacher =
     session?.role === "teacher" ||
     session?.isTeacher === true ||
     session?.userType === "teacher" ||
     (session?.currentUser && session.currentUser.role === "teacher");
 
-  const userId = isTeacher ? teacherId : learnerId;
+  const userId = isTeacher ? teacherId : learnerId; // currently unused but kept for future
   const userName = isTeacher ? teacherName : learnerName;
 
   // ─── Resources index ────────────────────────────────────────
@@ -166,7 +166,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         <PrepVideoCall
           roomId={sessionId}
           isTeacher={isTeacher}
-          userName={userName} // ✅ add this
+          userName={userName} // ✅ pass to Jitsi
           onScreenShareStreamChange={handleScreenShareStreamChange}
         />
 
@@ -180,7 +180,67 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
       </section>
 
       {/* RIGHT: resource picker + viewer */}
-      {/* ...rest stays the same */}
+      <section className="spx-classroom-layout__prep-pane">
+        {isTeacher && (
+          <ClassroomResourcePicker
+            isTeacher={isTeacher}
+            tracks={tracks}
+            selectedResourceId={selectedResourceId}
+            onChangeResourceId={handleChangeResourceId}
+          />
+        )}
+
+        <div className="spx-classroom-layout__prep-content">
+          {resource ? (
+            <PrepShell
+              resource={resource}
+              viewer={viewer}
+              hideSidebar
+              hideBreadcrumbs
+              classroomChannel={classroomChannel}
+              screenShareStream={screenShareStream}
+              isTeacher={isTeacher}
+            />
+          ) : (
+            <div className="spx-prep-viewer spx-prep-viewer__placeholder">
+              <h2>
+                {screenShareStream
+                  ? "Screen Share Active"
+                  : "No resource selected"}
+              </h2>
+              <p>
+                {screenShareStream
+                  ? "The screen share is being displayed."
+                  : isTeacher
+                  ? "Use the bar above to choose a track, book, level, unit and resource."
+                  : "Waiting for your teacher to pick a resource."}
+              </p>
+
+              {screenShareStream && (
+                <div style={{ marginTop: "20px", width: "100%" }}>
+                  <video
+                    autoPlay
+                    playsInline
+                    muted={isTeacher}
+                    style={{
+                      width: "100%",
+                      maxHeight: "500px",
+                      background: "#000",
+                      borderRadius: "8px",
+                    }}
+                    ref={(el) => {
+                      if (el && screenShareStream) {
+                        el.srcObject = screenShareStream;
+                        el.play().catch(() => {});
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
