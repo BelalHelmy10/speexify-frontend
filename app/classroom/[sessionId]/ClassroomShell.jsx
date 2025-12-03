@@ -160,25 +160,17 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const viewer = resource ? getViewerInfo(resource) : null;
 
   return (
-    <div className="spx-classroom-layout">
-      {/* LEFT: video + chat */}
+    <div className="spx-classroom-layout spx-classroom-layout--video-dominant">
+      {/* LEFT: big video, full column */}
       <section className="spx-classroom-layout__video-pane">
         <PrepVideoCall
           roomId={sessionId}
           isTeacher={isTeacher}
           onScreenShareStreamChange={handleScreenShareStreamChange}
         />
-
-        <ClassroomChat
-          classroomChannel={classroomChannel}
-          sessionId={sessionId}
-          isTeacher={isTeacher}
-          teacherName={teacherName}
-          learnerName={learnerName}
-        />
       </section>
 
-      {/* RIGHT: resource picker + viewer */}
+      {/* RIGHT: resource picker + viewer + chat */}
       <section className="spx-classroom-layout__prep-pane">
         {isTeacher && (
           <ClassroomResourcePicker
@@ -238,6 +230,16 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
               )}
             </div>
           )}
+        </div>
+
+        <div className="spx-classroom-layout__chat-pane">
+          <ClassroomChat
+            classroomChannel={classroomChannel}
+            sessionId={sessionId}
+            isTeacher={isTeacher}
+            teacherName={teacherName}
+            learnerName={learnerName}
+          />
         </div>
       </section>
     </div>

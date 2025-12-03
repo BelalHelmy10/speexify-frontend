@@ -1958,7 +1958,7 @@ $breakpoint-xl: 1280px;
 
 .spx-classroom-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.7fr) minmax(0, 2.3fr); // ~35% / 65%
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); // base – overridden by modifiers
   gap: $space-6;
   align-items: flex-start;
   margin-top: $space-3;
@@ -1969,6 +1969,21 @@ $breakpoint-xl: 1280px;
     gap: $space-4;
     min-height: auto;
   }
+}
+
+/* OPTION A – video is dominant */
+.spx-classroom-layout--video-dominant {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.1fr);
+}
+
+/* OPTION C – resources dominant (your old behaviour) */
+.spx-classroom-layout--resources-dominant {
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 2.3fr);
+}
+
+/* keep your existing pane styles, plus: */
+.spx-classroom-layout__chat-pane {
+  margin-top: $space-3;
 }
 
 // ─── Left Video Column ───────────────────────────────────────────────────────
