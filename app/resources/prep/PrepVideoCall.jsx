@@ -1,43 +1,69 @@
 // app/resources/prep/PrepVideoCall.jsx
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useRef } from "react";
 
-export default function PrepVideoCall({ roomId, isTeacher }) {
-  // Stable room name based on your classroom session
-  const roomName = useMemo(() => `speexify-classroom-${roomId}`, [roomId]);
+const JITSI_DOMAIN =
+  process.env.NEXT_PUBLIC_JITSI_DOMAIN || "meet.speexify.com";
+
+export default function PrepVideoCall({
+  roomId,
+  userName,
+  isTeacher,
+  onScreenShareStreamChange, // kept for future use
+}) {
+  const containerRef = useRef(null);
+  const apiRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!roomId) return;
+    if (!containerRef.current) return;
+
+    const JitsiAPI = window.JitsiMeetExternalAPI;
+    if (!JitsiAPI) {
+      console.error("JitsiMeetExternalAPI not found on window");
+      return;
+    }
+
+    // Example: speexify-classroom-9
+    const roomName = `speexify-classroom-${roomId}`;
+
+    const api = new JitsiAPI(JITSI_DOMAIN, {
+      roomName,
+      parentNode: containerRef.current,
+      width: "100%",
+      height: "100%",
+      userInfo: {
+        displayName: userName || (isTeacher ? "Teacher" : "Learner"),
+      },
+      configOverwrite: {
+        disableDeepLinking: true,
+      },
+      interfaceConfigOverwrite: {
+        // you can tweak toolbar later if you want
+      },
+    });
+
+    apiRef.current = api;
+
+    // (optional) hook screen-share events later using onScreenShareStreamChange
+
+    return () => {
+      try {
+        api.dispose();
+      } catch (e) {
+        console.warn("Error disposing Jitsi API", e);
+      }
+      apiRef.current = null;
+    };
+  }, [roomId, userName, isTeacher, onScreenShareStreamChange]);
 
   return (
-    <section className="prep-video">
-      <header className="prep-video__header">
-        <h2 className="prep-video__title">Live video</h2>
-        <p className="prep-video__subtitle">
-          Start a 1-to-1 call with your learner directly in the classroom.
-        </p>
-      </header>
-
-      <div className="prep-video__body">
-        <div className="prep-video__frame-wrapper">
-          <iframe
-            title="Speexify Classroom Video"
-            src={`https://meet.speexify.com/${roomName}`}
-            allow="camera; microphone; fullscreen; display-capture; clipboard-read; clipboard-write"
-            allowFullScreen
-            style={{
-              width: "100%",
-              height: "100%",
-              border: "0",
-              borderRadius: "inherit",
-            }}
-          />
-        </div>
-
-        <p className="prep-video__hint">
-          You are using the new Jitsi-powered media server
-          {isTeacher ? " (teacher view)" : ""}. Share this classroom link with
-          your learner to join the same room.
-        </p>
+    <div className="prep-video">
+      <div className="prep-video__frame-wrapper">
+        <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
       </div>
-    </section>
+    </div>
   );
 }

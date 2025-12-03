@@ -9,7 +9,7 @@ import { getServerUser } from "./server-auth";
 import Providers from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ClientProviders from "./ClientProviders"; // ✅ ADD THIS
+import ClientProviders from "./ClientProviders";
 
 // Force dynamic rendering so the first paint always reflects the live auth state
 export const dynamic = "force-dynamic";
@@ -35,10 +35,12 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en">
+      <head>
+        {/* Jitsi external API for embedded meetings */}
+        <script src="https://meet.speexify.com/external_api.js"></script>
+      </head>
       <body suppressHydrationWarning>
         <ClientProviders>
-          {" "}
-          {/* ✅ WRAP EVERYTHING */}
           <Providers initialUser={user}>
             <Header />
             <main>{children}</main>
