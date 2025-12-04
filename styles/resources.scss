@@ -1624,3 +1624,68 @@ body.classroom-active {
     box-shadow: 0 0 0 2px rgba($cr-accent-primary, 0.3);
   }
 }
+// ─── Modal: Small variant + footer actions ───────────────────────────────────
+
+.cr-modal--small {
+  max-width: 480px;
+}
+
+.cr-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem 1.25rem;
+  border-top: 1px solid $cr-border-subtle;
+  background: $cr-bg-secondary;
+}
+
+/* Generic button style for modals / dialogs */
+.cr-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: $cr-font-sans;
+  border-radius: $cr-radius-full;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all $cr-transition-fast;
+  text-decoration: none; // for <a> buttons
+  white-space: nowrap;
+}
+
+/* Neutral / ghost action (Cancel) */
+.cr-button--ghost {
+  background: transparent;
+  color: $cr-text-secondary;
+  border-color: $cr-border-default;
+
+  &:hover {
+    background: $cr-bg-tertiary;
+    color: $cr-text-primary;
+    border-color: $cr-border-strong;
+    text-decoration: none;
+  }
+}
+
+/* Destructive / primary action (Yes, leave) */
+.cr-button--danger {
+  background: $cr-accent-danger;
+  color: $cr-text-primary;
+  border-color: rgba($cr-accent-danger, 0.8);
+  box-shadow: 0 4px 16px rgba($cr-accent-danger, 0.35);
+
+  &:hover {
+    background: lighten($cr-accent-danger, 5%);
+    box-shadow: 0 6px 20px rgba($cr-accent-danger, 0.45);
+    transform: translateY(-1px);
+    text-decoration: none;
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba($cr-accent-danger, 0.35);
+  }
+}

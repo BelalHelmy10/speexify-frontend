@@ -2,9 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-const JITSI_DOMAIN =
-  process.env.NEXT_PUBLIC_JITSI_DOMAIN || "meet.speexify.com";
+import { JITSI_DOMAIN, buildJitsiOptions } from "@/lib/jitsiConfig";
 
 export default function PrepVideoCall({
   roomId,
@@ -31,7 +29,7 @@ export default function PrepVideoCall({
 
     const existing = document.getElementById("jitsi-external-api");
     if (existing) {
-      // wait until it finishes loading
+      // Wait until it finishes loading
       await new Promise((resolve, reject) => {
         if (existing.getAttribute("data-loaded") === "true") return resolve();
         existing.addEventListener("load", () => resolve(), { once: true });
@@ -76,107 +74,14 @@ export default function PrepVideoCall({
           throw new Error("JitsiMeetExternalAPI not available on window");
         }
 
-        const roomName = `speexify-classroom-${roomId}`;
-
-        const api = new JitsiAPI(JITSI_DOMAIN, {
-          roomName,
+        const options = buildJitsiOptions({
+          roomId,
+          userName,
+          isTeacher: !!isTeacher,
           parentNode: containerRef.current,
-          width: "100%",
-          height: "100%",
-          userInfo: {
-            displayName: userName || (isTeacher ? "Teacher" : "Learner"),
-          },
-          configOverwrite: {
-            // Core settings
-            disableDeepLinking: true,
-            startWithAudioMuted: false,
-            startWithVideoMuted: false,
-
-            // UI simplification
-            disableModeratorIndicator: false,
-            disableReactions: true,
-            disablePolls: true,
-            disableSelfView: false,
-
-            // Quality settings
-            resolution: 720,
-            constraints: {
-              video: {
-                height: { ideal: 720, max: 720, min: 240 },
-                width: { ideal: 1280, max: 1280, min: 320 },
-              },
-            },
-
-            // Reduce bandwidth usage
-            enableLayerSuspension: true,
-            channelLastN: 2,
-
-            // Disable features we don't need
-            enableWelcomePage: false,
-            enableClosePage: false,
-
-            // Pre-join settings (we keep it for device testing)
-            prejoinConfig: {
-              enabled: true,
-              hideDisplayName: false,
-              hideExtraJoinButtons: ["no-audio", "by-phone"],
-            },
-
-            // Lobby settings
-            enableLobbyChat: false,
-
-            // Recording / streaming
-            fileRecordingsEnabled: false,
-            liveStreamingEnabled: false,
-
-            // Etherpad
-            etherpad_base: undefined,
-
-            // Breakout rooms
-            breakoutRooms: {
-              hideAddRoomButton: true,
-              hideAutoAssignButton: true,
-              hideJoinRoomButton: true,
-            },
-          },
-          interfaceConfigOverwrite: {
-            APP_NAME: "Speexify Classroom",
-            DEFAULT_BACKGROUND: "#0f172a",
-            DEFAULT_LOCAL_DISPLAY_NAME: isTeacher ? "Teacher" : "Learner",
-            DEFAULT_REMOTE_DISPLAY_NAME: "Participant",
-
-            SHOW_JITSI_WATERMARK: false,
-            SHOW_WATERMARK_FOR_GUESTS: false,
-            SHOW_BRAND_WATERMARK: false,
-            SHOW_POWERED_BY: false,
-            SHOW_PROMOTIONAL_CLOSE_PAGE: false,
-            HIDE_INVITE_MORE_HEADER: true,
-            HIDE_DEEP_LINKING_LOGO: true,
-
-            TOOLBAR_BUTTONS: [
-              "microphone",
-              "camera",
-              "desktop",
-              "fullscreen",
-              "hangup",
-              "settings",
-              "videoquality",
-              "tileview",
-            ],
-
-            DISABLE_FOCUS_INDICATOR: true,
-            DISABLE_DOMINANT_SPEAKER_INDICATOR: false,
-            DISABLE_VIDEO_BACKGROUND: false,
-            DISABLE_TRANSCRIPTION_SUBTITLES: true,
-
-            FILM_STRIP_MAX_HEIGHT: 120,
-            VERTICAL_FILMSTRIP: true,
-            MOBILE_APP_PROMO: false,
-            TILE_VIEW_MAX_COLUMNS: 2,
-            VIDEO_LAYOUT_FIT: "both",
-          },
         });
 
+        const api = new JitsiAPI(JITSI_DOMAIN, options);
         apiRef.current = api;
 
         // Jitsi UI is now mounted; hide "Connecting…" overlay
@@ -206,8 +111,8 @@ export default function PrepVideoCall({
         api.addListener("screenSharingStatusChanged", (status) => {
           const cb = screenShareCbRef.current;
           if (typeof cb === "function") {
-            // true when Jitsi is actively sharing a screen, false otherwise
-            cb(Boolean(status?.on));
+            // We still only expose boolean active vs not, as designed in ClassroomShell
+            cb(status.on ? true : null);
           }
         });
 

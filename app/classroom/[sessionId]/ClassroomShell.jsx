@@ -118,22 +118,26 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     () => buildResourceIndex(tracks || []),
     [tracks]
   );
+
   const [selectedResourceId, setSelectedResourceId] = useState(null);
   const [isScreenShareActive, setIsScreenShareActive] = useState(false);
 
   /* -----------------------------------------------------------
-     Focus Mode State
+     Focus Mode & Layout State
   ----------------------------------------------------------- */
   const [focusMode, setFocusMode] = useState(FOCUS_MODES.BALANCED);
   const [customSplit, setCustomSplit] = useState(null); // null = use focusMode default
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
-  // Chat visibility (mobile/desktop)
+  // Chat visibility
   const [isChatOpen, setIsChatOpen] = useState(true);
 
   // Resource picker modal
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  // Leave confirmation modal
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   /* -----------------------------------------------------------
      Drag-to-resize logic
@@ -195,7 +199,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const leftPanelWidth = getSplitPercentage();
 
   /* -----------------------------------------------------------
-     Realtime sync (Supabase / WS channel)
+     Realtime sync (classroom channel)
   ----------------------------------------------------------- */
   const classroomChannel = useClassroomChannel(String(sessionId));
   const ready = classroomChannel?.ready ?? false;
@@ -250,7 +254,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   // stable callback so PrepVideoCall's effect doesn't re-run on every render
   const handleScreenShareStreamChange = useCallback((isActive) => {
-    // Jitsi tells us "on" (true) / "off" (false)
     setIsScreenShareActive(Boolean(isActive));
   }, []);
 
@@ -289,7 +292,11 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           >
             {isTeacher ? "👨‍🏫 Teacher" : "👨‍🎓 Learner"}
           </div>
-          <a href="/dashboard" className="cr-header__leave">
+          <button
+            type="button"
+            className="cr-header__leave"
+            onClick={() => setShowLeaveConfirm(true)}
+          >
             Leave
             <svg
               width="16"
@@ -303,7 +310,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
               <polyline points="16,17 21,12 16,7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-          </a>
+          </button>
         </div>
       </header>
 
@@ -504,6 +511,41 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
                 onChangeResourceId={handleChangeResourceId}
                 isTeacher={isTeacher}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Confirmation Modal */}
+      {showLeaveConfirm && (
+        <div
+          className="cr-modal-overlay"
+          onClick={() => setShowLeaveConfirm(false)}
+        >
+          <div
+            className="cr-modal cr-modal--small"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="cr-modal__header">
+              <h2 className="cr-modal__title">Leave classroom?</h2>
+            </div>
+            <div className="cr-modal__body">
+              <p>
+                Are you sure you want to leave this live session? Any ongoing
+                conversation and screen sharing will stop.
+              </p>
+            </div>
+            <div className="cr-modal__footer">
+              <button
+                type="button"
+                className="cr-button cr-button--ghost"
+                onClick={() => setShowLeaveConfirm(false)}
+              >
+                Cancel
+              </button>
+              <a href="/dashboard" className="cr-button cr-button--danger">
+                Yes, leave
+              </a>
             </div>
           </div>
         </div>
