@@ -206,7 +206,8 @@ export default function PrepVideoCall({
         api.addListener("screenSharingStatusChanged", (status) => {
           const cb = screenShareCbRef.current;
           if (typeof cb === "function") {
-            cb(status.on ? true : null);
+            // true when Jitsi is actively sharing a screen, false otherwise
+            cb(Boolean(status?.on));
           }
         });
 

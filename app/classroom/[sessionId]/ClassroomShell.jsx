@@ -77,6 +77,24 @@ const FOCUS_MODES = {
   CONTENT: "content",
 };
 
+const focusModeLabel = {
+  [FOCUS_MODES.BALANCED]: "Balanced",
+  [FOCUS_MODES.VIDEO]: "Video Focus",
+  [FOCUS_MODES.CONTENT]: "Content Focus",
+};
+
+const focusModeIcon = {
+  [FOCUS_MODES.BALANCED]: "⚖️",
+  [FOCUS_MODES.VIDEO]: "🎥",
+  [FOCUS_MODES.CONTENT]: "📄",
+};
+
+const FOCUS_MODE_ORDER = [
+  FOCUS_MODES.BALANCED,
+  FOCUS_MODES.VIDEO,
+  FOCUS_MODES.CONTENT,
+];
+
 /* -----------------------------------------------------------
    MAIN COMPONENT
 ----------------------------------------------------------- */
@@ -101,7 +119,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     [tracks]
   );
   const [selectedResourceId, setSelectedResourceId] = useState(null);
-  const [screenShareStream, setScreenShareStream] = useState(null);
+  const [isScreenShareActive, setIsScreenShareActive] = useState(false);
 
   /* -----------------------------------------------------------
      Focus Mode State
@@ -111,7 +129,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
-  // Chat visibility (mobile)
+  // Chat visibility (mobile/desktop)
   const [isChatOpen, setIsChatOpen] = useState(true);
 
   // Resource picker modal
@@ -177,7 +195,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const leftPanelWidth = getSplitPercentage();
 
   /* -----------------------------------------------------------
-     Realtime sync (Supabase channel)
+     Realtime sync (Supabase / WS channel)
   ----------------------------------------------------------- */
   const classroomChannel = useClassroomChannel(String(sessionId));
   const ready = classroomChannel?.ready ?? false;
@@ -200,7 +218,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     return unsub;
   }, [ready, resourcesById, subscribe]);
 
-  // Teacher auto-selects the first resource
+  // Teacher auto-selects the first resource when entering
   useEffect(() => {
     if (!isTeacher || selectedResourceId) return;
 
@@ -231,45 +249,15 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   }
 
   // stable callback so PrepVideoCall's effect doesn't re-run on every render
-  const handleScreenShareStreamChange = useCallback(
-    (stream) => {
-      setScreenShareStream(stream);
-    },
-    [] // setScreenShareStream is stable
-  );
-
-  function cycleFocusMode() {
-    setCustomSplit(null); // Reset custom split when cycling
-    setFocusMode((prev) => {
-      switch (prev) {
-        case FOCUS_MODES.BALANCED:
-          return FOCUS_MODES.VIDEO;
-        case FOCUS_MODES.VIDEO:
-          return FOCUS_MODES.CONTENT;
-        case FOCUS_MODES.CONTENT:
-          return FOCUS_MODES.BALANCED;
-        default:
-          return FOCUS_MODES.BALANCED;
-      }
-    });
-  }
+  const handleScreenShareStreamChange = useCallback((isActive) => {
+    // Jitsi tells us "on" (true) / "off" (false)
+    setIsScreenShareActive(Boolean(isActive));
+  }, []);
 
   function resetToMode(mode) {
     setCustomSplit(null);
     setFocusMode(mode);
   }
-
-  const focusModeLabel = {
-    [FOCUS_MODES.BALANCED]: "Balanced",
-    [FOCUS_MODES.VIDEO]: "Video Focus",
-    [FOCUS_MODES.CONTENT]: "Content Focus",
-  };
-
-  const focusModeIcon = {
-    [FOCUS_MODES.BALANCED]: "⚖️",
-    [FOCUS_MODES.VIDEO]: "🎥",
-    [FOCUS_MODES.CONTENT]: "📄",
-  };
 
   /* -----------------------------------------------------------
      RENDER
@@ -398,28 +386,27 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
                 hideSidebar
                 hideBreadcrumbs
                 classroomChannel={classroomChannel}
-                screenShareStream={screenShareStream}
                 isTeacher={isTeacher}
-                className="cr-prep-shell-fullsize" // Add this
+                className="cr-prep-shell-fullsize"
               />
             ) : (
               <div className="cr-placeholder">
                 <div className="cr-placeholder__icon">
-                  {screenShareStream ? "🖥️" : "📚"}
+                  {isScreenShareActive ? "🖥️" : "📚"}
                 </div>
                 <h2 className="cr-placeholder__title">
-                  {screenShareStream
-                    ? "Screen share is active"
+                  {isScreenShareActive
+                    ? "Screen sharing is active"
                     : "No resource selected"}
                 </h2>
                 <p className="cr-placeholder__text">
-                  {screenShareStream
-                    ? "The teacher is sharing their screen."
+                  {isScreenShareActive
+                    ? "The teacher is sharing their screen in the video call."
                     : isTeacher
                     ? "Click the resource picker below to choose content."
                     : "Waiting for the teacher to select a resource."}
                 </p>
-                {isTeacher && !screenShareStream && (
+                {isTeacher && !isScreenShareActive && (
                   <button
                     className="cr-placeholder__action"
                     onClick={() => setIsPickerOpen(true)}
@@ -449,40 +436,31 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
         <div className="cr-controls__center">
           <div className="cr-focus-switcher">
-            <button
-              className={`cr-focus-btn ${
-                focusMode === FOCUS_MODES.VIDEO ? "cr-focus-btn--active" : ""
-              }`}
-              onClick={() => resetToMode(FOCUS_MODES.VIDEO)}
-              title="Video Focus"
-            >
-              🎥
-            </button>
-            <button
-              className={`cr-focus-btn ${
-                focusMode === FOCUS_MODES.BALANCED ? "cr-focus-btn--active" : ""
-              }`}
-              onClick={() => resetToMode(FOCUS_MODES.BALANCED)}
-              title="Balanced"
-            >
-              ⚖️
-            </button>
-            <button
-              className={`cr-focus-btn ${
-                focusMode === FOCUS_MODES.CONTENT ? "cr-focus-btn--active" : ""
-              }`}
-              onClick={() => resetToMode(FOCUS_MODES.CONTENT)}
-              title="Content Focus"
-            >
-              📄
-            </button>
+            {FOCUS_MODE_ORDER.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={
+                  "cr-focus-btn" +
+                  (focusMode === mode ? " cr-focus-btn--active" : "")
+                }
+                onClick={() => resetToMode(mode)}
+                aria-pressed={focusMode === mode}
+                aria-label={focusModeLabel[mode]}
+                title={focusModeLabel[mode]}
+              >
+                <span className="cr-controls__btn-icon">
+                  {focusModeIcon[mode]}
+                </span>
+              </button>
+            ))}
           </div>
 
           {customSplit !== null && (
             <button
               className="cr-controls__reset"
               onClick={() => setCustomSplit(null)}
-              title="Reset to preset"
+              title="Reset to preset layout"
             >
               Reset
             </button>

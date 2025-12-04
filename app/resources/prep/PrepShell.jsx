@@ -29,7 +29,7 @@ export default function PrepShell({
   hideSidebar = false,
   hideBreadcrumbs = false,
   classroomChannel,
-  screenShareStream = null,
+  isScreenShareActive = false,
   isTeacher = false,
 }) {
   const [focusMode, setFocusMode] = useState(false);
@@ -46,7 +46,6 @@ export default function PrepShell({
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const screenVideoRef = useRef(null);
 
   const applyingRemoteRef = useRef(false);
 
@@ -58,7 +57,7 @@ export default function PrepShell({
   const level = subLevel?.level;
   const track = level?.track;
 
-  const hasScreenShare = !!screenShareStream;
+  const hasScreenShare = !!isScreenShareActive;
   const isPdf = viewer?.type === "pdf" && !pdfFallback;
   const showSidebar = !hideSidebar && !sidebarCollapsed;
   const showBreadcrumbs = !hideBreadcrumbs;
@@ -73,29 +72,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Attach/detach screen share stream to video element
   // ─────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const videoEl = screenVideoRef.current;
-    if (!videoEl) return;
-
-    if (screenShareStream) {
-      videoEl.srcObject = screenShareStream;
-      videoEl.muted = isTeacher; // Mute for teacher to prevent echo, learner hears audio
-
-      const playPromise = videoEl.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Autoplay blocked - try muted
-          if (!isTeacher) {
-            videoEl.muted = true;
-            videoEl.play().catch(() => {});
-          }
-        });
-      }
-    } else {
-      videoEl.pause();
-      videoEl.srcObject = null;
-    }
-  }, [screenShareStream, isTeacher, hasScreenShare]);
 
   // Focus newly-activated text box
   useEffect(() => {

@@ -3,6 +3,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import { buildResourcePickerIndex } from "@/lib/resourcePickerIndex";
 
 // Choose the best URL for a resource
 function getPrimaryUrl(resource) {
@@ -40,84 +41,23 @@ function findUnitWithContext(tracks, unitId) {
 }
 
 export default function ResourcesPicker({ tracks = [] }) {
+  // Shared index builder used by both resources page & classroom
   const {
-    trackOptions,
+    trackOptions: baseTrackOptions,
     booksByTrackId,
     bookLevelsByBookId,
     unitOptionsByBookLevelId,
-  } = useMemo(() => {
-    const trackOptions = [];
-    const booksByTrackId = {};
-    const bookLevelsByBookId = {};
-    const unitOptionsByBookLevelId = {};
+  } = useMemo(() => buildResourcePickerIndex(tracks), [tracks]);
 
-    (tracks || []).forEach((track) => {
-      // Track dropdown option
-      trackOptions.push({
-        value: track._id,
-        label:
-          typeof track.order === "number"
-            ? `${track.order}) ${track.name}`
-            : track.name,
-      });
-
-      // Books for this track
-      const booksForTrack = [];
-      (track.books || []).forEach((book) => {
-        booksForTrack.push({
-          value: book._id,
-          label: book.title,
-        });
-      });
-      booksByTrackId[track._id] = booksForTrack;
-
-      // Book levels + units (we get them by walking levels/subLevels/units)
-      (track.levels || []).forEach((level) => {
-        (level.subLevels || []).forEach((subLevel) => {
-          (subLevel.units || []).forEach((unit) => {
-            const bookLevel = unit.bookLevel;
-            const book = bookLevel?.book;
-            if (!book || !book._id || !bookLevel || !bookLevel._id) return;
-
-            // Ensure book → bookLevels mapping exists
-            if (!bookLevelsByBookId[book._id]) {
-              bookLevelsByBookId[book._id] = [];
-            }
-            if (
-              !bookLevelsByBookId[book._id].some(
-                (b) => b.value === bookLevel._id
-              )
-            ) {
-              bookLevelsByBookId[book._id].push({
-                value: bookLevel._id,
-                label: bookLevel.title,
-                code: bookLevel.code,
-              });
-            }
-
-            // Units per bookLevel
-            if (!unitOptionsByBookLevelId[bookLevel._id]) {
-              unitOptionsByBookLevelId[bookLevel._id] = [];
-            }
-            unitOptionsByBookLevelId[bookLevel._id].push({
-              value: unit._id,
-              label: unit.title,
-              subLevelTitle: subLevel.title,
-              summary: unit.summary,
-              resources: unit.resources || [],
-            });
-          });
-        });
-      });
-    });
-
-    return {
-      trackOptions,
-      booksByTrackId,
-      bookLevelsByBookId,
-      unitOptionsByBookLevelId,
-    };
-  }, [tracks]);
+  // Resources page wants the order prefix in the label (e.g. "1) General English")
+  const trackOptions = useMemo(
+    () =>
+      (baseTrackOptions || []).map((t) => ({
+        value: t.value,
+        label: typeof t.order === "number" ? `${t.order}) ${t.label}` : t.label,
+      })),
+    [baseTrackOptions]
+  );
 
   // ── Selection state ────────────────────────────────────────
   const [selectedTrackId, setSelectedTrackId] = useState(

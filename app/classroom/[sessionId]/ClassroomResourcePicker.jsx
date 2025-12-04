@@ -1,4 +1,3 @@
-// app/classroom/[sessionId]/ClassroomResourcePicker.jsx
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -208,7 +207,7 @@ export default function ClassroomResourcePicker({
                     disabled={!isTeacher}
                   >
                     <span className="cr-picker__item-icon">
-                      {getResourceIcon(r.type || r.resourceType)}
+                      {getResourceIcon(r)}
                     </span>
                     <span className="cr-picker__item-info">
                       <span className="cr-picker__item-title">{r.title}</span>
@@ -244,20 +243,30 @@ export default function ClassroomResourcePicker({
 }
 
 /* -----------------------------------------------------------
-   Helper: Get icon for resource type
+   Helper: Get icon for resource based on real fields
 ----------------------------------------------------------- */
-function getResourceIcon(type) {
-  const icons = {
-    pdf: "📄",
-    video: "🎬",
-    audio: "🎧",
-    image: "🖼️",
-    document: "📝",
-    presentation: "📊",
-    quiz: "❓",
-    exercise: "✏️",
-    default: "📁",
-  };
+function getResourceIcon(resource) {
+  if (!resource) return "📁";
 
-  return icons[type?.toLowerCase()] || icons.default;
+  const isPdfUrl = (url) =>
+    typeof url === "string" && url.toLowerCase().endsWith(".pdf");
+
+  // URL-based detection first (most reliable)
+  if (resource.youtubeUrl) return "🎬";
+  if (resource.googleSlidesUrl) return "📊";
+  if (resource.externalUrl && isPdfUrl(resource.externalUrl)) return "📄";
+  if (resource.fileUrl && isPdfUrl(resource.fileUrl)) return "📄";
+  if (resource.externalUrl) return "🌐";
+  if (resource.fileUrl) return "📁";
+
+  // Fall back to "kind" semantics
+  const kind = (resource.kind || "").toLowerCase();
+
+  if (kind.includes("worksheet") || kind.includes("exercise")) return "✏️";
+  if (kind.includes("quiz") || kind.includes("test") || kind.includes("exam"))
+    return "❓";
+  if (kind.includes("audio")) return "🎧";
+  if (kind.includes("video")) return "🎬";
+
+  return "📁";
 }
