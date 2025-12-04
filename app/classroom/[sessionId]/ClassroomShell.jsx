@@ -1,25 +1,20 @@
 // app/classroom/[sessionId]/ClassroomShell.jsx
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
 import PrepShell from "@/app/resources/prep/PrepShell";
 import ClassroomResourcePicker from "./ClassroomResourcePicker";
+import ClassroomChat from "./ClassroomChat";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
-import ClassroomChat from "./ClassroomChat";
 
-/**
- * Safely build a display name from a user-like object or plain string.
- */
+/* -----------------------------------------------------------
+   Utility: Safely generate a display name
+----------------------------------------------------------- */
 function buildDisplayName(source) {
   if (!source) return "";
-
-  if (typeof source === "string") {
-    return source;
-  }
-
-  // explicit fields first
+  if (typeof source === "string") return source;
   if (source.fullName) return source.fullName;
   if (source.name) return source.name;
   if (source.displayName) return source.displayName;
@@ -27,18 +22,15 @@ function buildDisplayName(source) {
   const first = source.firstName || source.givenName || source.first_name || "";
   const last = source.lastName || source.familyName || source.last_name || "";
 
-  const combined = [first, last].filter(Boolean).join(" ");
-  return combined || "";
+  return [first, last].filter(Boolean).join(" ") || "";
 }
 
-/**
- * Try to extract teacher / learner identities from the session object.
- * This is defensive and will happily ignore fields that don't exist.
- */
+/* -----------------------------------------------------------
+   Utility: Extract teacher & learner details from session
+----------------------------------------------------------- */
 function getParticipantsFromSession(session) {
   const s = session || {};
 
-  // teacher-ish objects / ids / names
   const teacherObj =
     s.teacherUser ||
     s.teacher ||
@@ -73,174 +65,471 @@ function getParticipantsFromSession(session) {
     buildDisplayName(learnerObj) ||
     "Learner";
 
-  return {
-    teacherId,
-    learnerId,
-    teacherName,
-    learnerName,
-  };
+  return { teacherId, learnerId, teacherName, learnerName };
 }
 
+/* -----------------------------------------------------------
+   Focus Modes
+----------------------------------------------------------- */
+const FOCUS_MODES = {
+  BALANCED: "balanced",
+  VIDEO: "video",
+  CONTENT: "content",
+};
+
+/* -----------------------------------------------------------
+   MAIN COMPONENT
+----------------------------------------------------------- */
 export default function ClassroomShell({ session, sessionId, tracks }) {
   const { teacherId, learnerId, teacherName, learnerName } =
     getParticipantsFromSession(session);
 
-  // Decide role
+  // Determine teacher vs learner
   const isTeacher =
     session?.role === "teacher" ||
     session?.isTeacher === true ||
     session?.userType === "teacher" ||
     (session?.currentUser && session.currentUser.role === "teacher");
 
-  const userId = isTeacher ? teacherId : learnerId; // currently unused but kept for future
   const userName = isTeacher ? teacherName : learnerName;
 
-  // ─── Resources index ────────────────────────────────────────
+  /* -----------------------------------------------------------
+     Resources
+  ----------------------------------------------------------- */
   const { resourcesById } = useMemo(
     () => buildResourceIndex(tracks || []),
     [tracks]
   );
-
   const [selectedResourceId, setSelectedResourceId] = useState(null);
   const [screenShareStream, setScreenShareStream] = useState(null);
 
-  // ─── Real-time channel ──────────────────────────────────────
+  /* -----------------------------------------------------------
+     Focus Mode State
+  ----------------------------------------------------------- */
+  const [focusMode, setFocusMode] = useState(FOCUS_MODES.BALANCED);
+  const [customSplit, setCustomSplit] = useState(null); // null = use focusMode default
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
+
+  // Chat visibility (mobile)
+  const [isChatOpen, setIsChatOpen] = useState(true);
+
+  // Resource picker modal
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  /* -----------------------------------------------------------
+     Drag-to-resize logic
+  ----------------------------------------------------------- */
+  const handleMouseDown = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!isDragging || !containerRef.current) return;
+
+      const container = containerRef.current;
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = Math.min(Math.max((x / rect.width) * 100, 15), 85);
+
+      setCustomSplit(percentage);
+    },
+    [isDragging]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // Calculate split percentages
+  const getSplitPercentage = () => {
+    if (customSplit !== null) return customSplit;
+
+    switch (focusMode) {
+      case FOCUS_MODES.VIDEO:
+        return 55;
+      case FOCUS_MODES.CONTENT:
+        return 28;
+      case FOCUS_MODES.BALANCED:
+      default:
+        return 38;
+    }
+  };
+
+  const leftPanelWidth = getSplitPercentage();
+
+  /* -----------------------------------------------------------
+     Realtime sync (Supabase channel)
+  ----------------------------------------------------------- */
   const classroomChannel = useClassroomChannel(String(sessionId));
   const ready = classroomChannel?.ready ?? false;
   const send = classroomChannel?.send ?? (() => {});
   const subscribe = classroomChannel?.subscribe ?? (() => () => {});
 
-  // Learner: listen for teacher resource changes
+  // Learner listens for teacher's resource updates
   useEffect(() => {
     if (!ready) return;
 
-    const unsubscribe = subscribe((message) => {
-      if (message?.type === "SET_RESOURCE") {
-        const { resourceId } = message;
+    const unsub = subscribe((msg) => {
+      if (msg?.type === "SET_RESOURCE") {
+        const { resourceId } = msg;
         if (resourceId && resourcesById[resourceId]) {
           setSelectedResourceId(resourceId);
         }
       }
     });
 
-    return unsubscribe;
+    return unsub;
   }, [ready, resourcesById, subscribe]);
 
-  // Teacher: auto-select first resource
+  // Teacher auto-selects the first resource
   useEffect(() => {
-    if (!isTeacher) return;
-    if (selectedResourceId) return;
+    if (!isTeacher || selectedResourceId) return;
 
-    const allResources = Object.values(resourcesById || {});
-    if (!allResources.length) return;
-
-    const first = allResources[0];
-    if (!first?._id) return;
-
-    setSelectedResourceId(first._id);
+    const all = Object.values(resourcesById || {});
+    if (all.length && all[0]?._id) {
+      setSelectedResourceId(all[0]._id);
+    }
   }, [isTeacher, resourcesById, selectedResourceId]);
 
-  // Teacher: broadcast resource changes
+  // Teacher broadcasts resource changes
   useEffect(() => {
     if (!isTeacher || !ready || !selectedResourceId) return;
     send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
   }, [isTeacher, ready, selectedResourceId, send]);
 
-  function handleChangeResourceId(nextId) {
-    setSelectedResourceId(nextId || null);
-  }
-
-  function handleScreenShareStreamChange(stream) {
-    setScreenShareStream(stream);
-  }
-
   const resource = selectedResourceId
-    ? resourcesById[selectedResourceId] || null
+    ? resourcesById[selectedResourceId]
     : null;
+
   const viewer = resource ? getViewerInfo(resource) : null;
 
+  /* -----------------------------------------------------------
+     Handlers
+  ----------------------------------------------------------- */
+  function handleChangeResourceId(id) {
+    setSelectedResourceId(id || null);
+    setIsPickerOpen(false);
+  }
+
+  // stable callback so PrepVideoCall's effect doesn't re-run on every render
+  const handleScreenShareStreamChange = useCallback(
+    (stream) => {
+      setScreenShareStream(stream);
+    },
+    [] // setScreenShareStream is stable
+  );
+
+  function cycleFocusMode() {
+    setCustomSplit(null); // Reset custom split when cycling
+    setFocusMode((prev) => {
+      switch (prev) {
+        case FOCUS_MODES.BALANCED:
+          return FOCUS_MODES.VIDEO;
+        case FOCUS_MODES.VIDEO:
+          return FOCUS_MODES.CONTENT;
+        case FOCUS_MODES.CONTENT:
+          return FOCUS_MODES.BALANCED;
+        default:
+          return FOCUS_MODES.BALANCED;
+      }
+    });
+  }
+
+  function resetToMode(mode) {
+    setCustomSplit(null);
+    setFocusMode(mode);
+  }
+
+  const focusModeLabel = {
+    [FOCUS_MODES.BALANCED]: "Balanced",
+    [FOCUS_MODES.VIDEO]: "Video Focus",
+    [FOCUS_MODES.CONTENT]: "Content Focus",
+  };
+
+  const focusModeIcon = {
+    [FOCUS_MODES.BALANCED]: "⚖️",
+    [FOCUS_MODES.VIDEO]: "🎥",
+    [FOCUS_MODES.CONTENT]: "📄",
+  };
+
+  /* -----------------------------------------------------------
+     RENDER
+  ----------------------------------------------------------- */
   return (
-    <div className="spx-classroom-layout">
-      {/* LEFT: video + chat */}
-      <section className="spx-classroom-layout__video-pane">
-        <PrepVideoCall
-          roomId={sessionId}
-          isTeacher={isTeacher}
-          userName={userName} // ✅ pass to Jitsi
-          onScreenShareStreamChange={handleScreenShareStreamChange}
-        />
+    <div className="cr-shell">
+      {/* Header */}
+      <header className="cr-header">
+        <div className="cr-header__left">
+          <a href="/dashboard" className="cr-header__logo">
+            Speexify
+          </a>
+          <span className="cr-header__separator">›</span>
+          <span className="cr-header__session">Classroom #{sessionId}</span>
+        </div>
 
-        <ClassroomChat
-          classroomChannel={classroomChannel}
-          sessionId={sessionId}
-          isTeacher={isTeacher}
-          teacherName={teacherName}
-          learnerName={learnerName}
-        />
-      </section>
-
-      {/* RIGHT: resource picker + viewer */}
-      <section className="spx-classroom-layout__prep-pane">
-        {isTeacher && (
-          <ClassroomResourcePicker
-            isTeacher={isTeacher}
-            tracks={tracks}
-            selectedResourceId={selectedResourceId}
-            onChangeResourceId={handleChangeResourceId}
-          />
-        )}
-
-        <div className="spx-classroom-layout__prep-content">
-          {resource ? (
-            <PrepShell
-              resource={resource}
-              viewer={viewer}
-              hideSidebar
-              hideBreadcrumbs
-              classroomChannel={classroomChannel}
-              screenShareStream={screenShareStream}
-              isTeacher={isTeacher}
-            />
-          ) : (
-            <div className="spx-prep-viewer spx-prep-viewer__placeholder">
-              <h2>
-                {screenShareStream
-                  ? "Screen Share Active"
-                  : "No resource selected"}
-              </h2>
-              <p>
-                {screenShareStream
-                  ? "The screen share is being displayed."
-                  : isTeacher
-                  ? "Use the bar above to choose a track, book, level, unit and resource."
-                  : "Waiting for your teacher to pick a resource."}
-              </p>
-
-              {screenShareStream && (
-                <div style={{ marginTop: "20px", width: "100%" }}>
-                  <video
-                    autoPlay
-                    playsInline
-                    muted={isTeacher}
-                    style={{
-                      width: "100%",
-                      maxHeight: "500px",
-                      background: "#000",
-                      borderRadius: "8px",
-                    }}
-                    ref={(el) => {
-                      if (el && screenShareStream) {
-                        el.srcObject = screenShareStream;
-                        el.play().catch(() => {});
-                      }
-                    }}
-                  />
-                </div>
-              )}
-            </div>
+        <div className="cr-header__center">
+          {resource && (
+            <span className="cr-header__resource-name">
+              {resource.title || "Untitled Resource"}
+            </span>
           )}
         </div>
-      </section>
+
+        <div className="cr-header__right">
+          <div
+            className="cr-header__role-badge"
+            data-role={isTeacher ? "teacher" : "learner"}
+          >
+            {isTeacher ? "👨‍🏫 Teacher" : "👨‍🎓 Learner"}
+          </div>
+          <a href="/dashboard" className="cr-header__leave">
+            Leave
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16,17 21,12 16,7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </a>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div
+        className={`cr-main ${isDragging ? "cr-main--dragging" : ""}`}
+        ref={containerRef}
+      >
+        {/* Left Panel: Video + Chat */}
+        <aside
+          className="cr-panel cr-panel--left"
+          style={{ width: `${leftPanelWidth}%` }}
+        >
+          <div className="cr-video-container">
+            <PrepVideoCall
+              roomId={sessionId}
+              userName={userName}
+              isTeacher={isTeacher}
+              onScreenShareStreamChange={handleScreenShareStreamChange}
+            />
+          </div>
+
+          <div
+            className={`cr-chat-container ${
+              !isChatOpen ? "cr-chat-container--collapsed" : ""
+            }`}
+          >
+            <button
+              className="cr-chat-toggle"
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
+            >
+              <span className="cr-chat-toggle__label">💬 Chat</span>
+              <span
+                className={`cr-chat-toggle__icon ${
+                  isChatOpen ? "cr-chat-toggle__icon--open" : ""
+                }`}
+              >
+                ▼
+              </span>
+            </button>
+
+            {isChatOpen && (
+              <ClassroomChat
+                classroomChannel={classroomChannel}
+                sessionId={sessionId}
+                isTeacher={isTeacher}
+                teacherName={teacherName}
+                learnerName={learnerName}
+              />
+            )}
+          </div>
+        </aside>
+
+        {/* Drag Handle */}
+        <div
+          className={`cr-divider ${isDragging ? "cr-divider--active" : ""}`}
+          onMouseDown={handleMouseDown}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize panels"
+        >
+          <div className="cr-divider__handle">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+
+        {/* Right Panel: Content Viewer */}
+        <section
+          className="cr-panel cr-panel--right"
+          style={{ width: `${100 - leftPanelWidth}%` }}
+        >
+          <div className="cr-content-viewer">
+            {resource ? (
+              <PrepShell
+                resource={resource}
+                viewer={viewer}
+                hideSidebar
+                hideBreadcrumbs
+                classroomChannel={classroomChannel}
+                screenShareStream={screenShareStream}
+                isTeacher={isTeacher}
+                className="cr-prep-shell-fullsize" // Add this
+              />
+            ) : (
+              <div className="cr-placeholder">
+                <div className="cr-placeholder__icon">
+                  {screenShareStream ? "🖥️" : "📚"}
+                </div>
+                <h2 className="cr-placeholder__title">
+                  {screenShareStream
+                    ? "Screen share is active"
+                    : "No resource selected"}
+                </h2>
+                <p className="cr-placeholder__text">
+                  {screenShareStream
+                    ? "The teacher is sharing their screen."
+                    : isTeacher
+                    ? "Click the resource picker below to choose content."
+                    : "Waiting for the teacher to select a resource."}
+                </p>
+                {isTeacher && !screenShareStream && (
+                  <button
+                    className="cr-placeholder__action"
+                    onClick={() => setIsPickerOpen(true)}
+                  >
+                    📚 Choose Resource
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* Bottom Control Bar */}
+      <footer className="cr-controls">
+        <div className="cr-controls__left">
+          {isTeacher && (
+            <button
+              className="cr-controls__btn cr-controls__btn--primary"
+              onClick={() => setIsPickerOpen(true)}
+            >
+              <span className="cr-controls__btn-icon">📚</span>
+              <span className="cr-controls__btn-label">Resources</span>
+            </button>
+          )}
+        </div>
+
+        <div className="cr-controls__center">
+          <div className="cr-focus-switcher">
+            <button
+              className={`cr-focus-btn ${
+                focusMode === FOCUS_MODES.VIDEO ? "cr-focus-btn--active" : ""
+              }`}
+              onClick={() => resetToMode(FOCUS_MODES.VIDEO)}
+              title="Video Focus"
+            >
+              🎥
+            </button>
+            <button
+              className={`cr-focus-btn ${
+                focusMode === FOCUS_MODES.BALANCED ? "cr-focus-btn--active" : ""
+              }`}
+              onClick={() => resetToMode(FOCUS_MODES.BALANCED)}
+              title="Balanced"
+            >
+              ⚖️
+            </button>
+            <button
+              className={`cr-focus-btn ${
+                focusMode === FOCUS_MODES.CONTENT ? "cr-focus-btn--active" : ""
+              }`}
+              onClick={() => resetToMode(FOCUS_MODES.CONTENT)}
+              title="Content Focus"
+            >
+              📄
+            </button>
+          </div>
+
+          {customSplit !== null && (
+            <button
+              className="cr-controls__reset"
+              onClick={() => setCustomSplit(null)}
+              title="Reset to preset"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+
+        <div className="cr-controls__right">
+          <button
+            className="cr-controls__btn cr-controls__btn--ghost"
+            onClick={() => setIsChatOpen(!isChatOpen)}
+          >
+            <span className="cr-controls__btn-icon">💬</span>
+            <span className="cr-controls__btn-label">
+              {isChatOpen ? "Hide Chat" : "Show Chat"}
+            </span>
+          </button>
+        </div>
+      </footer>
+
+      {/* Resource Picker Modal */}
+      {isPickerOpen && isTeacher && (
+        <div
+          className="cr-modal-overlay"
+          onClick={() => setIsPickerOpen(false)}
+        >
+          <div className="cr-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="cr-modal__header">
+              <h2 className="cr-modal__title">Choose a Resource</h2>
+              <button
+                className="cr-modal__close"
+                onClick={() => setIsPickerOpen(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="cr-modal__body">
+              <ClassroomResourcePicker
+                tracks={tracks}
+                selectedResourceId={selectedResourceId}
+                onChangeResourceId={handleChangeResourceId}
+                isTeacher={isTeacher}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

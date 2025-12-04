@@ -11,6 +11,19 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
   const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"
   const [error, setError] = useState("");
 
+  // Add class to body when classroom is active (to hide site header/footer)
+  useEffect(() => {
+    if (status === "ok" && session) {
+      document.body.classList.add("classroom-active");
+      document.documentElement.classList.add("classroom-active");
+    }
+
+    return () => {
+      document.body.classList.remove("classroom-active");
+      document.documentElement.classList.remove("classroom-active");
+    };
+  }, [status, session]);
+
   useEffect(() => {
     if (!sessionId) return;
 
@@ -40,52 +53,46 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
     };
   }, [sessionId]);
 
-  // LOADING
+  // LOADING - full screen loading
   if (status === "loading") {
     return (
-      <div className="spx-resources-page">
-        <div className="spx-resources-page__inner spx-prep-page">
-          <div className="spx-prep-empty-card">
-            <h1 className="spx-prep-empty-card__title">Loading classroom…</h1>
-            <p className="spx-prep-empty-card__text">
-              We’re fetching the latest details for this session.
-            </p>
-          </div>
+      <div className="cr-loading-screen">
+        <div className="cr-loading-screen__content">
+          <div className="cr-loading-screen__spinner" />
+          <h1 className="cr-loading-screen__title">Loading classroom…</h1>
+          <p className="cr-loading-screen__text">
+            Preparing session #{sessionId}
+          </p>
         </div>
       </div>
     );
   }
 
-  // ERROR / NOT FOUND
+  // ERROR / NOT FOUND - full screen error
   if (status === "error" || !session) {
     return (
-      <div className="spx-resources-page">
-        <div className="spx-resources-page__inner spx-prep-page">
-          <div className="spx-prep-empty-card">
-            <h1 className="spx-prep-empty-card__title">Session not found</h1>
-            <p className="spx-prep-empty-card__text">
-              {error ||
-                `Unable to load this classroom (session #${sessionId}).`}
-            </p>
-            <Link href="/dashboard" className="spx-button spx-button--primary">
-              ← Back to dashboard
-            </Link>
-          </div>
+      <div className="cr-error-screen">
+        <div className="cr-error-screen__content">
+          <span className="cr-error-screen__icon">⚠️</span>
+          <h1 className="cr-error-screen__title">Session not found</h1>
+          <p className="cr-error-screen__text">
+            {error || `Unable to load classroom session #${sessionId}.`}
+          </p>
+          <Link href="/dashboard" className="cr-error-screen__btn">
+            ← Back to dashboard
+          </Link>
         </div>
       </div>
     );
   }
 
-  // NORMAL STATE → now show ClassroomShell
+  // NORMAL STATE → render ClassroomShell WITHOUT any wrappers
+  // The shell takes over the entire viewport
   return (
-    <div className="spx-resources-page">
-      <div className="spx-resources-page__inner spx-prep-page">
-        <ClassroomShell
-          session={session}
-          sessionId={String(sessionId)}
-          tracks={tracks}
-        />
-      </div>
-    </div>
+    <ClassroomShell
+      session={session}
+      sessionId={String(sessionId)}
+      tracks={tracks}
+    />
   );
 }

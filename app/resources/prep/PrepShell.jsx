@@ -138,6 +138,7 @@ export default function PrepShell({
   }, [storageKey]);
 
   // Resize canvas
+  // Resize canvas
   useEffect(() => {
     const canvas = canvasRef.current;
 
@@ -152,11 +153,19 @@ export default function PrepShell({
 
     function resizeCanvas() {
       const rect = container.getBoundingClientRect();
+
+      // Skip if container has no size yet
+      if (rect.width === 0 || rect.height === 0) return;
+
       const prev =
         canvas.width && canvas.height ? canvas.toDataURL("image/png") : null;
 
       canvas.width = rect.width;
       canvas.height = rect.height;
+
+      // Also set CSS dimensions to match
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
 
       if (prev) {
         const img = new Image();
@@ -893,7 +902,7 @@ export default function PrepShell({
         )}
 
         <section className="prep-viewer">
-          {viewerIsActive && (
+          {viewerIsActive && !hideBreadcrumbs && (
             <button
               type="button"
               className="prep-viewer__focus-toggle"
@@ -905,14 +914,16 @@ export default function PrepShell({
 
           {viewerIsActive ? (
             <>
-              <div className="prep-viewer__badge">
-                <span className="prep-viewer__badge-dot" />
-                <span className="prep-viewer__badge-text">
-                  {hasScreenShare
-                    ? "🖥 Screen share active"
-                    : `Live preview · ${viewer.label}`}
-                </span>
-              </div>
+              {!hideBreadcrumbs && (
+                <div className="prep-viewer__badge">
+                  <span className="prep-viewer__badge-dot" />
+                  <span className="prep-viewer__badge-text">
+                    {hasScreenShare
+                      ? "🖥 Screen share active"
+                      : `Live preview · ${viewer.label}`}
+                  </span>
+                </div>
+              )}
 
               {/* Toolbar */}
               <div className="prep-annotate-toolbar">
@@ -1023,6 +1034,8 @@ export default function PrepShell({
                       onContainerReady={(el) => {
                         containerRef.current = el;
                       }}
+                      hideControls={!hideBreadcrumbs ? false : true}
+                      hideSidebar={hideBreadcrumbs}
                     >
                       {renderAnnotationsOverlay()}
                     </PdfViewerWithSidebar>

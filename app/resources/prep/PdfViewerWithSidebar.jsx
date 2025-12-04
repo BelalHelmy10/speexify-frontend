@@ -8,6 +8,8 @@ export default function PdfViewerWithSidebar({
   onFatalError,
   children, // overlay from PrepShell will be rendered here
   onContainerReady, // optional callback to expose the scroll container
+  hideControls = false,
+  hideSidebar = false,
 }) {
   const mainRef = useRef(null);
   const pdfCanvasRef = useRef(null);
@@ -21,8 +23,6 @@ export default function PdfViewerWithSidebar({
   // Expose the scroll container to the parent (PrepShell) once mounted
   useEffect(() => {
     if (typeof onContainerReady === "function" && mainRef.current) {
-      // mainRef points to .prep-pdf-main
-      // The actual scroll container for pdf+overlay is its inner div:
       const inner = mainRef.current.querySelector(".prep-pdf-main-inner");
       if (inner) {
         onContainerReady(inner);
@@ -47,9 +47,11 @@ export default function PdfViewerWithSidebar({
       setPdfDoc(null);
 
       try {
-        const pdfjsModule = await import("pdfjs-dist/build/pdf");
+        // ✅ Use the legacy build so Webpack/Next doesn't pull in pdf.mjs
+        const rawModule = await import("pdfjs-dist/legacy/build/pdf");
+        const pdfjsModule = rawModule.default ?? rawModule;
 
-        // pdf.js worker from CDN (must be a plain string URL)
+        // ✅ Configure worker – using CDN is fine
         pdfjsModule.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsModule.version}/pdf.worker.min.js`;
 
         if (cancelled) return;
@@ -65,7 +67,7 @@ export default function PdfViewerWithSidebar({
       } catch (err) {
         console.error("Failed to load PDF", err);
         if (!cancelled) {
-          setError("Couldn’t load PDF file.");
+          setError("Couldn't load PDF file.");
           if (onFatalError) onFatalError(err);
         }
       }
@@ -94,11 +96,17 @@ export default function PdfViewerWithSidebar({
         const container = mainRef.current;
         const rect = container.getBoundingClientRect();
 
+        // Skip if container has no size yet
+        if (rect.width === 0 || rect.height === 0) return;
+
         const unscaledViewport = page.getViewport({ scale: 1 });
 
-        // Fit width; height can overflow, container can scroll
-        const scale =
-          unscaledViewport.width > 0 ? rect.width / unscaledViewport.width : 1;
+        // Calculate scale to fit width with some padding
+        const scaleWidth =
+          rect.width > 0 ? (rect.width * 0.95) / unscaledViewport.width : 1;
+
+        // In classroom mode, fit to width; allow vertical scrolling
+        const scale = scaleWidth;
 
         const viewport = page.getViewport({ scale });
 
@@ -115,7 +123,7 @@ export default function PdfViewerWithSidebar({
       } catch (err) {
         if (!cancelled) {
           console.error("Failed to render PDF page", err);
-          setError("Couldn’t render this page.");
+          setError("Couldn't render this page.");
           if (onFatalError) onFatalError(err);
         }
       }
@@ -135,7 +143,7 @@ export default function PdfViewerWithSidebar({
       cancelled = true;
       if (observer) observer.disconnect();
     };
-  }, [pdfjs, pdfDoc, currentPage, onFatalError]);
+  }, [pdfjs, pdfDoc, currentPage, onFatalError, hideControls]);
 
   function handlePageClick(pageNum) {
     setCurrentPage(pageNum);
@@ -144,47 +152,77 @@ export default function PdfViewerWithSidebar({
   return (
     <div className="prep-pdf-layout">
       <div className="prep-pdf-main" ref={mainRef}>
-        <div
-          className="prep-pdf-main-inner"
-          style={{ position: "relative" }} // overlay + pdf in same scroll container
-        >
+        <div className="prep-pdf-main-inner" style={{ position: "relative" }}>
           {error ? (
             <div className="prep-pdf-error">{error}</div>
           ) : (
             <>
               <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
               {children}
+
+              {/* Navigation arrows for classroom mode */}
+              {hideControls && numPages > 1 && (
+                <div className="prep-pdf-nav">
+                  <button
+                    type="button"
+                    className="prep-pdf-nav__btn prep-pdf-nav__btn--prev"
+                    onClick={() =>
+                      handlePageClick(Math.max(1, currentPage - 1))
+                    }
+                    disabled={currentPage === 1}
+                    aria-label="Previous page"
+                  >
+                    ←
+                  </button>
+                  <span className="prep-pdf-nav__indicator">
+                    {currentPage} / {numPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="prep-pdf-nav__btn prep-pdf-nav__btn--next"
+                    onClick={() =>
+                      handlePageClick(Math.min(numPages, currentPage + 1))
+                    }
+                    disabled={currentPage === numPages}
+                    aria-label="Next page"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
 
-      <aside className="prep-pdf-sidebar">
-        {error ? (
-          <div className="prep-pdf-sidebar__empty">{error}</div>
-        ) : numPages === 0 ? (
-          <div className="prep-pdf-sidebar__empty">Loading pages…</div>
-        ) : (
-          <div className="prep-pdf-sidebar__pages">
-            {Array.from({ length: numPages }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <button
-                  key={pageNum}
-                  type="button"
-                  className={
-                    "prep-pdf-sidebar__page-button" +
-                    (pageNum === currentPage ? " is-active" : "")
-                  }
-                  onClick={() => handlePageClick(pageNum)}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </aside>
+      {!hideSidebar && (
+        <aside className="prep-pdf-sidebar">
+          {error ? (
+            <div className="prep-pdf-sidebar__empty">{error}</div>
+          ) : numPages === 0 ? (
+            <div className="prep-pdf-sidebar__empty">Loading pages…</div>
+          ) : (
+            <div className="prep-pdf-sidebar__pages">
+              {Array.from({ length: numPages }, (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    className={
+                      "prep-pdf-sidebar__page-button" +
+                      (pageNum === currentPage ? " is-active" : "")
+                    }
+                    onClick={() => handlePageClick(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </aside>
+      )}
     </div>
   );
 }

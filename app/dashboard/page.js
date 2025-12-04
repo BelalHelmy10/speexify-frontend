@@ -427,6 +427,10 @@ export default function Dashboard() {
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
   const { upcomingCount, completedCount, timezone } = summary;
 
+  const joinableTeach =
+    teachSummary.nextTeach &&
+    canJoin(teachSummary.nextTeach.startAt, teachSummary.nextTeach.endAt);
+
   const activePacks = packs.filter((p) => p.status === "active" && !p.expired);
   const totalSessions = activePacks.reduce(
     (s, p) => s + Number(p.sessionsTotal || 0),
@@ -756,19 +760,13 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="button-row">
-                {teachSummary.nextTeach.meetingUrl &&
-                canJoin(
-                  teachSummary.nextTeach.startAt,
-                  teachSummary.nextTeach.endAt
-                ) ? (
-                  <a
-                    href={getSafeExternalUrl(teachSummary.nextTeach.meetingUrl)}
-                    target="_blank"
-                    rel="noreferrer"
+                {joinableTeach ? (
+                  <Link
+                    href={`/classroom/${teachSummary.nextTeach.id}`}
                     className="btn btn--primary btn--glow"
                   >
-                    Join session
-                  </a>
+                    Join classroom
+                  </Link>
                 ) : (
                   <Link href="/calendar" className="btn btn--ghost">
                     <svg

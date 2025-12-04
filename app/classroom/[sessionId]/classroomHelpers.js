@@ -4,7 +4,6 @@
 // Resource index
 // ─────────────────────────────────────────────────────────────
 
-// Build { resourcesById } so we can go from resourceId → full resource + context
 export function buildResourceIndex(tracks = []) {
   const resourcesById = {};
 
@@ -17,7 +16,6 @@ export function buildResourceIndex(tracks = []) {
 
             resourcesById[resource._id] = {
               ...resource,
-              // Attach context so PrepShell can still show breadcrumbs, etc.
               unit: {
                 _id: unit._id,
                 title: unit.title,
@@ -49,7 +47,7 @@ export function buildResourceIndex(tracks = []) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Viewer helpers (mirror app/resources/prep/page.jsx)
+// Viewer helpers
 // ─────────────────────────────────────────────────────────────
 
 function normalizeYouTubeEmbed(url) {
@@ -59,12 +57,10 @@ function normalizeYouTubeEmbed(url) {
     const u = new URL(url);
     let videoId = null;
 
-    // youtu.be/<id>
     if (u.hostname.includes("youtu.be")) {
       videoId = u.pathname.replace("/", "");
     }
 
-    // youtube.com/watch?v=<id> or /embed/<id>
     if (
       u.hostname.includes("youtube.com") ||
       u.hostname.includes("m.youtube.com")
@@ -74,7 +70,7 @@ function normalizeYouTubeEmbed(url) {
       }
 
       if (u.pathname.startsWith("/embed/")) {
-        return url; // already embed-friendly
+        return url;
       }
     }
 
@@ -102,7 +98,6 @@ export function getViewerInfo(resource) {
   const isPdfUrl = (url) =>
     typeof url === "string" && url.toLowerCase().endsWith(".pdf");
 
-  // YouTube
   if (resource.youtubeUrl) {
     const viewerUrl = normalizeYouTubeEmbed(resource.youtubeUrl);
     return {
@@ -113,7 +108,6 @@ export function getViewerInfo(resource) {
     };
   }
 
-  // Google Slides
   if (resource.googleSlidesUrl) {
     const viewerUrl = normalizeGoogleSlidesEmbed(resource.googleSlidesUrl);
     return {
@@ -124,7 +118,6 @@ export function getViewerInfo(resource) {
     };
   }
 
-  // PDF via externalUrl
   if (resource.externalUrl && isPdfUrl(resource.externalUrl)) {
     return {
       type: "pdf",
@@ -134,7 +127,6 @@ export function getViewerInfo(resource) {
     };
   }
 
-  // PDF via fileUrl
   if (resource.fileUrl && isPdfUrl(resource.fileUrl)) {
     return {
       type: "pdf",
@@ -144,7 +136,6 @@ export function getViewerInfo(resource) {
     };
   }
 
-  // Generic external page
   if (resource.externalUrl) {
     return {
       type: "external",
@@ -154,7 +145,6 @@ export function getViewerInfo(resource) {
     };
   }
 
-  // Generic file (non-PDF)
   if (resource.fileUrl) {
     return {
       type: "file",
@@ -186,19 +176,16 @@ export function buildPickerIndex(tracks = []) {
   (tracks || []).forEach((track) => {
     if (!track?._id) return;
 
-    // Track options (simple label: just the name in classroom)
     trackOptions.push({
       value: track._id,
       label: track.name,
     });
 
-    // Books directly on track
     booksByTrackId[track._id] = (track.books || []).map((book) => ({
       value: book._id,
       label: book.title,
     }));
 
-    // Book levels + units – we derive these by walking through levels/subLevels/units
     (track.levels || []).forEach((level) => {
       (level.subLevels || []).forEach((subLevel) => {
         (subLevel.units || []).forEach((unit) => {
@@ -206,7 +193,6 @@ export function buildPickerIndex(tracks = []) {
           const book = bookLevel?.book;
           if (!book || !book._id || !bookLevel || !bookLevel._id) return;
 
-          // Book → Book levels
           if (!bookLevelsByBookId[book._id]) {
             bookLevelsByBookId[book._id] = [];
           }
@@ -220,7 +206,6 @@ export function buildPickerIndex(tracks = []) {
             });
           }
 
-          // Book level → Units
           if (!unitOptionsByBookLevelId[bookLevel._id]) {
             unitOptionsByBookLevelId[bookLevel._id] = [];
           }
@@ -232,7 +217,6 @@ export function buildPickerIndex(tracks = []) {
             resources: unit.resources || [],
           });
 
-          // Unit → Resources
           if (!resourcesByUnitId[unit._id]) {
             resourcesByUnitId[unit._id] = [];
           }

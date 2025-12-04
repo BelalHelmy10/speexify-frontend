@@ -30,8 +30,7 @@ export default function ClassroomResourcePicker({
     : [];
   const resourceOptions = unitId ? resourcesByUnitId[unitId] || [] : [];
 
-  // All cascades are TEACHER-ONLY
-
+  // Cascade effects (TEACHER-ONLY)
   useEffect(() => {
     if (!isTeacher) return;
     if (!trackOptions.length) return;
@@ -49,14 +48,13 @@ export default function ClassroomResourcePicker({
       setBookId("");
       setBookLevelId("");
       setUnitId("");
-      onChangeResourceId(null);
       return;
     }
 
     setBookId((prev) =>
       list.some((b) => b.value === prev) ? prev : list[0].value
     );
-  }, [trackId, booksByTrackId, onChangeResourceId, isTeacher]);
+  }, [trackId, booksByTrackId, isTeacher]);
 
   useEffect(() => {
     if (!isTeacher) return;
@@ -65,14 +63,13 @@ export default function ClassroomResourcePicker({
     if (!list.length) {
       setBookLevelId("");
       setUnitId("");
-      onChangeResourceId(null);
       return;
     }
 
     setBookLevelId((prev) =>
       list.some((l) => l.value === prev) ? prev : list[0].value
     );
-  }, [bookId, bookLevelsByBookId, onChangeResourceId, isTeacher]);
+  }, [bookId, bookLevelsByBookId, isTeacher]);
 
   useEffect(() => {
     if (!isTeacher) return;
@@ -80,146 +77,187 @@ export default function ClassroomResourcePicker({
     const list = unitOptionsByBookLevelId[bookLevelId] || [];
     if (!list.length) {
       setUnitId("");
-      onChangeResourceId(null);
       return;
     }
 
     setUnitId((prev) =>
       list.some((u) => u.value === prev) ? prev : list[0].value
     );
-  }, [bookLevelId, unitOptionsByBookLevelId, onChangeResourceId, isTeacher]);
+  }, [bookLevelId, unitOptionsByBookLevelId, isTeacher]);
 
-  useEffect(() => {
-    if (!isTeacher) return;
-
-    const list = resourcesByUnitId[unitId] || [];
-    if (!list.length) {
-      onChangeResourceId(null);
-      return;
-    }
-
-    // If current selectedResourceId is still valid, keep it.
-    // Otherwise, fall back to the first resource in this unit.
-    const stillExists = list.some((r) => r._id === selectedResourceId);
-    const nextId = stillExists ? selectedResourceId : list[0]._id;
-
-    if (nextId !== selectedResourceId) {
-      onChangeResourceId(nextId);
-    }
-  }, [
-    unitId,
-    resourcesByUnitId,
-    selectedResourceId,
-    onChangeResourceId,
-    isTeacher,
-  ]);
+  // Find currently selected resource for highlighting
+  const currentResource = resourceOptions.find(
+    (r) => r._id === selectedResourceId
+  );
 
   return (
-    <div className="spx-classroom-picker">
-      <div className="spx-classroom-picker__row">
-        {/* Track */}
-        <div className="spx-classroom-picker__select">
-          <select
-            value={trackId}
-            onChange={(e) => setTrackId(e.target.value)}
-            disabled={!isTeacher}
-          >
-            {trackOptions.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
+    <div className="cr-picker">
+      {/* Navigation breadcrumb */}
+      <div className="cr-picker__nav">
+        <div className="cr-picker__nav-row">
+          {/* Track */}
+          <div className="cr-picker__field">
+            <label className="cr-picker__label">Course</label>
+            <div className="cr-picker__select-wrapper">
+              <select
+                className="cr-picker__select"
+                value={trackId}
+                onChange={(e) => setTrackId(e.target.value)}
+                disabled={!isTeacher}
+              >
+                {trackOptions.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              <span className="cr-picker__select-arrow">▾</span>
+            </div>
+          </div>
 
-        {/* Book */}
-        <div
-          className={
-            "spx-classroom-picker__select" +
-            (!bookOptions.length ? " spx-classroom-picker__select--empty" : "")
-          }
-        >
-          <select
-            value={bookId}
-            onChange={(e) => setBookId(e.target.value)}
-            disabled={!bookOptions.length || !isTeacher}
-          >
-            {!bookOptions.length && <option>No books</option>}
-            {bookOptions.map((b) => (
-              <option key={b.value} value={b.value}>
-                {b.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* Book */}
+          <div className="cr-picker__field">
+            <label className="cr-picker__label">Book</label>
+            <div className="cr-picker__select-wrapper">
+              <select
+                className="cr-picker__select"
+                value={bookId}
+                onChange={(e) => setBookId(e.target.value)}
+                disabled={!bookOptions.length || !isTeacher}
+              >
+                {!bookOptions.length && <option>—</option>}
+                {bookOptions.map((b) => (
+                  <option key={b.value} value={b.value}>
+                    {b.label}
+                  </option>
+                ))}
+              </select>
+              <span className="cr-picker__select-arrow">▾</span>
+            </div>
+          </div>
 
-        {/* Book level */}
-        <div
-          className={
-            "spx-classroom-picker__select" +
-            (!bookLevelOptions.length
-              ? " spx-classroom-picker__select--empty"
-              : "")
-          }
-        >
-          <select
-            value={bookLevelId}
-            onChange={(e) => setBookLevelId(e.target.value)}
-            disabled={!bookLevelOptions.length || !isTeacher}
-          >
-            {!bookLevelOptions.length && <option>No levels</option>}
-            {bookLevelOptions.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* Book Level */}
+          <div className="cr-picker__field">
+            <label className="cr-picker__label">Level</label>
+            <div className="cr-picker__select-wrapper">
+              <select
+                className="cr-picker__select"
+                value={bookLevelId}
+                onChange={(e) => setBookLevelId(e.target.value)}
+                disabled={!bookLevelOptions.length || !isTeacher}
+              >
+                {!bookLevelOptions.length && <option>—</option>}
+                {bookLevelOptions.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+              <span className="cr-picker__select-arrow">▾</span>
+            </div>
+          </div>
 
-        {/* Unit */}
-        <div
-          className={
-            "spx-classroom-picker__select" +
-            (!unitOptions.length ? " spx-classroom-picker__select--empty" : "")
-          }
-        >
-          <select
-            value={unitId}
-            onChange={(e) => setUnitId(e.target.value)}
-            disabled={!unitOptions.length || !isTeacher}
-          >
-            {!unitOptions.length && <option>No units</option>}
-            {unitOptions.map((u) => (
-              <option key={u.value} value={u.value}>
-                {u.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Resource */}
-        <div
-          className={
-            "spx-classroom-picker__select" +
-            (!resourceOptions.length
-              ? " spx-classroom-picker__select--empty"
-              : "")
-          }
-        >
-          <select
-            value={selectedResourceId || ""}
-            onChange={(e) => onChangeResourceId(e.target.value)}
-            disabled={!resourceOptions.length || !isTeacher}
-          >
-            {!resourceOptions.length && <option>No resources</option>}
-            {resourceOptions.map((r) => (
-              <option key={r._id} value={r._id}>
-                {r.title}
-              </option>
-            ))}
-          </select>
+          {/* Unit */}
+          <div className="cr-picker__field">
+            <label className="cr-picker__label">Unit</label>
+            <div className="cr-picker__select-wrapper">
+              <select
+                className="cr-picker__select"
+                value={unitId}
+                onChange={(e) => setUnitId(e.target.value)}
+                disabled={!unitOptions.length || !isTeacher}
+              >
+                {!unitOptions.length && <option>—</option>}
+                {unitOptions.map((u) => (
+                  <option key={u.value} value={u.value}>
+                    {u.label}
+                  </option>
+                ))}
+              </select>
+              <span className="cr-picker__select-arrow">▾</span>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Resource List */}
+      <div className="cr-picker__resources">
+        <div className="cr-picker__resources-header">
+          <span className="cr-picker__resources-title">
+            Resources{" "}
+            {resourceOptions.length > 0 && `(${resourceOptions.length})`}
+          </span>
+        </div>
+
+        {resourceOptions.length === 0 ? (
+          <div className="cr-picker__empty">
+            <span className="cr-picker__empty-icon">📂</span>
+            <p>No resources in this unit</p>
+          </div>
+        ) : (
+          <ul className="cr-picker__list">
+            {resourceOptions.map((r) => {
+              const isSelected = r._id === selectedResourceId;
+              return (
+                <li key={r._id}>
+                  <button
+                    className={`cr-picker__item ${
+                      isSelected ? "cr-picker__item--selected" : ""
+                    }`}
+                    onClick={() => onChangeResourceId(r._id)}
+                    disabled={!isTeacher}
+                  >
+                    <span className="cr-picker__item-icon">
+                      {getResourceIcon(r.type || r.resourceType)}
+                    </span>
+                    <span className="cr-picker__item-info">
+                      <span className="cr-picker__item-title">{r.title}</span>
+                      {r.description && (
+                        <span className="cr-picker__item-desc">
+                          {r.description.slice(0, 60)}
+                          {r.description.length > 60 ? "…" : ""}
+                        </span>
+                      )}
+                    </span>
+                    {isSelected && (
+                      <span className="cr-picker__item-check">✓</span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      {/* Current Selection Info */}
+      {currentResource && (
+        <div className="cr-picker__current">
+          <span className="cr-picker__current-label">Selected:</span>
+          <span className="cr-picker__current-name">
+            {currentResource.title}
+          </span>
+        </div>
+      )}
     </div>
   );
+}
+
+/* -----------------------------------------------------------
+   Helper: Get icon for resource type
+----------------------------------------------------------- */
+function getResourceIcon(type) {
+  const icons = {
+    pdf: "📄",
+    video: "🎬",
+    audio: "🎧",
+    image: "🖼️",
+    document: "📝",
+    presentation: "📊",
+    quiz: "❓",
+    exercise: "✏️",
+    default: "📁",
+  };
+
+  return icons[type?.toLowerCase()] || icons.default;
 }
