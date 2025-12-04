@@ -47,12 +47,6 @@ function getParticipantsFromSession(session) {
     s.user ||
     null;
 
-  const teacherId =
-    (teacherObj && (teacherObj.id || teacherObj._id)) || s.teacherId || null;
-
-  const learnerId =
-    (learnerObj && (learnerObj.id || learnerObj._id)) || s.learnerId || null;
-
   const teacherName =
     s.teacherName ||
     s.teacherDisplayName ||
@@ -65,7 +59,7 @@ function getParticipantsFromSession(session) {
     buildDisplayName(learnerObj) ||
     "Learner";
 
-  return { teacherId, learnerId, teacherName, learnerName };
+  return { teacherName, learnerName };
 }
 
 /* -----------------------------------------------------------
@@ -89,9 +83,10 @@ const focusModeIcon = {
   [FOCUS_MODES.CONTENT]: "📄",
 };
 
+// ✅ Put BALANCED (⚖️) back in the middle
 const FOCUS_MODE_ORDER = [
-  FOCUS_MODES.BALANCED,
   FOCUS_MODES.VIDEO,
+  FOCUS_MODES.BALANCED,
   FOCUS_MODES.CONTENT,
 ];
 
@@ -304,7 +299,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
             className="cr-header__leave"
             onClick={() => setShowLeaveConfirm(true)}
           >
-            Leave
+            <span>Leave</span>
             <svg
               width="16"
               height="16"
