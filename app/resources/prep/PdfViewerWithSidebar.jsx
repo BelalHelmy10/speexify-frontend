@@ -20,6 +20,9 @@ export default function PdfViewerWithSidebar({
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
 
+  // Track the current pdf.js render task so we can cancel it
+  const renderTaskRef = useRef(null);
+
   // Expose the scroll container to the parent (PrepShell) once mounted
   useEffect(() => {
     if (typeof onContainerReady === "function" && mainRef.current) {
@@ -107,7 +110,6 @@ export default function PdfViewerWithSidebar({
 
         // In classroom mode, fit to width; allow vertical scrolling
         const scale = scaleWidth;
-
         const viewport = page.getViewport({ scale });
 
         const canvas = pdfCanvasRef.current;
@@ -119,7 +121,25 @@ export default function PdfViewerWithSidebar({
         canvas.style.width = `${viewport.width}px`;
         canvas.style.height = `${viewport.height}px`;
 
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        // 🔒 Cancel any in-flight render before starting a new one
+        if (renderTaskRef.current) {
+          try {
+            renderTaskRef.current.cancel();
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn("Error cancelling previous render task", e);
+          }
+        }
+
+        const renderTask = page.render({ canvasContext: ctx, viewport });
+        renderTaskRef.current = renderTask;
+
+        await renderTask.promise;
+
+        // Clear ref only if this is still the latest task
+        if (renderTaskRef.current === renderTask) {
+          renderTaskRef.current = null;
+        }
       } catch (err) {
         if (!cancelled) {
           console.error("Failed to render PDF page", err);
@@ -134,6 +154,7 @@ export default function PdfViewerWithSidebar({
     let observer;
     if (typeof ResizeObserver !== "undefined" && mainRef.current) {
       observer = new ResizeObserver(() => {
+        // Trigger a fresh render on resize
         renderPage();
       });
       observer.observe(mainRef.current);
@@ -141,7 +162,20 @@ export default function PdfViewerWithSidebar({
 
     return () => {
       cancelled = true;
+
       if (observer) observer.disconnect();
+
+      // Cancel any ongoing render when effect cleans up
+      if (renderTaskRef.current) {
+        try {
+          renderTaskRef.current.cancel();
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn("Error cancelling render task on cleanup", e);
+        } finally {
+          renderTaskRef.current = null;
+        }
+      }
     };
   }, [pdfjs, pdfDoc, currentPage, onFatalError, hideControls]);
 
