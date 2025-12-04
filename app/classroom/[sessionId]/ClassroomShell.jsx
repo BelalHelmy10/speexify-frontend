@@ -99,8 +99,7 @@ const FOCUS_MODE_ORDER = [
    MAIN COMPONENT
 ----------------------------------------------------------- */
 export default function ClassroomShell({ session, sessionId, tracks }) {
-  const { teacherId, learnerId, teacherName, learnerName } =
-    getParticipantsFromSession(session);
+  const { teacherName, learnerName } = getParticipantsFromSession(session);
 
   // Determine teacher vs learner
   const isTeacher =
@@ -130,8 +129,9 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
-  // Chat visibility
+  // Chat visibility + unread
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
   // Resource picker modal
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -180,6 +180,13 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
       document.body.style.userSelect = "";
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // When chat opens, clear unread counter
+  useEffect(() => {
+    if (isChatOpen) {
+      setChatUnreadCount(0);
+    }
+  }, [isChatOpen]);
 
   // Calculate split percentages
   const getSplitPercentage = () => {
@@ -353,15 +360,16 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
               </span>
             </button>
 
-            {isChatOpen && (
-              <ClassroomChat
-                classroomChannel={classroomChannel}
-                sessionId={sessionId}
-                isTeacher={isTeacher}
-                teacherName={teacherName}
-                learnerName={learnerName}
-              />
-            )}
+            {/* Chat stays mounted so it can track unread messages */}
+            <ClassroomChat
+              classroomChannel={classroomChannel}
+              sessionId={sessionId}
+              isTeacher={isTeacher}
+              teacherName={teacherName}
+              learnerName={learnerName}
+              isOpen={isChatOpen}
+              onUnreadCountChange={setChatUnreadCount}
+            />
           </div>
         </aside>
 
@@ -481,7 +489,11 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
           >
             <span className="cr-controls__btn-icon">💬</span>
             <span className="cr-controls__btn-label">
-              {isChatOpen ? "Hide Chat" : "Show Chat"}
+              {isChatOpen
+                ? "Hide Chat"
+                : chatUnreadCount > 0
+                ? `Show Chat (${chatUnreadCount})`
+                : "Show Chat"}
             </span>
           </button>
         </div>

@@ -1,273 +1,481 @@
 // app/classroom/[sessionId]/ClassroomChat.jsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
-/**
- * Classroom chat between teacher and learner.
- * Features:
- *  - Timestamps on messages
- *  - Empty state
- *  - Auto-scroll
- *  - Role-based styling
- */
+const STORAGE_PREFIX = "speexify_classroom_chat_";
+
+function formatTime(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 export default function ClassroomChat({
   classroomChannel,
   sessionId,
   isTeacher,
-  teacherName = "Teacher",
-  learnerName = "Learner",
+  teacherName,
+  learnerName,
+  isOpen = true,
+  onUnreadCountChange,
 }) {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
+  const [inputValue, setInputValue] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
-  // Scroll to bottom when new messages arrive
+  // “Other user is typing…”
+  const [otherTypingName, setOtherTypingName] = useState(null);
+
+  // role + display name for this client
+  const myRole = isTeacher ? "teacher" : "learner";
+  const myName = isTeacher
+    ? teacherName || "Teacher"
+    : learnerName || "Learner";
+
+  const ready = classroomChannel?.ready ?? false;
+  const send = classroomChannel?.send ?? (() => {});
+  const subscribe = classroomChannel?.subscribe ?? (() => () => {});
+
+  const storageKey = `${STORAGE_PREFIX}${sessionId}`;
+
+  const otherTypingTimeoutRef = useRef(null);
+  const localTypingTimeoutRef = useRef(null);
+  const hasSentTypingRef = useRef(false);
+
+  // ─────────────────────────────────────────────────────────────
+  // Load persisted chat from localStorage
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!messagesEndRef.current) return;
-    messagesEndRef.current.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setMessages(parsed);
+      }
+    } catch (err) {
+      console.warn("Failed to load classroom chat history", err);
+    }
+  }, [storageKey]);
+
+  // Persist chat to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(messages));
+    } catch (err) {
+      console.warn("Failed to persist classroom chat history", err);
+    }
+  }, [messages, storageKey]);
+
+  // ─────────────────────────────────────────────────────────────
+  // Helper: push message into state
+  // ─────────────────────────────────────────────────────────────
+  const appendMessage = useCallback(
+    (msg, { countAsUnread = true } = {}) => {
+      setMessages((prev) => [...prev, msg]);
+
+      // If chat is closed, bump unread count in parent
+      if (
+        !isOpen &&
+        countAsUnread &&
+        typeof onUnreadCountChange === "function"
+      ) {
+        onUnreadCountChange((prev) =>
+          typeof prev === "number" ? prev + 1 : 1
+        );
+      }
+    },
+    [isOpen, onUnreadCountChange]
+  );
+
+  // ─────────────────────────────────────────────────────────────
+  // Join / leave system messages
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!ready) return;
+
+    // Broadcast join
+    send({
+      type: "CHAT_SYSTEM",
+      kind: "join",
+      role: myRole,
+      name: myName,
+      sessionId,
+      at: new Date().toISOString(),
     });
-  }, [messages]);
 
-  // Listen for incoming chat messages on the classroom channel
-  useEffect(() => {
-    if (!classroomChannel || !classroomChannel.ready) return;
-    if (!classroomChannel.subscribe) return;
+    // Local “you joined” message (not broadcast)
+    appendMessage(
+      {
+        id: `local_join_${myRole}`,
+        type: "system_local",
+        text: `You joined as ${myName} (${
+          myRole === "teacher" ? "teacher" : "learner"
+        })`,
+        at: new Date().toISOString(),
+      },
+      { countAsUnread: false }
+    );
 
-    const unsubscribe = classroomChannel.subscribe((msg) => {
-      if (!msg) return;
-
-      if (msg.type === "CHAT_MESSAGE") {
-        if (String(msg.sessionId) !== String(sessionId)) return;
-        // Avoid duplicates (from our own optimistic update)
-        setMessages((prev) => {
-          const exists = prev.some(
-            (m) =>
-              m.ts === msg.ts &&
-              m.fromRole === msg.fromRole &&
-              m.text === msg.text
-          );
-          if (exists) return prev;
-          return [...prev, msg];
+    return () => {
+      // Try to broadcast leave
+      try {
+        send({
+          type: "CHAT_SYSTEM",
+          kind: "leave",
+          role: myRole,
+          name: myName,
+          sessionId,
+          at: new Date().toISOString(),
         });
+      } catch {
+        // ignore
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]); // <- intentionally only when we first become ready
+
+  // ─────────────────────────────────────────────────────────────
+  // Listen to incoming messages on the channel
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!ready) return;
+
+    const unsubscribe = subscribe((msg) => {
+      if (!msg || !msg.type) return;
+
+      if (msg.sessionId && String(msg.sessionId) !== String(sessionId)) {
+        // Different classroom
+        return;
       }
 
-      if (msg.type === "TYPING_INDICATOR") {
-        if (String(msg.sessionId) !== String(sessionId)) return;
-        // Show typing indicator from the other person
-        const fromTeacher = msg.fromRole === "teacher";
-        if ((isTeacher && !fromTeacher) || (!isTeacher && fromTeacher)) {
-          setIsTyping(msg.isTyping);
+      switch (msg.type) {
+        case "CHAT_MESSAGE": {
+          const isMine =
+            msg.role === myRole && (msg.name === myName || !msg.name); // best-effort match
+
+          const messageObj = {
+            id:
+              msg.id ||
+              `remote_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+            type: "message",
+            role: msg.role || "unknown",
+            name: msg.name || (msg.role === "teacher" ? "Teacher" : "Learner"),
+            text: msg.text || "",
+            at: msg.at || new Date().toISOString(),
+            isMine,
+          };
+
+          appendMessage(messageObj, { countAsUnread: !isMine });
+          break;
         }
+
+        case "CHAT_SYSTEM": {
+          // join / leave
+          const systemText =
+            msg.kind === "join"
+              ? `${msg.name || "Someone"} joined the classroom`
+              : msg.kind === "leave"
+              ? `${msg.name || "Someone"} left the classroom`
+              : "";
+
+          if (!systemText) return;
+
+          appendMessage(
+            {
+              id:
+                msg.id ||
+                `system_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+              type: "system",
+              text: systemText,
+              at: msg.at || new Date().toISOString(),
+            },
+            { countAsUnread: false } // system messages don’t bump unread
+          );
+          break;
+        }
+
+        case "CHAT_TYPING": {
+          // ignore our own typing echoes
+          if (msg.role === myRole) return;
+
+          if (msg.isTyping) {
+            setOtherTypingName(
+              msg.name || (msg.role === "teacher" ? "Teacher" : "Learner")
+            );
+
+            if (otherTypingTimeoutRef.current) {
+              clearTimeout(otherTypingTimeoutRef.current);
+            }
+            otherTypingTimeoutRef.current = setTimeout(() => {
+              setOtherTypingName(null);
+            }, 5000);
+          } else {
+            setOtherTypingName(null);
+            if (otherTypingTimeoutRef.current) {
+              clearTimeout(otherTypingTimeoutRef.current);
+              otherTypingTimeoutRef.current = null;
+            }
+          }
+          break;
+        }
+
+        default:
+          break;
       }
     });
 
-    return unsubscribe;
-  }, [classroomChannel, sessionId, isTeacher]);
+    return () => {
+      unsubscribe?.();
+      if (otherTypingTimeoutRef.current) {
+        clearTimeout(otherTypingTimeoutRef.current);
+        otherTypingTimeoutRef.current = null;
+      }
+    };
+  }, [ready, subscribe, appendMessage, myRole, myName, sessionId]);
 
-  // Send typing indicator (debounced)
-  // Send typing indicator (debounced)
-  useEffect(() => {
-    if (!classroomChannel || !classroomChannel.send) return;
+  // ─────────────────────────────────────────────────────────────
+  // Local typing: send “is typing” with debounce
+  // ─────────────────────────────────────────────────────────────
+  const sendTyping = useCallback(
+    (isTyping) => {
+      if (!ready) return;
 
-    // If input is empty, immediately send "not typing"
-    if (!input.trim()) {
-      classroomChannel.send({
-        type: "TYPING_INDICATOR",
-        sessionId: String(sessionId),
-        fromRole: isTeacher ? "teacher" : "learner",
-        isTyping: false,
-      });
-      return;
+      try {
+        send({
+          type: "CHAT_TYPING",
+          isTyping: Boolean(isTyping),
+          role: myRole,
+          name: myName,
+          sessionId,
+          at: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn("Failed to send typing event", err);
+      }
+    },
+    [ready, send, myRole, myName, sessionId]
+  );
+
+  const handleInputChange = (e) => {
+    const nextValue = e.target.value;
+    setInputValue(nextValue);
+
+    // If user started typing, send typing-on once
+    if (nextValue.trim() && !hasSentTypingRef.current) {
+      hasSentTypingRef.current = true;
+      sendTyping(true);
     }
 
-    const timeout = setTimeout(() => {
-      classroomChannel.send({
-        type: "TYPING_INDICATOR",
-        sessionId: String(sessionId),
-        fromRole: isTeacher ? "teacher" : "learner",
-        isTyping: false,
-      });
-    }, 1500);
+    // Reset local typing timeout
+    if (localTypingTimeoutRef.current) {
+      clearTimeout(localTypingTimeoutRef.current);
+    }
+    localTypingTimeoutRef.current = setTimeout(() => {
+      if (hasSentTypingRef.current) {
+        hasSentTypingRef.current = false;
+        sendTyping(false);
+      }
+    }, 3000);
+  };
 
-    classroomChannel.send({
-      type: "TYPING_INDICATOR",
-      sessionId: String(sessionId),
-      fromRole: isTeacher ? "teacher" : "learner",
-      isTyping: true,
-    });
+  // Clear local typing on blur
+  const handleInputBlur = () => {
+    if (hasSentTypingRef.current) {
+      hasSentTypingRef.current = false;
+      sendTyping(false);
+    }
+    if (localTypingTimeoutRef.current) {
+      clearTimeout(localTypingTimeoutRef.current);
+      localTypingTimeoutRef.current = null;
+    }
+  };
 
-    return () => clearTimeout(timeout);
-  }, [input, classroomChannel, sessionId, isTeacher]);
-
-  function handleSubmit(e) {
+  // ─────────────────────────────────────────────────────────────
+  // Send message
+  // ─────────────────────────────────────────────────────────────
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const text = input.trim();
-    if (!text) return;
+    const text = inputValue.trim();
+    if (!text || !ready) return;
 
-    const message = {
+    setIsSending(true);
+
+    const nowIso = new Date().toISOString();
+    const id = `chat_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+    const outgoing = {
       type: "CHAT_MESSAGE",
-      sessionId: String(sessionId),
-      fromRole: isTeacher ? "teacher" : "learner",
+      id,
+      role: myRole,
+      name: myName,
       text,
-      ts: Date.now(),
+      at: nowIso,
+      sessionId,
     };
 
-    // Send over websocket
-    if (classroomChannel && classroomChannel.send) {
-      classroomChannel.send(message);
+    // Optimistic local append
+    appendMessage(
+      {
+        ...outgoing,
+        type: "message",
+        isMine: true,
+      },
+      { countAsUnread: false }
+    );
+
+    try {
+      send(outgoing);
+    } catch (err) {
+      console.warn("Failed to send chat message", err);
     }
 
-    // Optimistic local update
-    setMessages((prev) => [...prev, message]);
-    setInput("");
+    setInputValue("");
+    setIsSending(false);
 
-    // Keep focus on input
-    inputRef.current?.focus();
-  }
-
-  function handleKeyDown(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
+    // Ensure typing state is reset
+    if (hasSentTypingRef.current) {
+      hasSentTypingRef.current = false;
+      sendTyping(false);
     }
-  }
-
-  function handleBlur() {
-    // Clear typing indicator when input loses focus
-    if (classroomChannel && classroomChannel.send) {
-      classroomChannel.send({
-        type: "TYPING_INDICATOR",
-        sessionId: String(sessionId),
-        fromRole: isTeacher ? "teacher" : "learner",
-        isTyping: false,
-      });
+    if (localTypingTimeoutRef.current) {
+      clearTimeout(localTypingTimeoutRef.current);
+      localTypingTimeoutRef.current = null;
     }
-  }
 
-  const viewerRole = isTeacher ? "teacher" : "learner";
-  const viewerLabel = isTeacher ? teacherName : learnerName;
-  const otherLabel = isTeacher ? learnerName : teacherName;
+    // When chat is open and user sends a message, reset unread count
+    if (isOpen && typeof onUnreadCountChange === "function") {
+      onUnreadCountChange(0);
+    }
+  };
+
+  // When chat just became open, clear unread count
+  useEffect(() => {
+    if (isOpen && typeof onUnreadCountChange === "function") {
+      onUnreadCountChange(0);
+    }
+  }, [isOpen, onUnreadCountChange]);
+
+  // ─────────────────────────────────────────────────────────────
+  // Scroll to bottom on new messages
+  // ─────────────────────────────────────────────────────────────
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    if (!messagesEndRef.current) return;
+    messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages]);
+
+  // ─────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────
+  const hasMessages = messages.length > 0;
 
   return (
-    <div className="cr-chat" aria-label="Classroom chat panel">
-      {/* Messages */}
-      <div
-        className="cr-chat__messages"
-        role="log"
-        aria-label="Chat messages"
-        aria-live="polite"
-      >
-        {messages.length === 0 ? (
+    <div className="cr-chat">
+      <div className="cr-chat__messages">
+        {!hasMessages && (
           <div className="cr-chat__empty">
-            <span className="cr-chat__empty-icon">💬</span>
+            <div className="cr-chat__empty-icon">💭</div>
             <p className="cr-chat__empty-text">No messages yet</p>
             <p className="cr-chat__empty-hint">
               Start the conversation with your{" "}
-              {isTeacher ? "learner" : "teacher"}
+              {isTeacher ? "learner" : "teacher"}.
             </p>
           </div>
-        ) : (
-          messages.map((m, idx) => {
-            const isFromTeacher = m.fromRole === "teacher";
-            const isSelf = m.fromRole === viewerRole;
-            const label = isFromTeacher ? teacherName : learnerName;
-            const time = formatTime(m.ts);
+        )}
+
+        {hasMessages &&
+          messages.map((msg) => {
+            if (msg.type === "system" || msg.type === "system_local") {
+              return (
+                <div
+                  key={msg.id}
+                  className="cr-chat__message cr-chat__message--system"
+                >
+                  <div className="cr-chat__bubble cr-chat__bubble--system">
+                    <div className="cr-chat__bubble-text">{msg.text}</div>
+                    {msg.at && (
+                      <div className="cr-chat__bubble-time">
+                        {formatTime(msg.at)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            const isMine = msg.isMine;
+            const roleClass =
+              msg.role === "teacher"
+                ? "cr-chat__message--teacher"
+                : msg.role === "learner"
+                ? "cr-chat__message--learner"
+                : "";
+
+            const sideClass = isMine
+              ? "cr-chat__message--self"
+              : "cr-chat__message--other";
 
             return (
               <div
-                key={`${m.ts}-${idx}`}
-                className={`cr-chat__message ${
-                  isSelf ? "cr-chat__message--self" : "cr-chat__message--other"
-                } ${
-                  isFromTeacher
-                    ? "cr-chat__message--teacher"
-                    : "cr-chat__message--learner"
-                }`}
-                role="article"
-                aria-label={`${label} at ${time}: ${m.text}`}
+                key={msg.id}
+                className={`cr-chat__message ${roleClass} ${sideClass}`}
               >
                 <div className="cr-chat__bubble">
                   <div className="cr-chat__bubble-header">
-                    <span className="cr-chat__bubble-name">{label}</span>
-                    <span className="cr-chat__bubble-time">{time}</span>
+                    <span className="cr-chat__bubble-name">
+                      {msg.name ||
+                        (msg.role === "teacher" ? "Teacher" : "Learner")}
+                    </span>
+                    <span className="cr-chat__bubble-time">
+                      {formatTime(msg.at)}
+                    </span>
                   </div>
-                  <div className="cr-chat__bubble-text">{m.text}</div>
+                  <div className="cr-chat__bubble-text">{msg.text}</div>
                 </div>
               </div>
             );
-          })
-        )}
+          })}
 
-        {/* Typing indicator */}
-        {isTyping && (
+        {otherTypingName && (
           <div className="cr-chat__typing">
-            <span className="cr-chat__typing-dots">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-            <span className="cr-chat__typing-text">
-              {otherLabel} is typing…
-            </span>
+            <div className="cr-chat__typing-dots">
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="cr-chat__typing-text">
+              {otherTypingName} is typing…
+            </div>
           </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <form
-        className="cr-chat__form"
-        onSubmit={handleSubmit}
-        aria-label="Send a message"
-      >
+      <form className="cr-chat__form" onSubmit={handleSubmit}>
         <input
-          ref={inputRef}
-          className="cr-chat__input"
           type="text"
+          className="cr-chat__input"
           placeholder="Type a message…"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          aria-label="Chat message"
-          autoComplete="off"
+          value={inputValue}
+          onChange={handleInputChange}
+          onBlur={handleInputBlur}
+          disabled={!ready || isSending}
         />
         <button
-          className="cr-chat__send"
           type="submit"
-          disabled={!input.trim()}
+          className="cr-chat__send"
+          disabled={!ready || isSending || !inputValue.trim()}
           aria-label="Send message"
         >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="22" y1="2" x2="11" y2="13" />
-            <polygon points="22,2 15,22 11,13 2,9" />
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M4 20L20 12L4 4V10L14 12L4 14V20Z" fill="currentColor" />
           </svg>
         </button>
       </form>
     </div>
   );
-}
-
-/* -----------------------------------------------------------
-   Helper: Format timestamp
------------------------------------------------------------ */
-function formatTime(ts) {
-  if (!ts) return "";
-  const date = new Date(ts);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
