@@ -923,3 +923,32 @@
     border: 1px solid $color-black;
   }
 }
+
+.spx-lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.spx-lang-btn {
+  border: none;
+  background: transparent;
+  padding: 0.15rem 0.4rem;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.spx-lang-btn--active {
+  font-weight: 600;
+  opacity: 1;
+}
+
+.spx-lang-separator {
+  opacity: 0.5;
+}
+
+.spx-lang-switcher--mobile {
+  justify-content: flex-start;
+  padding-top: 0.5rem;
+}

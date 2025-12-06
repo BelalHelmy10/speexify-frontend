@@ -7,6 +7,62 @@ import { usePathname, useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import { logout as apiLogout } from "@/lib/auth";
 
+/* ------------------------------------------------------------------
+   Locale helpers
+------------------------------------------------------------------ */
+
+function getLocalizedPath(pathname, targetLocale) {
+  const current = pathname || "/";
+
+  const currentlyArabic = current.startsWith("/ar");
+
+  if (targetLocale === "ar") {
+    if (currentlyArabic) return current;
+    if (current === "/") return "/ar";
+    return `/ar${current}`;
+  }
+
+  // targetLocale === "en"
+  if (!currentlyArabic) return current;
+  const withoutAr = current.replace(/^\/ar/, "") || "/";
+  return withoutAr;
+}
+
+function LanguageSwitcher() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const isArabic = pathname?.startsWith("/ar");
+
+  const handleSwitch = (targetLocale) => {
+    const targetPath = getLocalizedPath(pathname, targetLocale);
+    router.push(targetPath);
+  };
+
+  return (
+    <div className="spx-lang-switcher">
+      <button
+        type="button"
+        className={"spx-lang-btn" + (!isArabic ? " spx-lang-btn--active" : "")}
+        onClick={() => handleSwitch("en")}
+      >
+        EN
+      </button>
+      <span className="spx-lang-separator">|</span>
+      <button
+        type="button"
+        className={"spx-lang-btn" + (isArabic ? " spx-lang-btn--active" : "")}
+        onClick={() => handleSwitch("ar")}
+      >
+        AR
+      </button>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Header
+------------------------------------------------------------------ */
+
 export default function Header() {
   const { user, checking, setUser } = useAuth();
   const router = useRouter();
@@ -186,6 +242,7 @@ export default function Header() {
                 </Link>
               </li>
             ))}
+
             {!checking && !user && (
               <li
                 className="spx-nav-item spx-nav-item-special"
@@ -204,6 +261,14 @@ export default function Header() {
                 </Link>
               </li>
             )}
+
+            {/* Desktop language switcher */}
+            <li
+              className="spx-nav-item spx-nav-item-lang"
+              style={{ "--item-index": links.length + 1 }}
+            >
+              <LanguageSwitcher />
+            </li>
           </ul>
         </nav>
 
@@ -364,6 +429,14 @@ export default function Header() {
                 </button>
               </li>
             )}
+
+            {/* Mobile language switcher */}
+            <li
+              className="spx-mobile-item spx-mobile-item-lang"
+              style={{ "--item-index": links.length + 2 }}
+            >
+              <LanguageSwitcher />
+            </li>
           </ul>
         </div>
       </div>
