@@ -1,57 +1,1426 @@
 // ════════════════════════════════════════════════════════════════════════════
-// CLASSROOM SHELL STYLES - "Dark Focus Studio" Design
-// ════════════════════════════════════════════════════════════════════════════
-//
-// APPEND THIS ENTIRE BLOCK TO THE END OF YOUR resources.scss FILE
-//
+// SPEEXIFY RESOURCES & CLASSROOM STYLES
+// Complete stylesheet for Resources page, Unit pages, Prep Room, and Classroom
 // ════════════════════════════════════════════════════════════════════════════
 
-// ─── Classroom-specific Design Tokens ────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// DESIGN TOKENS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Color Palette ──────────────────────────────────────────────────────────
 
 $cr-bg-primary: #0a0f1a;
 $cr-bg-secondary: #111827;
 $cr-bg-tertiary: #1e293b;
 $cr-bg-elevated: #1f2937;
+$cr-bg-surface: #151d2e;
 
 $cr-accent-teacher: #f59e0b;
 $cr-accent-learner: #3b82f6;
 $cr-accent-primary: #0ea5e9;
 $cr-accent-success: #22c55e;
 $cr-accent-danger: #ef4444;
+$cr-accent-purple: #a855f7;
+$cr-accent-pink: #ec4899;
 
 $cr-text-primary: #f8fafc;
 $cr-text-secondary: #94a3b8;
 $cr-text-muted: #64748b;
+$cr-text-faint: #475569;
 
 $cr-border-subtle: rgba(148, 163, 184, 0.12);
 $cr-border-default: rgba(148, 163, 184, 0.2);
 $cr-border-strong: rgba(148, 163, 184, 0.35);
 
+// ─── Shadows ────────────────────────────────────────────────────────────────
+
 $cr-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
 $cr-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
 $cr-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
 $cr-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+$cr-shadow-glow: 0 0 40px rgba($cr-accent-primary, 0.15);
+
+// ─── Border Radius ──────────────────────────────────────────────────────────
 
 $cr-radius-sm: 8px;
 $cr-radius-md: 12px;
 $cr-radius-lg: 16px;
 $cr-radius-xl: 20px;
+$cr-radius-2xl: 24px;
 $cr-radius-full: 999px;
+
+// ─── Transitions ────────────────────────────────────────────────────────────
 
 $cr-transition-fast: 0.12s ease;
 $cr-transition-normal: 0.2s ease;
 $cr-transition-slow: 0.3s ease;
+$cr-transition-spring: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+// ─── Layout ─────────────────────────────────────────────────────────────────
 
 $cr-header-height: 56px;
 $cr-controls-height: 60px;
+$cr-max-width: 1400px;
+$cr-content-max-width: 1200px;
+
+// ─── Typography ─────────────────────────────────────────────────────────────
 
 $cr-font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
   sans-serif;
+$cr-font-display: "Plus Jakarta Sans", "DM Sans", -apple-system,
+  BlinkMacSystemFont, sans-serif;
 $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 
-// ════════════════════════════════════════════════════════════════════════════
-// GLOBAL: HIDE SITE CHROME WHEN CLASSROOM IS ACTIVE
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// PART 1: RESOURCES PAGE STYLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Main Resources Page Container ──────────────────────────────────────────
+
+.spx-resources-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    180deg,
+    $cr-bg-primary 0%,
+    darken($cr-bg-primary, 2%) 100%
+  );
+  color: $cr-text-primary;
+  font-family: $cr-font-sans;
+  padding: 2rem 1rem 4rem;
+
+  @media (min-width: 768px) {
+    padding: 3rem 2rem 5rem;
+  }
+}
+
+.spx-resources-page__inner {
+  max-width: $cr-max-width;
+  margin: 0 auto;
+}
+
+// ─── Hero Section ───────────────────────────────────────────────────────────
+
+.spx-resources-hero {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem 1rem;
+  position: relative;
+
+  @media (min-width: 768px) {
+    margin-bottom: 4rem;
+    padding: 3rem 2rem;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(
+      circle,
+      rgba($cr-accent-primary, 0.08) 0%,
+      transparent 70%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+.spx-resources-hero__eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: $cr-accent-primary;
+  background: rgba($cr-accent-primary, 0.12);
+  border: 1px solid rgba($cr-accent-primary, 0.25);
+  padding: 0.5rem 1rem;
+  border-radius: $cr-radius-full;
+  margin-bottom: 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.spx-resources-hero__title {
+  font-family: $cr-font-display;
+  font-size: clamp(1.75rem, 5vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: $cr-text-primary;
+  margin: 0 0 1rem;
+  position: relative;
+  z-index: 1;
+
+  background: linear-gradient(
+    135deg,
+    $cr-text-primary 0%,
+    $cr-text-secondary 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.spx-resources-hero__subtitle {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: $cr-text-secondary;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+
+  @media (min-width: 768px) {
+    font-size: 1.0625rem;
+  }
+}
+
+.spx-resources-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: $cr-text-muted;
+  font-size: 1rem;
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px dashed $cr-border-default;
+}
+
+// ─── Resources Layout (Picker + Preview) ────────────────────────────────────
+
+.resources-layout {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: minmax(400px, 480px) 1fr;
+    gap: 2rem;
+  }
+}
+
+// ─── Resources Picker Card ──────────────────────────────────────────────────
+
+.resources-picker {
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px solid $cr-border-subtle;
+  padding: 1.5rem;
+  box-shadow: $cr-shadow-md;
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
+}
+
+.resources-picker__header {
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid $cr-border-subtle;
+}
+
+.resources-picker__title {
+  font-family: $cr-font-display;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.resources-picker__subtitle {
+  font-size: 0.875rem;
+  color: $cr-text-muted;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.resources-picker__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.resources-picker__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.resources-picker__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $cr-text-secondary;
+}
+
+.resources-picker__control {
+  position: relative;
+
+  select {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    font-size: 0.9375rem;
+    font-family: $cr-font-sans;
+    color: $cr-text-primary;
+    background: $cr-bg-tertiary;
+    border: 1px solid $cr-border-default;
+    border-radius: $cr-radius-md;
+    appearance: none;
+    cursor: pointer;
+    outline: none;
+    transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast,
+      background $cr-transition-fast;
+
+    &:hover {
+      background: $cr-bg-elevated;
+      border-color: $cr-border-strong;
+    }
+
+    &:focus {
+      border-color: $cr-accent-primary;
+      box-shadow: 0 0 0 3px rgba($cr-accent-primary, 0.15);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    option {
+      background: $cr-bg-secondary;
+      color: $cr-text-primary;
+      padding: 0.5rem;
+    }
+  }
+
+  &::after {
+    content: "▾";
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    color: $cr-text-muted;
+    pointer-events: none;
+  }
+}
+
+.resources-picker__hint {
+  font-size: 0.75rem;
+  color: $cr-text-muted;
+  margin: 0;
+  line-height: 1.4;
+}
+
+// ─── Resources Preview Card ─────────────────────────────────────────────────
+
+.resources-preview {
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 1024px) {
+    position: sticky;
+    top: 2rem;
+    align-self: start;
+  }
+}
+
+.resources-preview__card {
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px solid $cr-border-subtle;
+  padding: 1.5rem;
+  box-shadow: $cr-shadow-md;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
+
+  &--empty {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: linear-gradient(
+      135deg,
+      $cr-bg-secondary 0%,
+      $cr-bg-surface 100%
+    );
+    border-style: dashed;
+
+    h3 {
+      font-family: $cr-font-display;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: $cr-text-secondary;
+      margin: 0 0 0.5rem;
+    }
+
+    p {
+      font-size: 0.875rem;
+      color: $cr-text-muted;
+      margin: 0;
+      max-width: 280px;
+      line-height: 1.5;
+    }
+  }
+
+  &--animated {
+    animation: resourceCardFadeIn 0.35s ease-out;
+  }
+}
+
+@keyframes resourceCardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.resources-preview__breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: $cr-text-muted;
+  margin-bottom: 1rem;
+
+  span {
+    &:not(:last-child):not(:nth-last-child(2)) {
+      // dots
+    }
+  }
+}
+
+.resources-preview__title {
+  font-family: $cr-font-display;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.resources-preview__description {
+  font-size: 0.9375rem;
+  color: $cr-text-secondary;
+  margin: 0 0 1rem;
+  line-height: 1.6;
+}
+
+.resources-preview__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.resources-preview__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.resources-preview__filename {
+  font-size: 0.8125rem;
+  font-family: $cr-font-mono;
+  color: $cr-text-muted;
+  margin: 0 0 1.25rem;
+  padding: 0.5rem 0.75rem;
+  background: $cr-bg-tertiary;
+  border-radius: $cr-radius-sm;
+  word-break: break-all;
+}
+
+.resources-preview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid $cr-border-subtle;
+}
+
+// ─── Shared Chips & Tags ────────────────────────────────────────────────────
+
+.resources-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: $cr-text-secondary;
+  background: $cr-bg-tertiary;
+  border: 1px solid $cr-border-subtle;
+  border-radius: $cr-radius-full;
+
+  &--primary {
+    color: $cr-accent-primary;
+    background: rgba($cr-accent-primary, 0.12);
+    border-color: rgba($cr-accent-primary, 0.25);
+  }
+
+  &--success {
+    color: $cr-accent-success;
+    background: rgba($cr-accent-success, 0.12);
+    border-color: rgba($cr-accent-success, 0.25);
+  }
+}
+
+.resources-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: $cr-text-muted;
+  background: $cr-bg-elevated;
+  border-radius: $cr-radius-sm;
+  text-transform: lowercase;
+
+  &::before {
+    content: "#";
+    margin-right: 0.125rem;
+    opacity: 0.6;
+  }
+}
+
+// ─── Shared Buttons ─────────────────────────────────────────────────────────
+
+.resources-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6875rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: $cr-font-sans;
+  border-radius: $cr-radius-full;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all $cr-transition-fast;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: none;
+  }
+
+  &--primary {
+    background: linear-gradient(
+      135deg,
+      $cr-accent-primary,
+      lighten($cr-accent-primary, 8%)
+    );
+    color: white;
+    box-shadow: 0 4px 16px rgba($cr-accent-primary, 0.3);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba($cr-accent-primary, 0.4);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: $cr-text-secondary;
+    border-color: $cr-border-default;
+
+    &:hover {
+      background: $cr-bg-tertiary;
+      color: $cr-text-primary;
+      border-color: $cr-border-strong;
+    }
+  }
+
+  &--disabled {
+    background: $cr-bg-tertiary;
+    color: $cr-text-muted;
+    cursor: not-allowed;
+    opacity: 0.6;
+
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PART 2: UNIT PAGE STYLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+.resources-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    180deg,
+    $cr-bg-primary 0%,
+    darken($cr-bg-primary, 2%) 100%
+  );
+  color: $cr-text-primary;
+  font-family: $cr-font-sans;
+  padding: 2rem 1rem 4rem;
+
+  @media (min-width: 768px) {
+    padding: 3rem 2rem 5rem;
+  }
+
+  &--unit {
+    // specific unit page adjustments if needed
+  }
+}
+
+.resources-page__inner {
+  max-width: $cr-content-max-width;
+  margin: 0 auto;
+
+  &.prep-page {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  &.unit-page {
+    max-width: $cr-content-max-width;
+  }
+}
+
+// ─── Unit Not Found ─────────────────────────────────────────────────────────
+
+.unit-not-found {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px solid $cr-border-subtle;
+  max-width: 500px;
+  margin: 2rem auto;
+}
+
+.unit-not-found__title {
+  font-family: $cr-font-display;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0 0 0.75rem;
+}
+
+.unit-not-found__text {
+  font-size: 0.9375rem;
+  color: $cr-text-secondary;
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+}
+
+// ─── Unit Breadcrumbs ───────────────────────────────────────────────────────
+
+.unit-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.unit-breadcrumbs__link {
+  color: $cr-accent-primary;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color $cr-transition-fast;
+
+  &:hover {
+    color: lighten($cr-accent-primary, 10%);
+    text-decoration: underline;
+  }
+}
+
+.unit-breadcrumbs__separator {
+  color: $cr-text-muted;
+  font-size: 0.75rem;
+}
+
+.unit-breadcrumbs__crumb {
+  color: $cr-text-secondary;
+}
+
+// ─── Unit Header Card ───────────────────────────────────────────────────────
+
+.unit-header-card {
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px solid $cr-border-subtle;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: $cr-shadow-md;
+  position: relative;
+  overflow: hidden;
+
+  @media (min-width: 768px) {
+    padding: 2rem 2.5rem;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+      90deg,
+      $cr-accent-primary,
+      $cr-accent-purple,
+      $cr-accent-pink
+    );
+  }
+}
+
+.unit-header-card__top-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.unit-header-card__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $cr-text-muted;
+}
+
+.unit-header-card__order {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $cr-accent-primary;
+  background: rgba($cr-accent-primary, 0.12);
+  border: 1px solid rgba($cr-accent-primary, 0.25);
+  padding: 0.375rem 0.875rem;
+  border-radius: $cr-radius-full;
+}
+
+.unit-header-card__title {
+  font-family: $cr-font-display;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  color: $cr-text-primary;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.unit-header-card__summary {
+  font-size: 1rem;
+  color: $cr-text-secondary;
+  margin: 0 0 1.25rem;
+  line-height: 1.7;
+  max-width: 700px;
+}
+
+.unit-header-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: $cr-text-muted;
+}
+
+.unit-header-card__meta-item {
+  // default style
+}
+
+.unit-header-card__dot {
+  font-size: 0.5rem;
+  opacity: 0.5;
+}
+
+// ─── Unit Resources Section ─────────────────────────────────────────────────
+
+.unit-resources {
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px solid $cr-border-subtle;
+  padding: 1.5rem;
+  box-shadow: $cr-shadow-md;
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
+}
+
+.unit-resources__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid $cr-border-subtle;
+}
+
+.unit-resources__title {
+  font-family: $cr-font-display;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0 0 0.25rem;
+}
+
+.unit-resources__subtitle {
+  font-size: 0.875rem;
+  color: $cr-text-muted;
+  margin: 0;
+}
+
+.unit-resources__back {
+  flex-shrink: 0;
+}
+
+.unit-resources__empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: $cr-text-muted;
+  font-size: 0.9375rem;
+}
+
+// ─── Unit Resource Cards List ───────────────────────────────────────────────
+
+.unit-resources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.unit-resource-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: $cr-bg-tertiary;
+  border: 1px solid $cr-border-subtle;
+  border-radius: $cr-radius-lg;
+  transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1.5rem;
+  }
+
+  &:hover {
+    border-color: $cr-border-default;
+    box-shadow: $cr-shadow-sm;
+  }
+}
+
+.unit-resource-card__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.unit-resource-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.unit-resource-card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.unit-resource-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.unit-resource-card__description {
+  font-size: 0.875rem;
+  color: $cr-text-secondary;
+  margin: 0 0 0.75rem;
+  line-height: 1.6;
+}
+
+.unit-resource-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.5rem;
+}
+
+.unit-resource-card__filename {
+  font-size: 0.75rem;
+  font-family: $cr-font-mono;
+  color: $cr-text-muted;
+  margin: 0;
+}
+
+.unit-resource-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-shrink: 0;
+
+  @media (min-width: 768px) {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PART 3: PREP ROOM / PREP SHELL STYLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Prep Empty Card ────────────────────────────────────────────────────────
+
+.prep-empty-card {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px solid $cr-border-subtle;
+  max-width: 500px;
+  margin: 2rem auto;
+}
+
+.prep-empty-card__title {
+  font-family: $cr-font-display;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0 0 0.75rem;
+}
+
+.prep-empty-card__text {
+  font-size: 0.9375rem;
+  color: $cr-text-secondary;
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+}
+
+// ─── Prep Layout ────────────────────────────────────────────────────────────
+
+.prep-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 200px);
+  background: $cr-bg-primary;
+  border-radius: $cr-radius-xl;
+  overflow: hidden;
+  border: 1px solid $cr-border-subtle;
+
+  @media (min-width: 1024px) {
+    flex-direction: row;
+    height: calc(100vh - 160px);
+    max-height: 900px;
+  }
+}
+
+// ─── Prep Viewer ────────────────────────────────────────────────────────────
+
+.prep-viewer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-lg;
+  overflow: hidden;
+
+  @media (min-width: 1024px) {
+    min-height: 0;
+    border-radius: 0;
+  }
+}
+
+.prep-viewer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: $cr-bg-tertiary;
+  border-bottom: 1px solid $cr-border-subtle;
+  flex-shrink: 0;
+}
+
+.prep-viewer__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prep-viewer__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.prep-viewer__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: $cr-font-sans;
+  color: $cr-text-secondary;
+  background: transparent;
+  border: 1px solid $cr-border-default;
+  border-radius: $cr-radius-full;
+  cursor: pointer;
+  transition: all $cr-transition-fast;
+  text-decoration: none;
+
+  &:hover {
+    color: $cr-text-primary;
+    background: $cr-bg-elevated;
+    border-color: $cr-border-strong;
+    text-decoration: none;
+  }
+}
+
+.prep-viewer__frame-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
+.prep-viewer__canvas-container {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.prep-viewer__frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: $cr-bg-primary;
+}
+
+.prep-viewer__error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: $cr-text-secondary;
+}
+
+.prep-viewer__error-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.prep-viewer__error-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0 0 0.5rem;
+}
+
+.prep-viewer__error-text {
+  font-size: 0.875rem;
+  color: $cr-text-muted;
+  margin: 0;
+  max-width: 300px;
+}
+
+// ─── Prep Sidebar ───────────────────────────────────────────────────────────
+
+.prep-sidebar {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: $cr-bg-secondary;
+  border-top: 1px solid $cr-border-subtle;
+
+  @media (min-width: 1024px) {
+    width: 380px;
+    border-top: none;
+    border-left: 1px solid $cr-border-subtle;
+  }
+}
+
+.prep-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: $cr-bg-tertiary;
+  border-bottom: 1px solid $cr-border-subtle;
+  flex-shrink: 0;
+}
+
+.prep-sidebar__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0;
+}
+
+.prep-sidebar__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+// ─── Prep Notes ─────────────────────────────────────────────────────────────
+
+.prep-notes {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.prep-notes__header {
+  margin-bottom: 0.75rem;
+}
+
+.prep-notes__label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin-bottom: 0.25rem;
+}
+
+.prep-notes__hint {
+  display: block;
+  font-size: 0.75rem;
+  color: $cr-text-muted;
+  line-height: 1.4;
+}
+
+.prep-notes__textarea {
+  flex: 1;
+  min-height: 200px;
+  padding: 1rem;
+  font-size: 0.875rem;
+  font-family: $cr-font-sans;
+  color: $cr-text-primary;
+  background: $cr-bg-tertiary;
+  border: 1px solid $cr-border-default;
+  border-radius: $cr-radius-md;
+  resize: vertical;
+  outline: none;
+  transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
+  line-height: 1.6;
+
+  &::placeholder {
+    color: $cr-text-muted;
+  }
+
+  &:focus {
+    border-color: $cr-accent-primary;
+    box-shadow: 0 0 0 3px rgba($cr-accent-primary, 0.15);
+  }
+}
+
+// ─── Prep PDF Viewer with Sidebar ───────────────────────────────────────────
+
+.prep-pdf-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+}
+
+.prep-pdf-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: $cr-bg-primary;
+  position: relative;
+}
+
+.prep-pdf-main-inner {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  position: relative;
+}
+
+.prep-pdf-canvas {
+  max-width: 100%;
+  height: auto;
+  box-shadow: $cr-shadow-lg;
+  border-radius: $cr-radius-sm;
+}
+
+.prep-pdf-error {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: $cr-accent-danger;
+  font-size: 0.9375rem;
+  text-align: center;
+}
+
+.prep-pdf-sidebar {
+  width: 100%;
+  max-height: 120px;
+  background: $cr-bg-secondary;
+  border-top: 1px solid $cr-border-subtle;
+  overflow-y: auto;
+
+  @media (min-width: 768px) {
+    width: 80px;
+    max-height: none;
+    border-top: none;
+    border-left: 1px solid $cr-border-subtle;
+  }
+}
+
+.prep-pdf-sidebar__empty {
+  padding: 1rem;
+  text-align: center;
+  color: $cr-text-muted;
+  font-size: 0.8125rem;
+}
+
+.prep-pdf-sidebar__pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+
+  @media (min-width: 768px) {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+}
+
+.prep-pdf-sidebar__page-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: $cr-font-sans;
+  color: $cr-text-secondary;
+  background: $cr-bg-tertiary;
+  border: 1px solid $cr-border-subtle;
+  border-radius: $cr-radius-sm;
+  cursor: pointer;
+  transition: all $cr-transition-fast;
+
+  &:hover {
+    background: $cr-bg-elevated;
+    border-color: $cr-border-default;
+    color: $cr-text-primary;
+  }
+
+  &.is-active {
+    background: $cr-accent-primary;
+    border-color: $cr-accent-primary;
+    color: white;
+    box-shadow: 0 2px 8px rgba($cr-accent-primary, 0.3);
+  }
+}
+
+// ─── Prep PDF Navigation (Classroom mode) ───────────────────────────────────
+
+.prep-pdf-nav {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba($cr-bg-secondary, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid $cr-border-default;
+  border-radius: $cr-radius-full;
+  box-shadow: $cr-shadow-lg;
+  z-index: 10;
+}
+
+.prep-pdf-nav__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  color: $cr-text-secondary;
+  background: $cr-bg-tertiary;
+  border: 1px solid $cr-border-subtle;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all $cr-transition-fast;
+
+  &:hover:not(:disabled) {
+    background: $cr-bg-elevated;
+    color: $cr-text-primary;
+    border-color: $cr-border-default;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.prep-pdf-nav__indicator {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $cr-text-primary;
+  font-family: $cr-font-mono;
+  min-width: 60px;
+  text-align: center;
+}
+
+// ─── Prep Annotation Toolbar ────────────────────────────────────────────────
+
+.prep-annotate-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: $cr-bg-secondary;
+  border-bottom: 1px solid $cr-border-subtle;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.prep-annotate-toolbar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: $cr-font-sans;
+  color: $cr-text-secondary;
+  background: $cr-bg-tertiary;
+  border: 1px solid $cr-border-subtle;
+  border-radius: $cr-radius-md;
+  cursor: pointer;
+  transition: all $cr-transition-fast;
+  white-space: nowrap;
+
+  span {
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
+
+  &:hover {
+    color: $cr-text-primary;
+    background: $cr-bg-elevated;
+    border-color: $cr-border-default;
+  }
+
+  &.is-active {
+    color: $cr-accent-primary;
+    background: rgba($cr-accent-primary, 0.12);
+    border-color: rgba($cr-accent-primary, 0.4);
+  }
+
+  &--danger {
+    color: $cr-accent-danger;
+
+    &:hover {
+      background: rgba($cr-accent-danger, 0.12);
+      border-color: rgba($cr-accent-danger, 0.3);
+    }
+  }
+}
+
+.prep-annotate-colors {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding-left: 0.5rem;
+  margin-left: auto;
+  border-left: 1px solid $cr-border-subtle;
+}
+
+.prep-annotate-color {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all $cr-transition-fast;
+  flex-shrink: 0;
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  &.is-active {
+    border-color: $cr-accent-primary;
+    box-shadow: 0 0 0 2px rgba($cr-accent-primary, 0.3);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PART 4: CLASSROOM SHELL STYLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Hide Site Chrome When Classroom Active ─────────────────────────────────
 
 html.classroom-active,
 body.classroom-active {
@@ -90,9 +1459,7 @@ body.classroom-active {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// LOADING SCREEN
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Loading Screen ─────────────────────────────────────────────────────────
 
 .cr-loading-screen {
   position: fixed;
@@ -137,9 +1504,7 @@ body.classroom-active {
   font-family: $cr-font-sans;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// ERROR SCREEN
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Error Screen ───────────────────────────────────────────────────────────
 
 .cr-error-screen {
   position: fixed;
@@ -206,9 +1571,7 @@ body.classroom-active {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// SHELL CONTAINER
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Shell Container ────────────────────────────────────────────────────────
 
 .cr-shell {
   position: fixed;
@@ -222,9 +1585,7 @@ body.classroom-active {
   overflow: hidden;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// HEADER
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Header ─────────────────────────────────────────────────────────────────
 
 .cr-header {
   display: flex;
@@ -378,9 +1739,7 @@ body.classroom-active {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// MAIN CONTENT AREA
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Main Content Area ──────────────────────────────────────────────────────
 
 .cr-main {
   flex: 1;
@@ -443,7 +1802,7 @@ body.classroom-active {
   }
 }
 
-// ─── Drag Divider ────────────────────────────────────────────────────────────
+// ─── Drag Divider ───────────────────────────────────────────────────────────
 
 .cr-divider {
   position: relative;
@@ -503,9 +1862,7 @@ body.classroom-active {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// VIDEO CONTAINER
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Video Container ────────────────────────────────────────────────────────
 
 .cr-video-container {
   flex: 1;
@@ -611,9 +1968,7 @@ body.classroom-active {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// CHAT CONTAINER
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Chat Container ─────────────────────────────────────────────────────────
 
 .cr-chat-container {
   display: flex;
@@ -913,9 +2268,7 @@ body.classroom-active {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// CONTENT VIEWER
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Content Viewer ─────────────────────────────────────────────────────────
 
 .cr-content-viewer {
   width: 100%;
@@ -925,7 +2278,6 @@ body.classroom-active {
   overflow: hidden;
   position: relative;
 
-  // Force prep shell to take full height
   > * {
     flex: 1;
     min-height: 0;
@@ -1040,9 +2392,7 @@ body.classroom-active {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// CONTROLS BAR
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Controls Bar ───────────────────────────────────────────────────────────
 
 .cr-controls {
   display: flex;
@@ -1161,7 +2511,7 @@ body.classroom-active {
   }
 }
 
-// ─── Focus Mode Switcher ─────────────────────────────────────────────────────
+// ─── Focus Mode Switcher ────────────────────────────────────────────────────
 
 .cr-focus-switcher {
   display: flex;
@@ -1204,9 +2554,7 @@ body.classroom-active {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// MODAL (Resource Picker)
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Modal (Resource Picker) ────────────────────────────────────────────────
 
 .cr-modal-overlay {
   position: fixed;
@@ -1297,9 +2645,20 @@ body.classroom-active {
   padding: 1.5rem;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// RESOURCE PICKER (Modal Content)
-// ════════════════════════════════════════════════════════════════════════════
+.cr-modal--small {
+  max-width: 480px;
+}
+
+.cr-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem 1.25rem;
+  border-top: 1px solid $cr-border-subtle;
+  background: $cr-bg-secondary;
+}
+
+// ─── Resource Picker (Modal Content) ────────────────────────────────────────
 
 .cr-picker {
   display: flex;
@@ -1513,133 +2872,8 @@ body.classroom-active {
   font-weight: 500;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// ACCESSIBILITY
-// ════════════════════════════════════════════════════════════════════════════
+// ─── Generic Button Style ───────────────────────────────────────────────────
 
-@media (prefers-reduced-motion: reduce) {
-  .cr-shell,
-  .cr-shell *,
-  .cr-loading-screen,
-  .cr-error-screen {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-.cr-shell button:focus-visible,
-.cr-shell a:focus-visible,
-.cr-shell input:focus-visible,
-.cr-shell select:focus-visible {
-  outline: 2px solid $cr-accent-primary;
-  outline-offset: 2px;
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// PREP ANNOTATION TOOLBAR (for classroom integration)
-// ════════════════════════════════════════════════════════════════════════════
-
-.prep-annotate-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: $cr-bg-secondary;
-  border-bottom: 1px solid $cr-border-subtle;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-  z-index: 10;
-}
-
-.prep-annotate-toolbar__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 0.875rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  font-family: $cr-font-sans;
-  color: $cr-text-secondary;
-  background: $cr-bg-tertiary;
-  border: 1px solid $cr-border-subtle;
-  border-radius: $cr-radius-md;
-  cursor: pointer;
-  transition: all $cr-transition-fast;
-  white-space: nowrap;
-
-  span {
-    @media (max-width: 768px) {
-      display: none;
-    }
-  }
-
-  &:hover {
-    color: $cr-text-primary;
-    background: $cr-bg-elevated;
-    border-color: $cr-border-default;
-  }
-
-  &.is-active {
-    color: $cr-accent-primary;
-    background: rgba($cr-accent-primary, 0.12);
-    border-color: rgba($cr-accent-primary, 0.4);
-  }
-
-  &--danger {
-    color: $cr-accent-danger;
-
-    &:hover {
-      background: rgba($cr-accent-danger, 0.12);
-      border-color: rgba($cr-accent-danger, 0.3);
-    }
-  }
-}
-
-.prep-annotate-colors {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding-left: 0.5rem;
-  margin-left: auto;
-  border-left: 1px solid $cr-border-subtle;
-}
-
-.prep-annotate-color {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all $cr-transition-fast;
-  flex-shrink: 0;
-
-  &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  }
-
-  &.is-active {
-    border-color: $cr-accent-primary;
-    box-shadow: 0 0 0 2px rgba($cr-accent-primary, 0.3);
-  }
-}
-// ─── Modal: Small variant + footer actions ───────────────────────────────────
-
-.cr-modal--small {
-  max-width: 480px;
-}
-
-.cr-modal__footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 0.75rem 1.5rem 1.25rem;
-  border-top: 1px solid $cr-border-subtle;
-  background: $cr-bg-secondary;
-}
-
-/* Generic button style for modals / dialogs */
 .cr-button {
   display: inline-flex;
   align-items: center;
@@ -1652,11 +2886,10 @@ body.classroom-active {
   border: 1px solid transparent;
   cursor: pointer;
   transition: all $cr-transition-fast;
-  text-decoration: none; // for <a> buttons
+  text-decoration: none;
   white-space: nowrap;
 }
 
-/* Neutral / ghost action (Cancel) */
 .cr-button--ghost {
   background: transparent;
   color: $cr-text-secondary;
@@ -1670,7 +2903,6 @@ body.classroom-active {
   }
 }
 
-/* Destructive / primary action (Yes, leave) */
 .cr-button--danger {
   background: $cr-accent-danger;
   color: $cr-text-primary;
@@ -1687,5 +2919,651 @@ body.classroom-active {
   &:active {
     transform: translateY(0);
     box-shadow: 0 2px 10px rgba($cr-accent-danger, 0.35);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PART 5: ACCESSIBILITY & UTILITIES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Reduced Motion ─────────────────────────────────────────────────────────
+
+@media (prefers-reduced-motion: reduce) {
+  .cr-shell,
+  .cr-shell *,
+  .cr-loading-screen,
+  .cr-error-screen,
+  .resources-preview__card--animated,
+  .spx-resources-page *,
+  .resources-page * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// ─── Focus Visible ──────────────────────────────────────────────────────────
+
+.cr-shell button:focus-visible,
+.cr-shell a:focus-visible,
+.cr-shell input:focus-visible,
+.cr-shell select:focus-visible,
+.spx-resources-page button:focus-visible,
+.spx-resources-page a:focus-visible,
+.spx-resources-page select:focus-visible,
+.resources-page button:focus-visible,
+.resources-page a:focus-visible,
+.resources-page select:focus-visible {
+  outline: 2px solid $cr-accent-primary;
+  outline-offset: 2px;
+}
+
+// ─── Scrollbar Styling ──────────────────────────────────────────────────────
+
+.spx-resources-page,
+.resources-page,
+.cr-shell {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $cr-bg-primary;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $cr-border-default;
+    border-radius: $cr-radius-full;
+
+    &:hover {
+      background: $cr-border-strong;
+    }
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: $cr-border-default $cr-bg-primary;
+  }
+}
+
+// ─── Selection Color ────────────────────────────────────────────────────────
+
+.spx-resources-page,
+.resources-page,
+.cr-shell {
+  ::selection {
+    background: rgba($cr-accent-primary, 0.3);
+    color: $cr-text-primary;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CLASSROOM PDF VIEWER STYLES
+// Append this to your resources.scss file
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── Variables (use existing if available) ──────────────────────────────────
+
+$cpv-bg-primary: #0a0f1a;
+$cpv-bg-secondary: #111827;
+$cpv-bg-tertiary: #1e293b;
+$cpv-bg-elevated: #1f2937;
+
+$cpv-accent-primary: #0ea5e9;
+$cpv-accent-danger: #ef4444;
+$cpv-accent-success: #22c55e;
+$cpv-accent-pointer: #f59e0b;
+
+$cpv-text-primary: #f8fafc;
+$cpv-text-secondary: #94a3b8;
+$cpv-text-muted: #64748b;
+
+$cpv-border-subtle: rgba(148, 163, 184, 0.12);
+$cpv-border-default: rgba(148, 163, 184, 0.2);
+
+$cpv-radius-sm: 8px;
+$cpv-radius-md: 12px;
+$cpv-radius-full: 999px;
+
+$cpv-transition-fast: 0.12s ease;
+$cpv-transition-normal: 0.2s ease;
+
+$cpv-font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+$cpv-font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN CONTAINER
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cpv {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: $cpv-bg-primary;
+  font-family: $cpv-font-sans;
+  color: $cpv-text-primary;
+  overflow: hidden;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LOADING & ERROR STATES
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cpv-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: 1rem;
+  color: $cpv-text-secondary;
+  font-size: 0.9375rem;
+}
+
+.cpv-loading__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid $cpv-border-default;
+  border-top-color: $cpv-accent-primary;
+  border-radius: 50%;
+  animation: cpv-spin 0.8s linear infinite;
+}
+
+@keyframes cpv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cpv-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: 0.75rem;
+  color: $cpv-accent-danger;
+  font-size: 0.9375rem;
+  text-align: center;
+  padding: 2rem;
+}
+
+.cpv-error__icon {
+  font-size: 2.5rem;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOOLBAR
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cpv-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: $cpv-bg-secondary;
+  border-bottom: 1px solid $cpv-border-subtle;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.cpv-toolbar__tools {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cpv-toolbar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: $cpv-font-sans;
+  color: $cpv-text-secondary;
+  background: $cpv-bg-tertiary;
+  border: 1px solid $cpv-border-subtle;
+  border-radius: $cpv-radius-md;
+  cursor: pointer;
+  transition: all $cpv-transition-fast;
+  white-space: nowrap;
+
+  span {
+    @media (max-width: 900px) {
+      display: none;
+    }
+  }
+
+  &:hover {
+    color: $cpv-text-primary;
+    background: $cpv-bg-elevated;
+    border-color: $cpv-border-default;
+  }
+
+  &.is-active {
+    color: $cpv-accent-primary;
+    background: rgba($cpv-accent-primary, 0.15);
+    border-color: rgba($cpv-accent-primary, 0.4);
+  }
+
+  &--danger {
+    color: $cpv-text-muted;
+
+    &:hover {
+      color: $cpv-accent-danger;
+      background: rgba($cpv-accent-danger, 0.12);
+      border-color: rgba($cpv-accent-danger, 0.3);
+    }
+  }
+}
+
+.cpv-toolbar__colors {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding-left: 0.75rem;
+  margin-left: 0.5rem;
+  border-left: 1px solid $cpv-border-subtle;
+}
+
+.cpv-toolbar__color {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all $cpv-transition-fast;
+  flex-shrink: 0;
+
+  &:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  &.is-active {
+    border-color: $cpv-accent-primary;
+    box-shadow: 0 0 0 2px rgba($cpv-accent-primary, 0.3);
+    transform: scale(1.1);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VIEWPORT
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cpv-viewport {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+  padding: 1.5rem;
+  background: $cpv-bg-primary;
+  min-height: 0;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $cpv-bg-secondary;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $cpv-border-default;
+    border-radius: $cpv-radius-full;
+
+    &:hover {
+      background: $cpv-text-muted;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PAGE WRAPPER
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cpv-page-wrapper {
+  position: relative;
+  display: inline-block;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border-radius: $cpv-radius-sm;
+  overflow: hidden;
+  background: white;
+}
+
+.cpv-page-canvas {
+  display: block;
+}
+
+.cpv-annotation-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+
+  // Make canvas transparent so PDF shows through
+  // but still capture mouse events
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEXT BOX
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cpv-textbox {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 100px;
+  max-width: 300px;
+  z-index: 20;
+  pointer-events: auto;
+
+  &--editing {
+    .cpv-textbox__header {
+      display: flex;
+    }
+  }
+}
+
+.cpv-textbox__header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.5rem;
+  background: $cpv-bg-secondary;
+  border-radius: $cpv-radius-sm $cpv-radius-sm 0 0;
+  cursor: move;
+}
+
+.cpv-textbox__drag {
+  color: $cpv-text-muted;
+  font-size: 0.75rem;
+  cursor: move;
+}
+
+.cpv-textbox__delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 1rem;
+  color: $cpv-text-muted;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all $cpv-transition-fast;
+
+  &:hover {
+    color: $cpv-accent-danger;
+    background: rgba($cpv-accent-danger, 0.15);
+  }
+}
+
+.cpv-textbox__input {
+  width: 100%;
+  min-height: 60px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: $cpv-font-sans;
+  font-weight: 600;
+  line-height: 1.4;
+  background: rgba($cpv-bg-secondary, 0.95);
+  border: 1px solid $cpv-border-default;
+  border-radius: 0 0 $cpv-radius-sm $cpv-radius-sm;
+  resize: both;
+  outline: none;
+
+  &::placeholder {
+    color: $cpv-text-muted;
+  }
+
+  &:focus {
+    border-color: $cpv-accent-primary;
+    box-shadow: 0 0 0 2px rgba($cpv-accent-primary, 0.2);
+  }
+}
+
+.cpv-textbox__label {
+  padding: 0.375rem 0.625rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: $cpv-radius-sm;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: move;
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  // Border to make it visible
+  border: 1px solid rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// POINTER (STICKY)
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cpv-pointer {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  pointer-events: none;
+}
+
+.cpv-pointer__dot {
+  width: 16px;
+  height: 16px;
+  background: $cpv-accent-pointer;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba($cpv-accent-pointer, 0.5);
+}
+
+.cpv-pointer__ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border: 2px solid $cpv-accent-pointer;
+  border-radius: 50%;
+  animation: cpv-pointer-pulse 1.5s ease-out infinite;
+}
+
+@keyframes cpv-pointer-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NAVIGATION BAR
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cpv-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: $cpv-bg-secondary;
+  border-top: 1px solid $cpv-border-subtle;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.cpv-nav__left,
+.cpv-nav__center,
+.cpv-nav__right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cpv-nav__center {
+  flex: 1;
+  justify-content: center;
+}
+
+.cpv-nav__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: $cpv-font-sans;
+  color: $cpv-text-secondary;
+  background: $cpv-bg-tertiary;
+  border: 1px solid $cpv-border-subtle;
+  border-radius: $cpv-radius-md;
+  cursor: pointer;
+  transition: all $cpv-transition-fast;
+
+  &:hover:not(:disabled) {
+    color: $cpv-text-primary;
+    background: $cpv-bg-elevated;
+    border-color: $cpv-border-default;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &--text {
+    font-size: 0.8125rem;
+    padding: 0 1rem;
+  }
+}
+
+.cpv-nav__zoom {
+  font-size: 0.8125rem;
+  font-family: $cpv-font-mono;
+  color: $cpv-text-secondary;
+  min-width: 50px;
+  text-align: center;
+}
+
+.cpv-nav__pages {
+  font-size: 0.875rem;
+  color: $cpv-text-primary;
+  padding: 0 0.75rem;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════════════════════════════
+
+@media (max-width: 768px) {
+  .cpv-toolbar {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .cpv-toolbar__tools {
+    gap: 0.25rem;
+  }
+
+  .cpv-toolbar__btn {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .cpv-toolbar__colors {
+    padding-left: 0.5rem;
+    margin-left: 0.25rem;
+    gap: 0.25rem;
+  }
+
+  .cpv-toolbar__color {
+    width: 24px;
+    height: 24px;
+  }
+
+  .cpv-viewport {
+    padding: 0.75rem;
+  }
+
+  .cpv-nav {
+    padding: 0.5rem 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .cpv-nav__btn {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.875rem;
+  }
+
+  .cpv-nav__pages {
+    font-size: 0.8125rem;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CURSOR STATES
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cpv-page-wrapper[style*="cursor: crosshair"] {
+  .cpv-annotation-canvas {
+    cursor: crosshair;
+  }
+}
+
+.cpv-page-wrapper[style*="cursor: text"] {
+  .cpv-annotation-canvas {
+    cursor: text;
+  }
+}
+
+.cpv-page-wrapper[style*="cursor: pointer"] {
+  .cpv-annotation-canvas {
+    cursor: pointer;
+  }
+}
+
+.cpv-page-wrapper[style*="cursor: cell"] {
+  .cpv-annotation-canvas {
+    cursor: cell;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ACCESSIBILITY
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cpv button:focus-visible {
+  outline: 2px solid $cpv-accent-primary;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cpv-loading__spinner,
+  .cpv-pointer__ring {
+    animation: none;
   }
 }
