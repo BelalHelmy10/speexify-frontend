@@ -1,0 +1,17 @@
+{
+  "home": "Home",
+  "individual": "Individual",
+  "corporate": "Corporate",
+  "packages": "Packages",
+  "about": "About",
+  "contact": "Contact",
+  "register": "Register",
+  "login": "Log in",
+  "logout": "Logout",
+  "dashboard": "Dashboard",
+  "calendar": "Calendar",
+  "progress": "Progress",
+  "resources": "Resources",
+  "settings": "Settings",
+  "admin": "Admin"
+}

@@ -179,64 +179,63 @@ function Home({ locale = "en" }) {
       <section className="home-features">
         <div className="home-container">
           <div className="home-section-header">
-            <h2 className="home-section-title">Why Speexify</h2>
+            <h2 className="home-section-title">{t(dict, "features_title")}</h2>
             <p className="home-section-subtitle">
-              Everything you need to master professional communication
+              {t(dict, "features_subtitle")}
             </p>
           </div>
 
           <div className="home-features__grid">
             <Feature
               icon="🎯"
-              title="Personalized coaching"
-              text="A tailored plan built around your role, goals, and level. Learn what actually helps you succeed at work."
+              title={t(dict, "feature1_title")}
+              text={t(dict, "feature1_text")}
             />
             <Feature
               icon="⭐"
-              title="Top-tier coaches"
-              text="Hand-picked, experienced trainers with business expertise — not just grammar."
+              title={t(dict, "feature2_title")}
+              text={t(dict, "feature2_text")}
             />
             <Feature
               icon="📊"
-              title="Flexible & measurable"
-              text="Book sessions around your schedule and track progress with clear milestones and reports."
+              title={t(dict, "feature3_title")}
+              text={t(dict, "feature3_text")}
             />
             <Feature
               icon="🚀"
-              title="For individuals & teams"
-              text="From solo learners to company programs — Speexify scales with your needs."
+              title={t(dict, "feature4_title")}
+              text={t(dict, "feature4_text")}
             />
           </div>
         </div>
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
+      {/* ===== HOW IT WORKS ===== */}
       <section className="home-spx-how">
         <div className="home-container">
           <div className="home-section-header">
-            <h2 className="home-section-title">How it works</h2>
-            <p className="home-section-subtitle">
-              Three simple steps to transformation
-            </p>
+            <h2 className="home-section-title">{t(dict, "how_title")}</h2>
+            <p className="home-section-subtitle">{t(dict, "how_subtitle")}</p>
           </div>
 
           <div className="home-spx-how__grid">
             <HowStep
               step="01"
-              title="Assess"
-              text="Complete a quick skills & goals survey to personalize your plan."
+              title={t(dict, "how_step1_title")}
+              text={t(dict, "how_step1_text")}
               img="/images/assess.avif"
             />
             <HowStep
               step="02"
-              title="Coach"
-              text="Meet 1:1 with a coach matched to your role & industry."
+              title={t(dict, "how_step2_title")}
+              text={t(dict, "how_step2_text")}
               img="/images/coach.avif"
             />
             <HowStep
               step="03"
-              title="Apply"
-              text="Practice with real work scenarios and measure improvement."
+              title={t(dict, "how_step3_title")}
+              text={t(dict, "how_step3_text")}
               img="/images/apply.avif"
             />
           </div>
@@ -246,7 +245,7 @@ function Home({ locale = "en" }) {
               className="home-btn home-btn--primary home-btn--shine"
               href="/register"
             >
-              <span>Start your assessment</span>
+              <span>{t(dict, "how_cta_primary")}</span>
               <svg
                 className="home-btn__arrow"
                 width="16"
@@ -265,44 +264,43 @@ function Home({ locale = "en" }) {
               </svg>
             </Link>
             <Link className="home-btn home-btn--ghost" href="/contact">
-              Ask a question
+              {t(dict, "how_cta_secondary")}
             </Link>
           </div>
         </div>
       </section>
 
       {/* ===== CURRICULUM ===== */}
+      {/* ===== CURRICULUM ===== */}
       <section className="home-spx-curriculum">
         <div className="home-container">
           <div className="home-section-header">
-            <h2 className="home-section-title">What you'll learn</h2>
-            <p className="home-section-subtitle">
-              Practical, job-ready modules you can apply the same day
-            </p>
+            <h2 className="home-section-title">{t(dict, "curr_title")}</h2>
+            <p className="home-section-subtitle">{t(dict, "curr_subtitle")}</p>
           </div>
 
           <div className="home-spx-curriculum__grid">
             <CurriculumCard
-              title="Client communication"
-              desc="Run structured calls, handle objections, and summarize clearly."
+              title={t(dict, "curr1_title")}
+              desc={t(dict, "curr1_desc")}
               img="/images/client-communication.avif"
               color="blue"
             />
             <CurriculumCard
-              title="Presentations"
-              desc="Build confident narratives with visuals and engaging delivery."
+              title={t(dict, "curr2_title")}
+              desc={t(dict, "curr2_desc")}
               img="/images/presentations.avif"
               color="purple"
             />
             <CurriculumCard
-              title="Email & async"
-              desc="Write crisp, professional messages that get quick responses."
+              title={t(dict, "curr3_title")}
+              desc={t(dict, "curr3_desc")}
               img="/images/email-and-async.avif"
               color="green"
             />
             <CurriculumCard
-              title="Leadership"
-              desc="Drive decisions, give feedback, and influence across teams."
+              title={t(dict, "curr4_title")}
+              desc={t(dict, "curr4_desc")}
               img="/images/leadership.avif"
               color="orange"
             />
@@ -310,105 +308,104 @@ function Home({ locale = "en" }) {
 
           <div className="home-spx-curriculum__more">
             <Link className="home-btn home-btn--ghost" href="/packages">
-              See full track list
+              {t(dict, "curr_more")}
             </Link>
           </div>
         </div>
       </section>
 
       {/* ===== COACHES ===== */}
+      {/* ===== COACHES ===== */}
       <section className="home-spx-coaches">
         <div className="home-container">
           <div className="home-section-header">
-            <h2 className="home-section-title">Meet a few of our coaches</h2>
+            <h2 className="home-section-title">{t(dict, "coaches_title")}</h2>
             <p className="home-section-subtitle">
-              Expert trainers with real-world business experience
+              {t(dict, "coaches_subtitle")}
             </p>
           </div>
 
           <div className="home-spx-coaches__grid">
             <CoachCard
-              name="Billy H."
-              role="Senior Communication Coach"
-              bio="Former enterprise trainer; specializes in client-facing roles."
+              name={t(dict, "coach1_name")}
+              role={t(dict, "coach1_role")}
+              bio={t(dict, "coach1_bio")}
               img="/images/Billy.jpeg"
             />
             <CoachCard
-              name="Zee A."
-              role="Presentation & Storytelling"
-              bio="Ex-consultant; helps craft persuasive narratives for execs."
+              name={t(dict, "coach2_name")}
+              role={t(dict, "coach2_role")}
+              bio={t(dict, "coach2_bio")}
               img="/images/ZiadAnwer.jpeg"
             />
             <CoachCard
-              name="Lina T."
-              role="Leadership Communication"
-              bio="Led global teams; mentors managers on clarity and influence."
+              name={t(dict, "coach3_name")}
+              role={t(dict, "coach3_role")}
+              bio={t(dict, "coach3_bio")}
               img="/images/Lina.avif"
             />
           </div>
 
-          <p className="home-spx-coaches__note">
-            We'll match you with the perfect coach for your goals
-          </p>
+          <p className="home-spx-coaches__note">{t(dict, "coaches_note")}</p>
         </div>
       </section>
 
       {/* ===== CASE STUDIES ===== */}
+      {/* ===== CASE STUDIES ===== */}
       <section className="home-spx-cases">
         <div className="home-container">
           <div className="home-section-header">
-            <h2 className="home-section-title">Real outcomes</h2>
-            <p className="home-section-subtitle">
-              See how teams are transforming their communication
-            </p>
+            <h2 className="home-section-title">{t(dict, "cases_title")}</h2>
+            <p className="home-section-subtitle">{t(dict, "cases_subtitle")}</p>
           </div>
 
           <div className="home-spx-cases__grid">
             <CaseCard
               logo="/images/logo-indeed.svg"
-              title="Onboarding made faster"
-              text="A support team reduced average handle time by 22% with clearer call structures."
-              metric="22%"
-              metricLabel="faster"
+              title={t(dict, "case1_title")}
+              text={t(dict, "case1_text")}
+              metric={t(dict, "case1_metric")}
+              metricLabel={t(dict, "case1_metric_label")}
             />
             <CaseCard
               logo="/images/logo-amazon.svg"
-              title="Meetings that decide"
-              text="A product trio cut weekly syncs by 30% using agenda-first updates."
-              metric="30%"
-              metricLabel="less time"
+              title={t(dict, "case2_title")}
+              text={t(dict, "case2_text")}
+              metric={t(dict, "case2_metric")}
+              metricLabel={t(dict, "case2_metric_label")}
             />
             <CaseCard
               logo="/images/logo-allianz.svg"
-              title="Sales confidence"
-              text="Reps improved objection handling and boosted close rates in Q2."
-              metric="2.1×"
-              metricLabel="close rate"
+              title={t(dict, "case3_title")}
+              text={t(dict, "case3_text")}
+              metric={t(dict, "case3_metric")}
+              metricLabel={t(dict, "case3_metric_label")}
             />
           </div>
         </div>
       </section>
 
       {/* ===== TESTIMONIALS ===== */}
+      {/* ===== TESTIMONIALS ===== */}
       <section className="home-testimonials">
         <div className="home-container">
           <div className="home-testimonials__grid">
             <Quote
-              quote="My coach helped me nail tough client calls. I feel confident and clear."
-              author="Sara M."
-              role="Customer Success"
+              quote={t(dict, "testi1_quote")}
+              author={t(dict, "testi1_author")}
+              role={t(dict, "testi1_role")}
               rating={5}
             />
             <Quote
-              quote="Our team's communication improved in weeks — meetings are faster and decisions clearer."
-              author="Ahmed K."
-              role="Team Lead"
+              quote={t(dict, "testi2_quote")}
+              author={t(dict, "testi2_author")}
+              role={t(dict, "testi2_role")}
               rating={5}
             />
             <Quote
-              quote="The sessions are practical and fun. I can see progress after every call."
-              author="Javier R."
-              role="Product Manager"
+              quote={t(dict, "testi3_quote")}
+              author={t(dict, "testi3_author")}
+              role={t(dict, "testi3_role")}
               rating={5}
             />
           </div>
@@ -416,55 +413,43 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== FAQ ===== */}
+      {/* ===== FAQ ===== */}
       <section className="home-spx-faq">
         <div className="home-container">
           <div className="home-section-header">
-            <h2 className="home-section-title">Frequently asked questions</h2>
-            <p className="home-section-subtitle">
-              Everything you need to know to get started
-            </p>
+            <h2 className="home-section-title">{t(dict, "faq_title")}</h2>
+            <p className="home-section-subtitle">{t(dict, "faq_subtitle")}</p>
           </div>
 
           <div className="home-spx-faq__grid">
             <details className="home-spx-faq__item">
-              <summary>How do you match me with a coach?</summary>
-              <p>
-                We consider your goals, current level, industry, and schedule to
-                suggest the best coach profiles for you or your team.
-              </p>
+              <summary>{t(dict, "faq1_q")}</summary>
+              <p>{t(dict, "faq1_a")}</p>
             </details>
             <details className="home-spx-faq__item">
-              <summary>Can I switch coaches later?</summary>
-              <p>
-                Absolutely. If the fit isn't right, you can switch anytime
-                without losing progress.
-              </p>
+              <summary>{t(dict, "faq2_q")}</summary>
+              <p>{t(dict, "faq2_a")}</p>
             </details>
             <details className="home-spx-faq__item">
-              <summary>Do you offer corporate packages?</summary>
-              <p>
-                Yes — we support budget controls, reporting, and manager
-                dashboards for teams.
-              </p>
+              <summary>{t(dict, "faq3_q")}</summary>
+              <p>{t(dict, "faq3_a")}</p>
             </details>
             <details className="home-spx-faq__item">
-              <summary>What's the time commitment?</summary>
-              <p>
-                Most learners do 1–2 sessions per week plus short, role-based
-                practice.
-              </p>
+              <summary>{t(dict, "faq4_q")}</summary>
+              <p>{t(dict, "faq4_a")}</p>
             </details>
           </div>
         </div>
       </section>
 
       {/* ===== NEWSLETTER ===== */}
+      {/* ===== NEWSLETTER ===== */}
       <section className="home-spx-newsletter">
         <div className="home-container">
           <div className="home-spx-newsletter__inner">
             <div className="home-spx-newsletter__copy">
-              <h3>Get actionable communication tips</h3>
-              <p>Monthly insights from coaches — no spam, just value.</p>
+              <h3>{t(dict, "newsletter_title")}</h3>
+              <p>{t(dict, "newsletter_sub")}</p>
             </div>
             <form
               className="home-spx-newsletter__form"
@@ -472,18 +457,19 @@ function Home({ locale = "en" }) {
             >
               <input
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t(dict, "newsletter_placeholder")}
                 aria-label="Email"
                 className="home-spx-newsletter__input"
               />
               <button className="home-btn home-btn--primary" type="submit">
-                Subscribe
+                {t(dict, "newsletter_button")}
               </button>
             </form>
           </div>
         </div>
       </section>
 
+      {/* ===== CTA ===== */}
       {/* ===== CTA ===== */}
       <section className="home-cta">
         <div className="home-cta__background">
@@ -496,19 +482,15 @@ function Home({ locale = "en" }) {
 
         <div className="home-container home-cta__inner">
           <div className="home-cta__content">
-            <h3 className="home-cta__title">
-              Ready to accelerate your English?
-            </h3>
-            <p className="home-cta__sub">
-              Join Speexify today — start with a personalized plan in minutes.
-            </p>
+            <h3 className="home-cta__title">{t(dict, "cta_title")}</h3>
+            <p className="home-cta__sub">{t(dict, "cta_sub")}</p>
           </div>
           <div className="home-cta__actions">
             <Link
               className="home-btn home-btn--primary home-btn--lg home-btn--shine"
               href="/register"
             >
-              <span>Create your account</span>
+              <span>{t(dict, "cta_primary")}</span>
               <svg
                 className="home-btn__arrow"
                 width="16"
@@ -530,7 +512,7 @@ function Home({ locale = "en" }) {
               className="home-btn home-btn--ghost home-btn--lg"
               href="/contact"
             >
-              Talk to us
+              {t(dict, "cta_secondary")}
             </Link>
           </div>
         </div>

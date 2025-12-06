@@ -1,0 +1,17 @@
+{
+  "home": "الرئيسية",
+  "individual": "الأفراد",
+  "corporate": "الشركات",
+  "packages": "الباقات",
+  "about": "من نحن",
+  "contact": "تواصل معنا",
+  "register": "إنشاء حساب",
+  "login": "تسجيل الدخول",
+  "logout": "تسجيل الخروج",
+  "dashboard": "لوحة التحكم",
+  "calendar": "التقويم",
+  "progress": "التقدم",
+  "resources": "المصادر",
+  "settings": "الإعدادات",
+  "admin": "الإدارة"
+}

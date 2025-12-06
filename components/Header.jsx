@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import { logout as apiLogout } from "@/lib/auth";
+import { getDictionary, t } from "@/app/i18n";
 
 /* ------------------------------------------------------------------
    Locale helpers
@@ -68,6 +69,9 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en"; // ✅ locale here
+  const navDict = getDictionary(locale, "nav"); // ✅ nav translations here
+
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -116,23 +120,23 @@ export default function Header() {
   };
 
   const loggedOut = [
-    { to: "/", label: "Home" },
-    { to: "/individual-training", label: "Individual" },
-    { to: "/corporate-training", label: "Corporate" },
-    { to: "/packages", label: "Packages" },
-    { to: "/about", label: "About" },
-    { to: "/contact", label: "Contact" },
+    { to: "/", label: t(navDict, "home") },
+    { to: "/individual-training", label: t(navDict, "individual") },
+    { to: "/corporate-training", label: t(navDict, "corporate") },
+    { to: "/packages", label: t(navDict, "packages") },
+    { to: "/about", label: t(navDict, "about") },
+    { to: "/contact", label: t(navDict, "contact") },
   ];
 
   const learner = [
-    { to: "/dashboard", label: "Dashboard" },
-    { to: "/calendar", label: "Calendar" },
-    { to: "/dashboard/progress", label: "Progress" },
-    { to: "/resources", label: "Resources" },
-    { to: "/settings", label: "Settings" },
+    { to: "/dashboard", label: t(navDict, "dashboard") },
+    { to: "/calendar", label: t(navDict, "calendar") },
+    { to: "/dashboard/progress", label: t(navDict, "progress") },
+    { to: "/resources", label: t(navDict, "resources") },
+    { to: "/settings", label: t(navDict, "settings") },
   ];
 
-  const adminExtra = [{ to: "/admin", label: "Admin" }];
+  const adminExtra = [{ to: "/admin", label: t(navDict, "admin") }];
 
   const links =
     checking || !user
@@ -155,7 +159,7 @@ export default function Header() {
       >
         <span className="spx-cta-bg"></span>
         <span className="spx-cta-content">
-          <span className="spx-cta-text">Log in</span>
+          <span className="spx-cta-text">{t(navDict, "login")}</span>
           <svg
             className="spx-cta-arrow"
             width="16"
@@ -181,7 +185,7 @@ export default function Header() {
       >
         <span className="spx-cta-bg"></span>
         <span className="spx-cta-content">
-          <span className="spx-cta-text">Logout</span>
+          <span className="spx-cta-text">{t(navDict, "logout")}</span>
           <svg
             className="spx-cta-icon"
             width="16"
@@ -257,7 +261,9 @@ export default function Header() {
                   onClick={() => setOpen(false)}
                 >
                   <span className="spx-link-bg"></span>
-                  <span className="spx-link-text">Register</span>
+                  <span className="spx-link-text">
+                    {t(navDict, "register")}
+                  </span>
                 </Link>
               </li>
             )}
@@ -346,7 +352,9 @@ export default function Header() {
                   >
                     <span className="spx-mobile-link-bg"></span>
                     <span className="spx-mobile-link-content">
-                      <span className="spx-mobile-link-text">Register</span>
+                      <span className="spx-mobile-link-text">
+                        {t(navDict, "register")}
+                      </span>
                       <svg
                         className="spx-mobile-link-arrow"
                         width="18"
@@ -376,7 +384,7 @@ export default function Header() {
                   >
                     <span className="spx-mobile-cta-bg"></span>
                     <span className="spx-mobile-cta-content">
-                      <span>Log in</span>
+                      <span>{t(navDict, "login")}</span>
                       <svg
                         width="18"
                         height="18"
@@ -409,7 +417,7 @@ export default function Header() {
                 >
                   <span className="spx-mobile-cta-bg"></span>
                   <span className="spx-mobile-cta-content">
-                    <span>Logout</span>
+                    <span>{t(navDict, "logout")}</span>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path
                         d="M6 14H3.33333C2.59695 14 2 13.403 2 12.6667V3.33333C2 2.59695 2.59695 2 3.33333 2H6"
