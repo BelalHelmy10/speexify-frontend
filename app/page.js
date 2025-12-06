@@ -7,11 +7,13 @@ import Link from "next/link";
 import useAuth from "@/hooks/useAuth";
 import "@/styles/home.scss";
 
+import { getDictionary, t } from "./i18n"; // ✅ NEW
+
 // (Global CSS note)
 // Move this to app/layout.js:
 // import "@/styles/home.scss";
 
-export default function Page() {
+export default function Page({ locale = "en" }) {
   const { user, checking } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
@@ -23,13 +25,17 @@ export default function Page() {
 
   if (checking) return <div className="home-route-loading">Loading…</div>;
   if (user) return null;
-  return <Home />;
+
+  // Pass locale into Home so it can pick the right translations
+  return <Home locale={locale} />;
 }
 
 /* ============================
    Home (inline, formerly Home.jsx)
    ============================ */
-function Home() {
+function Home({ locale = "en" }) {
+  const dict = getDictionary(locale, "home"); // ✅ NEW
+
   return (
     <div className="home-home">
       {/* ===== HERO ===== */}
@@ -43,20 +49,15 @@ function Home() {
           <div className="home-hero__copy">
             <div className="home-hero__badge">
               <span className="home-hero__badge-icon">✦</span>
-              <span>Language &amp; communication coaching</span>
+              <span>{t(dict, "badge")}</span> {/* ✅ translated */}
             </div>
 
             <h1 className="home-hero__title">
-              Empower your team to
-              <span className="home-hero__title-accent">
-                {" "}
-                speak with confidence
-              </span>
+              {t(dict, "title")} {/* ✅ translated (full title) */}
             </h1>
 
             <p className="home-hero__sub">
-              Speexify delivers personalized English coaching and applied
-              learning programs that drive measurable performance at work.
+              {t(dict, "subtitle")} {/* ✅ translated */}
             </p>
 
             <div className="home-hero__cta">
@@ -64,7 +65,7 @@ function Home() {
                 className="home-btn home-btn--primary home-btn--shine"
                 href="/register"
               >
-                <span>Get started</span>
+                <span>{t(dict, "ctaPrimary")}</span> {/* ✅ translated */}
                 <svg
                   className="home-btn__arrow"
                   width="16"
@@ -83,7 +84,7 @@ function Home() {
                 </svg>
               </Link>
               <Link className="home-btn home-btn--ghost" href="/packages">
-                Explore packages
+                {t(dict, "ctaSecondary")} {/* ✅ translated */}
               </Link>
             </div>
 

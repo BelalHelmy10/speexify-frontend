@@ -10,6 +10,7 @@ import Providers from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ClientProviders from "./ClientProviders";
+import LocaleShell from "./LocaleShell"; // ✅ NEW
 
 // Force dynamic rendering so the first paint always reflects the live auth state
 export const dynamic = "force-dynamic";
@@ -40,13 +41,15 @@ export default async function RootLayout({ children }) {
         <script src="https://meet.speexify.com/external_api.js"></script>
       </head>
       <body suppressHydrationWarning>
-        <ClientProviders>
-          <Providers initialUser={user}>
-            <Header />
-            <main>{children}</main>
-            <Footer />
-          </Providers>
-        </ClientProviders>
+        <LocaleShell>
+          <ClientProviders>
+            <Providers initialUser={user}>
+              <Header />
+              <main>{children}</main>
+              <Footer />
+            </Providers>
+          </ClientProviders>
+        </LocaleShell>
       </body>
     </html>
   );

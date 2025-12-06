@@ -6,5 +6,5 @@ import Page from "../page";
 export default function ArabicHomePage() {
   // For now we just render the same component.
   // Auth + redirects all work exactly the same.
-  return <Page />;
+  return <Page locale="ar" />;
 }

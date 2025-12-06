@@ -10,6 +10,7 @@
 // ─── Color Palette ──────────────────────────────────────────────────────────
 
 $cr-bg-primary: #0a0f1a;
+$cr-bg-primary-dark: #060a12; // pre-calculated: darken($cr-bg-primary, 2%)
 $cr-bg-secondary: #111827;
 $cr-bg-tertiary: #1e293b;
 $cr-bg-elevated: #1f2937;
@@ -18,8 +19,11 @@ $cr-bg-surface: #151d2e;
 $cr-accent-teacher: #f59e0b;
 $cr-accent-learner: #3b82f6;
 $cr-accent-primary: #0ea5e9;
+$cr-accent-primary-light: #2db4ed; // pre-calculated: lighten($cr-accent-primary, 8%)
+$cr-accent-primary-lighter: #3db9ef; // pre-calculated: lighten($cr-accent-primary, 10%)
 $cr-accent-success: #22c55e;
 $cr-accent-danger: #ef4444;
+$cr-accent-danger-light: #f26262; // pre-calculated: lighten($cr-accent-danger, 5%)
 $cr-accent-purple: #a855f7;
 $cr-accent-pink: #ec4899;
 
@@ -82,7 +86,7 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   background: linear-gradient(
     180deg,
     $cr-bg-primary 0%,
-    darken($cr-bg-primary, 2%) 100%
+    $cr-bg-primary-dark 100%
   );
   color: $cr-text-primary;
   font-family: $cr-font-sans;
@@ -530,7 +534,7 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     background: linear-gradient(
       135deg,
       $cr-accent-primary,
-      lighten($cr-accent-primary, 8%)
+      $cr-accent-primary-light
     );
     color: white;
     box-shadow: 0 4px 16px rgba($cr-accent-primary, 0.3);
@@ -579,7 +583,7 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   background: linear-gradient(
     180deg,
     $cr-bg-primary 0%,
-    darken($cr-bg-primary, 2%) 100%
+    $cr-bg-primary-dark 100%
   );
   color: $cr-text-primary;
   font-family: $cr-font-sans;
@@ -653,7 +657,7 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   transition: color $cr-transition-fast;
 
   &:hover {
-    color: lighten($cr-accent-primary, 10%);
+    color: $cr-accent-primary-lighter;
     text-decoration: underline;
   }
 }
@@ -1565,7 +1569,7 @@ body.classroom-active {
   transition: all $cr-transition-fast;
 
   &:hover {
-    background: lighten($cr-accent-primary, 8%);
+    background: $cr-accent-primary-light;
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba($cr-accent-primary, 0.3);
   }
@@ -1964,7 +1968,7 @@ body.classroom-active {
   transition: background $cr-transition-fast;
 
   &:hover {
-    background: lighten($cr-accent-primary, 10%);
+    background: $cr-accent-primary-lighter;
   }
 }
 
@@ -2255,7 +2259,7 @@ body.classroom-active {
   }
 
   &:hover:not(:disabled) {
-    background: lighten($cr-accent-primary, 8%);
+    background: $cr-accent-primary-light;
     transform: scale(1.05);
   }
 
@@ -2386,7 +2390,7 @@ body.classroom-active {
   transition: all $cr-transition-fast;
 
   &:hover {
-    background: lighten($cr-accent-primary, 8%);
+    background: $cr-accent-primary-light;
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba($cr-accent-primary, 0.3);
   }
@@ -2470,7 +2474,7 @@ body.classroom-active {
   background: linear-gradient(
     135deg,
     $cr-accent-primary,
-    lighten($cr-accent-primary, 10%)
+    $cr-accent-primary-lighter
   );
   color: white;
   box-shadow: 0 4px 16px rgba($cr-accent-primary, 0.3);
@@ -2910,7 +2914,7 @@ body.classroom-active {
   box-shadow: 0 4px 16px rgba($cr-accent-danger, 0.35);
 
   &:hover {
-    background: lighten($cr-accent-danger, 5%);
+    background: $cr-accent-danger-light;
     box-shadow: 0 6px 20px rgba($cr-accent-danger, 0.45);
     transform: translateY(-1px);
     text-decoration: none;
