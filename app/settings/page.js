@@ -1,10 +1,12 @@
-// web/src/pages/Settings.jsx
+// app/settings/page.js
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import "@/styles/settings.scss";
 import useAuth from "@/hooks/useAuth";
+import { getDictionary, t } from "@/app/i18n";
 
 const timezones = [
   "UTC",
@@ -21,8 +23,14 @@ const timezones = [
   "Australia/Sydney",
 ];
 
-export default function Settings() {
+export default function SettingsPage() {
   const { user, checking } = useAuth();
+  const pathname = usePathname();
+
+  // ✅ locale detection for /settings vs /ar/settings
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "settings");
+
   const [me, setMe] = useState(null);
   const [status, setStatus] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -38,14 +46,14 @@ export default function Settings() {
         const res = await api.get("/me");
         setMe(res.data);
       } catch (e) {
-        setStatus(e.response?.data?.error || "Failed to load profile");
+        setStatus(e.response?.data?.error || t(dict, "loading_settings"));
       }
     })();
-  }, [checking, user]);
+  }, [checking, user, dict]);
 
   const onSave = async (e) => {
     e.preventDefault();
-    setStatus("Saving...");
+    setStatus(t(dict, "status_saving"));
     setSaveSuccess(false);
     try {
       const payload = { name: me.name || "", timezone: me.timezone || "" };
@@ -62,7 +70,7 @@ export default function Settings() {
 
   const changePassword = async (e) => {
     e.preventDefault();
-    setPwStatus("Saving...");
+    setPwStatus(t(dict, "pw_status_saving"));
     setPwSuccess(false);
     try {
       await api.post("/me/password", { currentPassword, newPassword });
@@ -77,35 +85,40 @@ export default function Settings() {
     }
   };
 
-  if (!me) {
+  // ── loading / auth guards ─────────────────────────────────
+  if (checking) {
     return (
       <div className="settings-modern">
         <div className="settings-loading">
           <div className="spinner" />
-          <p>{status || "Loading settings..."}</p>
+          <p>{t(dict, "loading_generic")}</p>
         </div>
       </div>
     );
   }
 
-  if (checking)
+  if (!user) {
+    return (
+      <div className="settings-modern">
+        <div className="settings-loading">
+          <p>{t(dict, "not_authenticated")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!me) {
     return (
       <div className="settings-modern">
         <div className="settings-loading">
           <div className="spinner" />
-          <p>Loading…</p>
+          <p>{status || t(dict, "loading_settings")}</p>
         </div>
       </div>
     );
-  if (!user)
-    return (
-      <div className="settings-modern">
-        <div className="settings-loading">
-          <p>Not authenticated</p>
-        </div>
-      </div>
-    );
+  }
 
+  // ── main UI ───────────────────────────────────────────────
   return (
     <div className="settings-modern">
       <div className="settings-container">
@@ -113,10 +126,8 @@ export default function Settings() {
         <div className="settings-header">
           <div className="settings-header__content">
             <h1 className="settings-title">
-              Settings
-              <span className="settings-subtitle">
-                Manage your account preferences and security
-              </span>
+              {t(dict, "title")}
+              <span className="settings-subtitle">{t(dict, "subtitle")}</span>
             </h1>
           </div>
           <div className="settings-header__badge">
@@ -141,9 +152,11 @@ export default function Settings() {
               </svg>
             </div>
             <div>
-              <h2 className="settings-card__title">Profile Information</h2>
+              <h2 className="settings-card__title">
+                {t(dict, "profile_title")}
+              </h2>
               <p className="settings-card__description">
-                Update your personal details and preferences
+                {t(dict, "profile_description")}
               </p>
             </div>
           </div>
@@ -151,10 +164,8 @@ export default function Settings() {
           <form onSubmit={onSave} className="settings-form">
             <div className="form-group">
               <label className="form-label">
-                Email Address
-                <span className="form-hint">
-                  Your account email (read-only)
-                </span>
+                {t(dict, "email_label")}
+                <span className="form-hint">{t(dict, "email_hint")}</span>
               </label>
               <div className="form-input-wrapper">
                 <svg
@@ -188,10 +199,8 @@ export default function Settings() {
 
             <div className="form-group">
               <label className="form-label">
-                Full Name
-                <span className="form-hint">
-                  How you'd like to be addressed
-                </span>
+                {t(dict, "name_label")}
+                <span className="form-hint">{t(dict, "name_hint")}</span>
               </label>
               <div className="form-input-wrapper">
                 <svg
@@ -222,17 +231,15 @@ export default function Settings() {
                   onChange={(e) =>
                     setMe((m) => ({ ...m, name: e.target.value }))
                   }
-                  placeholder="Enter your name"
+                  placeholder=""
                 />
               </div>
             </div>
 
             <div className="form-group">
               <label className="form-label">
-                Time Zone
-                <span className="form-hint">
-                  Used for scheduling and notifications
-                </span>
+                {t(dict, "timezone_label")}
+                <span className="form-hint">{t(dict, "timezone_hint")}</span>
               </label>
               <div className="form-input-wrapper">
                 <svg
@@ -263,7 +270,7 @@ export default function Settings() {
                     setMe((m) => ({ ...m, timezone: e.target.value }))
                   }
                 >
-                  <option value="">(Use browser default)</option>
+                  <option value="">{t(dict, "timezone_default_option")}</option>
                   {timezones.map((tz) => (
                     <option key={tz} value={tz}>
                       {tz}
@@ -284,7 +291,7 @@ export default function Settings() {
                     strokeLinejoin="round"
                   />
                 </svg>
-                {status || "Save Changes"}
+                {status || t(dict, "save_button")}
               </button>
               {saveSuccess && (
                 <div className="success-message">
@@ -304,7 +311,7 @@ export default function Settings() {
                       strokeLinejoin="round"
                     />
                   </svg>
-                  Profile updated successfully
+                  {t(dict, "save_success")}
                 </div>
               )}
             </div>
@@ -334,9 +341,11 @@ export default function Settings() {
               </svg>
             </div>
             <div>
-              <h2 className="settings-card__title">Security</h2>
+              <h2 className="settings-card__title">
+                {t(dict, "security_title")}
+              </h2>
               <p className="settings-card__description">
-                Keep your account secure by updating your password regularly
+                {t(dict, "security_description")}
               </p>
             </div>
           </div>
@@ -344,8 +353,10 @@ export default function Settings() {
           <form onSubmit={changePassword} className="settings-form">
             <div className="form-group">
               <label className="form-label">
-                Current Password
-                <span className="form-hint">Enter your existing password</span>
+                {t(dict, "current_password_label")}
+                <span className="form-hint">
+                  {t(dict, "current_password_hint")}
+                </span>
               </label>
               <div className="form-input-wrapper">
                 <svg
@@ -384,8 +395,10 @@ export default function Settings() {
 
             <div className="form-group">
               <label className="form-label">
-                New Password
-                <span className="form-hint">Must be at least 8 characters</span>
+                {t(dict, "new_password_label")}
+                <span className="form-hint">
+                  {t(dict, "new_password_hint")}
+                </span>
               </label>
               <div className="form-input-wrapper">
                 <svg
@@ -428,7 +441,7 @@ export default function Settings() {
                     strokeLinecap="round"
                   />
                 </svg>
-                {pwStatus || "Update Password"}
+                {pwStatus || t(dict, "update_pw_button")}
               </button>
               {pwSuccess && (
                 <div className="success-message">
@@ -448,7 +461,7 @@ export default function Settings() {
                       strokeLinejoin="round"
                     />
                   </svg>
-                  Password changed successfully
+                  {t(dict, "pw_success")}
                 </div>
               )}
             </div>
@@ -475,8 +488,10 @@ export default function Settings() {
                 </svg>
               </div>
               <div className="info-item__content">
-                <div className="info-item__label">Account Role</div>
-                <div className="info-item__value">{me.role || "User"}</div>
+                <div className="info-item__label">{t(dict, "role_label")}</div>
+                <div className="info-item__value">
+                  {me.role || t(dict, "role_default")}
+                </div>
               </div>
             </div>
 
@@ -501,9 +516,13 @@ export default function Settings() {
                 </svg>
               </div>
               <div className="info-item__content">
-                <div className="info-item__label">Member Since</div>
+                <div className="info-item__label">
+                  {t(dict, "member_since_label")}
+                </div>
                 <div className="info-item__value">
-                  {new Date(me.createdAt || Date.now()).toLocaleDateString()}
+                  {new Date(me.createdAt || Date.now()).toLocaleDateString(
+                    locale === "ar" ? "ar-EG" : "en-US"
+                  )}
                 </div>
               </div>
             </div>

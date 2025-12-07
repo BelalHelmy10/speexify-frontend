@@ -1,0 +1,44 @@
+{
+  "back_btn": "← رجوع",
+
+  "loading_title": "جارٍ تحميل الجلسة…",
+  "loading_subtitle": "نقوم بجلب أحدث تفاصيل هذه الجلسة.",
+  "loading_badge": "جارٍ التحميل",
+
+  "error_title": "الجلسة غير متاحة",
+  "error_subtitle": "تعذّر تحميل هذه الجلسة الآن.",
+  "error_badge": "خطأ",
+  "error_fallback": "تعذّر تحميل تفاصيل الجلسة.",
+  "generic_error": "تعذّر تحميل تفاصيل الجلسة",
+
+  "normal_title_fallback": "تفاصيل الجلسة",
+  "normal_subtitle": "نظرة عامة على الدرس والمشاركين والتغذية الراجعة.",
+
+  "section_time_title": "الوقت",
+  "time_start_label": "البدء:",
+  "time_end_label": "الانتهاء:",
+  "datetime_na": "غير متوفر",
+
+  "section_teacher_title": "المدرّس",
+  "section_teacher_not_assigned": "لم يتم تعيين مدرّس بعد.",
+
+  "section_learner_title": "المتعلم",
+  "section_learner_not_found": "لم يتم العثور على المتعلم.",
+
+  "join_title": "رابط الانضمام",
+  "join_open_classroom": "فتح صف Speexify",
+  "join_external_link": "رابط اجتماع خارجي",
+  "join_no_meeting": "لا يوجد رابط اجتماع خارجي؛ استخدم صف Speexify أعلاه.",
+
+  "notes_title": "الملاحظات / الواجب",
+  "notes_empty": "لم تتم إضافة ملاحظات أو واجب منزلي لهذه الجلسة بعد.",
+
+  "feedback_title": "تغذية راجعة من المدرّس",
+  "feedback_hint": "ملاحظات من المدرّس لمساعدتك في خطواتك القادمة.",
+  "feedback_msg_title": "رسالة إلى المتعلم",
+  "feedback_msg_empty": "لا توجد رسالة.",
+  "feedback_comments_title": "ملاحظات حول الجلسة",
+  "feedback_comments_empty": "لا توجد ملاحظات.",
+  "feedback_future_title": "الخطوات القادمة",
+  "feedback_future_empty": "لم يتم إضافة خطوات قادمة بعد."
+}

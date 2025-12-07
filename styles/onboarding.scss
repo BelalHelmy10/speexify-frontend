@@ -47,7 +47,6 @@
   position: relative;
   overflow: hidden;
 
-  // Subtle decorative element
   &::before {
     content: "";
     position: absolute;
@@ -281,7 +280,6 @@
   transition: transform $transition-base, color $transition-base;
 }
 
-// rotate icon when select is focused (expects: select + icon)
 .onboarding-field__select:focus + .onboarding-field__select-icon {
   transform: rotate(180deg);
   color: $brand;
@@ -675,4 +673,12 @@
   .onboarding-actions {
     display: none;
   }
+}
+
+// ============================================================================
+// RTL tweaks for sliders
+// ============================================================================
+
+html[dir="rtl"] .onboarding-slider input[type="range"] {
+  direction: rtl;
 }

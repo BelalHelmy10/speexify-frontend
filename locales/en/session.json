@@ -1,0 +1,44 @@
+{
+  "back_btn": "← Back",
+
+  "loading_title": "Loading session…",
+  "loading_subtitle": "We’re fetching the latest details for this session.",
+  "loading_badge": "Loading",
+
+  "error_title": "Session not available",
+  "error_subtitle": "We couldn’t load this session right now.",
+  "error_badge": "Error",
+  "error_fallback": "Could not load session.",
+  "generic_error": "Failed to load session details",
+
+  "normal_title_fallback": "Session details",
+  "normal_subtitle": "Overview of this lesson, participants, and feedback.",
+
+  "section_time_title": "Time",
+  "time_start_label": "Start:",
+  "time_end_label": "End:",
+  "datetime_na": "N/A",
+
+  "section_teacher_title": "Teacher",
+  "section_teacher_not_assigned": "Not assigned.",
+
+  "section_learner_title": "Learner",
+  "section_learner_not_found": "Not found.",
+
+  "join_title": "Join link",
+  "join_open_classroom": "Open Speexify classroom",
+  "join_external_link": "External meeting link",
+  "join_no_meeting": "No external meeting link set; use the Speexify classroom above.",
+
+  "notes_title": "Notes / Homework",
+  "notes_empty": "No notes or homework have been added for this session yet.",
+
+  "feedback_title": "Teacher feedback",
+  "feedback_hint": "Reflections from your teacher to help guide your next steps.",
+  "feedback_msg_title": "Message to the learner",
+  "feedback_msg_empty": "No message provided.",
+  "feedback_comments_title": "Comments on the session",
+  "feedback_comments_empty": "No comments provided.",
+  "feedback_future_title": "Future steps",
+  "feedback_future_empty": "No future steps added yet."
+}

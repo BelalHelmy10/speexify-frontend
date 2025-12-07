@@ -1,15 +1,19 @@
+// app/dashboard/sessions/[id]/feedback/page.js
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/components/ToastProvider";
 import "@/styles/session-feedback.scss";
 import { trackEvent } from "@/lib/analytics";
 
-export default function SessionFeedbackPage({ params }) {
-  const { id } = params;
+export default function SessionFeedbackPage() {
+  // ✅ Correct way to read [id] in a client component
+  const params = useParams();
+  const id = params?.id;
+
   const router = useRouter();
   const { user, checking } = useAuth();
 
@@ -68,11 +72,15 @@ export default function SessionFeedbackPage({ params }) {
   }, [id, checking]);
 
   const handleBack = () => {
-    router.push(`/dashboard/sessions/${id}`);
+    if (id) {
+      router.push(`/dashboard/sessions/${id}`);
+    } else {
+      router.push("/dashboard/sessions");
+    }
   };
 
   const handleSave = async () => {
-    if (!canEdit) return;
+    if (!canEdit || !id) return;
     try {
       setSaving(true);
       setError("");

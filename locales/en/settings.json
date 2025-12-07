@@ -1,0 +1,42 @@
+{
+  "title": "Settings",
+  "subtitle": "Manage your account preferences and security",
+
+  "loading_settings": "Loading settings...",
+  "loading_generic": "Loading…",
+  "not_authenticated": "Not authenticated",
+
+  "profile_title": "Profile Information",
+  "profile_description": "Update your personal details and preferences",
+
+  "email_label": "Email Address",
+  "email_hint": "Your account email (read-only)",
+
+  "name_label": "Full Name",
+  "name_hint": "How you'd like to be addressed",
+
+  "timezone_label": "Time Zone",
+  "timezone_hint": "Used for scheduling and notifications",
+  "timezone_default_option": "(Use browser default)",
+
+  "save_button": "Save Changes",
+  "status_saving": "Saving...",
+  "save_success": "Profile updated successfully",
+
+  "security_title": "Security",
+  "security_description": "Keep your account secure by updating your password regularly",
+
+  "current_password_label": "Current Password",
+  "current_password_hint": "Enter your existing password",
+
+  "new_password_label": "New Password",
+  "new_password_hint": "Must be at least 8 characters",
+
+  "update_pw_button": "Update Password",
+  "pw_status_saving": "Saving...",
+  "pw_success": "Password changed successfully",
+
+  "role_label": "Account Role",
+  "role_default": "User",
+  "member_since_label": "Member Since"
+}

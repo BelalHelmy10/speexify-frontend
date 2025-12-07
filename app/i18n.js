@@ -38,6 +38,21 @@ import arDashboard from "@/locales/ar/dashboard.json";
 import enCalendar from "@/locales/en/calendar.json";
 import arCalendar from "@/locales/ar/calendar.json";
 
+import enProgress from "@/locales/en/progress.json";
+import arProgress from "@/locales/ar/progress.json";
+
+import enSession from "@/locales/en/session.json";
+import arSession from "@/locales/ar/session.json";
+
+import enResources from "@/locales/en/resources.json";
+import arResources from "@/locales/ar/resources.json";
+
+import enSettings from "@/locales/en/settings.json";
+import arSettings from "@/locales/ar/settings.json";
+
+import enOnboarding from "@/locales/en/onboarding.json";
+import arOnboarding from "@/locales/ar/onboarding.json";
+
 const dictionaries = {
   en: {
     home: enHome,
@@ -53,6 +68,11 @@ const dictionaries = {
     careers: enCareers,
     dashboard: enDashboard,
     calendar: enCalendar,
+    progress: enProgress,
+    session: enSession,
+    resources: enResources,
+    settings: enSettings,
+    onboarding: enOnboarding,
   },
   ar: {
     home: arHome,
@@ -68,6 +88,11 @@ const dictionaries = {
     careers: arCareers,
     dashboard: arDashboard,
     calendar: arCalendar,
+    progress: arProgress,
+    session: arSession,
+    resources: arResources,
+    settings: arSettings,
+    onboarding: arOnboarding,
   },
 };
 
@@ -76,6 +101,7 @@ export function getDictionary(locale = "en", section) {
   return lang[section] || {};
 }
 
+// Safe placeholder replacement: {key} -> value (no RegExp, so no /{0}/ error)
 export function t(dict, key, vars) {
   let value =
     dict && Object.prototype.hasOwnProperty.call(dict, key)
@@ -84,7 +110,8 @@ export function t(dict, key, vars) {
 
   if (vars && typeof value === "string") {
     Object.entries(vars).forEach(([k, v]) => {
-      value = value.replace(new RegExp(`{${k}}`, "g"), String(v));
+      const token = `{${k}}`;
+      value = value.split(token).join(String(v));
     });
   }
 

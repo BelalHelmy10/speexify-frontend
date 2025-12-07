@@ -1,39 +1,43 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import Link from "next/link";
 import { useToast } from "@/components/ToastProvider";
 import { trackEvent } from "@/lib/analytics";
+import { getDictionary, t } from "@/app/i18n";
+import "@/styles/onboarding.scss";
 
+// We store KEYS here, labels come from i18n
 const MOTIVATIONS = [
-  "Professional development",
-  "Academic studies",
-  "Exam preparation (IELTS/TOEFL/etc.)",
-  "Immigration / relocation",
-  "Travel",
-  "Social / personal growth",
-  "Other",
+  "professional_development",
+  "academic_studies",
+  "exam_preparation",
+  "immigration_relocation",
+  "travel",
+  "social_personal_growth",
+  "other",
 ];
 
 const USAGE_CONTEXTS = [
-  "Work emails",
-  "Meetings / presentations",
-  "Client communication",
-  "Academic writing",
-  "Research / reading papers",
-  "Social conversation",
-  "Travel situations",
-  "Other",
+  "work_emails",
+  "meetings_presentations",
+  "client_communication",
+  "academic_writing",
+  "research_reading",
+  "social_conversation",
+  "travel_situations",
+  "other",
 ];
 
 const LEARNING_STYLES = [
-  "Structured grammar-focused lessons",
-  "Interactive speaking & conversation",
-  "Task / project-based learning",
-  "Listening & video-based practice",
-  "Reading-focused with vocabulary building",
-  "Self-paced study with feedback",
+  "structured_grammar",
+  "interactive_speaking",
+  "task_project",
+  "listening_video",
+  "reading_vocab",
+  "self_paced",
 ];
 
 const SKILLS = [
@@ -48,6 +52,11 @@ const SKILLS = [
 
 export default function OnboardingPage() {
   const { toast } = useToast();
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "onboarding");
+  const isRTL = locale === "ar";
+
   const [answers, setAnswers] = useState({
     // ——— Profile / Logistics ———
     timezone: "",
@@ -59,11 +68,11 @@ export default function OnboardingPage() {
     goals: "",
     context: "",
     levelSelfEval: "",
-    usageFrequency: "", // Never / Sometimes / Often / Daily
-    usageContexts: [], // array of strings
+    usageFrequency: "", // "never" | "sometimes" | "often" | "daily"
+    usageContexts: [],
 
     // ——— Needs Analysis ———
-    motivations: [], // array of strings
+    motivations: [],
     motivationOther: "",
     examDetails: "",
 
@@ -75,10 +84,10 @@ export default function OnboardingPage() {
       Pronunciation: 3,
       Grammar: 3,
       Vocabulary: 3,
-    }, // 1–5 Likert
+    },
 
     challenges: "",
-    learningStyles: [], // array of strings
+    learningStyles: [],
 
     // ——— Self-Assessment ———
     confidence: {
@@ -86,7 +95,7 @@ export default function OnboardingPage() {
       Listening: 5,
       Reading: 5,
       Writing: 5,
-    }, // 1–10
+    },
 
     writingSample: "",
     consentRecording: false,
@@ -97,13 +106,22 @@ export default function OnboardingPage() {
 
   // Derived: whether to show exam details input
   const isExamSelected = useMemo(
-    () => answers.motivations.includes("Exam preparation (IELTS/TOEFL/etc.)"),
+    () => answers.motivations.includes("exam_preparation"),
     [answers.motivations]
   );
 
-  // Helper function for dynamic slider background
-  const getSliderBackground = (value, min, max) => {
+  // Slider background helper (RTL-aware)
+  const getSliderBackground = (value, min, max, rtl = false) => {
     const percentage = ((value - min) / (max - min)) * 100;
+
+    if (rtl) {
+      // Blue fill from the RIGHT in RTL
+      return {
+        background: `linear-gradient(to left, #0ea5e9 0%, #0ea5e9 ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`,
+      };
+    }
+
+    // Default LTR
     return {
       background: `linear-gradient(to right, #0ea5e9 0%, #0ea5e9 ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`,
     };
@@ -111,10 +129,10 @@ export default function OnboardingPage() {
 
   const handleCheckboxGroup = (key, value) => {
     setAnswers((prev) => {
-      const arr = new Set(prev[key]);
-      if (arr.has(value)) arr.delete(value);
-      else arr.add(value);
-      return { ...prev, [key]: Array.from(arr) };
+      const set = new Set(prev[key]);
+      if (set.has(value)) set.delete(value);
+      else set.add(value);
+      return { ...prev, [key]: Array.from(set) };
     });
   };
 
@@ -128,13 +146,17 @@ export default function OnboardingPage() {
   const handleToggle = (key) =>
     setAnswers((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  // Load existing answers
   useEffect(() => {
     (async () => {
       try {
         const { data } = await api.get("/me/onboarding");
-        if (data?.answers) setAnswers((prev) => ({ ...prev, ...data.answers }));
-      } catch {}
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+        if (data?.answers) {
+          setAnswers((prev) => ({ ...prev, ...data.answers }));
+        }
+      } catch {
+        // ignore
+      }
     })();
   }, []);
 
@@ -145,16 +167,13 @@ export default function OnboardingPage() {
     try {
       await api.post("/me/onboarding", { answers });
 
-      // 🔹 Analytics: onboarding completed
       trackEvent("onboarding_completed", {
-        // You can add more details if you want, e.g.:
-        // timezone: answers.timezone,
-        // experienceYears: answers.experienceYears,
+        // extra props if needed
       });
 
       setSaved(true);
     } catch (e) {
-      toast.error(e?.response?.data?.error || "Failed to save");
+      toast.error(e?.response?.data?.error || t(dict, "error_save_failed"));
     } finally {
       setSaving(false);
     }
@@ -164,12 +183,9 @@ export default function OnboardingPage() {
     <div className="onboarding-wrapper">
       <div className="onboarding-container">
         <div className="onboarding-header">
-          <h2 className="onboarding-header__title">
-            Welcome! Let&apos;s Get Started
-          </h2>
+          <h2 className="onboarding-header__title">{t(dict, "hero_title")}</h2>
           <p className="onboarding-header__subtitle">
-            Help us personalize your learning experience by sharing a few
-            details about yourself.
+            {t(dict, "hero_subtitle")}
           </p>
         </div>
 
@@ -177,9 +193,11 @@ export default function OnboardingPage() {
           {/* ========== SECTION: Profile & Logistics ========== */}
           <section className="onboarding-section">
             <div className="onboarding-section__header">
-              <h3 className="onboarding-section__title">Profile & Logistics</h3>
+              <h3 className="onboarding-section__title">
+                {t(dict, "section_profile_title")}
+              </h3>
               <p className="onboarding-section__hint">
-                Your timezone and availability help us schedule effectively.
+                {t(dict, "section_profile_hint")}
               </p>
             </div>
 
@@ -187,9 +205,11 @@ export default function OnboardingPage() {
               {/* Timezone */}
               <div className="onboarding-field">
                 <label className="onboarding-field__label" htmlFor="timezone">
-                  <span className="onboarding-field__label-text">Timezone</span>
+                  <span className="onboarding-field__label-text">
+                    {t(dict, "field_timezone_label")}
+                  </span>
                   <span className="onboarding-field__label-hint">
-                    Where are you located?
+                    {t(dict, "field_timezone_hint")}
                   </span>
                 </label>
                 <input
@@ -200,7 +220,7 @@ export default function OnboardingPage() {
                   onChange={(e) =>
                     setAnswers({ ...answers, timezone: e.target.value })
                   }
-                  placeholder="e.g., Africa/Cairo, America/New_York"
+                  placeholder={t(dict, "field_timezone_placeholder")}
                   required
                 />
               </div>
@@ -209,10 +229,10 @@ export default function OnboardingPage() {
               <div className="onboarding-field">
                 <label className="onboarding-field__label" htmlFor="format">
                   <span className="onboarding-field__label-text">
-                    Preferred Format
+                    {t(dict, "field_format_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    Class size preference
+                    {t(dict, "field_format_hint")}
                   </span>
                 </label>
                 <div className="onboarding-field__select-wrapper">
@@ -227,10 +247,14 @@ export default function OnboardingPage() {
                       })
                     }
                   >
-                    <option value="1:1">1:1 (Individual Sessions)</option>
-                    <option value="group">Small Group (2–5 people)</option>
+                    <option value="1:1">
+                      {t(dict, "field_format_option_1to1")}
+                    </option>
+                    <option value="group">
+                      {t(dict, "field_format_option_group")}
+                    </option>
                     <option value="intensive">
-                      Intensive (short-term, high frequency)
+                      {t(dict, "field_format_option_intensive")}
                     </option>
                   </select>
                   <svg
@@ -258,10 +282,10 @@ export default function OnboardingPage() {
                   htmlFor="availability"
                 >
                   <span className="onboarding-field__label-text">
-                    Weekly Availability
+                    {t(dict, "field_availability_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    When are you typically free?
+                    {t(dict, "field_availability_hint")}
                   </span>
                 </label>
                 <textarea
@@ -272,7 +296,7 @@ export default function OnboardingPage() {
                   onChange={(e) =>
                     setAnswers({ ...answers, availability: e.target.value })
                   }
-                  placeholder="e.g., Sun 18:00–20:00, Tue 10:00–12:00, Thu 14:00–16:00"
+                  placeholder={t(dict, "field_availability_placeholder")}
                 />
               </div>
             </div>
@@ -281,9 +305,11 @@ export default function OnboardingPage() {
           {/* ========== SECTION: Goals & Context ========== */}
           <section className="onboarding-section">
             <div className="onboarding-section__header">
-              <h3 className="onboarding-section__title">Goals & Context</h3>
+              <h3 className="onboarding-section__title">
+                {t(dict, "section_goals_title")}
+              </h3>
               <p className="onboarding-section__hint">
-                Tell us what success looks like and how you use English.
+                {t(dict, "section_goals_hint")}
               </p>
             </div>
 
@@ -292,10 +318,10 @@ export default function OnboardingPage() {
               <div className="onboarding-field onboarding-field--full">
                 <label className="onboarding-field__label" htmlFor="goals">
                   <span className="onboarding-field__label-text">
-                    Your Learning Goals
+                    {t(dict, "field_goals_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    What would you like to achieve?
+                    {t(dict, "field_goals_hint")}
                   </span>
                 </label>
                 <textarea
@@ -306,7 +332,7 @@ export default function OnboardingPage() {
                   onChange={(e) =>
                     setAnswers({ ...answers, goals: e.target.value })
                   }
-                  placeholder="e.g., Present better at work, pass IELTS 7.0, ace job interviews..."
+                  placeholder={t(dict, "field_goals_placeholder")}
                 />
               </div>
 
@@ -314,10 +340,10 @@ export default function OnboardingPage() {
               <div className="onboarding-field onboarding-field--full">
                 <label className="onboarding-field__label" htmlFor="context">
                   <span className="onboarding-field__label-text">
-                    Learning Context
+                    {t(dict, "field_context_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    Work, study, personal growth?
+                    {t(dict, "field_context_hint")}
                   </span>
                 </label>
                 <textarea
@@ -328,7 +354,7 @@ export default function OnboardingPage() {
                   onChange={(e) =>
                     setAnswers({ ...answers, context: e.target.value })
                   }
-                  placeholder="e.g., Professional development, university studies, immigration prep..."
+                  placeholder={t(dict, "field_context_placeholder")}
                 />
               </div>
 
@@ -339,7 +365,7 @@ export default function OnboardingPage() {
                   htmlFor="usageFrequency"
                 >
                   <span className="onboarding-field__label-text">
-                    How often do you use English?
+                    {t(dict, "field_usage_frequency_label")}
                   </span>
                 </label>
                 <div className="onboarding-field__select-wrapper">
@@ -348,14 +374,27 @@ export default function OnboardingPage() {
                     className="onboarding-field__select"
                     value={answers.usageFrequency}
                     onChange={(e) =>
-                      setAnswers({ ...answers, usageFrequency: e.target.value })
+                      setAnswers({
+                        ...answers,
+                        usageFrequency: e.target.value,
+                      })
                     }
                   >
-                    <option value="">Select...</option>
-                    <option value="Never">Never</option>
-                    <option value="Sometimes">Sometimes</option>
-                    <option value="Often">Often</option>
-                    <option value="Daily">Daily</option>
+                    <option value="">
+                      {t(dict, "field_usage_frequency_placeholder")}
+                    </option>
+                    <option value="never">
+                      {t(dict, "usage_frequency_never")}
+                    </option>
+                    <option value="sometimes">
+                      {t(dict, "usage_frequency_sometimes")}
+                    </option>
+                    <option value="often">
+                      {t(dict, "usage_frequency_often")}
+                    </option>
+                    <option value="daily">
+                      {t(dict, "usage_frequency_daily")}
+                    </option>
                   </select>
                   <svg
                     className="onboarding-field__select-icon"
@@ -379,21 +418,23 @@ export default function OnboardingPage() {
               <div className="onboarding-field onboarding-field--full">
                 <label className="onboarding-field__label">
                   <span className="onboarding-field__label-text">
-                    In which situations?
+                    {t(dict, "field_usage_contexts_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    Select all that apply
+                    {t(dict, "field_usage_contexts_hint")}
                   </span>
                 </label>
                 <div className="onboarding-checkbox-grid">
-                  {USAGE_CONTEXTS.map((c) => (
-                    <label key={c} className="onboarding-checkbox">
+                  {USAGE_CONTEXTS.map((key) => (
+                    <label key={key} className="onboarding-checkbox">
                       <input
                         type="checkbox"
-                        checked={answers.usageContexts.includes(c)}
-                        onChange={() => handleCheckboxGroup("usageContexts", c)}
+                        checked={answers.usageContexts.includes(key)}
+                        onChange={() =>
+                          handleCheckboxGroup("usageContexts", key)
+                        }
                       />
-                      <span>{c}</span>
+                      <span>{t(dict, `usage_${key}`)}</span>
                     </label>
                   ))}
                 </div>
@@ -404,9 +445,11 @@ export default function OnboardingPage() {
           {/* ========== SECTION: Needs Analysis ========== */}
           <section className="onboarding-section">
             <div className="onboarding-section__header">
-              <h3 className="onboarding-section__title">Needs Analysis</h3>
+              <h3 className="onboarding-section__title">
+                {t(dict, "section_needs_title")}
+              </h3>
               <p className="onboarding-section__hint">
-                Help us tailor your plan and choose the right materials.
+                {t(dict, "section_needs_hint")}
               </p>
             </div>
 
@@ -415,35 +458,35 @@ export default function OnboardingPage() {
               <div className="onboarding-field onboarding-field--full">
                 <label className="onboarding-field__label">
                   <span className="onboarding-field__label-text">
-                    Main reasons for learning
+                    {t(dict, "field_motivations_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    Select all that apply
+                    {t(dict, "field_motivations_hint")}
                   </span>
                 </label>
                 <div className="onboarding-checkbox-grid">
-                  {MOTIVATIONS.map((m) => (
-                    <label key={m} className="onboarding-checkbox">
+                  {MOTIVATIONS.map((key) => (
+                    <label key={key} className="onboarding-checkbox">
                       <input
                         type="checkbox"
-                        checked={answers.motivations.includes(m)}
-                        onChange={() => handleCheckboxGroup("motivations", m)}
+                        checked={answers.motivations.includes(key)}
+                        onChange={() => handleCheckboxGroup("motivations", key)}
                       />
-                      <span>{m}</span>
+                      <span>{t(dict, `motivation_${key}`)}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               {/* Motivation other */}
-              {answers.motivations.includes("Other") && (
+              {answers.motivations.includes("other") && (
                 <div className="onboarding-field onboarding-field--full">
                   <label
                     className="onboarding-field__label"
                     htmlFor="motivationOther"
                   >
                     <span className="onboarding-field__label-text">
-                      Tell us more
+                      {t(dict, "field_motivation_other_label")}
                     </span>
                   </label>
                   <input
@@ -457,7 +500,7 @@ export default function OnboardingPage() {
                         motivationOther: e.target.value,
                       })
                     }
-                    placeholder="Briefly describe your motivation"
+                    placeholder={t(dict, "field_motivation_other_placeholder")}
                   />
                 </div>
               )}
@@ -470,10 +513,10 @@ export default function OnboardingPage() {
                     htmlFor="examDetails"
                   >
                     <span className="onboarding-field__label-text">
-                      Exam details
+                      {t(dict, "field_exam_details_label")}
                     </span>
                     <span className="onboarding-field__label-hint">
-                      Which exam? Target score? Deadline?
+                      {t(dict, "field_exam_details_hint")}
                     </span>
                   </label>
                   <input
@@ -482,28 +525,31 @@ export default function OnboardingPage() {
                     className="onboarding-field__input"
                     value={answers.examDetails}
                     onChange={(e) =>
-                      setAnswers({ ...answers, examDetails: e.target.value })
+                      setAnswers({
+                        ...answers,
+                        examDetails: e.target.value,
+                      })
                     }
-                    placeholder="e.g., IELTS 7.0 by Oct 15"
+                    placeholder={t(dict, "field_exam_details_placeholder")}
                   />
                 </div>
               )}
 
-              {/* Skill priorities (Likert 1-5) */}
+              {/* Skill priorities */}
               <div className="onboarding-field onboarding-field--full">
                 <label className="onboarding-field__label">
                   <span className="onboarding-field__label-text">
-                    Skill focus priorities
+                    {t(dict, "field_skill_priority_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    1 = Not important, 5 = Very important
+                    {t(dict, "field_skill_priority_hint")}
                   </span>
                 </label>
                 <div className="onboarding-sliders">
                   {SKILLS.map((s) => (
                     <div className="onboarding-slider" key={s}>
                       <div className="onboarding-slider__label">
-                        <span>{s}</span>
+                        <span>{t(dict, `skill_${s.toLowerCase()}`)}</span>
                         <span className="onboarding-slider__value">
                           {answers.skillPriority[s]}
                         </span>
@@ -520,7 +566,8 @@ export default function OnboardingPage() {
                         style={getSliderBackground(
                           answers.skillPriority[s],
                           1,
-                          5
+                          5,
+                          isRTL
                         )}
                       />
                       <div className="onboarding-slider__scale">
@@ -539,10 +586,10 @@ export default function OnboardingPage() {
               <div className="onboarding-field onboarding-field--full">
                 <label className="onboarding-field__label" htmlFor="challenges">
                   <span className="onboarding-field__label-text">
-                    What do you find most difficult?
+                    {t(dict, "field_challenges_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    Be specific—this guides our first lessons.
+                    {t(dict, "field_challenges_hint")}
                   </span>
                 </label>
                 <textarea
@@ -553,7 +600,7 @@ export default function OnboardingPage() {
                   onChange={(e) =>
                     setAnswers({ ...answers, challenges: e.target.value })
                   }
-                  placeholder="e.g., understanding fast speech; organizing ideas in writing; accurate grammar in emails..."
+                  placeholder={t(dict, "field_challenges_placeholder")}
                 />
               </div>
 
@@ -561,23 +608,23 @@ export default function OnboardingPage() {
               <div className="onboarding-field onboarding-field--full">
                 <label className="onboarding-field__label">
                   <span className="onboarding-field__label-text">
-                    Preferred learning style
+                    {t(dict, "field_learning_styles_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    Select all that apply
+                    {t(dict, "field_learning_styles_hint")}
                   </span>
                 </label>
                 <div className="onboarding-checkbox-grid">
-                  {LEARNING_STYLES.map((s) => (
-                    <label key={s} className="onboarding-checkbox">
+                  {LEARNING_STYLES.map((key) => (
+                    <label key={key} className="onboarding-checkbox">
                       <input
                         type="checkbox"
-                        checked={answers.learningStyles.includes(s)}
+                        checked={answers.learningStyles.includes(key)}
                         onChange={() =>
-                          handleCheckboxGroup("learningStyles", s)
+                          handleCheckboxGroup("learningStyles", key)
                         }
                       />
-                      <span>{s}</span>
+                      <span>{t(dict, `learning_${key}`)}</span>
                     </label>
                   ))}
                 </div>
@@ -588,9 +635,11 @@ export default function OnboardingPage() {
           {/* ========== SECTION: Self-Assessment ========== */}
           <section className="onboarding-section">
             <div className="onboarding-section__header">
-              <h3 className="onboarding-section__title">Self-Assessment</h3>
+              <h3 className="onboarding-section__title">
+                {t(dict, "section_self_title")}
+              </h3>
               <p className="onboarding-section__hint">
-                Optional but helpful for placement and lesson planning.
+                {t(dict, "section_self_hint")}
               </p>
             </div>
 
@@ -599,10 +648,10 @@ export default function OnboardingPage() {
               <div className="onboarding-field">
                 <label className="onboarding-field__label" htmlFor="level">
                   <span className="onboarding-field__label-text">
-                    Current Level
+                    {t(dict, "field_level_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    Self-assessment (CEFR)
+                    {t(dict, "field_level_hint")}
                   </span>
                 </label>
                 <div className="onboarding-field__select-wrapper">
@@ -611,16 +660,21 @@ export default function OnboardingPage() {
                     className="onboarding-field__select"
                     value={answers.levelSelfEval}
                     onChange={(e) =>
-                      setAnswers({ ...answers, levelSelfEval: e.target.value })
+                      setAnswers({
+                        ...answers,
+                        levelSelfEval: e.target.value,
+                      })
                     }
                   >
-                    <option value="">Select your level...</option>
-                    <option value="A1">A1 (Beginner)</option>
-                    <option value="A2">A2 (Elementary)</option>
-                    <option value="B1">B1 (Intermediate)</option>
-                    <option value="B2">B2 (Upper Intermediate)</option>
-                    <option value="C1">C1 (Advanced)</option>
-                    <option value="C2">C2 (Near-native)</option>
+                    <option value="">
+                      {t(dict, "field_level_placeholder")}
+                    </option>
+                    <option value="A1">{t(dict, "level_a1")}</option>
+                    <option value="A2">{t(dict, "level_a2")}</option>
+                    <option value="B1">{t(dict, "level_b1")}</option>
+                    <option value="B2">{t(dict, "level_b2")}</option>
+                    <option value="C1">{t(dict, "level_c1")}</option>
+                    <option value="C2">{t(dict, "level_c2")}</option>
                   </select>
                   <svg
                     className="onboarding-field__select-icon"
@@ -640,21 +694,21 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* Confidence sliders 1–10 */}
+              {/* Confidence sliders */}
               <div className="onboarding-field onboarding-field--full">
                 <label className="onboarding-field__label">
                   <span className="onboarding-field__label-text">
-                    Confidence by skill
+                    {t(dict, "field_confidence_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    1 = Low confidence, 10 = Very confident
+                    {t(dict, "field_confidence_hint")}
                   </span>
                 </label>
                 <div className="onboarding-sliders">
                   {["Speaking", "Listening", "Reading", "Writing"].map((s) => (
                     <div className="onboarding-slider" key={s}>
                       <div className="onboarding-slider__label">
-                        <span>{s}</span>
+                        <span>{t(dict, `skill_${s.toLowerCase()}`)}</span>
                         <span className="onboarding-slider__value">
                           {answers.confidence[s]}
                         </span>
@@ -671,7 +725,8 @@ export default function OnboardingPage() {
                         style={getSliderBackground(
                           answers.confidence[s],
                           1,
-                          10
+                          10,
+                          isRTL
                         )}
                       />
                       <div className="onboarding-slider__scale">
@@ -693,10 +748,10 @@ export default function OnboardingPage() {
                   htmlFor="writingSample"
                 >
                   <span className="onboarding-field__label-text">
-                    Short writing sample (optional)
+                    {t(dict, "field_writing_sample_label")}
                   </span>
                   <span className="onboarding-field__label-hint">
-                    3–5 sentences about your goals or interests
+                    {t(dict, "field_writing_sample_hint")}
                   </span>
                 </label>
                 <textarea
@@ -705,9 +760,12 @@ export default function OnboardingPage() {
                   className="onboarding-field__textarea"
                   value={answers.writingSample}
                   onChange={(e) =>
-                    setAnswers({ ...answers, writingSample: e.target.value })
+                    setAnswers({
+                      ...answers,
+                      writingSample: e.target.value,
+                    })
                   }
-                  placeholder="Write a short paragraph here…"
+                  placeholder={t(dict, "field_writing_sample_placeholder")}
                 />
               </div>
 
@@ -719,10 +777,7 @@ export default function OnboardingPage() {
                     checked={answers.consentRecording}
                     onChange={() => handleToggle("consentRecording")}
                   />
-                  <span>
-                    I consent to use of session recordings/screenshots for
-                    private feedback and coaching purposes only.
-                  </span>
+                  <span>{t(dict, "field_consent_label")}</span>
                 </label>
               </div>
             </div>
@@ -731,16 +786,20 @@ export default function OnboardingPage() {
           {/* ========== SECTION: Additional Notes ========== */}
           <section className="onboarding-section">
             <div className="onboarding-section__header">
-              <h3 className="onboarding-section__title">Additional Notes</h3>
+              <h3 className="onboarding-section__title">
+                {t(dict, "section_notes_title")}
+              </h3>
               <p className="onboarding-section__hint">
-                Anything else we should know?
+                {t(dict, "section_notes_hint")}
               </p>
             </div>
 
             <div className="onboarding-form__grid">
               <div className="onboarding-field onboarding-field--full">
                 <label className="onboarding-field__label" htmlFor="notes">
-                  <span className="onboarding-field__label-text">Notes</span>
+                  <span className="onboarding-field__label-text">
+                    {t(dict, "field_notes_label")}
+                  </span>
                 </label>
                 <textarea
                   id="notes"
@@ -750,7 +809,7 @@ export default function OnboardingPage() {
                   onChange={(e) =>
                     setAnswers({ ...answers, notes: e.target.value })
                   }
-                  placeholder="Share any specific requirements, preferences, accessibility needs, or concerns..."
+                  placeholder={t(dict, "field_notes_placeholder")}
                 />
               </div>
             </div>
@@ -766,10 +825,10 @@ export default function OnboardingPage() {
               {saving ? (
                 <>
                   <span className="onboarding-btn__spinner"></span>
-                  Saving...
+                  {t(dict, "button_saving")}
                 </>
               ) : (
-                "Complete Onboarding"
+                t(dict, "button_submit")
               )}
             </button>
 
@@ -777,7 +836,7 @@ export default function OnboardingPage() {
               className="onboarding-btn onboarding-btn--ghost"
               href="/dashboard"
             >
-              Back to Dashboard
+              {t(dict, "button_back_dashboard")}
             </Link>
 
             {saved && (
@@ -791,7 +850,7 @@ export default function OnboardingPage() {
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span>Successfully saved!</span>
+                <span>{t(dict, "save_success")}</span>
               </div>
             )}
           </div>

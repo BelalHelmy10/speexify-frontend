@@ -1,0 +1,130 @@
+{
+  "hero_title": "أهلاً بك! لنبدأ",
+  "hero_subtitle": "ساعدنا على تخصيص تجربة التعلّم من خلال بعض المعلومات عنك.",
+
+  "section_profile_title": "الملف الشخصي والجوانب اللوجستية",
+  "section_profile_hint": "منطقتك الزمنية وتوافرُك يساعداننا في تنظيم المواعيد بشكل أفضل.",
+
+  "field_timezone_label": "المنطقة الزمنية",
+  "field_timezone_hint": "أين تعيش؟",
+  "field_timezone_placeholder": "مثال: Africa/Cairo أو America/New_York",
+
+  "field_format_label": "نمط الدروس المفضّل",
+  "field_format_hint": "حجم الصف المفضّل",
+  "field_format_option_1to1": "دروس فردية (1:1)",
+  "field_format_option_group": "مجموعة صغيرة (2–5 أشخاص)",
+  "field_format_option_intensive": "برنامج مكثّف (قصير المدى، بتكرار عال)",
+
+  "field_availability_label": "الأوقات المتاحة أسبوعيًا",
+  "field_availability_hint": "متى تكون متفرغًا عادة؟",
+  "field_availability_placeholder": "مثال: الأحد 18:00–20:00، الثلاثاء 10:00–12:00، الخميس 14:00–16:00",
+
+  "section_goals_title": "الأهداف والسياق",
+  "section_goals_hint": "أخبرنا كيف تبدو النتيجة الناجحة بالنسبة لك وكيف تستخدم اللغة الإنجليزية.",
+
+  "field_goals_label": "أهداف التعلّم",
+  "field_goals_hint": "ما الذي تودّ تحقيقه؟",
+  "field_goals_placeholder": "مثال: تحسين العروض التقديمية في العمل، الحصول على IELTS 7.0، اجتياز مقابلات العمل...",
+
+  "field_context_label": "سياق التعلّم",
+  "field_context_hint": "عمل، دراسة، تطوير شخصي؟",
+  "field_context_placeholder": "مثال: تطوير مهني، دراسة جامعية، التحضير للهجرة...",
+
+  "field_usage_frequency_label": "كم مرة تستخدم اللغة الإنجليزية؟",
+  "field_usage_frequency_placeholder": "اختر...",
+  "usage_frequency_never": "لا أستخدمها",
+  "usage_frequency_sometimes": "أحيانًا",
+  "usage_frequency_often": "غالبًا",
+  "usage_frequency_daily": "يوميًا",
+
+  "field_usage_contexts_label": "في أي مواقف تستخدمها؟",
+  "field_usage_contexts_hint": "اختر كل ما ينطبق",
+
+  "usage_work_emails": "رسائل البريد الإلكتروني في العمل",
+  "usage_meetings_presentations": "الاجتماعات / العروض التقديمية",
+  "usage_client_communication": "التواصل مع العملاء",
+  "usage_academic_writing": "الكتابة الأكاديمية",
+  "usage_research_reading": "البحث / قراءة الأبحاث",
+  "usage_social_conversation": "المحادثات الاجتماعية",
+  "usage_travel_situations": "مواقف السفر",
+  "usage_other": "أخرى",
+
+  "section_needs_title": "تحليل الاحتياجات",
+  "section_needs_hint": "ساعدنا في تخصيص خطتك واختيار المواد المناسبة.",
+
+  "field_motivations_label": "أهم أسباب التعلّم",
+  "field_motivations_hint": "اختر كل ما ينطبق",
+
+  "motivation_professional_development": "التطوير المهني",
+  "motivation_academic_studies": "الدراسة الأكاديمية",
+  "motivation_exam_preparation": "التحضير لاختبار (IELTS / TOEFL / إلخ)",
+  "motivation_immigration_relocation": "الهجرة / الانتقال للعيش بالخارج",
+  "motivation_travel": "السفر",
+  "motivation_social_personal_growth": "التطوّر الاجتماعي / الشخصي",
+  "motivation_other": "أسباب أخرى",
+
+  "field_motivation_other_label": "أخبرنا المزيد",
+  "field_motivation_other_placeholder": "اشرح باختصار سبب تعلّمك",
+
+  "field_exam_details_label": "تفاصيل الاختبار",
+  "field_exam_details_hint": "ما هو الاختبار؟ ما الدرجة المطلوبة؟ وما الموعد النهائي؟",
+  "field_exam_details_placeholder": "مثال: IELTS 7.0 قبل 15 أكتوبر",
+
+  "field_skill_priority_label": "أولويات التركيز على المهارات",
+  "field_skill_priority_hint": "1 = غير مهم، 5 = مهم جدًا",
+
+  "skill_speaking": "المحادثة",
+  "skill_listening": "الاستماع",
+  "skill_reading": "القراءة",
+  "skill_writing": "الكتابة",
+  "skill_pronunciation": "النطق",
+  "skill_grammar": "القواعد",
+  "skill_vocabulary": "المفردات",
+
+  "field_challenges_label": "ما الجوانب الأصعب بالنسبة لك؟",
+  "field_challenges_hint": "كن محددًا — هذا يوجّه الحصص الأولى.",
+  "field_challenges_placeholder": "مثال: صعوبة فهم المتحدثين السريعين؛ تنظيم الأفكار في الكتابة؛ الدقة في القواعد في الرسائل...",
+
+  "field_learning_styles_label": "أسلوب التعلّم المفضّل",
+  "field_learning_styles_hint": "اختر كل ما ينطبق",
+
+  "learning_structured_grammar": "دروس منظّمة تركّز على القواعد",
+  "learning_interactive_speaking": "محادثات وأنشطة تفاعلية",
+  "learning_task_project": "تعلّم قائم على المهام والمشاريع",
+  "learning_listening_video": "تدريبات استماع وفيديو",
+  "learning_reading_vocab": "تركيز على القراءة وبناء المفردات",
+  "learning_self_paced": "تعلّم ذاتي مع ملاحظات ومتابعة",
+
+  "section_self_title": "التقييم الذاتي",
+  "section_self_hint": "اختياري لكن يساعد في تحديد المستوى وخطة الدروس.",
+
+  "field_level_label": "مستواك الحالي",
+  "field_level_hint": "تقييمك الذاتي (CEFR)",
+  "field_level_placeholder": "اختر مستواك...",
+  "level_a1": "A1 (مبتدئ)",
+  "level_a2": "A2 (أوّل متوسط)",
+  "level_b1": "B1 (متوسط)",
+  "level_b2": "B2 (فوق المتوسط)",
+  "level_c1": "C1 (متقدّم)",
+  "level_c2": "C2 (قريب من الناطق الأصلي)",
+
+  "field_confidence_label": "درجة ثقتك في كل مهارة",
+  "field_confidence_hint": "1 = ثقة منخفضة، 10 = ثقة عالية جدًا",
+
+  "field_writing_sample_label": "نموذج كتابة قصير (اختياري)",
+  "field_writing_sample_hint": "3–5 جمل عن أهدافك أو اهتماماتك",
+  "field_writing_sample_placeholder": "اكتب فقرة قصيرة هنا...",
+
+  "field_consent_label": "أوافق على استخدام تسجيلات الجلسات / لقطات الشاشة لأغراض التغذية الراجعة والتدريب الخاص فقط.",
+
+  "section_notes_title": "ملاحظات إضافية",
+  "section_notes_hint": "هل هناك أي شيء آخر يجب أن نعرفه؟",
+  "field_notes_label": "ملاحظات",
+  "field_notes_placeholder": "اذكر أي متطلبات خاصة، تفضيلات، احتياجات وصول، أو أمور مهمّة أخرى...",
+
+  "button_saving": "جارٍ الحفظ...",
+  "button_submit": "إكمال استبيان البداية",
+  "button_back_dashboard": "العودة إلى لوحة التحكم",
+  "save_success": "تم الحفظ بنجاح!",
+  "error_save_failed": "فشل الحفظ"
+}

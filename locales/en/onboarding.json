@@ -1,0 +1,130 @@
+{
+  "hero_title": "Welcome! Let's Get Started",
+  "hero_subtitle": "Help us personalize your learning experience by sharing a few details about yourself.",
+
+  "section_profile_title": "Profile & Logistics",
+  "section_profile_hint": "Your timezone and availability help us schedule effectively.",
+
+  "field_timezone_label": "Timezone",
+  "field_timezone_hint": "Where are you located?",
+  "field_timezone_placeholder": "e.g., Africa/Cairo, America/New_York",
+
+  "field_format_label": "Preferred Format",
+  "field_format_hint": "Class size preference",
+  "field_format_option_1to1": "1:1 (Individual Sessions)",
+  "field_format_option_group": "Small Group (2–5 people)",
+  "field_format_option_intensive": "Intensive (short-term, high frequency)",
+
+  "field_availability_label": "Weekly Availability",
+  "field_availability_hint": "When are you typically free?",
+  "field_availability_placeholder": "e.g., Sun 18:00–20:00, Tue 10:00–12:00, Thu 14:00–16:00",
+
+  "section_goals_title": "Goals & Context",
+  "section_goals_hint": "Tell us what success looks like and how you use English.",
+
+  "field_goals_label": "Your Learning Goals",
+  "field_goals_hint": "What would you like to achieve?",
+  "field_goals_placeholder": "e.g., Present better at work, pass IELTS 7.0, ace job interviews...",
+
+  "field_context_label": "Learning Context",
+  "field_context_hint": "Work, study, personal growth?",
+  "field_context_placeholder": "e.g., Professional development, university studies, immigration prep...",
+
+  "field_usage_frequency_label": "How often do you use English?",
+  "field_usage_frequency_placeholder": "Select...",
+  "usage_frequency_never": "Never",
+  "usage_frequency_sometimes": "Sometimes",
+  "usage_frequency_often": "Often",
+  "usage_frequency_daily": "Daily",
+
+  "field_usage_contexts_label": "In which situations?",
+  "field_usage_contexts_hint": "Select all that apply",
+
+  "usage_work_emails": "Work emails",
+  "usage_meetings_presentations": "Meetings / presentations",
+  "usage_client_communication": "Client communication",
+  "usage_academic_writing": "Academic writing",
+  "usage_research_reading": "Research / reading papers",
+  "usage_social_conversation": "Social conversation",
+  "usage_travel_situations": "Travel situations",
+  "usage_other": "Other",
+
+  "section_needs_title": "Needs Analysis",
+  "section_needs_hint": "Help us tailor your plan and choose the right materials.",
+
+  "field_motivations_label": "Main reasons for learning",
+  "field_motivations_hint": "Select all that apply",
+
+  "motivation_professional_development": "Professional development",
+  "motivation_academic_studies": "Academic studies",
+  "motivation_exam_preparation": "Exam preparation (IELTS/TOEFL/etc.)",
+  "motivation_immigration_relocation": "Immigration / relocation",
+  "motivation_travel": "Travel",
+  "motivation_social_personal_growth": "Social / personal growth",
+  "motivation_other": "Other",
+
+  "field_motivation_other_label": "Tell us more",
+  "field_motivation_other_placeholder": "Briefly describe your motivation",
+
+  "field_exam_details_label": "Exam details",
+  "field_exam_details_hint": "Which exam? Target score? Deadline?",
+  "field_exam_details_placeholder": "e.g., IELTS 7.0 by Oct 15",
+
+  "field_skill_priority_label": "Skill focus priorities",
+  "field_skill_priority_hint": "1 = Not important, 5 = Very important",
+
+  "skill_speaking": "Speaking",
+  "skill_listening": "Listening",
+  "skill_reading": "Reading",
+  "skill_writing": "Writing",
+  "skill_pronunciation": "Pronunciation",
+  "skill_grammar": "Grammar",
+  "skill_vocabulary": "Vocabulary",
+
+  "field_challenges_label": "What do you find most difficult?",
+  "field_challenges_hint": "Be specific—this guides our first lessons.",
+  "field_challenges_placeholder": "e.g., understanding fast speech; organizing ideas in writing; accurate grammar in emails...",
+
+  "field_learning_styles_label": "Preferred learning style",
+  "field_learning_styles_hint": "Select all that apply",
+
+  "learning_structured_grammar": "Structured grammar-focused lessons",
+  "learning_interactive_speaking": "Interactive speaking & conversation",
+  "learning_task_project": "Task / project-based learning",
+  "learning_listening_video": "Listening & video-based practice",
+  "learning_reading_vocab": "Reading-focused with vocabulary building",
+  "learning_self_paced": "Self-paced study with feedback",
+
+  "section_self_title": "Self-Assessment",
+  "section_self_hint": "Optional but helpful for placement and lesson planning.",
+
+  "field_level_label": "Current Level",
+  "field_level_hint": "Self-assessment (CEFR)",
+  "field_level_placeholder": "Select your level...",
+  "level_a1": "A1 (Beginner)",
+  "level_a2": "A2 (Elementary)",
+  "level_b1": "B1 (Intermediate)",
+  "level_b2": "B2 (Upper Intermediate)",
+  "level_c1": "C1 (Advanced)",
+  "level_c2": "C2 (Near-native)",
+
+  "field_confidence_label": "Confidence by skill",
+  "field_confidence_hint": "1 = Low confidence, 10 = Very confident",
+
+  "field_writing_sample_label": "Short writing sample (optional)",
+  "field_writing_sample_hint": "3–5 sentences about your goals or interests",
+  "field_writing_sample_placeholder": "Write a short paragraph here…",
+
+  "field_consent_label": "I consent to use of session recordings/screenshots for private feedback and coaching purposes only.",
+
+  "section_notes_title": "Additional Notes",
+  "section_notes_hint": "Anything else we should know?",
+  "field_notes_label": "Notes",
+  "field_notes_placeholder": "Share any specific requirements, preferences, accessibility needs, or concerns...",
+
+  "button_saving": "Saving...",
+  "button_submit": "Complete Onboarding",
+  "button_back_dashboard": "Back to Dashboard",
+  "save_success": "Successfully saved!",
+  "error_save_failed": "Failed to save"
+}

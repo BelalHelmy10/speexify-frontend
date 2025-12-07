@@ -1,0 +1,22 @@
+{
+  "page_title": "Learning progress",
+  "subtitle_main": "See how many sessions you’ve completed and how your activity evolves over time.",
+  "subtitle_loading": "Loading your progress…",
+  "subtitle_not_logged_in": "You need to be logged in to view this page.",
+  "subtitle_error": "We couldn’t load your progress right now.",
+  "error_generic": "Failed to load progress",
+  "back_to_dashboard": "← Back to dashboard",
+
+  "summary_completed_label": "Completed sessions",
+  "summary_total_time_label": "Total time",
+  "summary_total_time_meta_suffix": "minutes",
+  "summary_avg_rating_label": "Average rating",
+  "summary_avg_rating_meta": "(ratings coming in a later step)",
+
+  "timeline_title": "Sessions per month",
+  "timeline_subtitle_prefix": "Last",
+  "timeline_subtitle_suffix": "months.",
+  "timeline_empty": "You don’t have any completed sessions yet. Once you start taking sessions, you’ll see your activity here.",
+  "timeline_col_month": "Month",
+  "timeline_col_completed": "Completed sessions"
+}

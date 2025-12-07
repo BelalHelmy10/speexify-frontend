@@ -1,0 +1,42 @@
+{
+  "title": "الإعدادات",
+  "subtitle": "إدارة تفضيلات حسابك وإعدادات الأمان",
+
+  "loading_settings": "جارٍ تحميل الإعدادات...",
+  "loading_generic": "جارٍ التحميل...",
+  "not_authenticated": "لم يتم تسجيل الدخول",
+
+  "profile_title": "معلومات الحساب",
+  "profile_description": "حدِّث بياناتك الشخصية وتفضيلاتك",
+
+  "email_label": "البريد الإلكتروني",
+  "email_hint": "بريد حسابك (للقراءة فقط)",
+
+  "name_label": "الاسم الكامل",
+  "name_hint": "كيف تود أن نخاطبك",
+
+  "timezone_label": "المنطقة الزمنية",
+  "timezone_hint": "تُستخدم في الجدولة والتنبيهات",
+  "timezone_default_option": "(استخدام المنطقة الافتراضية للمتصفح)",
+
+  "save_button": "حفظ التغييرات",
+  "status_saving": "جارٍ الحفظ...",
+  "save_success": "تم تحديث الملف الشخصي بنجاح",
+
+  "security_title": "الأمان",
+  "security_description": "حافظ على أمان حسابك بتحديث كلمة المرور بانتظام",
+
+  "current_password_label": "كلمة المرور الحالية",
+  "current_password_hint": "أدخِل كلمة المرور الحالية",
+
+  "new_password_label": "كلمة المرور الجديدة",
+  "new_password_hint": "يجب أن تكون 8 أحرف على الأقل",
+
+  "update_pw_button": "تحديث كلمة المرور",
+  "pw_status_saving": "جارٍ الحفظ...",
+  "pw_success": "تم تغيير كلمة المرور بنجاح",
+
+  "role_label": "دور الحساب",
+  "role_default": "مستخدم",
+  "member_since_label": "عضو منذ"
+}

@@ -1,11 +1,16 @@
-// app/resources/units/[slug]/page.jsx
+// app/resources/units/[slug]/page.js
 import { sanityClient } from "@/lib/sanity";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const UNIT_WITH_RESOURCES_QUERY = `
-*[_type == "unit" && slug.current == $slug][0]{
+// Build the GROQ query WITHOUT using $slug
+function buildUnitQuery(slug) {
+  // very small escape so quotes in slug can't break the query
+  const safeSlug = String(slug).replace(/"/g, '\\"');
+
+  return `
+*[_type == "unit" && slug.current == "${safeSlug}"][0]{
   _id,
   title,
   "slug": slug.current,
@@ -42,10 +47,22 @@ const UNIT_WITH_RESOURCES_QUERY = `
   }
 }
 `;
+}
 
+// 🔐 Guard + use query builder so there is **no `$slug` param** at all
 async function getUnit(slug) {
-  const unit = await sanityClient.fetch(UNIT_WITH_RESOURCES_QUERY, { slug });
-  return unit || null;
+  if (!slug || typeof slug !== "string") {
+    return null;
+  }
+
+  try {
+    const query = buildUnitQuery(slug);
+    const unit = await sanityClient.fetch(query);
+    return unit || null;
+  } catch (err) {
+    console.error("Failed to fetch unit from Sanity", err);
+    return null;
+  }
 }
 
 // Helper to decide which URL to open for a resource
@@ -58,8 +75,13 @@ function getPrimaryUrl(resource) {
   return null;
 }
 
-export default async function UnitResourcesPage({ params }) {
-  const slug = params.slug;
+// ─────────────────────────────────────────────────────────────
+// NOTE: params is now a Promise in Next 16 server components.
+// We must await it instead of destructuring directly.
+// ─────────────────────────────────────────────────────────────
+
+export default async function UnitResourcesPage(props) {
+  const { slug } = await props.params;
   const unit = await getUnit(slug);
 
   if (!unit) {
@@ -241,7 +263,10 @@ export default async function UnitResourcesPage({ params }) {
                           Open resource
                         </a>
                         <Link
-                          href={`/resources/prep?resourceId=${r._id}`}
+                          href={{
+                            pathname: "/resources/prep",
+                            query: { resourceId: r._id },
+                          }}
                           className="resources-button resources-button--ghost"
                         >
                           Open in Prep Room

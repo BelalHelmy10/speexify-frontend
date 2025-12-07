@@ -1,0 +1,22 @@
+{
+  "page_title": "تقدّم التعلّم",
+  "subtitle_main": "شاهد عدد الجلسات التي أنهيتها وكيف يتطوّر نشاطك مع الوقت.",
+  "subtitle_loading": "جارٍ تحميل تقدّمك…",
+  "subtitle_not_logged_in": "يجب تسجيل الدخول لعرض هذه الصفحة.",
+  "subtitle_error": "تعذّر تحميل بيانات التقدّم الآن.",
+  "error_generic": "تعذّر تحميل بيانات التقدّم",
+  "back_to_dashboard": "← العودة إلى لوحة التحكم",
+
+  "summary_completed_label": "الجلسات المكتملة",
+  "summary_total_time_label": "إجمالي الوقت",
+  "summary_total_time_meta_suffix": "دقيقة تقريبًا",
+  "summary_avg_rating_label": "متوسط التقييم",
+  "summary_avg_rating_meta": "(سيتم تفعيل التقييمات في مرحلة لاحقة)",
+
+  "timeline_title": "الجلسات لكل شهر",
+  "timeline_subtitle_prefix": "آخر",
+  "timeline_subtitle_suffix": "شهرًا.",
+  "timeline_empty": "لا توجد لديك أي جلسات مكتملة بعد. بمجرد أن تبدأ في حضور الجلسات ستظهر أنشطتك هنا.",
+  "timeline_col_month": "الشهر",
+  "timeline_col_completed": "الجلسات المكتملة"
+}
