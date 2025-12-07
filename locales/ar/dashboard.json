@@ -1,0 +1,75 @@
+{
+  "status_loading": "جارٍ التحميل…",
+  "status_failed": "فشل تحميل لوحة التحكم",
+  "status_not_auth": "أنت غير مسجَّل الدخول",
+
+  "title": "لوحة التحكم",
+  "subtitle": "مرحبًا بعودتك، {name}",
+
+  "kpi_upcoming": "الجلسات القادمة",
+  "kpi_completed": "الجلسات المنتهية",
+  "kpi_total": "إجمالي الجلسات",
+
+  "warning_action_needed": "يتطلّب إجراء",
+  "warning_out_of_credits_title": "انتهت رصيد جلساتك",
+  "warning_out_of_credits_body": "اشترِ باقة جديدة لحجز جلستك القادمة.",
+  "warning_browse_packages": "استعراض الباقات",
+
+  "plan_badge": "خطتك",
+  "plan_no_active": "لا توجد باقات مفعّلة بعد.",
+  "plan_no_active_body": "ابدأ باختيار الباقة المناسبة لأهدافك.",
+  "plan_browse_packages": "استعراض الباقات",
+  "plan_default_title": "خطتك",
+  "plan_flexible_duration": "مدة مرنة",
+  "plan_expires_label": "تنتهي في",
+  "plan_progress_label": "{remaining} من {total} جلسة متبقية",
+
+  "actions_two": "إجرائان مطلوبان",
+  "actions_one": "إجراء واحد مطلوب",
+
+  "onboarding_view": "عرض استبيان البداية",
+  "onboarding_complete": "إكمال استبيان البداية",
+  "assessment_view": "عرض التقييم",
+  "assessment_take": "أداء التقييم الكتابي",
+  "view_all_plans": "عرض كل الخطط",
+
+  "teaching_badge": "التدريس",
+  "teaching_title": "أقرب جلسة ستدرّسها",
+  "teaching_none": "لا توجد جلسات تدريس قادمة.",
+  "teaching_view_calendar": "عرض التقويم",
+
+  "upcoming_title": "الجلسات القادمة",
+  "upcoming_open_calendar": "فتح التقويم",
+  "upcoming_none": "لا توجد جلسات قادمة.",
+
+  "past_title": "الجلسات السابقة",
+  "past_view_all": "عرض الكل",
+  "past_none": "لا توجد جلسات سابقة.",
+
+  "countdown_starts_in": "تبدأ بعد",
+  "countdown_live": "مباشر الآن",
+  "countdown_ended": "انتهت",
+
+  "session_title_default": "جلسة",
+
+  "session_join_classroom": "دخول الفصل",
+  "session_join_tooltip_early": "يُفتح الفصل قبل موعد البدء بقليل",
+  "session_join_soon": "سيفتح الفصل قريبًا",
+  "session_external_link": "رابط خارجي",
+  "session_reschedule": "تغيير الموعد",
+  "session_cancel": "إلغاء",
+  "session_cancel_title": "هل تريد إلغاء هذه الجلسة؟",
+  "session_view_details": "عرض التفاصيل",
+  "session_edit_feedback": "تعديل الملاحظات",
+  "session_give_feedback": "إضافة الملاحظات",
+  "session_view_feedback": "عرض الملاحظات",
+
+  "modal_reschedule_title": "تغيير موعد الجلسة",
+  "modal_start_time": "وقت البداية",
+  "modal_end_time": "وقت النهاية",
+  "modal_cancel": "إلغاء",
+  "modal_save_changes": "حفظ التغييرات",
+
+  "error_cancel_failed": "فشل الإلغاء",
+  "error_reschedule_failed": "فشل تغيير الموعد"
+}

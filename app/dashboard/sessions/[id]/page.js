@@ -2,14 +2,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
 import "@/styles/session-detail.scss";
 
 export default function SessionDetailPage({ params }) {
   const router = useRouter();
-  const { id } = params;
+  const { id } = useParams();
 
   const [session, setSession] = useState(null);
   const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"

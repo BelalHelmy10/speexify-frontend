@@ -1,0 +1,47 @@
+{
+  "hero_badge": "Careers at Speexify",
+  "hero_title_main": "Help people speak with",
+  "hero_title_accent": " confidence, everywhere",
+  "hero_subtitle": "We're a remote-first team building language & communication training that actually works—for learners and for the businesses that rely on them. Join us to ship impact, not just features.",
+  "hero_cta_primary": "See open roles",
+  "hero_cta_secondary": "Learn about Speexify",
+
+  "values_remote_title": "Remote-first",
+  "values_remote_body": "Work from anywhere. Async-friendly culture across time zones.",
+  "values_learning_title": "Learning stipend",
+  "values_learning_body": "Each teammate gets a budget for courses, books, and conferences.",
+  "values_wellbeing_title": "Wellbeing & PTO",
+  "values_wellbeing_body": "Flexible time off, local holidays, and generous parental leave.",
+  "values_inclusive_title": "Inclusive culture",
+  "values_inclusive_body": "We embrace diverse perspectives to create better solutions.",
+
+  "roles_heading": "Open roles",
+  "roles_loading": "Loading roles…",
+  "roles_count_single": "{count} role available",
+  "roles_count_multi": "{count} roles available",
+
+  "saved_label": "Saved:",
+  "search_placeholder": "Search by title, keyword, tech…",
+
+  "filter_department_label": "Filter by department",
+  "filter_location_label": "Filter by location",
+  "filter_type_label": "Filter by type",
+  "filter_department_all": "All departments",
+  "filter_location_all": "All locations",
+  "filter_type_all": "All types",
+
+  "empty_text": "No matches. Try clearing filters or searching for fewer words.",
+
+  "card_view_details": "View details",
+  "card_apply": "Apply",
+
+  "connect_title": "Don't see the right role?",
+  "connect_body": "We love meeting curious, kind builders. Tell us how you can help our mission.",
+  "connect_cta": "Connect with us",
+
+  "modal_do_title": "What you'll do",
+  "modal_bring_title": "What you'll bring",
+  "modal_benefits_title": "Benefits",
+  "modal_close": "Close",
+  "modal_apply": "Apply"
+}

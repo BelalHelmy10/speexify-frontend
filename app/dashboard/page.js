@@ -3,11 +3,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { fmtInTz } from "@/utils/date";
 import { getSafeExternalUrl } from "@/utils/url";
 import { useToast } from "@/components/ToastProvider";
+import { getDictionary, t } from "@/app/i18n";
 
 const fmt = (d) =>
   new Date(d).toLocaleString([], {
@@ -29,7 +31,9 @@ const canJoin = (startAt, endAt, windowMins = 15) => {
   return now >= early && now <= end;
 };
 
-const useCountdown = (startAt, endAt) => {
+const useCountdown = (startAt, endAt, labels = {}) => {
+  const { startsIn = "Starts in", live = "Live", ended = "Ended" } = labels;
+
   const [now, setNow] = useState(Date.now());
   const timer = useRef(null);
 
@@ -58,12 +62,12 @@ const useCountdown = (startAt, endAt) => {
     if (mins > 0 || hours > 0 || days > 0) parts.push(`${mins}m`);
     parts.push(`${String(secs).padStart(2, "0")}s`);
 
-    return `Starts in ${parts.join(" ")}`;
+    return `${startsIn} ${parts.join(" ")}`;
   }
 
-  if (now >= start && now <= end) return "Live";
+  if (now >= start && now <= end) return live;
 
-  return "Ended";
+  return ended;
 };
 
 function SessionRow({
@@ -73,8 +77,13 @@ function SessionRow({
   onRescheduleClick,
   isUpcoming = true,
   isTeacher = false,
+  dict,
 }) {
-  const countdown = useCountdown(s.startAt, s.endAt);
+  const countdown = useCountdown(s.startAt, s.endAt, {
+    startsIn: t(dict, "countdown_starts_in"),
+    live: t(dict, "countdown_live"),
+    ended: t(dict, "countdown_ended"),
+  });
   const joinable = canJoin(s.startAt, s.endAt);
 
   return (
@@ -82,7 +91,9 @@ function SessionRow({
       <div className="session-item__indicator"></div>
       <div className="session-item__content">
         <div className="session-item__main">
-          <div className="session-item__title">{s.title || "Session"}</div>
+          <div className="session-item__title">
+            {s.title || t(dict, "session_title_default")}
+          </div>
           <div className="session-item__meta">
             <span className="session-item__time">
               <svg
@@ -116,11 +127,13 @@ function SessionRow({
                 }`}
                 title={
                   joinable
-                    ? "Join Speexify classroom"
-                    : "Classroom opens shortly before start time"
+                    ? t(dict, "session_join_classroom")
+                    : t(dict, "session_join_tooltip_early")
                 }
               >
-                {joinable ? "Join classroom" : countdown || "Classroom soon"}
+                {joinable
+                  ? t(dict, "session_join_classroom")
+                  : countdown || t(dict, "session_join_soon")}
               </Link>
 
               {/* Optional external meeting link (Zoom/Teams, etc.) */}
@@ -130,9 +143,9 @@ function SessionRow({
                   target="_blank"
                   rel="noreferrer"
                   className="btn btn--ghost"
-                  title="Open external meeting link"
+                  title={t(dict, "session_external_link")}
                 >
-                  External link
+                  {t(dict, "session_external_link")}
                 </a>
               )}
 
@@ -140,14 +153,14 @@ function SessionRow({
                 className="btn btn--ghost"
                 onClick={() => onRescheduleClick(s)}
               >
-                Reschedule
+                {t(dict, "session_reschedule")}
               </button>
               <button
                 className="btn btn--ghost btn--danger"
                 onClick={() => onCancel(s)}
-                title="Cancel session"
+                title={t(dict, "session_cancel_title")}
               >
-                Cancel
+                {t(dict, "session_cancel")}
               </button>
             </>
           ) : (
@@ -156,7 +169,7 @@ function SessionRow({
                 href={`/dashboard/sessions/${s.id}`}
                 className="btn btn--ghost"
               >
-                View details
+                {t(dict, "session_view_details")}
                 <svg
                   width="16"
                   height="16"
@@ -175,7 +188,9 @@ function SessionRow({
                   href={`/dashboard/sessions/${s.id}/feedback`}
                   className="btn btn--primary"
                 >
-                  {s.teacherFeedback ? "Edit feedback" : "Give feedback"}
+                  {s.teacherFeedback
+                    ? t(dict, "session_edit_feedback")
+                    : t(dict, "session_give_feedback")}
                 </Link>
               )}
 
@@ -185,7 +200,7 @@ function SessionRow({
                   href={`/dashboard/sessions/${s.id}/feedback`}
                   className="btn btn--primary"
                 >
-                  View feedback
+                  {t(dict, "session_view_feedback")}
                 </Link>
               )}
             </>
@@ -234,9 +249,9 @@ function Card({ title, value, icon, gradient }) {
   );
 }
 
-export default function Dashboard() {
+function DashboardInner({ dict }) {
   const { toast, confirmModal } = useToast();
-  const [status, setStatus] = useState("Loading…");
+  const [status, setStatus] = useState(() => t(dict, "status_loading"));
   const [summary, setSummary] = useState(null);
   const { user, checking } = useAuth();
   const isTeacher = user?.role === "teacher";
@@ -263,9 +278,9 @@ export default function Dashboard() {
       setSummary(res.data);
       setStatus("");
     } catch (e) {
-      setStatus(e?.response?.data?.error || "Failed to load dashboard");
+      setStatus(e?.response?.data?.error || t(dict, "status_failed"));
     }
-  }, []);
+  }, [dict]);
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -341,13 +356,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (checking) return;
     if (!user) {
-      setStatus("Not authenticated");
+      setStatus(t(dict, "status_not_auth"));
       return;
     }
     refreshAll();
     fetchOnboarding();
     fetchAssessment();
-  }, [checking, user, refreshAll, fetchOnboarding, fetchAssessment]);
+  }, [checking, user, refreshAll, fetchOnboarding, fetchAssessment, dict]);
 
   // Teacher summary
   useEffect(() => {
@@ -387,13 +402,13 @@ export default function Dashboard() {
   }, [refreshAll]);
 
   const handleCancel = async (s) => {
-    const ok = await confirmModal("Cancel this session?");
+    const ok = await confirmModal(t(dict, "session_cancel_title"));
     if (!ok) return;
     try {
       await api.post(`/sessions/${s.id}/cancel`);
       await refreshAll();
     } catch (e) {
-      toast.error(e?.response?.data?.error || "Failed to cancel");
+      toast.error(e?.response?.data?.error || t(dict, "error_cancel_failed"));
     }
   };
 
@@ -416,7 +431,9 @@ export default function Dashboard() {
       setReschedSession(null);
       await refreshAll();
     } catch (e) {
-      toast.error(e?.response?.data?.error || "Failed to reschedule");
+      toast.error(
+        e?.response?.data?.error || t(dict, "error_reschedule_failed")
+      );
     }
   };
 
@@ -459,20 +476,22 @@ export default function Dashboard() {
     Boolean
   ).length;
 
+  const subtitleText = t(dict, "subtitle", {
+    name: user?.name || user?.email || "",
+  });
+
   return (
     <div className="container-narrow dashboard">
       <div className="dashboard__header">
         <div>
-          <h2>Dashboard</h2>
-          <p className="dashboard__subtitle">
-            Welcome back, {user?.name || user?.email}
-          </p>
+          <h2>{t(dict, "title")}</h2>
+          <p className="dashboard__subtitle">{subtitleText}</p>
         </div>
       </div>
 
       <div className="grid-3">
         <Card
-          title="Upcoming"
+          title={t(dict, "kpi_upcoming")}
           value={upcomingCount}
           icon={
             <svg
@@ -490,7 +509,7 @@ export default function Dashboard() {
           gradient="blue"
         />
         <Card
-          title="Completed"
+          title={t(dict, "kpi_completed")}
           value={completedCount}
           icon={
             <svg
@@ -506,7 +525,7 @@ export default function Dashboard() {
           gradient="green"
         />
         <Card
-          title="Total"
+          title={t(dict, "kpi_total")}
           value={upcomingCount + completedCount}
           icon={
             <svg
@@ -536,15 +555,17 @@ export default function Dashboard() {
             className="panel__badge"
             style={{ background: "#fff7ed", color: "#9a3412" }}
           >
-            Action needed
+            {t(dict, "warning_action_needed")}
           </div>
-          <h3 style={{ marginTop: 8 }}>You're out of session credits</h3>
+          <h3 style={{ marginTop: 8 }}>
+            {t(dict, "warning_out_of_credits_title")}
+          </h3>
           <p style={{ margin: "6px 0 12px", opacity: 0.9 }}>
-            Purchase a package to book your next session.
+            {t(dict, "warning_out_of_credits_body")}
           </p>
           <div className="button-row">
             <Link href="/packages" className="btn btn--primary">
-              Browse packages
+              {t(dict, "warning_browse_packages")}
             </Link>
           </div>
         </div>
@@ -553,7 +574,7 @@ export default function Dashboard() {
       {/* Plan / packages panel – learners only */}
       {!isTeacher && (
         <div className="panel panel--featured">
-          <div className="panel__badge">Your plan</div>
+          <div className="panel__badge">{t(dict, "plan_badge")}</div>
 
           {activePacks.length === 0 ? (
             <div className="empty-state">
@@ -569,17 +590,20 @@ export default function Dashboard() {
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
               </svg>
-              <p>No active packages yet.</p>
+              <p>{t(dict, "plan_no_active")}</p>
+              <p style={{ opacity: 0.8, marginTop: 4 }}>
+                {t(dict, "plan_no_active_body")}
+              </p>
               <div className="button-row">
                 <Link href="/packages" className="btn btn--primary">
-                  Browse packages
+                  {t(dict, "plan_browse_packages")}
                 </Link>
               </div>
             </div>
           ) : (
             <>
               <h3 className="next-session__title">
-                {primaryPack?.title || "Your plan"}
+                {primaryPack?.title || t(dict, "plan_default_title")}
               </h3>
               <div className="next-session__time" style={{ marginTop: 6 }}>
                 <svg
@@ -595,8 +619,10 @@ export default function Dashboard() {
                 </svg>
                 {primaryPack?.minutesPerSession
                   ? `${primaryPack.minutesPerSession} min / session`
-                  : "Flexible duration"}
-                {expiryLabel ? ` · Expires ${expiryLabel}` : ""}
+                  : t(dict, "plan_flexible_duration")}
+                {expiryLabel
+                  ? ` · ${t(dict, "plan_expires_label")} ${expiryLabel}`
+                  : ""}
               </div>
 
               <div className="progress" style={{ margin: "16px 0 8px" }}>
@@ -624,7 +650,10 @@ export default function Dashboard() {
                   className="progress__label"
                   style={{ fontSize: 12, marginTop: 6, opacity: 0.8 }}
                 >
-                  {remainingSessions} of {totalSessions} sessions remaining
+                  {t(dict, "plan_progress_label", {
+                    remaining: remainingSessions,
+                    total: totalSessions,
+                  })}
                 </div>
               </div>
 
@@ -639,8 +668,8 @@ export default function Dashboard() {
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
                   </svg>
                   {pendingActionsCount === 2
-                    ? "2 required actions"
-                    : "1 required action"}
+                    ? t(dict, "actions_two")
+                    : t(dict, "actions_one")}
                 </div>
               )}
 
@@ -664,7 +693,9 @@ export default function Dashboard() {
                       <path d="M12 8v4m0 4h.01" />
                     </svg>
                   )}
-                  {onbComplete ? "View onboarding" : "Complete onboarding form"}
+                  {onbComplete
+                    ? t(dict, "onboarding_view")
+                    : t(dict, "onboarding_complete")}
                 </Link>
 
                 <Link
@@ -686,11 +717,13 @@ export default function Dashboard() {
                       <path d="M12 8v4m0 4h.01" />
                     </svg>
                   )}
-                  {assComplete ? "View assessment" : "Take written assessment"}
+                  {assComplete
+                    ? t(dict, "assessment_view")
+                    : t(dict, "assessment_take")}
                 </Link>
 
                 <Link href="/packages" className="btn btn--ghost">
-                  View all plans
+                  {t(dict, "view_all_plans")}
                 </Link>
               </div>
             </>
@@ -700,8 +733,8 @@ export default function Dashboard() {
 
       {isTeacher && (
         <div className="panel panel--featured">
-          <div className="panel__badge">Teaching</div>
-          <h3>Next session to teach</h3>
+          <div className="panel__badge">{t(dict, "teaching_badge")}</div>
+          <h3>{t(dict, "teaching_title")}</h3>
           {!teachSummary.nextTeach ? (
             <div className="empty-state">
               <svg
@@ -717,7 +750,7 @@ export default function Dashboard() {
                 <line x1="8" y1="2" x2="8" y2="6" />
                 <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
-              <p>No upcoming teaching sessions.</p>
+              <p>{t(dict, "teaching_none")}</p>
             </div>
           ) : (
             <>
@@ -765,7 +798,7 @@ export default function Dashboard() {
                     href={`/classroom/${teachSummary.nextTeach.id}`}
                     className="btn btn--primary btn--glow"
                   >
-                    Join classroom
+                    {t(dict, "session_join_classroom")}
                   </Link>
                 ) : (
                   <Link href="/calendar" className="btn btn--ghost">
@@ -782,7 +815,7 @@ export default function Dashboard() {
                       <line x1="8" y1="2" x2="8" y2="6" />
                       <line x1="3" y1="10" x2="21" y2="10" />
                     </svg>
-                    View calendar
+                    {t(dict, "teaching_view_calendar")}
                   </Link>
                 )}
               </div>
@@ -793,7 +826,7 @@ export default function Dashboard() {
 
       <div className="panel">
         <div className="panel__head">
-          <h3>Upcoming sessions</h3>
+          <h3>{t(dict, "upcoming_title")}</h3>
           <Link href="/calendar" className="btn btn--ghost btn--sm">
             <svg
               width="16"
@@ -808,12 +841,12 @@ export default function Dashboard() {
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            Open calendar
+            {t(dict, "upcoming_open_calendar")}
           </Link>
         </div>
         {upcoming.length === 0 ? (
           <div className="empty-state empty-state--compact">
-            <p>No upcoming sessions.</p>
+            <p>{t(dict, "upcoming_none")}</p>
           </div>
         ) : (
           <div className="session-list">
@@ -826,6 +859,7 @@ export default function Dashboard() {
                 onCancel={handleCancel}
                 onRescheduleClick={openReschedule}
                 isTeacher={isTeacher}
+                dict={dict}
               />
             ))}
           </div>
@@ -834,9 +868,9 @@ export default function Dashboard() {
 
       <div className="panel">
         <div className="panel__head">
-          <h3>Past sessions</h3>
+          <h3>{t(dict, "past_title")}</h3>
           <Link href="/calendar" className="btn btn--ghost btn--sm">
-            View all
+            {t(dict, "past_view_all")}
             <svg
               width="16"
               height="16"
@@ -851,7 +885,7 @@ export default function Dashboard() {
         </div>
         {past.length === 0 ? (
           <div className="empty-state empty-state--compact">
-            <p>No past sessions.</p>
+            <p>{t(dict, "past_none")}</p>
           </div>
         ) : (
           <div className="session-list">
@@ -864,6 +898,7 @@ export default function Dashboard() {
                 onCancel={() => {}}
                 onRescheduleClick={() => {}}
                 isTeacher={isTeacher}
+                dict={dict}
               />
             ))}
           </div>
@@ -871,10 +906,13 @@ export default function Dashboard() {
       </div>
 
       {reschedOpen && (
-        <Modal title="Reschedule session" onClose={() => setReschedOpen(false)}>
+        <Modal
+          title={t(dict, "modal_reschedule_title")}
+          onClose={() => setReschedOpen(false)}
+        >
           <div className="form-grid">
             <label>
-              <span>Start time</span>
+              <span>{t(dict, "modal_start_time")}</span>
               <input
                 type="datetime-local"
                 value={newStart}
@@ -882,7 +920,7 @@ export default function Dashboard() {
               />
             </label>
             <label>
-              <span>End time</span>
+              <span>{t(dict, "modal_end_time")}</span>
               <input
                 type="datetime-local"
                 value={newEnd}
@@ -895,14 +933,21 @@ export default function Dashboard() {
               className="btn btn--ghost"
               onClick={() => setReschedOpen(false)}
             >
-              Cancel
+              {t(dict, "modal_cancel")}
             </button>
             <button className="btn btn--primary" onClick={submitReschedule}>
-              Save changes
+              {t(dict, "modal_save_changes")}
             </button>
           </div>
         </Modal>
       )}
     </div>
   );
+}
+
+export default function DashboardPage() {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "dashboard");
+  return <DashboardInner dict={dict} />;
 }

@@ -26,8 +26,8 @@ import {
   format,
 } from "date-fns";
 
-import { getSafeExternalUrl } from "@/utils/url";
 import { useRouter } from "next/navigation";
+import { getDictionary, t } from "@/app/i18n";
 
 // date-fns localizer for RBC
 const locales = {};
@@ -43,7 +43,7 @@ const localizer = dateFnsLocalizer({
 const toRbcEvents = (arr = []) =>
   arr.map((s) => ({
     id: String(s.id),
-    title: s.title || "Session",
+    title: s.title || "", // fallback will be translated in EventComp
     start: new Date(s.startAt),
     end: s.endAt ? new Date(s.endAt) : new Date(s.startAt),
     status: s.status, // "scheduled" | "canceled"
@@ -68,14 +68,163 @@ function getVisibleRange(date, view) {
   };
 }
 
+// Countdown hook with injectable labels
+const useCountdown = (startAt, endAt, labels = {}) => {
+  const startsIn = labels.startsIn || "Starts in";
+  const live = labels.live || "Live";
+  const ended = labels.ended || "Ended";
+
+  const [now, setNow] = useState(Date.now());
+  const timer = useRef(null);
+
+  useEffect(() => {
+    timer.current = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer.current);
+  }, []);
+
+  if (!startAt) return "";
+
+  const start = new Date(startAt).getTime();
+  const end = endAt ? new Date(endAt).getTime() : start + 60 * 60 * 1000;
+
+  if (now < start) {
+    let remaining = Math.max(0, Math.floor((start - now) / 1000));
+    const days = Math.floor(remaining / 86400);
+    remaining %= 86400;
+    const hours = Math.floor(remaining / 3600);
+    remaining %= 3600;
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0 || days > 0) parts.push(`${hours}h`);
+    if (mins > 0 || hours > 0 || days > 0) parts.push(`${mins}m`);
+    parts.push(`${String(secs).padStart(2, "0")}s`);
+
+    return `${startsIn} ${parts.join(" ")}`;
+  }
+
+  if (now >= start && now <= end) return live;
+
+  return ended;
+};
+
+function SessionRow({
+  s,
+  timezone,
+  onCancel,
+  onRescheduleClick,
+  isUpcoming = true,
+  isTeacher = false,
+  dict,
+}) {
+  const countdown = useCountdown(s.startAt, s.endAt, {
+    startsIn: t(dict, "countdown_starts_in"),
+    live: t(dict, "countdown_live"),
+    ended: t(dict, "countdown_ended"),
+  });
+  const joinable = canJoin(s.startAt, s.endAt);
+
+  return (
+    <div className="session-item">
+      <div className="session-item__indicator"></div>
+      <div className="session-item__content">
+        <div className="session-item__main">
+          <div className="session-item__title">
+            {s.title || t(dict, "session_default_title")}
+          </div>
+          <div className="session-item__meta">
+            <span className="session-item__time">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              {s.startAt.toLocaleString
+                ? s.startAt.toLocaleString()
+                : new Date(s.startAt).toLocaleString()}
+            </span>
+            {s.status && (
+              <span className={`badge badge--${s.status}`}>{s.status}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="session-item__actions">
+          {isUpcoming ? (
+            <>
+              {/* built-in classroom join button */}
+              <a
+                href={`/classroom/${s.id}`}
+                className={`btn ${
+                  joinable ? "btn--primary btn--glow" : "btn--ghost"
+                }`}
+                title={
+                  joinable
+                    ? t(dict, "countdown_live")
+                    : t(dict, "countdown_starts_in")
+                }
+              >
+                {joinable ? t(dict, "countdown_live") : countdown}
+              </a>
+
+              <button
+                className="btn btn--ghost"
+                onClick={() => onRescheduleClick(s)}
+              >
+                {t(dict, "session_default_title")}
+              </button>
+              <button
+                className="btn btn--ghost btn--danger"
+                onClick={() => onCancel(s)}
+              >
+                {t(dict, "countdown_ended")}
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// time window in which user can "join"
+const canJoin = (startAt, endAt, windowMins = 15) => {
+  const now = new Date();
+  const start = new Date(startAt);
+  const end = endAt
+    ? new Date(endAt)
+    : new Date(start.getTime() + 60 * 60 * 1000);
+  const early = new Date(start.getTime() - windowMins * 60 * 1000);
+  return now >= early && now <= end;
+};
+
 export default function CalendarPage() {
   const { user, checking } = useAuth();
   const router = useRouter();
+
+  // i18n: default EN, then update from URL (/ar/…)
+  const [dict, setDict] = useState(() => getDictionary("en", "calendar"));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isArabic = window.location.pathname.startsWith("/ar");
+    const locale = isArabic ? "ar" : "en";
+    setDict(getDictionary(locale, "calendar"));
+  }, []);
+
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState("month");
+  const [view, setView] = useState("week");
   const calRef = useRef(null);
 
   // Fetch sessions for a range
@@ -99,10 +248,10 @@ export default function CalendarPage() {
         );
         setEvents(toRbcEvents(sessions));
       } catch (e) {
-        setError(e?.response?.data?.error || "Failed to load sessions");
+        setError(e?.response?.data?.error || t(dict, "error_failed"));
       }
     })();
-  }, [currentDate, view, fetchEvents]);
+  }, [currentDate, view, fetchEvents, checking, user, dict]);
 
   // Handle RBC's range notifications
   const handleRangeChange = useCallback(
@@ -127,10 +276,10 @@ export default function CalendarPage() {
         );
         setEvents(toRbcEvents(sessions));
       } catch (e) {
-        setError(e?.response?.data?.error || "Failed to load sessions");
+        setError(e?.response?.data?.error || t(dict, "error_failed"));
       }
     },
-    [currentDate, view, fetchEvents]
+    [currentDate, view, fetchEvents, checking, user, dict]
   );
 
   // Premium event styling with gradients and shadows
@@ -157,17 +306,20 @@ export default function CalendarPage() {
     return { style, className: isCanceled ? "ev--canceled" : "ev--scheduled" };
   }, []);
 
-  // Custom event component with elegant icon
-  const EventComp = useCallback(({ event }) => {
+  // Custom event component with elegant icon (uses translated default title)
+  const EventComp = ({ event }) => {
     return (
       <div className="ev-pill">
         <span className="ev-icon">●</span>
-        <span className="ev-title">{event.title}</span>
+        <span className="ev-title">
+          {event.title || t(dict, "session_default_title")}
+        </span>
       </div>
     );
-  }, []);
+  };
 
-  // Click → join link
+  const components = useMemo(() => ({ event: EventComp }), [dict]);
+
   // Click → go to session detail page
   const onSelectEvent = useCallback(
     (event) => {
@@ -183,40 +335,38 @@ export default function CalendarPage() {
     setCurrentDate(date);
   };
 
-  const components = useMemo(() => ({ event: EventComp }), [EventComp]);
-
   // Stats calculation
   const scheduledCount = events.filter((e) => e.status === "scheduled").length;
   const canceledCount = events.filter((e) => e.status === "canceled").length;
   const currentMonthYear = format(currentDate, "MMMM yyyy");
 
   if (checking)
-    return <div className="calendar-premium-container">Loading…</div>;
+    return (
+      <div className="calendar-premium-container">{t(dict, "loading")}</div>
+    );
   if (!user)
-    return <div className="calendar-premium-container">Not authenticated</div>;
+    return (
+      <div className="calendar-premium-container">{t(dict, "not_auth")}</div>
+    );
 
   return (
     <div className="calendar-premium-container">
       {/* Animated gradient background */}
       <div className="calendar-bg-gradient"></div>
+
       {/* Header Section */}
       <div className="calendar-header">
         <div className="calendar-header-content">
           <h1 className="calendar-title">
             <span className="calendar-icon">📅</span>
-            My Schedule
+            {t(dict, "title")}
           </h1>
-          <p className="calendar-subtitle">
-            Manage your upcoming sessions and meetings
-          </p>
+          <p className="calendar-subtitle">{t(dict, "subtitle")}</p>
         </div>
       </div>
 
       {events.length === 0 && (
-        <p className="calendar-empty">
-          No sessions in this date range yet. Once you book a session, it will
-          appear here on the calendar.
-        </p>
+        <p className="calendar-empty">{t(dict, "empty")}</p>
       )}
       {error && (
         <div className="calendar-error-banner">
@@ -224,13 +374,14 @@ export default function CalendarPage() {
           <span>{error}</span>
         </div>
       )}
+
       <div className="calendar-two-pane">
         <div className="calendar-two-pane__wrap">
           {/* Left: Mini Calendar Sidebar */}
           <div className="calendar-two-pane__left">
             <div className="mini-cal-wrapper">
               <div className="mini-cal-header">
-                <h3 className="mini-cal-title">Quick Navigation</h3>
+                <h3 className="mini-cal-title">{t(dict, "quick_nav")}</h3>
                 <div className="mini-cal-month">{currentMonthYear}</div>
               </div>
 
@@ -246,11 +397,15 @@ export default function CalendarPage() {
               <div className="mini-legend">
                 <div className="legend-item">
                   <span className="legend-dot legend-dot--scheduled"></span>
-                  <span className="legend-text">Scheduled</span>
+                  <span className="legend-text">
+                    {t(dict, "legend_scheduled")}
+                  </span>
                 </div>
                 <div className="legend-item">
                   <span className="legend-dot legend-dot--canceled"></span>
-                  <span className="legend-text">Canceled</span>
+                  <span className="legend-text">
+                    {t(dict, "legend_canceled")}
+                  </span>
                 </div>
               </div>
 
@@ -258,12 +413,12 @@ export default function CalendarPage() {
               <div className="mini-stats-card">
                 <div className="stat-item">
                   <div className="stat-value">{scheduledCount}</div>
-                  <div className="stat-label">Upcoming</div>
+                  <div className="stat-label">{t(dict, "stats_upcoming")}</div>
                 </div>
                 <div className="stat-divider"></div>
                 <div className="stat-item">
                   <div className="stat-value">{canceledCount}</div>
-                  <div className="stat-label">Canceled</div>
+                  <div className="stat-label">{t(dict, "stats_canceled")}</div>
                 </div>
               </div>
             </div>
@@ -286,7 +441,7 @@ export default function CalendarPage() {
               components={components}
               eventPropGetter={eventPropGetter}
               views={["month", "week", "day", "agenda"]}
-              defaultView="month"
+              defaultView="week"
               drilldownView="day"
               popup
               step={30}

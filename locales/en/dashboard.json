@@ -1,0 +1,75 @@
+{
+  "status_loading": "Loading…",
+  "status_failed": "Failed to load dashboard",
+  "status_not_auth": "Not authenticated",
+
+  "title": "Dashboard",
+  "subtitle": "Welcome back, {name}",
+
+  "kpi_upcoming": "Upcoming",
+  "kpi_completed": "Completed",
+  "kpi_total": "Total",
+
+  "warning_action_needed": "Action needed",
+  "warning_out_of_credits_title": "You're out of session credits",
+  "warning_out_of_credits_body": "Purchase a package to book your next session.",
+  "warning_browse_packages": "Browse packages",
+
+  "plan_badge": "Your plan",
+  "plan_no_active": "No active packages yet.",
+  "plan_no_active_body": "Start by choosing a package that fits your goals.",
+  "plan_browse_packages": "Browse packages",
+  "plan_default_title": "Your plan",
+  "plan_flexible_duration": "Flexible duration",
+  "plan_expires_label": "Expires",
+  "plan_progress_label": "{remaining} of {total} sessions remaining",
+
+  "actions_two": "2 required actions",
+  "actions_one": "1 required action",
+
+  "onboarding_view": "View onboarding",
+  "onboarding_complete": "Complete onboarding form",
+  "assessment_view": "View assessment",
+  "assessment_take": "Take written assessment",
+  "view_all_plans": "View all plans",
+
+  "teaching_badge": "Teaching",
+  "teaching_title": "Next session to teach",
+  "teaching_none": "No upcoming teaching sessions.",
+  "teaching_view_calendar": "View calendar",
+
+  "upcoming_title": "Upcoming sessions",
+  "upcoming_open_calendar": "Open calendar",
+  "upcoming_none": "No upcoming sessions.",
+
+  "past_title": "Past sessions",
+  "past_view_all": "View all",
+  "past_none": "No past sessions.",
+
+  "countdown_starts_in": "Starts in",
+  "countdown_live": "Live",
+  "countdown_ended": "Ended",
+
+  "session_title_default": "Session",
+
+  "session_join_classroom": "Join classroom",
+  "session_join_tooltip_early": "Classroom opens shortly before start time",
+  "session_join_soon": "Classroom soon",
+  "session_external_link": "External link",
+  "session_reschedule": "Reschedule",
+  "session_cancel": "Cancel",
+  "session_cancel_title": "Cancel this session?",
+  "session_view_details": "View details",
+  "session_edit_feedback": "Edit feedback",
+  "session_give_feedback": "Give feedback",
+  "session_view_feedback": "View feedback",
+
+  "modal_reschedule_title": "Reschedule session",
+  "modal_start_time": "Start time",
+  "modal_end_time": "End time",
+  "modal_cancel": "Cancel",
+  "modal_save_changes": "Save changes",
+
+  "error_cancel_failed": "Failed to cancel",
+  "error_reschedule_failed": "Failed to reschedule"
+}

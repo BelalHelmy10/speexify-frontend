@@ -1024,3 +1024,20 @@
   color: $text-secondary;
   font-size: 0.9rem;
 }
+
+/* RTL FIXES FOR CALENDAR TOOLBAR & BUTTON ORDER */
+[dir="rtl"] .calendar-premium-container {
+  // keep the rest of the layout RTL…
+  direction: rtl;
+}
+
+/* …but force the toolbar + button groups to behave LTR */
+[dir="rtl"] .calendar-premium-container .rbc-toolbar,
+[dir="rtl"] .calendar-premium-container .rbc-toolbar .rbc-btn-group {
+  direction: ltr;
+}
+
+/* keep the label nicely centered in RTL too */
+[dir="rtl"] .calendar-premium-container .rbc-toolbar .rbc-toolbar-label {
+  text-align: center;
+}

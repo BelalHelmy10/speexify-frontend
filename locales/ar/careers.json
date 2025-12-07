@@ -1,0 +1,47 @@
+{
+  "hero_badge": "العمل في Speexify",
+  "hero_title_main": "ساعد الناس على التحدث",
+  "hero_title_accent": " بثقة في كل مكان",
+  "hero_subtitle": "نحن فريق يعمل عن بُعد ونبني برامج تدريب على اللغة والتواصل تعطي نتائج حقيقية — للمتعلمين وللشركات التي تعتمد عليهم. انضم إلينا لصنع تأثير حقيقي، لا مجرد ميزات.",
+  "hero_cta_primary": "عرض الوظائف المتاحة",
+  "hero_cta_secondary": "تعرّف على Speexify",
+
+  "values_remote_title": "العمل عن بُعد أولًا",
+  "values_remote_body": "اعمل من أي مكان. ثقافة عمل متزامن/غير متزامن عبر المناطق الزمنية.",
+  "values_learning_title": "ميزانية تعلّم",
+  "values_learning_body": "لكل فرد في الفريق ميزانية للدورات والكتب والمؤتمرات.",
+  "values_wellbeing_title": "الراحة والرفاهية",
+  "values_wellbeing_body": "إجازات مرنة، وإجازات محلية، وإجازات عائلية سخية.",
+  "values_inclusive_title": "ثقافة شاملة",
+  "values_inclusive_body": "نحتضن وجهات النظر المتنوعة لصنع حلول أفضل.",
+
+  "roles_heading": "الوظائف المتاحة",
+  "roles_loading": "جارٍ تحميل الوظائف…",
+  "roles_count_single": "فرصة عمل واحدة متاحة",
+  "roles_count_multi": "{count} فرص عمل متاحة",
+
+  "saved_label": "المحفوظة:",
+  "search_placeholder": "ابحث حسب المسمى، الكلمات المفتاحية، التقنية…",
+
+  "filter_department_label": "تصفية حسب القسم",
+  "filter_location_label": "تصفية حسب الموقع",
+  "filter_type_label": "تصفية حسب النوع",
+  "filter_department_all": "كل الأقسام",
+  "filter_location_all": "كل المواقع",
+  "filter_type_all": "كل الأنواع",
+
+  "empty_text": "لا توجد نتائج مطابقة. جرّب إزالة عوامل التصفية أو تقليل كلمات البحث.",
+
+  "card_view_details": "عرض التفاصيل",
+  "card_apply": "قدِّم الآن",
+
+  "connect_title": "لا ترى الوظيفة المناسبة؟",
+  "connect_body": "نحب التعرّف على صنّاع التغيير الفضوليين والطيبين. أخبرنا كيف يمكن أن تساهم في مهمتنا.",
+  "connect_cta": "تواصل معنا",
+
+  "modal_do_title": "مسؤولياتك",
+  "modal_bring_title": "ما الذي ستقدّمه",
+  "modal_benefits_title": "المزايا",
+  "modal_close": "إغلاق",
+  "modal_apply": "قدِّم الآن"
+}

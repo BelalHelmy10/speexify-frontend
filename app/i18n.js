@@ -29,6 +29,15 @@ import arLogin from "@/locales/ar/login.json";
 import enForgotPassword from "@/locales/en/forgot-password.json";
 import arForgotPassword from "@/locales/ar/forgot-password.json";
 
+import enCareers from "@/locales/en/careers.json";
+import arCareers from "@/locales/ar/careers.json";
+
+import enDashboard from "@/locales/en/dashboard.json";
+import arDashboard from "@/locales/ar/dashboard.json";
+
+import enCalendar from "@/locales/en/calendar.json";
+import arCalendar from "@/locales/ar/calendar.json";
+
 const dictionaries = {
   en: {
     home: enHome,
@@ -41,6 +50,9 @@ const dictionaries = {
     register: enRegister,
     login: enLogin,
     forgotPassword: enForgotPassword,
+    careers: enCareers,
+    dashboard: enDashboard,
+    calendar: enCalendar,
   },
   ar: {
     home: arHome,
@@ -53,6 +65,9 @@ const dictionaries = {
     register: arRegister,
     login: arLogin,
     forgotPassword: arForgotPassword,
+    careers: arCareers,
+    dashboard: arDashboard,
+    calendar: arCalendar,
   },
 };
 

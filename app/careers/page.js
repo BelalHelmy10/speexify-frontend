@@ -3,8 +3,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { getDictionary, t } from "@/app/i18n";
 
-export default function Careers() {
+function Careers({ dict }) {
   const [jobs, setJobs] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +18,7 @@ export default function Careers() {
   });
   const [activeJob, setActiveJob] = useState(null);
   const [saved, setSaved] = useState(() => {
+    if (typeof window === "undefined") return new Set();
     try {
       return new Set(
         JSON.parse(localStorage.getItem("speexify_saved_jobs") || "[]")
@@ -46,6 +49,7 @@ export default function Careers() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     localStorage.setItem(
       "speexify_saved_jobs",
       JSON.stringify(Array.from(saved))
@@ -131,29 +135,24 @@ Thanks!`
           <div className="careers__hero-copy">
             <div className="careers__badge">
               <span className="careers__badge-icon">🚀</span>
-              <span>Careers at Speexify</span>
+              <span>{t(dict, "hero_badge")}</span>
             </div>
 
             <h1 className="careers__headline">
-              Help people speak with
+              {t(dict, "hero_title_main")}
               <span className="careers__headline-accent">
-                {" "}
-                confidence, everywhere
+                {t(dict, "hero_title_accent")}
               </span>
             </h1>
 
-            <p className="careers__subtitle">
-              We're a remote-first team building language & communication
-              training that actually works—for learners and for the businesses
-              that rely on them. Join us to ship impact, not just features.
-            </p>
+            <p className="careers__subtitle">{t(dict, "hero_subtitle")}</p>
 
             <div className="careers-cta-row">
               <a
                 href="#open-roles"
                 className="careers-btn careers-btn--primary careers-btn--lg"
               >
-                <span>See open roles</span>
+                <span>{t(dict, "hero_cta_primary")}</span>
                 <svg
                   className="careers-btn__arrow"
                   width="16"
@@ -174,7 +173,7 @@ Thanks!`
                 href="/about"
                 className="careers-btn careers-btn--outline careers-btn--lg"
               >
-                Learn about Speexify
+                {t(dict, "hero_cta_secondary")}
               </Link>
             </div>
           </div>
@@ -193,27 +192,23 @@ Thanks!`
         <div className="careers__values-grid">
           <div className="careers__value">
             <div className="careers__value-icon">🌍</div>
-            <h3>Remote-first</h3>
-            <p>Work from anywhere. Async-friendly culture across time zones.</p>
+            <h3>{t(dict, "values_remote_title")}</h3>
+            <p>{t(dict, "values_remote_body")}</p>
           </div>
           <div className="careers__value">
             <div className="careers__value-icon">📚</div>
-            <h3>Learning stipend</h3>
-            <p>
-              Each teammate gets a budget for courses, books, and conferences.
-            </p>
+            <h3>{t(dict, "values_learning_title")}</h3>
+            <p>{t(dict, "values_learning_body")}</p>
           </div>
           <div className="careers__value">
             <div className="careers__value-icon">🏖️</div>
-            <h3>Wellbeing & PTO</h3>
-            <p>
-              Flexible time off, local holidays, and generous parental leave.
-            </p>
+            <h3>{t(dict, "values_wellbeing_title")}</h3>
+            <p>{t(dict, "values_wellbeing_body")}</p>
           </div>
           <div className="careers__value">
             <div className="careers__value-icon">🤝</div>
-            <h3>Inclusive culture</h3>
-            <p>We embrace diverse perspectives to create better solutions.</p>
+            <h3>{t(dict, "values_inclusive_title")}</h3>
+            <p>{t(dict, "values_inclusive_body")}</p>
           </div>
         </div>
       </section>
@@ -222,13 +217,13 @@ Thanks!`
       <section id="open-roles" className="careers__roles">
         <div className="careers__roles-head">
           <div>
-            <h2>Open roles</h2>
+            <h2>{t(dict, "roles_heading")}</h2>
             <p className="careers__roles-sub">
               {loading
-                ? "Loading roles…"
-                : `${filtered.length} role${
-                    filtered.length === 1 ? "" : "s"
-                  } available`}
+                ? t(dict, "roles_loading")
+                : filtered.length === 1
+                ? t(dict, "roles_count_single", { count: filtered.length })
+                : t(dict, "roles_count_multi", { count: filtered.length })}
             </p>
           </div>
 
@@ -245,7 +240,7 @@ Thanks!`
                 fill="currentColor"
               />
             </svg>
-            <span>Saved:</span>
+            <span>{t(dict, "saved_label")}</span>
             <span className="careers__saved-count">{saved.size}</span>
           </div>
         </div>
@@ -269,11 +264,11 @@ Thanks!`
             </svg>
             <input
               type="search"
-              placeholder="Search by title, keyword, tech…"
+              placeholder={t(dict, "search_placeholder")}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               className="careers__search"
-              aria-label="Search jobs"
+              aria-label={t(dict, "search_placeholder")}
             />
           </div>
 
@@ -283,12 +278,12 @@ Thanks!`
               onChange={(e) =>
                 setFilters((f) => ({ ...f, department: e.target.value }))
               }
-              aria-label="Filter by department"
+              aria-label={t(dict, "filter_department_label")}
               className="careers__filter"
             >
               {departments.map((d) => (
                 <option key={d} value={d}>
-                  {d === "All" ? "All departments" : d}
+                  {d === "All" ? t(dict, "filter_department_all") : d}
                 </option>
               ))}
             </select>
@@ -297,12 +292,12 @@ Thanks!`
               onChange={(e) =>
                 setFilters((f) => ({ ...f, location: e.target.value }))
               }
-              aria-label="Filter by location"
+              aria-label={t(dict, "filter_location_label")}
               className="careers__filter"
             >
               {locations.map((l) => (
                 <option key={l} value={l}>
-                  {l === "All" ? "All locations" : l}
+                  {l === "All" ? t(dict, "filter_location_all") : l}
                 </option>
               ))}
             </select>
@@ -311,12 +306,12 @@ Thanks!`
               onChange={(e) =>
                 setFilters((f) => ({ ...f, type: e.target.value }))
               }
-              aria-label="Filter by type"
+              aria-label={t(dict, "filter_type_label")}
               className="careers__filter"
             >
-              {types.map((t) => (
-                <option key={t} value={t}>
-                  {t === "All" ? "All types" : t}
+              {types.map((tOpt) => (
+                <option key={tOpt} value={tOpt}>
+                  {tOpt === "All" ? t(dict, "filter_type_all") : tOpt}
                 </option>
               ))}
             </select>
@@ -346,9 +341,7 @@ Thanks!`
                   strokeLinecap="round"
                 />
               </svg>
-              <p>
-                No matches. Try clearing filters or searching for fewer words.
-              </p>
+              <p>{t(dict, "empty_text")}</p>
             </div>
           )}
 
@@ -393,13 +386,13 @@ Thanks!`
                     className="careers-btn careers-btn--secondary careers-btn--md"
                     onClick={() => setActiveJob(job)}
                   >
-                    View details
+                    {t(dict, "card_view_details")}
                   </button>
                   <button
                     className="careers-btn careers-btn--primary careers-btn--md"
                     onClick={() => apply(job)}
                   >
-                    <span>Apply</span>
+                    <span>{t(dict, "card_apply")}</span>
                     <svg
                       className="careers-btn__arrow"
                       width="16"
@@ -435,17 +428,14 @@ Thanks!`
 
         <div className="careers__connect-inner">
           <div className="careers__connect-content">
-            <h2>Don't see the right role?</h2>
-            <p>
-              We love meeting curious, kind builders. Tell us how you can help
-              our mission.
-            </p>
+            <h2>{t(dict, "connect_title")}</h2>
+            <p>{t(dict, "connect_body")}</p>
           </div>
           <a
             href="mailto:careers@speexify.com"
             className="careers-btn careers-btn--ghost careers-btn--lg"
           >
-            Connect with us
+            {t(dict, "connect_cta")}
           </a>
         </div>
       </section>
@@ -456,13 +446,14 @@ Thanks!`
           job={activeJob}
           onClose={() => setActiveJob(null)}
           onApply={apply}
+          dict={dict}
         />
       )}
     </main>
   );
 }
 
-function JobModal({ job, onClose, onApply }) {
+function JobModal({ job, onClose, onApply, dict }) {
   useEffect(() => {
     const onEsc = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onEsc);
@@ -481,7 +472,7 @@ function JobModal({ job, onClose, onApply }) {
         <button
           className="careers-modal__close"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t(dict, "modal_close")}
         >
           <svg
             width="24"
@@ -511,7 +502,7 @@ function JobModal({ job, onClose, onApply }) {
         <div className="careers-modal__content">
           {job.description && (
             <>
-              <h4>What you'll do</h4>
+              <h4>{t(dict, "modal_do_title")}</h4>
               <ul>
                 {job.description.map((d, i) => (
                   <li key={i}>{d}</li>
@@ -522,7 +513,7 @@ function JobModal({ job, onClose, onApply }) {
 
           {job.requirements && (
             <>
-              <h4>What you'll bring</h4>
+              <h4>{t(dict, "modal_bring_title")}</h4>
               <ul>
                 {job.requirements.map((d, i) => (
                   <li key={i}>{d}</li>
@@ -533,7 +524,7 @@ function JobModal({ job, onClose, onApply }) {
 
           {job.benefits && (
             <>
-              <h4>Benefits</h4>
+              <h4>{t(dict, "modal_benefits_title")}</h4>
               <ul>
                 {job.benefits.map((d, i) => (
                   <li key={i}>{d}</li>
@@ -548,13 +539,13 @@ function JobModal({ job, onClose, onApply }) {
             className="careers-btn careers-btn--secondary careers-btn--md"
             onClick={onClose}
           >
-            Close
+            {t(dict, "modal_close")}
           </button>
           <button
             className="careers-btn careers-btn--primary careers-btn--md"
             onClick={() => onApply(job)}
           >
-            <span>Apply</span>
+            <span>{t(dict, "modal_apply")}</span>
             <svg
               className="careers-btn__arrow"
               width="16"
@@ -575,4 +566,12 @@ function JobModal({ job, onClose, onApply }) {
       </div>
     </div>
   );
+}
+
+export default function CareersPage() {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "careers");
+
+  return <Careers dict={dict} />;
 }
