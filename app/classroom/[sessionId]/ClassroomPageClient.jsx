@@ -13,17 +13,20 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
 
   // Add class to body when classroom is active (to hide site header/footer)
   useEffect(() => {
-    if (status === "ok" && session) {
+    if (status === "ok" && session && typeof document !== "undefined") {
       document.body.classList.add("classroom-active");
       document.documentElement.classList.add("classroom-active");
     }
 
     return () => {
-      document.body.classList.remove("classroom-active");
-      document.documentElement.classList.remove("classroom-active");
+      if (typeof document !== "undefined") {
+        document.body.classList.remove("classroom-active");
+        document.documentElement.classList.remove("classroom-active");
+      }
     };
   }, [status, session]);
 
+  // Load session details from API
   useEffect(() => {
     if (!sessionId) return;
 
@@ -33,13 +36,23 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
       try {
         setStatus("loading");
         setError("");
+
         const { data } = await api.get(`/sessions/${sessionId}`);
         if (cancelled) return;
-        setSession(data?.session || null);
-        setStatus("ok");
+
+        const loadedSession = data?.session || null;
+        setSession(loadedSession);
+
+        if (loadedSession) {
+          setStatus("ok");
+        } else {
+          setStatus("error");
+          setError(`Session #${sessionId} not found.`);
+        }
       } catch (err) {
         console.error("Failed to load session for classroom", err);
         if (cancelled) return;
+
         setError(
           err?.response?.data?.error || "Failed to load session for classroom"
         );

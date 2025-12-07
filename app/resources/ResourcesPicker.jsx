@@ -5,7 +5,9 @@ import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { buildResourcePickerIndex } from "@/lib/resourcePickerIndex";
 
-// Choose the best URL for a resource
+/* -----------------------------------------------------------
+   Helper: Choose the primary URL for a resource
+----------------------------------------------------------- */
 function getPrimaryUrl(resource) {
   if (!resource) return null;
   if (resource.googleSlidesUrl) return resource.googleSlidesUrl;
@@ -15,191 +17,198 @@ function getPrimaryUrl(resource) {
   return null;
 }
 
-// Find a unit (and its context) by ID inside the tree
+/* -----------------------------------------------------------
+   Helper: Find a unit (and its context) inside the tracks tree
+----------------------------------------------------------- */
 function findUnitWithContext(tracks, unitId) {
+  if (!unitId) return null;
+
   for (const track of tracks || []) {
     for (const level of track.levels || []) {
       for (const subLevel of level.subLevels || []) {
         for (const unit of subLevel.units || []) {
           if (unit._id === unitId) {
-            const bookLevel = unit.bookLevel || null;
-            const book = bookLevel?.book || null;
-            return { track, level, subLevel, unit, bookLevel, book };
+            return {
+              unit,
+              track,
+              level,
+              subLevel,
+            };
           }
         }
       }
     }
   }
-  return {
-    track: null,
-    level: null,
-    subLevel: null,
-    unit: null,
-    bookLevel: null,
-    book: null,
-  };
+
+  return null;
 }
 
-export default function ResourcesPicker({ tracks = [] }) {
-  // Shared index builder used by both resources page & classroom
+/* -----------------------------------------------------------
+   MAIN COMPONENT
+----------------------------------------------------------- */
+export default function ResourcesPicker({ tracks }) {
+  // Build the picker index (shared with classroom)
   const {
-    trackOptions: baseTrackOptions,
+    trackOptions,
     booksByTrackId,
     bookLevelsByBookId,
     unitOptionsByBookLevelId,
-  } = useMemo(() => buildResourcePickerIndex(tracks), [tracks]);
+    resourcesByUnitId,
+  } = useMemo(() => buildResourcePickerIndex(tracks || []), [tracks]);
 
-  // Resources page wants the order prefix in the label (e.g. "1) General English")
-  const trackOptions = useMemo(
-    () =>
-      (baseTrackOptions || []).map((t) => ({
-        value: t.value,
-        label: typeof t.order === "number" ? `${t.order}) ${t.label}` : t.label,
-      })),
-    [baseTrackOptions]
-  );
-
-  // ── Selection state ────────────────────────────────────────
-  const [selectedTrackId, setSelectedTrackId] = useState(
-    trackOptions[0]?.value || ""
-  );
-  const [selectedBookId, setSelectedBookId] = useState("");
-  const [selectedBookLevelId, setSelectedBookLevelId] = useState("");
-  const [selectedUnitId, setSelectedUnitId] = useState("");
+  // Selection state
+  const [trackId, setTrackId] = useState("");
+  const [bookId, setBookId] = useState("");
+  const [bookLevelId, setBookLevelId] = useState("");
+  const [unitId, setUnitId] = useState("");
   const [selectedResourceId, setSelectedResourceId] = useState("");
 
-  const bookOptions = selectedTrackId
-    ? booksByTrackId[selectedTrackId] || []
+  // Options derived from current selections
+  const bookOptions = trackId ? booksByTrackId[trackId] || [] : [];
+  const bookLevelOptions = bookId ? bookLevelsByBookId[bookId] || [] : [];
+  const unitOptions = bookLevelId
+    ? unitOptionsByBookLevelId[bookLevelId] || []
     : [];
+  const resourceOptions = unitId ? resourcesByUnitId[unitId] || [] : [];
 
-  const bookLevelOptions = selectedBookId
-    ? bookLevelsByBookId[selectedBookId] || []
-    : [];
+  /* ---------------------------------------------------------
+     Cascading defaults: track → book → level → unit → resource
+  --------------------------------------------------------- */
 
-  const unitOptions = selectedBookLevelId
-    ? unitOptionsByBookLevelId[selectedBookLevelId] || []
-    : [];
-
-  // Keep track selection valid when options change
+  // When tracks/index change, pick the first track
   useEffect(() => {
     if (!trackOptions.length) {
-      setSelectedTrackId("");
+      setTrackId("");
       return;
     }
-    setSelectedTrackId((prev) => {
-      const stillExists = trackOptions.some((t) => t.value === prev);
-      return stillExists ? prev : trackOptions[0].value;
-    });
+
+    setTrackId((prev) =>
+      trackOptions.some((t) => t.value === prev) ? prev : trackOptions[0].value
+    );
   }, [trackOptions]);
 
-  // Track → Book
+  // When track changes, choose first book for that track
   useEffect(() => {
-    const booksForTrack = selectedTrackId
-      ? booksByTrackId[selectedTrackId] || []
-      : [];
-
-    if (!booksForTrack.length) {
-      setSelectedBookId("");
-      setSelectedBookLevelId("");
-      setSelectedUnitId("");
+    const list = booksByTrackId[trackId] || [];
+    if (!list.length) {
+      setBookId("");
+      setBookLevelId("");
+      setUnitId("");
       setSelectedResourceId("");
       return;
     }
 
-    setSelectedBookId((prev) => {
-      const stillExists = booksForTrack.some((b) => b.value === prev);
-      return stillExists ? prev : booksForTrack[0].value;
-    });
-  }, [selectedTrackId, booksByTrackId]);
+    setBookId((prev) =>
+      list.some((b) => b.value === prev) ? prev : list[0].value
+    );
+  }, [trackId, booksByTrackId]);
 
-  // Book → Book level
+  // When book changes, choose first book level
   useEffect(() => {
-    const levelsForBook = selectedBookId
-      ? bookLevelsByBookId[selectedBookId] || []
-      : [];
-
-    if (!levelsForBook.length) {
-      setSelectedBookLevelId("");
-      setSelectedUnitId("");
+    const list = bookLevelsByBookId[bookId] || [];
+    if (!list.length) {
+      setBookLevelId("");
+      setUnitId("");
       setSelectedResourceId("");
       return;
     }
 
-    setSelectedBookLevelId((prev) => {
-      const stillExists = levelsForBook.some((l) => l.value === prev);
-      return stillExists ? prev : levelsForBook[0].value;
-    });
-  }, [selectedBookId, bookLevelsByBookId]);
+    setBookLevelId((prev) =>
+      list.some((l) => l.value === prev) ? prev : list[0].value
+    );
+  }, [bookId, bookLevelsByBookId]);
 
-  // Book level → Unit
+  // When book level changes, choose first unit
   useEffect(() => {
-    if (!unitOptions.length) {
-      setSelectedUnitId("");
+    const list = unitOptionsByBookLevelId[bookLevelId] || [];
+    if (!list.length) {
+      setUnitId("");
       setSelectedResourceId("");
       return;
     }
-    setSelectedUnitId((prev) => {
-      const stillExists = unitOptions.some((u) => u.value === prev);
-      return stillExists ? prev : unitOptions[0].value;
-    });
-  }, [unitOptions]);
 
-  // Get unit + context for preview
-  const { track, level, subLevel, unit, bookLevel, book } = useMemo(
-    () =>
-      selectedUnitId
-        ? findUnitWithContext(tracks, selectedUnitId)
-        : {
-            track: null,
-            level: null,
-            subLevel: null,
-            unit: null,
-            bookLevel: null,
-            book: null,
-          },
-    [tracks, selectedUnitId]
-  );
+    setUnitId((prev) =>
+      list.some((u) => u.value === prev) ? prev : list[0].value
+    );
+  }, [bookLevelId, unitOptionsByBookLevelId]);
 
-  const resources = unit?.resources || [];
-
-  // Keep resource selection valid when resources change
+  // When unit changes, choose first resource
   useEffect(() => {
-    if (!resources.length) {
+    const list = resourcesByUnitId[unitId] || [];
+    if (!list.length) {
       setSelectedResourceId("");
       return;
     }
-    setSelectedResourceId((prev) => {
-      const stillExists = resources.some((r) => r._id === prev);
-      return stillExists ? prev : resources[0]._id;
-    });
-  }, [resources]);
 
+    setSelectedResourceId((prev) =>
+      list.some((r) => r._id === prev) ? prev : list[0]._id
+    );
+  }, [unitId, resourcesByUnitId]);
+
+  // Current selected resource
   const selectedResource =
-    resources.find((r) => r._id === selectedResourceId) || resources[0] || null;
+    resourceOptions.find((r) => r._id === selectedResourceId) ||
+    resourceOptions[0] ||
+    null;
 
-  const resourceUrl = getPrimaryUrl(selectedResource);
+  // Context for breadcrumbs (track, level, subLevel, unit)
+  const unitCtx = useMemo(
+    () => findUnitWithContext(tracks, unitId),
+    [tracks, unitId]
+  );
+  const currentUnit = unitCtx?.unit || null;
+  const currentTrack = unitCtx?.track || null;
+  const currentLevel = unitCtx?.level || null;
+  const currentSubLevel = unitCtx?.subLevel || null;
 
-  // ── UI ─────────────────────────────────────────────────────
+  const primaryUrl = getPrimaryUrl(selectedResource);
+
+  // Prep Room link – this MUST carry a real resourceId,
+  // otherwise the Prep page will show "Please choose a resource first"
+  const prepHref = selectedResource
+    ? {
+        pathname: "/resources/prep",
+        query: {
+          resourceId: selectedResource._id,
+          unitId: currentUnit?._id,
+        },
+      }
+    : null;
+
+  // Unit page link (adjust path if your route is different)
+  const unitHref =
+    currentUnit && currentUnit.slug
+      ? {
+          pathname: `/resources/units/${currentUnit.slug}`,
+        }
+      : null;
+
+  const hasResources = resourceOptions.length > 0;
+
+  /* ---------------------------------------------------------
+     RENDER
+  --------------------------------------------------------- */
+
   return (
     <div className="resources-layout">
-      {/* LEFT: picker card */}
+      {/* LEFT: Picker Card */}
       <section className="resources-picker">
         <div className="resources-picker__header">
-          <h2 className="resources-picker__title">Quick resource finder</h2>
+          <h2 className="resources-picker__title">Browse materials</h2>
           <p className="resources-picker__subtitle">
-            Pick a track, then a book/series, then the book level, unit, and
-            resource you want to use.
+            Choose a course, book, level, unit, then pick a resource to preview
+            and open in the prep room.
           </p>
         </div>
 
         <div className="resources-picker__grid">
-          {/* Track select */}
+          {/* Track */}
           <div className="resources-picker__field">
-            <label className="resources-picker__label">Track</label>
+            <label className="resources-picker__label">Course / Track</label>
             <div className="resources-picker__control">
               <select
-                value={selectedTrackId}
-                onChange={(e) => setSelectedTrackId(e.target.value)}
+                value={trackId}
+                onChange={(e) => setTrackId(e.target.value)}
               >
                 {trackOptions.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -208,23 +217,18 @@ export default function ResourcesPicker({ tracks = [] }) {
                 ))}
               </select>
             </div>
-            <p className="resources-picker__hint">
-              Choose the main path (e.g. General English, Business English).
-            </p>
           </div>
 
-          {/* Book / series select */}
+          {/* Book */}
           <div className="resources-picker__field">
             <label className="resources-picker__label">Book / Series</label>
             <div className="resources-picker__control">
               <select
-                value={selectedBookId}
-                onChange={(e) => setSelectedBookId(e.target.value)}
+                value={bookId}
+                onChange={(e) => setBookId(e.target.value)}
                 disabled={!bookOptions.length}
               >
-                {!bookOptions.length && (
-                  <option value="">No books for this track yet</option>
-                )}
+                {!bookOptions.length && <option>—</option>}
                 {bookOptions.map((b) => (
                   <option key={b.value} value={b.value}>
                     {b.label}
@@ -232,23 +236,18 @@ export default function ResourcesPicker({ tracks = [] }) {
                 ))}
               </select>
             </div>
-            <p className="resources-picker__hint">
-              Then choose the coursebook / series you&apos;re using.
-            </p>
           </div>
 
-          {/* Book level select */}
+          {/* Book Level */}
           <div className="resources-picker__field">
-            <label className="resources-picker__label">Book level</label>
+            <label className="resources-picker__label">Level</label>
             <div className="resources-picker__control">
               <select
-                value={selectedBookLevelId}
-                onChange={(e) => setSelectedBookLevelId(e.target.value)}
+                value={bookLevelId}
+                onChange={(e) => setBookLevelId(e.target.value)}
                 disabled={!bookLevelOptions.length}
               >
-                {!bookLevelOptions.length && (
-                  <option value="">No levels for this book yet</option>
-                )}
+                {!bookLevelOptions.length && <option>—</option>}
                 {bookLevelOptions.map((l) => (
                   <option key={l.value} value={l.value}>
                     {l.label}
@@ -256,23 +255,18 @@ export default function ResourcesPicker({ tracks = [] }) {
                 ))}
               </select>
             </div>
-            <p className="resources-picker__hint">
-              Then pick the specific level (e.g. Starter, A2, B2).
-            </p>
           </div>
 
-          {/* Unit select */}
+          {/* Unit */}
           <div className="resources-picker__field">
             <label className="resources-picker__label">Unit</label>
             <div className="resources-picker__control">
               <select
-                value={selectedUnitId}
-                onChange={(e) => setSelectedUnitId(e.target.value)}
+                value={unitId}
+                onChange={(e) => setUnitId(e.target.value)}
                 disabled={!unitOptions.length}
               >
-                {!unitOptions.length && (
-                  <option value="">No units for this level yet</option>
-                )}
+                {!unitOptions.length && <option>—</option>}
                 {unitOptions.map((u) => (
                   <option key={u.value} value={u.value}>
                     {u.label}
@@ -280,111 +274,92 @@ export default function ResourcesPicker({ tracks = [] }) {
                 ))}
               </select>
             </div>
-            <p className="resources-picker__hint">
-              Now pick the exact unit you&apos;re preparing.
-            </p>
           </div>
 
-          {/* Resource select */}
+          {/* Resources in this unit */}
           <div className="resources-picker__field resources-picker__field--full">
-            <label className="resources-picker__label">Resource</label>
+            <label className="resources-picker__label">Resources</label>
             <div className="resources-picker__control">
               <select
                 value={selectedResourceId}
                 onChange={(e) => setSelectedResourceId(e.target.value)}
-                disabled={!resources.length}
+                disabled={!resourceOptions.length}
               >
-                {!resources.length && (
-                  <option value="">No resources in this unit yet</option>
-                )}
-                {resources.map((r) => (
+                {!resourceOptions.length && <option>—</option>}
+                {resourceOptions.map((r) => (
                   <option key={r._id} value={r._id}>
-                    {r.title}
+                    {r.title || "Untitled resource"}
                   </option>
                 ))}
               </select>
             </div>
             <p className="resources-picker__hint">
-              Finally, choose the PDF, slides, or video you&apos;ll use.
+              Once you pick a resource, you can open it in the prep room or jump
+              to the unit page.
             </p>
           </div>
         </div>
       </section>
 
-      {/* RIGHT: preview card */}
+      {/* RIGHT: Preview Card */}
       <section className="resources-preview">
-        {!selectedUnitId ? (
-          <div className="resources-preview__card resources-preview__card--empty resources-preview__card--animated">
-            <h3>Choose a track, book, level & unit</h3>
+        {!selectedResource || !hasResources ? (
+          <div className="resources-preview__card resources-preview__card--empty">
+            <h3>No resource selected</h3>
             <p>
-              Once you pick a book level and unit, we&apos;ll show you the
-              resources available here.
-            </p>
-          </div>
-        ) : !resources.length ? (
-          <div className="resources-preview__card resources-preview__card--empty resources-preview__card--animated">
-            <h3>No resources yet</h3>
-            <p>
-              This unit doesn&apos;t have any resources configured in Sanity
-              right now.
+              Choose a track, book, level, and unit on the left, then select a
+              resource to see its details and open it in the prep room.
             </p>
           </div>
         ) : (
-          <div
-            key={selectedResource?._id || unit?._id}
-            className="resources-preview__card resources-preview__card--animated"
-          >
+          <div className="resources-preview__card resources-preview__card--animated">
+            {/* Breadcrumbs */}
             <div className="resources-preview__breadcrumbs">
-              {track && <span>{track.name}</span>}
-              {book && (
-                <>
-                  <span>•</span>
-                  <span>{book.title}</span>
-                </>
+              {currentTrack && <span>{currentTrack.name}</span>}
+              {currentUnit?.bookLevel?.book && <span>·</span>}
+              {currentUnit?.bookLevel?.book && (
+                <span>{currentUnit.bookLevel.book.title}</span>
               )}
-              {bookLevel && (
-                <>
-                  <span>•</span>
-                  <span>{bookLevel.title}</span>
-                </>
-              )}
-              {subLevel && (
-                <>
-                  <span>•</span>
-                  <span>
-                    {subLevel.code} – {subLevel.title}
-                  </span>
-                </>
-              )}
+              {currentLevel && <span>·</span>}
+              {currentLevel && <span>{currentLevel.name}</span>}
+              {currentSubLevel && <span>·</span>}
+              {currentSubLevel && <span>{currentSubLevel.title}</span>}
+              {currentUnit && <span>·</span>}
+              {currentUnit && <span>{currentUnit.title}</span>}
             </div>
 
+            {/* Title + description */}
             <h3 className="resources-preview__title">
-              {selectedResource?.title}
+              {selectedResource.title || "Untitled resource"}
             </h3>
 
-            {selectedResource?.description && (
+            {selectedResource.description && (
               <p className="resources-preview__description">
                 {selectedResource.description}
               </p>
             )}
 
+            {/* Meta chips */}
             <div className="resources-preview__meta">
-              {selectedResource?.kind && (
-                <span className="resources-chip">{selectedResource.kind}</span>
-              )}
-              {selectedResource?.cecrLevel && (
+              {selectedResource.kind && (
                 <span className="resources-chip resources-chip--primary">
+                  {selectedResource.kind}
+                </span>
+              )}
+              {selectedResource.cecrLevel && (
+                <span className="resources-chip resources-chip--success">
                   CEFR {selectedResource.cecrLevel}
                 </span>
               )}
-              {selectedResource?.sourceType && (
+              {selectedResource.sourceType && (
                 <span className="resources-chip">
-                  {selectedResource.sourceType}
+                  Source: {selectedResource.sourceType}
                 </span>
               )}
             </div>
 
-            {Array.isArray(selectedResource?.tags) &&
+            {/* Tags */}
+            {Array.isArray(selectedResource.tags) &&
               selectedResource.tags.length > 0 && (
                 <div className="resources-preview__tags">
                   {selectedResource.tags.map((tag) => (
@@ -395,48 +370,69 @@ export default function ResourcesPicker({ tracks = [] }) {
                 </div>
               )}
 
-            {selectedResource?.fileName && (
+            {/* File name */}
+            {selectedResource.fileName && (
               <p className="resources-preview__filename">
                 {selectedResource.fileName}
               </p>
             )}
 
+            {/* Actions */}
             <div className="resources-preview__actions">
-              {resourceUrl ? (
-                <a
-                  href={resourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              {/* Open in Prep Room */}
+              {prepHref ? (
+                <Link
+                  href={prepHref}
                   className="resources-button resources-button--primary"
                 >
-                  Open resource
+                  <span>🧑‍🏫 Open in Prep Room</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="resources-button resources-button--disabled"
+                  disabled
+                >
+                  🧑‍🏫 Choose a resource first
+                </button>
+              )}
+
+              {/* Open unit page */}
+              {unitHref ? (
+                <Link
+                  href={unitHref}
+                  className="resources-button resources-button--ghost"
+                >
+                  <span>📘 Open unit page</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="resources-button resources-button--disabled"
+                  disabled
+                >
+                  📘 Unit page unavailable
+                </button>
+              )}
+
+              {/* Open original file/link */}
+              {primaryUrl ? (
+                <a
+                  href={primaryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="resources-button resources-button--ghost"
+                >
+                  <span>🔗 Open original</span>
                 </a>
               ) : (
                 <button
                   type="button"
-                  disabled
                   className="resources-button resources-button--disabled"
+                  disabled
                 >
-                  No URL configured
+                  🔗 No direct link
                 </button>
-              )}
-
-              {selectedResource && (
-                <Link
-                  href={`/resources/prep?resourceId=${selectedResource._id}`}
-                  className="resources-button resources-button--ghost"
-                >
-                  Open in Prep Room
-                </Link>
-              )}
-
-              {unit?.slug && (
-                <Link
-                  href={`/resources/units/${unit.slug}`}
-                  className="resources-button resources-button--ghost"
-                >
-                  View unit page
-                </Link>
               )}
             </div>
           </div>

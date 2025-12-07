@@ -1,11 +1,12 @@
 // app/resources/prep/page.js
-import { sanityClient } from "@/lib/sanity";
 import Link from "next/link";
+import { sanityClient } from "@/lib/sanity";
 import PrepShell from "./PrepShell";
-import { getViewerInfo } from "@/lib/viewerHelpers"; // ✅ NEW
+import { getViewerInfo } from "@/lib/viewerHelpers";
 
 export const dynamic = "force-dynamic";
 
+// Load a single resource + its unit / track context
 const RESOURCE_WITH_CONTEXT_QUERY = `
 *[_type == "resource" && _id == $id][0]{
   _id,
@@ -15,6 +16,8 @@ const RESOURCE_WITH_CONTEXT_QUERY = `
   cecrLevel,
   tags,
   sourceType,
+  code,
+  order,
   "fileUrl": file.asset->url,
   "fileName": file.asset->originalFilename,
   externalUrl,
@@ -25,18 +28,24 @@ const RESOURCE_WITH_CONTEXT_QUERY = `
     _id,
     title,
     "slug": slug.current,
+    code,
+    order,
+    summary,
     subLevel->{
       _id,
       title,
       code,
+      order,
       level->{
         _id,
         name,
         code,
+        order,
         track->{
           _id,
           name,
-          code
+          code,
+          order
         }
       }
     }
@@ -44,35 +53,38 @@ const RESOURCE_WITH_CONTEXT_QUERY = `
 }
 `;
 
-async function getResource(resourceId) {
-  if (!resourceId) return null;
-  const resource = await sanityClient.fetch(RESOURCE_WITH_CONTEXT_QUERY, {
-    id: resourceId,
-  });
-  return resource || null;
+async function getResourceWithContext(id) {
+  if (!id) return null;
+  const data = await sanityClient.fetch(RESOURCE_WITH_CONTEXT_QUERY, { id });
+  return data || null;
 }
 
-// ─────────────────────────────────────────────────────────────
+export default async function PrepPage({ searchParams: searchParamsPromise }) {
+  // ⬅️ THIS is the important line: unwrap the Promise
+  const searchParams = await searchParamsPromise;
 
-export default async function PrepRoomPage({ searchParams }) {
-  // From query string: /resources/prep?resourceId=...
-  const resourceId = searchParams?.resourceId;
+  // Accept a few possible names, but Resources uses ?resourceId=
+  const resourceId =
+    searchParams?.resourceId ??
+    searchParams?.resource ??
+    searchParams?.id ??
+    null;
 
+  const unitIdFromQuery = searchParams?.unitId || null; // optional, just in case
+
+  // Visiting /resources/prep without selecting a resource
   if (!resourceId) {
     return (
-      <div className="resources-page">
-        <div className="resources-page__inner prep-page">
-          <div className="prep-empty-card">
-            <h1 className="prep-empty-card__title">No resource selected</h1>
-            <p className="prep-empty-card__text">
-              Open the Prep Room from the resources picker or a unit page to
-              load a specific resource here.
+      <div className="spx-resources-page">
+        <div className="spx-resources-page__inner">
+          <div className="spx-resources-empty-card">
+            <h1>No resource selected</h1>
+            <p>
+              Please choose a resource from the Resources page or a Unit page
+              before opening the Prep Room.
             </p>
-            <Link
-              href="/resources"
-              className="resources-button resources-button--primary"
-            >
-              ← Back to Resources
+            <Link href="/resources" className="resources-button">
+              ← Back to resources
             </Link>
           </div>
         </div>
@@ -80,23 +92,20 @@ export default async function PrepRoomPage({ searchParams }) {
     );
   }
 
-  const resource = await getResource(resourceId);
+  const resource = await getResourceWithContext(resourceId);
 
   if (!resource) {
     return (
-      <div className="resources-page">
-        <div className="resources-page__inner prep-page">
-          <div className="prep-empty-card">
-            <h1 className="prep-empty-card__title">Resource not found</h1>
-            <p className="prep-empty-card__text">
-              We couldn&apos;t find this resource. It might have been removed or
-              the link is incorrect.
+      <div className="spx-resources-page">
+        <div className="spx-resources-page__inner">
+          <div className="spx-resources-empty-card">
+            <h1>Resource not found</h1>
+            <p>
+              We couldn&apos;t find this resource. It may have been removed in
+              Sanity or the URL is incorrect.
             </p>
-            <Link
-              href="/resources"
-              className="resources-button resources-button--primary"
-            >
-              ← Back to Resources
+            <Link href="/resources" className="resources-button">
+              ← Back to resources
             </Link>
           </div>
         </div>
@@ -104,12 +113,20 @@ export default async function PrepRoomPage({ searchParams }) {
     );
   }
 
-  const viewer = getViewerInfo(resource); // ✅ now using shared helper
+  const viewer = getViewerInfo(resource);
 
   return (
-    <div className="resources-page">
-      <div className="resources-page__inner prep-page">
-        <PrepShell resource={resource} viewer={viewer} />
+    <div className="spx-resources-page spx-resources-page--prep">
+      <div className="spx-resources-page__inner">
+        <PrepShell
+          resource={resource}
+          viewer={viewer}
+          hideSidebar={false}
+          hideBreadcrumbs={false}
+          classroomChannel={null}
+          isScreenShareActive={false}
+          isTeacher={true}
+        />
       </div>
     </div>
   );

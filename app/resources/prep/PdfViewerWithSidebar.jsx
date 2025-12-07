@@ -1,258 +1,440 @@
 // app/resources/prep/PdfViewerWithSidebar.jsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 export default function PdfViewerWithSidebar({
   fileUrl,
   onFatalError,
-  children, // overlay from PrepShell will be rendered here
+  children, // overlay from PrepShell will be rendered over the page
   onContainerReady, // optional callback to expose the scroll container
-  hideControls = false,
-  hideSidebar = false,
+  hideControls = false, // hide bottom nav if desired
+  hideSidebar = false, // hide page list if desired
 }) {
-  const mainRef = useRef(null);
-  const pdfCanvasRef = useRef(null);
+  const mainRef = useRef(null); // scroll container
+  const pdfCanvasRef = useRef(null); // main PDF canvas
+  const pageWrapperRef = useRef(null); // wrapper for positioning overlay
 
   const [pdfjs, setPdfjs] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [zoom, setZoom] = useState(1.0);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Track the current pdf.js render task so we can cancel it
+  // Track current render task so we can cancel when switching page/zoom
   const renderTaskRef = useRef(null);
 
-  // Expose the scroll container to the parent (PrepShell) once mounted
-  useEffect(() => {
-    if (typeof onContainerReady === "function" && mainRef.current) {
-      const inner = mainRef.current.querySelector(".prep-pdf-main-inner");
-      if (inner) {
-        onContainerReady(inner);
-      }
+  // Expose the page wrapper (not scroll container) to parent for annotation positioning
+  const updateContainerRef = useCallback(() => {
+    if (typeof onContainerReady === "function" && pageWrapperRef.current) {
+      onContainerReady(pageWrapperRef.current);
     }
   }, [onContainerReady]);
 
-  // Load pdf.js + the PDF document
+  useEffect(() => {
+    updateContainerRef();
+  }, [updateContainerRef]);
+
+  // Load pdf.js lazily on the client
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
-      if (!fileUrl) {
-        setPdfDoc(null);
-        setNumPages(0);
-        setError("No PDF file URL provided.");
-        return;
-      }
-
-      setError(null);
-      setNumPages(0);
-      setPdfDoc(null);
-
+    async function loadPdfJs() {
       try {
-        // ✅ Use the legacy build so Webpack/Next doesn't pull in pdf.mjs
-        const rawModule = await import("pdfjs-dist/legacy/build/pdf");
-        const pdfjsModule = rawModule.default ?? rawModule;
+        const pdfjsLib = await import("pdfjs-dist/build/pdf");
 
-        // ✅ Configure worker – using CDN is fine
-        pdfjsModule.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsModule.version}/pdf.worker.min.js`;
+        // Try to set up the worker
+        try {
+          // Option 1: Use CDN worker (most reliable)
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+        } catch (workerErr) {
+          console.warn(
+            "Failed to set PDF.js worker, using main thread:",
+            workerErr
+          );
+          // Will fall back to main thread rendering
+        }
 
-        if (cancelled) return;
-        setPdfjs(pdfjsModule);
-
-        const loadingTask = pdfjsModule.getDocument(fileUrl);
-        const doc = await loadingTask.promise;
-        if (cancelled) return;
-
-        setPdfDoc(doc);
-        setNumPages(doc.numPages || 0);
-        setCurrentPage(1);
-      } catch (err) {
-        console.error("Failed to load PDF", err);
         if (!cancelled) {
-          setError("Couldn't load PDF file.");
-          if (onFatalError) onFatalError(err);
+          setPdfjs(pdfjsLib);
+        }
+      } catch (err) {
+        console.error("Failed to load pdf.js", err);
+        if (!cancelled) {
+          setError("Failed to load PDF engine.");
+          setLoading(false);
+          onFatalError?.(err);
         }
       }
     }
 
-    load();
+    loadPdfJs();
 
     return () => {
       cancelled = true;
     };
-  }, [fileUrl, onFatalError]);
+  }, [onFatalError]);
 
-  // Render current page (and re-render on resize)
+  // Load the PDF document whenever fileUrl or pdfjs changes
   useEffect(() => {
-    if (!pdfjs || !pdfDoc || !pdfCanvasRef.current || !mainRef.current) {
-      return;
+    if (!pdfjs || !fileUrl) return;
+
+    let cancelled = false;
+
+    async function loadDocument() {
+      setLoading(true);
+      setError(null);
+      setPdfDoc(null);
+      setNumPages(0);
+      setCurrentPage(1);
+
+      try {
+        // Configure loading options for better compatibility
+        const loadingTask = pdfjs.getDocument({
+          url: fileUrl,
+          // Disable range requests which can cause issues with some servers
+          disableRange: true,
+          // Disable streaming for better compatibility
+          disableStream: true,
+          // Allow credentials for authenticated requests
+          withCredentials: false,
+        });
+
+        const doc = await loadingTask.promise;
+        if (cancelled) {
+          try {
+            doc.destroy();
+          } catch (_) {}
+          return;
+        }
+
+        setPdfDoc(doc);
+        setNumPages(doc.numPages || 0);
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load PDF document:", err);
+        if (!cancelled) {
+          let msg = "Failed to load PDF file.";
+
+          // Provide more specific error messages
+          if (err.message?.includes("Missing PDF")) {
+            msg = "The PDF file could not be found or is not accessible.";
+          } else if (err.message?.includes("Invalid PDF")) {
+            msg = "This file does not appear to be a valid PDF.";
+          } else if (err.name === "MissingPDFException") {
+            msg = "The PDF file is missing or the URL is incorrect.";
+          } else if (
+            err.message?.includes("fetch") ||
+            err.message?.includes("network")
+          ) {
+            msg =
+              "Network error: Could not download the PDF. The file may be private or require authentication.";
+          }
+
+          setError(msg);
+          setLoading(false);
+          onFatalError?.(err);
+        }
+      }
     }
+
+    loadDocument();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pdfjs, fileUrl, onFatalError]);
+
+  // Render the current page whenever pdfDoc, currentPage, or zoom changes
+  useEffect(() => {
+    if (!pdfDoc || !pdfCanvasRef.current) return;
 
     let cancelled = false;
 
     async function renderPage() {
+      setLoading(true);
+      setError(null);
+
+      // Cancel any previous render
+      if (renderTaskRef.current) {
+        try {
+          renderTaskRef.current.cancel();
+        } catch (_) {}
+        renderTaskRef.current = null;
+      }
+
       try {
         const page = await pdfDoc.getPage(currentPage);
-        if (cancelled) return;
-
-        const container = mainRef.current;
-        const rect = container.getBoundingClientRect();
-
-        // Skip if container has no size yet
-        if (rect.width === 0 || rect.height === 0) return;
-
-        const unscaledViewport = page.getViewport({ scale: 1 });
-
-        // Calculate scale to fit width with some padding
-        const scaleWidth =
-          rect.width > 0 ? (rect.width * 0.95) / unscaledViewport.width : 1;
-
-        // In classroom mode, fit to width; allow vertical scrolling
-        const scale = scaleWidth;
-        const viewport = page.getViewport({ scale });
+        if (cancelled) {
+          return;
+        }
 
         const canvas = pdfCanvasRef.current;
-        const ctx = canvas.getContext("2d");
+        const context = canvas.getContext("2d");
 
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        const devicePixelRatio = window.devicePixelRatio || 1;
 
+        const viewport = page.getViewport({ scale: zoom });
+        const outputScale = devicePixelRatio;
+
+        canvas.width = viewport.width * outputScale;
+        canvas.height = viewport.height * outputScale;
+
+        // CSS size (so overlay & coordinates match visual size)
         canvas.style.width = `${viewport.width}px`;
         canvas.style.height = `${viewport.height}px`;
 
-        // 🔒 Cancel any in-flight render before starting a new one
-        if (renderTaskRef.current) {
-          try {
-            renderTaskRef.current.cancel();
-          } catch (e) {
-            // eslint-disable-next-line no-console
-            console.warn("Error cancelling previous render task", e);
-          }
-        }
+        // Scale drawing for high-DPI displays
+        context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+        context.clearRect(0, 0, viewport.width, viewport.height);
 
-        const renderTask = page.render({ canvasContext: ctx, viewport });
+        const renderContext = {
+          canvasContext: context,
+          viewport,
+        };
+
+        const renderTask = page.render(renderContext);
         renderTaskRef.current = renderTask;
 
         await renderTask.promise;
 
-        // Clear ref only if this is still the latest task
-        if (renderTaskRef.current === renderTask) {
-          renderTaskRef.current = null;
+        if (!cancelled) {
+          setLoading(false);
+          // Update container ref after render to ensure correct sizing
+          updateContainerRef();
         }
       } catch (err) {
-        if (!cancelled) {
-          console.error("Failed to render PDF page", err);
-          setError("Couldn't render this page.");
-          if (onFatalError) onFatalError(err);
-        }
+        if (cancelled) return;
+        // Ignore cancelled render errors
+        if (err.name === "RenderingCancelledException") return;
+
+        console.error("Failed to render PDF page:", err);
+        setError("Failed to render PDF page.");
+        setLoading(false);
+      } finally {
+        renderTaskRef.current = null;
       }
     }
 
     renderPage();
 
-    let observer;
-    if (typeof ResizeObserver !== "undefined" && mainRef.current) {
-      observer = new ResizeObserver(() => {
-        // Trigger a fresh render on resize
-        renderPage();
-      });
-      observer.observe(mainRef.current);
-    }
-
     return () => {
       cancelled = true;
-
-      if (observer) observer.disconnect();
-
-      // Cancel any ongoing render when effect cleans up
       if (renderTaskRef.current) {
         try {
           renderTaskRef.current.cancel();
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.warn("Error cancelling render task on cleanup", e);
-        } finally {
-          renderTaskRef.current = null;
-        }
+        } catch (_) {}
       }
     };
-  }, [pdfjs, pdfDoc, currentPage, onFatalError, hideControls]);
+  }, [pdfDoc, currentPage, zoom, updateContainerRef]);
 
-  function handlePageClick(pageNum) {
-    setCurrentPage(pageNum);
+  // Cleanup pdfDoc on unmount
+  useEffect(() => {
+    return () => {
+      if (pdfDoc) {
+        try {
+          pdfDoc.destroy();
+        } catch (_) {}
+      }
+    };
+  }, [pdfDoc]);
+
+  // ─────────────────────────────────────────────────────────────
+  // Controls: page navigation & zoom
+  // ─────────────────────────────────────────────────────────────
+
+  const canGoPrev = currentPage > 1;
+  const canGoNext = currentPage < numPages;
+
+  const MIN_ZOOM = 0.5;
+  const MAX_ZOOM = 3.0;
+  const ZOOM_STEP = 0.25;
+
+  function goPrevPage() {
+    if (!canGoPrev) return;
+    setCurrentPage((p) => Math.max(1, p - 1));
+  }
+
+  function goNextPage() {
+    if (!canGoNext) return;
+    setCurrentPage((p) => Math.min(numPages, p + 1));
+  }
+
+  function zoomOut() {
+    setZoom((z) => Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100));
+  }
+
+  function zoomIn() {
+    setZoom((z) => Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100));
+  }
+
+  function zoomFit() {
+    setZoom(1.0);
+  }
+
+  // When currentPage changes, scroll to top of viewer
+  useEffect(() => {
+    if (!mainRef.current) return;
+    mainRef.current.scrollTop = 0;
+  }, [currentPage]);
+
+  // ─────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────
+
+  if (!fileUrl) {
+    return (
+      <div className="prep-pdf-error">
+        No PDF file was provided for this resource.
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="prep-pdf-error">
+        <span className="prep-pdf-error__icon">⚠️</span>
+        <span className="prep-pdf-error__text">{error}</span>
+        <button
+          className="prep-pdf-error__retry"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
     <div className="prep-pdf-layout">
-      <div className="prep-pdf-main" ref={mainRef}>
-        <div className="prep-pdf-main-inner" style={{ position: "relative" }}>
-          {error ? (
-            <div className="prep-pdf-error">{error}</div>
-          ) : (
-            <>
-              <canvas ref={pdfCanvasRef} className="prep-pdf-canvas" />
-              {children}
+      {/* MAIN AREA */}
+      <div className="prep-pdf-main">
+        <div className="prep-pdf-main-inner" ref={mainRef}>
+          {loading && !pdfDoc && (
+            <div className="cpv-loading">
+              <div className="cpv-loading__spinner" />
+              <span>Loading PDF…</span>
+            </div>
+          )}
 
-              {/* Navigation arrows for classroom mode */}
-              {hideControls && numPages > 1 && (
-                <div className="prep-pdf-nav">
-                  <button
-                    type="button"
-                    className="prep-pdf-nav__btn prep-pdf-nav__btn--prev"
-                    onClick={() =>
-                      handlePageClick(Math.max(1, currentPage - 1))
-                    }
-                    disabled={currentPage === 1}
-                    aria-label="Previous page"
-                  >
-                    ←
-                  </button>
-                  <span className="prep-pdf-nav__indicator">
-                    {currentPage} / {numPages}
-                  </span>
-                  <button
-                    type="button"
-                    className="prep-pdf-nav__btn prep-pdf-nav__btn--next"
-                    onClick={() =>
-                      handlePageClick(Math.min(numPages, currentPage + 1))
-                    }
-                    disabled={currentPage === numPages}
-                    aria-label="Next page"
-                  >
-                    →
-                  </button>
+          {/* Canvas + overlay */}
+          <div
+            className="cpv-page-wrapper"
+            ref={pageWrapperRef}
+            style={{ position: "relative", display: "inline-block" }}
+          >
+            <canvas
+              ref={pdfCanvasRef}
+              className="prep-pdf-canvas cpv-page-canvas"
+            />
+            {/* Overlay from PrepShell (annotations, pointer, etc.) */}
+            {children && (
+              <div
+                className="prep-pdf-overlay"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  pointerEvents: "auto",
+                }}
+              >
+                {children}
+              </div>
+            )}
+          </div>
+
+          {/* Bottom nav (zoom + page) – can be hidden with hideControls */}
+          {!hideControls && numPages > 0 && (
+            <div className="cpv-nav">
+              <div className="cpv-nav__left">
+                <button
+                  type="button"
+                  className="cpv-nav__btn"
+                  onClick={zoomOut}
+                  disabled={zoom <= MIN_ZOOM}
+                  title="Zoom out"
+                >
+                  −
+                </button>
+                <div
+                  className="cpv-nav__zoom"
+                  onClick={zoomFit}
+                  style={{ cursor: "pointer" }}
+                  title="Reset zoom"
+                >
+                  {Math.round(zoom * 100)}%
                 </div>
-              )}
-            </>
+                <button
+                  type="button"
+                  className="cpv-nav__btn"
+                  onClick={zoomIn}
+                  disabled={zoom >= MAX_ZOOM}
+                  title="Zoom in"
+                >
+                  +
+                </button>
+              </div>
+
+              <div className="cpv-nav__center">
+                <button
+                  type="button"
+                  className="cpv-nav__btn"
+                  onClick={goPrevPage}
+                  disabled={!canGoPrev}
+                  title="Previous page"
+                >
+                  ←
+                </button>
+                <div className="cpv-nav__pages">
+                  Page {currentPage} / {numPages || "…"}
+                </div>
+                <button
+                  type="button"
+                  className="cpv-nav__btn"
+                  onClick={goNextPage}
+                  disabled={!canGoNext}
+                  title="Next page"
+                >
+                  →
+                </button>
+              </div>
+
+              <div className="cpv-nav__right">
+                {/* Reserved for future: "Fit to width", etc. */}
+              </div>
+            </div>
           )}
         </div>
       </div>
 
-      {!hideSidebar && (
+      {/* SIDEBAR (page buttons) – can be hidden with hideSidebar */}
+      {!hideSidebar && numPages > 1 && (
         <aside className="prep-pdf-sidebar">
-          {error ? (
-            <div className="prep-pdf-sidebar__empty">{error}</div>
-          ) : numPages === 0 ? (
-            <div className="prep-pdf-sidebar__empty">Loading pages…</div>
+          {numPages === 0 ? (
+            <div className="prep-pdf-sidebar__empty">
+              No pages detected in this PDF.
+            </div>
           ) : (
             <div className="prep-pdf-sidebar__pages">
-              {Array.from({ length: numPages }, (_, i) => {
-                const pageNum = i + 1;
-                return (
+              {Array.from({ length: numPages }, (_, i) => i + 1).map(
+                (pageNo) => (
                   <button
-                    key={pageNum}
+                    key={pageNo}
                     type="button"
                     className={
                       "prep-pdf-sidebar__page-button" +
-                      (pageNum === currentPage ? " is-active" : "")
+                      (pageNo === currentPage ? " is-active" : "")
                     }
-                    onClick={() => handlePageClick(pageNum)}
+                    onClick={() => setCurrentPage(pageNo)}
                   >
-                    {pageNum}
+                    {pageNo}
                   </button>
-                );
-              })}
+                )
+              )}
             </div>
           )}
         </aside>

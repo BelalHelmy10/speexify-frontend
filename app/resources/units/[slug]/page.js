@@ -1,32 +1,57 @@
-// app/resources/units/[slug]/page.jsx
+// app/resources/units/[slug]/page.js
 import { sanityClient } from "@/lib/sanity";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const UNIT_WITH_RESOURCES_QUERY = `
+const UNIT_QUERY = `
 *[_type == "unit" && slug.current == $slug][0]{
   _id,
   title,
   "slug": slug.current,
   summary,
   order,
-  subLevel->{
+  // Book level with its book
+  "bookLevel": bookLevel->{
     _id,
     title,
     code,
-    level->{
+    order,
+    "book": book->{
       _id,
-      name,
+      title,
       code,
-      track->{
+      order,
+      // Optional: track linked via book
+      "track": track->{
         _id,
         name,
-        code
+        code,
+        order
       }
     }
   },
-  "resources": *[_type == "resource" && references(^._id)] | order(order asc){
+  // Sublevel + level + track chain
+  "subLevel": subLevel->{
+    _id,
+    title,
+    code,
+    order,
+    "level": level->{
+      _id,
+      name,
+      code,
+      order,
+      "track": track->{
+        _id,
+        name,
+        code,
+        order
+      }
+    }
+  },
+  // Resources that reference this unit
+  "resources": *[_type == "resource" && references(^._id)] | order(order asc) {
     _id,
     title,
     description,
@@ -44,11 +69,12 @@ const UNIT_WITH_RESOURCES_QUERY = `
 `;
 
 async function getUnit(slug) {
-  const unit = await sanityClient.fetch(UNIT_WITH_RESOURCES_QUERY, { slug });
+  if (!slug) return null;
+  const unit = await sanityClient.fetch(UNIT_QUERY, { slug });
   return unit || null;
 }
 
-// Helper to decide which URL to open for a resource
+// Helper: choose main URL for a resource
 function getPrimaryUrl(resource) {
   if (!resource) return null;
   if (resource.googleSlidesUrl) return resource.googleSlidesUrl;
@@ -58,25 +84,27 @@ function getPrimaryUrl(resource) {
   return null;
 }
 
-export default async function UnitResourcesPage({ params }) {
-  const slug = params.slug;
+export default async function UnitPage({ params }) {
+  const slug = params?.slug;
+
   const unit = await getUnit(slug);
 
+  // If no unit found → nice error card
   if (!unit) {
     return (
       <div className="resources-page resources-page--unit">
-        <div className="resources-page__inner">
+        <div className="resources-page__inner unit-page">
           <div className="unit-not-found">
             <h1 className="unit-not-found__title">Unit not found</h1>
             <p className="unit-not-found__text">
-              We couldn&apos;t find this unit. It might have been removed or the
-              link is incorrect.
+              We couldn&apos;t find this unit. It may have been removed or the
+              URL is incorrect.
             </p>
             <Link
               href="/resources"
               className="resources-button resources-button--primary"
             >
-              ← Back to Resources
+              ← Back to resources
             </Link>
           </div>
         </div>
@@ -84,67 +112,81 @@ export default async function UnitResourcesPage({ params }) {
     );
   }
 
-  const { subLevel } = unit;
-  const level = subLevel?.level;
-  const track = level?.track;
+  const { title, summary, order, bookLevel, subLevel, resources } = unit;
+
+  // Derive track / book / level info for breadcrumbs
+  const book = bookLevel?.book || null;
+  const level = subLevel?.level || null;
+  const trackFromLevel = level?.track || null;
+  const trackFromBook = book?.track || null;
+
+  const track = trackFromLevel || trackFromBook || null;
+
+  const hasResources = Array.isArray(resources) && resources.length > 0;
 
   return (
     <div className="resources-page resources-page--unit">
       <div className="resources-page__inner unit-page">
         {/* Breadcrumbs */}
-        <nav className="unit-breadcrumbs">
+        <nav className="unit-breadcrumbs" aria-label="Breadcrumb">
           <Link href="/resources" className="unit-breadcrumbs__link">
             Resources
           </Link>
+          <span className="unit-breadcrumbs__separator">›</span>
+
           {track && (
             <>
-              <span className="unit-breadcrumbs__separator">/</span>
               <span className="unit-breadcrumbs__crumb">{track.name}</span>
+              <span className="unit-breadcrumbs__separator">›</span>
             </>
           )}
-          {level && (
+
+          {book && (
             <>
-              <span className="unit-breadcrumbs__separator">/</span>
-              <span className="unit-breadcrumbs__crumb">{level.name}</span>
+              <span className="unit-breadcrumbs__crumb">{book.title}</span>
+              <span className="unit-breadcrumbs__separator">›</span>
             </>
           )}
-          {subLevel && (
+
+          {bookLevel && (
             <>
-              <span className="unit-breadcrumbs__separator">/</span>
-              <span className="unit-breadcrumbs__crumb">
-                {subLevel.code} – {subLevel.title}
-              </span>
+              <span className="unit-breadcrumbs__crumb">{bookLevel.title}</span>
+              <span className="unit-breadcrumbs__separator">›</span>
             </>
           )}
+
+          <span className="unit-breadcrumbs__crumb">{title}</span>
         </nav>
 
-        {/* Unit Header Card */}
+        {/* Unit header card */}
         <header className="unit-header-card">
           <div className="unit-header-card__top-row">
             <span className="unit-header-card__eyebrow">
-              {track?.code || "Track"} · {level?.code || "Level"} ·{" "}
-              {subLevel?.code || "Sublevel"}
+              {track ? track.name : "Unit"}
             </span>
-            {typeof unit.order === "number" && (
-              <span className="unit-header-card__order">Unit {unit.order}</span>
+
+            {typeof order === "number" && (
+              <span className="unit-header-card__order">
+                Unit {order.toString().padStart(2, "0")}
+              </span>
             )}
           </div>
 
-          <h1 className="unit-header-card__title">{unit.title}</h1>
+          <h1 className="unit-header-card__title">{title}</h1>
 
-          {unit.summary && (
-            <p className="unit-header-card__summary">{unit.summary}</p>
-          )}
+          {summary && <p className="unit-header-card__summary">{summary}</p>}
 
           <div className="unit-header-card__meta">
-            {track && (
-              <span className="unit-header-card__meta-item">{track.name}</span>
+            {book && (
+              <span className="unit-header-card__meta-item">
+                📘 Book: {book.title}
+              </span>
             )}
-            {level && (
+            {bookLevel && (
               <>
                 <span className="unit-header-card__dot">•</span>
                 <span className="unit-header-card__meta-item">
-                  {level.name}
+                  Level: {bookLevel.title}
                 </span>
               </>
             )}
@@ -152,115 +194,132 @@ export default async function UnitResourcesPage({ params }) {
               <>
                 <span className="unit-header-card__dot">•</span>
                 <span className="unit-header-card__meta-item">
-                  {subLevel.code} – {subLevel.title}
+                  Sub-level: {subLevel.title}
                 </span>
               </>
             )}
           </div>
         </header>
 
-        {/* Resources List */}
+        {/* Resources list */}
         <section className="unit-resources">
           <div className="unit-resources__header">
             <div>
-              <h2 className="unit-resources__title">Resources</h2>
+              <h2 className="unit-resources__title">Unit resources</h2>
               <p className="unit-resources__subtitle">
-                All PDFs, slides, and videos linked to this unit.
+                PDFs, slides, videos, and activities linked to this unit.
               </p>
             </div>
-            <Link
-              href="/resources"
-              className="resources-button resources-button--ghost unit-resources__back"
-            >
-              Back to picker
-            </Link>
+            <div className="unit-resources__back">
+              <Link
+                href="/resources"
+                className="resources-button resources-button--ghost"
+              >
+                ← Back to resources
+              </Link>
+            </div>
           </div>
 
-          {(!unit.resources || unit.resources.length === 0) && (
-            <p className="unit-resources__empty">
-              No resources have been added to this unit yet.
-            </p>
-          )}
+          {!hasResources ? (
+            <div className="unit-resources__empty">
+              No resources found for this unit yet. Add Resource documents in
+              Sanity that reference this unit.
+            </div>
+          ) : (
+            <ul className="unit-resources-list">
+              {resources.map((res) => {
+                const url = getPrimaryUrl(res);
 
-          <div className="unit-resources-list">
-            {unit.resources?.map((r) => {
-              const url = getPrimaryUrl(r);
+                return (
+                  <li key={res._id} className="unit-resource-card">
+                    <div className="unit-resource-card__main">
+                      <div className="unit-resource-card__title-row">
+                        <h3 className="unit-resource-card__title">
+                          {res.title || "Untitled resource"}
+                        </h3>
 
-              return (
-                <article key={r._id} className="unit-resource-card">
-                  <div className="unit-resource-card__main">
-                    <div className="unit-resource-card__title-row">
-                      <h3 className="unit-resource-card__title">{r.title}</h3>
-                      <div className="unit-resource-card__chips">
-                        {r.kind && (
-                          <span className="resources-chip">{r.kind}</span>
-                        )}
-                        {r.cecrLevel && (
-                          <span className="resources-chip resources-chip--primary">
-                            CEFR {r.cecrLevel}
-                          </span>
-                        )}
-                        {r.sourceType && (
-                          <span className="resources-chip">{r.sourceType}</span>
-                        )}
+                        <div className="unit-resource-card__chips">
+                          {res.kind && (
+                            <span className="resources-chip resources-chip--primary">
+                              {res.kind}
+                            </span>
+                          )}
+                          {res.cecrLevel && (
+                            <span className="resources-chip resources-chip--success">
+                              CEFR {res.cecrLevel}
+                            </span>
+                          )}
+                          {res.sourceType && (
+                            <span className="resources-chip">
+                              Source: {res.sourceType}
+                            </span>
+                          )}
+                        </div>
                       </div>
+
+                      {res.description && (
+                        <p className="unit-resource-card__description">
+                          {res.description}
+                        </p>
+                      )}
+
+                      {Array.isArray(res.tags) && res.tags.length > 0 && (
+                        <div className="unit-resource-card__tags">
+                          {res.tags.map((tag) => (
+                            <span key={tag} className="resources-tag">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {res.fileName && (
+                        <p className="unit-resource-card__filename">
+                          {res.fileName}
+                        </p>
+                      )}
                     </div>
 
-                    {r.description && (
-                      <p className="unit-resource-card__description">
-                        {r.description}
-                      </p>
-                    )}
+                    <div className="unit-resource-card__actions">
+                      {/* Open in Prep Room */}
+                      <Link
+                        href={{
+                          pathname: "/resources/prep",
+                          query: {
+                            resourceId: res._id,
+                            unitId: unit._id,
+                          },
+                        }}
+                        className="resources-button resources-button--primary"
+                      >
+                        🧑‍🏫 Prep Room
+                      </Link>
 
-                    {Array.isArray(r.tags) && r.tags.length > 0 && (
-                      <div className="unit-resource-card__tags">
-                        {r.tags.map((tag) => (
-                          <span key={tag} className="resources-tag">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {r.fileName && (
-                      <p className="unit-resource-card__filename">
-                        {r.fileName}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="unit-resource-card__actions">
-                    {url ? (
-                      <>
+                      {/* Open original file / URL */}
+                      {url ? (
                         <a
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="resources-button resources-button--primary"
-                        >
-                          Open resource
-                        </a>
-                        <Link
-                          href={`/resources/prep?resourceId=${r._id}`}
                           className="resources-button resources-button--ghost"
                         >
-                          Open in Prep Room
-                        </Link>
-                      </>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled
-                        className="resources-button resources-button--disabled"
-                      >
-                        No URL configured
-                      </button>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                          🔗 Open original
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          className="resources-button resources-button--disabled"
+                          disabled
+                        >
+                          🔗 No direct link
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </section>
       </div>
     </div>

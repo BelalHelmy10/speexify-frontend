@@ -4,35 +4,58 @@ import ResourcesPicker from "./ResourcesPicker";
 
 export const dynamic = "force-dynamic";
 
-// Track → Book → Book level → Unit → Resource
+/**
+ * Sanity query for the Resources picker.
+ *
+ * Shape:
+ * Track
+ *   ├─ books[]
+ *   └─ levels[]
+ *        └─ subLevels[]
+ *             └─ units[]
+ *                  ├─ bookLevel -> book
+ *                  └─ resources[]
+ *
+ * This is the shape that buildResourcePickerIndex() and ResourcesPicker expect.
+ */
 const RESOURCES_PICKER_QUERY = `
 *[_type == "track"] | order(order asc) {
   _id,
   name,
   code,
   order,
+
+  // Books directly under this track
   "books": *[_type == "book" && references(^._id)] | order(order asc) {
     _id,
     title,
     code,
     order
   },
+
+  // CEFR levels / main levels for this track
   "levels": *[_type == "level" && references(^._id)] | order(order asc) {
     _id,
     name,
     code,
     order,
+
+    // Sub-levels (e.g. A1.1, B1.2, etc.)
     "subLevels": *[_type == "subLevel" && references(^._id)] | order(order asc) {
       _id,
       title,
       code,
       order,
+
+      // Units under each sub-level
       "units": *[_type == "unit" && references(^._id)] | order(order asc) {
         _id,
         title,
         "slug": slug.current,
         order,
         summary,
+
+        // Link back to the book + book level for this unit
         "bookLevel": bookLevel->{
           _id,
           title,
@@ -45,6 +68,8 @@ const RESOURCES_PICKER_QUERY = `
             order
           }
         },
+
+        // All resources attached to this unit
         "resources": *[_type == "resource" && references(^._id)] | order(order asc) {
           _id,
           title,
@@ -67,7 +92,7 @@ const RESOURCES_PICKER_QUERY = `
 
 async function getResourcesTree() {
   const data = await sanityClient.fetch(RESOURCES_PICKER_QUERY);
-  return data || [];
+  return Array.isArray(data) ? data : [];
 }
 
 export default async function ResourcesPage() {

@@ -1,3 +1,4 @@
+// app/classroom/[sessionId]/ClassroomResourcePicker.jsx
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -15,8 +16,11 @@ export default function ClassroomResourcePicker({
     bookLevelsByBookId,
     unitOptionsByBookLevelId,
     resourcesByUnitId,
-  } = useMemo(() => buildPickerIndex(tracks), [tracks]);
+  } = useMemo(() => buildPickerIndex(tracks || []), [tracks]);
 
+  // ─────────────────────────────────────────────
+  // Local selection state (teacher’s controls)
+  // ─────────────────────────────────────────────
   const [trackId, setTrackId] = useState(trackOptions[0]?.value || "");
   const [bookId, setBookId] = useState("");
   const [bookLevelId, setBookLevelId] = useState("");
@@ -29,7 +33,11 @@ export default function ClassroomResourcePicker({
     : [];
   const resourceOptions = unitId ? resourcesByUnitId[unitId] || [] : [];
 
-  // Cascade effects (TEACHER-ONLY)
+  // ─────────────────────────────────────────────
+  // Cascading auto-selection (teacher only)
+  // ─────────────────────────────────────────────
+
+  // Track
   useEffect(() => {
     if (!isTeacher) return;
     if (!trackOptions.length) return;
@@ -39,6 +47,7 @@ export default function ClassroomResourcePicker({
     );
   }, [trackOptions, isTeacher]);
 
+  // Book when track changes
   useEffect(() => {
     if (!isTeacher) return;
 
@@ -55,6 +64,7 @@ export default function ClassroomResourcePicker({
     );
   }, [trackId, booksByTrackId, isTeacher]);
 
+  // Book level when book changes
   useEffect(() => {
     if (!isTeacher) return;
 
@@ -70,6 +80,7 @@ export default function ClassroomResourcePicker({
     );
   }, [bookId, bookLevelsByBookId, isTeacher]);
 
+  // Unit when book level changes
   useEffect(() => {
     if (!isTeacher) return;
 
@@ -84,14 +95,28 @@ export default function ClassroomResourcePicker({
     );
   }, [bookLevelId, unitOptionsByBookLevelId, isTeacher]);
 
-  // Find currently selected resource for highlighting
+  // ─────────────────────────────────────────────
+  // Currently selected resource (for footer)
+  // ─────────────────────────────────────────────
   const currentResource = resourceOptions.find(
     (r) => r._id === selectedResourceId
   );
 
+  // If there are literally no tracks, show a clear message
+  if (!trackOptions.length) {
+    return (
+      <div className="cr-picker">
+        <div className="cr-picker__empty">
+          <span className="cr-picker__empty-icon">📂</span>
+          <p>No classroom resources are configured yet.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="cr-picker">
-      {/* Navigation breadcrumb */}
+      {/* Navigation selectors */}
       <div className="cr-picker__nav">
         <div className="cr-picker__nav-row">
           {/* Track */}
@@ -200,9 +225,11 @@ export default function ClassroomResourcePicker({
               return (
                 <li key={r._id}>
                   <button
-                    className={`cr-picker__item ${
-                      isSelected ? "cr-picker__item--selected" : ""
-                    }`}
+                    type="button"
+                    className={
+                      "cr-picker__item" +
+                      (isSelected ? " cr-picker__item--selected" : "")
+                    }
                     onClick={() => onChangeResourceId(r._id)}
                     disabled={!isTeacher}
                   >
@@ -210,7 +237,9 @@ export default function ClassroomResourcePicker({
                       {getResourceIcon(r)}
                     </span>
                     <span className="cr-picker__item-info">
-                      <span className="cr-picker__item-title">{r.title}</span>
+                      <span className="cr-picker__item-title">
+                        {r.title || "Untitled resource"}
+                      </span>
                       {r.description && (
                         <span className="cr-picker__item-desc">
                           {r.description.slice(0, 60)}

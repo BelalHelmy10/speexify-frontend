@@ -12,12 +12,11 @@ import { buildResourcePickerIndex } from "@/lib/resourcePickerIndex";
 
 // Re-export viewer info so the rest of the classroom code does NOT need to change
 export { sharedGetViewerInfo as getViewerInfo };
-
-// (OPTIONAL) If other parts of classroomHelpers need the normalizers, export them:
-// export { normalizeYouTubeEmbed, normalizeGoogleSlidesEmbed };
+// (OPTIONAL) re-export normalizers if needed elsewhere
+export { normalizeYouTubeEmbed, normalizeGoogleSlidesEmbed };
 
 // ─────────────────────────────────────────────────────────────
-// Resource index builder (KEEP YOUR ORIGINAL CODE)
+// Resource index builder – matches the RESOURCES query shape
 // ─────────────────────────────────────────────────────────────
 
 export function buildResourceIndex(tracks = []) {
@@ -30,28 +29,62 @@ export function buildResourceIndex(tracks = []) {
           (unit.resources || []).forEach((resource) => {
             if (!resource?._id) return;
 
+            const bookLevel = unit.bookLevel || null;
+            const book = bookLevel?.book || null;
+
             resourcesById[resource._id] = {
               ...resource,
+              // Attach full context in the shape viewerHelpers expects
               unit: {
                 _id: unit._id,
                 title: unit.title,
                 slug: unit.slug,
+                order: unit.order,
+                summary: unit.summary,
+                bookLevel: bookLevel
+                  ? {
+                      _id: bookLevel._id,
+                      title: bookLevel.title,
+                      code: bookLevel.code,
+                      order: bookLevel.order,
+                      book: book
+                        ? {
+                            _id: book._id,
+                            title: book.title,
+                            code: book.code,
+                            order: book.order,
+                          }
+                        : undefined,
+                    }
+                  : undefined,
                 subLevel: {
                   _id: subLevel._id,
                   title: subLevel.title,
                   code: subLevel.code,
+                  order: subLevel.order,
                   level: {
                     _id: level._id,
                     name: level.name,
                     code: level.code,
+                    order: level.order,
                     track: {
                       _id: track._id,
                       name: track.name,
                       code: track.code,
+                      order: track.order,
                     },
                   },
                 },
               },
+              // Optional: convenience access to book
+              book: book
+                ? {
+                    _id: book._id,
+                    title: book.title,
+                    code: book.code,
+                    order: book.order,
+                  }
+                : undefined,
             };
           });
         });
@@ -62,20 +95,12 @@ export function buildResourceIndex(tracks = []) {
   return { resourcesById };
 }
 
-// KEEP THE REST OF YOUR FILE BELOW THIS
-
-// ─────────────────────────────────────────────────────────────
-// Viewer helpers
-// ─────────────────────────────────────────────────────────────
-
-// ─────────────────────────────────────────────────────────────
-// Picker index for ClassroomResourcePicker
-// ─────────────────────────────────────────────────────────────
-
 // ─────────────────────────────────────────────────────────────
 // Picker index for ClassroomResourcePicker (shared helper)
 // ─────────────────────────────────────────────────────────────
 
 export function buildPickerIndex(tracks = []) {
+  // This uses the same helper as the /resources page,
+  // which expects the exact query shape we just matched.
   return buildResourcePickerIndex(tracks);
 }

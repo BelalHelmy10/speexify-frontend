@@ -1,4 +1,4 @@
 // app/ar/dashboard/sessions/[id]/page.js
-import SessionDetailPage from "@/app/dashboard/sessions/[id]/page";
+import SessionDetailPage from "../../../../dashboard/sessions/[id]/page";
 
 export default SessionDetailPage;

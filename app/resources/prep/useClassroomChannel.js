@@ -51,19 +51,30 @@ export function useClassroomChannel(roomId) {
   // ─────────────────────────────────────────────────────────────
   // Heartbeat / ping to keep connection alive
   // ─────────────────────────────────────────────────────────────
+
+  // 1) Define stopHeartbeat first so it exists before startHeartbeat ever runs
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  }, []);
+
+  // 2) startHeartbeat can safely call stopHeartbeat now
   const startHeartbeat = useCallback(() => {
+    // clear any previous interval
     stopHeartbeat();
 
-    if (!wsRef.current) return;
-    if (wsRef.current.readyState !== WebSocket.OPEN) return;
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
     // Ping every 25s (adjust as needed)
     heartbeatIntervalRef.current = setInterval(() => {
-      const ws = wsRef.current;
-      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      const sock = wsRef.current;
+      if (!sock || sock.readyState !== WebSocket.OPEN) return;
 
       try {
-        ws.send(
+        sock.send(
           JSON.stringify({
             type: "ping",
             ts: Date.now(),
@@ -74,14 +85,7 @@ export function useClassroomChannel(roomId) {
         console.warn("Classroom WS ping failed", err);
       }
     }, 25000);
-  }, []);
-
-  const stopHeartbeat = useCallback(() => {
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = null;
-    }
-  }, []);
+  }, [stopHeartbeat]);
 
   // ─────────────────────────────────────────────────────────────
   // Reconnect logic (exponential backoff)
@@ -102,7 +106,7 @@ export function useClassroomChannel(roomId) {
     // Exponential backoff: 1s, 2s, 4s, 8s... capped at 30s
     const delay = Math.min(30000, 1000 * Math.pow(2, attempt - 1));
 
-    setStatus(attempt === 1 ? "reconnecting" : "reconnecting");
+    setStatus("reconnecting");
 
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);

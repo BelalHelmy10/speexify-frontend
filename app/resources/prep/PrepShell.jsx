@@ -23,6 +23,66 @@ const PEN_COLORS = [
   "#22c55e",
 ];
 
+// ─────────────────────────────────────────────────────────────
+// HELPER: Detect and convert Google Drive URLs
+// ─────────────────────────────────────────────────────────────
+
+function parseGoogleDriveUrl(url) {
+  if (!url) return null;
+
+  // Match various Google Drive URL patterns
+  const patterns = [
+    // https://drive.google.com/file/d/FILE_ID/view
+    // https://drive.google.com/file/d/FILE_ID/preview
+    /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
+    // https://drive.google.com/open?id=FILE_ID
+    /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
+    // https://drive.google.com/uc?id=FILE_ID
+    /drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/,
+    // https://docs.google.com/document/d/FILE_ID (for Google Docs exported as PDF)
+    /docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+
+  return null;
+}
+
+function getDirectPdfUrl(url) {
+  if (!url) return null;
+
+  const fileId = parseGoogleDriveUrl(url);
+  if (fileId) {
+    // Convert to direct download URL that pdf.js can load
+    // Note: The file must be publicly accessible or shared with "anyone with the link"
+    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+  }
+
+  // Return original URL if not a Google Drive URL
+  return url;
+}
+
+function isGoogleDriveUrl(url) {
+  if (!url) return false;
+  return url.includes("drive.google.com") || url.includes("docs.google.com");
+}
+
+function isPdfUrl(url) {
+  if (!url) return false;
+  const lowerUrl = url.toLowerCase();
+  return (
+    lowerUrl.endsWith(".pdf") ||
+    lowerUrl.includes(".pdf?") ||
+    lowerUrl.includes("/pdf") ||
+    isGoogleDriveUrl(url) // Assume Google Drive files in this context are PDFs
+  );
+}
+
 export default function PrepShell({
   resource,
   viewer,
@@ -32,6 +92,21 @@ export default function PrepShell({
   isScreenShareActive = false,
   isTeacher = false,
 }) {
+  // ─────────────────────────────────────────────────────────────
+  // SAFETY GUARD: if there is no resource, don't explode
+  // ─────────────────────────────────────────────────────────────
+  if (!resource) {
+    return (
+      <div className="prep-empty-card">
+        <h2 className="prep-empty-card__title">No resource selected</h2>
+        <p className="prep-empty-card__text">
+          Pick a resource from the list to preview it here and get ready for
+          your session.
+        </p>
+      </div>
+    );
+  }
+
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -46,6 +121,7 @@ export default function PrepShell({
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+  const screenVideoRef = useRef(null);
 
   const applyingRemoteRef = useRef(false);
 
@@ -58,7 +134,33 @@ export default function PrepShell({
   const track = level?.track;
 
   const hasScreenShare = !!isScreenShareActive;
-  const isPdf = viewer?.type === "pdf" && !pdfFallback;
+
+  // ─────────────────────────────────────────────────────────────
+  // FIXED: Better PDF detection
+  // ─────────────────────────────────────────────────────────────
+  const isPdf = (() => {
+    if (pdfFallback) return false;
+
+    // Check explicit type first
+    if (viewer?.type === "pdf") return true;
+
+    // Check if URL looks like a PDF
+    if (isPdfUrl(viewerUrl)) return true;
+
+    // Check file extension from resource
+    if (resource.fileName?.toLowerCase().endsWith(".pdf")) return true;
+
+    // Check sourceType
+    if (resource.sourceType?.toLowerCase() === "pdf") return true;
+
+    return false;
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  // FIXED: Get the correct URL for PDF viewer
+  // ─────────────────────────────────────────────────────────────
+  const pdfViewerUrl = isPdf ? getDirectPdfUrl(viewerUrl) : null;
+
   const showSidebar = !hideSidebar && !sidebarCollapsed;
   const showBreadcrumbs = !hideBreadcrumbs;
 
@@ -70,17 +172,19 @@ export default function PrepShell({
     (focusMode || sidebarCollapsed || hideSidebar ? " prep-layout--focus" : "");
 
   // ─────────────────────────────────────────────────────────────
-  // Attach/detach screen share stream to video element
+  // Focus newly-activated text box
   // ─────────────────────────────────────────────────────────────
 
-  // Focus newly-activated text box
   useEffect(() => {
     if (!activeTextId) return;
     const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
     if (el) el.focus();
   }, [activeTextId]);
 
+  // ─────────────────────────────────────────────────────────────
   // Load annotations from localStorage
+  // ─────────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!storageKey) return;
 
@@ -113,8 +217,10 @@ export default function PrepShell({
     }
   }, [storageKey]);
 
-  // Resize canvas
-  // Resize canvas
+  // ─────────────────────────────────────────────────────────────
+  // Resize canvas with container
+  // ─────────────────────────────────────────────────────────────
+
   useEffect(() => {
     const canvas = canvasRef.current;
 
@@ -166,6 +272,10 @@ export default function PrepShell({
       return () => window.removeEventListener("resize", resizeCanvas);
     }
   }, [hasScreenShare]);
+
+  // ─────────────────────────────────────────────────────────────
+  // Persistence + broadcasting
+  // ─────────────────────────────────────────────────────────────
 
   function saveAnnotations(opts = {}) {
     if (!storageKey) return;
@@ -271,6 +381,10 @@ export default function PrepShell({
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Subscribe to classroom channel (for sync)
+  // ─────────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!classroomChannel || !classroomChannel.ready) return;
     if (!classroomChannel.subscribe) return;
@@ -295,6 +409,10 @@ export default function PrepShell({
     return unsubscribe;
   }, [classroomChannel, resource._id]);
 
+  // ─────────────────────────────────────────────────────────────
+  // Canvas coordinate helpers
+  // ─────────────────────────────────────────────────────────────
+
   function getCanvasCoordinates(event) {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -308,6 +426,10 @@ export default function PrepShell({
       height: rect.height,
     };
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Drawing tools (pen / highlighter / eraser)
+  // ─────────────────────────────────────────────────────────────
 
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
@@ -323,6 +445,7 @@ export default function PrepShell({
   }
 
   function draw(e) {
+    // Dragging sticky notes / text boxes
     if (dragState) {
       const coords = getCanvasCoordinates(e);
       if (!coords) return;
@@ -409,6 +532,10 @@ export default function PrepShell({
     broadcastAnnotations();
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Pointer mode
+  // ─────────────────────────────────────────────────────────────
+
   function updatePointer(e) {
     if (tool !== TOOL_POINTER) {
       setPointerPos(null);
@@ -427,6 +554,10 @@ export default function PrepShell({
       y: rect.height ? y / rect.height : 0,
     });
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Sticky notes
+  // ─────────────────────────────────────────────────────────────
 
   function handleClickForNote(e) {
     if (tool !== TOOL_NOTE) return;
@@ -478,6 +609,10 @@ export default function PrepShell({
       offsetY: currentY - y,
     });
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Text boxes
+  // ─────────────────────────────────────────────────────────────
 
   function createTextBox(e) {
     const coords = getCanvasCoordinates(e);
@@ -531,6 +666,10 @@ export default function PrepShell({
     });
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Clear everything
+  // ─────────────────────────────────────────────────────────────
+
   function clearCanvasAndNotes() {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -551,6 +690,10 @@ export default function PrepShell({
     }
     broadcastAnnotations({ canvasData: null, stickyNotes: [], textBoxes: [] });
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Mouse handlers for overlay
+  // ─────────────────────────────────────────────────────────────
 
   function handleMouseDown(e) {
     const target = e.target;
@@ -618,6 +761,10 @@ export default function PrepShell({
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Tool switching helper (toggling)
+  // ─────────────────────────────────────────────────────────────
+
   function setToolSafe(nextTool) {
     if (tool === nextTool) {
       setTool(TOOL_NONE);
@@ -631,6 +778,10 @@ export default function PrepShell({
       }
     }
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Render overlay (canvas + notes + text + pointer)
+  // ─────────────────────────────────────────────────────────────
 
   function renderAnnotationsOverlay() {
     return (
@@ -744,7 +895,15 @@ export default function PrepShell({
     );
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Viewer activity flag
+  // ─────────────────────────────────────────────────────────────
+
   const viewerIsActive = hasScreenShare || !!viewerUrl;
+
+  // ─────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -787,26 +946,6 @@ export default function PrepShell({
       )}
 
       <div className={layoutClasses}>
-        {!hideSidebar && (
-          <button
-            type="button"
-            className={
-              "prep-sidebar-toggle" +
-              (sidebarCollapsed ? " prep-sidebar-toggle--collapsed" : "")
-            }
-            onClick={() => setSidebarCollapsed((v) => !v)}
-            aria-label={
-              sidebarCollapsed
-                ? "Open prep notes panel"
-                : "Hide prep notes panel"
-            }
-          >
-            <span className="prep-sidebar-toggle__icon">
-              {sidebarCollapsed ? "💬" : "←"}
-            </span>
-          </button>
-        )}
-
         {showSidebar && (
           <aside className="prep-info-card">
             <div className="prep-info-card__header">
@@ -890,7 +1029,7 @@ export default function PrepShell({
 
           {viewerIsActive ? (
             <>
-              {!hideBreadcrumbs && (
+              {/* {!hideBreadcrumbs && (
                 <div className="prep-viewer__badge">
                   <span className="prep-viewer__badge-dot" />
                   <span className="prep-viewer__badge-text">
@@ -899,10 +1038,30 @@ export default function PrepShell({
                       : `Live preview · ${viewer.label}`}
                   </span>
                 </div>
-              )}
+              )} */}
 
               {/* Toolbar */}
               <div className="prep-annotate-toolbar">
+                {/* Sidebar toggle - inside toolbar */}
+                {!hideSidebar && (
+                  <button
+                    type="button"
+                    className={
+                      "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--sidebar" +
+                      (sidebarCollapsed ? " is-collapsed" : "")
+                    }
+                    onClick={() => setSidebarCollapsed((v) => !v)}
+                    aria-label={
+                      sidebarCollapsed ? "Show sidebar" : "Hide sidebar"
+                    }
+                  >
+                    {sidebarCollapsed ? "📋" : "📋"}
+                    <span>{sidebarCollapsed ? "Show Info" : "Hide Info"}</span>
+                  </button>
+                )}
+
+                <div className="prep-annotate-toolbar__separator" />
+
                 <button
                   type="button"
                   className={
@@ -1003,9 +1162,10 @@ export default function PrepShell({
                     {renderAnnotationsOverlay()}
                   </div>
                 ) : isPdf ? (
+                  /* 🔥 PDF MODE - Using pdf.js viewer */
                   <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
-                      fileUrl={viewerUrl}
+                      fileUrl={pdfViewerUrl}
                       onFatalError={() => setPdfFallback(true)}
                       onContainerReady={(el) => {
                         containerRef.current = el;
@@ -1017,6 +1177,7 @@ export default function PrepShell({
                     </PdfViewerWithSidebar>
                   </div>
                 ) : (
+                  /* 🔥 IFRAME MODE - For non-PDF content */
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}

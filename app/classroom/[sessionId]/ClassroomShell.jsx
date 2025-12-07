@@ -83,7 +83,7 @@ const focusModeIcon = {
   [FOCUS_MODES.CONTENT]: "📄",
 };
 
-// ✅ Put BALANCED (⚖️) back in the middle
+// BALANCED (⚖️) in the middle
 const FOCUS_MODE_ORDER = [
   FOCUS_MODES.VIDEO,
   FOCUS_MODES.BALANCED,
@@ -397,6 +397,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
                 hideBreadcrumbs
                 classroomChannel={classroomChannel}
                 isTeacher={isTeacher}
+                isScreenShareActive={isScreenShareActive}
                 className="cr-prep-shell-fullsize"
               />
             ) : (

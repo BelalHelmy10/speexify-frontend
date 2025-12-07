@@ -1,10 +1,10 @@
-// app/classroom/[sessionId]/page.jsx
+// app/classroom/[sessionId]/page.js
 import { sanityClient } from "@/lib/sanity";
 import ClassroomPageClient from "./ClassroomPageClient";
 
 export const dynamic = "force-dynamic";
 
-// Same query shape as app/resources/page.jsx
+// 🔹 EXACT same structure as app/resources/page.js
 const CLASSROOM_RESOURCES_QUERY = `
 *[_type == "track"] | order(order asc) {
   _id,
@@ -71,7 +71,29 @@ async function getResourcesTree() {
 }
 
 export default async function ClassroomPage({ params }) {
-  const sessionId = params.sessionId;
+  // ⬇️ In your Next.js version, `params` is a Promise
+  const resolvedParams = await params;
+  const sessionId = resolvedParams?.sessionId ?? resolvedParams?.id ?? null;
+
+  // Extra defensive: if the URL somehow doesn't have an id, show a clear error
+  if (!sessionId) {
+    return (
+      <div className="cr-error-screen">
+        <div className="cr-error-screen__content">
+          <span className="cr-error-screen__icon">⚠️</span>
+          <h1 className="cr-error-screen__title">Session not found</h1>
+          <p className="cr-error-screen__text">
+            Missing classroom session id in the URL. Please go back to the
+            dashboard and open the classroom again.
+          </p>
+          <a href="/dashboard" className="cr-error-screen__btn">
+            ← Back to dashboard
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   const tracks = await getResourcesTree();
 
   return <ClassroomPageClient sessionId={String(sessionId)} tracks={tracks} />;
