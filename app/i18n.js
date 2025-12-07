@@ -44,9 +44,6 @@ import arProgress from "@/locales/ar/progress.json";
 import enSession from "@/locales/en/session.json";
 import arSession from "@/locales/ar/session.json";
 
-import enResources from "@/locales/en/resources.json";
-import arResources from "@/locales/ar/resources.json";
-
 import enSettings from "@/locales/en/settings.json";
 import arSettings from "@/locales/ar/settings.json";
 
@@ -70,7 +67,6 @@ const dictionaries = {
     calendar: enCalendar,
     progress: enProgress,
     session: enSession,
-    resources: enResources,
     settings: enSettings,
     onboarding: enOnboarding,
   },
@@ -90,7 +86,6 @@ const dictionaries = {
     calendar: arCalendar,
     progress: arProgress,
     session: arSession,
-    resources: arResources,
     settings: arSettings,
     onboarding: arOnboarding,
   },

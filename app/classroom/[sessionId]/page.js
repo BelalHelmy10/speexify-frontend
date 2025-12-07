@@ -1,4 +1,4 @@
-// app/classroom/[sessionId]/page.js
+// app/classroom/[sessionId]/page.jsx
 import { sanityClient } from "@/lib/sanity";
 import ClassroomPageClient from "./ClassroomPageClient";
 
@@ -15,34 +15,49 @@ const CLASSROOM_RESOURCES_QUERY = `
     _id,
     title,
     code,
+    order
+  },
+  "levels": *[_type == "level" && references(^._id)] | order(order asc) {
+    _id,
+    name,
+    code,
     order,
-    "levels": *[_type == "level" && references(^._id)] | order(order asc) {
+    "subLevels": *[_type == "subLevel" && references(^._id)] | order(order asc) {
       _id,
       title,
       code,
       order,
-      "subLevels": *[_type == "subLevel" && references(^._id)] | order(order asc) {
+      "units": *[_type == "unit" && references(^._id)] | order(order asc) {
         _id,
         title,
-        code,
+        "slug": slug.current,
         order,
-        "units": *[_type == "unit" && references(^._id)] | order(order asc) {
+        summary,
+        "bookLevel": bookLevel->{
           _id,
           title,
-          "slug": slug.current,
-          order,
           code,
-          "resources": *[_type == "resource" && references(^._id)] | order(order asc) {
+          order,
+          "book": book->{
             _id,
             title,
-            type,
-            order,
-            description,
-            googleSlidesUrl,
-            youtubeUrl,
-            externalUrl,
-            "fileUrl": file.asset->url
+            code,
+            order
           }
+        },
+        "resources": *[_type == "resource" && references(^._id)] | order(order asc) {
+          _id,
+          title,
+          description,
+          kind,
+          cecrLevel,
+          tags,
+          sourceType,
+          "fileUrl": file.asset->url,
+          "fileName": file.asset->originalFilename,
+          externalUrl,
+          googleSlidesUrl,
+          youtubeUrl
         }
       }
     }
@@ -55,10 +70,8 @@ async function getResourcesTree() {
   return data || [];
 }
 
-// ⚠️ params is now a Promise – we must await it
-export default async function ClassroomPage(props) {
-  const { sessionId } = await props.params; // <- this is the key change
-
+export default async function ClassroomPage({ params }) {
+  const sessionId = params.sessionId;
   const tracks = await getResourcesTree();
 
   return <ClassroomPageClient sessionId={String(sessionId)} tracks={tracks} />;

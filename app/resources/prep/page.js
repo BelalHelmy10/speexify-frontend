@@ -2,7 +2,7 @@
 import { sanityClient } from "@/lib/sanity";
 import Link from "next/link";
 import PrepShell from "./PrepShell";
-import { getViewerInfo } from "@/lib/viewerHelpers";
+import { getViewerInfo } from "@/lib/viewerHelpers"; // ✅ NEW
 
 export const dynamic = "force-dynamic";
 
@@ -53,14 +53,10 @@ async function getResource(resourceId) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// NOTE: searchParams is now a Promise in Next 16 server components.
-// We must await it instead of destructuring directly.
-// ─────────────────────────────────────────────────────────────
 
-export default async function PrepRoomPage(props) {
-  const searchParams = await props.searchParams;
+export default async function PrepRoomPage({ searchParams }) {
   // From query string: /resources/prep?resourceId=...
-  const resourceId = searchParams?.resourceId ?? null;
+  const resourceId = searchParams?.resourceId;
 
   if (!resourceId) {
     return (
@@ -108,7 +104,7 @@ export default async function PrepRoomPage(props) {
     );
   }
 
-  const viewer = getViewerInfo(resource);
+  const viewer = getViewerInfo(resource); // ✅ now using shared helper
 
   return (
     <div className="resources-page">

@@ -1,4 +1,4 @@
-// app/resources/page.jsx
+// app/resources/page.js
 import { sanityClient } from "@/lib/sanity";
 import ResourcesPicker from "./ResourcesPicker";
 
