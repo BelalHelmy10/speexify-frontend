@@ -1,0 +1,27 @@
+{
+  "title": "مرحبًا بعودتك",
+  "subtitle": "سجّل الدخول للمتابعة إلى حسابك",
+
+  "social_divider": "أو أكمل باستخدام البريد الإلكتروني",
+
+  "label_email": "عنوان البريد الإلكتروني",
+  "placeholder_email": "name@example.com",
+
+  "label_password": "كلمة المرور",
+  "placeholder_password": "أدخل كلمة المرور",
+
+  "forgot_password": "هل نسيت كلمة المرور؟",
+
+  "btn_sign_in": "تسجيل الدخول",
+  "btn_signing_in": "جارٍ تسجيل الدخول...",
+
+  "no_account": "ليس لديك حساب؟",
+  "link_create_account": "إنشاء حساب",
+
+  "alert_login_failed": "فشل تسجيل الدخول",
+  "alert_google_no_credential": "لم يُرجع Google بيانات تسجيل",
+  "alert_google_failed": "فشل تسجيل الدخول عبر Google",
+
+  "user_fallback_name": "المستخدم",
+  "btn_sign_out": "تسجيل الخروج"
+}

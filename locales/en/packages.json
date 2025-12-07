@@ -1,0 +1,81 @@
+{
+  "hero_title": "Professional English Coaching",
+  "hero_subtitle": "Choose the format that works for you—private one-on-one sessions or collaborative group learning. Flexible plans, real results.",
+
+  "tab_individual": "Individuals",
+  "tab_corporate": "Teams & Companies",
+
+  "lesson_one_on_one_title": "One-on-One",
+  "lesson_one_on_one_sub": "Private sessions",
+  "lesson_group_title": "Group",
+  "lesson_group_sub": "2–5 learners",
+
+  "note_1on1_strong": "60-minute sessions",
+  "note_1on1_rest": "Personalized coaching · Flexible scheduling",
+  "note_group_strong": "90-minute sessions",
+  "note_group_rest": "Small groups (2–5 learners) · Collaborative learning",
+  "note_corporate": "Custom programs · Progress reporting · Enterprise billing · Dedicated support",
+
+  "hero_media_alt": "English coaching in action",
+
+  "status_loading": "Loading packages…",
+  "status_error": "Something went wrong. Please try again.",
+
+  "pricing_title_1on1": "One-on-One Packages",
+  "pricing_title_group": "Group Learning Packages",
+  "pricing_title_corporate": "Enterprise Solutions",
+
+  "pricing_subtitle_individual": "Choose the package that fits your learning goals and schedule",
+  "pricing_subtitle_corporate": "Scalable language training for teams of all sizes",
+
+  "estimator_title": "Budget Estimator",
+  "estimator_text": "Get a rough estimate for your team size. Final pricing depends on program format, duration, and custom requirements.",
+  "estimator_label_team_size": "Team Size",
+  "estimator_employees": "employees",
+  "estimator_period": "mo",
+  "estimator_cta": "Get Custom Quote",
+  "estimator_disclaimer": "This is an indicative estimate only. Actual pricing varies based on program scope, duration, and delivery format.",
+
+  "how_title": "How It Works",
+  "how_subtitle": "Get started in three simple steps",
+  "how_step1_title": "Choose Your Plan",
+  "how_step1_desc": "Select the package that matches your goals—private coaching or group learning.",
+  "how_step2_title": "Schedule Sessions",
+  "how_step2_desc": "Book times that fit your schedule. Easy rescheduling if plans change.",
+  "how_step3_title": "Start Improving",
+  "how_step3_desc": "Practical lessons, actionable feedback, and measurable progress from day one.",
+
+  "compare_title": "What's Included",
+  "compare_subtitle": "Compare features across all packages",
+  "compare_col_features": "Features",
+  "compare_empty": "All packages include personalized coaching, flexible scheduling, and progress tracking.",
+
+  "faq_title": "Frequently Asked Questions",
+  "faq1_q": "Can I switch between One-on-One and Group lessons?",
+  "faq1_a": "Yes! You can switch formats between billing periods. Contact us and we'll help you transition smoothly.",
+  "faq2_q": "What's the difference between One-on-One and Group sessions?",
+  "faq2_a": "One-on-One sessions are 60 minutes of private coaching focused entirely on your goals. Group sessions are 90 minutes with 2–5 learners, offering collaborative practice at a lower cost per person.",
+  "faq3_q": "How does group composition work?",
+  "faq3_a": "We match learners with similar proficiency levels and learning goals to ensure productive, balanced sessions.",
+  "faq4_q": "What if I miss a session?",
+  "faq4_a": "You can reschedule within your package period. We offer flexible rescheduling with 24-hour notice.",
+  "faq5_q": "Do you offer corporate/enterprise plans?",
+  "faq5_a": "Yes! We provide custom programs for teams with volume pricing, dedicated account management, progress reporting, and flexible billing options.",
+
+  "cta_title": "Ready to Start Your English Journey?",
+  "cta_individual_primary": "Book Free Consultation",
+  "cta_individual_secondary": "View All Plans",
+  "cta_corp_primary": "Request Proposal",
+  "cta_corp_secondary": "Learn About Corporate Programs",
+
+  "badge_most_popular": "MOST POPULAR",
+  "price_custom": "Custom Pricing",
+  "price_from": "From",
+  "label_sessions": "sessions",
+  "label_per_session": "session",
+  "label_min_per_session": "min/session",
+
+  "cta_corp_card_primary": "Contact Sales",
+  "cta_corp_card_secondary": "Learn More",
+  "cta_buy_now": "Buy Now"
+}

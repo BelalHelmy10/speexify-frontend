@@ -1,12 +1,14 @@
-// web/src/pages/ForgotPassword.jsx
+// app/forgot-password/page.js
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import { login as apiLogin } from "@/lib/auth";
+import { getDictionary, t } from "@/app/i18n";
 
-export default function ForgotPassword() {
+function ForgotPasswordInner({ dict }) {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -36,11 +38,8 @@ export default function ForgotPassword() {
         });
       }, 1000);
     } catch (err) {
-      // Avoid user enumeration: show generic message if any error
-      setMsg(
-        err?.response?.data?.error ||
-          "If the email exists, a verification code has been sent."
-      );
+      // Avoid user enumeration: generic message (or backend message if present)
+      setMsg(err?.response?.data?.error || t(dict, "msg_start_generic"));
     } finally {
       setBusy(false);
     }
@@ -65,12 +64,10 @@ export default function ForgotPassword() {
         return;
       } catch {
         // If auto-login fails, still inform the user that reset worked
-        setMsg(
-          "Password reset successful. Please sign in with your new password."
-        );
+        setMsg(t(dict, "msg_reset_success"));
       }
     } catch (err) {
-      setMsg(err?.response?.data?.error || "Could not reset password");
+      setMsg(err?.response?.data?.error || t(dict, "msg_reset_error"));
     } finally {
       setBusy(false);
     }
@@ -80,8 +77,8 @@ export default function ForgotPassword() {
     <main className="auth-page">
       <section className="auth-card">
         <header className="auth-head">
-          <h1>Reset your password</h1>
-          <p>We’ll send a 6-digit code to your email.</p>
+          <h1>{t(dict, "title")}</h1>
+          <p>{t(dict, "subtitle")}</p>
         </header>
 
         {msg && <div className="auth-alert">{msg}</div>}
@@ -90,11 +87,11 @@ export default function ForgotPassword() {
         {step === 1 && (
           <form className="auth-form" onSubmit={start}>
             <div className="field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">{t(dict, "label_email")}</label>
               <input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t(dict, "placeholder_email")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -104,7 +101,7 @@ export default function ForgotPassword() {
             </div>
 
             <button className="btn-primary" disabled={busy}>
-              {busy ? "Sending…" : "Send code"}
+              {busy ? t(dict, "btn_sending") : t(dict, "btn_send_code")}
             </button>
           </form>
         )}
@@ -113,13 +110,13 @@ export default function ForgotPassword() {
         {step === 2 && (
           <form className="auth-form" onSubmit={complete}>
             <div className="field">
-              <label htmlFor="code">Verification code</label>
+              <label htmlFor="code">{t(dict, "label_code")}</label>
               <input
                 id="code"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]{6}"
-                placeholder="6-digit code"
+                placeholder={t(dict, "placeholder_code")}
                 value={code}
                 onChange={(e) =>
                   setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
@@ -131,12 +128,14 @@ export default function ForgotPassword() {
             </div>
 
             <div className="field">
-              <label htmlFor="newPassword">New password</label>
+              <label htmlFor="newPassword">
+                {t(dict, "label_new_password")}
+              </label>
               <input
                 id="newPassword"
                 type="password"
                 minLength={8}
-                placeholder="••••••••"
+                placeholder={t(dict, "placeholder_new_password")}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -145,7 +144,7 @@ export default function ForgotPassword() {
             </div>
 
             <button className="btn-primary" disabled={busy}>
-              {busy ? "Updating…" : "Reset password"}
+              {busy ? t(dict, "btn_updating") : t(dict, "btn_reset")}
             </button>
 
             <div className="row between" style={{ marginTop: 8 }}>
@@ -154,12 +153,20 @@ export default function ForgotPassword() {
                 className="btn-link"
                 onClick={start}
                 disabled={busy || cooldown > 0}
-                title={cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                title={
+                  cooldown > 0
+                    ? t(dict, "btn_resend_with_cooldown", {
+                        cooldown,
+                      })
+                    : t(dict, "btn_resend")
+                }
               >
-                {cooldown > 0 ? `Resend code (${cooldown}s)` : "Resend code"}
+                {cooldown > 0
+                  ? t(dict, "btn_resend_with_cooldown", { cooldown })
+                  : t(dict, "btn_resend")}
               </button>
               <Link className="btn-link" href="/login">
-                Back to login
+                {t(dict, "back_to_login")}
               </Link>
             </div>
           </form>
@@ -167,4 +174,12 @@ export default function ForgotPassword() {
       </section>
     </main>
   );
+}
+
+export default function ForgotPasswordPage() {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "forgotPassword");
+
+  return <ForgotPasswordInner dict={dict} />;
 }

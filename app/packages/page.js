@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import "@/styles/packages.scss";
+import { getDictionary, t } from "@/app/i18n";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
@@ -35,6 +37,10 @@ function buildFeatureMatrix(plans, maxRows = 10) {
 }
 
 function Packages() {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "packages");
+
   const [tab, setTab] = useState(AUD.INDIVIDUAL);
   const [lessonType, setLessonType] = useState(LESSON_TYPE.ONE_ON_ONE);
   const [loading, setLoading] = useState(false);
@@ -64,16 +70,43 @@ function Packages() {
     return Math.max(0, Math.round(seats * base));
   }, [seats]);
 
+  const isIndividual = tab === AUD.INDIVIDUAL;
+  const isOneOnOne = lessonType === LESSON_TYPE.ONE_ON_ONE;
+
+  // Section title/subtitle logic with translations
+  const pricingTitle = isIndividual
+    ? isOneOnOne
+      ? t(dict, "pricing_title_1on1", "One-on-One Packages")
+      : t(dict, "pricing_title_group", "Group Learning Packages")
+    : t(dict, "pricing_title_corporate", "Enterprise Solutions");
+
+  const pricingSubtitle = isIndividual
+    ? t(
+        dict,
+        "pricing_subtitle_individual",
+        "Choose the package that fits your learning goals and schedule"
+      )
+    : t(
+        dict,
+        "pricing_subtitle_corporate",
+        "Scalable language training for teams of all sizes"
+      );
+
   return (
     <div className="ecp">
       {/* HERO */}
       <section className="ecp__section ecp-hero">
         <div className="ecp__container ecp-hero__inner">
           <div className="ecp-hero__copy">
-            <h1 className="ecp-hero__title">Professional English Coaching</h1>
+            <h1 className="ecp-hero__title">
+              {t(dict, "hero_title", "Professional English Coaching")}
+            </h1>
             <p className="ecp-hero__subtitle">
-              Choose the format that works for you—private one-on-one sessions
-              or collaborative group learning. Flexible plans, real results.
+              {t(
+                dict,
+                "hero_subtitle",
+                "Choose the format that works for you—private one-on-one sessions or collaborative group learning. Flexible plans, real results."
+              )}
             </p>
 
             <div className="ecp-tabs" role="tablist" aria-label="Audience">
@@ -85,7 +118,7 @@ function Packages() {
                 }`}
                 onClick={() => setTab(AUD.INDIVIDUAL)}
               >
-                Individuals
+                {t(dict, "tab_individual", "Individuals")}
               </button>
               <button
                 role="tab"
@@ -95,7 +128,7 @@ function Packages() {
                 }`}
                 onClick={() => setTab(AUD.CORPORATE)}
               >
-                Teams & Companies
+                {t(dict, "tab_corporate", "Teams & Companies")}
               </button>
             </div>
 
@@ -109,8 +142,12 @@ function Packages() {
                 >
                   <span className="ecp-lesson-icon">👤</span>
                   <span className="ecp-lesson-text">
-                    <strong>One-on-One</strong>
-                    <small>Private sessions</small>
+                    <strong>
+                      {t(dict, "lesson_one_on_one_title", "One-on-One")}
+                    </strong>
+                    <small>
+                      {t(dict, "lesson_one_on_one_sub", "Private sessions")}
+                    </small>
                   </span>
                 </button>
                 <button
@@ -121,8 +158,8 @@ function Packages() {
                 >
                   <span className="ecp-lesson-icon">👥</span>
                   <span className="ecp-lesson-text">
-                    <strong>Group</strong>
-                    <small>2-5 learners</small>
+                    <strong>{t(dict, "lesson_group_title", "Group")}</strong>
+                    <small>{t(dict, "lesson_group_sub", "2-5 learners")}</small>
                   </span>
                 </button>
               </div>
@@ -132,20 +169,37 @@ function Packages() {
               <div className="ecp-hero__note">
                 {lessonType === LESSON_TYPE.ONE_ON_ONE ? (
                   <>
-                    <strong>60-minute sessions</strong> · Personalized coaching
-                    · Flexible scheduling
+                    <strong>
+                      {t(dict, "note_1on1_strong", "60-minute sessions")}
+                    </strong>{" "}
+                    ·{" "}
+                    {t(
+                      dict,
+                      "note_1on1_rest",
+                      "Personalized coaching · Flexible scheduling"
+                    )}
                   </>
                 ) : (
                   <>
-                    <strong>90-minute sessions</strong> · Small groups (2-5
-                    learners) · Collaborative learning
+                    <strong>
+                      {t(dict, "note_group_strong", "90-minute sessions")}
+                    </strong>{" "}
+                    ·{" "}
+                    {t(
+                      dict,
+                      "note_group_rest",
+                      "Small groups (2-5 learners) · Collaborative learning"
+                    )}
                   </>
                 )}
               </div>
             ) : (
               <div className="ecp-hero__note">
-                Custom programs · Progress reporting · Enterprise billing ·
-                Dedicated support
+                {t(
+                  dict,
+                  "note_corporate",
+                  "Custom programs · Progress reporting · Enterprise billing · Dedicated support"
+                )}
               </div>
             )}
           </div>
@@ -153,7 +207,7 @@ function Packages() {
           <figure className="ecp-media ecp-hero__media">
             <img
               src="/images/english-coaching-in-action.avif"
-              alt="English coaching in action"
+              alt={t(dict, "hero_media_alt", "English coaching in action")}
               loading="eager"
             />
           </figure>
@@ -164,14 +218,18 @@ function Packages() {
       {loading && (
         <section className="ecp__section">
           <div className="ecp__container">
-            <div className="ecp-status">Loading packages…</div>
+            <div className="ecp-status">
+              {t(dict, "status_loading", "Loading packages…")}
+            </div>
           </div>
         </section>
       )}
       {!loading && err && (
         <section className="ecp__section">
           <div className="ecp__container">
-            <div className="ecp-status ecp-status--warn">{err}</div>
+            <div className="ecp-status ecp-status--warn">
+              {t(dict, "status_error", err || "Something went wrong.")}
+            </div>
           </div>
         </section>
       )}
@@ -180,18 +238,8 @@ function Packages() {
       <section className="ecp__section ecp-pricing-section">
         <div className="ecp__container">
           <div className="ecp-section-header">
-            <h2 className="ecp-section-title">
-              {tab === AUD.INDIVIDUAL
-                ? lessonType === LESSON_TYPE.ONE_ON_ONE
-                  ? "One-on-One Packages"
-                  : "Group Learning Packages"
-                : "Enterprise Solutions"}
-            </h2>
-            <p className="ecp-section-subtitle">
-              {tab === AUD.INDIVIDUAL
-                ? "Choose the package that fits your learning goals and schedule"
-                : "Scalable language training for teams of all sizes"}
-            </p>
+            <h2 className="ecp-section-title">{pricingTitle}</h2>
+            <p className="ecp-section-subtitle">{pricingSubtitle}</p>
           </div>
 
           <div className="ecp-grid ecp-grid--fade-in">
@@ -200,7 +248,7 @@ function Packages() {
                 key={p.id || idx}
                 plan={p}
                 audience={tab}
-                lessonType={lessonType}
+                dict={dict}
               />
             ))}
           </div>
@@ -212,15 +260,20 @@ function Packages() {
         <section className="ecp__section ecp-estimator">
           <div className="ecp__container ecp-card ecp-estimator__row">
             <div className="ecp-estimator__copy">
-              <h3 className="ecp-estimator__title">Budget Estimator</h3>
+              <h3 className="ecp-estimator__title">
+                {t(dict, "estimator_title", "Budget Estimator")}
+              </h3>
               <p className="ecp-estimator__p">
-                Get a rough estimate for your team size. Final pricing depends
-                on program format, duration, and custom requirements.
+                {t(
+                  dict,
+                  "estimator_text",
+                  "Get a rough estimate for your team size. Final pricing depends on program format, duration, and custom requirements."
+                )}
               </p>
             </div>
             <div className="ecp-estimator__control">
               <label className="ecp-label" htmlFor="seats">
-                Team Size
+                {t(dict, "estimator_label_team_size", "Team Size")}
               </label>
               <input
                 id="seats"
@@ -231,19 +284,25 @@ function Packages() {
                 value={seats}
                 onChange={(e) => setSeats(Number(e.target.value))}
               />
-              <div className="ecp-estimator__value">{seats} employees</div>
+              <div className="ecp-estimator__value">
+                {seats} {t(dict, "estimator_employees", "employees")}
+              </div>
             </div>
             <div className="ecp-estimator__result">
               <div className="ecp-estimator__number">
-                ~${corpEstimate.toLocaleString()}/mo
+                ~${corpEstimate.toLocaleString()}/
+                {t(dict, "estimator_period", "mo")}
               </div>
               <Link href="/corporate#rfp" className="ecp-btn ecp-btn--primary">
-                Get Custom Quote
+                {t(dict, "estimator_cta", "Get Custom Quote")}
               </Link>
             </div>
             <div className="ecp-estimator__disclaimer">
-              This is an indicative estimate only. Actual pricing varies based
-              on program scope, duration, and delivery format.
+              {t(
+                dict,
+                "estimator_disclaimer",
+                "This is an indicative estimate only. Actual pricing varies based on program scope, duration, and delivery format."
+              )}
             </div>
           </div>
         </section>
@@ -253,26 +312,40 @@ function Packages() {
       <section className="ecp__section ecp-how">
         <div className="ecp__container">
           <div className="ecp-section-header">
-            <h2 className="ecp-section-title">How It Works</h2>
+            <h2 className="ecp-section-title">
+              {t(dict, "how_title", "How It Works")}
+            </h2>
             <p className="ecp-section-subtitle">
-              Get started in three simple steps
+              {t(dict, "how_subtitle", "Get started in three simple steps")}
             </p>
           </div>
           <div className="ecp-grid-steps">
             <Step
               n="1"
-              title="Choose Your Plan"
-              desc="Select the package that matches your goals—private coaching or group learning."
+              title={t(dict, "how_step1_title", "Choose Your Plan")}
+              desc={t(
+                dict,
+                "how_step1_desc",
+                "Select the package that matches your goals—private coaching or group learning."
+              )}
             />
             <Step
               n="2"
-              title="Schedule Sessions"
-              desc="Book times that fit your schedule. Easy rescheduling if plans change."
+              title={t(dict, "how_step2_title", "Schedule Sessions")}
+              desc={t(
+                dict,
+                "how_step2_desc",
+                "Book times that fit your schedule. Easy rescheduling if plans change."
+              )}
             />
             <Step
               n="3"
-              title="Start Improving"
-              desc="Practical lessons, actionable feedback, and measurable progress from day one."
+              title={t(dict, "how_step3_title", "Start Improving")}
+              desc={t(
+                dict,
+                "how_step3_desc",
+                "Practical lessons, actionable feedback, and measurable progress from day one."
+              )}
             />
           </div>
         </div>
@@ -282,16 +355,22 @@ function Packages() {
       <section className="ecp__section">
         <div className="ecp__container ecp-compare ecp-card">
           <div className="ecp-compare__header">
-            <h2 className="ecp-compare__title">What's Included</h2>
+            <h2 className="ecp-compare__title">
+              {t(dict, "compare_title", "What's Included")}
+            </h2>
             <p className="ecp-compare__subtitle">
-              Compare features across all packages
+              {t(
+                dict,
+                "compare_subtitle",
+                "Compare features across all packages"
+              )}
             </p>
           </div>
           <div className="ecp-compare__tablewrap">
             <table className="ecp-compare__table">
               <thead>
                 <tr>
-                  <th>Features</th>
+                  <th>{t(dict, "compare_col_features", "Features")}</th>
                   {plans.map((p, i) => (
                     <th key={i}>{p.title}</th>
                   ))}
@@ -301,8 +380,11 @@ function Packages() {
                 {matrix.length === 0 ? (
                   <tr>
                     <td colSpan={1 + plans.length} className="empty">
-                      All packages include personalized coaching, flexible
-                      scheduling, and progress tracking.
+                      {t(
+                        dict,
+                        "compare_empty",
+                        "All packages include personalized coaching, flexible scheduling, and progress tracking."
+                      )}
                     </td>
                   </tr>
                 ) : (
@@ -326,27 +408,57 @@ function Packages() {
       {/* FAQ */}
       <section className="ecp__section ecp-faq">
         <div className="ecp__container ecp-card">
-          <h2 className="ecp-faq__title">Frequently Asked Questions</h2>
+          <h2 className="ecp-faq__title">
+            {t(dict, "faq_title", "Frequently Asked Questions")}
+          </h2>
           <div className="ecp-faq__list">
             <Faq
-              q="Can I switch between One-on-One and Group lessons?"
-              a="Yes! You can switch formats between billing periods. Contact us and we'll help you transition smoothly."
+              q={t(
+                dict,
+                "faq1_q",
+                "Can I switch between One-on-One and Group lessons?"
+              )}
+              a={t(
+                dict,
+                "faq1_a",
+                "Yes! You can switch formats between billing periods. Contact us and we'll help you transition smoothly."
+              )}
             />
             <Faq
-              q="What's the difference between One-on-One and Group sessions?"
-              a="One-on-One sessions are 60 minutes of private coaching focused entirely on your goals. Group sessions are 90 minutes with 2-5 learners, offering collaborative practice at a lower cost per person."
+              q={t(
+                dict,
+                "faq2_q",
+                "What's the difference between One-on-One and Group sessions?"
+              )}
+              a={t(
+                dict,
+                "faq2_a",
+                "One-on-One sessions are 60 minutes of private coaching focused entirely on your goals. Group sessions are 90 minutes with 2-5 learners, offering collaborative practice at a lower cost per person."
+              )}
             />
             <Faq
-              q="How does group composition work?"
-              a="We match learners with similar proficiency levels and learning goals to ensure productive, balanced sessions."
+              q={t(dict, "faq3_q", "How does group composition work?")}
+              a={t(
+                dict,
+                "faq3_a",
+                "We match learners with similar proficiency levels and learning goals to ensure productive, balanced sessions."
+              )}
             />
             <Faq
-              q="What if I miss a session?"
-              a="You can reschedule within your package period. We offer flexible rescheduling with 24-hour notice."
+              q={t(dict, "faq4_q", "What if I miss a session?")}
+              a={t(
+                dict,
+                "faq4_a",
+                "You can reschedule within your package period. We offer flexible rescheduling with 24-hour notice."
+              )}
             />
             <Faq
-              q="Do you offer corporate/enterprise plans?"
-              a="Yes! We provide custom programs for teams with volume pricing, dedicated account management, progress reporting, and flexible billing options."
+              q={t(dict, "faq5_q", "Do you offer corporate/enterprise plans?")}
+              a={t(
+                dict,
+                "faq5_a",
+                "Yes! We provide custom programs for teams with volume pricing, dedicated account management, progress reporting, and flexible billing options."
+              )}
             />
           </div>
         </div>
@@ -355,20 +467,22 @@ function Packages() {
       {/* CTA STRIP */}
       <section className="ecp__section ecp-cta">
         <div className="ecp__container ecp-cta__inner">
-          <h2>Ready to Start Your English Journey?</h2>
+          <h2>
+            {t(dict, "cta_title", "Ready to Start Your English Journey?")}
+          </h2>
           {tab === AUD.INDIVIDUAL ? (
             <div className="ecp-cta__actions">
               <Link
                 className="ecp-btn ecp-btn--primary ecp-btn--lg"
                 href="/individual#trial"
               >
-                Book Free Consultation
+                {t(dict, "cta_individual_primary", "Book Free Consultation")}
               </Link>
               <Link
                 className="ecp-btn ecp-btn--ghost ecp-btn--lg"
                 href="/packages"
               >
-                View All Plans
+                {t(dict, "cta_individual_secondary", "View All Plans")}
               </Link>
             </div>
           ) : (
@@ -377,13 +491,17 @@ function Packages() {
                 href="/corporate#rfp"
                 className="ecp-btn ecp-btn--primary ecp-btn--lg"
               >
-                Request Proposal
+                {t(dict, "cta_corp_primary", "Request Proposal")}
               </Link>
               <Link
                 className="ecp-btn ecp-btn--ghost ecp-btn--lg"
                 href="/corporate"
               >
-                Learn About Corporate Programs
+                {t(
+                  dict,
+                  "cta_corp_secondary",
+                  "Learn About Corporate Programs"
+                )}
               </Link>
             </div>
           )}
@@ -394,7 +512,7 @@ function Packages() {
 }
 
 /* Components */
-function PricingCard({ plan, audience }) {
+function PricingCard({ plan, audience, dict }) {
   const {
     title,
     description,
@@ -412,12 +530,16 @@ function PricingCard({ plan, audience }) {
 
   const totalLabel = (() => {
     if (priceType === "CUSTOM" || (!priceUSD && !startingAtUSD))
-      return "Custom Pricing";
+      return t(dict, "price_custom", "Custom Pricing");
     if (startingAtUSD && !priceUSD)
-      return `From $${Number(startingAtUSD).toLocaleString()}`;
+      return t(
+        dict,
+        "price_from",
+        `From $${Number(startingAtUSD).toLocaleString()}`
+      );
     if (typeof priceUSD === "number")
       return `$${Number(priceUSD).toLocaleString()}`;
-    return "Custom Pricing";
+    return t(dict, "price_custom", "Custom Pricing");
   })();
 
   const perSessionPrice =
@@ -427,13 +549,19 @@ function PricingCard({ plan, audience }) {
 
   return (
     <div className={`ecp-card ecp-card--plan ${isPopular ? "is-popular" : ""}`}>
-      {isPopular && <div className="ecp-badge">MOST POPULAR</div>}
+      {isPopular && (
+        <div className="ecp-badge">
+          {t(dict, "badge_most_popular", "MOST POPULAR")}
+        </div>
+      )}
       {savings && <div className="ecp-savings">{savings.toUpperCase()}</div>}
 
       <div className="ecp-card__head">
         <div className="ecp-card__title">{title}</div>
         {sessionsPerPack && (
-          <div className="ecp-card__sessions">{sessionsPerPack} sessions</div>
+          <div className="ecp-card__sessions">
+            {sessionsPerPack} {t(dict, "label_sessions", "sessions")}
+          </div>
         )}
       </div>
 
@@ -442,10 +570,14 @@ function PricingCard({ plan, audience }) {
       <div className="ecp-card__price">
         <div className="ecp-card__value">{totalLabel}</div>
         {perSessionPrice && (
-          <div className="ecp-card__sub">${perSessionPrice}/session</div>
+          <div className="ecp-card__sub">
+            ${perSessionPrice}/{t(dict, "label_per_session", "session")}
+          </div>
         )}
         {durationMin && !isCorp && (
-          <div className="ecp-card__duration">{durationMin} min/session</div>
+          <div className="ecp-card__duration">
+            {durationMin} {t(dict, "label_min_per_session", "min/session")}
+          </div>
         )}
       </div>
 
@@ -461,20 +593,19 @@ function PricingCard({ plan, audience }) {
         {isCorp ? (
           <>
             <Link href="/corporate#rfp" className="ecp-btn ecp-btn--primary">
-              Contact Sales
+              {t(dict, "cta_corp_card_primary", "Contact Sales")}
             </Link>
             <Link className="ecp-btn ecp-btn--ghost" href="/corporate">
-              Learn More
+              {t(dict, "cta_corp_card_secondary", "Learn More")}
             </Link>
           </>
         ) : (
           <>
-            {/* KEEPING YOUR PAYMENT LINK + LABEL */}
             <Link
               href={`/checkout?plan=${encodeURIComponent(plan.title)}`}
               className="ecp-btn ecp-btn--primary"
             >
-              Buy Now
+              {t(dict, "cta_buy_now", "Buy Now")}
             </Link>
           </>
         )}

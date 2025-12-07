@@ -1,8 +1,8 @@
-// src/pages/login.jsx
+// app/login/page.js
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -16,14 +16,15 @@ import {
   logout as apiLogout,
 } from "@/lib/auth";
 import useAuth from "@/hooks/useAuth";
+import { getDictionary, t } from "@/app/i18n";
 
-function Login() {
+function LoginInner({ dict }) {
   const [form, setForm] = useState({ email: "", password: "" });
   const [msg, setMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [redirecting, setRedirecting] = useState(false); // hide UI during post-login nav
-  const [loggingOut, setLoggingOut] = useState(false); // hide UI during logout
+  const [redirecting, setRedirecting] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const router = useRouter();
   const params = useSearchParams();
@@ -33,20 +34,15 @@ function Login() {
   const redirectAfterLogin = useCallback(() => {
     const next = params.get("next");
 
-    console.log("🔍 Checking next param:", next);
-
     if (next) {
-      console.log("✅ Found next param, redirecting to:", next);
       window.location.href = decodeURIComponent(next);
       return;
     }
 
-    console.log("📍 No next param, redirecting to dashboard");
     router.replace("/dashboard");
     router.refresh();
   }, [params, router]);
 
-  // If already authenticated, start redirect immediately and render nothing
   useEffect(() => {
     if (!checking && user) {
       setRedirecting(true);
@@ -66,39 +62,38 @@ function Login() {
       redirectAfterLogin();
     } catch (err) {
       setRedirecting(false);
-      setMsg(err?.message || "Login failed");
+      setMsg(err?.message || t(dict, "alert_login_failed"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Called by <GoogleButton/> with resp = { credential, ... }
   const handleGoogleSuccess = async (resp) => {
     try {
       const credential = resp?.credential;
       if (!credential) {
-        setMsg("Google didn’t return a credential");
+        setMsg(t(dict, "alert_google_no_credential"));
         return;
       }
       setMsg("");
       setRedirecting(true);
-      await apiGoogleLogin(credential); // send raw string to /api/auth/google
+      await apiGoogleLogin(credential);
       await refresh();
       redirectAfterLogin();
     } catch (err) {
       console.error(err);
       setRedirecting(false);
-      setMsg(err?.message || "Google sign-in failed");
+      setMsg(err?.message || t(dict, "alert_google_failed"));
     }
   };
 
   const handleGoogleError = (err) => {
     console.error(err);
-    setMsg("Google sign-in failed");
+    setMsg(t(dict, "alert_google_failed"));
   };
 
   const logout = async () => {
-    setLoggingOut(true); // hide any “not authenticated” flashes while the app flips state
+    setLoggingOut(true);
     try {
       await apiLogout();
     } catch (e) {
@@ -109,7 +104,7 @@ function Login() {
     router.refresh();
   };
 
-  // KEY: never render the card while checking, redirecting, logging out, or already authenticated
+  // Don't render form while state is unstable
   if (checking || redirecting || loggingOut || user) return null;
 
   return (
@@ -149,8 +144,8 @@ function Login() {
           </div>
 
           <header className="auth-header">
-            <h1>Welcome back</h1>
-            <p>Sign in to continue to your account</p>
+            <h1>{t(dict, "title")}</h1>
+            <p>{t(dict, "subtitle")}</p>
           </header>
 
           {!user ? (
@@ -163,7 +158,7 @@ function Login() {
               </div>
 
               <div className="auth-divider">
-                <span>or continue with email</span>
+                <span>{t(dict, "social_divider")}</span>
               </div>
 
               <form className="auth-form" onSubmit={login}>
@@ -181,7 +176,7 @@ function Login() {
                 )}
 
                 <div className="form-field">
-                  <label htmlFor="email">Email address</label>
+                  <label htmlFor="email">{t(dict, "label_email")}</label>
                   <div className="input-wrapper">
                     <svg
                       className="input-icon"
@@ -194,7 +189,7 @@ function Login() {
                     <input
                       id="email"
                       type="email"
-                      placeholder="name@example.com"
+                      placeholder={t(dict, "placeholder_email")}
                       value={form.email}
                       onChange={(e) =>
                         setForm({ ...form, email: e.target.value })
@@ -207,9 +202,11 @@ function Login() {
 
                 <div className="form-field">
                   <div className="field-label-row">
-                    <label htmlFor="password">Password</label>
+                    <label htmlFor="password">
+                      {t(dict, "label_password")}
+                    </label>
                     <Link href="/forgot-password" className="forgot-link">
-                      Forgot password?
+                      {t(dict, "forgot_password")}
                     </Link>
                   </div>
                   <div className="input-wrapper">
@@ -227,7 +224,7 @@ function Login() {
                     <input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
+                      placeholder={t(dict, "placeholder_password")}
                       value={form.password}
                       onChange={(e) =>
                         setForm({ ...form, password: e.target.value })
@@ -289,19 +286,19 @@ function Login() {
                           opacity="0.75"
                         />
                       </svg>
-                      Signing in...
+                      {t(dict, "btn_signing_in")}
                     </>
                   ) : (
-                    "Sign in"
+                    t(dict, "btn_sign_in")
                   )}
                 </button>
               </form>
 
               <footer className="auth-footer">
                 <p>
-                  Don&apos;t have an account?{" "}
+                  {t(dict, "no_account")}{" "}
                   <Link href="/register" className="link-primary">
-                    Create account
+                    {t(dict, "link_create_account")}
                   </Link>
                 </p>
               </footer>
@@ -310,18 +307,18 @@ function Login() {
             <div className="auth-logged">
               <div className="user-badge">
                 <div className="user-avatar">
-                  {user.name
-                    ? user.name.charAt(0).toUpperCase()
-                    : user.email.charAt(0).toUpperCase()}
+                  {(user.name || user.email || "?").charAt(0).toUpperCase()}
                 </div>
                 <div className="user-info">
-                  <p className="user-name">{user.name || "User"}</p>
+                  <p className="user-name">
+                    {user.name || t(dict, "user_fallback_name")}
+                  </p>
                   <p className="user-email">{user.email}</p>
                   <span className="user-role">{user.role}</span>
                 </div>
               </div>
               <button className="btn-secondary" onClick={logout}>
-                Sign out
+                {t(dict, "btn_sign_out")}
               </button>
             </div>
           )}
@@ -337,4 +334,10 @@ function Login() {
   );
 }
 
-export default Login;
+export default function LoginPage() {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "login");
+
+  return <LoginInner dict={dict} />;
+}

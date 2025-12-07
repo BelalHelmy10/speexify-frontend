@@ -1,28 +1,30 @@
+// app/individual-training/page.js
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { usePathname } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 import "@/styles/individual.scss";
+import { getDictionary, t } from "@/app/i18n";
 
-function Individual() {
+function IndividualInner({ dict }) {
   const { user } = useAuth();
   const formRef = useRef(null);
 
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState("");
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => ({
     name: "",
     email: "",
     timezone: "",
-    level: "A2 (Elementary)",
-    goal: "Speak more confidently",
-    availability: "Weekdays",
+    level: t(dict, "level_a2"),
+    goal: t(dict, "goal_confidence"),
+    availability: t(dict, "availability_weekdays"),
     message: "",
     agree: false,
-  });
+  }));
 
   useEffect(() => {
     if (!user) return;
@@ -42,7 +44,7 @@ function Individual() {
     e.preventDefault();
     setStatus("");
     if (!form.name || !form.email || !form.agree) {
-      setStatus("Please fill the required fields.");
+      setStatus(t(dict, "status_required"));
       return;
     }
     setSending(true);
@@ -57,7 +59,7 @@ function Individual() {
           form.timezone
         }\nAvailability: ${form.availability}\n\n${form.message || ""}`,
       });
-      setStatus("Thanks! We'll email you to schedule a quick consult.");
+      setStatus(t(dict, "status_sent"));
       formRef.current?.reset();
       setForm((f) => ({ ...f, message: "", agree: false }));
     } catch (_err) {
@@ -66,9 +68,7 @@ function Individual() {
         `Name: ${form.name}\nEmail: ${form.email}\nLevel: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone}\nAvailability: ${form.availability}\n\n${form.message}`
       );
       window.location.href = `mailto:hello@speexify.com?subject=${subject}&body=${body}`;
-      setStatus(
-        "Opened your email client. If that didn't work, email hello@speexify.com."
-      );
+      setStatus(t(dict, "status_email_fallback"));
     } finally {
       setSending(false);
     }
@@ -87,23 +87,21 @@ function Individual() {
           <div className="ind-hero__copy">
             <div className="ind-hero__badge">
               <span className="ind-hero__badge-icon">✨</span>
-              <span>Personalized 1:1 coaching</span>
+              <span>{t(dict, "hero_badge")}</span>
             </div>
 
             <h1 className="ind-hero__title">
-              Speak English with
-              <span className="ind-hero__title-accent"> confidence</span>
+              {t(dict, "hero_title_main")}
+              <span className="ind-hero__title-accent">
+                {t(dict, "hero_title_accent")}
+              </span>
             </h1>
 
-            <p className="ind-hero__subtitle">
-              1:1 coaching focused on your real life — interviews, meetings,
-              travel, or exams. Improve fast with clear goals, practical
-              language, and coach feedback.
-            </p>
+            <p className="ind-hero__subtitle">{t(dict, "hero_subtitle")}</p>
 
             <div className="ind-hero__actions">
               <a href="#trial" className="btn btn--primary btn--shine">
-                <span>Book a free consult</span>
+                <span>{t(dict, "hero_cta_primary")}</span>
                 <svg
                   className="btn__arrow"
                   width="16"
@@ -121,64 +119,22 @@ function Individual() {
                 </svg>
               </a>
               <Link href="/packages" className="btn btn--ghost">
-                See packages
+                {t(dict, "hero_cta_secondary")}
               </Link>
             </div>
 
             <div className="ind-hero__features">
               <div className="ind-hero__feature">
-                <svg
-                  className="ind-hero__feature-icon"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                >
-                  <path
-                    d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span>Flexible scheduling</span>
+                <CheckIcon />
+                <span>{t(dict, "hero_feature_1")}</span>
               </div>
               <div className="ind-hero__feature">
-                <svg
-                  className="ind-hero__feature-icon"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                >
-                  <path
-                    d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span>Expert coaches</span>
+                <CheckIcon />
+                <span>{t(dict, "hero_feature_2")}</span>
               </div>
               <div className="ind-hero__feature">
-                <svg
-                  className="ind-hero__feature-icon"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                >
-                  <path
-                    d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span>Real progress</span>
+                <CheckIcon />
+                <span>{t(dict, "hero_feature_3")}</span>
               </div>
             </div>
           </div>
@@ -192,7 +148,7 @@ function Individual() {
             />
             <div className="ind-hero__media-badge">
               <span className="ind-hero__media-badge-dot"></span>
-              <span>Live coaching sessions</span>
+              <span>{t(dict, "hero_media_badge")}</span>
             </div>
           </figure>
         </div>
@@ -202,14 +158,18 @@ function Individual() {
       <section className="container ind-metrics">
         <div className="grid-3">
           <MetricCard
-            metric="+3×"
-            label="more speaking time than group classes"
+            metric={t(dict, "metric_1_value")}
+            label={t(dict, "metric_1_label")}
             icon="📈"
           />
-          <MetricCard metric="4.9/5" label="average coach rating" icon="⭐" />
           <MetricCard
-            metric="6–8 wks"
-            label="visible confidence gains"
+            metric={t(dict, "metric_2_value")}
+            label={t(dict, "metric_2_label")}
+            icon="⭐"
+          />
+          <MetricCard
+            metric={t(dict, "metric_3_value")}
+            label={t(dict, "metric_3_label")}
             icon="🎯"
           />
         </div>
@@ -218,33 +178,31 @@ function Individual() {
       {/* WHO IT'S FOR */}
       <section className="container ind-goals">
         <div className="section-header">
-          <h2 className="section-title">Built for your goals</h2>
-          <p className="section-subtitle">
-            Choose your focus area and we'll customize your learning path
-          </p>
+          <h2 className="section-title">{t(dict, "goals_title")}</h2>
+          <p className="section-subtitle">{t(dict, "goals_subtitle")}</p>
         </div>
 
         <div className="ind-goals__grid">
           <Goal
-            title="Work & interviews"
-            p="Practice interviews, meetings, and presentations. Get language you can use tomorrow."
+            title={t(dict, "goal_1_title")}
+            p={t(dict, "goal_1_p")}
             img="/images/interviews.avif"
           />
           <Goal
-            title="Fluency & conversation"
-            p="Sound natural in daily life. Build vocabulary and confidence with guided speaking."
+            title={t(dict, "goal_2_title")}
+            p={t(dict, "goal_2_p")}
             img="/images/speaking.avif"
           />
           <Goal
-            title="Exams & study"
-            p="Prepare for IELTS/TOEFL or university speaking tasks with targeted feedback."
+            title={t(dict, "goal_3_title")}
+            p={t(dict, "goal_3_p")}
             img="/images/exams.avif"
           />
         </div>
 
         <div className="ind-goals__cta">
           <a href="#trial" className="btn btn--ghost">
-            Talk to a coach
+            {t(dict, "goals_cta")}
           </a>
         </div>
       </section>
@@ -252,21 +210,19 @@ function Individual() {
       {/* HOW IT WORKS */}
       <section className="container ind-how">
         <div className="section-header">
-          <h2 className="section-title">How it works</h2>
-          <p className="section-subtitle">
-            Simple steps to get started and keep improving
-          </p>
+          <h2 className="section-title">{t(dict, "how_title")}</h2>
+          <p className="section-subtitle">{t(dict, "how_subtitle")}</p>
         </div>
 
         <div className="ind-steps">
-          <Step n="1" title="Quick consult">
-            Share goals and schedule. We match you with the right coach.
+          <Step n="1" title={t(dict, "how_step1_title")}>
+            {t(dict, "how_step1_p")}
           </Step>
-          <Step n="2" title="Personal plan">
-            Weekly 1:1 sessions with practice between lessons.
+          <Step n="2" title={t(dict, "how_step2_title")}>
+            {t(dict, "how_step2_p")}
           </Step>
-          <Step n="3" title="Real progress">
-            Regular feedback, pronunciation tune-ups, and clear milestones.
+          <Step n="3" title={t(dict, "how_step3_title")}>
+            {t(dict, "how_step3_p")}
           </Step>
         </div>
       </section>
@@ -274,52 +230,48 @@ function Individual() {
       {/* WHAT YOU'LL LEARN */}
       <section className="container ind-learn">
         <div className="section-header">
-          <h2 className="section-title">What you'll learn</h2>
-          <p className="section-subtitle">
-            Practical modules customized to your level (A1–C2)
-          </p>
+          <h2 className="section-title">{t(dict, "learn_title")}</h2>
+          <p className="section-subtitle">{t(dict, "learn_subtitle")}</p>
         </div>
 
         <ul className="chips">
-          <li>Everyday conversation</li>
-          <li>Work meetings</li>
-          <li>Interview prep</li>
-          <li>Presentation skills</li>
-          <li>Pronunciation & stress</li>
-          <li>Email & chat tone</li>
-          <li>Vocabulary building</li>
-          <li>Listening strategies</li>
+          <li>{t(dict, "chip_everyday")}</li>
+          <li>{t(dict, "chip_meetings")}</li>
+          <li>{t(dict, "chip_interview")}</li>
+          <li>{t(dict, "chip_presentations")}</li>
+          <li>{t(dict, "chip_pronunciation")}</li>
+          <li>{t(dict, "chip_email")}</li>
+          <li>{t(dict, "chip_vocab")}</li>
+          <li>{t(dict, "chip_listening")}</li>
         </ul>
       </section>
 
       {/* TESTIMONIALS */}
       <section className="container ind-testimonials">
         <div className="section-header">
-          <h2 className="section-title">What our learners say</h2>
-          <p className="section-subtitle">
-            Real stories from people just like you
-          </p>
+          <h2 className="section-title">{t(dict, "testi_title")}</h2>
+          <p className="section-subtitle">{t(dict, "testi_subtitle")}</p>
         </div>
 
         <div className="grid-3">
           <Testimonial
-            quote="I finally feel comfortable leading meetings. My coach made it practical and fun."
-            by="Sara"
-            role="Software Engineer"
+            quote={t(dict, "testi1_quote")}
+            by={t(dict, "testi1_by")}
+            role={t(dict, "testi1_role")}
             avatar="/images/sara.avif"
             rating={5}
           />
           <Testimonial
-            quote="Two months with Speexify did more than a year of classes."
-            by="Ali"
-            role="MSc Student"
+            quote={t(dict, "testi2_quote")}
+            by={t(dict, "testi2_by")}
+            role={t(dict, "testi2_role")}
             avatar="/images/ali.avif"
             rating={5}
           />
           <Testimonial
-            quote="The interview practice helped me get an offer. Totally worth it."
-            by="Marta"
-            role="Product Designer"
+            quote={t(dict, "testi3_quote")}
+            by={t(dict, "testi3_by")}
+            role={t(dict, "testi3_role")}
             avatar="/images/marta.avif"
             rating={5}
           />
@@ -330,15 +282,13 @@ function Individual() {
       <section id="trial" className="container ind-trial">
         <div className="ind-trial__card">
           <div className="section-header">
-            <h2 className="section-title">Book a free consult</h2>
-            <p className="section-subtitle">
-              Tell us a bit about you — we'll match a coach and set up a call
-            </p>
+            <h2 className="section-title">{t(dict, "trial_title")}</h2>
+            <p className="section-subtitle">{t(dict, "trial_subtitle")}</p>
           </div>
 
           <form ref={formRef} onSubmit={submit} className="rfp">
             <div className="rfp__row">
-              <Field label="Full name*" name="name">
+              <Field label={t(dict, "field_name")} name="name">
                 <input
                   className="input"
                   name="name"
@@ -347,7 +297,7 @@ function Individual() {
                   required
                 />
               </Field>
-              <Field label="Email*" name="email">
+              <Field label={t(dict, "field_email")} name="email">
                 <input
                   className="input"
                   type="email"
@@ -360,63 +310,63 @@ function Individual() {
             </div>
 
             <div className="rfp__row rfp__row--3">
-              <Field label="Timezone" name="timezone">
+              <Field label={t(dict, "field_timezone")} name="timezone">
                 <input
                   className="input"
                   name="timezone"
-                  placeholder="e.g., Europe/London"
+                  placeholder={t(dict, "field_timezone_placeholder")}
                   value={form.timezone}
                   onChange={onChange}
                 />
               </Field>
-              <Field label="Level" name="level">
+              <Field label={t(dict, "field_level")} name="level">
                 <select
                   className="select"
                   name="level"
                   value={form.level}
                   onChange={onChange}
                 >
-                  <option>A2 (Elementary)</option>
-                  <option>B1 (Intermediate)</option>
-                  <option>B2 (Upper-Intermediate)</option>
-                  <option>C1 (Advanced)</option>
-                  <option>C2 (Proficient)</option>
+                  <option>{t(dict, "level_a2")}</option>
+                  <option>{t(dict, "level_b1")}</option>
+                  <option>{t(dict, "level_b2")}</option>
+                  <option>{t(dict, "level_c1")}</option>
+                  <option>{t(dict, "level_c2")}</option>
                 </select>
               </Field>
-              <Field label="Availability" name="availability">
+              <Field label={t(dict, "field_availability")} name="availability">
                 <select
                   className="select"
                   name="availability"
                   value={form.availability}
                   onChange={onChange}
                 >
-                  <option>Weekdays</option>
-                  <option>Weeknights</option>
-                  <option>Weekends</option>
+                  <option>{t(dict, "availability_weekdays")}</option>
+                  <option>{t(dict, "availability_weeknights")}</option>
+                  <option>{t(dict, "availability_weekends")}</option>
                 </select>
               </Field>
             </div>
 
             <div className="rfp__row">
-              <Field label="Main goal" name="goal">
+              <Field label={t(dict, "field_goal")} name="goal">
                 <select
                   className="select"
                   name="goal"
                   value={form.goal}
                   onChange={onChange}
                 >
-                  <option>Speak more confidently</option>
-                  <option>Interview preparation</option>
-                  <option>Improve pronunciation</option>
-                  <option>Emails & writing</option>
-                  <option>Exam preparation (IELTS/TOEFL)</option>
+                  <option>{t(dict, "goal_confidence")}</option>
+                  <option>{t(dict, "goal_interview")}</option>
+                  <option>{t(dict, "goal_pronunciation")}</option>
+                  <option>{t(dict, "goal_writing")}</option>
+                  <option>{t(dict, "goal_exam")}</option>
                 </select>
               </Field>
-              <Field label="Anything else?" name="message">
+              <Field label={t(dict, "field_message")} name="message">
                 <input
                   className="input"
                   name="message"
-                  placeholder="Optional note"
+                  placeholder={t(dict, "message_placeholder")}
                   value={form.message}
                   onChange={onChange}
                 />
@@ -431,9 +381,9 @@ function Individual() {
                 onChange={onChange}
               />
               <span>
-                I agree to the{" "}
+                {t(dict, "checkbox_prefix")}{" "}
                 <Link href="/privacy" className="link">
-                  privacy policy
+                  {t(dict, "checkbox_link")}
                 </Link>
                 .
               </span>
@@ -445,7 +395,9 @@ function Individual() {
                 type="submit"
                 disabled={sending}
               >
-                {sending ? "Sending…" : "Request consult"}
+                {sending
+                  ? t(dict, "btn_sending")
+                  : t(dict, "btn_request_consult")}
               </button>
               {status && (
                 <span className="form-status" role="status" aria-live="polite">
@@ -469,17 +421,15 @@ function Individual() {
 
         <div className="container ind-cta__inner">
           <div className="ind-cta__content">
-            <h2 className="ind-cta__title">Ready to get started?</h2>
-            <p className="ind-cta__subtitle">
-              Join hundreds of learners transforming their English
-            </p>
+            <h2 className="ind-cta__title">{t(dict, "final_title")}</h2>
+            <p className="ind-cta__subtitle">{t(dict, "final_subtitle")}</p>
           </div>
           <div className="ind-cta__actions">
             <a href="#trial" className="btn btn--primary btn--lg">
-              Book consult
+              {t(dict, "final_btn_primary")}
             </a>
             <Link href="/packages" className="btn btn--ghost btn--lg">
-              View packages
+              {t(dict, "final_btn_secondary")}
             </Link>
           </div>
         </div>
@@ -488,7 +438,28 @@ function Individual() {
   );
 }
 
-/* ——— Components ——— */
+/* ——— small components ——— */
+
+function CheckIcon() {
+  return (
+    <svg
+      className="ind-hero__feature-icon"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+    >
+      <path
+        d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function Field({ label, name, children }) {
   return (
     <div className="field" data-name={name}>
@@ -559,4 +530,10 @@ function Testimonial({ quote, by, role, avatar, rating }) {
   );
 }
 
-export default Individual;
+export default function IndividualPage() {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "individual");
+
+  return <IndividualInner dict={dict} />;
+}

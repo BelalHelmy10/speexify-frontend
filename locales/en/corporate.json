@@ -1,0 +1,110 @@
+{
+  "hero_badge": "Enterprise communication training",
+  "hero_title_main": "English that moves",
+  "hero_title_accent": " the business",
+  "hero_subtitle": "Tailored programs for teams and companies: 1:1 coaching, small-group practice, and workshops. Clear outcomes, flexible scheduling, and reporting for managers.",
+  "hero_cta_primary": "Request proposal",
+  "hero_cta_secondary": "See plans",
+  "hero_feature_coach": "Coach-matched",
+  "hero_feature_flex": "Flexible scheduling",
+  "hero_feature_reporting": "Full reporting",
+  "hero_media_badge": "Team training programs",
+
+  "logos_title": "Trusted by leading teams",
+
+  "metric1_label": "report improved confidence in meetings",
+  "metric2_label": "average coach rating",
+  "metric3_label": "visible communication gains",
+
+  "programs_title": "Programs that fit your team",
+  "programs_subtitle": "Mix and match formats for maximum impact",
+
+  "program1_title": "1:1 Coaching",
+  "program1_p1": "Personalized plan per learner",
+  "program1_p2": "Pronunciation & speaking drills",
+  "program1_p3": "Real work scenarios",
+
+  "program2_title": "Small-Group Practice",
+  "program2_p1": "3–6 learners per group",
+  "program2_p2": "Guided speaking time",
+  "program2_p3": "Peer feedback",
+
+  "program3_title": "Workshops",
+  "program3_p1": "Presentations & storytelling",
+  "program3_p2": "Meetings & facilitation",
+  "program3_p3": "Email & tone for business",
+
+  "plans_title": "Pilot · Team · Company",
+  "plans_subtitle": "Start small, scale with results",
+
+  "plan1_title": "Pilot (5–10)",
+  "plan1_desc": "Validate impact with a small cohort and clear report.",
+  "plan1_b1": "1:1 + group mix",
+  "plan1_b2": "Kickoff & goals",
+  "plan1_b3": "End-of-pilot report",
+
+  "plan2_title": "Team (10–50)",
+  "plan2_desc": "Blend formats; add workshops; monthly reporting.",
+  "plan2_b1": "Coach matching",
+  "plan2_b2": "Workshops",
+  "plan2_b3": "Manager updates",
+  "plan2_badge": "Most popular",
+
+  "plan3_title": "Company (50+)",
+  "plan3_desc": "Scaled rollout with CSM and quarterly exec reports.",
+  "plan3_b1": "Scheduling at scale",
+  "plan3_b2": "Dedicated CSM",
+  "plan3_b3": "Security review support",
+
+  "plans_view_corp": "View corporate plans",
+
+  "reporting_title": "Manager visibility & reporting",
+  "reporting_subtitle": "Monthly summaries, attendance, and learning milestones. Optional roster and SSO.",
+  "reporting_b1": "Progress & participation tracking",
+  "reporting_b2": "Team trends & risk identification",
+  "reporting_b3": "Quarterly business reviews",
+
+  "testis_title": "What leaders say",
+  "testis_subtitle": "Real results from real teams",
+
+  "testi1_quote": "Our team now leads client calls with confidence. Practical and fast.",
+  "testi1_by": "Sarah K.",
+  "testi1_role": "Head of CS, SaaS",
+
+  "testi2_quote": "Workshops were a hit. The follow-up 1:1s sealed the gains.",
+  "testi2_by": "Marcus T.",
+  "testi2_role": "L&D Manager, Fintech",
+
+  "testi3_quote": "Clear reporting helped us expand from pilot to company-wide.",
+  "testi3_by": "Priya M.",
+  "testi3_role": "HRBP, Global Ops",
+
+  "rfp_title": "Request a proposal",
+  "rfp_subtitle": "Tell us about your team and goals",
+
+  "field_company": "Company *",
+  "field_contact_name": "Contact name",
+  "field_email": "Email *",
+  "field_team_size": "Team size",
+  "field_timeframe": "Timeframe",
+  "field_goals": "Goals",
+  "field_notes": "Notes",
+
+  "placeholder_goals": "e.g., client calls, presentations, internal collaboration",
+  "placeholder_notes": "Optional",
+
+  "check_privacy_prefix": "I agree to the",
+  "check_privacy_link": "privacy policy",
+
+  "btn_request_proposal": "Request proposal",
+  "sending": "Sending…",
+
+  "status_required": "Please fill required fields.",
+  "status_sent": "Thanks! We'll get back to you shortly.",
+  "status_email_fallback": "Opened your email client. If that didn't work, email hello@speexify.com.",
+
+  "cta_title": "Ready to roll out training?",
+  "cta_subtitle": "Transform your team's communication starting today",
+  "cta_btn_primary": "Request proposal",
+  "cta_btn_secondary": "See plans"
+}

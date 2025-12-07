@@ -1,21 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
+import { getDictionary, t } from "../i18n";
 import "@/styles/contact.scss";
+
+const DEFAULT_ROLE = "INDIVIDUAL";
+const DEFAULT_TOPIC = "GENERAL";
+
+function getTopicLabel(topic, dict) {
+  switch (topic) {
+    case "SALES":
+      return t(dict, "form_topic_option_sales");
+    case "SUPPORT":
+      return t(dict, "form_topic_option_support");
+    case "PARTNERSHIPS":
+      return t(dict, "form_topic_option_partnerships");
+    case "MEDIA":
+      return t(dict, "form_topic_option_media");
+    case "GENERAL":
+    default:
+      return t(dict, "form_topic_option_general");
+  }
+}
 
 function Contact() {
   const { user } = useAuth();
+  const pathname = usePathname();
+
+  const locale = pathname && pathname.startsWith("/ar") ? "ar" : "en";
+  const dict = useMemo(() => getDictionary(locale, "contact"), [locale]);
 
   const [form, setForm] = useState({
     name: "",
     email: "",
     company: "",
     phone: "",
-    role: "Individual",
-    topic: "General question",
+    role: DEFAULT_ROLE, // codes, not labels
+    topic: DEFAULT_TOPIC,
     budget: "",
     message: "",
     agree: false,
@@ -24,6 +49,7 @@ function Contact() {
   const [status, setStatus] = useState("");
   const [sending, setSending] = useState(false);
 
+  // Pre-fill from user
   useEffect(() => {
     if (!user) return;
     setForm((f) => ({
@@ -41,27 +67,29 @@ function Contact() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("");
+
     if (!form.name || !form.email || !form.message || !form.agree) {
-      setStatus("Please fill required fields.");
+      setStatus(t(dict, "form_status_required"));
       return;
     }
 
     setSending(true);
     try {
-      await api.post("/api/contact", form);
-      setStatus("Sent ✓ Thanks — we'll get back to you shortly.");
+      await api.post("/api/contact", {
+        ...form,
+        locale,
+      });
+      setStatus(t(dict, "form_status_sent"));
       setForm((f) => ({ ...f, message: "" }));
     } catch {
       const subject = encodeURIComponent(
-        `[Contact] ${form.topic} — ${form.name}`
+        `[Contact] ${getTopicLabel(form.topic, dict)} — ${form.name}`
       );
       const body = encodeURIComponent(
         `Name: ${form.name}\nEmail: ${form.email}\nCompany: ${form.company}\nPhone: ${form.phone}\nRole: ${form.role}\nBudget: ${form.budget}\n\nMessage:\n${form.message}`
       );
       window.location.href = `mailto:hello@speexify.com?subject=${subject}&body=${body}`;
-      setStatus(
-        "Opened your email client. If that didn't work, email hello@speexify.com."
-      );
+      setStatus(t(dict, "form_status_email_fallback"));
     } finally {
       setSending(false);
     }
@@ -79,21 +107,21 @@ function Contact() {
         <div className="contact-hero__content container stack-lg">
           <div className="contact-hero__badge">
             <span className="contact-hero__badge-icon">💬</span>
-            <span>Get in touch</span>
+            <span>{t(dict, "hero_badge")}</span>
           </div>
 
           <h1 className="contact-hero__title">
-            Talk to<span className="contact-hero__title-accent"> Speexify</span>
+            {t(dict, "hero_title_prefix")}
+            <span className="contact-hero__title-accent">
+              {t(dict, "hero_title_accent")}
+            </span>
           </h1>
 
-          <p className="contact-hero__subtitle">
-            Language & communication coaching that drives results. Tell us what
-            you need — we'll tailor a plan.
-          </p>
+          <p className="contact-hero__subtitle">{t(dict, "hero_subtitle")}</p>
 
           <div className="contact-hero__actions row-gap-sm">
             <Link href="/register" className="btn btn--primary btn--shine">
-              <span>Book a call</span>
+              <span>{t(dict, "hero_cta_primary")}</span>
               <svg
                 className="btn__arrow"
                 width="16"
@@ -111,7 +139,7 @@ function Contact() {
               </svg>
             </Link>
             <a href="mailto:hello@speexify.com" className="btn btn--ghost">
-              Email us
+              {t(dict, "hero_cta_secondary")}
             </a>
           </div>
         </div>
@@ -123,17 +151,15 @@ function Contact() {
           {/* LEFT: Form */}
           <div className="card contact-form stack-md">
             <div className="card__header stack-xs">
-              <h2 className="card__title">Contact us</h2>
-              <p className="card__subtitle">
-                We usually reply within one business day.
-              </p>
+              <h2 className="card__title">{t(dict, "form_card_title")}</h2>
+              <p className="card__subtitle">{t(dict, "form_card_subtitle")}</p>
             </div>
 
             <form onSubmit={handleSubmit} noValidate className="stack-md">
               <div className="form-row">
                 <div className="field">
                   <label className="label" htmlFor="name">
-                    Full name*
+                    {t(dict, "form_name_label")}
                   </label>
                   <input
                     id="name"
@@ -146,7 +172,7 @@ function Contact() {
                 </div>
                 <div className="field">
                   <label className="label" htmlFor="email">
-                    Email*
+                    {t(dict, "form_email_label")}
                   </label>
                   <input
                     id="email"
@@ -163,7 +189,7 @@ function Contact() {
               <div className="form-row">
                 <div className="field">
                   <label className="label" htmlFor="company">
-                    Company
+                    {t(dict, "form_company_label")}
                   </label>
                   <input
                     id="company"
@@ -171,12 +197,12 @@ function Contact() {
                     className="input"
                     value={form.company}
                     onChange={onChange}
-                    placeholder="(optional)"
+                    placeholder={t(dict, "form_company_placeholder")}
                   />
                 </div>
                 <div className="field">
                   <label className="label" htmlFor="phone">
-                    Phone
+                    {t(dict, "form_phone_label")}
                   </label>
                   <input
                     id="phone"
@@ -184,7 +210,7 @@ function Contact() {
                     className="input"
                     value={form.phone}
                     onChange={onChange}
-                    placeholder="(optional)"
+                    placeholder={t(dict, "form_phone_placeholder")}
                   />
                 </div>
               </div>
@@ -192,7 +218,7 @@ function Contact() {
               <div className="form-row form-row--3">
                 <div className="field">
                   <label className="label" htmlFor="role">
-                    I'm a…
+                    {t(dict, "form_role_label")}
                   </label>
                   <select
                     id="role"
@@ -201,14 +227,20 @@ function Contact() {
                     value={form.role}
                     onChange={onChange}
                   >
-                    <option>Individual</option>
-                    <option>Teacher</option>
-                    <option>Company</option>
+                    <option value="INDIVIDUAL">
+                      {t(dict, "form_role_option_individual")}
+                    </option>
+                    <option value="TEACHER">
+                      {t(dict, "form_role_option_teacher")}
+                    </option>
+                    <option value="COMPANY">
+                      {t(dict, "form_role_option_company")}
+                    </option>
                   </select>
                 </div>
                 <div className="field">
                   <label className="label" htmlFor="topic">
-                    Topic
+                    {t(dict, "form_topic_label")}
                   </label>
                   <select
                     id="topic"
@@ -217,16 +249,26 @@ function Contact() {
                     value={form.topic}
                     onChange={onChange}
                   >
-                    <option>General question</option>
-                    <option>Sales / Team training</option>
-                    <option>Support</option>
-                    <option>Partnerships</option>
-                    <option>Media</option>
+                    <option value="GENERAL">
+                      {t(dict, "form_topic_option_general")}
+                    </option>
+                    <option value="SALES">
+                      {t(dict, "form_topic_option_sales")}
+                    </option>
+                    <option value="SUPPORT">
+                      {t(dict, "form_topic_option_support")}
+                    </option>
+                    <option value="PARTNERSHIPS">
+                      {t(dict, "form_topic_option_partnerships")}
+                    </option>
+                    <option value="MEDIA">
+                      {t(dict, "form_topic_option_media")}
+                    </option>
                   </select>
                 </div>
                 <div className="field">
                   <label className="label" htmlFor="budget">
-                    Budget
+                    {t(dict, "form_budget_label")}
                   </label>
                   <select
                     id="budget"
@@ -235,18 +277,28 @@ function Contact() {
                     value={form.budget}
                     onChange={onChange}
                   >
-                    <option value="">Not sure yet</option>
-                    <option>Under $1,000</option>
-                    <option>$1,000 – $5,000</option>
-                    <option>$5,000 – $15,000</option>
-                    <option>$15,000+</option>
+                    <option value="">
+                      {t(dict, "form_budget_option_unsure")}
+                    </option>
+                    <option value="UNDER_1K">
+                      {t(dict, "form_budget_option_under_1k")}
+                    </option>
+                    <option value="1K_5K">
+                      {t(dict, "form_budget_option_1k_5k")}
+                    </option>
+                    <option value="5K_15K">
+                      {t(dict, "form_budget_option_5k_15k")}
+                    </option>
+                    <option value="15K_PLUS">
+                      {t(dict, "form_budget_option_15k_plus")}
+                    </option>
                   </select>
                 </div>
               </div>
 
               <div className="field">
                 <label className="label" htmlFor="message">
-                  How can we help?*
+                  {t(dict, "form_message_label")}
                 </label>
                 <textarea
                   id="message"
@@ -267,9 +319,9 @@ function Contact() {
                   onChange={onChange}
                 />
                 <span>
-                  I agree to the processing of my info per the{" "}
+                  {t(dict, "form_privacy_label")}{" "}
                   <Link href="/privacy" className="link">
-                    privacy policy
+                    {t(dict, "form_privacy_link")}
                   </Link>
                   .
                 </span>
@@ -281,7 +333,7 @@ function Contact() {
                   type="submit"
                   disabled={sending}
                 >
-                  {sending ? "Sending…" : "Send message"}
+                  {sending ? t(dict, "form_sending") : t(dict, "form_submit")}
                 </button>
                 {status && (
                   <span
@@ -313,25 +365,29 @@ function Contact() {
                     <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <h3 className="card__title">Talk to a human</h3>
+                <h3 className="card__title">{t(dict, "sidebar_talk_title")}</h3>
               </div>
               <ul className="list stack-sm">
                 <li>
-                  <div className="list__title">Sales (teams & companies)</div>
+                  <div className="list__title">
+                    {t(dict, "sidebar_sales_label")}
+                  </div>
                   <a className="link" href="mailto:sales@speexify.com">
                     sales@speexify.com
                   </a>
                 </li>
                 <li>
                   <div className="list__title">
-                    Support (learners & teachers)
+                    {t(dict, "sidebar_support_label")}
                   </div>
                   <a className="link" href="mailto:support@speexify.com">
                     support@speexify.com
                   </a>
                 </li>
                 <li>
-                  <div className="list__title">Partnerships</div>
+                  <div className="list__title">
+                    {t(dict, "sidebar_partnerships_label")}
+                  </div>
                   <a className="link" href="mailto:partners@speexify.com">
                     partners@speexify.com
                   </a>
@@ -351,7 +407,7 @@ function Contact() {
                     strokeLinecap="round"
                   />
                 </svg>
-                <span>Avg. response: &lt; 24h (Mon–Fri)</span>
+                <span>{t(dict, "sidebar_response_time")}</span>
               </div>
             </div>
 
@@ -371,20 +427,22 @@ function Contact() {
                     <circle cx="12" cy="10" r="3" />
                   </svg>
                 </div>
-                <h3 className="card__title">Office & hours</h3>
+                <h3 className="card__title">
+                  {t(dict, "sidebar_office_title")}
+                </h3>
               </div>
               <div className="kvs">
                 <div>
-                  <span>HQ</span>
-                  <strong>London, UK</strong>
+                  <span>{t(dict, "sidebar_office_hq_label")}</span>
+                  <strong>{t(dict, "sidebar_office_hq_value")}</strong>
                 </div>
                 <div>
-                  <span>Support</span>
-                  <strong>Mon–Fri, 9–6 (UTC)</strong>
+                  <span>{t(dict, "sidebar_office_support_label")}</span>
+                  <strong>{t(dict, "sidebar_office_support_value")}</strong>
                 </div>
                 <div>
-                  <span>Phone</span>
-                  <strong>+44 20 0000 0000</strong>
+                  <span>{t(dict, "sidebar_office_phone_label")}</span>
+                  <strong>{t(dict, "sidebar_office_phone_value")}</strong>
                 </div>
               </div>
             </div>
@@ -404,7 +462,9 @@ function Contact() {
                     <path d="M17 2l4 4-4 4M3 11V9a4 4 0 014-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 01-4 4H3" />
                   </svg>
                 </div>
-                <h3 className="card__title">Follow us</h3>
+                <h3 className="card__title">
+                  {t(dict, "sidebar_social_title")}
+                </h3>
               </div>
               <div className="social row-gap-xs">
                 <a
@@ -413,7 +473,7 @@ function Contact() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  LinkedIn
+                  {t(dict, "sidebar_social_linkedin")}
                 </a>
                 <a
                   className="btn btn--ghost btn--social"
@@ -421,7 +481,7 @@ function Contact() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  X
+                  {t(dict, "sidebar_social_x")}
                 </a>
                 <a
                   className="btn btn--ghost btn--social"
@@ -429,7 +489,7 @@ function Contact() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  YouTube
+                  {t(dict, "sidebar_social_youtube")}
                 </a>
               </div>
             </div>
@@ -442,32 +502,26 @@ function Contact() {
         <div className="container lanes">
           <div className="lane stack-xs">
             <div className="lane__icon">👤</div>
-            <h3>For individuals</h3>
-            <p>
-              Improve speaking, listening, and confidence with tailored
-              sessions.
-            </p>
+            <h3>{t(dict, "lanes_individual_title")}</h3>
+            <p>{t(dict, "lanes_individual_body")}</p>
             <Link className="btn btn--ghost" href="/individual">
-              Learn more
+              {t(dict, "lanes_individual_cta")}
             </Link>
           </div>
           <div className="lane stack-xs">
             <div className="lane__icon">👥</div>
-            <h3>For teams</h3>
-            <p>
-              Onboarding, meetings, and presentations — programs that fit your
-              culture.
-            </p>
+            <h3>{t(dict, "lanes_teams_title")}</h3>
+            <p>{t(dict, "lanes_teams_body")}</p>
             <Link className="btn btn--ghost" href="/corporate">
-              Learn more
+              {t(dict, "lanes_teams_cta")}
             </Link>
           </div>
           <div className="lane stack-xs">
             <div className="lane__icon">💎</div>
-            <h3>Packages</h3>
-            <p>Transparent pricing for individuals and companies.</p>
+            <h3>{t(dict, "lanes_packages_title")}</h3>
+            <p>{t(dict, "lanes_packages_body")}</p>
             <Link className="btn btn--ghost" href="/packages">
-              See packages
+              {t(dict, "lanes_packages_cta")}
             </Link>
           </div>
         </div>
@@ -477,11 +531,8 @@ function Contact() {
       <section className="contact-map section section--tight">
         <div className="container contact-map__inner">
           <div className="contact-map__panel card stack-sm">
-            <h3 className="card__title">Where we operate</h3>
-            <p>
-              Remote-first across EMEA & North America. In-person options on
-              request.
-            </p>
+            <h3 className="card__title">{t(dict, "map_title")}</h3>
+            <p>{t(dict, "map_body")}</p>
             <ul className="bullets">
               <li>
                 <svg
@@ -494,7 +545,7 @@ function Contact() {
                 >
                   <path d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z" />
                 </svg>
-                <span>🇬🇧 London (HQ)</span>
+                <span>{t(dict, "map_point_london")}</span>
               </li>
               <li>
                 <svg
@@ -507,7 +558,7 @@ function Contact() {
                 >
                   <path d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z" />
                 </svg>
-                <span>🇪🇺 EU time zones covered</span>
+                <span>{t(dict, "map_point_eu")}</span>
               </li>
               <li>
                 <svg
@@ -520,7 +571,7 @@ function Contact() {
                 >
                   <path d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z" />
                 </svg>
-                <span>🇺🇸 East & Pacific time</span>
+                <span>{t(dict, "map_point_us")}</span>
               </li>
             </ul>
           </div>
@@ -544,7 +595,7 @@ function Contact() {
                   strokeWidth="2"
                 />
               </svg>
-              <span>Interactive map</span>
+              <span>{t(dict, "map_placeholder")}</span>
             </div>
           </div>
         </div>
@@ -553,20 +604,20 @@ function Contact() {
       {/* FAQ */}
       <section className="section">
         <div className="container faq">
-          <h2 className="faq__title">Frequently asked questions</h2>
+          <h2 className="faq__title">{t(dict, "faq_title")}</h2>
           <Accordion
             items={[
               {
-                q: "How fast can we start?",
-                a: "Most individuals start within 48 hours. Teams: 1–2 weeks depending on scope.",
+                q: t(dict, "faq_1_q"),
+                a: t(dict, "faq_1_a"),
               },
               {
-                q: "Do you offer corporate invoicing?",
-                a: "Yes. We support invoicing & purchase orders for approved accounts.",
+                q: t(dict, "faq_2_q"),
+                a: t(dict, "faq_2_a"),
               },
               {
-                q: "What languages do you coach?",
-                a: "English-focused today, with custom programs available on request.",
+                q: t(dict, "faq_3_q"),
+                a: t(dict, "faq_3_a"),
               },
             ]}
           />

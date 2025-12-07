@@ -12,8 +12,9 @@ import { getDictionary, t } from "@/app/i18n";
    Locale helpers
 ------------------------------------------------------------------ */
 
-function getLocalizedPath(pathname, targetLocale) {
-  const current = pathname || "/";
+// Switch current path between /... and /ar/...
+function getLocalizedPath(currentPath, targetLocale) {
+  const current = currentPath || "/";
 
   const currentlyArabic = current.startsWith("/ar");
 
@@ -29,13 +30,28 @@ function getLocalizedPath(pathname, targetLocale) {
   return withoutAr;
 }
 
-function LanguageSwitcher() {
-  const pathname = usePathname();
+// Build an href for a given base path ("/about") in the current locale
+function localizeHref(baseHref, locale) {
+  if (locale === "ar") {
+    if (baseHref === "/") return "/ar";
+    if (baseHref.startsWith("/ar")) return baseHref;
+    return `/ar${baseHref}`;
+  }
+  // locale === "en"
+  if (baseHref === "/ar") return "/";
+  return baseHref;
+}
+
+/* ------------------------------------------------------------------
+   Language switcher
+------------------------------------------------------------------ */
+
+function LanguageSwitcher({ locale, pathname }) {
   const router = useRouter();
-  const isArabic = pathname?.startsWith("/ar");
+  const isArabic = locale === "ar";
 
   const handleSwitch = (targetLocale) => {
-    const targetPath = getLocalizedPath(pathname, targetLocale);
+    const targetPath = getLocalizedPath(pathname || "/", targetLocale);
     router.push(targetPath);
   };
 
@@ -69,22 +85,29 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const locale = pathname?.startsWith("/ar") ? "ar" : "en"; // ✅ locale here
-  const navDict = getDictionary(locale, "nav"); // ✅ nav translations here
+  // Locale detection from URL
+  const isArabic = pathname?.startsWith("/ar");
+  const locale = isArabic ? "ar" : "en";
+
+  // Normalized path WITHOUT /ar for active-state checks
+  const normalizedPath = (pathname || "/").replace(/^\/ar/, "") || "/";
+
+  const navDict = getDictionary(locale, "nav");
 
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  const isActive = (href) => {
-    if (!href || !pathname) return false;
+  const isActive = (hrefBase) => {
+    const href = hrefBase || "/";
+    if (!normalizedPath) return false;
 
     // Exact match logic for any nested dashboard route
     if (href.startsWith("/dashboard")) {
-      return pathname === href;
+      return normalizedPath === href;
     }
 
     // Normal match for public pages
-    return pathname === href || pathname.startsWith(`${href}/`);
+    return normalizedPath === href || normalizedPath.startsWith(`${href}/`);
   };
 
   useEffect(() => {
@@ -108,7 +131,8 @@ export default function Header() {
     setOpen(false);
   }, [pathname]);
 
-  const logoTo = checking ? "/" : user ? "/dashboard" : "/";
+  const baseLogoTo = checking ? "/" : user ? "/dashboard" : "/";
+  const logoTo = localizeHref(baseLogoTo, locale);
 
   const logout = async () => {
     try {
@@ -116,7 +140,7 @@ export default function Header() {
     } catch {}
     setUser(null);
     setOpen(false);
-    router.push("/login");
+    router.push(localizeHref("/login", locale));
   };
 
   const loggedOut = [
@@ -153,7 +177,7 @@ export default function Header() {
       </span>
     ) : !user ? (
       <Link
-        href="/login"
+        href={localizeHref("/login", locale)}
         className="spx-nav-cta"
         onClick={() => setOpen(false)}
       >
@@ -228,24 +252,28 @@ export default function Header() {
 
         <nav className="spx-nav">
           <ul className="spx-nav-list">
-            {links.map((item, idx) => (
-              <li
-                key={item.to}
-                className="spx-nav-item"
-                style={{ "--item-index": idx }}
-              >
-                <Link
-                  href={item.to}
-                  className={
-                    "spx-nav-link" + (isActive(item.to) ? " spx-is-active" : "")
-                  }
-                  onClick={() => setOpen(false)}
+            {links.map((item, idx) => {
+              const href = localizeHref(item.to, locale);
+              return (
+                <li
+                  key={item.to}
+                  className="spx-nav-item"
+                  style={{ "--item-index": idx }}
                 >
-                  <span className="spx-link-bg"></span>
-                  <span className="spx-link-text">{item.label}</span>
-                </Link>
-              </li>
-            ))}
+                  <Link
+                    href={href}
+                    className={
+                      "spx-nav-link" +
+                      (isActive(item.to) ? " spx-is-active" : "")
+                    }
+                    onClick={() => setOpen(false)}
+                  >
+                    <span className="spx-link-bg"></span>
+                    <span className="spx-link-text">{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
 
             {!checking && !user && (
               <li
@@ -253,7 +281,7 @@ export default function Header() {
                 style={{ "--item-index": links.length }}
               >
                 <Link
-                  href="/register"
+                  href={localizeHref("/register", locale)}
                   className={
                     "spx-nav-link" +
                     (isActive("/register") ? " spx-is-active" : "")
@@ -273,7 +301,7 @@ export default function Header() {
               className="spx-nav-item spx-nav-item-lang"
               style={{ "--item-index": links.length + 1 }}
             >
-              <LanguageSwitcher />
+              <LanguageSwitcher locale={locale} pathname={pathname} />
             </li>
           </ul>
         </nav>
@@ -296,45 +324,49 @@ export default function Header() {
         </button>
       </div>
 
+      {/* Mobile drawer */}
       <div className={"spx-mobile-drawer" + (open ? " spx-is-open" : "")}>
         <div className="spx-mobile-drawer-inner">
           <ul className="spx-mobile-list">
-            {links.map((item, idx) => (
-              <li
-                key={item.to}
-                className="spx-mobile-item"
-                style={{ "--item-index": idx }}
-              >
-                <Link
-                  href={item.to}
-                  className={
-                    "spx-mobile-link" +
-                    (isActive(item.to) ? " spx-is-active" : "")
-                  }
-                  onClick={() => setOpen(false)}
+            {links.map((item, idx) => {
+              const href = localizeHref(item.to, locale);
+              return (
+                <li
+                  key={item.to}
+                  className="spx-mobile-item"
+                  style={{ "--item-index": idx }}
                 >
-                  <span className="spx-mobile-link-bg"></span>
-                  <span className="spx-mobile-link-content">
-                    <span className="spx-mobile-link-text">{item.label}</span>
-                    <svg
-                      className="spx-mobile-link-arrow"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 18 18"
-                      fill="none"
-                    >
-                      <path
-                        d="M6.75 13.5L11.25 9L6.75 4.5"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                </Link>
-              </li>
-            ))}
+                  <Link
+                    href={href}
+                    className={
+                      "spx-mobile-link" +
+                      (isActive(item.to) ? " spx-is-active" : "")
+                    }
+                    onClick={() => setOpen(false)}
+                  >
+                    <span className="spx-mobile-link-bg"></span>
+                    <span className="spx-mobile-link-content">
+                      <span className="spx-mobile-link-text">{item.label}</span>
+                      <svg
+                        className="spx-mobile-link-arrow"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 18 18"
+                        fill="none"
+                      >
+                        <path
+                          d="M6.75 13.5L11.25 9L6.75 4.5"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
 
             {!checking && !user && (
               <>
@@ -343,7 +375,7 @@ export default function Header() {
                   style={{ "--item-index": links.length }}
                 >
                   <Link
-                    href="/register"
+                    href={localizeHref("/register", locale)}
                     className={
                       "spx-mobile-link" +
                       (isActive("/register") ? " spx-is-active" : "")
@@ -378,7 +410,7 @@ export default function Header() {
                   style={{ "--item-index": links.length + 1 }}
                 >
                   <Link
-                    href="/login"
+                    href={localizeHref("/login", locale)}
                     className="spx-mobile-cta"
                     onClick={() => setOpen(false)}
                   >
@@ -443,7 +475,7 @@ export default function Header() {
               className="spx-mobile-item spx-mobile-item-lang"
               style={{ "--item-index": links.length + 2 }}
             >
-              <LanguageSwitcher />
+              <LanguageSwitcher locale={locale} pathname={pathname} />
             </li>
           </ul>
         </div>

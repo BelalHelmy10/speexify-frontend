@@ -1,9 +1,11 @@
-// web/app/about/AboutClient.jsx
+// app/about/page.js
 "use client";
 
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import "@/styles/about.scss";
+import { getDictionary, t } from "@/app/i18n";
 
 const heroImg = "/images/about_hero.avif";
 const historyImg = "/images/about_history.avif";
@@ -17,93 +19,94 @@ const leadBilly = "/images/Billy.jpeg";
 const leadZiad = "/images/ZiadAnwer.jpeg";
 const leadChris = "/images/leader_chris.avif";
 
-const stats = [
-  { value: "6", label: "languages", icon: "🌍" },
-  { value: "150+", label: "countries", icon: "🗺️" },
-  { value: "100+", label: "industry-focused courses", icon: "📚" },
-  { value: "24/7", label: "live instruction", icon: "⏰" },
+// config arrays – text comes from translations
+const statsConfig = [
+  { icon: "🌍", valueKey: "stat1_value", labelKey: "stat1_label" },
+  { icon: "🗺️", valueKey: "stat2_value", labelKey: "stat2_label" },
+  { icon: "📚", valueKey: "stat3_value", labelKey: "stat3_label" },
+  { icon: "⏰", valueKey: "stat4_value", labelKey: "stat4_label" },
 ];
 
-const values = [
+const valuesConfig = [
   {
     icon: valuesIconA,
-    title: "We take action with empathy",
-    desc: "Impact starts with understanding. We balance compassion with pragmatic thinking to make decisions that align with our mission.",
+    titleKey: "value1_title",
+    descKey: "value1_desc",
   },
   {
     icon: valuesIconB,
-    title: "We communicate to drive impact",
-    desc: "We foster transparency, ask the right questions, and embrace constructive dialogue to deliver outcomes that matter.",
+    titleKey: "value2_title",
+    descKey: "value2_desc",
   },
   {
     icon: valuesIconC,
-    title: "We own our outcomes",
-    desc: "Everyone holds the wheel. We approach obstacles with purpose, hold ourselves accountable, and focus on results.",
+    titleKey: "value3_title",
+    descKey: "value3_desc",
   },
   {
     icon: valuesIconD,
-    title: "We embrace diverse perspectives",
-    desc: "Different viewpoints lead to better solutions. We break down barriers so learners and teams can achieve their goals.",
+    titleKey: "value4_title",
+    descKey: "value4_desc",
   },
 ];
 
-const timeline = [
+const timelineConfig = [
   {
-    year: "2018",
-    text: "Speexify starts as a small tutoring collective focused on real-world English.",
+    yearKey: "timeline1_year",
+    textKey: "timeline1_text",
   },
   {
-    year: "2020",
-    text: "Launched 24/7 scheduling and a global tutor network.",
+    yearKey: "timeline2_year",
+    textKey: "timeline2_text",
   },
   {
-    year: "2023",
-    text: "Expanded corporate programs with role-specific learning paths.",
+    yearKey: "timeline3_year",
+    textKey: "timeline3_text",
   },
   {
-    year: "2025",
-    text: "Introduced AI-assisted practice to personalize every session.",
+    yearKey: "timeline4_year",
+    textKey: "timeline4_text",
   },
 ];
 
-const leaders = [
-  { img: leadBilly, name: "Belal Helmy", role: "Co-Founder & CEO" },
-  { img: leadZiad, name: "Eliane Yumi Iwasaki", role: "Co-Founder & CEO" },
-  { img: leadChris, name: "Christopher Osborn", role: "Engineering" },
+const leadersConfig = [
+  { img: leadBilly, nameKey: "leader1_name", roleKey: "leader1_role" },
+  { img: leadZiad, nameKey: "leader2_name", roleKey: "leader2_role" },
+  { img: leadChris, nameKey: "leader3_name", roleKey: "leader3_role" },
 ];
 
-const testimonials = [
+const testimonialsConfig = [
   {
-    quote:
-      "Speexify sharpened our team's business English and saved hours each week. Practical, flexible, and effective.",
-    name: "John Guthrie",
-    company: "Hilton International",
+    quoteKey: "testi1_quote",
+    nameKey: "testi1_name",
+    companyKey: "testi1_company",
     rating: 5,
   },
   {
-    quote:
-      "We saw remarkable improvement within weeks. The blend of live coaching and targeted content exceeded expectations.",
-    name: "Donatella De Vita",
-    company: "Pirelli",
+    quoteKey: "testi2_quote",
+    nameKey: "testi2_name",
+    companyKey: "testi2_company",
     rating: 5,
   },
   {
-    quote:
-      "Speexify's structure makes it easy to satisfy different learning styles across our organization.",
-    name: "Bogdan Dumitrascu",
-    company: "Forvia",
+    quoteKey: "testi3_quote",
+    nameKey: "testi3_name",
+    companyKey: "testi3_company",
     rating: 5,
   },
   {
-    quote:
-      "Adoption was smooth and impact was fast. Highly recommended for business communication.",
-    name: "Meredith Taghi",
-    company: "DHL Group",
+    quoteKey: "testi4_quote",
+    nameKey: "testi4_name",
+    companyKey: "testi4_company",
     rating: 5,
   },
 ];
 
-export default function AboutClient() {
+export default function AboutPage() {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "about");
+
   return (
     <main className="about">
       {/* HERO */}
@@ -117,26 +120,24 @@ export default function AboutClient() {
           <div className="about__hero-left">
             <div className="about__badge">
               <span className="about__badge-icon">✨</span>
-              <span>Meet Speexify</span>
+              <span>{t(dict, "hero_badge")}</span>
             </div>
 
             <h1 className="about__headline">
-              Where language training meets
-              <span className="about__headline-accent"> business needs</span>
+              {t(dict, "hero_title_main")}
+              <span className="about__headline-accent">
+                {t(dict, "hero_title_accent")}
+              </span>
             </h1>
 
-            <p className="about__sub">
-              We deliver job-specific programs that increase productivity,
-              foster collaboration, and unlock people's potential with real
-              conversations and measurable progress.
-            </p>
+            <p className="about__sub">{t(dict, "hero_sub")}</p>
 
             <div className="about-cta-row">
               <Link
                 href="/demo"
                 className="about-btn about-btn--primary about-btn--lg"
               >
-                <span>Request a demo</span>
+                <span>{t(dict, "hero_cta_primary")}</span>
                 <svg
                   className="about-btn__arrow"
                   width="16"
@@ -157,7 +158,7 @@ export default function AboutClient() {
                 href="/packages"
                 className="about-btn about-btn--outline about-btn--lg"
               >
-                See packages
+                {t(dict, "hero_cta_secondary")}
               </Link>
             </div>
           </div>
@@ -168,7 +169,7 @@ export default function AboutClient() {
               <img src={heroImg} alt="Learner using Speexify" />
               <div className="about__hero-media-badge">
                 <span className="about__hero-media-badge-dot"></span>
-                <span>Trusted globally</span>
+                <span>{t(dict, "hero_trusted")}</span>
               </div>
             </div>
           </div>
@@ -178,11 +179,11 @@ export default function AboutClient() {
       {/* STATS */}
       <section className="about__stats">
         <div className="container about__stats-grid">
-          {stats.map((s) => (
-            <div className="about__stat" key={s.label}>
+          {statsConfig.map((s) => (
+            <div className="about__stat" key={s.labelKey}>
               <div className="about__stat-icon">{s.icon}</div>
-              <div className="about__stat-value">{s.value}</div>
-              <div className="about__stat-label">{s.label}</div>
+              <div className="about__stat-value">{t(dict, s.valueKey)}</div>
+              <div className="about__stat-label">{t(dict, s.labelKey)}</div>
             </div>
           ))}
         </div>
@@ -196,18 +197,9 @@ export default function AboutClient() {
             <div className="about__history-overlay"></div>
           </div>
           <div className="about__history-copy">
-            <h2>Our history</h2>
-            <p>
-              Since our early days, we've supported learners in more than 150
-              countries with live coaching from certified teachers and
-              role-specific courses. Our approach bridges soft and technical
-              skill gaps so teams can communicate, collaborate, and thrive.
-            </p>
-            <p>
-              Today we're remote-first and globally distributed. We keep
-              improving the craft—refining our curriculum, growing our community
-              of tutors, and building tools that make progress inevitable.
-            </p>
+            <h2>{t(dict, "history_title")}</h2>
+            <p>{t(dict, "history_p1")}</p>
+            <p>{t(dict, "history_p2")}</p>
           </div>
         </div>
       </section>
@@ -216,20 +208,20 @@ export default function AboutClient() {
       <section className="about__values">
         <div className="container">
           <div className="about__section-header">
-            <h2 className="about__section-title">Our values</h2>
+            <h2 className="about__section-title">{t(dict, "values_title")}</h2>
             <p className="about__section-subtitle">
-              The principles that guide everything we do
+              {t(dict, "values_subtitle")}
             </p>
           </div>
 
           <div className="about__values-grid">
-            {values.map((v) => (
-              <article className="about__value" key={v.title}>
+            {valuesConfig.map((v) => (
+              <article className="about__value" key={v.titleKey}>
                 <div className="about__value-icon-wrap">
                   <img className="about__value-icon" src={v.icon} alt="" />
                 </div>
-                <h3>{v.title}</h3>
-                <p>{v.desc}</p>
+                <h3>{t(dict, v.titleKey)}</h3>
+                <p>{t(dict, v.descKey)}</p>
               </article>
             ))}
           </div>
@@ -240,17 +232,9 @@ export default function AboutClient() {
       <section className="about__life">
         <div className="container about__life-grid">
           <div className="about__life-copy">
-            <h2>Life@Speexify</h2>
-            <p>
-              We're a remote dream team across multiple time zones. Despite the
-              distance, we stay closely connected, collaborate effectively, and
-              show up for each other and our learners.
-            </p>
-            <p>
-              Diversity is our strength—we bring different perspectives to the
-              table and stay united in the mission to break down language
-              barriers.
-            </p>
+            <h2>{t(dict, "life_title")}</h2>
+            <p>{t(dict, "life_p1")}</p>
+            <p>{t(dict, "life_p2")}</p>
           </div>
           <div className="about__life-media">
             <img
@@ -271,18 +255,22 @@ export default function AboutClient() {
       <section className="about__timeline">
         <div className="container">
           <div className="about__section-header">
-            <h2 className="about__section-title">Our journey</h2>
+            <h2 className="about__section-title">
+              {t(dict, "timeline_title")}
+            </h2>
             <p className="about__section-subtitle">
-              Key milestones in our story
+              {t(dict, "timeline_subtitle")}
             </p>
           </div>
 
           <div className="about__timeline-grid">
-            {timeline.map((t, idx) => (
-              <div className="about__timeline-card" key={t.year}>
+            {timelineConfig.map((item, idx) => (
+              <div className="about__timeline-card" key={item.yearKey}>
                 <div className="about__timeline-number">{idx + 1}</div>
-                <div className="about__timeline-year">{t.year}</div>
-                <p>{t.text}</p>
+                <div className="about__timeline-year">
+                  {t(dict, item.yearKey)}
+                </div>
+                <p>{t(dict, item.textKey)}</p>
               </div>
             ))}
           </div>
@@ -293,24 +281,22 @@ export default function AboutClient() {
       <section className="about__leaders">
         <div className="container">
           <div className="about__section-header">
-            <h2 className="about__section-title">
-              Meet our executive leadership
-            </h2>
+            <h2 className="about__section-title">{t(dict, "leaders_title")}</h2>
             <p className="about__section-subtitle">
-              The team driving our vision forward
+              {t(dict, "leaders_subtitle")}
             </p>
           </div>
 
           <div className="about__leader-grid">
-            {leaders.map((l) => (
-              <div className="about__leader" key={l.name}>
+            {leadersConfig.map((l) => (
+              <div className="about__leader" key={l.nameKey}>
                 <div className="about__leader-media">
-                  <img src={l.img} alt={l.name} />
+                  <img src={l.img} alt={t(dict, l.nameKey)} />
                   <div className="about__leader-overlay"></div>
                 </div>
                 <div className="about__leader-card">
-                  <h4>{l.name}</h4>
-                  <span>{l.role}</span>
+                  <h4>{t(dict, l.nameKey)}</h4>
+                  <span>{t(dict, l.roleKey)}</span>
                 </div>
               </div>
             ))}
@@ -322,14 +308,16 @@ export default function AboutClient() {
       <section className="about__testimonials">
         <div className="container">
           <div className="about__section-header">
-            <h2 className="about__section-title">Hear it from our clients</h2>
+            <h2 className="about__section-title">
+              {t(dict, "testimonials_title")}
+            </h2>
             <p className="about__section-subtitle">
-              Real results from real companies
+              {t(dict, "testimonials_subtitle")}
             </p>
           </div>
 
           <div className="about__quote-grid">
-            {testimonials.map((q, i) => (
+            {testimonialsConfig.map((q, i) => (
               <blockquote className="about__quote" key={i}>
                 <div className="about__quote-stars">
                   {[...Array(q.rating)].map((_, idx) => (
@@ -338,10 +326,10 @@ export default function AboutClient() {
                     </span>
                   ))}
                 </div>
-                <p>"{q.quote}"</p>
+                <p>"{t(dict, q.quoteKey)}"</p>
                 <footer>
-                  <strong>{q.name}</strong>
-                  <span>{q.company}</span>
+                  <strong>{t(dict, q.nameKey)}</strong>
+                  <span>{t(dict, q.companyKey)}</span>
                 </footer>
               </blockquote>
             ))}
@@ -360,17 +348,14 @@ export default function AboutClient() {
         </div>
 
         <div className="container about__cta-inner">
-          <h2>Join the Speexify team</h2>
-          <p>
-            Help us build the most effective, human-centered language learning
-            platform in the world.
-          </p>
+          <h2>{t(dict, "cta_title")}</h2>
+          <p>{t(dict, "cta_text")}</p>
           <div className="about-cta-row">
             <Link
               href="/careers"
               className="about-btn about-btn--secondary about-btn--lg"
             >
-              <span>See open roles</span>
+              <span>{t(dict, "cta_primary")}</span>
               <svg
                 className="about-btn__arrow"
                 width="16"
@@ -391,7 +376,7 @@ export default function AboutClient() {
               href="/contact"
               className="about-btn about-btn--ghost about-btn--lg"
             >
-              Connect with us
+              {t(dict, "cta_secondary")}
             </Link>
           </div>
         </div>

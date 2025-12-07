@@ -1,10 +1,10 @@
-// src/pages/Register.jsx
+// app/register/page.js
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 const GoogleButton = dynamic(() => import("@/components/GoogleButton"), {
   ssr: false,
@@ -16,10 +16,9 @@ import {
   googleLogin as apiGoogleLogin,
 } from "@/lib/auth";
 import { trackEvent } from "@/lib/analytics";
+import { getDictionary, t } from "@/app/i18n";
 
-export default function Register() {
-  const router = useRouter();
-
+function RegisterInner({ dict }) {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -41,7 +40,7 @@ export default function Register() {
       await apiRegisterStart(email);
       setStep(2);
       setMsgType("success");
-      setMsg(`Verification code sent to ${email}`);
+      setMsg(`${t(dict, "msg_code_sent_prefix")} ${email}`);
 
       setCooldown(60);
       const iv = setInterval(() => {
@@ -55,7 +54,7 @@ export default function Register() {
       }, 1000);
     } catch (err) {
       setMsgType("error");
-      setMsg(err?.message || "Could not send verification code");
+      setMsg(err?.message || t(dict, "msg_send_failed"));
     } finally {
       setSending(false);
     }
@@ -67,51 +66,46 @@ export default function Register() {
     try {
       const result = await apiRegisterComplete({ email, code, password, name });
 
-      // 🔹 Analytics: signup completed
       trackEvent("signup_completed", {
         email,
-        // if your API returns user info, you can also include:
         userId: result?.user?.id,
       });
 
       setMsgType("success");
-      setMsg(`Account created successfully! Redirecting...`);
+      setMsg(t(dict, "msg_register_success"));
       setTimeout(() => {
         window.location.href = "/login";
       }, 1200);
     } catch (err) {
       setMsgType("error");
-      setMsg(err?.message || "Registration failed");
+      setMsg(err?.message || t(dict, "msg_register_failed"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Called by <GoogleButton/> with resp = { credential, ... }
   const handleGoogleSuccess = async (resp) => {
     try {
       const credential = resp?.credential;
       if (!credential) {
         setMsgType("error");
-        setMsg("Google didn’t return a credential");
+        setMsg(t(dict, "msg_google_no_credential"));
         return;
       }
       setMsg("");
-      // IMPORTANT: send the raw string, not an object
       await apiGoogleLogin(credential);
-      // Session cookie is set; just go to dashboard
       window.location.href = "/dashboard";
     } catch (err) {
       console.error(err);
       setMsgType("error");
-      setMsg(err?.message || "Google sign-in failed");
+      setMsg(err?.message || t(dict, "msg_google_failed"));
     }
   };
 
   const handleGoogleError = (err) => {
     console.error(err);
     setMsgType("error");
-    setMsg("Google sign-in failed");
+    setMsg(t(dict, "msg_google_failed"));
   };
 
   return (
@@ -151,11 +145,13 @@ export default function Register() {
           </div>
 
           <header className="auth-header">
-            <h1>{step === 1 ? "Create account" : "Verify your email"}</h1>
+            <h1>
+              {step === 1 ? t(dict, "title_step1") : t(dict, "title_step2")}
+            </h1>
             <p>
               {step === 1
-                ? "Get started with your free account"
-                : `We sent a code to ${email}`}
+                ? t(dict, "subtitle_step1")
+                : `${t(dict, "subtitle_step2_prefix")} ${email}`}
             </p>
           </header>
 
@@ -174,12 +170,12 @@ export default function Register() {
                   "1"
                 )}
               </div>
-              <span>Email</span>
+              <span>{t(dict, "step1_label")}</span>
             </div>
             <div className="step-line" />
             <div className={`step ${step >= 2 ? "active" : ""}`}>
               <div className="step-circle">2</div>
-              <span>Verify</span>
+              <span>{t(dict, "step2_label")}</span>
             </div>
           </div>
 
@@ -214,12 +210,12 @@ export default function Register() {
               </div>
 
               <div className="auth-divider">
-                <span>or continue with email</span>
+                <span>{t(dict, "social_cta")}</span>
               </div>
 
               <form className="auth-form" onSubmit={sendCode}>
                 <div className="form-field">
-                  <label htmlFor="email">Email address</label>
+                  <label htmlFor="email">{t(dict, "label_email")}</label>
                   <div className="input-wrapper">
                     <svg
                       className="input-icon"
@@ -232,7 +228,7 @@ export default function Register() {
                     <input
                       id="email"
                       type="email"
-                      placeholder="name@example.com"
+                      placeholder={t(dict, "placeholder_email")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -265,19 +261,19 @@ export default function Register() {
                           opacity="0.75"
                         />
                       </svg>
-                      Sending code...
+                      {t(dict, "btn_sending_code")}
                     </>
                   ) : (
-                    "Continue"
+                    t(dict, "btn_continue")
                   )}
                 </button>
               </form>
 
               <footer className="auth-footer">
                 <p>
-                  Already have an account?{" "}
+                  {t(dict, "already_have_account")}{" "}
                   <Link href="/login" className="link-primary">
-                    Sign in
+                    {t(dict, "link_sign_in")}
                   </Link>
                 </p>
               </footer>
@@ -287,7 +283,7 @@ export default function Register() {
           {step === 2 && (
             <form className="auth-form" onSubmit={complete}>
               <div className="form-field">
-                <label htmlFor="code">Verification code</label>
+                <label htmlFor="code">{t(dict, "label_code")}</label>
                 <div className="input-wrapper">
                   <svg
                     className="input-icon"
@@ -315,14 +311,13 @@ export default function Register() {
                     autoComplete="one-time-code"
                   />
                 </div>
-                <p className="field-hint">
-                  Enter the 6-digit code sent to your email
-                </p>
+                <p className="field-hint">{t(dict, "code_hint")}</p>
               </div>
 
               <div className="form-field">
                 <label htmlFor="name">
-                  Full name <span className="optional">(optional)</span>
+                  {t(dict, "label_name")}{" "}
+                  <span className="optional">{t(dict, "optional")}</span>
                 </label>
                 <div className="input-wrapper">
                   <svg
@@ -339,7 +334,7 @@ export default function Register() {
                   <input
                     id="name"
                     type="text"
-                    placeholder="Jane Doe"
+                    placeholder={t(dict, "placeholder_name")}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     autoComplete="name"
@@ -348,7 +343,7 @@ export default function Register() {
               </div>
 
               <div className="form-field">
-                <label htmlFor="password">Password</label>
+                <label htmlFor="password">{t(dict, "label_password")}</label>
                 <div className="input-wrapper">
                   <svg
                     className="input-icon"
@@ -364,7 +359,7 @@ export default function Register() {
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Create a strong password"
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -400,7 +395,7 @@ export default function Register() {
                     )}
                   </button>
                 </div>
-                <p className="field-hint">Must be at least 6 characters</p>
+                <p className="field-hint">{t(dict, "password_hint")}</p>
               </div>
 
               <button
@@ -426,10 +421,10 @@ export default function Register() {
                         opacity="0.75"
                       />
                     </svg>
-                    Creating account...
+                    {t(dict, "btn_creating_account")}
                   </>
                 ) : (
-                  "Create account"
+                  t(dict, "btn_create_account")
                 )}
               </button>
 
@@ -441,7 +436,9 @@ export default function Register() {
                   onClick={sendCode}
                 >
                   {cooldown > 0 ? (
-                    <>Resend code ({cooldown}s)</>
+                    <>
+                      {t(dict, "btn_resend_with_timer")} ({cooldown}s)
+                    </>
                   ) : (
                     <>
                       <svg viewBox="0 0 20 20" fill="currentColor">
@@ -451,7 +448,7 @@ export default function Register() {
                           clipRule="evenodd"
                         />
                       </svg>
-                      Resend code
+                      {t(dict, "btn_resend")}
                     </>
                   )}
                 </button>
@@ -471,15 +468,15 @@ export default function Register() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  Change email
+                  {t(dict, "btn_change_email")}
                 </button>
               </div>
 
               <footer className="auth-footer">
                 <p>
-                  Already have an account?{" "}
+                  {t(dict, "already_have_account")}{" "}
                   <Link href="/login" className="link-primary">
-                    Sign in
+                    {t(dict, "link_sign_in")}
                   </Link>
                 </p>
               </footer>
@@ -495,4 +492,12 @@ export default function Register() {
       </div>
     </main>
   );
+}
+
+export default function RegisterPage() {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "register");
+
+  return <RegisterInner dict={dict} />;
 }

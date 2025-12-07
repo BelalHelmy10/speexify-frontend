@@ -1,0 +1,46 @@
+{
+  "title_step1": "Create account",
+  "title_step2": "Verify your email",
+
+  "subtitle_step1": "Get started with your free account",
+  "subtitle_step2_prefix": "We sent a code to",
+
+  "step1_label": "Email",
+  "step2_label": "Verify",
+
+  "social_cta": "or continue with email",
+
+  "label_email": "Email address",
+  "placeholder_email": "name@example.com",
+
+  "label_code": "Verification code",
+  "code_hint": "Enter the 6-digit code sent to your email",
+
+  "label_name": "Full name",
+  "optional": "(optional)",
+  "placeholder_name": "Jane Doe",
+
+  "label_password": "Password",
+  "password_hint": "Must be at least 6 characters",
+
+  "btn_continue": "Continue",
+  "btn_sending_code": "Sending code...",
+  "btn_create_account": "Create account",
+  "btn_creating_account": "Creating account...",
+  "btn_resend": "Resend code",
+  "btn_resend_with_timer": "Resend code",
+  "btn_change_email": "Change email",
+
+  "already_have_account": "Already have an account?",
+  "link_sign_in": "Sign in",
+
+  "msg_code_sent_prefix": "Verification code sent to",
+  "msg_send_failed": "Could not send verification code",
+  "msg_register_failed": "Registration failed",
+  "msg_google_no_credential": "Google didn’t return a credential",
+  "msg_google_failed": "Google sign-in failed",
+  "msg_register_success": "Account created successfully! Redirecting...",
+
+  "alert_success_icon_label": "Success",
+  "alert_error_icon_label": "Error"
+}

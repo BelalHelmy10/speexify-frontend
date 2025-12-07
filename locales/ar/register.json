@@ -1,0 +1,46 @@
+{
+  "title_step1": "إنشاء حساب",
+  "title_step2": "تأكيد البريد الإلكتروني",
+
+  "subtitle_step1": "ابدأ بحسابك المجاني",
+  "subtitle_step2_prefix": "أرسلنا رمز التحقق إلى",
+
+  "step1_label": "البريد الإلكتروني",
+  "step2_label": "التأكيد",
+
+  "social_cta": "أو أكمل باستخدام البريد الإلكتروني",
+
+  "label_email": "عنوان البريد الإلكتروني",
+  "placeholder_email": "name@example.com",
+
+  "label_code": "رمز التحقق",
+  "code_hint": "أدخل الرمز المكوَّن من 6 أرقام المرسَل إلى بريدك",
+
+  "label_name": "الاسم الكامل",
+  "optional": "(اختياري)",
+  "placeholder_name": "الاسم هنا",
+
+  "label_password": "كلمة المرور",
+  "password_hint": "يجب أن تكون 6 أحرف على الأقل",
+
+  "btn_continue": "متابعة",
+  "btn_sending_code": "جارٍ إرسال الرمز...",
+  "btn_create_account": "إنشاء حساب",
+  "btn_creating_account": "جارٍ إنشاء الحساب...",
+  "btn_resend": "إعادة إرسال الرمز",
+  "btn_resend_with_timer": "إعادة إرسال الرمز",
+  "btn_change_email": "تغيير البريد الإلكتروني",
+
+  "already_have_account": "لديك حساب بالفعل؟",
+  "link_sign_in": "تسجيل الدخول",
+
+  "msg_code_sent_prefix": "تم إرسال رمز التحقق إلى",
+  "msg_send_failed": "تعذّر إرسال رمز التحقق",
+  "msg_register_failed": "فشل إنشاء الحساب",
+  "msg_google_no_credential": "لم يُرجع Google بيانات تسجيل",
+  "msg_google_failed": "فشل تسجيل الدخول عبر Google",
+  "msg_register_success": "تم إنشاء الحساب بنجاح! سيتم تحويلك...",
+
+  "alert_success_icon_label": "نجاح",
+  "alert_error_icon_label": "خطأ"
+}

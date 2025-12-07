@@ -53,7 +53,10 @@ function Home({ locale = "en" }) {
             </div>
 
             <h1 className="home-hero__title">
-              {t(dict, "title")} {/* ✅ translated (full title) */}
+              {t(dict, "title_main")}
+              <span className="home-hero__title-accent">
+                {t(dict, "title_accent")}
+              </span>
             </h1>
 
             <p className="home-hero__sub">

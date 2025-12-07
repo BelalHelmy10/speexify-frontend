@@ -1,14 +1,14 @@
-// src/pages/CorporateTraining.jsx
+// app/corporate-training/page.js
 "use client";
 
 import { useRef, useState } from "react";
-import api from "@/lib/api";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
-// If these styles are GLOBAL, move them into globals.scss instead.
-// If they are component-scoped, consider converting to a CSS module.
+import api from "@/lib/api";
 import "@/styles/corporate.scss";
+import { getDictionary, t } from "@/app/i18n";
 
-export default function CorporateTraining() {
+function CorporateTraining({ dict }) {
   const formRef = useRef(null);
 
   const [sending, setSending] = useState(false);
@@ -33,15 +33,13 @@ export default function CorporateTraining() {
     e.preventDefault();
     setStatus("");
 
-    // quick client-side validation
     if (!form.company || !form.email || !form.agree) {
-      setStatus("Please fill required fields.");
+      setStatus(t(dict, "status_required"));
       return;
     }
 
     setSending(true);
     try {
-      // Send to your backend contact endpoint
       await api.post("/api/contact", {
         name: `${form.contactName || "(no name)"} @ ${form.company}`,
         email: form.email,
@@ -55,19 +53,16 @@ export default function CorporateTraining() {
         }`,
       });
 
-      setStatus("Thanks! We'll get back to you shortly.");
+      setStatus(t(dict, "status_sent"));
       formRef.current?.reset();
       setForm((f) => ({ ...f, message: "", agree: false }));
     } catch (_err) {
-      // graceful fallback to mailto
       const subject = encodeURIComponent(`[Corporate RFP] ${form.company}`);
       const body = encodeURIComponent(
         `Company: ${form.company}\nContact: ${form.contactName}\nEmail: ${form.email}\nTeam size: ${form.size}\nTimeframe: ${form.timeframe}\nGoals: ${form.goals}\n\n${form.message}`
       );
       window.location.href = `mailto:hello@speexify.com?subject=${subject}&body=${body}`;
-      setStatus(
-        "Opened your email client. If that didn't work, email hello@speexify.com."
-      );
+      setStatus(t(dict, "status_email_fallback"));
     } finally {
       setSending(false);
     }
@@ -86,18 +81,18 @@ export default function CorporateTraining() {
           <div className="spx-corp-hero__copy">
             <div className="spx-corp-hero__badge">
               <span className="spx-corp-hero__badge-icon">🏢</span>
-              <span>Enterprise communication training</span>
+              <span>{t(dict, "hero_badge")}</span>
             </div>
 
             <h1 className="spx-corp-hero__title">
-              English that moves
-              <span className="spx-corp-hero__title-accent"> the business</span>
+              {t(dict, "hero_title_main")}
+              <span className="spx-corp-hero__title-accent">
+                {t(dict, "hero_title_accent")}
+              </span>
             </h1>
 
             <p className="spx-corp-hero__subtitle">
-              Tailored programs for teams and companies: 1:1 coaching,
-              small-group practice, and workshops. Clear outcomes, flexible
-              scheduling, and reporting for managers.
+              {t(dict, "hero_subtitle")}
             </p>
 
             <div className="spx-corp-hero__actions">
@@ -105,7 +100,7 @@ export default function CorporateTraining() {
                 href="#rfp"
                 className="spx-corp-btn spx-corp-btn--primary spx-corp-btn--shine"
               >
-                <span>Request proposal</span>
+                <span>{t(dict, "hero_cta_primary")}</span>
                 <svg
                   className="spx-corp-btn__arrow"
                   width="16"
@@ -127,14 +122,14 @@ export default function CorporateTraining() {
                 href="/packages?tab=corporate"
                 className="spx-corp-btn spx-corp-btn--ghost"
               >
-                See plans
+                {t(dict, "hero_cta_secondary")}
               </Link>
             </div>
 
             <div className="spx-corp-hero__features" aria-label="Key features">
-              <HeroFeature>Coach-matched</HeroFeature>
-              <HeroFeature>Flexible scheduling</HeroFeature>
-              <HeroFeature>Full reporting</HeroFeature>
+              <HeroFeature>{t(dict, "hero_feature_coach")}</HeroFeature>
+              <HeroFeature>{t(dict, "hero_feature_flex")}</HeroFeature>
+              <HeroFeature>{t(dict, "hero_feature_reporting")}</HeroFeature>
             </div>
           </div>
 
@@ -147,7 +142,7 @@ export default function CorporateTraining() {
             />
             <div className="spx-corp-hero__media-badge">
               <span className="spx-corp-hero__media-badge-icon">👥</span>
-              <span>Team training programs</span>
+              <span>{t(dict, "hero_media_badge")}</span>
             </div>
           </figure>
         </div>
@@ -156,7 +151,7 @@ export default function CorporateTraining() {
       {/* LOGOS */}
       <section className="spx-corp__section spx-corp-logos">
         <div className="spx-corp__container">
-          <p className="spx-corp-logos__title">Trusted by leading teams</p>
+          <p className="spx-corp-logos__title">{t(dict, "logos_title")}</p>
           <div className="spx-corp-logos__row">
             <Logo src="/logos/slack.svg" alt="Slack" />
             <Logo src="/logos/notion.svg" alt="Notion" />
@@ -170,17 +165,9 @@ export default function CorporateTraining() {
       {/* OUTCOMES */}
       <section className="spx-corp__section spx-corp-outcomes">
         <div className="spx-corp__container spx-corp-grid--3">
-          <Metric
-            value="92%"
-            label="report improved confidence in meetings"
-            icon="📊"
-          />
-          <Metric value="4.9/5" label="average coach rating" icon="⭐" />
-          <Metric
-            value="6–8 wks"
-            label="visible communication gains"
-            icon="🎯"
-          />
+          <Metric value="92%" label={t(dict, "metric1_label")} icon="📊" />
+          <Metric value="4.9/5" label={t(dict, "metric2_label")} icon="⭐" />
+          <Metric value="6–8 wks" label={t(dict, "metric3_label")} icon="🎯" />
         </div>
       </section>
 
@@ -188,36 +175,36 @@ export default function CorporateTraining() {
       <section className="spx-corp__section spx-corp-programs">
         <div className="spx-corp__container">
           <SectionHead
-            title="Programs that fit your team"
-            subtitle="Mix and match formats for maximum impact"
+            title={t(dict, "programs_title")}
+            subtitle={t(dict, "programs_subtitle")}
           />
 
           <div className="spx-corp-grid--3">
             <Program
               img="/images/one-on-one-coaching.avif"
-              title="1:1 Coaching"
+              title={t(dict, "program1_title")}
               points={[
-                "Personalized plan per learner",
-                "Pronunciation & speaking drills",
-                "Real work scenarios",
+                t(dict, "program1_p1"),
+                t(dict, "program1_p2"),
+                t(dict, "program1_p3"),
               ]}
             />
             <Program
               img="/images/small-group-practice.avif"
-              title="Small-Group Practice"
+              title={t(dict, "program2_title")}
               points={[
-                "3–6 learners per group",
-                "Guided speaking time",
-                "Peer feedback",
+                t(dict, "program2_p1"),
+                t(dict, "program2_p2"),
+                t(dict, "program2_p3"),
               ]}
             />
             <Program
               img="/images/workshops.avif"
-              title="Workshops"
+              title={t(dict, "program3_title")}
               points={[
-                "Presentations & storytelling",
-                "Meetings & facilitation",
-                "Email & tone for business",
+                t(dict, "program3_p1"),
+                t(dict, "program3_p2"),
+                t(dict, "program3_p3"),
               ]}
             />
           </div>
@@ -228,36 +215,41 @@ export default function CorporateTraining() {
       <section className="spx-corp__section spx-corp-plans">
         <div className="spx-corp__container">
           <SectionHead
-            title="Pilot · Team · Company"
-            subtitle="Start small, scale with results"
+            title={t(dict, "plans_title")}
+            subtitle={t(dict, "plans_subtitle")}
           />
 
           <div className="spx-corp-grid--3">
             <Plan
               img="/images/pilot.avif"
-              title="Pilot (5–10)"
-              desc="Validate impact with a small cohort and clear report."
+              title={t(dict, "plan1_title")}
+              desc={t(dict, "plan1_desc")}
               bullets={[
-                "1:1 + group mix",
-                "Kickoff & goals",
-                "End-of-pilot report",
+                t(dict, "plan1_b1"),
+                t(dict, "plan1_b2"),
+                t(dict, "plan1_b3"),
               ]}
             />
             <Plan
               img="/images/team.avif"
-              title="Team (10–50)"
-              desc="Blend formats; add workshops; monthly reporting."
-              bullets={["Coach matching", "Workshops", "Manager updates"]}
+              title={t(dict, "plan2_title")}
+              desc={t(dict, "plan2_desc")}
+              bullets={[
+                t(dict, "plan2_b1"),
+                t(dict, "plan2_b2"),
+                t(dict, "plan2_b3"),
+              ]}
               popular
+              popularLabel={t(dict, "plan2_badge")}
             />
             <Plan
               img="/images/company.avif"
-              title="Company (50+)"
-              desc="Scaled rollout with CSM and quarterly exec reports."
+              title={t(dict, "plan3_title")}
+              desc={t(dict, "plan3_desc")}
               bullets={[
-                "Scheduling at scale",
-                "Dedicated CSM",
-                "Security review support",
+                t(dict, "plan3_b1"),
+                t(dict, "plan3_b2"),
+                t(dict, "plan3_b3"),
               ]}
             />
           </div>
@@ -267,7 +259,7 @@ export default function CorporateTraining() {
               href="/packages?tab=corporate"
               className="spx-corp-btn spx-corp-btn--primary"
             >
-              View corporate plans
+              {t(dict, "plans_view_corp")}
             </Link>
           </div>
         </div>
@@ -279,13 +271,13 @@ export default function CorporateTraining() {
           <div className="spx-corp-reporting__inner">
             <div className="spx-corp-reporting__copy">
               <SectionHead
-                title="Manager visibility & reporting"
-                subtitle="Monthly summaries, attendance, and learning milestones. Optional roster and SSO."
+                title={t(dict, "reporting_title")}
+                subtitle={t(dict, "reporting_subtitle")}
               />
               <ul className="spx-corp-bullets">
-                <li>Progress & participation tracking</li>
-                <li>Team trends & risk identification</li>
-                <li>Quarterly business reviews</li>
+                <li>{t(dict, "reporting_b1")}</li>
+                <li>{t(dict, "reporting_b2")}</li>
+                <li>{t(dict, "reporting_b3")}</li>
               </ul>
             </div>
             <figure className="spx-corp-media spx-corp-reporting__media">
@@ -304,28 +296,28 @@ export default function CorporateTraining() {
       <section className="spx-corp__section spx-corp-testis">
         <div className="spx-corp__container">
           <SectionHead
-            title="What leaders say"
-            subtitle="Real results from real teams"
+            title={t(dict, "testis_title")}
+            subtitle={t(dict, "testis_subtitle")}
           />
           <div className="spx-corp-grid--3">
             <Testi
-              quote="Our team now leads client calls with confidence. Practical and fast."
-              by="Sarah K."
-              role="Head of CS, SaaS"
+              quote={t(dict, "testi1_quote")}
+              by={t(dict, "testi1_by")}
+              role={t(dict, "testi1_role")}
               avatar="/images/head-of-cs.avif"
               rating={5}
             />
             <Testi
-              quote="Workshops were a hit. The follow-up 1:1s sealed the gains."
-              by="Marcus T."
-              role="L&D Manager, Fintech"
+              quote={t(dict, "testi2_quote")}
+              by={t(dict, "testi2_by")}
+              role={t(dict, "testi2_role")}
               avatar="/images/l&d-manager.avif"
               rating={5}
             />
             <Testi
-              quote="Clear reporting helped us expand from pilot to company-wide."
-              by="Priya M."
-              role="HRBP, Global Ops"
+              quote={t(dict, "testi3_quote")}
+              by={t(dict, "testi3_by")}
+              role={t(dict, "testi3_role")}
               avatar="/images/global-ops.avif"
               rating={5}
             />
@@ -338,12 +330,12 @@ export default function CorporateTraining() {
         <div className="spx-corp__container">
           <div className="spx-corp-rfp__card">
             <SectionHead
-              title="Request a proposal"
-              subtitle="Tell us about your team and goals"
+              title={t(dict, "rfp_title")}
+              subtitle={t(dict, "rfp_subtitle")}
             />
             <form ref={formRef} onSubmit={submit} className="spx-corp-form">
               <div className="spx-corp-form__row spx-corp-form__row--2">
-                <Field label="Company *">
+                <Field label={t(dict, "field_company")}>
                   <input
                     className="spx-corp-input"
                     name="company"
@@ -352,7 +344,7 @@ export default function CorporateTraining() {
                     required
                   />
                 </Field>
-                <Field label="Contact name">
+                <Field label={t(dict, "field_contact_name")}>
                   <input
                     className="spx-corp-input"
                     name="contactName"
@@ -363,7 +355,7 @@ export default function CorporateTraining() {
               </div>
 
               <div className="spx-corp-form__row spx-corp-form__row--3">
-                <Field label="Email *">
+                <Field label={t(dict, "field_email")}>
                   <input
                     className="spx-corp-input"
                     type="email"
@@ -374,7 +366,7 @@ export default function CorporateTraining() {
                     autoComplete="email"
                   />
                 </Field>
-                <Field label="Team size">
+                <Field label={t(dict, "field_team_size")}>
                   <select
                     className="spx-corp-select"
                     name="size"
@@ -387,7 +379,7 @@ export default function CorporateTraining() {
                     <option>200+</option>
                   </select>
                 </Field>
-                <Field label="Timeframe">
+                <Field label={t(dict, "field_timeframe")}>
                   <select
                     className="spx-corp-select"
                     name="timeframe"
@@ -402,20 +394,20 @@ export default function CorporateTraining() {
               </div>
 
               <div className="spx-corp-form__row spx-corp-form__row--2">
-                <Field label="Goals">
+                <Field label={t(dict, "field_goals")}>
                   <input
                     className="spx-corp-input"
                     name="goals"
-                    placeholder="e.g., client calls, presentations, internal collaboration"
+                    placeholder={t(dict, "placeholder_goals")}
                     value={form.goals}
                     onChange={onChange}
                   />
                 </Field>
-                <Field label="Notes">
+                <Field label={t(dict, "field_notes")}>
                   <input
                     className="spx-corp-input"
                     name="message"
-                    placeholder="Optional"
+                    placeholder={t(dict, "placeholder_notes")}
                     value={form.message}
                     onChange={onChange}
                   />
@@ -430,9 +422,9 @@ export default function CorporateTraining() {
                   onChange={onChange}
                 />
                 <span>
-                  I agree to the{" "}
+                  {t(dict, "check_privacy_prefix")}{" "}
                   <Link href="/privacy" className="spx-corp-link">
-                    privacy policy
+                    {t(dict, "check_privacy_link")}
                   </Link>
                   .
                 </span>
@@ -444,7 +436,9 @@ export default function CorporateTraining() {
                   type="submit"
                   disabled={sending}
                 >
-                  {sending ? "Sending…" : "Request proposal"}
+                  {sending
+                    ? t(dict, "sending")
+                    : t(dict, "btn_request_proposal")}
                 </button>
                 {status && <span className="spx-corp-status">{status}</span>}
               </div>
@@ -465,23 +459,21 @@ export default function CorporateTraining() {
 
         <div className="spx-corp__container spx-corp-cta__inner">
           <div className="spx-corp-cta__content">
-            <h2 className="spx-corp-cta__title">Ready to roll out training?</h2>
-            <p className="spx-corp-cta__subtitle">
-              Transform your team's communication starting today
-            </p>
+            <h2 className="spx-corp-cta__title">{t(dict, "cta_title")}</h2>
+            <p className="spx-corp-cta__subtitle">{t(dict, "cta_subtitle")}</p>
           </div>
           <div className="spx-corp-cta__actions">
             <a
               href="#rfp"
               className="spx-corp-btn spx-corp-btn--primary spx-corp-btn--lg"
             >
-              Request proposal
+              {t(dict, "cta_btn_primary")}
             </a>
             <Link
               href="/packages?tab=corporate"
               className="spx-corp-btn spx-corp-btn--ghost spx-corp-btn--lg"
             >
-              See plans
+              {t(dict, "cta_btn_secondary")}
             </Link>
           </div>
         </div>
@@ -490,7 +482,7 @@ export default function CorporateTraining() {
   );
 }
 
-/* ————— helpers ————— */
+/* helpers (unchanged except text now passed in) */
 
 function HeroFeature({ children }) {
   return (
@@ -571,12 +563,19 @@ function Program({ img, title, points = [] }) {
   );
 }
 
-function Plan({ img, title, desc, bullets = [], popular = false }) {
+function Plan({
+  img,
+  title,
+  desc,
+  bullets = [],
+  popular = false,
+  popularLabel,
+}) {
   return (
     <div
       className={`spx-corp-card spx-corp-plan ${popular ? "is-popular" : ""}`}
     >
-      {popular && <span className="spx-corp-badge">Most popular</span>}
+      {popular && <span className="spx-corp-badge">{popularLabel}</span>}
       <figure className="spx-corp-media spx-corp-plan__media">
         <img src={img} alt="" loading="lazy" />
       </figure>
@@ -591,13 +590,13 @@ function Plan({ img, title, desc, bullets = [], popular = false }) {
       </ul>
       <div className="spx-corp-plan__actions">
         <a href="#rfp" className="spx-corp-btn spx-corp-btn--primary">
-          Request proposal
+          {t(getDictionary("en", "corporate"), "btn_request_proposal")}
         </a>
         <Link
           href="/packages?tab=corporate"
           className="spx-corp-btn spx-corp-btn--ghost"
         >
-          Learn more
+          {t(getDictionary("en", "corporate"), "hero_cta_secondary")}
         </Link>
       </div>
     </div>
@@ -632,4 +631,12 @@ function Testi({ quote, by, role, avatar, rating }) {
       </div>
     </div>
   );
+}
+
+export default function CorporateTrainingPage() {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "corporate");
+
+  return <CorporateTraining dict={dict} />;
 }

@@ -1,0 +1,27 @@
+{
+  "title": "Welcome back",
+  "subtitle": "Sign in to continue to your account",
+
+  "social_divider": "or continue with email",
+
+  "label_email": "Email address",
+  "placeholder_email": "name@example.com",
+
+  "label_password": "Password",
+  "placeholder_password": "Enter your password",
+
+  "forgot_password": "Forgot password?",
+
+  "btn_sign_in": "Sign in",
+  "btn_signing_in": "Signing in...",
+
+  "no_account": "Don't have an account?",
+  "link_create_account": "Create account",
+
+  "alert_login_failed": "Login failed",
+  "alert_google_no_credential": "Google didn’t return a credential",
+  "alert_google_failed": "Google sign-in failed",
+
+  "user_fallback_name": "User",
+  "btn_sign_out": "Sign out"
+}
