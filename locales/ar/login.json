@@ -23,5 +23,6 @@
   "alert_google_failed": "فشل تسجيل الدخول عبر Google",
 
   "user_fallback_name": "المستخدم",
-  "btn_sign_out": "تسجيل الخروج"
+  "btn_sign_out": "تسجيل الخروج",
+  "google_button_aria": "متابعة باستخدام جوجل"
 }

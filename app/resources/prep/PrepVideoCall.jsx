@@ -10,22 +10,21 @@ export default function PrepVideoCall({
   userName,
   isTeacher,
   onScreenShareStreamChange,
-  locale = "en", // 🔹 NEW: locale prop
+  locale = "en",
 }) {
   const containerRef = useRef(null);
   const apiRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const dict = getDictionary(locale, "classroom"); // 🔹 NEW: classroom dict
+  const dict = getDictionary(locale, "classroom");
 
-  // Stable ref for the callback so changes don't re-init Jitsi
+  // keep callback stable
   const screenShareCbRef = useRef(onScreenShareStreamChange);
   useEffect(() => {
     screenShareCbRef.current = onScreenShareStreamChange;
   }, [onScreenShareStreamChange]);
 
-  // Helper: ensure external_api.js is loaded exactly once
   async function ensureJitsiScript() {
     if (typeof window === "undefined") return;
 
@@ -33,7 +32,6 @@ export default function PrepVideoCall({
 
     const existing = document.getElementById("jitsi-external-api");
     if (existing) {
-      // Wait until it finishes loading
       await new Promise((resolve, reject) => {
         if (existing.getAttribute("data-loaded") === "true") return resolve();
         existing.addEventListener("load", () => resolve(), { once: true });
@@ -56,7 +54,7 @@ export default function PrepVideoCall({
     });
   }
 
-  // Main Jitsi init effect
+  // 🔧 MAIN FIX: only depend on roomId (and optionally locale if you really want)
   useEffect(() => {
     let cancelled = false;
 
@@ -69,7 +67,6 @@ export default function PrepVideoCall({
       setError(null);
 
       try {
-        // Load script if needed
         await ensureJitsiScript();
         if (cancelled) return;
 
@@ -88,17 +85,11 @@ export default function PrepVideoCall({
         const api = new JitsiAPI(JITSI_DOMAIN, options);
         apiRef.current = api;
 
-        // Jitsi UI is now mounted; hide "Connecting…" overlay
         setIsLoading(false);
         setError(null);
 
-        // Events
         api.addListener("videoConferenceJoined", () => {
           setError(null);
-        });
-
-        api.addListener("videoConferenceLeft", () => {
-          // optional: handle leave
         });
 
         api.addListener("errorOccurred", (e) => {
@@ -113,13 +104,8 @@ export default function PrepVideoCall({
         api.addListener("screenSharingStatusChanged", (status) => {
           const cb = screenShareCbRef.current;
           if (typeof cb === "function") {
-            // We still only expose boolean active vs not, as designed in ClassroomShell
             cb(status.on ? true : null);
           }
-        });
-
-        api.addListener("readyToClose", () => {
-          // user clicked hangup
         });
       } catch (err) {
         console.error("Failed to initialize Jitsi:", err);
@@ -141,11 +127,11 @@ export default function PrepVideoCall({
       }
       apiRef.current = null;
     };
-  }, [roomId, userName, isTeacher, dict]); // dict is stable for same locale
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]); // ✅ only roomId
 
   return (
     <div className="cr-video">
-      {/* Loading state – only while script/API bootstraps */}
       {isLoading && !error && (
         <div className="cr-video__loading">
           <div className="cr-video__spinner" />
@@ -153,7 +139,6 @@ export default function PrepVideoCall({
         </div>
       )}
 
-      {/* Error state */}
       {error && (
         <div className="cr-video__error">
           <span className="cr-video__error-icon">⚠️</span>
@@ -167,7 +152,6 @@ export default function PrepVideoCall({
         </div>
       )}
 
-      {/* Jitsi container */}
       <div
         ref={containerRef}
         className="cr-video__frame"

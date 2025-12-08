@@ -18,7 +18,7 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { getDictionary, t } from "@/app/i18n";
 
-function RegisterInner({ dict }) {
+function RegisterInner({ dict, locale }) {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -31,6 +31,10 @@ function RegisterInner({ dict }) {
   const [sending, setSending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+
+  const base = locale === "ar" ? "/ar" : "";
+  const loginPath = `${base}/login`;
+  const dashboardPath = `${base}/dashboard`;
 
   const sendCode = async (e) => {
     e?.preventDefault?.();
@@ -74,7 +78,7 @@ function RegisterInner({ dict }) {
       setMsgType("success");
       setMsg(t(dict, "msg_register_success"));
       setTimeout(() => {
-        window.location.href = "/login";
+        window.location.href = loginPath;
       }, 1200);
     } catch (err) {
       setMsgType("error");
@@ -94,7 +98,7 @@ function RegisterInner({ dict }) {
       }
       setMsg("");
       await apiGoogleLogin(credential);
-      window.location.href = "/dashboard";
+      window.location.href = dashboardPath;
     } catch (err) {
       console.error(err);
       setMsgType("error");
@@ -162,7 +166,7 @@ function RegisterInner({ dict }) {
                   <svg viewBox="0 0 20 20" fill="currentColor">
                     <path
                       fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                       clipRule="evenodd"
                     />
                   </svg>
@@ -185,7 +189,7 @@ function RegisterInner({ dict }) {
                 {msgType === "success" ? (
                   <path
                     fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
                     clipRule="evenodd"
                   />
                 ) : (
@@ -272,7 +276,7 @@ function RegisterInner({ dict }) {
               <footer className="auth-footer">
                 <p>
                   {t(dict, "already_have_account")}{" "}
-                  <Link href="/login" className="link-primary">
+                  <Link href={loginPath} className="link-primary">
                     {t(dict, "link_sign_in")}
                   </Link>
                 </p>
@@ -475,7 +479,7 @@ function RegisterInner({ dict }) {
               <footer className="auth-footer">
                 <p>
                   {t(dict, "already_have_account")}{" "}
-                  <Link href="/login" className="link-primary">
+                  <Link href={loginPath} className="link-primary">
                     {t(dict, "link_sign_in")}
                   </Link>
                 </p>
@@ -499,5 +503,5 @@ export default function RegisterPage() {
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = getDictionary(locale, "register");
 
-  return <RegisterInner dict={dict} />;
+  return <RegisterInner dict={dict} locale={locale} />;
 }

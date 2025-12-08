@@ -117,5 +117,34 @@
   "pdf_prev_page": "الصفحة السابقة",
   "pdf_next_page": "الصفحة التالية",
   "pdf_page_label": "الصفحة",
-  "pdf_no_pages": "لا توجد صفحات"
+  "pdf_no_pages": "لا توجد صفحات",
+  "resources_prep_empty_title": "لا يوجد محتوى محدَّد",
+  "resources_prep_empty_text": "اختر مادة من القائمة لبدء العمل عليها.",
+
+  "resources_prep_note_placeholder": "اكتب ملاحظة سريعة…",
+  "resources_prep_text_placeholder": "اكتب هنا…",
+
+  "resources_breadcrumb_root": "الموارد",
+  "resources_breadcrumb_prep_room": "غرفة التحضير",
+
+  "resources_prep_info_back_to_picker": "الرجوع إلى الموارد",
+  "resources_prep_info_view_unit": "عرض الوحدة كاملة",
+  "resources_prep_info_open_raw": "فتح الملف الأصلي",
+
+  "resources_focus_viewer_exit": "الخروج من وضع التركيز",
+  "resources_focus_viewer_enter": "التركيز على العرض",
+
+  "resources_toolbar_sidebar_show": "إظهار التفاصيل",
+  "resources_toolbar_sidebar_hide": "إخفاء التفاصيل",
+
+  "resources_toolbar_pen": "قلم",
+  "resources_toolbar_highlighter": "مُعلِّم",
+  "resources_toolbar_text": "نص",
+  "resources_toolbar_eraser": "ممحاة",
+  "resources_toolbar_note": "ملاحظة لاصقة",
+  "resources_toolbar_pointer": "مؤشِّر",
+  "resources_toolbar_clear_all": "مسح الكل",
+
+  "resources_viewer_no_preview_title": "لا يوجد معاينة للملف",
+  "resources_viewer_no_preview_text": "ما زال بإمكانك فتح الملف الأصلي من الزر في الجانب الأيسر."
 }

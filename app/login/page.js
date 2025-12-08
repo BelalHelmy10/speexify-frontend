@@ -18,7 +18,7 @@ import {
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "@/app/i18n";
 
-function LoginInner({ dict }) {
+function LoginInner({ dict, locale }) {
   const [form, setForm] = useState({ email: "", password: "" });
   const [msg, setMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -31,17 +31,31 @@ function LoginInner({ dict }) {
 
   const { user, checking, refresh } = useAuth();
 
+  const base = locale === "ar" ? "/ar" : "";
+  const dashboardPath = `${base}/dashboard`;
+  const loginPath = `${base}/login`;
+  const forgotPasswordPath = `${base}/forgot-password`;
+  const registerPath = `${base}/register`;
+
   const redirectAfterLogin = useCallback(() => {
     const next = params.get("next");
 
     if (next) {
-      window.location.href = decodeURIComponent(next);
+      const decoded = decodeURIComponent(next);
+
+      // If next is absolute or already has /ar, just go there
+      if (/^https?:\/\//.test(decoded) || decoded.startsWith("/ar/")) {
+        window.location.href = decoded;
+      } else {
+        // Relative app path → add locale prefix if needed
+        window.location.href = locale === "ar" ? `/ar${decoded}` : decoded;
+      }
       return;
     }
 
-    router.replace("/dashboard");
+    router.replace(dashboardPath);
     router.refresh();
-  }, [params, router]);
+  }, [params, router, dashboardPath, locale]);
 
   useEffect(() => {
     if (!checking && user) {
@@ -100,7 +114,7 @@ function LoginInner({ dict }) {
       // ignore
     }
     await refresh();
-    router.replace("/login");
+    router.replace(loginPath);
     router.refresh();
   };
 
@@ -205,7 +219,7 @@ function LoginInner({ dict }) {
                     <label htmlFor="password">
                       {t(dict, "label_password")}
                     </label>
-                    <Link href="/forgot-password" className="forgot-link">
+                    <Link href={forgotPasswordPath} className="forgot-link">
                       {t(dict, "forgot_password")}
                     </Link>
                   </div>
@@ -297,7 +311,7 @@ function LoginInner({ dict }) {
               <footer className="auth-footer">
                 <p>
                   {t(dict, "no_account")}{" "}
-                  <Link href="/register" className="link-primary">
+                  <Link href={registerPath} className="link-primary">
                     {t(dict, "link_create_account")}
                   </Link>
                 </p>
@@ -339,5 +353,5 @@ export default function LoginPage() {
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = getDictionary(locale, "login");
 
-  return <LoginInner dict={dict} />;
+  return <LoginInner dict={dict} locale={locale} />;
 }

@@ -398,6 +398,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
                 classroomChannel={classroomChannel}
                 isTeacher={isTeacher}
                 isScreenShareActive={isScreenShareActive}
+                locale="en"
                 className="cr-prep-shell-fullsize"
               />
             ) : (

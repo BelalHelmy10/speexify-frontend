@@ -1,4 +1,4 @@
-// app/dashboard/page.jsx
+// app/dashboard/page.js
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -78,6 +78,7 @@ function SessionRow({
   isUpcoming = true,
   isTeacher = false,
   dict,
+  prefix, // 👈 NEW
 }) {
   const countdown = useCountdown(s.startAt, s.endAt, {
     startsIn: t(dict, "countdown_starts_in"),
@@ -121,7 +122,7 @@ function SessionRow({
             <>
               {/* built-in classroom join button */}
               <Link
-                href={`/classroom/${s.id}`}
+                href={`${prefix}/classroom/${s.id}`} // 👈 prefix added
                 className={`btn ${
                   joinable ? "btn--primary btn--glow" : "btn--ghost"
                 }`}
@@ -166,7 +167,7 @@ function SessionRow({
           ) : (
             <>
               <Link
-                href={`/dashboard/sessions/${s.id}`}
+                href={`${prefix}/dashboard/sessions/${s.id}`} // 👈 prefix added
                 className="btn btn--ghost"
               >
                 {t(dict, "session_view_details")}
@@ -185,7 +186,7 @@ function SessionRow({
               {/* Teacher: give OR edit feedback on completed sessions */}
               {isTeacher && s.status === "completed" && (
                 <Link
-                  href={`/dashboard/sessions/${s.id}/feedback`}
+                  href={`${prefix}/dashboard/sessions/${s.id}/feedback`} // 👈
                   className="btn btn--primary"
                 >
                   {s.teacherFeedback
@@ -197,7 +198,7 @@ function SessionRow({
               {/* Learner: View feedback (only after teacher filled it) */}
               {!isTeacher && s.teacherFeedback && (
                 <Link
-                  href={`/dashboard/sessions/${s.id}/feedback`}
+                  href={`${prefix}/dashboard/sessions/${s.id}/feedback`} // 👈
                   className="btn btn--primary"
                 >
                   {t(dict, "session_view_feedback")}
@@ -249,7 +250,8 @@ function Card({ title, value, icon, gradient }) {
   );
 }
 
-function DashboardInner({ dict }) {
+function DashboardInner({ dict, prefix }) {
+  // 👈 prefix here
   const { toast, confirmModal } = useToast();
   const [status, setStatus] = useState(() => t(dict, "status_loading"));
   const [summary, setSummary] = useState(null);
@@ -564,7 +566,7 @@ function DashboardInner({ dict }) {
             {t(dict, "warning_out_of_credits_body")}
           </p>
           <div className="button-row">
-            <Link href="/packages" className="btn btn--primary">
+            <Link href={`${prefix}/packages`} className="btn btn--primary">
               {t(dict, "warning_browse_packages")}
             </Link>
           </div>
@@ -595,7 +597,7 @@ function DashboardInner({ dict }) {
                 {t(dict, "plan_no_active_body")}
               </p>
               <div className="button-row">
-                <Link href="/packages" className="btn btn--primary">
+                <Link href={`${prefix}/packages`} className="btn btn--primary">
                   {t(dict, "plan_browse_packages")}
                 </Link>
               </div>
@@ -675,7 +677,7 @@ function DashboardInner({ dict }) {
 
               <div className="button-row" style={{ gap: 12, flexWrap: "wrap" }}>
                 <Link
-                  href="/onboarding"
+                  href={`${prefix}/onboarding`}
                   className={`btn ${
                     onbComplete ? "btn--ghost" : "btn--primary btn--pulse"
                   }`}
@@ -699,7 +701,7 @@ function DashboardInner({ dict }) {
                 </Link>
 
                 <Link
-                  href="/assessment"
+                  href={`${prefix}/assessment`}
                   className={`btn ${
                     assComplete ? "btn--ghost" : "btn--primary btn--pulse"
                   }`}
@@ -722,7 +724,7 @@ function DashboardInner({ dict }) {
                     : t(dict, "assessment_take")}
                 </Link>
 
-                <Link href="/packages" className="btn btn--ghost">
+                <Link href={`${prefix}/packages`} className="btn btn--ghost">
                   {t(dict, "view_all_plans")}
                 </Link>
               </div>
@@ -795,13 +797,13 @@ function DashboardInner({ dict }) {
               <div className="button-row">
                 {joinableTeach ? (
                   <Link
-                    href={`/classroom/${teachSummary.nextTeach.id}`}
+                    href={`${prefix}/classroom/${teachSummary.nextTeach.id}`} // 👈
                     className="btn btn--primary btn--glow"
                   >
                     {t(dict, "session_join_classroom")}
                   </Link>
                 ) : (
-                  <Link href="/calendar" className="btn btn--ghost">
+                  <Link href={`${prefix}/calendar`} className="btn btn--ghost">
                     <svg
                       width="16"
                       height="16"
@@ -827,7 +829,7 @@ function DashboardInner({ dict }) {
       <div className="panel">
         <div className="panel__head">
           <h3>{t(dict, "upcoming_title")}</h3>
-          <Link href="/calendar" className="btn btn--ghost btn--sm">
+          <Link href={`${prefix}/calendar`} className="btn btn--ghost btn--sm">
             <svg
               width="16"
               height="16"
@@ -860,6 +862,7 @@ function DashboardInner({ dict }) {
                 onRescheduleClick={openReschedule}
                 isTeacher={isTeacher}
                 dict={dict}
+                prefix={prefix} // 👈 pass down
               />
             ))}
           </div>
@@ -869,7 +872,7 @@ function DashboardInner({ dict }) {
       <div className="panel">
         <div className="panel__head">
           <h3>{t(dict, "past_title")}</h3>
-          <Link href="/calendar" className="btn btn--ghost btn--sm">
+          <Link href={`${prefix}/calendar`} className="btn btn--ghost btn--sm">
             {t(dict, "past_view_all")}
             <svg
               width="16"
@@ -899,6 +902,7 @@ function DashboardInner({ dict }) {
                 onRescheduleClick={() => {}}
                 isTeacher={isTeacher}
                 dict={dict}
+                prefix={prefix} // 👈 pass down
               />
             ))}
           </div>
@@ -948,6 +952,7 @@ function DashboardInner({ dict }) {
 export default function DashboardPage() {
   const pathname = usePathname();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const prefix = locale === "ar" ? "/ar" : ""; // 👈 central prefix
   const dict = getDictionary(locale, "dashboard");
-  return <DashboardInner dict={dict} />;
+  return <DashboardInner dict={dict} prefix={prefix} />;
 }

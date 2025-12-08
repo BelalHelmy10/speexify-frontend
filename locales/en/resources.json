@@ -117,5 +117,34 @@
   "pdf_prev_page": "Previous page",
   "pdf_next_page": "Next page",
   "pdf_page_label": "Page",
-  "pdf_no_pages": "No pages"
+  "pdf_no_pages": "No pages",
+  "resources_prep_empty_title": "No resource selected",
+  "resources_prep_empty_text": "Choose a resource from the list to start working with it.",
+
+  "resources_prep_note_placeholder": "Write a quick note…",
+  "resources_prep_text_placeholder": "Type here…",
+
+  "resources_breadcrumb_root": "Resources",
+  "resources_breadcrumb_prep_room": "Prep room",
+
+  "resources_prep_info_back_to_picker": "Back to resources",
+  "resources_prep_info_view_unit": "View full unit",
+  "resources_prep_info_open_raw": "Open original file",
+
+  "resources_focus_viewer_exit": "Exit focus mode",
+  "resources_focus_viewer_enter": "Focus on viewer",
+
+  "resources_toolbar_sidebar_show": "Show details",
+  "resources_toolbar_sidebar_hide": "Hide details",
+
+  "resources_toolbar_pen": "Pen",
+  "resources_toolbar_highlighter": "Highlighter",
+  "resources_toolbar_text": "Text",
+  "resources_toolbar_eraser": "Eraser",
+  "resources_toolbar_note": "Sticky note",
+  "resources_toolbar_pointer": "Pointer",
+  "resources_toolbar_clear_all": "Clear all",
+
+  "resources_viewer_no_preview_title": "No preview available",
+  "resources_viewer_no_preview_text": "You can still open the original file using the button on the left."
 }
