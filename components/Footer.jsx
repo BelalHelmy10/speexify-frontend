@@ -3,9 +3,19 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { usePathname } from "next/navigation";
+import { getDictionary, t } from "@/app/i18n";
 
 function Footer() {
-  // Avoid recomputing on every render (tiny optimization)
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const dict = getDictionary(locale, "footer");
+  const $t = (key) => t(dict, key);
+
+  const dir = locale === "ar" ? "rtl" : "ltr";
+  const prefix = locale === "ar" ? "/ar" : "";
+
+  // avoid recomputing
   const currentYear = useMemo(() => new Date().getFullYear(), []);
 
   const handleNewsletterSubmit = (e) => {
@@ -14,23 +24,29 @@ function Footer() {
   };
 
   return (
-    <footer className="site-footer-wrapper">
+    <footer className="site-footer-wrapper" dir={dir}>
       <div className="site-footer container">
         {/* Main Footer Content */}
         <div className="footer-top">
           {/* Brand Section */}
           <div className="brand-section">
-            <Link href="/" className="brand-link" aria-label="Go to homepage">
+            <Link
+              href={prefix || "/"}
+              className="brand-link"
+              aria-label={
+                locale === "ar"
+                  ? "العودة إلى الصفحة الرئيسية"
+                  : "Go to homepage"
+              }
+            >
               <span className="brand-text">Speexify</span>
               <span className="brand-shimmer" />
             </Link>
-            <p className="brand-tagline">
-              Language &amp; communication coaching for teams that need results.
-            </p>
+            <p className="brand-tagline">{$t("tagline")}</p>
 
             {/* Newsletter Signup */}
             <div className="newsletter">
-              <h4 className="newsletter-title">Stay in the loop</h4>
+              <h4 className="newsletter-title">{$t("newsletterTitle")}</h4>
               <form
                 className="newsletter-form"
                 onSubmit={handleNewsletterSubmit}
@@ -39,14 +55,14 @@ function Footer() {
                 <input
                   type="email"
                   name="email"
-                  placeholder="Enter your email"
+                  placeholder={$t("newsletterPlaceholder")}
                   className="newsletter-input"
-                  aria-label="Email address"
+                  aria-label={$t("newsletterPlaceholder")}
                   autoComplete="email"
                   required
                 />
                 <button type="submit" className="newsletter-btn">
-                  <span>Subscribe</span>
+                  <span>{$t("newsletterButton")}</span>
                   <svg
                     width="16"
                     height="16"
@@ -70,11 +86,14 @@ function Footer() {
           {/* Navigation Columns */}
           <nav className="footer-nav" aria-label="Footer">
             <div className="nav-col">
-              <h4 className="nav-col-title">Product</h4>
+              <h4 className="nav-col-title">{$t("productTitle")}</h4>
               <ul className="nav-col-list">
                 <li>
-                  <Link href="/individual-training" className="nav-col-link">
-                    <span>Individual Training</span>
+                  <Link
+                    href={`${prefix}/individual-training`}
+                    className="nav-col-link"
+                  >
+                    <span>{$t("individualTraining")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -94,8 +113,11 @@ function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/corporate-training" className="nav-col-link">
-                    <span>Corporate Training</span>
+                  <Link
+                    href={`${prefix}/corporate-training`}
+                    className="nav-col-link"
+                  >
+                    <span>{$t("corporateTraining")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -115,8 +137,8 @@ function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/packages" className="nav-col-link">
-                    <span>Packages</span>
+                  <Link href={`${prefix}/packages`} className="nav-col-link">
+                    <span>{$t("packages")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -139,11 +161,11 @@ function Footer() {
             </div>
 
             <div className="nav-col">
-              <h4 className="nav-col-title">Company</h4>
+              <h4 className="nav-col-title">{$t("companyTitle")}</h4>
               <ul className="nav-col-list">
                 <li>
-                  <Link href="/about" className="nav-col-link">
-                    <span>About</span>
+                  <Link href={`${prefix}/about`} className="nav-col-link">
+                    <span>{$t("about")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -163,8 +185,8 @@ function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="nav-col-link">
-                    <span>Contact</span>
+                  <Link href={`${prefix}/contact`} className="nav-col-link">
+                    <span>{$t("contact")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -184,8 +206,8 @@ function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/careers" className="nav-col-link">
-                    <span>Careers</span>
+                  <Link href={`${prefix}/careers`} className="nav-col-link">
+                    <span>{$t("careers")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -208,16 +230,16 @@ function Footer() {
             </div>
 
             <div className="nav-col">
-              <h4 className="nav-col-title">Resources</h4>
+              <h4 className="nav-col-title">{$t("resourcesTitle")}</h4>
               <ul className="nav-col-list">
                 <li>
                   <a
                     href="#blog"
                     className="nav-col-link"
                     onClick={(e) => e.preventDefault()}
-                    aria-label="Blog (coming soon)"
+                    aria-label={$t("ariaBlog")}
                   >
-                    <span>Blog</span>
+                    <span>{$t("blog")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -241,9 +263,9 @@ function Footer() {
                     href="#guides"
                     className="nav-col-link"
                     onClick={(e) => e.preventDefault()}
-                    aria-label="Guides (coming soon)"
+                    aria-label={$t("ariaGuides")}
                   >
-                    <span>Guides</span>
+                    <span>{$t("guides")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -267,9 +289,9 @@ function Footer() {
                     href="#help"
                     className="nav-col-link"
                     onClick={(e) => e.preventDefault()}
-                    aria-label="Help Center (coming soon)"
+                    aria-label={$t("ariaHelp")}
                   >
-                    <span>Help Center</span>
+                    <span>{$t("helpCenter")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -292,16 +314,16 @@ function Footer() {
             </div>
 
             <div className="nav-col">
-              <h4 className="nav-col-title">Legal</h4>
+              <h4 className="nav-col-title">{$t("legalTitle")}</h4>
               <ul className="nav-col-list">
                 <li>
                   <a
                     href="#privacy"
                     className="nav-col-link"
                     onClick={(e) => e.preventDefault()}
-                    aria-label="Privacy Policy (coming soon)"
+                    aria-label={$t("ariaPrivacy")}
                   >
-                    <span>Privacy Policy</span>
+                    <span>{$t("privacyPolicy")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -325,9 +347,9 @@ function Footer() {
                     href="#terms"
                     className="nav-col-link"
                     onClick={(e) => e.preventDefault()}
-                    aria-label="Terms of Service (coming soon)"
+                    aria-label={$t("ariaTerms")}
                   >
-                    <span>Terms of Service</span>
+                    <span>{$t("termsOfService")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -351,9 +373,9 @@ function Footer() {
                     href="#cookies"
                     className="nav-col-link"
                     onClick={(e) => e.preventDefault()}
-                    aria-label="Cookie Policy (coming soon)"
+                    aria-label={$t("ariaCookies")}
                   >
-                    <span>Cookie Policy</span>
+                    <span>{$t("cookiePolicy")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -381,7 +403,7 @@ function Footer() {
         <div className="footer-bottom">
           <div className="footer-bottom-left">
             <p className="copyright">
-              © {currentYear} Speexify. All rights reserved.
+              © {currentYear} Speexify. {$t("rights")}
             </p>
           </div>
 
@@ -393,7 +415,7 @@ function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="social-link"
-                aria-label="LinkedIn (opens in a new tab)"
+                aria-label={$t("ariaLinkedIn")}
               >
                 <svg
                   width="20"
@@ -424,7 +446,7 @@ function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="social-link"
-                aria-label="Twitter (opens in a new tab)"
+                aria-label={$t("ariaTwitter")}
               >
                 <svg
                   width="20"
@@ -445,7 +467,7 @@ function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="social-link"
-                aria-label="YouTube (opens in a new tab)"
+                aria-label={$t("ariaYouTube")}
               >
                 <svg
                   width="20"

@@ -50,6 +50,13 @@ import arSettings from "@/locales/ar/settings.json";
 import enOnboarding from "@/locales/en/onboarding.json";
 import arOnboarding from "@/locales/ar/onboarding.json";
 
+/* 🔹 NEW */
+import enResources from "@/locales/en/resources.json";
+import arResources from "@/locales/ar/resources.json";
+
+import enFooter from "@/locales/en/footer.json";
+import arFooter from "@/locales/ar/footer.json";
+
 const dictionaries = {
   en: {
     home: enHome,
@@ -69,6 +76,8 @@ const dictionaries = {
     session: enSession,
     settings: enSettings,
     onboarding: enOnboarding,
+    resources: enResources,
+    footer: enFooter,
   },
   ar: {
     home: arHome,
@@ -88,6 +97,8 @@ const dictionaries = {
     session: arSession,
     settings: arSettings,
     onboarding: arOnboarding,
+    resources: arResources,
+    footer: arFooter,
   },
 };
 
@@ -96,7 +107,7 @@ export function getDictionary(locale = "en", section) {
   return lang[section] || {};
 }
 
-// Safe placeholder replacement: {key} -> value (no RegExp, so no /{0}/ error)
+// Safe placeholder replacement
 export function t(dict, key, vars) {
   let value =
     dict && Object.prototype.hasOwnProperty.call(dict, key)

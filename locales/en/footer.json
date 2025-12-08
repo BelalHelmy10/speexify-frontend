@@ -1,0 +1,39 @@
+{
+  "tagline": "Language & communication coaching for teams that need results.",
+  "newsletterTitle": "Stay in the loop",
+  "newsletterPlaceholder": "Enter your email",
+  "newsletterButton": "Subscribe",
+
+  "productTitle": "Product",
+  "individualTraining": "Individual Training",
+  "corporateTraining": "Corporate Training",
+  "packages": "Packages",
+
+  "companyTitle": "Company",
+  "about": "About",
+  "contact": "Contact",
+  "careers": "Careers",
+
+  "resourcesTitle": "Resources",
+  "blog": "Blog",
+  "guides": "Guides",
+  "helpCenter": "Help Center",
+
+  "legalTitle": "Legal",
+  "privacyPolicy": "Privacy Policy",
+  "termsOfService": "Terms of Service",
+  "cookiePolicy": "Cookie Policy",
+
+  "rights": "All rights reserved.",
+
+  "ariaBlog": "Blog (coming soon)",
+  "ariaGuides": "Guides (coming soon)",
+  "ariaHelp": "Help Center (coming soon)",
+  "ariaPrivacy": "Privacy Policy (coming soon)",
+  "ariaTerms": "Terms of Service (coming soon)",
+  "ariaCookies": "Cookie Policy (coming soon)",
+
+  "ariaLinkedIn": "LinkedIn (opens in a new tab)",
+  "ariaTwitter": "Twitter (opens in a new tab)",
+  "ariaYouTube": "YouTube (opens in a new tab)"
+}

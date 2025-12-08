@@ -1,0 +1,121 @@
+{
+  "//": "===== HERO / PAGE HEADER (new naming) =====",
+  "hero_eyebrow": "مكتبة الموارد",
+  "hero_title": "كل موارد الصف في مكان واحد",
+  "hero_subtitle": "تصفّح حسب المسار والكتاب والمستوى والوحدة. افتح الملف الأصلي، أو صفحة الوحدة، أو ادخل غرفة التحضير مع أدوات التعليق.",
+
+  "empty_state": "لا توجد موارد مضافة بعد. عند ربط الموارد بالمسارات والوحدات ستظهر هنا.",
+
+  "//_aliases": "مفاتيح قديمة لا تزال مستخدَمة في الـ JSX الحالي – نربطها بنفس النصوص",
+  "resources_eyebrow": "المصادر",
+  "resources_page_title": "مكتبة الموارد",
+  "resources_page_subtitle": "تصفّح الموارد حسب المسار والكتاب والمستوى والوحدة.",
+  "resources_filename": "اسم الملف",
+  "resources_btn_open_original": "فتح الملف الأصلي",
+  "resources_btn_open_unit": "صفحة الوحدة",
+  "resources_btn_open_prep": "فتح في غرفة التحضير",
+  "resources_field_track": "المسار",
+  "resources_field_book": "الكتاب",
+  "resources_field_level": "المستوى",
+  "resources_field_unit": "الوحدة",
+  "resources_field_resources": "الموارد",
+  "resources_resources_hint": "اختر وحدة ومواردها لعرضها أو فتحها في غرفة التحضير.",
+
+  "//": "===== PICKER PANEL (new naming) =====",
+  "picker_title": "اختر موردًا",
+  "picker_subtitle": "تنقّل حسب المسار والكتاب والمستوى والوحدة للعثور على ما تحتاجه.",
+
+  "resources_picker_title": "اختر موردًا",
+  "resources_picker_subtitle": "تنقّل حسب المسار والكتاب والمستوى والوحدة للعثور على المورد المناسب.",
+
+  "label_track": "المسار",
+  "label_book": "الكتاب",
+  "label_level": "المستوى",
+  "label_unit": "الوحدة",
+  "label_resources": "الموارد في هذه الوحدة",
+
+  "resource_untitled": "مورد بدون عنوان",
+  "picker_hint": "اختر موردًا من هذه الوحدة لعرضه في المعاينة وفتحه في غرفة التحضير.",
+
+  "preview_empty_title": "لم يتم اختيار أي مورد",
+  "preview_empty_body": "استخدم المرشّحات على اليسار لاختيار المسار والكتاب والمستوى والوحدة والمورد.",
+
+  "label_cefr": "CEFR {level}",
+  "label_source": "المصدر: {source}",
+
+  "btn_open_prep": "فتح في غرفة التحضير",
+  "btn_choose_first": "اختر موردًا أولًا",
+  "btn_unit_page": "فتح صفحة الوحدة",
+  "btn_unit_unavailable": "صفحة الوحدة غير متوفرة",
+  "btn_open_original": "فتح الملف الأصلي",
+  "btn_no_link": "لا يوجد رابط متاح",
+
+  "//": "===== PREP ROOM: GENERIC / EMPTY / ERRORS =====",
+  "prep_empty_title": "لا يوجد مورد محمَّل",
+  "prep_empty_body": "اختر موردًا من صفحة الموارد لتبدأ التحضير للدرس.",
+
+  "prep_breadcrumb_resources": "الموارد",
+  "prep_breadcrumb_prep_room": "غرفة التحضير",
+
+  "prep_back_to_picker": "← العودة إلى الموارد",
+  "prep_view_unit_page": "عرض صفحة الوحدة",
+  "prep_open_raw_link": "فتح الرابط الأصلي",
+
+  "prep_no_preview_title": "لا تتوفر معاينة",
+  "prep_no_preview_body": "لا يمكن معاينة هذا المورد هنا. جرّب فتح الرابط الأصلي بدلًا من ذلك.",
+
+  "prep_no_resource_title": "لم يتم اختيار أي مورد",
+  "prep_no_resource_body": "افتح صفحة الموارد واختر موردًا قبل الدخول إلى غرفة التحضير.",
+  "prep_no_resource_back": "الانتقال إلى الموارد",
+
+  "prep_not_found_title": "المورد غير موجود",
+  "prep_not_found_body": "تعذّر العثور على هذا المورد. ربما تم حذفه أو أنّ الرابط غير صالح.",
+  "prep_not_found_back": "العودة إلى الموارد",
+
+  "//": "===== PREP NOTES =====",
+  "prep_notes_label": "ملاحظات التحضير",
+  "prep_notes_hint": "تُحفَظ على هذا الجهاز فقط.",
+  "prep_notes_placeholder": "اكتب نقاط الحديث، وتوزيع الوقت، والملاحظات السريعة هنا…",
+
+  "//": "===== STICKY NOTES / TEXT BOXES =====",
+  "prep_note_placeholder": "ملاحظة…",
+  "prep_text_placeholder": "اكتب هنا…",
+
+  "//": "===== SIDEBAR TOGGLE / FOCUS =====",
+  "prep_sidebar_show_info": "إظهار تفاصيل المورد",
+  "prep_sidebar_hide_info": "إخفاء تفاصيل المورد",
+
+  "prep_focus_viewer": "التركيز على العرض",
+  "prep_exit_focus": "إيقاف وضع التركيز",
+
+  "//": "===== TOOLBAR LABELS =====",
+  "prep_tool_pen": "قلم",
+  "prep_tool_highlighter": "مميِّز",
+  "prep_tool_text": "نص",
+  "prep_tool_eraser": "ممحاة",
+  "prep_tool_note": "ملاحظة لاصقة",
+  "prep_tool_pointer": "مؤشِّر",
+  "prep_tool_clear_all": "مسح الكل",
+
+  "//": "===== PDF VIEWER ERRORS & CONTROLS =====",
+  "pdf_loading": "جارٍ تحميل ملف PDF…",
+  "pdf_retry": "إعادة المحاولة",
+
+  "pdf_error_engine": "تعذّر تحميل محرّك عرض ملفات PDF.",
+  "pdf_error_generic": "تعذّر تحميل ملف PDF هذا.",
+  "pdf_error_missing": "تعذّر العثور على ملف الـ PDF.",
+  "pdf_error_invalid": "الملف ليس PDF صالحًا.",
+  "pdf_error_missing_url": "رابط ملف الـ PDF مفقود أو غير صالح.",
+  "pdf_error_network": "خطأ في الشبكة أثناء تحميل ملف الـ PDF.",
+  "pdf_error_render": "حدث خطأ أثناء عرض هذه الصفحة.",
+  "pdf_error_no_file": "لم يتم توفير رابط لملف PDF.",
+
+  "pdf_zoom_out": "تصغير",
+  "pdf_zoom_in": "تكبير",
+  "pdf_zoom_reset": "إعادة ضبط الحجم",
+
+  "pdf_prev_page": "الصفحة السابقة",
+  "pdf_next_page": "الصفحة التالية",
+  "pdf_page_label": "الصفحة",
+  "pdf_no_pages": "لا توجد صفحات"
+}

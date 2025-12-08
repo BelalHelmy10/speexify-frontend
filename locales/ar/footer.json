@@ -1,0 +1,39 @@
+{
+  "tagline": "تدريب على اللغة والتواصل للفرق التي تحتاج إلى نتائج حقيقية.",
+  "newsletterTitle": "ابق على اطلاع",
+  "newsletterPlaceholder": "أدخل بريدك الإلكتروني",
+  "newsletterButton": "اشترك",
+
+  "productTitle": "المنتج",
+  "individualTraining": "تدريب فردي",
+  "corporateTraining": "تدريب للشركات",
+  "packages": "الباقات",
+
+  "companyTitle": "الشركة",
+  "about": "من نحن",
+  "contact": "تواصل معنا",
+  "careers": "الوظائف",
+
+  "resourcesTitle": "المصادر",
+  "blog": "المدونة",
+  "guides": "الأدلة",
+  "helpCenter": "مركز المساعدة",
+
+  "legalTitle": "قانوني",
+  "privacyPolicy": "سياسة الخصوصية",
+  "termsOfService": "شروط الاستخدام",
+  "cookiePolicy": "سياسة ملفات تعريف الارتباط",
+
+  "rights": "جميع الحقوق محفوظة.",
+
+  "ariaBlog": "المدونة (قريباً)",
+  "ariaGuides": "الأدلة (قريباً)",
+  "ariaHelp": "مركز المساعدة (قريباً)",
+  "ariaPrivacy": "سياسة الخصوصية (قريباً)",
+  "ariaTerms": "شروط الاستخدام (قريباً)",
+  "ariaCookies": "سياسة ملفات تعريف الارتباط (قريباً)",
+
+  "ariaLinkedIn": "لينكدإن (تفتح في تبويب جديد)",
+  "ariaTwitter": "تويتر (تفتح في تبويب جديد)",
+  "ariaYouTube": "يوتيوب (تفتح في تبويب جديد)"
+}

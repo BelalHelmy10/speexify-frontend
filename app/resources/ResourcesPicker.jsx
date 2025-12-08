@@ -4,6 +4,7 @@
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { buildResourcePickerIndex } from "@/lib/resourcePickerIndex";
+import { getDictionary, t } from "@/app/i18n";
 
 /* -----------------------------------------------------------
    Helper: Choose the primary URL for a resource
@@ -46,7 +47,9 @@ function findUnitWithContext(tracks, unitId) {
 /* -----------------------------------------------------------
    MAIN COMPONENT
 ----------------------------------------------------------- */
-export default function ResourcesPicker({ tracks }) {
+export default function ResourcesPicker({ tracks, locale = "en" }) {
+  const dict = getDictionary(locale, "resources");
+
   // Build the picker index (shared with classroom)
   const {
     trackOptions,
@@ -163,8 +166,7 @@ export default function ResourcesPicker({ tracks }) {
 
   const primaryUrl = getPrimaryUrl(selectedResource);
 
-  // Prep Room link – this MUST carry a real resourceId,
-  // otherwise the Prep page will show "Please choose a resource first"
+  // Prep Room link – this MUST carry a real resourceId
   const prepHref = selectedResource
     ? {
         pathname: "/resources/prep",
@@ -175,7 +177,7 @@ export default function ResourcesPicker({ tracks }) {
       }
     : null;
 
-  // Unit page link (adjust path if your route is different)
+  // Unit page link
   const unitHref =
     currentUnit && currentUnit.slug
       ? {
@@ -194,25 +196,28 @@ export default function ResourcesPicker({ tracks }) {
       {/* LEFT: Picker Card */}
       <section className="resources-picker">
         <div className="resources-picker__header">
-          <h2 className="resources-picker__title">Browse materials</h2>
+          <h2 className="resources-picker__title">
+            {t(dict, "resources_picker_title")}
+          </h2>
           <p className="resources-picker__subtitle">
-            Choose a course, book, level, unit, then pick a resource to preview
-            and open in the prep room.
+            {t(dict, "resources_picker_subtitle")}
           </p>
         </div>
 
         <div className="resources-picker__grid">
           {/* Track */}
           <div className="resources-picker__field">
-            <label className="resources-picker__label">Course / Track</label>
+            <label className="resources-picker__label">
+              {t(dict, "resources_field_track")}
+            </label>
             <div className="resources-picker__control">
               <select
                 value={trackId}
                 onChange={(e) => setTrackId(e.target.value)}
               >
-                {trackOptions.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
+                {trackOptions.map((tOpt) => (
+                  <option key={tOpt.value} value={tOpt.value}>
+                    {tOpt.label}
                   </option>
                 ))}
               </select>
@@ -221,7 +226,9 @@ export default function ResourcesPicker({ tracks }) {
 
           {/* Book */}
           <div className="resources-picker__field">
-            <label className="resources-picker__label">Book / Series</label>
+            <label className="resources-picker__label">
+              {t(dict, "resources_field_book")}
+            </label>
             <div className="resources-picker__control">
               <select
                 value={bookId}
@@ -240,7 +247,9 @@ export default function ResourcesPicker({ tracks }) {
 
           {/* Book Level */}
           <div className="resources-picker__field">
-            <label className="resources-picker__label">Level</label>
+            <label className="resources-picker__label">
+              {t(dict, "resources_field_level")}
+            </label>
             <div className="resources-picker__control">
               <select
                 value={bookLevelId}
@@ -259,7 +268,9 @@ export default function ResourcesPicker({ tracks }) {
 
           {/* Unit */}
           <div className="resources-picker__field">
-            <label className="resources-picker__label">Unit</label>
+            <label className="resources-picker__label">
+              {t(dict, "resources_field_unit")}
+            </label>
             <div className="resources-picker__control">
               <select
                 value={unitId}
@@ -278,7 +289,9 @@ export default function ResourcesPicker({ tracks }) {
 
           {/* Resources in this unit */}
           <div className="resources-picker__field resources-picker__field--full">
-            <label className="resources-picker__label">Resources</label>
+            <label className="resources-picker__label">
+              {t(dict, "resources_field_resources")}
+            </label>
             <div className="resources-picker__control">
               <select
                 value={selectedResourceId}
@@ -288,14 +301,13 @@ export default function ResourcesPicker({ tracks }) {
                 {!resourceOptions.length && <option>—</option>}
                 {resourceOptions.map((r) => (
                   <option key={r._id} value={r._id}>
-                    {r.title || "Untitled resource"}
+                    {r.title || t(dict, "resources_preview_title_fallback")}
                   </option>
                 ))}
               </select>
             </div>
             <p className="resources-picker__hint">
-              Once you pick a resource, you can open it in the prep room or jump
-              to the unit page.
+              {t(dict, "resources_resources_hint")}
             </p>
           </div>
         </div>
@@ -305,11 +317,8 @@ export default function ResourcesPicker({ tracks }) {
       <section className="resources-preview">
         {!selectedResource || !hasResources ? (
           <div className="resources-preview__card resources-preview__card--empty">
-            <h3>No resource selected</h3>
-            <p>
-              Choose a track, book, level, and unit on the left, then select a
-              resource to see its details and open it in the prep room.
-            </p>
+            <h3>{t(dict, "resources_preview_no_resource_title")}</h3>
+            <p>{t(dict, "resources_preview_no_resource_text")}</p>
           </div>
         ) : (
           <div className="resources-preview__card resources-preview__card--animated">
@@ -330,7 +339,8 @@ export default function ResourcesPicker({ tracks }) {
 
             {/* Title + description */}
             <h3 className="resources-preview__title">
-              {selectedResource.title || "Untitled resource"}
+              {selectedResource.title ||
+                t(dict, "resources_preview_title_fallback")}
             </h3>
 
             {selectedResource.description && (
@@ -343,17 +353,23 @@ export default function ResourcesPicker({ tracks }) {
             <div className="resources-preview__meta">
               {selectedResource.kind && (
                 <span className="resources-chip resources-chip--primary">
-                  {selectedResource.kind}
+                  {t(dict, "resources_meta_kind", {
+                    kind: selectedResource.kind,
+                  })}
                 </span>
               )}
               {selectedResource.cecrLevel && (
                 <span className="resources-chip resources-chip--success">
-                  CEFR {selectedResource.cecrLevel}
+                  {t(dict, "resources_meta_cefr", {
+                    level: selectedResource.cecrLevel,
+                  })}
                 </span>
               )}
               {selectedResource.sourceType && (
                 <span className="resources-chip">
-                  Source: {selectedResource.sourceType}
+                  {t(dict, "resources_meta_source", {
+                    sourceType: selectedResource.sourceType,
+                  })}
                 </span>
               )}
             </div>
@@ -364,7 +380,7 @@ export default function ResourcesPicker({ tracks }) {
                 <div className="resources-preview__tags">
                   {selectedResource.tags.map((tag) => (
                     <span key={tag} className="resources-tag">
-                      {tag}
+                      {t(dict, "resources_tag", { tag })}
                     </span>
                   ))}
                 </div>
@@ -373,7 +389,9 @@ export default function ResourcesPicker({ tracks }) {
             {/* File name */}
             {selectedResource.fileName && (
               <p className="resources-preview__filename">
-                {selectedResource.fileName}
+                {t(dict, "resources_filename", {
+                  fileName: selectedResource.fileName,
+                })}
               </p>
             )}
 
@@ -385,7 +403,7 @@ export default function ResourcesPicker({ tracks }) {
                   href={prepHref}
                   className="resources-button resources-button--primary"
                 >
-                  <span>🧑‍🏫 Open in Prep Room</span>
+                  <span>{t(dict, "resources_btn_open_prep")}</span>
                 </Link>
               ) : (
                 <button
@@ -393,7 +411,7 @@ export default function ResourcesPicker({ tracks }) {
                   className="resources-button resources-button--disabled"
                   disabled
                 >
-                  🧑‍🏫 Choose a resource first
+                  {t(dict, "resources_btn_choose_resource_first")}
                 </button>
               )}
 
@@ -403,7 +421,7 @@ export default function ResourcesPicker({ tracks }) {
                   href={unitHref}
                   className="resources-button resources-button--ghost"
                 >
-                  <span>📘 Open unit page</span>
+                  <span>{t(dict, "resources_btn_open_unit")}</span>
                 </Link>
               ) : (
                 <button
@@ -411,7 +429,7 @@ export default function ResourcesPicker({ tracks }) {
                   className="resources-button resources-button--disabled"
                   disabled
                 >
-                  📘 Unit page unavailable
+                  {t(dict, "resources_btn_unit_unavailable")}
                 </button>
               )}
 
@@ -423,7 +441,7 @@ export default function ResourcesPicker({ tracks }) {
                   rel="noopener noreferrer"
                   className="resources-button resources-button--ghost"
                 >
-                  <span>🔗 Open original</span>
+                  <span>{t(dict, "resources_btn_open_original")}</span>
                 </a>
               ) : (
                 <button
@@ -431,7 +449,7 @@ export default function ResourcesPicker({ tracks }) {
                   className="resources-button resources-button--disabled"
                   disabled
                 >
-                  🔗 No direct link
+                  {t(dict, "resources_btn_no_link")}
                 </button>
               )}
             </div>

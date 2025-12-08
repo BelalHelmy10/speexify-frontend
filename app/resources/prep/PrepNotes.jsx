@@ -2,10 +2,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getDictionary, t } from "@/app/i18n";
 
-export default function PrepNotes({ resourceId }) {
+export default function PrepNotes({ resourceId, locale = "en" }) {
   const [value, setValue] = useState("");
 
+  const dict = getDictionary(locale, "resources");
   const storageKey = `speexify_prep_notes_${resourceId}`;
 
   // Load notes from localStorage
@@ -19,7 +21,7 @@ export default function PrepNotes({ resourceId }) {
     } catch (err) {
       console.warn("Failed to read prep notes from localStorage", err);
     }
-  }, [resourceId]);
+  }, [resourceId, storageKey]);
 
   // Save notes to localStorage
   useEffect(() => {
@@ -34,15 +36,17 @@ export default function PrepNotes({ resourceId }) {
   return (
     <div className="prep-notes">
       <div className="prep-notes__header">
-        <span className="prep-notes__label">Session notes</span>
+        <span className="prep-notes__label">
+          {t(dict, "resources_prep_notes_label")}
+        </span>
         <span className="prep-notes__hint">
-          Jot down warm-ups, questions, pronunciation points, follow-ups, etc.
+          {t(dict, "resources_prep_notes_hint")}
         </span>
       </div>
 
       <textarea
         className="prep-notes__textarea"
-        placeholder="Start writing your plan for this resource..."
+        placeholder={t(dict, "resources_prep_notes_placeholder")}
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />

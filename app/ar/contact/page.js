@@ -1,4 +1,6 @@
-// app/ar/contact/page.js
-import ContactPage from "../../contact/page";
+// app/ar/classroom/[sessionId]/page.js
+import ClassroomPage from "../../../classroom/[sessionId]/page";
 
-export default ContactPage;
+export default function ArabicClassroomPage(props) {
+  return <ClassroomPage {...props} locale="ar" />;
+}

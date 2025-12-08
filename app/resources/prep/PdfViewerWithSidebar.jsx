@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { getDictionary, t } from "@/app/i18n";
 
 export default function PdfViewerWithSidebar({
   fileUrl,
@@ -10,6 +11,7 @@ export default function PdfViewerWithSidebar({
   onContainerReady, // optional callback to expose the scroll container
   hideControls = false, // hide bottom nav if desired
   hideSidebar = false, // hide page list if desired
+  locale = "en",
 }) {
   const mainRef = useRef(null); // scroll container
   const pdfCanvasRef = useRef(null); // main PDF canvas
@@ -22,6 +24,9 @@ export default function PdfViewerWithSidebar({
   const [zoom, setZoom] = useState(1.0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // i18n dictionary
+  const dict = getDictionary(locale, "resources");
 
   // Track current render task so we can cancel when switching page/zoom
   const renderTaskRef = useRef(null);
@@ -63,7 +68,7 @@ export default function PdfViewerWithSidebar({
       } catch (err) {
         console.error("Failed to load pdf.js", err);
         if (!cancelled) {
-          setError("Failed to load PDF engine.");
+          setError(t(dict, "resources_pdf_engine_error"));
           setLoading(false);
           onFatalError?.(err);
         }
@@ -75,7 +80,7 @@ export default function PdfViewerWithSidebar({
     return () => {
       cancelled = true;
     };
-  }, [onFatalError]);
+  }, [onFatalError, dict]);
 
   // Load the PDF document whenever fileUrl or pdfjs changes
   useEffect(() => {
@@ -116,21 +121,21 @@ export default function PdfViewerWithSidebar({
       } catch (err) {
         console.error("Failed to load PDF document:", err);
         if (!cancelled) {
-          let msg = "Failed to load PDF file.";
+          let msg = t(dict, "resources_pdf_load_generic_error");
 
           // Provide more specific error messages
           if (err.message?.includes("Missing PDF")) {
-            msg = "The PDF file could not be found or is not accessible.";
+            msg = t(dict, "resources_pdf_missing_error");
           } else if (err.message?.includes("Invalid PDF")) {
-            msg = "This file does not appear to be a valid PDF.";
+            msg = t(dict, "resources_pdf_invalid_error");
           } else if (err.name === "MissingPDFException") {
-            msg = "The PDF file is missing or the URL is incorrect.";
+            // same text: file missing / URL incorrect
+            msg = t(dict, "resources_pdf_missing_error");
           } else if (
             err.message?.includes("fetch") ||
             err.message?.includes("network")
           ) {
-            msg =
-              "Network error: Could not download the PDF. The file may be private or require authentication.";
+            msg = t(dict, "resources_pdf_network_error");
           }
 
           setError(msg);
@@ -145,7 +150,7 @@ export default function PdfViewerWithSidebar({
     return () => {
       cancelled = true;
     };
-  }, [pdfjs, fileUrl, onFatalError]);
+  }, [pdfjs, fileUrl, onFatalError, dict]);
 
   // Render the current page whenever pdfDoc, currentPage, or zoom changes
   useEffect(() => {
@@ -211,7 +216,7 @@ export default function PdfViewerWithSidebar({
         if (err.name === "RenderingCancelledException") return;
 
         console.error("Failed to render PDF page:", err);
-        setError("Failed to render PDF page.");
+        setError(t(dict, "resources_pdf_render_error"));
         setLoading(false);
       } finally {
         renderTaskRef.current = null;
@@ -228,7 +233,7 @@ export default function PdfViewerWithSidebar({
         } catch (_) {}
       }
     };
-  }, [pdfDoc, currentPage, zoom, updateContainerRef]);
+  }, [pdfDoc, currentPage, zoom, updateContainerRef, dict]);
 
   // Cleanup pdfDoc on unmount
   useEffect(() => {
@@ -286,9 +291,7 @@ export default function PdfViewerWithSidebar({
 
   if (!fileUrl) {
     return (
-      <div className="prep-pdf-error">
-        No PDF file was provided for this resource.
-      </div>
+      <div className="prep-pdf-error">{t(dict, "resources_pdf_no_file")}</div>
     );
   }
 
@@ -301,7 +304,7 @@ export default function PdfViewerWithSidebar({
           className="prep-pdf-error__retry"
           onClick={() => window.location.reload()}
         >
-          Retry
+          {t(dict, "resources_pdf_error_retry")}
         </button>
       </div>
     );
@@ -315,7 +318,7 @@ export default function PdfViewerWithSidebar({
           {loading && !pdfDoc && (
             <div className="cpv-loading">
               <div className="cpv-loading__spinner" />
-              <span>Loading PDF…</span>
+              <span>{t(dict, "resources_pdf_loading")}</span>
             </div>
           )}
 
@@ -356,7 +359,7 @@ export default function PdfViewerWithSidebar({
                   className="cpv-nav__btn"
                   onClick={zoomOut}
                   disabled={zoom <= MIN_ZOOM}
-                  title="Zoom out"
+                  title={t(dict, "resources_pdf_zoom_out")}
                 >
                   −
                 </button>
@@ -364,7 +367,7 @@ export default function PdfViewerWithSidebar({
                   className="cpv-nav__zoom"
                   onClick={zoomFit}
                   style={{ cursor: "pointer" }}
-                  title="Reset zoom"
+                  title={t(dict, "resources_pdf_zoom_reset")}
                 >
                   {Math.round(zoom * 100)}%
                 </div>
@@ -373,7 +376,7 @@ export default function PdfViewerWithSidebar({
                   className="cpv-nav__btn"
                   onClick={zoomIn}
                   disabled={zoom >= MAX_ZOOM}
-                  title="Zoom in"
+                  title={t(dict, "resources_pdf_zoom_in")}
                 >
                   +
                 </button>
@@ -385,19 +388,22 @@ export default function PdfViewerWithSidebar({
                   className="cpv-nav__btn"
                   onClick={goPrevPage}
                   disabled={!canGoPrev}
-                  title="Previous page"
+                  title={t(dict, "resources_pdf_prev_page")}
                 >
                   ←
                 </button>
                 <div className="cpv-nav__pages">
-                  Page {currentPage} / {numPages || "…"}
+                  {t(dict, "resources_pdf_page_label", {
+                    current: currentPage,
+                    total: numPages || "…",
+                  })}
                 </div>
                 <button
                   type="button"
                   className="cpv-nav__btn"
                   onClick={goNextPage}
                   disabled={!canGoNext}
-                  title="Next page"
+                  title={t(dict, "resources_pdf_next_page")}
                 >
                   →
                 </button>
@@ -416,7 +422,7 @@ export default function PdfViewerWithSidebar({
         <aside className="prep-pdf-sidebar">
           {numPages === 0 ? (
             <div className="prep-pdf-sidebar__empty">
-              No pages detected in this PDF.
+              {t(dict, "resources_pdf_sidebar_empty")}
             </div>
           ) : (
             <div className="prep-pdf-sidebar__pages">

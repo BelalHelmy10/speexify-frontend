@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PrepNotes from "./PrepNotes";
 import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
+import { getDictionary, t } from "@/app/i18n";
 
 const TOOL_NONE = "none";
 const TOOL_PEN = "pen";
@@ -30,16 +31,10 @@ const PEN_COLORS = [
 function parseGoogleDriveUrl(url) {
   if (!url) return null;
 
-  // Match various Google Drive URL patterns
   const patterns = [
-    // https://drive.google.com/file/d/FILE_ID/view
-    // https://drive.google.com/file/d/FILE_ID/preview
     /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
-    // https://drive.google.com/open?id=FILE_ID
     /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
-    // https://drive.google.com/uc?id=FILE_ID
     /drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/,
-    // https://docs.google.com/document/d/FILE_ID (for Google Docs exported as PDF)
     /docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/,
   ];
 
@@ -58,12 +53,9 @@ function getDirectPdfUrl(url) {
 
   const fileId = parseGoogleDriveUrl(url);
   if (fileId) {
-    // Convert to direct download URL that pdf.js can load
-    // Note: The file must be publicly accessible or shared with "anyone with the link"
     return `https://drive.google.com/uc?export=download&id=${fileId}`;
   }
 
-  // Return original URL if not a Google Drive URL
   return url;
 }
 
@@ -79,7 +71,7 @@ function isPdfUrl(url) {
     lowerUrl.endsWith(".pdf") ||
     lowerUrl.includes(".pdf?") ||
     lowerUrl.includes("/pdf") ||
-    isGoogleDriveUrl(url) // Assume Google Drive files in this context are PDFs
+    isGoogleDriveUrl(url)
   );
 }
 
@@ -91,17 +83,22 @@ export default function PrepShell({
   classroomChannel,
   isScreenShareActive = false,
   isTeacher = false,
+  locale = "en",
+  unitIdFromQuery,
 }) {
+  const dict = getDictionary(locale, "resources");
+
   // ─────────────────────────────────────────────────────────────
   // SAFETY GUARD: if there is no resource, don't explode
   // ─────────────────────────────────────────────────────────────
   if (!resource) {
     return (
       <div className="prep-empty-card">
-        <h2 className="prep-empty-card__title">No resource selected</h2>
+        <h2 className="prep-empty-card__title">
+          {t(dict, "resources_prep_empty_title")}
+        </h2>
         <p className="prep-empty-card__text">
-          Pick a resource from the list to preview it here and get ready for
-          your session.
+          {t(dict, "resources_prep_empty_text")}
         </p>
       </div>
     );
@@ -136,29 +133,17 @@ export default function PrepShell({
   const hasScreenShare = !!isScreenShareActive;
 
   // ─────────────────────────────────────────────────────────────
-  // FIXED: Better PDF detection
+  // PDF detection
   // ─────────────────────────────────────────────────────────────
   const isPdf = (() => {
     if (pdfFallback) return false;
-
-    // Check explicit type first
     if (viewer?.type === "pdf") return true;
-
-    // Check if URL looks like a PDF
     if (isPdfUrl(viewerUrl)) return true;
-
-    // Check file extension from resource
     if (resource.fileName?.toLowerCase().endsWith(".pdf")) return true;
-
-    // Check sourceType
     if (resource.sourceType?.toLowerCase() === "pdf") return true;
-
     return false;
   })();
 
-  // ─────────────────────────────────────────────────────────────
-  // FIXED: Get the correct URL for PDF viewer
-  // ─────────────────────────────────────────────────────────────
   const pdfViewerUrl = isPdf ? getDirectPdfUrl(viewerUrl) : null;
 
   const showSidebar = !hideSidebar && !sidebarCollapsed;
@@ -235,8 +220,6 @@ export default function PrepShell({
 
     function resizeCanvas() {
       const rect = container.getBoundingClientRect();
-
-      // Skip if container has no size yet
       if (rect.width === 0 || rect.height === 0) return;
 
       const prev =
@@ -245,7 +228,6 @@ export default function PrepShell({
       canvas.width = rect.width;
       canvas.height = rect.height;
 
-      // Also set CSS dimensions to match
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
 
@@ -445,7 +427,6 @@ export default function PrepShell({
   }
 
   function draw(e) {
-    // Dragging sticky notes / text boxes
     if (dragState) {
       const coords = getCanvasCoordinates(e);
       if (!coords) return;
@@ -821,7 +802,7 @@ export default function PrepShell({
             </div>
             <textarea
               className="prep-sticky-note__textarea"
-              placeholder="Note..."
+              placeholder={t(dict, "resources_prep_note_placeholder")}
               value={note.text}
               onChange={(e) => updateNoteText(note.id, e.target.value)}
               onMouseDown={(e) => e.stopPropagation()}
@@ -861,7 +842,7 @@ export default function PrepShell({
                     data-textbox-id={box.id}
                     className="prep-text-box__textarea"
                     style={{ color: box.color }}
-                    placeholder="Type…"
+                    placeholder={t(dict, "resources_prep_text_placeholder")}
                     value={box.text}
                     onChange={(e) => updateTextBoxText(box.id, e.target.value)}
                     onBlur={() => setActiveTextId(null)}
@@ -910,7 +891,7 @@ export default function PrepShell({
       {showBreadcrumbs && (
         <nav className="unit-breadcrumbs prep-breadcrumbs">
           <Link href="/resources" className="unit-breadcrumbs__link">
-            Resources
+            {t(dict, "resources_breadcrumb_root")}
           </Link>
           {track && (
             <>
@@ -940,7 +921,7 @@ export default function PrepShell({
           )}
           <span className="unit-breadcrumbs__separator">/</span>
           <span className="unit-breadcrumbs__crumb prep-breadcrumbs__current">
-            Prep Room
+            {t(dict, "resources_breadcrumb_prep_room")}
           </span>
         </nav>
       )}
@@ -990,14 +971,14 @@ export default function PrepShell({
                 href="/resources"
                 className="resources-button resources-button--ghost"
               >
-                Back to picker
+                {t(dict, "resources_prep_info_back_to_picker")}
               </Link>
               {unit?.slug && (
                 <Link
                   href={`/resources/units/${unit.slug}`}
                   className="resources-button resources-button--ghost"
                 >
-                  View unit page
+                  {t(dict, "resources_prep_info_view_unit")}
                 </Link>
               )}
               {viewer?.rawUrl && (
@@ -1007,12 +988,13 @@ export default function PrepShell({
                   rel="noopener noreferrer"
                   className="resources-button resources-button--primary"
                 >
-                  Open raw link
+                  {t(dict, "resources_prep_info_open_raw")}
                 </a>
               )}
             </div>
 
-            <PrepNotes resourceId={resource._id} />
+            {/* 🔴 IMPORTANT: pass locale down so PrepNotes uses Arabic when /ar/... */}
+            <PrepNotes resourceId={resource._id} locale={locale} />
           </aside>
         )}
 
@@ -1023,26 +1005,17 @@ export default function PrepShell({
               className="prep-viewer__focus-toggle"
               onClick={() => setFocusMode((v) => !v)}
             >
-              {focusMode ? "Exit focus" : "Focus viewer"}
+              {focusMode
+                ? t(dict, "resources_focus_viewer_exit")
+                : t(dict, "resources_focus_viewer_enter")}
             </button>
           )}
 
           {viewerIsActive ? (
             <>
-              {/* {!hideBreadcrumbs && (
-                <div className="prep-viewer__badge">
-                  <span className="prep-viewer__badge-dot" />
-                  <span className="prep-viewer__badge-text">
-                    {hasScreenShare
-                      ? "🖥 Screen share active"
-                      : `Live preview · ${viewer.label}`}
-                  </span>
-                </div>
-              )} */}
-
               {/* Toolbar */}
               <div className="prep-annotate-toolbar">
-                {/* Sidebar toggle - inside toolbar */}
+                {/* Sidebar toggle */}
                 {!hideSidebar && (
                   <button
                     type="button"
@@ -1052,11 +1025,17 @@ export default function PrepShell({
                     }
                     onClick={() => setSidebarCollapsed((v) => !v)}
                     aria-label={
-                      sidebarCollapsed ? "Show sidebar" : "Hide sidebar"
+                      sidebarCollapsed
+                        ? t(dict, "resources_toolbar_sidebar_show")
+                        : t(dict, "resources_toolbar_sidebar_hide")
                     }
                   >
                     {sidebarCollapsed ? "📋" : "📋"}
-                    <span>{sidebarCollapsed ? "Show Info" : "Hide Info"}</span>
+                    <span>
+                      {sidebarCollapsed
+                        ? t(dict, "resources_toolbar_sidebar_show")
+                        : t(dict, "resources_toolbar_sidebar_hide")}
+                    </span>
                   </button>
                 )}
 
@@ -1070,7 +1049,7 @@ export default function PrepShell({
                   }
                   onClick={() => setToolSafe(TOOL_PEN)}
                 >
-                  🖊️ <span>Pen</span>
+                  🖊️ <span>{t(dict, "resources_toolbar_pen")}</span>
                 </button>
                 <button
                   type="button"
@@ -1080,7 +1059,7 @@ export default function PrepShell({
                   }
                   onClick={() => setToolSafe(TOOL_HIGHLIGHTER)}
                 >
-                  ✨ <span>Highlighter</span>
+                  ✨ <span>{t(dict, "resources_toolbar_highlighter")}</span>
                 </button>
                 <button
                   type="button"
@@ -1090,7 +1069,7 @@ export default function PrepShell({
                   }
                   onClick={() => setToolSafe(TOOL_TEXT)}
                 >
-                  ✍️ <span>Text</span>
+                  ✍️ <span>{t(dict, "resources_toolbar_text")}</span>
                 </button>
                 <button
                   type="button"
@@ -1100,7 +1079,7 @@ export default function PrepShell({
                   }
                   onClick={() => setToolSafe(TOOL_ERASER)}
                 >
-                  🧽 <span>Eraser</span>
+                  🧽 <span>{t(dict, "resources_toolbar_eraser")}</span>
                 </button>
                 <button
                   type="button"
@@ -1110,7 +1089,7 @@ export default function PrepShell({
                   }
                   onClick={() => setToolSafe(TOOL_NOTE)}
                 >
-                  🗒️ <span>Note</span>
+                  🗒️ <span>{t(dict, "resources_toolbar_note")}</span>
                 </button>
                 <button
                   type="button"
@@ -1120,14 +1099,14 @@ export default function PrepShell({
                   }
                   onClick={() => setToolSafe(TOOL_POINTER)}
                 >
-                  ➤ <span>Pointer</span>
+                  ➤ <span>{t(dict, "resources_toolbar_pointer")}</span>
                 </button>
                 <button
                   type="button"
                   className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--danger"
                   onClick={clearCanvasAndNotes}
                 >
-                  🗑️ <span>Clear all</span>
+                  🗑️ <span>{t(dict, "resources_toolbar_clear_all")}</span>
                 </button>
 
                 <div className="prep-annotate-colors">
@@ -1162,7 +1141,7 @@ export default function PrepShell({
                     {renderAnnotationsOverlay()}
                   </div>
                 ) : isPdf ? (
-                  /* 🔥 PDF MODE - Using pdf.js viewer */
+                  /* 🔥 PDF MODE */
                   <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={pdfViewerUrl}
@@ -1172,12 +1151,13 @@ export default function PrepShell({
                       }}
                       hideControls={!hideBreadcrumbs ? false : true}
                       hideSidebar={hideBreadcrumbs}
+                      locale={locale}
                     >
                       {renderAnnotationsOverlay()}
                     </PdfViewerWithSidebar>
                   </div>
                 ) : (
-                  /* 🔥 IFRAME MODE - For non-PDF content */
+                  /* 🔥 IFRAME MODE */
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
@@ -1200,11 +1180,8 @@ export default function PrepShell({
             </>
           ) : (
             <div className="prep-viewer__placeholder">
-              <h2>No preview available</h2>
-              <p>
-                This resource doesn&apos;t have an embeddable URL. Use the
-                session notes on the left or open the raw link instead.
-              </p>
+              <h2>{t(dict, "resources_viewer_no_preview_title")}</h2>
+              <p>{t(dict, "resources_viewer_no_preview_text")}</p>
             </div>
           )}
         </section>

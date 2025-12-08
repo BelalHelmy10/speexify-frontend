@@ -3,6 +3,7 @@ import Link from "next/link";
 import { sanityClient } from "@/lib/sanity";
 import PrepShell from "./PrepShell";
 import { getViewerInfo } from "@/lib/viewerHelpers";
+import { getDictionary, t } from "@/app/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -59,9 +60,13 @@ async function getResourceWithContext(id) {
   return data || null;
 }
 
-export default async function PrepPage({ searchParams: searchParamsPromise }) {
-  // ⬅️ THIS is the important line: unwrap the Promise
+export default async function PrepPage({
+  searchParams: searchParamsPromise,
+  locale = "en",
+}) {
+  // ⬅️ unwrap the Promise (Next 13 app router quirk)
   const searchParams = await searchParamsPromise;
+  const dict = getDictionary(locale, "resources");
 
   // Accept a few possible names, but Resources uses ?resourceId=
   const resourceId =
@@ -78,13 +83,10 @@ export default async function PrepPage({ searchParams: searchParamsPromise }) {
       <div className="spx-resources-page">
         <div className="spx-resources-page__inner">
           <div className="spx-resources-empty-card">
-            <h1>No resource selected</h1>
-            <p>
-              Please choose a resource from the Resources page or a Unit page
-              before opening the Prep Room.
-            </p>
+            <h1>{t(dict, "resources_prep_no_resource_title")}</h1>
+            <p>{t(dict, "resources_prep_no_resource_text")}</p>
             <Link href="/resources" className="resources-button">
-              ← Back to resources
+              {t(dict, "resources_prep_back_to_resources")}
             </Link>
           </div>
         </div>
@@ -99,13 +101,10 @@ export default async function PrepPage({ searchParams: searchParamsPromise }) {
       <div className="spx-resources-page">
         <div className="spx-resources-page__inner">
           <div className="spx-resources-empty-card">
-            <h1>Resource not found</h1>
-            <p>
-              We couldn&apos;t find this resource. It may have been removed in
-              Sanity or the URL is incorrect.
-            </p>
+            <h1>{t(dict, "resources_prep_not_found_title")}</h1>
+            <p>{t(dict, "resources_prep_not_found_text")}</p>
             <Link href="/resources" className="resources-button">
-              ← Back to resources
+              {t(dict, "resources_prep_back_to_resources_again")}
             </Link>
           </div>
         </div>
@@ -126,6 +125,8 @@ export default async function PrepPage({ searchParams: searchParamsPromise }) {
           classroomChannel={null}
           isScreenShareActive={false}
           isTeacher={true}
+          locale={locale}
+          unitIdFromQuery={unitIdFromQuery}
         />
       </div>
     </div>

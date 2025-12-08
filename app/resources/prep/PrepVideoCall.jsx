@@ -3,17 +3,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import { JITSI_DOMAIN, buildJitsiOptions } from "@/lib/jitsiConfig";
+import { getDictionary, t } from "@/app/i18n";
 
 export default function PrepVideoCall({
   roomId,
   userName,
   isTeacher,
   onScreenShareStreamChange,
+  locale = "en", // 🔹 NEW: locale prop
 }) {
   const containerRef = useRef(null);
   const apiRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const dict = getDictionary(locale, "classroom"); // 🔹 NEW: classroom dict
 
   // Stable ref for the callback so changes don't re-init Jitsi
   const screenShareCbRef = useRef(onScreenShareStreamChange);
@@ -100,11 +104,9 @@ export default function PrepVideoCall({
         api.addListener("errorOccurred", (e) => {
           console.error("Jitsi error:", e);
           if (e?.error?.name === "conference.connectionError") {
-            setError(
-              "Connection error. Please check your internet connection."
-            );
+            setError(t(dict, "classroom_video_error_connection"));
           } else {
-            setError("Video call error. Please try again.");
+            setError(t(dict, "classroom_video_error_generic"));
           }
         });
 
@@ -122,7 +124,7 @@ export default function PrepVideoCall({
       } catch (err) {
         console.error("Failed to initialize Jitsi:", err);
         if (!cancelled) {
-          setError("Failed to start video call. Please try again.");
+          setError(t(dict, "classroom_video_error_generic"));
           setIsLoading(false);
         }
       }
@@ -139,7 +141,7 @@ export default function PrepVideoCall({
       }
       apiRef.current = null;
     };
-  }, [roomId, userName, isTeacher]); // NOTE: callback NOT in deps
+  }, [roomId, userName, isTeacher, dict]); // dict is stable for same locale
 
   return (
     <div className="cr-video">
@@ -147,7 +149,7 @@ export default function PrepVideoCall({
       {isLoading && !error && (
         <div className="cr-video__loading">
           <div className="cr-video__spinner" />
-          <span>Connecting to classroom…</span>
+          <span>{t(dict, "classroom_video_connecting")}</span>
         </div>
       )}
 
@@ -160,7 +162,7 @@ export default function PrepVideoCall({
             className="cr-video__retry"
             onClick={() => window.location.reload()}
           >
-            Retry
+            {t(dict, "classroom_video_retry")}
           </button>
         </div>
       )}

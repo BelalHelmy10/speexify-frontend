@@ -1,6 +1,7 @@
 // app/resources/page.js
 import { sanityClient } from "@/lib/sanity";
 import ResourcesPicker from "./ResourcesPicker";
+import { getDictionary, t } from "@/app/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -95,31 +96,32 @@ async function getResourcesTree() {
   return Array.isArray(data) ? data : [];
 }
 
-export default async function ResourcesPage() {
+// locale comes from the wrapper (normal = "en", /ar = "ar")
+export default async function ResourcesPage({ locale = "en" }) {
   const tracks = await getResourcesTree();
+  const dict = getDictionary(locale, "resources");
 
   return (
     <div className="spx-resources-page">
       <div className="spx-resources-page__inner">
         <header className="spx-resources-hero">
-          <span className="spx-resources-hero__eyebrow">Resources</span>
+          <span className="spx-resources-hero__eyebrow">
+            {t(dict, "resources_eyebrow")}
+          </span>
           <h1 className="spx-resources-hero__title">
-            Prepare your lessons in seconds
+            {t(dict, "resources_page_title")}
           </h1>
           <p className="spx-resources-hero__subtitle">
-            Pick a track, then a book/series, then the book level, unit, and
-            resource. We’ll surface the right PDFs, slides, and videos for your
-            next session.
+            {t(dict, "resources_page_subtitle")}
           </p>
         </header>
 
         {tracks.length === 0 ? (
           <p className="spx-resources-empty">
-            No tracks found yet. Add Track / Book / Book level / Unit / Resource
-            documents in Sanity.
+            {t(dict, "resources_empty_tracks")}
           </p>
         ) : (
-          <ResourcesPicker tracks={tracks} />
+          <ResourcesPicker tracks={tracks} locale={locale} />
         )}
       </div>
     </div>
