@@ -43,16 +43,25 @@ function LoginInner({ dict, locale }) {
     if (next) {
       const decoded = decodeURIComponent(next);
 
-      // If next is absolute or already has /ar, just go there
-      if (/^https?:\/\//.test(decoded) || decoded.startsWith("/ar/")) {
-        window.location.href = decoded;
-      } else {
-        // Relative app path → add locale prefix if needed
-        window.location.href = locale === "ar" ? `/ar${decoded}` : decoded;
+      // We ONLY allow internal app paths (must start with "/")
+      if (decoded.startsWith("/")) {
+        const isArabicPath = decoded.startsWith("/ar/");
+
+        // If the path is already explicitly Arabic, just go there
+        if (isArabicPath) {
+          window.location.href = decoded;
+        } else {
+          // Otherwise, add locale prefix if needed
+          window.location.href = locale === "ar" ? `/ar${decoded}` : decoded;
+        }
+
+        return;
       }
-      return;
+
+      // If next is something weird (doesn't start with "/"), ignore it
     }
 
+    // Fallback: go to dashboard
     router.replace(dashboardPath);
     router.refresh();
   }, [params, router, dashboardPath, locale]);

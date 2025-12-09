@@ -1,3 +1,4 @@
+// middleware.js
 import { NextResponse } from "next/server";
 
 const TOKEN_COOKIE = "speexify.sid"; // session cookie name
@@ -9,46 +10,61 @@ function isPrivate(pathname) {
     (p) => pathname === p || pathname.startsWith(`${p}/`)
   );
 }
-function isAuthPage(pathname) {
-  return AUTH_PAGES.includes(pathname);
-}
 
 export function middleware(req) {
-  const { pathname } = req.nextUrl;
-  const token = req.cookies.get(TOKEN_COOKIE)?.value ?? null;
-  const authed = Boolean(token);
+  const url = req.nextUrl.clone();
+  const pathname = url.pathname;
+  const searchParams = url.searchParams;
 
-  // allow assets / api
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/assets") ||
-    pathname.match(/\.(png|jpe?g|gif|svg|ico|webp|avif|css|js|map)$/)
-  ) {
-    return NextResponse.next();
+  const isArabic = pathname.startsWith("/ar/");
+  // Normalize to EN-style path ("/dashboard", "/login", etc.)
+  const basePath = isArabic ? pathname.replace(/^\/ar/, "") || "/" : pathname;
+
+  const token = req.cookies.get(TOKEN_COOKIE)?.value;
+  const isAuthed = !!token;
+
+  const onPrivatePage = isPrivate(basePath);
+  // const onAuth = AUTH_PAGES.includes(basePath); // we don't use this anymore here
+
+  // 1) Not logged in → trying to access private page → go to login (locale-aware)
+  if (!isAuthed && onPrivatePage) {
+    const loginPath = isArabic ? "/ar/login" : "/login";
+    const dest = url.clone();
+
+    dest.pathname = loginPath;
+
+    // Build original full path (with query) for "next"
+    const originalPathWithQuery =
+      pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
+
+    dest.searchParams.set("next", encodeURIComponent(originalPathWithQuery));
+
+    return NextResponse.redirect(dest);
   }
 
-  // keep protection for private routes
-  if (isPrivate(pathname) && !authed) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // ✅ do NOT redirect away from /login or /register just because a cookie exists
+  // 2) Otherwise, allow the request through.
+  //    Even if there's a cookie but the backend session is dead,
+  //    the page itself will see "not authenticated" and handle it.
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    "/",
+    "/", // home
     "/login",
     "/register",
     "/dashboard/:path*",
     "/calendar/:path*",
     "/settings/:path*",
     "/admin/:path*",
+
+    // Arabic equivalents
+    "/ar",
+    "/ar/login",
+    "/ar/register",
+    "/ar/dashboard/:path*",
+    "/ar/calendar/:path*",
+    "/ar/settings/:path*",
+    "/ar/admin/:path*",
   ],
 };

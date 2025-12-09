@@ -8,14 +8,14 @@ export default function PdfViewerWithSidebar({
   fileUrl,
   onFatalError,
   children, // overlay from PrepShell will be rendered over the page
-  onContainerReady, // optional callback to expose the scroll container
-  hideControls = false, // hide bottom nav if desired
-  hideSidebar = false, // hide page list if desired
+  onContainerReady, // exposes the page wrapper (annotation container) to parent
+  hideControls = false,
+  hideSidebar = false,
   locale = "en",
 }) {
   const mainRef = useRef(null); // scroll container
   const pdfCanvasRef = useRef(null); // main PDF canvas
-  const pageWrapperRef = useRef(null); // wrapper for positioning overlay
+  const pageWrapperRef = useRef(null); // wrapper that matches the PDF page (used for annotations)
 
   const [pdfjs, setPdfjs] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
@@ -25,13 +25,11 @@ export default function PdfViewerWithSidebar({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // i18n dictionary
   const dict = getDictionary(locale, "resources");
 
-  // Track current render task so we can cancel when switching page/zoom
   const renderTaskRef = useRef(null);
 
-  // Expose the page wrapper (not scroll container) to parent for annotation positioning
+  // Expose the page wrapper element to parent (for normalized coords)
   const updateContainerRef = useCallback(() => {
     if (typeof onContainerReady === "function" && pageWrapperRef.current) {
       onContainerReady(pageWrapperRef.current);
@@ -42,7 +40,7 @@ export default function PdfViewerWithSidebar({
     updateContainerRef();
   }, [updateContainerRef]);
 
-  // Load pdf.js lazily on the client
+  // Load pdf.js lazily
   useEffect(() => {
     let cancelled = false;
 
@@ -50,16 +48,13 @@ export default function PdfViewerWithSidebar({
       try {
         const pdfjsLib = await import("pdfjs-dist/build/pdf");
 
-        // Try to set up the worker
         try {
-          // Option 1: Use CDN worker (most reliable)
           pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
         } catch (workerErr) {
           console.warn(
             "Failed to set PDF.js worker, using main thread:",
             workerErr
           );
-          // Will fall back to main thread rendering
         }
 
         if (!cancelled) {
@@ -82,7 +77,7 @@ export default function PdfViewerWithSidebar({
     };
   }, [onFatalError, dict]);
 
-  // Load the PDF document whenever fileUrl or pdfjs changes
+  // Load the PDF document
   useEffect(() => {
     if (!pdfjs || !fileUrl) return;
 
@@ -96,14 +91,10 @@ export default function PdfViewerWithSidebar({
       setCurrentPage(1);
 
       try {
-        // Configure loading options for better compatibility
         const loadingTask = pdfjs.getDocument({
           url: fileUrl,
-          // Disable range requests which can cause issues with some servers
           disableRange: true,
-          // Disable streaming for better compatibility
           disableStream: true,
-          // Allow credentials for authenticated requests
           withCredentials: false,
         });
 
@@ -123,13 +114,11 @@ export default function PdfViewerWithSidebar({
         if (!cancelled) {
           let msg = t(dict, "resources_pdf_load_generic_error");
 
-          // Provide more specific error messages
           if (err.message?.includes("Missing PDF")) {
             msg = t(dict, "resources_pdf_missing_error");
           } else if (err.message?.includes("Invalid PDF")) {
             msg = t(dict, "resources_pdf_invalid_error");
           } else if (err.name === "MissingPDFException") {
-            // same text: file missing / URL incorrect
             msg = t(dict, "resources_pdf_missing_error");
           } else if (
             err.message?.includes("fetch") ||
@@ -152,7 +141,7 @@ export default function PdfViewerWithSidebar({
     };
   }, [pdfjs, fileUrl, onFatalError, dict]);
 
-  // Render the current page whenever pdfDoc, currentPage, or zoom changes
+  // Render the current page
   useEffect(() => {
     if (!pdfDoc || !pdfCanvasRef.current) return;
 
@@ -172,9 +161,7 @@ export default function PdfViewerWithSidebar({
 
       try {
         const page = await pdfDoc.getPage(currentPage);
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         const canvas = pdfCanvasRef.current;
         const context = canvas.getContext("2d");
@@ -184,10 +171,11 @@ export default function PdfViewerWithSidebar({
         const viewport = page.getViewport({ scale: zoom });
         const outputScale = devicePixelRatio;
 
+        // Pixel size of the canvas backing store
         canvas.width = viewport.width * outputScale;
         canvas.height = viewport.height * outputScale;
 
-        // CSS size (so overlay & coordinates match visual size)
+        // CSS size (visual size) – overlay & normalized coords match this
         canvas.style.width = `${viewport.width}px`;
         canvas.style.height = `${viewport.height}px`;
 
@@ -207,12 +195,11 @@ export default function PdfViewerWithSidebar({
 
         if (!cancelled) {
           setLoading(false);
-          // Update container ref after render to ensure correct sizing
+          // Ensure parent gets the up-to-date container size
           updateContainerRef();
         }
       } catch (err) {
         if (cancelled) return;
-        // Ignore cancelled render errors
         if (err.name === "RenderingCancelledException") return;
 
         console.error("Failed to render PDF page:", err);
@@ -235,7 +222,7 @@ export default function PdfViewerWithSidebar({
     };
   }, [pdfDoc, currentPage, zoom, updateContainerRef, dict]);
 
-  // Cleanup pdfDoc on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (pdfDoc) {
@@ -246,10 +233,7 @@ export default function PdfViewerWithSidebar({
     };
   }, [pdfDoc]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Controls: page navigation & zoom
-  // ─────────────────────────────────────────────────────────────
-
+  // Controls
   const canGoPrev = currentPage > 1;
   const canGoNext = currentPage < numPages;
 
@@ -279,15 +263,13 @@ export default function PdfViewerWithSidebar({
     setZoom(1.0);
   }
 
-  // When currentPage changes, scroll to top of viewer
+  // Scroll to top on page change
   useEffect(() => {
     if (!mainRef.current) return;
     mainRef.current.scrollTop = 0;
   }, [currentPage]);
 
-  // ─────────────────────────────────────────────────────────────
   // RENDER
-  // ─────────────────────────────────────────────────────────────
 
   if (!fileUrl) {
     return (
@@ -332,7 +314,8 @@ export default function PdfViewerWithSidebar({
               ref={pdfCanvasRef}
               className="prep-pdf-canvas cpv-page-canvas"
             />
-            {/* Overlay from PrepShell (annotations, pointer, etc.) */}
+
+            {/* Annotation / pointer overlay (PrepShell children) */}
             {children && (
               <div
                 className="prep-pdf-overlay"
@@ -350,7 +333,7 @@ export default function PdfViewerWithSidebar({
             )}
           </div>
 
-          {/* Bottom nav (zoom + page) – can be hidden with hideControls */}
+          {/* Bottom nav */}
           {!hideControls && numPages > 0 && (
             <div className="cpv-nav">
               <div className="cpv-nav__left">
@@ -409,15 +392,13 @@ export default function PdfViewerWithSidebar({
                 </button>
               </div>
 
-              <div className="cpv-nav__right">
-                {/* Reserved for future: "Fit to width", etc. */}
-              </div>
+              <div className="cpv-nav__right">{/* future controls */}</div>
             </div>
           )}
         </div>
       </div>
 
-      {/* SIDEBAR (page buttons) – can be hidden with hideSidebar */}
+      {/* SIDEBAR */}
       {!hideSidebar && numPages > 1 && (
         <aside className="prep-pdf-sidebar">
           {numPages === 0 ? (

@@ -3,12 +3,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { login as apiLogin } from "@/lib/auth";
 import { getDictionary, t } from "@/app/i18n";
 
 function ForgotPasswordInner({ dict }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const isArabic = pathname?.startsWith("/ar");
+
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -60,7 +64,10 @@ function ForgotPasswordInner({ dict }) {
       // Try to sign the user in immediately
       try {
         await apiLogin({ email, password: newPassword });
-        window.location.replace("/dashboard");
+
+        // Locale-aware redirect after successful auto-login
+        router.replace(isArabic ? "/ar/dashboard" : "/dashboard");
+        router.refresh?.();
         return;
       } catch {
         // If auto-login fails, still inform the user that reset worked

@@ -89,7 +89,7 @@ export default function PrepShell({
   const dict = getDictionary(locale, "resources");
 
   // ─────────────────────────────────────────────────────────────
-  // SAFETY GUARD: if there is no resource, don't explode
+  // SAFETY GUARD
   // ─────────────────────────────────────────────────────────────
   if (!resource) {
     return (
@@ -107,17 +107,22 @@ export default function PrepShell({
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [pointerPos, setPointerPos] = useState(null);
+  const [pointer, setPointer] = useState(null); // { x,y } normalized
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
-  const [dragState, setDragState] = useState(null);
+  const [dragState, setDragState] = useState(null); // { kind: "note"|"text", id, offsetX, offsetY }
   const [activeTextId, setActiveTextId] = useState(null);
   const [pdfFallback, setPdfFallback] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Vector strokes using normalized coords
+  // stroke: { id, tool, color, points: [{ x,y } in [0,1]] }
+  const [strokes, setStrokes] = useState([]);
+  const [currentStrokeId, setCurrentStrokeId] = useState(null);
+
   const canvasRef = useRef(null);
-  const containerRef = useRef(null);
+  const containerRef = useRef(null); // element that matches the page (for normalized coords)
   const screenVideoRef = useRef(null);
 
   const applyingRemoteRef = useRef(false);
@@ -167,6 +172,105 @@ export default function PrepShell({
   }, [activeTextId]);
 
   // ─────────────────────────────────────────────────────────────
+  // Utility: normalized point relative to containerRef
+  // ─────────────────────────────────────────────────────────────
+
+  function getNormalizedPoint(event) {
+    const container = containerRef.current;
+    if (!container) return null;
+    const rect = container.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+
+    return {
+      x: Math.min(0.999, Math.max(0.001, x)),
+      y: Math.min(0.999, Math.max(0.001, y)),
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Canvas coordinate helpers (for dragging notes/text)
+  // ─────────────────────────────────────────────────────────────
+
+  function getCanvasCoordinates(event) {
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container && !canvas) return null;
+
+    const el = container || canvas;
+    const rect = el.getBoundingClientRect();
+
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+      width: rect.width,
+      height: rect.height,
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // REDRAW: render all strokes (normalized) onto canvas (legacy bitmap)
+  // ─────────────────────────────────────────────────────────────
+
+  function redrawCanvasFromStrokes(strokesToDraw) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    strokesToDraw.forEach((stroke) => {
+      if (!stroke.points || stroke.points.length < 2) return;
+
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      if (stroke.tool === TOOL_PEN) {
+        ctx.strokeStyle = stroke.color || penColor;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+      } else if (stroke.tool === TOOL_HIGHLIGHTER) {
+        ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
+        ctx.lineWidth = 18;
+        ctx.globalAlpha = 0.3;
+        ctx.globalCompositeOperation = "source-over";
+      } else if (stroke.tool === TOOL_ERASER) {
+        ctx.strokeStyle = "rgba(0,0,0,1)";
+        ctx.lineWidth = 20;
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "destination-out";
+      }
+
+      ctx.beginPath();
+      stroke.points.forEach((p, idx) => {
+        const x = p.x * width;
+        const y = p.y * height;
+        if (idx === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  // Whenever strokes change, redraw bitmap (for saving/broadcast)
+  useEffect(() => {
+    redrawCanvasFromStrokes(strokes);
+  }, [strokes]);
+
+  // ─────────────────────────────────────────────────────────────
   // Load annotations from localStorage
   // ─────────────────────────────────────────────────────────────
 
@@ -184,8 +288,10 @@ export default function PrepShell({
       if (Array.isArray(parsed.textBoxes)) {
         setTextBoxes(parsed.textBoxes);
       }
-
-      if (parsed.canvasData && canvasRef.current) {
+      if (Array.isArray(parsed.strokes)) {
+        setStrokes(parsed.strokes);
+      } else if (parsed.canvasData && canvasRef.current) {
+        // Legacy fallback: old saved raster image
         const img = new Image();
         img.onload = () => {
           const canvas = canvasRef.current;
@@ -203,7 +309,7 @@ export default function PrepShell({
   }, [storageKey]);
 
   // ─────────────────────────────────────────────────────────────
-  // Resize canvas with container
+  // Resize canvas with container (and redraw strokes)
   // ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -222,25 +328,13 @@ export default function PrepShell({
       const rect = container.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
 
-      const prev =
-        canvas.width && canvas.height ? canvas.toDataURL("image/png") : null;
-
       canvas.width = rect.width;
       canvas.height = rect.height;
 
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
 
-      if (prev) {
-        const img = new Image();
-        img.onload = () => {
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        };
-        img.src = prev;
-      }
+      redrawCanvasFromStrokes(strokes);
     }
 
     resizeCanvas();
@@ -253,7 +347,7 @@ export default function PrepShell({
       window.addEventListener("resize", resizeCanvas);
       return () => window.removeEventListener("resize", resizeCanvas);
     }
-  }, [hasScreenShare]);
+  }, [hasScreenShare, strokes]);
 
   // ─────────────────────────────────────────────────────────────
   // Persistence + broadcasting
@@ -267,7 +361,8 @@ export default function PrepShell({
         opts.canvasData ?? (canvas ? canvas.toDataURL("image/png") : undefined);
 
       const data = {
-        canvasData: canvasData || null,
+        canvasData: canvasData || null, // legacy/fallback
+        strokes: opts.strokes ?? strokes,
         stickyNotes: opts.stickyNotes ?? stickyNotes,
         textBoxes: opts.textBoxes ?? textBoxes,
       };
@@ -289,7 +384,8 @@ export default function PrepShell({
     const payload = {
       type: "ANNOTATION_STATE",
       resourceId: resource._id,
-      canvasData: canvasData || null,
+      canvasData: canvasData || null, // legacy
+      strokes: custom.strokes ?? strokes,
       stickyNotes: custom.stickyNotes ?? stickyNotes,
       textBoxes: custom.textBoxes ?? textBoxes,
     };
@@ -324,6 +420,7 @@ export default function PrepShell({
 
     const {
       canvasData,
+      strokes: remoteStrokes,
       stickyNotes: remoteNotes,
       textBoxes: remoteText,
     } = message;
@@ -332,29 +429,31 @@ export default function PrepShell({
     try {
       if (Array.isArray(remoteNotes)) setStickyNotes(remoteNotes);
       if (Array.isArray(remoteText)) setTextBoxes(remoteText);
-
-      if (canvasRef.current) {
+      if (Array.isArray(remoteStrokes)) {
+        setStrokes(remoteStrokes);
+        // redraw handled by useEffect
+      } else if (canvasData && canvasRef.current) {
+        // legacy image path
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          if (canvasData) {
-            const img = new Image();
-            img.onload = () => {
-              const c = canvasRef.current;
-              if (!c) return;
-              const context = c.getContext("2d");
-              if (!context) return;
-              context.clearRect(0, 0, c.width, c.height);
-              context.drawImage(img, 0, 0, c.width, c.height);
-            };
-            img.src = canvasData;
-          }
+          const img = new Image();
+          img.onload = () => {
+            const c = canvasRef.current;
+            if (!c) return;
+            const context = c.getContext("2d");
+            if (!context) return;
+            context.clearRect(0, 0, c.width, c.height);
+            context.drawImage(img, 0, 0, c.width, c.height);
+          };
+          img.src = canvasData;
         }
       }
 
       saveAnnotations({
         canvasData: canvasData || null,
+        strokes: Array.isArray(remoteStrokes) ? remoteStrokes : strokes,
         stickyNotes: Array.isArray(remoteNotes) ? remoteNotes : stickyNotes,
         textBoxes: Array.isArray(remoteText) ? remoteText : textBoxes,
       });
@@ -377,14 +476,9 @@ export default function PrepShell({
       if (msg.type === "ANNOTATION_STATE") {
         applyRemoteAnnotationState(msg);
       } else if (msg.type === "POINTER_MOVE") {
-        const container = containerRef.current;
-        if (!container) return;
-        const rect = container.getBoundingClientRect();
-        const x = msg.xNorm * rect.width;
-        const y = msg.yNorm * rect.height;
-        setPointerPos({ x, y });
+        setPointer({ x: msg.xNorm, y: msg.yNorm });
       } else if (msg.type === "POINTER_HIDE") {
-        setPointerPos(null);
+        setPointer(null);
       }
     });
 
@@ -392,41 +486,32 @@ export default function PrepShell({
   }, [classroomChannel, resource._id]);
 
   // ─────────────────────────────────────────────────────────────
-  // Canvas coordinate helpers
-  // ─────────────────────────────────────────────────────────────
-
-  function getCanvasCoordinates(event) {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const container = canvas.parentElement || canvas;
-    const rect = container.getBoundingClientRect();
-
-    return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-      width: rect.width,
-      height: rect.height,
-    };
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Drawing tools (pen / highlighter / eraser)
+  // Drawing tools (pen / highlighter / eraser) using normalized coords
   // ─────────────────────────────────────────────────────────────
 
   function startDrawing(e) {
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
-    const coords = getCanvasCoordinates(e);
-    if (!coords) return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    ctx.beginPath();
-    ctx.moveTo(coords.x, coords.y);
+    const p = getNormalizedPoint(e);
+    if (!p) return;
+
+    const id = `stroke_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+    const stroke = {
+      id,
+      tool,
+      color: penColor,
+      points: [p],
+    };
+
+    setStrokes((prev) => [...prev, stroke]);
+    setCurrentStrokeId(id);
     setIsDrawing(true);
   }
 
   function draw(e) {
+    // Dragging sticky notes / text boxes
     if (dragState) {
       const coords = getCanvasCoordinates(e);
       if (!coords) return;
@@ -468,72 +553,38 @@ export default function PrepShell({
       return;
     }
 
-    if (!isDrawing) {
-      if (tool === TOOL_POINTER) updatePointer(e);
-      return;
-    }
+    if (!isDrawing) return;
 
     if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
       return;
 
-    const coords = getCanvasCoordinates(e);
-    if (!coords) return;
+    if (!currentStrokeId) return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    const p = getNormalizedPoint(e);
+    if (!p) return;
 
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    if (tool === TOOL_PEN) {
-      ctx.strokeStyle = penColor;
-      ctx.lineWidth = 3;
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
-    } else if (tool === TOOL_HIGHLIGHTER) {
-      ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
-      ctx.lineWidth = 18;
-      ctx.globalAlpha = 0.3;
-      ctx.globalCompositeOperation = "source-over";
-    } else if (tool === TOOL_ERASER) {
-      ctx.strokeStyle = "rgba(0,0,0,1)";
-      ctx.lineWidth = 20;
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "destination-out";
-    }
-
-    ctx.lineTo(coords.x, coords.y);
-    ctx.stroke();
+    setStrokes((prev) =>
+      prev.map((stroke) =>
+        stroke.id === currentStrokeId
+          ? { ...stroke, points: [...stroke.points, p] }
+          : stroke
+      )
+    );
   }
 
   function stopDrawing() {
-    if (!isDrawing) return;
+    if (!isDrawing && !dragState) return;
     setIsDrawing(false);
+    setCurrentStrokeId(null);
+
     saveAnnotations();
     broadcastAnnotations();
-  }
 
-  // ─────────────────────────────────────────────────────────────
-  // Pointer mode
-  // ─────────────────────────────────────────────────────────────
-
-  function updatePointer(e) {
-    if (tool !== TOOL_POINTER) {
-      setPointerPos(null);
-      broadcastPointer(null);
-      return;
+    if (dragState) {
+      setDragState(null);
+      saveAnnotations();
+      broadcastAnnotations();
     }
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    setPointerPos({ x, y });
-    broadcastPointer({
-      x: rect.width ? x / rect.width : 0,
-      y: rect.height ? y / rect.height : 0,
-    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -596,14 +647,13 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
 
   function createTextBox(e) {
-    const coords = getCanvasCoordinates(e);
-    if (!coords) return;
-    const { x, y, width, height } = coords;
+    const p = getNormalizedPoint(e);
+    if (!p) return;
 
     const box = {
       id: `text_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-      x: x / width,
-      y: y / height,
+      x: p.x,
+      y: p.y,
       text: "",
       color: penColor,
     };
@@ -657,23 +707,36 @@ export default function PrepShell({
       const ctx = canvas.getContext("2d");
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
+    setStrokes([]);
     setStickyNotes([]);
     setTextBoxes([]);
     setDragState(null);
     setActiveTextId(null);
+    setPointer(null);
     try {
       window.localStorage.setItem(
         storageKey,
-        JSON.stringify({ canvasData: null, stickyNotes: [], textBoxes: [] })
+        JSON.stringify({
+          canvasData: null,
+          strokes: [],
+          stickyNotes: [],
+          textBoxes: [],
+        })
       );
     } catch (err) {
       console.warn("Failed to clear annotations", err);
     }
-    broadcastAnnotations({ canvasData: null, stickyNotes: [], textBoxes: [] });
+    broadcastAnnotations({
+      canvasData: null,
+      strokes: [],
+      stickyNotes: [],
+      textBoxes: [],
+    });
+    broadcastPointer(null);
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Mouse handlers for overlay
+  // Mouse handlers (attached to canvas)
   // ─────────────────────────────────────────────────────────────
 
   function handleMouseDown(e) {
@@ -682,6 +745,17 @@ export default function PrepShell({
       target.closest &&
       (target.closest(".prep-sticky-note") || target.closest(".prep-text-box"))
     ) {
+      // Note/text header handles its own drag start
+      return;
+    }
+
+    // Pointer: click-to-stick (normalized)
+    if (tool === TOOL_POINTER) {
+      e.preventDefault();
+      const p = getNormalizedPoint(e);
+      if (!p) return;
+      setPointer(p);
+      broadcastPointer(p);
       return;
     }
 
@@ -716,13 +790,6 @@ export default function PrepShell({
       return;
     }
 
-    if (tool === TOOL_POINTER) {
-      updatePointer(e);
-    } else if (pointerPos) {
-      setPointerPos(null);
-      broadcastPointer(null);
-    }
-
     if (
       tool === TOOL_PEN ||
       tool === TOOL_HIGHLIGHTER ||
@@ -735,11 +802,6 @@ export default function PrepShell({
 
   function handleMouseUp() {
     stopDrawing();
-    if (dragState) {
-      setDragState(null);
-      saveAnnotations();
-      broadcastAnnotations();
-    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -749,36 +811,161 @@ export default function PrepShell({
   function setToolSafe(nextTool) {
     if (tool === nextTool) {
       setTool(TOOL_NONE);
-      setPointerPos(null);
+      setPointer(null);
       broadcastPointer(null);
     } else {
       setTool(nextTool);
       if (nextTool !== TOOL_POINTER) {
-        setPointerPos(null);
+        setPointer(null);
         broadcastPointer(null);
       }
     }
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Render overlay (canvas + notes + text + pointer)
+  // Render overlay (canvas + SVG + notes + text + pointer)
   // ─────────────────────────────────────────────────────────────
 
   function renderAnnotationsOverlay() {
+    // In iframe (Google viewer) mode, allow full interaction when no tool is active:
+    // overlayPointerEvents = "none" → clicks/scroll go to iframe.
+    // When a tool is active, overlayPointerEvents = "auto" → you can annotate.
+    const overlayPointerEvents =
+      !isPdf && !hasScreenShare && tool === TOOL_NONE ? "none" : "auto";
+
     return (
-      <>
+      <div
+        className="prep-annotate-layer"
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: overlayPointerEvents,
+        }}
+      >
+        {/* Canvas for drawing (gets mouse events) */}
         <canvas
           ref={canvasRef}
           className={
             "prep-annotate-canvas" +
             (tool !== TOOL_NONE ? " prep-annotate-canvas--drawing" : "")
           }
+          style={{
+            width: "100%",
+            height: "100%",
+            pointerEvents: tool === TOOL_NONE ? "none" : "auto",
+          }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         />
 
+        {/* SVG layer renders normalized strokes (auto-scales) */}
+        <svg
+          className="annotation-svg-layer"
+          width="100%"
+          height="100%"
+          viewBox="0 0 1 1"
+          preserveAspectRatio="none"
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+          }}
+        >
+          {strokes.map((stroke) => (
+            <polyline
+              key={stroke.id}
+              points={stroke.points.map((p) => `${p.x},${p.y}`).join(" ")}
+              fill="none"
+              stroke={
+                stroke.tool === TOOL_HIGHLIGHTER
+                  ? "rgba(255,255,0,0.5)"
+                  : stroke.color || "#111"
+              }
+              strokeWidth={
+                stroke.tool === TOOL_HIGHLIGHTER ? 0.04 : 0.01 // normalized widths
+              }
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
+        </svg>
+
+        {/* Text boxes layer (normalized) */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+          }}
+        >
+          {textBoxes.map((box) => {
+            const isEditing = activeTextId === box.id;
+            return (
+              <div
+                key={box.id}
+                className={
+                  "prep-text-box" + (isEditing ? " prep-text-box--editing" : "")
+                }
+                style={{
+                  position: "absolute",
+                  left: `${box.x * 100}%`,
+                  top: `${box.y * 100}%`,
+                  transform: "translate(-50%, -50%)",
+                  pointerEvents: "auto", // to allow drag/edit
+                }}
+              >
+                {isEditing ? (
+                  <>
+                    <div
+                      className="prep-text-box__header"
+                      onMouseDown={(e) => startTextDrag(e, box)}
+                    >
+                      <span className="prep-text-box__drag-handle" />
+                      <button
+                        type="button"
+                        className="prep-text-box__close"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTextBox(box.id);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <textarea
+                      data-textbox-id={box.id}
+                      className="prep-text-box__textarea"
+                      style={{ color: box.color }}
+                      placeholder={t(dict, "resources_prep_text_placeholder")}
+                      value={box.text}
+                      onChange={(e) =>
+                        updateTextBoxText(box.id, e.target.value)
+                      }
+                      onBlur={() => setActiveTextId(null)}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    />
+                  </>
+                ) : (
+                  <div
+                    className="prep-text-box__label"
+                    style={{ color: box.color }}
+                    onMouseDown={(e) => startTextDrag(e, box)}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      setActiveTextId(box.id);
+                    }}
+                  >
+                    {box.text}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Sticky notes */}
         {stickyNotes.map((note) => (
           <div
             key={note.id}
@@ -810,69 +997,25 @@ export default function PrepShell({
           </div>
         ))}
 
-        {textBoxes.map((box) => {
-          const isEditing = activeTextId === box.id;
-          return (
-            <div
-              key={box.id}
-              className={
-                "prep-text-box" + (isEditing ? " prep-text-box--editing" : "")
-              }
-              style={{ left: `${box.x * 100}%`, top: `${box.y * 100}%` }}
-            >
-              {isEditing ? (
-                <>
-                  <div
-                    className="prep-text-box__header"
-                    onMouseDown={(e) => startTextDrag(e, box)}
-                  >
-                    <span className="prep-text-box__drag-handle" />
-                    <button
-                      type="button"
-                      className="prep-text-box__close"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteTextBox(box.id);
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <textarea
-                    data-textbox-id={box.id}
-                    className="prep-text-box__textarea"
-                    style={{ color: box.color }}
-                    placeholder={t(dict, "resources_prep_text_placeholder")}
-                    value={box.text}
-                    onChange={(e) => updateTextBoxText(box.id, e.target.value)}
-                    onBlur={() => setActiveTextId(null)}
-                    onMouseDown={(e) => e.stopPropagation()}
-                  />
-                </>
-              ) : (
-                <div
-                  className="prep-text-box__label"
-                  style={{ color: box.color }}
-                  onMouseDown={(e) => startTextDrag(e, box)}
-                  onDoubleClick={(e) => {
-                    e.stopPropagation();
-                    setActiveTextId(box.id);
-                  }}
-                >
-                  {box.text}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {pointerPos && (
+        {/* Pointer (normalized) */}
+        {pointer && (
           <div
             className="prep-pointer"
-            style={{ left: `${pointerPos.x}px`, top: `${pointerPos.y}px` }}
+            style={{
+              position: "absolute",
+              left: `${pointer.x * 100}%`,
+              top: `${pointer.y * 100}%`,
+              transform: "translate(-50%, -50%)",
+              width: 16,
+              height: 16,
+              borderRadius: "999px",
+              border: "2px solid #ef4444",
+              background: "rgba(239,68,68,0.3)",
+              pointerEvents: "none",
+            }}
           />
         )}
-      </>
+      </div>
     );
   }
 
@@ -993,7 +1136,6 @@ export default function PrepShell({
               )}
             </div>
 
-            {/* 🔴 IMPORTANT: pass locale down so PrepNotes uses Arabic when /ar/... */}
             <PrepNotes resourceId={resource._id} locale={locale} />
           </aside>
         )}
@@ -1126,7 +1268,7 @@ export default function PrepShell({
               </div>
 
               <div className="prep-viewer__frame-wrapper">
-                {/* 🔥 SCREEN SHARE MODE */}
+                {/* SCREEN SHARE MODE */}
                 {hasScreenShare ? (
                   <div
                     className="prep-viewer__canvas-container"
@@ -1141,12 +1283,13 @@ export default function PrepShell({
                     {renderAnnotationsOverlay()}
                   </div>
                 ) : isPdf ? (
-                  /* 🔥 PDF MODE */
+                  // PDF MODE
                   <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={pdfViewerUrl}
                       onFatalError={() => setPdfFallback(true)}
                       onContainerReady={(el) => {
+                        // el is the page wrapper that matches the PDF page
                         containerRef.current = el;
                       }}
                       hideControls={!hideBreadcrumbs ? false : true}
@@ -1157,7 +1300,7 @@ export default function PrepShell({
                     </PdfViewerWithSidebar>
                   </div>
                 ) : (
-                  /* 🔥 IFRAME MODE */
+                  // IFRAME MODE (Google viewer, etc.)
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
