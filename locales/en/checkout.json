@@ -37,5 +37,6 @@
   "back_to_packages": "← Back to packages",
 
   "confirm_login_message": "Please log in to continue with checkout. Redirect to login page?",
-  "toast_payment_failed": "Payment failed. Please try again."
+  "toast_payment_failed": "Payment failed. Please try again.",
+  "toast_already_subscribed": "You already have an active package for this plan."
 }

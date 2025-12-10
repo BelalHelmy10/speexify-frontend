@@ -2,8 +2,18 @@
 import { NextResponse } from "next/server";
 
 const TOKEN_COOKIE = "speexify.sid"; // session cookie name
-const PRIVATE_ROUTES = ["/dashboard", "/calendar", "/settings", "/admin"];
-const AUTH_PAGES = ["/login", "/register"];
+
+// Any route in here requires an authenticated session
+const PRIVATE_ROUTES = [
+  "/dashboard",
+  "/calendar",
+  "/settings",
+  "/admin",
+
+  // ✅ new protected routes
+  "/checkout",
+  "/payment", // protect ALL /payment/*, including /payment/success
+];
 
 function isPrivate(pathname) {
   return PRIVATE_ROUTES.some(
@@ -17,23 +27,21 @@ export function middleware(req) {
   const searchParams = url.searchParams;
 
   const isArabic = pathname.startsWith("/ar/");
-  // Normalize to EN-style path ("/dashboard", "/login", etc.)
+  // Normalize to EN-style base path ("/dashboard", "/login", etc.)
   const basePath = isArabic ? pathname.replace(/^\/ar/, "") || "/" : pathname;
 
   const token = req.cookies.get(TOKEN_COOKIE)?.value;
   const isAuthed = !!token;
 
   const onPrivatePage = isPrivate(basePath);
-  // const onAuth = AUTH_PAGES.includes(basePath); // we don't use this anymore here
 
-  // 1) Not logged in → trying to access private page → go to login (locale-aware)
+  // Not logged in + private route -> redirect to login with ?next=...
   if (!isAuthed && onPrivatePage) {
     const loginPath = isArabic ? "/ar/login" : "/login";
     const dest = url.clone();
 
     dest.pathname = loginPath;
 
-    // Build original full path (with query) for "next"
     const originalPathWithQuery =
       pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
 
@@ -42,9 +50,7 @@ export function middleware(req) {
     return NextResponse.redirect(dest);
   }
 
-  // 2) Otherwise, allow the request through.
-  //    Even if there's a cookie but the backend session is dead,
-  //    the page itself will see "not authenticated" and handle it.
+  // Otherwise allow through
   return NextResponse.next();
 }
 
@@ -57,6 +63,8 @@ export const config = {
     "/calendar/:path*",
     "/settings/:path*",
     "/admin/:path*",
+    "/checkout/:path*", // ✅ protect checkout
+    "/payment/:path*", // ✅ protect /payment/success and friends
 
     // Arabic equivalents
     "/ar",
@@ -66,5 +74,7 @@ export const config = {
     "/ar/calendar/:path*",
     "/ar/settings/:path*",
     "/ar/admin/:path*",
+    "/ar/checkout/:path*", // ✅ ar checkout
+    "/ar/payment/:path*", // ✅ ar payment/success
   ],
 };

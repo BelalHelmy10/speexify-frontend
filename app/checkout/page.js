@@ -88,14 +88,16 @@ export default function CheckoutPage() {
 
     try {
       setLoading(true);
-
+      // NEW (locale-aware)
       if (!user) {
         const shouldLogin = await confirmModal(
           t(dict, "confirm_login_message")
         );
         if (shouldLogin) {
           const currentUrl = encodeURIComponent(window.location.href);
-          router.push(`/login?next=${currentUrl}`);
+          const loginPath = locale === "ar" ? "/ar/login" : "/login";
+
+          router.push(`${loginPath}?next=${currentUrl}`);
         }
         return;
       }
@@ -121,17 +123,30 @@ export default function CheckoutPage() {
         },
       };
 
-      // ✅ use shared Axios client
-      // baseURL: /api  → final URL: /api/payments/create-intent
       const { data } = await api.post("/payments/create-intent", body);
 
       if (!data?.ok) {
+        // This path is mostly for non-4xx/5xx errors, but we keep it
         throw new Error(data?.message || "Failed to init payment");
       }
 
       window.location.href = data.iframeUrl;
     } catch (e) {
-      toast.error(e?.message || t(dict, "toast_payment_failed"));
+      // 👇 Axios error: check response data
+      const resp = e?.response?.data;
+
+      if (resp?.code === "ALREADY_SUBSCRIBED") {
+        // Friendly message (you added this key to your i18n files)
+        toast.error(t(dict, "toast_already_subscribed"));
+      } else if (resp?.message) {
+        // Backend sent a specific message
+        toast.error(resp.message);
+      } else {
+        // Fallback generic message
+        toast.error(t(dict, "toast_payment_failed"));
+      }
+
+      console.error("startPayment error:", e);
     } finally {
       setLoading(false);
     }
@@ -163,7 +178,9 @@ export default function CheckoutPage() {
             {t(dict, "error_message_not_found")}
           </p>
           <button
-            onClick={() => router.push("/packages")}
+            onClick={() =>
+              router.push(locale === "ar" ? "/ar/packages" : "/packages")
+            }
             className="checkout__error-button"
           >
             {t(dict, "error_button_view_packages")}
@@ -324,7 +341,11 @@ export default function CheckoutPage() {
 
         {/* Back Link */}
         <div className="checkout__back">
-          <button onClick={() => router.push("/packages")}>
+          <button
+            onClick={() =>
+              router.push(locale === "ar" ? "/ar/packages" : "/packages")
+            }
+          >
             {t(dict, "back_to_packages")}
           </button>
         </div>

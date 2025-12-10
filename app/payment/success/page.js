@@ -1,32 +1,40 @@
+// app/payment/success/page.js
 "use client";
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+
+import { useEffect, useState, useMemo } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import "@/styles/payment-result.scss";
 import api from "@/lib/api";
+import { getDictionary, t } from "@/app/i18n";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Detect locale from URL prefix (/ar/...)
+  const locale = pathname && pathname.startsWith("/ar") ? "ar" : "en";
+  const dict = useMemo(() => getDictionary(locale, "payment-result"), [locale]);
+
   const [status, setStatus] = useState("loading");
 
   useEffect(() => {
     let timer = null;
 
-    const orderId = searchParams.get("order"); // you set this as merchant_order_id
+    const orderId = searchParams.get("order"); // Paymob merchant_order_id
     const successParam = searchParams.get("success");
 
-    // If we don't have an orderId, just fallback to the query param
     if (!orderId) {
       setStatus(successParam === "true" ? "success" : "failed");
       return;
     }
 
-    // Poll the backend for the real order status (webhook sets it)
     async function poll() {
       try {
         const { data } = await api.get(
           `/api/orders/${encodeURIComponent(orderId)}`
         );
+
         if (data?.status === "paid") {
           setStatus("success");
           return; // stop polling
@@ -35,6 +43,7 @@ export default function PaymentSuccessPage() {
           setStatus("failed");
           return; // stop polling
         }
+
         // keep polling while pending
         timer = setTimeout(poll, 1500);
       } catch (_e) {
@@ -51,6 +60,12 @@ export default function PaymentSuccessPage() {
     };
   }, [searchParams]);
 
+  const isArabic = locale === "ar";
+  const onboardingPath = isArabic ? "/ar/onboarding" : "/onboarding";
+  const dashboardPath = isArabic ? "/ar/dashboard" : "/dashboard";
+  const packagesPath = isArabic ? "/ar/packages" : "/packages";
+
+  // ---------- Loading ----------
   if (status === "loading") {
     return (
       <div className="payment-result payment-result--loading">
@@ -58,7 +73,7 @@ export default function PaymentSuccessPage() {
           <div className="payment-result__loading">
             <div className="payment-result__spinner"></div>
             <p className="payment-result__loading-text">
-              Processing payment...
+              {t(dict, "loading_text")}
             </p>
           </div>
         </div>
@@ -66,6 +81,7 @@ export default function PaymentSuccessPage() {
     );
   }
 
+  // ---------- Success ----------
   if (status === "success") {
     return (
       <div className="payment-result payment-result--success">
@@ -86,35 +102,38 @@ export default function PaymentSuccessPage() {
                 />
               </svg>
             </div>
-            <h1 className="payment-result__title">Payment Successful!</h1>
+
+            <h1 className="payment-result__title">
+              {t(dict, "title_success")}
+            </h1>
+
             <p className="payment-result__message">
-              Your payment has been processed successfully.
+              {t(dict, "message_success")}
               {searchParams.get("order") && (
                 <span className="payment-result__order">
                   {" "}
-                  Order ID: {searchParams.get("order")}
+                  {t(dict, "label_order_id")} {searchParams.get("order")}
                 </span>
               )}
             </p>
+
             <div className="payment-result__actions">
               <button
-                onClick={() => router.push("/onboarding")}
+                onClick={() => router.push(onboardingPath)}
                 className="payment-result__btn payment-result__btn--primary"
               >
-                Start onboarding
+                {t(dict, "btn_start_onboarding")}
               </button>
               <button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push(dashboardPath)}
                 className="payment-result__btn payment-result__btn--ghost"
               >
-                Go to Dashboard
+                {t(dict, "btn_go_dashboard")}
               </button>
             </div>
 
             <p className="payment-result__small">
-              Your credits are now available. If they don’t appear immediately,
-              give it a few seconds and refresh — we confirm payment via a
-              secure webhook.
+              {t(dict, "note_after_success")}
             </p>
           </div>
         </div>
@@ -122,6 +141,7 @@ export default function PaymentSuccessPage() {
     );
   }
 
+  // ---------- Failed ----------
   return (
     <div className="payment-result payment-result--failed">
       <div className="payment-result__container">
@@ -141,20 +161,19 @@ export default function PaymentSuccessPage() {
               />
             </svg>
           </div>
-          <h1 className="payment-result__title">Payment Failed</h1>
-          <p className="payment-result__message">
-            Your payment could not be processed. Please try again.
-          </p>
+
+          <h1 className="payment-result__title">{t(dict, "title_failed")}</h1>
+
+          <p className="payment-result__message">{t(dict, "message_failed")}</p>
+
           <button
-            onClick={() => router.push("/packages")}
+            onClick={() => router.push(packagesPath)}
             className="payment-result__btn payment-result__btn--primary"
           >
-            Try Again
+            {t(dict, "btn_try_again")}
           </button>
-          <p className="payment-result__small">
-            If you were charged but still see this, email{" "}
-            <strong>hello@speexify.com</strong> with your Order ID.
-          </p>
+
+          <p className="payment-result__small">{t(dict, "note_if_charged")}</p>
         </div>
       </div>
     </div>
