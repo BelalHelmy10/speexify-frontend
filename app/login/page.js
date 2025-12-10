@@ -1,4 +1,3 @@
-// app/login/page.js
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -18,7 +17,7 @@ import {
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "@/app/i18n";
 
-function LoginInner({ dict, locale }) {
+function LoginInner({ dict }) {
   const [form, setForm] = useState({ email: "", password: "" });
   const [msg, setMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -28,51 +27,45 @@ function LoginInner({ dict, locale }) {
 
   const router = useRouter();
   const params = useSearchParams();
+  const pathname = usePathname();
 
   const { user, checking, refresh } = useAuth();
 
-  const base = locale === "ar" ? "/ar" : "";
-  const dashboardPath = `${base}/dashboard`;
-  const loginPath = `${base}/login`;
-  const forgotPasswordPath = `${base}/forgot-password`;
-  const registerPath = `${base}/register`;
-
   const redirectAfterLogin = useCallback(() => {
+    // 1) Try ?next= from URL
     const next = params.get("next");
-
     if (next) {
-      const decoded = decodeURIComponent(next);
-
-      // We ONLY allow internal app paths (must start with "/")
-      if (decoded.startsWith("/")) {
-        const isArabicPath = decoded.startsWith("/ar/");
-
-        // If the path is already explicitly Arabic, just go there
-        if (isArabicPath) {
-          window.location.href = decoded;
-        } else {
-          // Otherwise, add locale prefix if needed
-          window.location.href = locale === "ar" ? `/ar${decoded}` : decoded;
-        }
-
-        return;
-      }
-
-      // If next is something weird (doesn't start with "/"), ignore it
+      window.location.href = decodeURIComponent(next);
+      return;
     }
 
-    // Fallback: go to dashboard
+    // 2) Fallback: sessionStorage
+    if (typeof window !== "undefined") {
+      const stored = window.sessionStorage.getItem("post_login_redirect");
+      if (stored) {
+        window.sessionStorage.removeItem("post_login_redirect");
+        window.location.href = stored;
+        return;
+      }
+    }
+
+    // 3) Final fallback: locale-aware dashboard
+    const isArabic =
+      (typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/ar")) ||
+      pathname?.startsWith("/ar");
+
+    const dashboardPath = isArabic ? "/ar/dashboard" : "/dashboard";
     router.replace(dashboardPath);
     router.refresh();
-  }, [params, router, dashboardPath, locale]);
+  }, [params, router, pathname]);
 
   useEffect(() => {
     if (!checking && user) {
       setRedirecting(true);
       redirectAfterLogin();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checking, user]);
+  }, [checking, user, redirectAfterLogin]);
 
   const login = async (e) => {
     e.preventDefault();
@@ -123,7 +116,7 @@ function LoginInner({ dict, locale }) {
       // ignore
     }
     await refresh();
-    router.replace(loginPath);
+    router.replace("/login");
     router.refresh();
   };
 
@@ -228,7 +221,7 @@ function LoginInner({ dict, locale }) {
                     <label htmlFor="password">
                       {t(dict, "label_password")}
                     </label>
-                    <Link href={forgotPasswordPath} className="forgot-link">
+                    <Link href="/forgot-password" className="forgot-link">
                       {t(dict, "forgot_password")}
                     </Link>
                   </div>
@@ -320,7 +313,7 @@ function LoginInner({ dict, locale }) {
               <footer className="auth-footer">
                 <p>
                   {t(dict, "no_account")}{" "}
-                  <Link href={registerPath} className="link-primary">
+                  <Link href="/register" className="link-primary">
                     {t(dict, "link_create_account")}
                   </Link>
                 </p>
@@ -362,5 +355,5 @@ export default function LoginPage() {
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = getDictionary(locale, "login");
 
-  return <LoginInner dict={dict} locale={locale} />;
+  return <LoginInner dict={dict} />;
 }

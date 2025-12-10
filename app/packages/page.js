@@ -40,6 +40,7 @@ function Packages() {
   const pathname = usePathname();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = getDictionary(locale, "packages");
+  const localePrefix = locale === "ar" ? "/ar" : "";
 
   const [tab, setTab] = useState(AUD.INDIVIDUAL);
   const [lessonType, setLessonType] = useState(LESSON_TYPE.ONE_ON_ONE);
@@ -249,6 +250,7 @@ function Packages() {
                 plan={p}
                 audience={tab}
                 dict={dict}
+                locale={locale}
               />
             ))}
           </div>
@@ -293,7 +295,10 @@ function Packages() {
                 ~${corpEstimate.toLocaleString()}/
                 {t(dict, "estimator_period", "mo")}
               </div>
-              <Link href="/corporate#rfp" className="ecp-btn ecp-btn--primary">
+              <Link
+                href={`${localePrefix}/corporate#rfp`}
+                className="ecp-btn ecp-btn--primary"
+              >
                 {t(dict, "estimator_cta", "Get Custom Quote")}
               </Link>
             </div>
@@ -474,13 +479,13 @@ function Packages() {
             <div className="ecp-cta__actions">
               <Link
                 className="ecp-btn ecp-btn--primary ecp-btn--lg"
-                href="/individual#trial"
+                href={`${localePrefix}/individual#trial`}
               >
                 {t(dict, "cta_individual_primary", "Book Free Consultation")}
               </Link>
               <Link
                 className="ecp-btn ecp-btn--ghost ecp-btn--lg"
-                href="/packages"
+                href={`${localePrefix}/packages`}
               >
                 {t(dict, "cta_individual_secondary", "View All Plans")}
               </Link>
@@ -488,14 +493,14 @@ function Packages() {
           ) : (
             <div className="ecp-cta__actions">
               <Link
-                href="/corporate#rfp"
+                href={`${localePrefix}/corporate#rfp`}
                 className="ecp-btn ecp-btn--primary ecp-btn--lg"
               >
                 {t(dict, "cta_corp_primary", "Request Proposal")}
               </Link>
               <Link
                 className="ecp-btn ecp-btn--ghost ecp-btn--lg"
-                href="/corporate"
+                href={`${localePrefix}/corporate`}
               >
                 {t(
                   dict,
@@ -512,7 +517,7 @@ function Packages() {
 }
 
 /* Components */
-function PricingCard({ plan, audience, dict }) {
+function PricingCard({ plan, audience, dict, locale }) {
   const {
     title,
     description,
@@ -527,6 +532,7 @@ function PricingCard({ plan, audience, dict }) {
 
   const bullets = parseFeatures(plan.featuresRaw || "").slice(0, 8);
   const isCorp = audience === AUD.CORPORATE;
+  const localePrefix = locale === "ar" ? "/ar" : "";
 
   const totalLabel = (() => {
     if (priceType === "CUSTOM" || (!priceUSD && !startingAtUSD))
@@ -592,17 +598,25 @@ function PricingCard({ plan, audience, dict }) {
       <div className="ecp-card__actions">
         {isCorp ? (
           <>
-            <Link href="/corporate#rfp" className="ecp-btn ecp-btn--primary">
+            <Link
+              href={`${localePrefix}/corporate#rfp`}
+              className="ecp-btn ecp-btn--primary"
+            >
               {t(dict, "cta_corp_card_primary", "Contact Sales")}
             </Link>
-            <Link className="ecp-btn ecp-btn--ghost" href="/corporate">
+            <Link
+              className="ecp-btn ecp-btn--ghost"
+              href={`${localePrefix}/corporate`}
+            >
               {t(dict, "cta_corp_card_secondary", "Learn More")}
             </Link>
           </>
         ) : (
           <>
             <Link
-              href={`/checkout?plan=${encodeURIComponent(plan.title)}`}
+              href={`${localePrefix}/checkout?plan=${encodeURIComponent(
+                plan.title
+              )}`}
               className="ecp-btn ecp-btn--primary"
             >
               {t(dict, "cta_buy_now", "Buy Now")}

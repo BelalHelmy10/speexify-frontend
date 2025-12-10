@@ -1,0 +1,41 @@
+{
+  "loading_text": "Loading...",
+
+  "error_title_not_found": "Package not found",
+  "error_message_not_found": "The package you selected could not be found.",
+  "error_button_view_packages": "View all packages",
+
+  "header_title": "Checkout",
+  "header_logged_in_as": "Logged in as",
+
+  "warning_title_login_required": "Login required",
+  "warning_body_login_required": "You'll be prompted to log in before payment.",
+
+  "details_label_sessions": "Sessions:",
+  "details_label_duration": "Duration per session:",
+  "details_duration_unit": "min",
+
+  "pricing_label_package_price_usd": "Package price (USD):",
+  "pricing_label_price_egp": "Price (EGP):",
+  "pricing_label_total": "Total:",
+
+  "pricing_value_price_egp": "EGP {amount}",
+  "pricing_value_total": "EGP {amount}",
+
+  "exchange_note": "💱 Exchange rate: $1 USD = {rate} EGP",
+
+  "customer_title_billing_info": "Billing information",
+  "customer_label_name": "Name:",
+  "customer_value_name_missing": "Not provided",
+  "customer_label_email": "Email:",
+
+  "pay_button_processing": "Processing...",
+  "pay_button_label_with_amount": "Pay EGP {amount}",
+
+  "security_note": "🔒 Secured by Paymob payment gateway",
+
+  "back_to_packages": "← Back to packages",
+
+  "confirm_login_message": "Please log in to continue with checkout. Redirect to login page?",
+  "toast_payment_failed": "Payment failed. Please try again."
+}

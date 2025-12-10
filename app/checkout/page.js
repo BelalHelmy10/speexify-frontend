@@ -1,16 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import api from "@/lib/api";
 import { me } from "@/lib/auth";
 import "@/styles/checkout.scss";
 import { useToast } from "@/components/ToastProvider";
+import { getDictionary, t } from "@/app/i18n";
 
 export default function CheckoutPage() {
   const { toast, confirmModal } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Locale & dictionary (same pattern as contact/packages)
+  const locale = pathname && pathname.startsWith("/ar") ? "ar" : "en";
+  const dict = useMemo(() => getDictionary(locale, "checkout"), [locale]);
 
   const [pkg, setPkg] = useState(null);
   const [user, setUser] = useState(null);
@@ -85,7 +91,7 @@ export default function CheckoutPage() {
 
       if (!user) {
         const shouldLogin = await confirmModal(
-          "Please log in to continue with checkout. Redirect to login page?"
+          t(dict, "confirm_login_message")
         );
         if (shouldLogin) {
           const currentUrl = encodeURIComponent(window.location.href);
@@ -115,22 +121,23 @@ export default function CheckoutPage() {
         },
       };
 
-      const res = await fetch("/api/payments/create-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(body),
-      }).then((r) => r.json());
+      // ✅ use shared Axios client
+      // baseURL: /api  → final URL: /api/payments/create-intent
+      const { data } = await api.post("/payments/create-intent", body);
 
-      if (!res?.ok) throw new Error(res?.message || "Failed to init payment");
+      if (!data?.ok) {
+        throw new Error(data?.message || "Failed to init payment");
+      }
 
-      window.location.href = res.iframeUrl;
+      window.location.href = data.iframeUrl;
     } catch (e) {
-      toast.error(e.message || "Payment failed");
+      toast.error(e?.message || t(dict, "toast_payment_failed"));
     } finally {
       setLoading(false);
     }
   }
+
+  const USD_TO_EGP_RATE = 50;
 
   // Show loading while fetching user and package
   if (loadingPkg || loadingUser) {
@@ -138,7 +145,7 @@ export default function CheckoutPage() {
       <div className="checkout__loading">
         <div className="checkout__loading-content">
           <div className="checkout__loading-spinner"></div>
-          <p className="checkout__loading-text">Loading...</p>
+          <p className="checkout__loading-text">{t(dict, "loading_text")}</p>
         </div>
       </div>
     );
@@ -149,22 +156,23 @@ export default function CheckoutPage() {
     return (
       <div className="checkout__error">
         <div className="checkout__error-content">
-          <h1 className="checkout__error-title">Package not found</h1>
+          <h1 className="checkout__error-title">
+            {t(dict, "error_title_not_found")}
+          </h1>
           <p className="checkout__error-message">
-            The package you selected could not be found.
+            {t(dict, "error_message_not_found")}
           </p>
           <button
             onClick={() => router.push("/packages")}
             className="checkout__error-button"
           >
-            View all packages
+            {t(dict, "error_button_view_packages")}
           </button>
         </div>
       </div>
     );
   }
 
-  const USD_TO_EGP_RATE = 50;
   const priceEGP = pkg.priceUSD * USD_TO_EGP_RATE;
 
   return (
@@ -172,10 +180,10 @@ export default function CheckoutPage() {
       <div className="checkout__container">
         {/* Header with User Info */}
         <div className="checkout__header">
-          <h1 className="checkout__header-title">Checkout</h1>
+          <h1 className="checkout__header-title">{t(dict, "header_title")}</h1>
           {user && (
             <div className="checkout__header-user">
-              Logged in as <strong>{user.email}</strong>
+              {t(dict, "header_logged_in_as")} <strong>{user.email}</strong>
             </div>
           )}
         </div>
@@ -196,8 +204,8 @@ export default function CheckoutPage() {
                 />
               </svg>
               <div className="checkout__warning-text">
-                <h3>Login required</h3>
-                <p>You'll be prompted to log in before payment.</p>
+                <h3>{t(dict, "warning_title_login_required")}</h3>
+                <p>{t(dict, "warning_body_login_required")}</p>
               </div>
             </div>
           </div>
@@ -212,7 +220,9 @@ export default function CheckoutPage() {
           <div className="checkout__details">
             {pkg.sessionsPerPack && (
               <div className="checkout__details-row">
-                <span className="checkout__details-label">Sessions:</span>
+                <span className="checkout__details-label">
+                  {t(dict, "details_label_sessions")}
+                </span>
                 <span className="checkout__details-value">
                   {pkg.sessionsPerPack}
                 </span>
@@ -221,10 +231,10 @@ export default function CheckoutPage() {
             {pkg.durationMin && (
               <div className="checkout__details-row">
                 <span className="checkout__details-label">
-                  Duration per session:
+                  {t(dict, "details_label_duration")}
                 </span>
                 <span className="checkout__details-value">
-                  {pkg.durationMin} min
+                  {pkg.durationMin} {t(dict, "details_duration_unit")}
                 </span>
               </div>
             )}
@@ -234,45 +244,57 @@ export default function CheckoutPage() {
           <div className="checkout__pricing">
             <div className="checkout__pricing-row">
               <span className="checkout__pricing-label">
-                Package Price (USD):
+                {t(dict, "pricing_label_package_price_usd")}
               </span>
               <span className="checkout__pricing-value">${pkg.priceUSD}</span>
             </div>
             <div className="checkout__pricing-row">
-              <span className="checkout__pricing-label">Price (EGP):</span>
+              <span className="checkout__pricing-label">
+                {t(dict, "pricing_label_price_egp")}
+              </span>
               <span className="checkout__pricing-value">
-                EGP {priceEGP.toFixed(2)}
+                {t(dict, "pricing_value_price_egp", {
+                  amount: priceEGP.toFixed(2),
+                })}
               </span>
             </div>
             <div className="checkout__pricing-row checkout__pricing-row--total">
               <span className="checkout__pricing-label checkout__pricing-label--total">
-                Total:
+                {t(dict, "pricing_label_total")}
               </span>
               <span className="checkout__pricing-value checkout__pricing-value--total">
-                EGP {priceEGP.toFixed(2)}
+                {t(dict, "pricing_value_total", {
+                  amount: priceEGP.toFixed(2),
+                })}
               </span>
             </div>
           </div>
 
           {/* Exchange Rate Note */}
           <div className="checkout__exchange-note">
-            💱 Exchange rate: $1 USD = {USD_TO_EGP_RATE} EGP
+            {t(dict, "exchange_note", { rate: USD_TO_EGP_RATE })}
           </div>
         </div>
 
         {/* Customer Information Preview (if logged in) */}
         {user && (
           <div className="checkout__customer">
-            <h3 className="checkout__customer-title">Billing Information</h3>
+            <h3 className="checkout__customer-title">
+              {t(dict, "customer_title_billing_info")}
+            </h3>
             <div className="checkout__customer-info">
               <div className="checkout__customer-row">
-                <span className="checkout__customer-label">Name:</span>
+                <span className="checkout__customer-label">
+                  {t(dict, "customer_label_name")}
+                </span>
                 <span className="checkout__customer-value">
-                  {user.name || "Not provided"}
+                  {user.name || t(dict, "customer_value_name_missing")}
                 </span>
               </div>
               <div className="checkout__customer-row">
-                <span className="checkout__customer-label">Email:</span>
+                <span className="checkout__customer-label">
+                  {t(dict, "customer_label_email")}
+                </span>
                 <span className="checkout__customer-value">{user.email}</span>
               </div>
             </div>
@@ -288,22 +310,22 @@ export default function CheckoutPage() {
           {loading ? (
             <span className="checkout__pay-button-loading">
               <span className="checkout__pay-button-spinner"></span>
-              Processing...
+              {t(dict, "pay_button_processing")}
             </span>
           ) : (
-            `Pay EGP ${priceEGP.toFixed(2)}`
+            t(dict, "pay_button_label_with_amount", {
+              amount: priceEGP.toFixed(2),
+            })
           )}
         </button>
 
         {/* Security Note */}
-        <div className="checkout__security">
-          🔒 Secured by Paymob payment gateway
-        </div>
+        <div className="checkout__security">{t(dict, "security_note")}</div>
 
         {/* Back Link */}
         <div className="checkout__back">
           <button onClick={() => router.push("/packages")}>
-            ← Back to packages
+            {t(dict, "back_to_packages")}
           </button>
         </div>
       </div>

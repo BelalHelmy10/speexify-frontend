@@ -1,0 +1,41 @@
+{
+  "loading_text": "جارٍ التحميل...",
+
+  "error_title_not_found": "لم يتم العثور على الباقة",
+  "error_message_not_found": "لم نتمكّن من العثور على الباقة التي اخترتها.",
+  "error_button_view_packages": "عرض جميع الباقات",
+
+  "header_title": "الدفع",
+  "header_logged_in_as": "مسجّل الدخول باسم",
+
+  "warning_title_login_required": "يتطلّب تسجيل الدخول",
+  "warning_body_login_required": "سيُطلب منك تسجيل الدخول قبل إتمام عملية الدفع.",
+
+  "details_label_sessions": "عدد الجلسات:",
+  "details_label_duration": "مدة كل جلسة:",
+  "details_duration_unit": "دقيقة",
+
+  "pricing_label_package_price_usd": "سعر الباقة (دولار):",
+  "pricing_label_price_egp": "السعر بالجنيه المصري:",
+  "pricing_label_total": "الإجمالي:",
+
+  "pricing_value_price_egp": "{amount} جنيه مصري",
+  "pricing_value_total": "{amount} جنيه مصري",
+
+  "exchange_note": "💱 سعر الصرف: 1$ = {rate} جنيه مصري",
+
+  "customer_title_billing_info": "بيانات الفاتورة",
+  "customer_label_name": "الاسم:",
+  "customer_value_name_missing": "غير مذكور",
+  "customer_label_email": "البريد الإلكتروني:",
+
+  "pay_button_processing": "جارٍ المعالجة...",
+  "pay_button_label_with_amount": "ادفع {amount} جنيه مصري",
+
+  "security_note": "🔒 الدفع مؤمّن عبر بوابة Paymob",
+
+  "back_to_packages": "← العودة إلى الباقات",
+
+  "confirm_login_message": "يجب تسجيل الدخول للمتابعة في عملية الدفع. هل تريد الانتقال إلى صفحة تسجيل الدخول؟",
+  "toast_payment_failed": "فشلت عملية الدفع. يرجى المحاولة مرة أخرى."
+}
