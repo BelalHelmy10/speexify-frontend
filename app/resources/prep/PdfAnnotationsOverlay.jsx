@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect } from "react";
 
-export default function PdfAnnotationsOverlay({ containerEl }) {
+export default function PdfAnnotationsOverlay({ containerEl, enabled = true }) {
   const [strokes, setStrokes] = useState([]); // [{ id, points: [{x,y}], color, width }]
   const isDrawingRef = useRef(false);
   const activeStrokeIdRef = useRef(null);
@@ -112,11 +112,12 @@ export default function PdfAnnotationsOverlay({ containerEl }) {
       style={{
         display: "block",
         touchAction: "none", // important for touch drawing
+        pointerEvents: enabled ? "auto" : "none",
       }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
+      onPointerDown={enabled ? handlePointerDown : undefined}
+      onPointerMove={enabled ? handlePointerMove : undefined}
+      onPointerUp={enabled ? handlePointerUp : undefined}
+      onPointerLeave={enabled ? handlePointerUp : undefined}
     >
       {strokes.map((stroke) => {
         const pointsAttr = stroke.points

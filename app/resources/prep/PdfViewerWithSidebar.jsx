@@ -31,9 +31,22 @@ export default function PdfViewerWithSidebar({
   const dict = getDictionary(locale, "resources");
   const renderTaskRef = useRef(null);
 
-  const MIN_ZOOM = 0.5;
-  const MAX_ZOOM = 3.0;
-  const ZOOM_STEP = 0.25;
+  // Updated (after change) - 10% steps, min 10%
+  const MIN_ZOOM = 0.1; // 10%
+  const MAX_ZOOM = 3.0; // Keep 300% max, or adjust if needed (e.g., to 5.0 for 500%)
+  const ZOOM_STEP = 0.1; // 10% steps
+
+  // UPDATED: Function to fit the PDF to the width (fits width to container)
+  const fitToPage = useCallback(() => {
+    if (!pdfDoc || !pageWrapperRef.current || !mainRef.current) return;
+
+    pdfDoc.getPage(currentPage).then((page) => {
+      const viewport = page.getViewport({ scale: 1.0 });
+      const containerWidth = mainRef.current.clientWidth - 20; // Subtract padding/margins if needed (adjust based on CSS)
+      const fitZoom = containerWidth / viewport.width;
+      setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fitZoom)));
+    });
+  }, [pdfDoc, currentPage]);
 
   // Expose the page wrapper element to parent
   const updateContainerRef = useCallback(() => {
@@ -46,7 +59,7 @@ export default function PdfViewerWithSidebar({
     updateContainerRef();
   }, [updateContainerRef]);
 
-  // NEW: Notify parent of nav state changes
+  // NEW: Notify parent of nav state changes, including fitToPage
   useEffect(() => {
     if (typeof onNavStateChange === "function") {
       onNavStateChange({
@@ -66,11 +79,12 @@ export default function PdfViewerWithSidebar({
             Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100)
           ),
         zoomFit: () => setZoom(1.0),
+        fitToPage, // NEW: Expose fitToPage
         setPage: (page) =>
           setCurrentPage(Math.max(1, Math.min(numPages, page))),
       });
     }
-  }, [currentPage, numPages, zoom, onNavStateChange]);
+  }, [currentPage, numPages, zoom, onNavStateChange, fitToPage]);
 
   // Load pdf.js lazily
   useEffect(() => {
@@ -387,6 +401,57 @@ export default function PdfViewerWithSidebar({
               >
                 +
               </button>
+              {/* NEW: Fit to page button with icon */}
+              <button
+                type="button"
+                className="cpv-nav__btn"
+                onClick={fitToPage}
+                title={t(dict, "resources_pdf_fit_to_page")}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="5"
+                    y="4"
+                    width="14"
+                    height="16"
+                    rx="1"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M12 1V3"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M12 21V23"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M10 1L12 3L14 1"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M10 23L12 21L14 23"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             </div>
 
             <div className="cpv-nav__center">
@@ -472,6 +537,7 @@ export function PdfNavBar({ navState, locale = "en", className = "" }) {
     zoomIn,
     zoomOut,
     zoomFit,
+    fitToPage, // NEW
   } = navState;
 
   return (
@@ -502,6 +568,57 @@ export function PdfNavBar({ navState, locale = "en", className = "" }) {
           title={t(dict, "resources_pdf_zoom_in")}
         >
           +
+        </button>
+        {/* NEW: Fit to page button with icon */}
+        <button
+          type="button"
+          className="cpv-nav__btn"
+          onClick={fitToPage}
+          title={t(dict, "resources_pdf_fit_to_page")}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              x="5"
+              y="4"
+              width="14"
+              height="16"
+              rx="1"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+            <path
+              d="M12 1V3"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M12 21V23"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M10 1L12 3L14 1"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M10 23L12 21L14 23"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       </div>
 

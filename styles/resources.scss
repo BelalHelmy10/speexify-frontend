@@ -80,7 +80,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── Scrollbar Mixin ────────────────────────────────────────────────────────
-
 @mixin custom-scrollbar(
   $width: 8px,
   $track: $cr-bg-primary,
@@ -90,27 +89,22 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     width: $width;
     height: $width;
   }
-
   &::-webkit-scrollbar-track {
     background: $track;
     border-radius: $cr-radius-full;
   }
-
   &::-webkit-scrollbar-thumb {
     background: $thumb;
     border-radius: $cr-radius-full;
-
     &:hover {
       background: $cr-border-strong;
     }
   }
-
   scrollbar-width: thin;
   scrollbar-color: $thumb $track;
 }
 
 // ─── Flex Container for Scroll ──────────────────────────────────────────────
-
 @mixin flex-scroll-container {
   display: flex;
   flex-direction: column;
@@ -119,7 +113,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Focus Visible ──────────────────────────────────────────────────────────
-
 @mixin focus-visible-ring {
   &:focus-visible {
     outline: 2px solid $cr-accent-primary;
@@ -130,13 +123,11 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION 3: ANIMATIONS (Consolidated - no duplicates)
 // ═══════════════════════════════════════════════════════════════════════════
-
 @keyframes cr-spin {
   to {
     transform: rotate(360deg);
   }
 }
-
 @keyframes cr-fade-in {
   from {
     opacity: 0;
@@ -145,7 +136,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     opacity: 1;
   }
 }
-
 @keyframes cr-slide-up {
   from {
     opacity: 0;
@@ -156,7 +146,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     transform: translateY(0) scale(1);
   }
 }
-
 @keyframes cr-typing {
   0%,
   60%,
@@ -169,7 +158,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     opacity: 1;
   }
 }
-
 @keyframes cr-pointer-pulse {
   0% {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(245, 158, 11, 0.5);
@@ -181,7 +169,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(245, 158, 11, 0);
   }
 }
-
 @keyframes cr-badge-pulse {
   0%,
   100% {
@@ -191,7 +178,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     opacity: 0.5;
   }
 }
-
 @keyframes resourceCardFadeIn {
   from {
     opacity: 0;
@@ -208,7 +194,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── Main Resources Page Container ──────────────────────────────────────────
-
 .spx-resources-page {
   min-height: 100vh;
   background: linear-gradient(
@@ -219,17 +204,14 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   color: $cr-text-primary;
   font-family: $cr-font-sans;
   padding: 2rem 1rem 4rem;
-
   @media (min-width: 768px) {
     padding: 3rem 2rem 5rem;
   }
-
   // ─── PREP PAGE VARIANT (Scroll Fix) ───────────────────────────────────────
   &--prep {
     height: 100vh;
     padding: 0;
     overflow: hidden; // Prevent whole page scroll
-
     .spx-resources-page__inner {
       height: 100%;
       max-width: 100%;
@@ -240,43 +222,35 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     }
   }
 }
-
 .spx-resources-page__inner {
   max-width: $cr-max-width;
   margin: 0 auto;
 }
 
 // ─── Alias for backward compatibility ───────────────────────────────────────
-
 .resources-page {
   @extend .spx-resources-page;
-
   &--unit {
     // Unit page specific adjustments
   }
 }
-
 .resources-page__inner {
   @extend .spx-resources-page__inner;
-
   &.unit-page {
     max-width: $cr-content-max-width;
   }
 }
 
 // ─── Hero Section ───────────────────────────────────────────────────────────
-
 .spx-resources-hero {
   text-align: center;
   margin-bottom: 3rem;
   padding: 2rem 1rem;
   position: relative;
-
   @media (min-width: 768px) {
     margin-bottom: 4rem;
     padding: 3rem 2rem;
   }
-
   &::before {
     content: "";
     position: absolute;
@@ -294,7 +268,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     z-index: 0;
   }
 }
-
 .spx-resources-hero__eyebrow {
   display: inline-block;
   font-size: 0.75rem;
@@ -310,7 +283,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   position: relative;
   z-index: 1;
 }
-
 .spx-resources-hero__title {
   font-family: $cr-font-display;
   font-size: clamp(1.75rem, 5vw, 2.75rem);
@@ -330,7 +302,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-
 .spx-resources-hero__subtitle {
   font-size: 1rem;
   line-height: 1.7;
@@ -339,12 +310,10 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   margin: 0 auto;
   position: relative;
   z-index: 1;
-
   @media (min-width: 768px) {
     font-size: 1.0625rem;
   }
 }
-
 .spx-resources-empty {
   text-align: center;
   padding: 4rem 2rem;
@@ -358,36 +327,30 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION 5: RESOURCES PICKER
 // ═══════════════════════════════════════════════════════════════════════════
-
 .resources-layout {
   display: grid;
   gap: 1.5rem;
   grid-template-columns: 1fr;
-
   @media (min-width: 1024px) {
     grid-template-columns: minmax(400px, 480px) 1fr;
     gap: 2rem;
   }
 }
-
 .resources-picker {
   background: $cr-bg-secondary;
   border-radius: $cr-radius-xl;
   border: 1px solid $cr-border-subtle;
   padding: 1.5rem;
   box-shadow: $cr-shadow-md;
-
   @media (min-width: 768px) {
     padding: 2rem;
   }
 }
-
 .resources-picker__header {
   margin-bottom: 1.75rem;
   padding-bottom: 1.25rem;
   border-bottom: 1px solid $cr-border-subtle;
 }
-
 .resources-picker__title {
   font-family: $cr-font-display;
   font-size: 1.25rem;
@@ -396,30 +359,25 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   margin: 0 0 0.5rem;
   letter-spacing: -0.01em;
 }
-
 .resources-picker__subtitle {
   font-size: 0.875rem;
   color: $cr-text-muted;
   margin: 0;
   line-height: 1.5;
 }
-
 .resources-picker__grid {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
-
 .resources-picker__field {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-
   &--full {
     grid-column: 1 / -1;
   }
 }
-
 .resources-picker__label {
   font-size: 0.75rem;
   font-weight: 600;
@@ -427,10 +385,8 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   letter-spacing: 0.06em;
   color: $cr-text-secondary;
 }
-
 .resources-picker__control {
   position: relative;
-
   select {
     width: 100%;
     padding: 0.75rem 2.5rem 0.75rem 1rem;
@@ -445,29 +401,24 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     outline: none;
     transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast,
       background $cr-transition-fast;
-
     &:hover {
       background: $cr-bg-elevated;
       border-color: $cr-border-strong;
     }
-
     &:focus {
       border-color: $cr-accent-primary;
       box-shadow: 0 0 0 3px rgba($cr-accent-primary, 0.15);
     }
-
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-
     option {
       background: $cr-bg-secondary;
       color: $cr-text-primary;
       padding: 0.5rem;
     }
   }
-
   &::after {
     content: "▾";
     position: absolute;
@@ -479,7 +430,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     pointer-events: none;
   }
 }
-
 .resources-picker__hint {
   font-size: 0.75rem;
   color: $cr-text-muted;
@@ -488,18 +438,15 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Resources Preview Card ─────────────────────────────────────────────────
-
 .resources-preview {
   display: flex;
   flex-direction: column;
-
   @media (min-width: 1024px) {
     position: sticky;
     top: 2rem;
     align-self: start;
   }
 }
-
 .resources-preview__card {
   background: $cr-bg-secondary;
   border-radius: $cr-radius-xl;
@@ -509,11 +456,9 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   min-height: 300px;
   display: flex;
   flex-direction: column;
-
   @media (min-width: 768px) {
     padding: 2rem;
   }
-
   &--empty {
     align-items: center;
     justify-content: center;
@@ -524,7 +469,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
       $cr-bg-surface 100%
     );
     border-style: dashed;
-
     h3 {
       font-family: $cr-font-display;
       font-size: 1.125rem;
@@ -532,7 +476,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
       color: $cr-text-secondary;
       margin: 0 0 0.5rem;
     }
-
     p {
       font-size: 0.875rem;
       color: $cr-text-muted;
@@ -541,12 +484,10 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
       line-height: 1.5;
     }
   }
-
   &--animated {
     animation: resourceCardFadeIn 0.35s ease-out;
   }
 }
-
 .resources-preview__breadcrumbs {
   display: flex;
   flex-wrap: wrap;
@@ -556,7 +497,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   color: $cr-text-muted;
   margin-bottom: 1rem;
 }
-
 .resources-preview__title {
   font-family: $cr-font-display;
   font-size: 1.375rem;
@@ -566,28 +506,24 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   letter-spacing: -0.01em;
   line-height: 1.3;
 }
-
 .resources-preview__description {
   font-size: 0.9375rem;
   color: $cr-text-secondary;
   margin: 0 0 1rem;
   line-height: 1.6;
 }
-
 .resources-preview__meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
-
 .resources-preview__tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
   margin-bottom: 1rem;
 }
-
 .resources-preview__filename {
   font-size: 0.8125rem;
   font-family: $cr-font-mono;
@@ -598,7 +534,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   border-radius: $cr-radius-sm;
   word-break: break-all;
 }
-
 .resources-preview__actions {
   display: flex;
   flex-wrap: wrap;
@@ -609,7 +544,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Shared Chips & Tags ────────────────────────────────────────────────────
-
 .resources-chip {
   display: inline-flex;
   align-items: center;
@@ -620,20 +554,17 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   background: $cr-bg-tertiary;
   border: 1px solid $cr-border-subtle;
   border-radius: $cr-radius-full;
-
   &--primary {
     color: $cr-accent-primary;
     background: rgba($cr-accent-primary, 0.12);
     border-color: rgba($cr-accent-primary, 0.25);
   }
-
   &--success {
     color: $cr-accent-success;
     background: rgba($cr-accent-success, 0.12);
     border-color: rgba($cr-accent-success, 0.25);
   }
 }
-
 .resources-tag {
   display: inline-flex;
   align-items: center;
@@ -644,7 +575,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   background: $cr-bg-elevated;
   border-radius: $cr-radius-sm;
   text-transform: lowercase;
-
   &::before {
     content: "#";
     margin-right: 0.125rem;
@@ -653,7 +583,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Shared Buttons ─────────────────────────────────────────────────────────
-
 .resources-button {
   display: inline-flex;
   align-items: center;
@@ -669,11 +598,9 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   text-decoration: none;
   transition: all $cr-transition-fast;
   white-space: nowrap;
-
   &:hover {
     text-decoration: none;
   }
-
   &--primary {
     background: linear-gradient(
       135deg,
@@ -682,45 +609,39 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     );
     color: white;
     box-shadow: 0 4px 16px rgba($cr-accent-primary, 0.3);
-
     &:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 24px rgba($cr-accent-primary, 0.4);
     }
-
     &:active {
       transform: translateY(0);
     }
   }
-
   &--ghost {
     background: transparent;
     color: $cr-text-secondary;
     border-color: $cr-border-default;
-
     &:hover {
       background: $cr-bg-tertiary;
       color: $cr-text-primary;
       border-color: $cr-border-strong;
     }
   }
-
   &--disabled {
     background: $cr-bg-tertiary;
     color: $cr-text-muted;
     cursor: not-allowed;
     opacity: 0.6;
-
     &:hover {
       transform: none;
       box-shadow: none;
     }
   }
 }
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION 6: UNIT PAGE STYLES
 // ═══════════════════════════════════════════════════════════════════════════
-
 .unit-not-found {
   text-align: center;
   padding: 4rem 2rem;
@@ -730,7 +651,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   max-width: 500px;
   margin: 2rem auto;
 }
-
 .unit-not-found__title {
   font-family: $cr-font-display;
   font-size: 1.5rem;
@@ -738,7 +658,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   color: $cr-text-primary;
   margin: 0 0 0.75rem;
 }
-
 .unit-not-found__text {
   font-size: 0.9375rem;
   color: $cr-text-secondary;
@@ -747,7 +666,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Unit Breadcrumbs ───────────────────────────────────────────────────────
-
 .unit-breadcrumbs {
   display: flex;
   flex-wrap: wrap;
@@ -756,30 +674,25 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   margin-bottom: 1.5rem;
   font-size: 0.875rem;
 }
-
 .unit-breadcrumbs__link {
   color: $cr-accent-primary;
   text-decoration: none;
   font-weight: 500;
   transition: color $cr-transition-fast;
-
   &:hover {
     color: $cr-accent-primary-lighter;
     text-decoration: underline;
   }
 }
-
 .unit-breadcrumbs__separator {
   color: $cr-text-muted;
   font-size: 0.75rem;
 }
-
 .unit-breadcrumbs__crumb {
   color: $cr-text-secondary;
 }
 
 // ─── Unit Header Card ───────────────────────────────────────────────────────
-
 .unit-header-card {
   background: $cr-bg-secondary;
   border-radius: $cr-radius-xl;
@@ -789,11 +702,9 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   box-shadow: $cr-shadow-md;
   position: relative;
   overflow: hidden;
-
   @media (min-width: 768px) {
     padding: 2rem 2.5rem;
   }
-
   &::before {
     content: "";
     position: absolute;
@@ -809,7 +720,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     );
   }
 }
-
 .unit-header-card__top-row {
   display: flex;
   flex-wrap: wrap;
@@ -818,7 +728,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
-
 .unit-header-card__eyebrow {
   font-size: 0.75rem;
   font-weight: 500;
@@ -826,7 +735,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   letter-spacing: 0.06em;
   color: $cr-text-muted;
 }
-
 .unit-header-card__order {
   font-size: 0.75rem;
   font-weight: 600;
@@ -836,7 +744,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   padding: 0.375rem 0.875rem;
   border-radius: $cr-radius-full;
 }
-
 .unit-header-card__title {
   font-family: $cr-font-display;
   font-size: clamp(1.5rem, 4vw, 2rem);
@@ -846,7 +753,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   letter-spacing: -0.02em;
   line-height: 1.25;
 }
-
 .unit-header-card__summary {
   font-size: 1rem;
   color: $cr-text-secondary;
@@ -854,7 +760,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   line-height: 1.7;
   max-width: 700px;
 }
-
 .unit-header-card__meta {
   display: flex;
   flex-wrap: wrap;
@@ -863,26 +768,22 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   font-size: 0.8125rem;
   color: $cr-text-muted;
 }
-
 .unit-header-card__dot {
   font-size: 0.5rem;
   opacity: 0.5;
 }
 
 // ─── Unit Resources Section ─────────────────────────────────────────────────
-
 .unit-resources {
   background: $cr-bg-secondary;
   border-radius: $cr-radius-xl;
   border: 1px solid $cr-border-subtle;
   padding: 1.5rem;
   box-shadow: $cr-shadow-md;
-
   @media (min-width: 768px) {
     padding: 2rem;
   }
 }
-
 .unit-resources__header {
   display: flex;
   flex-wrap: wrap;
@@ -893,7 +794,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   padding-bottom: 1.25rem;
   border-bottom: 1px solid $cr-border-subtle;
 }
-
 .unit-resources__title {
   font-family: $cr-font-display;
   font-size: 1.25rem;
@@ -901,17 +801,14 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   color: $cr-text-primary;
   margin: 0 0 0.25rem;
 }
-
 .unit-resources__subtitle {
   font-size: 0.875rem;
   color: $cr-text-muted;
   margin: 0;
 }
-
 .unit-resources__back {
   flex-shrink: 0;
 }
-
 .unit-resources__empty {
   text-align: center;
   padding: 3rem 2rem;
@@ -920,13 +817,11 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Unit Resource Cards List ───────────────────────────────────────────────
-
 .unit-resources-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
-
 .unit-resource-card {
   display: flex;
   flex-direction: column;
@@ -936,25 +831,21 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   border: 1px solid $cr-border-subtle;
   border-radius: $cr-radius-lg;
   transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
-
   @media (min-width: 768px) {
     flex-direction: row;
     align-items: flex-start;
     justify-content: space-between;
     padding: 1.5rem;
   }
-
   &:hover {
     border-color: $cr-border-default;
     box-shadow: $cr-shadow-sm;
   }
 }
-
 .unit-resource-card__main {
   flex: 1;
   min-width: 0;
 }
-
 .unit-resource-card__title-row {
   display: flex;
   flex-wrap: wrap;
@@ -962,7 +853,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   gap: 0.75rem;
   margin-bottom: 0.5rem;
 }
-
 .unit-resource-card__title {
   font-size: 1rem;
   font-weight: 600;
@@ -970,40 +860,34 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   margin: 0;
   line-height: 1.4;
 }
-
 .unit-resource-card__chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
 }
-
 .unit-resource-card__description {
   font-size: 0.875rem;
   color: $cr-text-secondary;
   margin: 0 0 0.75rem;
   line-height: 1.6;
 }
-
 .unit-resource-card__tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
   margin-bottom: 0.5rem;
 }
-
 .unit-resource-card__filename {
   font-size: 0.75rem;
   font-family: $cr-font-mono;
   color: $cr-text-muted;
   margin: 0;
 }
-
 .unit-resource-card__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   flex-shrink: 0;
-
   @media (min-width: 768px) {
     flex-direction: column;
     align-items: flex-end;
@@ -1015,7 +899,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── Prep Empty Card ────────────────────────────────────────────────────────
-
 .prep-empty-card {
   text-align: center;
   padding: 4rem 2rem;
@@ -1024,7 +907,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   border: 1px solid $cr-border-subtle;
   max-width: 500px;
   margin: 2rem auto;
-
   h1,
   h2,
   &__title {
@@ -1034,7 +916,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     color: $cr-text-primary;
     margin: 0 0 0.75rem;
   }
-
   p,
   &__text {
     font-size: 0.9375rem;
@@ -1050,12 +931,10 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Prep Breadcrumbs ───────────────────────────────────────────────────────
-
 .prep-breadcrumbs {
   flex-shrink: 0; // Don't shrink - stays visible
   padding: 0.75rem 1.5rem;
   margin: 0;
-
   &__current {
     color: $cr-text-primary;
     font-weight: 500;
@@ -1063,21 +942,18 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Prep Layout (SCROLL FIX APPLIED) ───────────────────────────────────────
-
 .prep-layout {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0; // Critical for flex scroll
-  overflow: hidden; // Contain scroll in children
+  overflow: auto; // Changed from hidden to auto (allow scroll if needed)
   background: $cr-bg-primary;
   border-radius: $cr-radius-xl;
   border: 1px solid $cr-border-subtle;
-
   @media (min-width: 1024px) {
     flex-direction: row;
   }
-
   &--focus {
     .prep-info-card {
       display: none;
@@ -1086,7 +962,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Prep Info Card (Sidebar) ───────────────────────────────────────────────
-
 .prep-info-card {
   flex-shrink: 0;
   width: 100%;
@@ -1099,18 +974,15 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   flex-direction: column;
   gap: 1rem;
   @include custom-scrollbar;
-
   @media (min-width: 1024px) {
     width: 360px;
     min-width: 320px;
     max-width: 400px;
   }
-
   &__header {
     padding-bottom: 1rem;
     border-bottom: 1px solid $cr-border-subtle;
   }
-
   &__title {
     font-family: $cr-font-display;
     font-size: 1.25rem;
@@ -1119,7 +991,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     margin: 0 0 0.5rem;
     line-height: 1.3;
   }
-
   &__filename {
     font-size: 0.8125rem;
     font-family: $cr-font-mono;
@@ -1127,26 +998,22 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     margin: 0;
     word-break: break-all;
   }
-
   &__description {
     font-size: 0.9375rem;
     color: $cr-text-secondary;
     margin: 0;
     line-height: 1.6;
   }
-
   &__meta {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
   }
-
   &__tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.375rem;
   }
-
   &__actions {
     display: flex;
     flex-wrap: wrap;
@@ -1157,20 +1024,17 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Prep Viewer (SCROLL FIX APPLIED) ───────────────────────────────────────
-
 .prep-viewer {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0; // Critical for flex scroll
-  min-width: 0; // Prevent flex blowout
-  overflow: hidden; // Contain scroll in children
+  min-width: 0;
+  overflow: auto; // Changed from hidden to auto (key fix for outer viewer scroll)
   background: $cr-bg-secondary;
-
   @media (min-width: 1024px) {
     border-radius: 0;
   }
-
   &__header {
     display: flex;
     align-items: center;
@@ -1180,7 +1044,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-bottom: 1px solid $cr-border-subtle;
     flex-shrink: 0;
   }
-
   &__title {
     font-size: 0.9375rem;
     font-weight: 600;
@@ -1190,12 +1053,10 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-
   &__actions {
     display: flex;
     gap: 0.5rem;
   }
-
   &__btn {
     display: inline-flex;
     align-items: center;
@@ -1211,37 +1072,32 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     cursor: pointer;
     transition: all $cr-transition-fast;
     text-decoration: none;
-
     &:hover {
       color: $cr-text-primary;
-      background: $cr-bg-elevated;
+      background: $cr-bg-tertiary;
       border-color: $cr-border-strong;
       text-decoration: none;
     }
   }
-
   &__frame-wrapper {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0; // Critical!
-    overflow: hidden;
+    min-height: 0;
+    overflow: auto; // Added auto (allow scroll here if needed)
   }
-
   &__canvas-container {
     flex: 1;
     position: relative;
     min-height: 0;
     overflow: auto; // THIS is where scroll happens for non-PDF
   }
-
   &__frame {
     width: 100%;
     height: 100%;
     border: none;
     background: $cr-bg-primary;
   }
-
   &__error {
     flex: 1;
     display: flex;
@@ -1252,27 +1108,23 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     text-align: center;
     color: $cr-text-secondary;
   }
-
   &__error-icon {
     font-size: 2.5rem;
     margin-bottom: 1rem;
     opacity: 0.6;
   }
-
   &__error-title {
     font-size: 1.125rem;
     font-weight: 600;
     color: $cr-text-primary;
     margin: 0 0 0.5rem;
   }
-
   &__error-text {
     font-size: 0.875rem;
     color: $cr-text-muted;
     margin: 0;
     max-width: 300px;
   }
-
   &__placeholder {
     flex: 1;
     display: flex;
@@ -1281,7 +1133,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     justify-content: center;
     padding: 2rem;
     text-align: center;
-
     h2 {
       font-family: $cr-font-display;
       font-size: 1.25rem;
@@ -1289,7 +1140,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
       color: $cr-text-secondary;
       margin: 0 0 0.5rem;
     }
-
     p {
       font-size: 0.9375rem;
       color: $cr-text-muted;
@@ -1297,7 +1147,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
       max-width: 400px;
     }
   }
-
   &__badge {
     display: inline-flex;
     align-items: center;
@@ -1310,7 +1159,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     font-size: 0.8125rem;
     color: $cr-accent-success;
   }
-
   &__badge-dot {
     width: 8px;
     height: 8px;
@@ -1318,11 +1166,9 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-radius: 50%;
     animation: cr-badge-pulse 2s ease-in-out infinite;
   }
-
   &__badge-text {
     font-weight: 500;
   }
-
   &__focus-toggle {
     position: absolute;
     top: 0.75rem;
@@ -1339,7 +1185,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-radius: $cr-radius-full;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover {
       color: $cr-text-primary;
       background: $cr-bg-elevated;
@@ -1349,20 +1194,17 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Prep Sidebar (Old style - for notes) ───────────────────────────────────
-
 .prep-sidebar {
   width: 100%;
   display: flex;
   flex-direction: column;
   background: $cr-bg-secondary;
   border-top: 1px solid $cr-border-subtle;
-
   @media (min-width: 1024px) {
     width: 380px;
     border-top: none;
     border-left: 1px solid $cr-border-subtle;
   }
-
   &__header {
     display: flex;
     align-items: center;
@@ -1372,14 +1214,12 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-bottom: 1px solid $cr-border-subtle;
     flex-shrink: 0;
   }
-
   &__title {
     font-size: 0.9375rem;
     font-weight: 600;
     color: $cr-text-primary;
     margin: 0;
   }
-
   &__content {
     flex: 1;
     overflow-y: auto;
@@ -1388,16 +1228,13 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Prep Notes ─────────────────────────────────────────────────────────────
-
 .prep-notes {
   display: flex;
   flex-direction: column;
   height: 100%;
-
   &__header {
     margin-bottom: 0.75rem;
   }
-
   &__label {
     display: block;
     font-size: 0.8125rem;
@@ -1405,14 +1242,12 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     color: $cr-text-primary;
     margin-bottom: 0.25rem;
   }
-
   &__hint {
     display: block;
     font-size: 0.75rem;
     color: $cr-text-muted;
     line-height: 1.4;
   }
-
   &__textarea {
     flex: 1;
     min-height: 200px;
@@ -1427,11 +1262,9 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     outline: none;
     transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
     line-height: 1.6;
-
     &::placeholder {
       color: $cr-text-muted;
     }
-
     &:focus {
       border-color: $cr-accent-primary;
       box-shadow: 0 0 0 3px rgba($cr-accent-primary, 0.15);
@@ -1440,7 +1273,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Prep Annotation Toolbar ────────────────────────────────────────────────
-
 .prep-annotate-toolbar {
   display: flex;
   align-items: center;
@@ -1451,7 +1283,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   flex-wrap: wrap;
   flex-shrink: 0; // Never shrink - stays visible
   z-index: 10;
-
   &__btn {
     display: inline-flex;
     align-items: center;
@@ -1467,49 +1298,40 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     cursor: pointer;
     transition: all $cr-transition-fast;
     white-space: nowrap;
-
     span {
       @media (max-width: 768px) {
         display: none;
       }
     }
-
     &:hover {
       color: $cr-text-primary;
       background: $cr-bg-elevated;
       border-color: $cr-border-default;
     }
-
     &.is-active {
       color: $cr-accent-primary;
       background: rgba($cr-accent-primary, 0.12);
       border-color: rgba($cr-accent-primary, 0.4);
     }
-
     &--danger {
       color: $cr-accent-danger;
-
       &:hover {
         background: rgba($cr-accent-danger, 0.12);
         border-color: rgba($cr-accent-danger, 0.3);
       }
     }
-
     &--sidebar {
       background: $cr-bg-elevated;
       border-color: $cr-border-default;
-
       &:hover {
         background: $cr-accent-primary;
         border-color: $cr-accent-primary;
         color: white;
       }
-
       &.is-collapsed {
         background: rgba($cr-accent-primary, 0.15);
         border-color: rgba($cr-accent-primary, 0.3);
         color: $cr-accent-primary;
-
         &:hover {
           background: $cr-accent-primary;
           color: white;
@@ -1517,7 +1339,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
       }
     }
   }
-
   &__separator {
     width: 1px;
     height: 28px;
@@ -1525,7 +1346,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     margin: 0 0.25rem;
   }
 }
-
 .prep-annotate-colors {
   display: flex;
   align-items: center;
@@ -1534,7 +1354,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   margin-left: auto;
   border-left: 1px solid $cr-border-subtle;
 }
-
 .prep-annotate-color {
   width: 28px;
   height: 28px;
@@ -1543,50 +1362,44 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   cursor: pointer;
   transition: all $cr-transition-fast;
   flex-shrink: 0;
-
   &:hover {
     transform: scale(1.1);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
-
   &.is-active {
     border-color: $cr-accent-primary;
     box-shadow: 0 0 0 2px rgba($cr-accent-primary, 0.3);
   }
 }
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION 8: PDF VIEWER STYLES (MERGED - combines prep-pdf-* and cpv-*)
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── PDF Layout (SCROLL FIX APPLIED) ────────────────────────────────────────
-
 .prep-pdf-layout {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
   min-height: 0;
-
   @media (min-width: 768px) {
     flex-direction: row;
   }
 }
-
 .prep-pdf-main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0; // Critical!
-  min-width: 0;
+  min-height: 0;
   background: $cr-bg-primary;
   position: relative;
-  overflow: hidden;
+  overflow: auto; // Changed from hidden to auto (key fix: allow outer scroll if inner overflows)
 }
-
 .prep-pdf-main-inner {
   flex: 1;
-  min-height: 0; // Critical for scroll
-  overflow: auto; // THIS IS THE SCROLL CONTAINER
+  min-height: 0;
+  overflow: auto; // Inner scroll for PDF pages
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1597,7 +1410,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     rgba(148, 163, 184, 0.3)
   );
 }
-
 .prep-pdf-canvas {
   max-width: 100%;
   height: auto;
@@ -1606,7 +1418,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── PDF Sidebar (Page Numbers) ─────────────────────────────────────────────
-
 .prep-pdf-sidebar {
   flex-shrink: 0;
   width: 100%;
@@ -1615,33 +1426,28 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   border-top: 1px solid $cr-border-subtle;
   overflow-y: auto;
   @include custom-scrollbar;
-
   @media (min-width: 768px) {
     width: 80px;
     max-height: none;
     border-top: none;
     border-left: 1px solid $cr-border-subtle;
   }
-
   &__empty {
     padding: 1rem;
     text-align: center;
     color: $cr-text-muted;
     font-size: 0.8125rem;
   }
-
   &__pages {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     padding: 0.75rem;
-
     @media (min-width: 768px) {
       flex-direction: column;
       flex-wrap: nowrap;
     }
   }
-
   &__page-button {
     display: flex;
     align-items: center;
@@ -1657,13 +1463,11 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-radius: $cr-radius-sm;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover {
       background: $cr-bg-elevated;
       border-color: $cr-border-default;
       color: $cr-text-primary;
     }
-
     &.is-active {
       background: $cr-accent-primary;
       border-color: $cr-accent-primary;
@@ -1674,7 +1478,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── PDF Error ──────────────────────────────────────────────────────────────
-
 .prep-pdf-error {
   display: flex;
   flex-direction: column;
@@ -1687,38 +1490,32 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   padding: 2rem;
   text-align: center;
   color: $cr-text-secondary;
-
   &__icon {
     font-size: 2.5rem;
   }
-
   &__text {
     font-size: 0.9375rem;
     max-width: 400px;
     line-height: 1.6;
   }
-
   &__retry {
     margin-top: 0.5rem;
     padding: 0.5rem 1.25rem;
     font-size: 0.875rem;
     font-weight: 500;
-    font-family: $cr-font-sans;
     color: $cr-text-primary;
     background: $cr-accent-primary;
     border: none;
     border-radius: $cr-radius-full;
     cursor: pointer;
-    transition: all $cr-transition-fast;
-
+    transition: background $cr-transition-fast;
     &:hover {
-      background: $cr-accent-primary-light;
+      background: $cr-accent-primary-lighter;
     }
   }
 }
 
 // ─── PDF Navigation (Bottom bar) ────────────────────────────────────────────
-
 .prep-pdf-nav {
   position: absolute;
   bottom: 1rem;
@@ -1734,7 +1531,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   border-radius: $cr-radius-full;
   box-shadow: $cr-shadow-lg;
   z-index: 10;
-
   &__btn {
     display: flex;
     align-items: center;
@@ -1748,19 +1544,16 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-radius: 50%;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover:not(:disabled) {
       background: $cr-bg-elevated;
       color: $cr-text-primary;
       border-color: $cr-border-default;
     }
-
     &:disabled {
       opacity: 0.4;
       cursor: not-allowed;
     }
   }
-
   &__indicator {
     font-size: 0.8125rem;
     font-weight: 500;
@@ -1772,7 +1565,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── PDF Overlay ────────────────────────────────────────────────────────────
-
 .prep-pdf-overlay {
   .prep-annotate-canvas {
     position: absolute;
@@ -1785,7 +1577,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 
 // ─── CPV (Classroom PDF Viewer) Styles - MERGED ─────────────────────────────
 // These are aliases/extensions of the prep-pdf-* classes for the classroom
-
 .cpv {
   display: flex;
   flex-direction: column;
@@ -1794,9 +1585,8 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   background: $cr-bg-primary;
   font-family: $cr-font-sans;
   color: $cr-text-primary;
-  overflow: hidden;
+  overflow: auto; // Changed from hidden to auto (key fix for classroom PDF scroll)
 }
-
 .cpv-loading {
   display: flex;
   flex-direction: column;
@@ -1807,7 +1597,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   gap: 1rem;
   color: $cr-text-secondary;
   font-size: 0.9375rem;
-
   &__spinner {
     width: 40px;
     height: 40px;
@@ -1817,11 +1606,9 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     animation: cr-spin 0.8s linear infinite;
   }
 }
-
 .cpv-error {
   @extend .prep-pdf-error;
 }
-
 .cpv-toolbar {
   display: flex;
   align-items: center;
@@ -1832,26 +1619,21 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   border-bottom: 1px solid $cr-border-subtle;
   flex-shrink: 0;
   z-index: 10;
-
   &__tools {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
-
   &__btn {
     @extend .prep-annotate-toolbar__btn;
   }
-
   &__colors {
     @extend .prep-annotate-colors;
   }
-
   &__color {
     @extend .prep-annotate-color;
   }
 }
-
 .cpv-viewport {
   flex: 1;
   display: flex;
@@ -1863,20 +1645,17 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   min-height: 0; // Critical for flex scroll
   @include custom-scrollbar(10px, $cr-bg-secondary, $cr-border-default);
 }
-
 .cpv-page-wrapper {
   position: relative;
   display: inline-block;
   box-shadow: $cr-shadow-lg;
   border-radius: $cr-radius-sm;
-  overflow: hidden;
+  overflow: visible; // Changed from hidden to visible (prevent clipping of tall pages)
   background: white;
 }
-
 .cpv-page-canvas {
   display: block;
 }
-
 .cpv-annotation-canvas {
   position: absolute;
   top: 0;
@@ -1885,7 +1664,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   height: 100%;
   pointer-events: auto;
 }
-
 .cpv-nav {
   display: flex;
   align-items: center;
@@ -1895,7 +1673,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   border-top: 1px solid $cr-border-subtle;
   flex-shrink: 0;
   z-index: 10;
-
   &__left,
   &__center,
   &__right {
@@ -1903,12 +1680,10 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     align-items: center;
     gap: 0.5rem;
   }
-
   &__center {
     flex: 1;
     justify-content: center;
   }
-
   &__btn {
     display: flex;
     align-items: center;
@@ -1925,24 +1700,20 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-radius: $cr-radius-md;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover:not(:disabled) {
       color: $cr-text-primary;
       background: $cr-bg-elevated;
       border-color: $cr-border-default;
     }
-
     &:disabled {
       opacity: 0.4;
       cursor: not-allowed;
     }
-
     &--text {
       font-size: 0.8125rem;
       padding: 0 1rem;
     }
   }
-
   &__zoom {
     font-size: 0.8125rem;
     font-family: $cr-font-mono;
@@ -1950,7 +1721,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     min-width: 50px;
     text-align: center;
   }
-
   &__pages {
     font-size: 0.875rem;
     color: $cr-text-primary;
@@ -1959,7 +1729,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Annotation Elements ────────────────────────────────────────────────────
-
 .prep-annotate-canvas {
   position: absolute;
   top: 0;
@@ -1968,13 +1737,11 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   height: 100%;
   pointer-events: none;
   z-index: 10;
-
   &--drawing {
     pointer-events: auto;
     cursor: crosshair;
   }
 }
-
 .prep-annotations-svg {
   position: absolute;
   top: 0;
@@ -1986,7 +1753,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Sticky Note ────────────────────────────────────────────────────────────
-
 .prep-sticky-note {
   position: absolute;
   z-index: 20;
@@ -1997,7 +1763,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   pointer-events: auto;
   transform: translate(-50%, -50%);
-
   &__header {
     display: flex;
     align-items: center;
@@ -2007,7 +1772,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-radius: 4px 4px 0 0;
     cursor: move;
   }
-
   &__close {
     display: flex;
     align-items: center;
@@ -2021,13 +1785,11 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-radius: 50%;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover {
       color: $cr-accent-danger;
       background: rgba($cr-accent-danger, 0.1);
     }
   }
-
   &__textarea {
     width: 100%;
     min-height: 80px;
@@ -2039,7 +1801,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border: none;
     resize: vertical;
     outline: none;
-
     &::placeholder {
       color: #999;
     }
@@ -2047,20 +1808,17 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Text Box ───────────────────────────────────────────────────────────────
-
 .prep-text-box {
   position: absolute;
   z-index: 20;
   pointer-events: auto;
   transform: translate(-50%, -50%);
-
   &--editing {
     min-width: 120px;
     background: rgba($cr-bg-secondary, 0.95);
     border-radius: $cr-radius-sm;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   }
-
   &__header {
     display: flex;
     align-items: center;
@@ -2070,16 +1828,13 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-radius: $cr-radius-sm $cr-radius-sm 0 0;
     cursor: move;
   }
-
   &__drag-handle {
     color: $cr-text-muted;
     font-size: 12px;
-
     &::before {
       content: "⋮⋮";
     }
   }
-
   &__close {
     display: flex;
     align-items: center;
@@ -2093,13 +1848,11 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-radius: 50%;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover {
       color: $cr-accent-danger;
       background: rgba($cr-accent-danger, 0.15);
     }
   }
-
   &__textarea {
     width: 100%;
     min-width: 150px;
@@ -2112,13 +1865,11 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border: none;
     resize: both;
     outline: none;
-
     &::placeholder {
       color: $cr-text-muted;
       font-weight: 400;
     }
   }
-
   &__label {
     padding: 4px 8px;
     font-size: 16px;
@@ -2134,7 +1885,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 // ─── Pointer ────────────────────────────────────────────────────────────────
-
 .prep-pointer {
   position: absolute;
   z-index: 30;
@@ -2153,15 +1903,12 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
 // CPV aliases
 .cpv-textbox {
   @extend .prep-text-box;
-
   &--editing {
     @extend .prep-text-box--editing;
   }
 }
-
 .cpv-pointer {
   @extend .prep-pointer;
-
   &__dot {
     width: 16px;
     height: 16px;
@@ -2169,7 +1916,6 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border-radius: 50%;
     box-shadow: 0 2px 8px rgba($cr-accent-teacher, 0.5);
   }
-
   &__ring {
     position: absolute;
     top: 50%;
@@ -2182,18 +1928,17 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     animation: cr-pointer-pulse 1.5s ease-out infinite;
   }
 }
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION 9: CLASSROOM SHELL STYLES
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── Hide Site Chrome When Classroom Active ─────────────────────────────────
-
 html.classroom-active,
 body.classroom-active {
   overflow: hidden !important;
   margin: 0 !important;
   padding: 0 !important;
-
   > header,
   .site-header,
   .main-header,
@@ -2203,7 +1948,6 @@ body.classroom-active {
   header:not(.cr-header) {
     display: none !important;
   }
-
   > footer,
   .site-footer,
   .main-footer,
@@ -2211,7 +1955,6 @@ body.classroom-active {
   footer:not(.cr-controls) {
     display: none !important;
   }
-
   .resources-page,
   .spx-resources-page,
   .page-wrapper,
@@ -2226,7 +1969,6 @@ body.classroom-active {
 }
 
 // ─── Loading Screen ─────────────────────────────────────────────────────────
-
 .cr-loading-screen {
   position: fixed;
   inset: 0;
@@ -2235,7 +1977,6 @@ body.classroom-active {
   justify-content: center;
   background: $cr-bg-primary;
   z-index: 9999;
-
   &__content {
     display: flex;
     flex-direction: column;
@@ -2244,7 +1985,6 @@ body.classroom-active {
     text-align: center;
     padding: 2rem;
   }
-
   &__spinner {
     width: 48px;
     height: 48px;
@@ -2253,7 +1993,6 @@ body.classroom-active {
     border-radius: 50%;
     animation: cr-spin 0.8s linear infinite;
   }
-
   &__title {
     margin: 0;
     font-size: 1.5rem;
@@ -2261,7 +2000,6 @@ body.classroom-active {
     color: $cr-text-primary;
     font-family: $cr-font-sans;
   }
-
   &__text {
     margin: 0;
     font-size: 0.9375rem;
@@ -2271,7 +2009,6 @@ body.classroom-active {
 }
 
 // ─── Error Screen ───────────────────────────────────────────────────────────
-
 .cr-error-screen {
   position: fixed;
   inset: 0;
@@ -2280,7 +2017,6 @@ body.classroom-active {
   justify-content: center;
   background: $cr-bg-primary;
   z-index: 9999;
-
   &__content {
     display: flex;
     flex-direction: column;
@@ -2290,12 +2026,10 @@ body.classroom-active {
     padding: 2rem;
     max-width: 400px;
   }
-
   &__icon {
     font-size: 3rem;
     opacity: 0.8;
   }
-
   &__title {
     margin: 0;
     font-size: 1.5rem;
@@ -2303,7 +2037,6 @@ body.classroom-active {
     color: $cr-text-primary;
     font-family: $cr-font-sans;
   }
-
   &__text {
     margin: 0;
     font-size: 0.9375rem;
@@ -2311,7 +2044,6 @@ body.classroom-active {
     font-family: $cr-font-sans;
     line-height: 1.6;
   }
-
   &__btn {
     margin-top: 1rem;
     display: inline-flex;
@@ -2328,7 +2060,6 @@ body.classroom-active {
     text-decoration: none;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover {
       background: $cr-accent-primary-light;
       transform: translateY(-2px);
@@ -2338,7 +2069,6 @@ body.classroom-active {
 }
 
 // ─── Shell Container ────────────────────────────────────────────────────────
-
 .cr-shell {
   position: fixed;
   inset: 0;
@@ -2348,11 +2078,10 @@ body.classroom-active {
   font-family: $cr-font-sans;
   color: $cr-text-primary;
   z-index: 1000;
-  overflow: hidden;
+  overflow: auto; // Changed from hidden to auto (key fix: allow shell-level scroll if needed)
 }
 
 // ─── Header ─────────────────────────────────────────────────────────────────
-
 .cr-header {
   display: flex;
   align-items: center;
@@ -2367,19 +2096,16 @@ body.classroom-active {
   border-bottom: 1px solid $cr-border-subtle;
   flex-shrink: 0;
   z-index: 100;
-
   @media (max-width: 768px) {
     padding: 0 1rem;
     height: 52px;
   }
-
   &__left {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
   }
-
   &__logo {
     font-size: 1.125rem;
     font-weight: 700;
@@ -2387,27 +2113,22 @@ body.classroom-active {
     text-decoration: none;
     letter-spacing: -0.02em;
     transition: color $cr-transition-fast;
-
     &:hover {
       color: $cr-accent-primary;
     }
   }
-
   &__separator {
     color: $cr-text-muted;
     font-size: 0.875rem;
   }
-
   &__session {
     font-size: 0.8125rem;
     color: $cr-text-secondary;
     font-weight: 500;
-
     @media (max-width: 640px) {
       display: none;
     }
   }
-
   &__center {
     flex: 1;
     display: flex;
@@ -2415,7 +2136,6 @@ body.classroom-active {
     min-width: 0;
     padding: 0 1rem;
   }
-
   &__resource-name {
     font-size: 0.8125rem;
     font-weight: 500;
@@ -2428,18 +2148,15 @@ body.classroom-active {
     background: $cr-bg-tertiary;
     border-radius: $cr-radius-full;
     border: 1px solid $cr-border-subtle;
-
     @media (max-width: 900px) {
       display: none;
     }
   }
-
   &__right {
     display: flex;
     align-items: center;
     gap: 0.75rem;
   }
-
   &__role-badge {
     display: flex;
     align-items: center;
@@ -2450,25 +2167,21 @@ body.classroom-active {
     border-radius: $cr-radius-full;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-
     &[data-role="teacher"] {
       background: rgba($cr-accent-teacher, 0.15);
       color: $cr-accent-teacher;
       border: 1px solid rgba($cr-accent-teacher, 0.3);
     }
-
     &[data-role="learner"] {
       background: rgba($cr-accent-learner, 0.15);
       color: $cr-accent-learner;
       border: 1px solid rgba($cr-accent-learner, 0.3);
     }
-
     @media (max-width: 640px) {
       padding: 0.25rem 0.5rem;
       font-size: 0.625rem;
     }
   }
-
   &__leave {
     display: inline-flex;
     align-items: center;
@@ -2483,19 +2196,16 @@ body.classroom-active {
     border-radius: $cr-radius-full;
     transition: all $cr-transition-fast;
     cursor: pointer;
-
     &:hover {
       color: $cr-accent-danger;
       border-color: rgba($cr-accent-danger, 0.5);
       background: rgba($cr-accent-danger, 0.1);
     }
-
     svg {
       width: 14px;
       height: 14px;
       opacity: 0.8;
     }
-
     @media (max-width: 640px) {
       padding: 0.375rem 0.625rem;
       span {
@@ -2506,63 +2216,52 @@ body.classroom-active {
 }
 
 // ─── Main Content Area ──────────────────────────────────────────────────────
-
 .cr-main {
   flex: 1;
   display: flex;
   min-height: 0;
   position: relative;
-  overflow: hidden;
-
+  overflow: auto; // Changed from hidden to auto (key fix: allow main content scroll)
   &--dragging {
     cursor: col-resize;
     user-select: none;
-
     * {
       pointer-events: none;
     }
-
     .cr-divider {
       pointer-events: auto;
     }
   }
-
   @media (max-width: 900px) {
     flex-direction: column;
     overflow-y: auto;
   }
 }
-
 .cr-panel {
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
   transition: width $cr-transition-slow;
-
   @media (max-width: 900px) {
     width: 100% !important;
     flex: none;
   }
-
   &--left {
     padding: 1rem;
     background: $cr-bg-secondary;
     border-right: 1px solid $cr-border-subtle;
     overflow-y: auto;
-
     @media (max-width: 900px) {
       max-height: 50vh;
       border-right: none;
       border-bottom: 1px solid $cr-border-subtle;
     }
   }
-
   &--right {
     flex: 1;
     background: $cr-bg-primary;
-    overflow: hidden;
-
+    overflow: auto; // Changed from hidden to auto (key fix: allow right panel scroll for PDF)
     @media (max-width: 900px) {
       flex: 1;
       min-height: 400px;
@@ -2571,7 +2270,6 @@ body.classroom-active {
 }
 
 // ─── Drag Divider ───────────────────────────────────────────────────────────
-
 .cr-divider {
   position: relative;
   width: 12px;
@@ -2582,7 +2280,6 @@ body.classroom-active {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-
   &::before {
     content: "";
     position: absolute;
@@ -2594,17 +2291,14 @@ body.classroom-active {
     background: $cr-border-subtle;
     transition: background $cr-transition-fast, width $cr-transition-fast;
   }
-
   &:hover::before,
   &--active::before {
     width: 4px;
     background: $cr-accent-primary;
   }
-
   @media (max-width: 900px) {
     display: none;
   }
-
   &__handle {
     display: flex;
     flex-direction: column;
@@ -2615,12 +2309,10 @@ body.classroom-active {
     border: 1px solid $cr-border-default;
     opacity: 0;
     transition: opacity $cr-transition-fast;
-
     .cr-divider:hover &,
     .cr-divider--active & {
       opacity: 1;
     }
-
     span {
       width: 3px;
       height: 3px;
@@ -2631,7 +2323,6 @@ body.classroom-active {
 }
 
 // ─── Video Container ────────────────────────────────────────────────────────
-
 .cr-video-container {
   flex: 1;
   min-height: 200px;
@@ -2640,13 +2331,11 @@ body.classroom-active {
   overflow: hidden;
   background: $cr-bg-primary;
   border: 1px solid $cr-border-subtle;
-
   @media (max-width: 900px) {
     min-height: 180px;
     max-height: 280px;
   }
 }
-
 .cr-video {
   width: 100%;
   height: 100%;
@@ -2655,20 +2344,17 @@ body.classroom-active {
   align-items: center;
   justify-content: center;
   background: $cr-bg-primary;
-
   &__frame {
     width: 100%;
     height: 100%;
     border-radius: $cr-radius-lg;
     overflow: hidden;
-
     iframe {
       width: 100%;
       height: 100%;
       border: none;
     }
   }
-
   &__loading {
     position: absolute;
     inset: 0;
@@ -2682,7 +2368,6 @@ body.classroom-active {
     font-size: 0.875rem;
     z-index: 10;
   }
-
   &__spinner {
     width: 32px;
     height: 32px;
@@ -2691,7 +2376,6 @@ body.classroom-active {
     border-radius: 50%;
     animation: cr-spin 0.8s linear infinite;
   }
-
   &__error {
     position: absolute;
     inset: 0;
@@ -2707,11 +2391,9 @@ body.classroom-active {
     padding: 1.5rem;
     z-index: 10;
   }
-
   &__error-icon {
     font-size: 2rem;
   }
-
   &__retry {
     margin-top: 0.5rem;
     padding: 0.5rem 1rem;
@@ -2723,7 +2405,6 @@ body.classroom-active {
     border-radius: $cr-radius-full;
     cursor: pointer;
     transition: background $cr-transition-fast;
-
     &:hover {
       background: $cr-accent-primary-lighter;
     }
@@ -2731,7 +2412,6 @@ body.classroom-active {
 }
 
 // ─── Chat Container ─────────────────────────────────────────────────────────
-
 .cr-chat-container {
   display: flex;
   flex-direction: column;
@@ -2740,21 +2420,17 @@ body.classroom-active {
   flex: 1;
   max-height: 300px;
   transition: max-height $cr-transition-normal;
-
   &--collapsed {
     max-height: 44px;
     flex: none;
-
     .cr-chat {
       display: none;
     }
   }
-
   @media (max-width: 900px) {
     max-height: 220px;
   }
 }
-
 .cr-chat-toggle {
   display: flex;
   align-items: center;
@@ -2768,32 +2444,26 @@ body.classroom-active {
   transition: background $cr-transition-fast;
   color: $cr-text-primary;
   font-family: $cr-font-sans;
-
   &:hover {
     background: $cr-bg-elevated;
   }
-
   .cr-chat-container--collapsed & {
     border-radius: $cr-radius-md;
   }
-
   &__label {
     font-size: 0.8125rem;
     font-weight: 600;
     color: $cr-text-primary;
   }
-
   &__icon {
     font-size: 0.625rem;
     color: $cr-text-muted;
     transition: transform $cr-transition-fast;
-
     &--open {
       transform: rotate(180deg);
     }
   }
 }
-
 .cr-chat {
   flex: 1;
   display: flex;
@@ -2804,7 +2474,6 @@ body.classroom-active {
   border-top: none;
   border-radius: 0 0 $cr-radius-md $cr-radius-md;
   overflow: hidden;
-
   &__messages {
     flex: 1;
     overflow-y: auto;
@@ -2814,7 +2483,6 @@ body.classroom-active {
     gap: 0.5rem;
     @include custom-scrollbar(4px);
   }
-
   &__empty {
     flex: 1;
     display: flex;
@@ -2824,129 +2492,106 @@ body.classroom-active {
     padding: 1.5rem;
     text-align: center;
   }
-
   &__empty-icon {
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
     opacity: 0.5;
   }
-
   &__empty-text {
     margin: 0;
     font-size: 0.8125rem;
     font-weight: 500;
     color: $cr-text-secondary;
   }
-
   &__empty-hint {
     margin: 0.25rem 0 0;
     font-size: 0.75rem;
     color: $cr-text-muted;
   }
-
   &__message {
     display: flex;
     max-width: 85%;
-
     &--self {
       align-self: flex-end;
     }
-
     &--other {
       align-self: flex-start;
     }
   }
-
   &__bubble {
     padding: 0.5rem 0.75rem;
     border-radius: $cr-radius-md;
     background: $cr-bg-elevated;
     border: 1px solid $cr-border-subtle;
-
     .cr-chat__message--teacher & {
       background: rgba($cr-accent-teacher, 0.12);
       border-color: rgba($cr-accent-teacher, 0.25);
     }
-
     .cr-chat__message--learner & {
       background: rgba($cr-accent-learner, 0.12);
       border-color: rgba($cr-accent-learner, 0.25);
     }
-
     .cr-chat__message--self & {
       border-color: $cr-border-strong;
     }
   }
-
   &__bubble-header {
     display: flex;
     align-items: baseline;
     gap: 0.5rem;
     margin-bottom: 0.25rem;
   }
-
   &__bubble-name {
     font-size: 0.6875rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-
     .cr-chat__message--teacher & {
       color: $cr-accent-teacher;
     }
-
     .cr-chat__message--learner & {
       color: $cr-accent-learner;
     }
   }
-
   &__bubble-time {
     font-size: 0.625rem;
     color: $cr-text-muted;
     font-family: $cr-font-mono;
   }
-
   &__bubble-text {
     font-size: 0.8125rem;
     line-height: 1.5;
     color: $cr-text-primary;
     word-wrap: break-word;
   }
-
   &__typing {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0;
   }
-
   &__typing-dots {
     display: flex;
     gap: 3px;
-
     span {
       width: 6px;
       height: 6px;
       border-radius: 50%;
       background: $cr-text-muted;
       animation: cr-typing 1.4s infinite ease-in-out;
-
       &:nth-child(2) {
         animation-delay: 0.2s;
       }
-
       &:nth-child(3) {
         animation-delay: 0.4s;
       }
     }
   }
-
   &__typing-text {
     font-size: 0.75rem;
     color: $cr-text-muted;
     font-style: italic;
   }
-
   &__form {
     display: flex;
     gap: 0.5rem;
@@ -2954,7 +2599,6 @@ body.classroom-active {
     border-top: 1px solid $cr-border-subtle;
     background: $cr-bg-tertiary;
   }
-
   &__input {
     flex: 1;
     padding: 0.625rem 1rem;
@@ -2966,17 +2610,14 @@ body.classroom-active {
     border-radius: $cr-radius-full;
     outline: none;
     transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
-
     &::placeholder {
       color: $cr-text-muted;
     }
-
     &:focus {
       border-color: $cr-accent-primary;
       box-shadow: 0 0 0 3px rgba($cr-accent-primary, 0.15);
     }
   }
-
   &__send {
     display: flex;
     align-items: center;
@@ -2989,22 +2630,18 @@ body.classroom-active {
     cursor: pointer;
     transition: background $cr-transition-fast, transform $cr-transition-fast;
     flex-shrink: 0;
-
     svg {
       color: white;
       width: 18px;
       height: 18px;
     }
-
     &:hover:not(:disabled) {
       background: $cr-accent-primary-light;
       transform: scale(1.05);
     }
-
     &:disabled {
       background: $cr-bg-elevated;
       cursor: not-allowed;
-
       svg {
         color: $cr-text-muted;
       }
@@ -3013,27 +2650,23 @@ body.classroom-active {
 }
 
 // ─── Content Viewer ─────────────────────────────────────────────────────────
-
 .cr-content-viewer {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto; // Changed from hidden to auto (key fix: allow content viewer scroll)
   position: relative;
-
   > * {
     flex: 1;
     min-height: 0;
   }
-
   .prep-layout {
     height: 100% !important;
     max-height: none !important;
     display: flex !important;
     flex-direction: row !important;
   }
-
   .prep-viewer {
     flex: 1 !important;
     height: 100% !important;
@@ -3047,7 +2680,6 @@ body.classroom-active {
     display: flex !important;
     flex-direction: column !important;
   }
-
   .prep-viewer__frame-wrapper {
     flex: 1 !important;
     height: 100% !important;
@@ -3055,37 +2687,31 @@ body.classroom-active {
     display: flex !important;
     flex-direction: column !important;
   }
-
   .prep-viewer__canvas-container {
     flex: 1 !important;
     height: 100% !important;
     max-height: none !important;
     position: relative !important;
   }
-
   .prep-viewer__frame {
     width: 100% !important;
     height: 100% !important;
     max-height: none !important;
   }
-
   .prep-pdf-layout {
     height: 100% !important;
     display: flex !important;
   }
-
   .prep-pdf-main {
     flex: 1 !important;
     height: 100% !important;
     min-height: 0 !important;
   }
-
   .prep-pdf-main-inner {
     height: 100% !important;
     overflow-y: auto !important;
   }
 }
-
 .cr-placeholder {
   flex: 1;
   display: flex;
@@ -3094,27 +2720,23 @@ body.classroom-active {
   justify-content: center;
   padding: 2rem;
   text-align: center;
-
   &__icon {
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.6;
   }
-
   &__title {
     margin: 0 0 0.5rem;
     font-size: 1.25rem;
     font-weight: 600;
     color: $cr-text-primary;
   }
-
   &__text {
     margin: 0;
     font-size: 0.9375rem;
     color: $cr-text-secondary;
     max-width: 400px;
   }
-
   &__action {
     margin-top: 1.5rem;
     padding: 0.75rem 1.5rem;
@@ -3127,7 +2749,6 @@ body.classroom-active {
     border-radius: $cr-radius-full;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover {
       background: $cr-accent-primary-light;
       transform: translateY(-2px);
@@ -3137,7 +2758,6 @@ body.classroom-active {
 }
 
 // ─── Controls Bar ───────────────────────────────────────────────────────────
-
 .cr-controls {
   display: flex;
   align-items: center;
@@ -3152,30 +2772,25 @@ body.classroom-active {
   border-top: 1px solid $cr-border-subtle;
   flex-shrink: 0;
   z-index: 100;
-
   @media (max-width: 768px) {
     padding: 0 0.75rem;
     height: 52px;
   }
-
   &__left,
   &__right {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
-
     @media (max-width: 768px) {
       gap: 0.25rem;
     }
   }
-
   &__center {
     display: flex;
     align-items: center;
     gap: 0.75rem;
   }
-
   &__btn {
     display: inline-flex;
     align-items: center;
@@ -3188,26 +2803,21 @@ body.classroom-active {
     cursor: pointer;
     transition: all $cr-transition-fast;
     border: 1px solid transparent;
-
     @media (max-width: 768px) {
       padding: 0.375rem 0.75rem;
       font-size: 0.75rem;
     }
-
     &-icon {
       font-size: 1rem;
-
       @media (max-width: 640px) {
         font-size: 0.875rem;
       }
     }
-
     &-label {
       @media (max-width: 640px) {
         display: none;
       }
     }
-
     &--primary {
       background: linear-gradient(
         135deg,
@@ -3216,18 +2826,15 @@ body.classroom-active {
       );
       color: white;
       box-shadow: 0 4px 16px rgba($cr-accent-primary, 0.3);
-
       &:hover {
         transform: translateY(-1px);
         box-shadow: 0 6px 20px rgba($cr-accent-primary, 0.4);
       }
     }
-
     &--ghost {
       background: transparent;
       color: $cr-text-secondary;
       border-color: $cr-border-default;
-
       &:hover {
         background: $cr-bg-tertiary;
         color: $cr-text-primary;
@@ -3235,7 +2842,6 @@ body.classroom-active {
       }
     }
   }
-
   &__reset {
     padding: 0.375rem 0.75rem;
     font-size: 0.75rem;
@@ -3247,7 +2853,6 @@ body.classroom-active {
     border-radius: $cr-radius-full;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover {
       color: $cr-text-primary;
       border-color: $cr-border-default;
@@ -3256,7 +2861,6 @@ body.classroom-active {
 }
 
 // ─── Focus Mode Switcher ────────────────────────────────────────────────────
-
 .cr-focus-switcher {
   display: flex;
   align-items: center;
@@ -3265,7 +2869,6 @@ body.classroom-active {
   border-radius: $cr-radius-full;
   border: 1px solid $cr-border-subtle;
 }
-
 .cr-focus-btn {
   display: flex;
   align-items: center;
@@ -3279,28 +2882,25 @@ body.classroom-active {
   cursor: pointer;
   transition: all $cr-transition-fast;
   opacity: 0.6;
-
   &:hover {
     opacity: 0.9;
     background: $cr-bg-elevated;
   }
-
   &--active {
     opacity: 1;
     background: $cr-accent-primary;
     box-shadow: 0 2px 8px rgba($cr-accent-primary, 0.4);
   }
-
   @media (max-width: 640px) {
     width: 32px;
     height: 32px;
     font-size: 0.875rem;
   }
 }
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION 10: MODALS & RESOURCE PICKER (CLASSROOM)
 // ═══════════════════════════════════════════════════════════════════════════
-
 .cr-modal-overlay {
   position: fixed;
   inset: 0;
@@ -3313,7 +2913,6 @@ body.classroom-active {
   padding: 1rem;
   animation: cr-fade-in 0.2s ease;
 }
-
 .cr-modal {
   width: 100%;
   max-width: 680px;
@@ -3326,11 +2925,9 @@ body.classroom-active {
   flex-direction: column;
   overflow: hidden;
   animation: cr-slide-up 0.25s ease;
-
   &--small {
     max-width: 480px;
   }
-
   &__header {
     display: flex;
     align-items: center;
@@ -3339,14 +2936,12 @@ body.classroom-active {
     border-bottom: 1px solid $cr-border-subtle;
     flex-shrink: 0;
   }
-
   &__title {
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
     color: $cr-text-primary;
   }
-
   &__close {
     display: flex;
     align-items: center;
@@ -3360,20 +2955,17 @@ body.classroom-active {
     border-radius: 50%;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover {
       color: $cr-text-primary;
       background: $cr-bg-tertiary;
     }
   }
-
   &__body {
     flex: 1;
     overflow-y: auto;
     padding: 1.5rem;
     @include custom-scrollbar;
   }
-
   &__footer {
     display: flex;
     justify-content: flex-end;
@@ -3385,33 +2977,27 @@ body.classroom-active {
 }
 
 // ─── Resource Picker (Modal Content) ────────────────────────────────────────
-
 .cr-picker {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-
   &__nav {
     padding-bottom: 1rem;
     border-bottom: 1px solid $cr-border-subtle;
   }
-
   &__nav-row {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
-
     @media (min-width: 640px) {
       grid-template-columns: repeat(4, 1fr);
     }
   }
-
   &__field {
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
   }
-
   &__label {
     font-size: 0.6875rem;
     font-weight: 600;
@@ -3419,11 +3005,9 @@ body.classroom-active {
     letter-spacing: 0.06em;
     color: $cr-text-muted;
   }
-
   &__select-wrapper {
     position: relative;
   }
-
   &__select {
     width: 100%;
     padding: 0.625rem 2rem 0.625rem 0.875rem;
@@ -3437,23 +3021,19 @@ body.classroom-active {
     cursor: pointer;
     outline: none;
     transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
-
     &:focus {
       border-color: $cr-accent-primary;
       box-shadow: 0 0 0 3px rgba($cr-accent-primary, 0.15);
     }
-
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-
     option {
       background: $cr-bg-secondary;
       color: $cr-text-primary;
     }
   }
-
   &__select-arrow {
     position: absolute;
     right: 0.75rem;
@@ -3463,17 +3043,14 @@ body.classroom-active {
     color: $cr-text-muted;
     pointer-events: none;
   }
-
   &__resources-header {
     margin-bottom: 0.75rem;
   }
-
   &__resources-title {
     font-size: 0.8125rem;
     font-weight: 600;
     color: $cr-text-secondary;
   }
-
   &__empty {
     display: flex;
     flex-direction: column;
@@ -3481,19 +3058,16 @@ body.classroom-active {
     padding: 2rem;
     text-align: center;
   }
-
   &__empty-icon {
     font-size: 2rem;
     margin-bottom: 0.5rem;
     opacity: 0.5;
   }
-
   &__empty p {
     margin: 0;
     font-size: 0.875rem;
     color: $cr-text-muted;
   }
-
   &__list {
     list-style: none;
     margin: 0;
@@ -3505,7 +3079,6 @@ body.classroom-active {
     overflow-y: auto;
     @include custom-scrollbar;
   }
-
   &__item {
     display: flex;
     align-items: flex-start;
@@ -3519,37 +3092,30 @@ body.classroom-active {
     border-radius: $cr-radius-md;
     cursor: pointer;
     transition: all $cr-transition-fast;
-
     &:hover {
       background: $cr-bg-elevated;
       border-color: $cr-border-default;
       transform: translateX(4px);
     }
-
     &--selected {
       background: rgba($cr-accent-primary, 0.12);
       border-color: rgba($cr-accent-primary, 0.4);
-
       &:hover {
         background: rgba($cr-accent-primary, 0.18);
       }
     }
-
     &:disabled {
       cursor: not-allowed;
       opacity: 0.6;
-
       &:hover {
         transform: none;
       }
     }
   }
-
   &__item-icon {
     font-size: 1.25rem;
     flex-shrink: 0;
   }
-
   &__item-info {
     flex: 1;
     min-width: 0;
@@ -3557,26 +3123,22 @@ body.classroom-active {
     flex-direction: column;
     gap: 0.25rem;
   }
-
   &__item-title {
     font-size: 0.875rem;
     font-weight: 500;
     color: $cr-text-primary;
   }
-
   &__item-desc {
     font-size: 0.75rem;
     color: $cr-text-muted;
     line-height: 1.4;
   }
-
   &__item-check {
     flex-shrink: 0;
     font-size: 0.875rem;
     color: $cr-accent-primary;
     font-weight: 600;
   }
-
   &__current {
     display: flex;
     align-items: center;
@@ -3586,13 +3148,11 @@ body.classroom-active {
     border: 1px solid rgba($cr-accent-success, 0.25);
     border-radius: $cr-radius-md;
   }
-
   &__current-label {
     font-size: 0.75rem;
     color: $cr-accent-success;
     font-weight: 500;
   }
-
   &__current-name {
     font-size: 0.8125rem;
     color: $cr-text-primary;
@@ -3603,7 +3163,6 @@ body.classroom-active {
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION 11: GENERIC BUTTONS
 // ═══════════════════════════════════════════════════════════════════════════
-
 .cr-button {
   display: inline-flex;
   align-items: center;
@@ -3618,12 +3177,10 @@ body.classroom-active {
   transition: all $cr-transition-fast;
   text-decoration: none;
   white-space: nowrap;
-
   &--ghost {
     background: transparent;
     color: $cr-text-secondary;
     border-color: $cr-border-default;
-
     &:hover {
       background: $cr-bg-tertiary;
       color: $cr-text-primary;
@@ -3631,20 +3188,17 @@ body.classroom-active {
       text-decoration: none;
     }
   }
-
   &--danger {
     background: $cr-accent-danger;
     color: $cr-text-primary;
     border-color: rgba($cr-accent-danger, 0.8);
     box-shadow: 0 4px 16px rgba($cr-accent-danger, 0.35);
-
     &:hover {
       background: $cr-accent-danger-light;
       box-shadow: 0 6px 20px rgba($cr-accent-danger, 0.45);
       transform: translateY(-1px);
       text-decoration: none;
     }
-
     &:active {
       transform: translateY(0);
       box-shadow: 0 2px 10px rgba($cr-accent-danger, 0.35);
@@ -3688,7 +3242,6 @@ body.classroom-active {
 .resources-page,
 .cr-shell {
   @include custom-scrollbar;
-
   * {
     scrollbar-width: thin;
     scrollbar-color: $cr-border-default $cr-bg-primary;

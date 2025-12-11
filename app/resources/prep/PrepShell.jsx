@@ -779,11 +779,12 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
 
   function renderAnnotationsOverlay() {
-    // In iframe (Google viewer) mode, allow full interaction when no tool is active:
-    // overlayPointerEvents = "none" → clicks/scroll go to iframe.
-    // When a tool is active, overlayPointerEvents = "auto" → you can annotate.
-    const overlayPointerEvents =
-      !isPdf && !hasScreenShare && tool === TOOL_NONE ? "none" : "auto";
+    // Key fix: Enable the overlay only when needed for interaction
+    // (drawing tools active OR existing notes/text that can be dragged/edited)
+    const needsInteraction =
+      tool !== TOOL_NONE || stickyNotes.length > 0 || textBoxes.length > 0;
+    const overlayPointerEvents = needsInteraction ? "auto" : "none";
+    const overlayTouchAction = needsInteraction ? "none" : "auto";
 
     return (
       <div
@@ -792,6 +793,7 @@ export default function PrepShell({
           position: "absolute",
           inset: 0,
           pointerEvents: overlayPointerEvents,
+          touchAction: overlayTouchAction,
         }}
       >
         {/* Canvas for drawing (gets mouse events) */}
@@ -805,6 +807,7 @@ export default function PrepShell({
             width: "100%",
             height: "100%",
             pointerEvents: tool === TOOL_NONE ? "none" : "auto",
+            touchAction: tool === TOOL_NONE ? "auto" : "none",
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
