@@ -779,8 +779,7 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
 
   function renderAnnotationsOverlay() {
-    // Key fix: Enable the overlay only when needed for interaction
-    // (drawing tools active OR existing notes/text that can be dragged/edited)
+    // Enable overlay only when interaction is needed
     const needsInteraction =
       tool !== TOOL_NONE || stickyNotes.length > 0 || textBoxes.length > 0;
     const overlayPointerEvents = needsInteraction ? "auto" : "none";
@@ -795,8 +794,11 @@ export default function PrepShell({
           pointerEvents: overlayPointerEvents,
           touchAction: overlayTouchAction,
         }}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
       >
-        {/* Canvas for drawing (gets mouse events) */}
+        {/* Canvas for drawing */}
         <canvas
           ref={canvasRef}
           className={
@@ -810,12 +812,9 @@ export default function PrepShell({
             touchAction: tool === TOOL_NONE ? "auto" : "none",
           }}
           onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
         />
 
-        {/* SVG layer renders normalized strokes (auto-scales) */}
+        {/* SVG strokes layer */}
         <svg
           className="annotation-svg-layer"
           width="100%"
@@ -838,16 +837,14 @@ export default function PrepShell({
                   ? "rgba(255,255,0,0.5)"
                   : stroke.color || "#111"
               }
-              strokeWidth={
-                stroke.tool === TOOL_HIGHLIGHTER ? 0.04 : 0.01 // normalized widths
-              }
+              strokeWidth={stroke.tool === TOOL_HIGHLIGHTER ? 0.04 : 0.01}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           ))}
         </svg>
 
-        {/* Text boxes layer (normalized) */}
+        {/* Text boxes layer */}
         <div
           style={{
             position: "absolute",
@@ -868,7 +865,7 @@ export default function PrepShell({
                   left: `${box.x * 100}%`,
                   top: `${box.y * 100}%`,
                   transform: "translate(-50%, -50%)",
-                  pointerEvents: "auto", // to allow drag/edit
+                  pointerEvents: "auto",
                 }}
               >
                 {isEditing ? (
@@ -925,7 +922,10 @@ export default function PrepShell({
           <div
             key={note.id}
             className="prep-sticky-note"
-            style={{ left: `${note.x * 100}%`, top: `${note.y * 100}%` }}
+            style={{
+              left: `${note.x * 100}%`,
+              top: `${note.y * 100}%`,
+            }}
           >
             <div
               className="prep-sticky-note__header"
@@ -952,7 +952,7 @@ export default function PrepShell({
           </div>
         ))}
 
-        {/* Pointer (normalized) */}
+        {/* Pointer */}
         {pointer && (
           <div
             className="prep-pointer"
