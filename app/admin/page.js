@@ -252,7 +252,19 @@ function Admin() {
         notes: "",
       }));
     } catch (e) {
-      setStatus(e.response?.data?.error || "Failed to create session");
+      setStatus("");
+
+      if (e.response?.status === 409) {
+        toast.error(
+          "Time conflict: A session already exists at this time for this learner or teacher"
+        );
+      } else if (e.response?.status === 422) {
+        toast.error(
+          e.response?.data?.message || "Learner has no remaining credits"
+        );
+      } else {
+        toast.error(e.response?.data?.error || "Failed to create session");
+      }
     }
   };
 
