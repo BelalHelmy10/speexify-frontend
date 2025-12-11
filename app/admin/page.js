@@ -211,9 +211,21 @@ function Admin() {
 
   const createSession = async (e) => {
     e.preventDefault();
+
+    const startAt = joinDateTime(form.date, form.startTime);
+
+    // Warn if session is in the past
+    if (startAt < new Date()) {
+      const proceed = await confirmModal(
+        "⚠️ This session is scheduled in the past. Are you sure you want to create it?"
+      );
+      if (!proceed) {
+        return;
+      }
+    }
+
     setStatus("Saving…");
     try {
-      const startAt = joinDateTime(form.date, form.startTime);
       const endAt = form.endTime ? joinDateTime(form.date, form.endTime) : null;
 
       const payload = {
