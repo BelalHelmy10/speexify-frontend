@@ -1153,14 +1153,7 @@ function Admin() {
                   </div>
                 </div>
               ) : (
-                <div
-                  key={s.id}
-                  className={`adm-session-card-modern ${
-                    new Date(s.startAt) < new Date()
-                      ? "adm-session-card-modern--past"
-                      : ""
-                  }`}
-                >
+                <div key={s.id} className="adm-session-card-modern">
                   <div className="adm-session-card-modern__header">
                     <div className="adm-session-card-modern__badge">
                       Session #{s.id}
