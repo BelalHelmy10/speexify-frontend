@@ -9,9 +9,12 @@ import api from "@/lib/api";
 import "@/styles/individual.scss";
 import { getDictionary, t } from "@/app/i18n";
 
-function IndividualInner({ dict }) {
+function IndividualInner({ dict, locale }) {
   const { user } = useAuth();
   const formRef = useRef(null);
+
+  // ✅ only used for URLs, NOT for translations
+  const prefix = locale === "ar" ? "/ar" : "";
 
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState("");
@@ -118,7 +121,8 @@ function IndividualInner({ dict }) {
                   />
                 </svg>
               </a>
-              <Link href="/packages" className="btn btn--ghost">
+              {/* 🔽 only URL changed */}
+              <Link href={`${prefix}/packages`} className="btn btn--ghost">
                 {t(dict, "hero_cta_secondary")}
               </Link>
             </div>
@@ -381,8 +385,8 @@ function IndividualInner({ dict }) {
                 onChange={onChange}
               />
               <span>
-                {t(dict, "checkbox_prefix")}{" "}
-                <Link href="/privacy" className="link">
+                {t(dict, "checkbox_prefix")} {/* 🔽 only URL changed */}
+                <Link href={`${prefix}/privacy`} className="link">
                   {t(dict, "checkbox_link")}
                 </Link>
                 .
@@ -428,7 +432,11 @@ function IndividualInner({ dict }) {
             <a href="#trial" className="btn btn--primary btn--lg">
               {t(dict, "final_btn_primary")}
             </a>
-            <Link href="/packages" className="btn btn--ghost btn--lg">
+            {/* 🔽 only URL changed */}
+            <Link
+              href={`${prefix}/packages`}
+              className="btn btn--ghost btn--lg"
+            >
               {t(dict, "final_btn_secondary")}
             </Link>
           </div>
@@ -530,10 +538,11 @@ function Testimonial({ quote, by, role, avatar, rating }) {
   );
 }
 
+// ✅ keep your original locale detection so Arabic stays Arabic
 export default function IndividualPage() {
   const pathname = usePathname();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = getDictionary(locale, "individual");
 
-  return <IndividualInner dict={dict} />;
+  return <IndividualInner dict={dict} locale={locale} />;
 }

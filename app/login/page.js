@@ -29,6 +29,9 @@ function LoginInner({ dict }) {
   const params = useSearchParams();
   const pathname = usePathname();
 
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const prefix = locale === "ar" ? "/ar" : "";
+
   const { user, checking, refresh } = useAuth();
 
   const redirectAfterLogin = useCallback(() => {
@@ -50,15 +53,10 @@ function LoginInner({ dict }) {
     }
 
     // 3) Final fallback: locale-aware dashboard
-    const isArabic =
-      (typeof window !== "undefined" &&
-        window.location.pathname.startsWith("/ar")) ||
-      pathname?.startsWith("/ar");
-
-    const dashboardPath = isArabic ? "/ar/dashboard" : "/dashboard";
+    const dashboardPath = locale === "ar" ? "/ar/dashboard" : "/dashboard";
     router.replace(dashboardPath);
     router.refresh();
-  }, [params, router, pathname]);
+  }, [params, router, locale]);
 
   useEffect(() => {
     if (!checking && user) {
@@ -116,7 +114,7 @@ function LoginInner({ dict }) {
       // ignore
     }
     await refresh();
-    router.replace("/login");
+    router.replace(`${prefix}/login`);
     router.refresh();
   };
 
@@ -221,7 +219,10 @@ function LoginInner({ dict }) {
                     <label htmlFor="password">
                       {t(dict, "label_password")}
                     </label>
-                    <Link href="/forgot-password" className="forgot-link">
+                    <Link
+                      href={`${prefix}/forgot-password`}
+                      className="forgot-link"
+                    >
                       {t(dict, "forgot_password")}
                     </Link>
                   </div>
@@ -309,11 +310,10 @@ function LoginInner({ dict }) {
                   )}
                 </button>
               </form>
-
               <footer className="auth-footer">
                 <p>
                   {t(dict, "no_account")}{" "}
-                  <Link href="/register" className="link-primary">
+                  <Link href={`${prefix}/register`} className="link-primary">
                     {t(dict, "link_create_account")}
                   </Link>
                 </p>

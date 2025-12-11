@@ -7,11 +7,7 @@ import Link from "next/link";
 import useAuth from "@/hooks/useAuth";
 import "@/styles/home.scss";
 
-import { getDictionary, t } from "./i18n"; // ✅ NEW
-
-// (Global CSS note)
-// Move this to app/layout.js:
-// import "@/styles/home.scss";
+import { getDictionary, t } from "./i18n"; // ✅ i18n
 
 export default function Page({ locale = "en" }) {
   const { user, checking } = useAuth();
@@ -20,21 +16,26 @@ export default function Page({ locale = "en" }) {
 
   useEffect(() => {
     if (checking) return;
-    if (user) router.replace(params.get("next") || "/dashboard");
-  }, [checking, user, router, params]);
+
+    const dashboardPath = locale === "ar" ? "/ar/dashboard" : "/dashboard";
+
+    if (user) {
+      router.replace(params.get("next") || dashboardPath);
+    }
+  }, [checking, user, router, params, locale]);
 
   if (checking) return <div className="home-route-loading">Loading…</div>;
   if (user) return null;
 
-  // Pass locale into Home so it can pick the right translations
   return <Home locale={locale} />;
 }
 
 /* ============================
-   Home (inline, formerly Home.jsx)
+   Home
    ============================ */
 function Home({ locale = "en" }) {
-  const dict = getDictionary(locale, "home"); // ✅ NEW
+  const dict = getDictionary(locale, "home");
+  const prefix = locale === "ar" ? "/ar" : "";
 
   return (
     <div className="home-home">
@@ -49,7 +50,7 @@ function Home({ locale = "en" }) {
           <div className="home-hero__copy">
             <div className="home-hero__badge">
               <span className="home-hero__badge-icon">✦</span>
-              <span>{t(dict, "badge")}</span> {/* ✅ translated */}
+              <span>{t(dict, "badge")}</span>
             </div>
 
             <h1 className="home-hero__title">
@@ -59,16 +60,14 @@ function Home({ locale = "en" }) {
               </span>
             </h1>
 
-            <p className="home-hero__sub">
-              {t(dict, "subtitle")} {/* ✅ translated */}
-            </p>
+            <p className="home-hero__sub">{t(dict, "subtitle")}</p>
 
             <div className="home-hero__cta">
               <Link
                 className="home-btn home-btn--primary home-btn--shine"
-                href="/register"
+                href={`${prefix}/register`}
               >
-                <span>{t(dict, "ctaPrimary")}</span> {/* ✅ translated */}
+                <span>{t(dict, "ctaPrimary")}</span>
                 <svg
                   className="home-btn__arrow"
                   width="16"
@@ -86,8 +85,11 @@ function Home({ locale = "en" }) {
                   />
                 </svg>
               </Link>
-              <Link className="home-btn home-btn--ghost" href="/packages">
-                {t(dict, "ctaSecondary")} {/* ✅ translated */}
+              <Link
+                className="home-btn home-btn--ghost"
+                href={`${prefix}/packages`}
+              >
+                {t(dict, "ctaSecondary")}
               </Link>
             </div>
 
@@ -214,7 +216,6 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
-      {/* ===== HOW IT WORKS ===== */}
       <section className="home-spx-how">
         <div className="home-container">
           <div className="home-section-header">
@@ -246,7 +247,7 @@ function Home({ locale = "en" }) {
           <div className="home-spx-how__cta">
             <Link
               className="home-btn home-btn--primary home-btn--shine"
-              href="/register"
+              href={`${prefix}/register`}
             >
               <span>{t(dict, "how_cta_primary")}</span>
               <svg
@@ -266,14 +267,16 @@ function Home({ locale = "en" }) {
                 />
               </svg>
             </Link>
-            <Link className="home-btn home-btn--ghost" href="/contact">
+            <Link
+              className="home-btn home-btn--ghost"
+              href={`${prefix}/contact`}
+            >
               {t(dict, "how_cta_secondary")}
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ===== CURRICULUM ===== */}
       {/* ===== CURRICULUM ===== */}
       <section className="home-spx-curriculum">
         <div className="home-container">
@@ -310,14 +313,16 @@ function Home({ locale = "en" }) {
           </div>
 
           <div className="home-spx-curriculum__more">
-            <Link className="home-btn home-btn--ghost" href="/packages">
+            <Link
+              className="home-btn home-btn--ghost"
+              href={`${prefix}/packages`}
+            >
               {t(dict, "curr_more")}
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ===== COACHES ===== */}
       {/* ===== COACHES ===== */}
       <section className="home-spx-coaches">
         <div className="home-container">
@@ -354,7 +359,6 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== CASE STUDIES ===== */}
-      {/* ===== CASE STUDIES ===== */}
       <section className="home-spx-cases">
         <div className="home-container">
           <div className="home-section-header">
@@ -389,7 +393,6 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== TESTIMONIALS ===== */}
-      {/* ===== TESTIMONIALS ===== */}
       <section className="home-testimonials">
         <div className="home-container">
           <div className="home-testimonials__grid">
@@ -415,7 +418,6 @@ function Home({ locale = "en" }) {
         </div>
       </section>
 
-      {/* ===== FAQ ===== */}
       {/* ===== FAQ ===== */}
       <section className="home-spx-faq">
         <div className="home-container">
@@ -446,7 +448,6 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== NEWSLETTER ===== */}
-      {/* ===== NEWSLETTER ===== */}
       <section className="home-spx-newsletter">
         <div className="home-container">
           <div className="home-spx-newsletter__inner">
@@ -473,7 +474,6 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== CTA ===== */}
-      {/* ===== CTA ===== */}
       <section className="home-cta">
         <div className="home-cta__background">
           <div className="home-cta__gradient"></div>
@@ -491,7 +491,7 @@ function Home({ locale = "en" }) {
           <div className="home-cta__actions">
             <Link
               className="home-btn home-btn--primary home-btn--lg home-btn--shine"
-              href="/register"
+              href={`${prefix}/register`}
             >
               <span>{t(dict, "cta_primary")}</span>
               <svg
@@ -513,7 +513,7 @@ function Home({ locale = "en" }) {
             </Link>
             <Link
               className="home-btn home-btn--ghost home-btn--lg"
-              href="/contact"
+              href={`${prefix}/contact`}
             >
               {t(dict, "cta_secondary")}
             </Link>
@@ -524,7 +524,7 @@ function Home({ locale = "en" }) {
   );
 }
 
-/* ========== Local UI bits (unchanged except class names) ========== */
+/* ========== Local UI bits ========== */
 function Feature({ icon, title, text }) {
   return (
     <div className="home-feature">

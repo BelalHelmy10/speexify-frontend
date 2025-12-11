@@ -34,6 +34,8 @@ function Contact() {
   const locale = pathname && pathname.startsWith("/ar") ? "ar" : "en";
   const dict = useMemo(() => getDictionary(locale, "contact"), [locale]);
 
+  const prefix = locale === "ar" ? "/ar" : "";
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -118,9 +120,11 @@ function Contact() {
           </h1>
 
           <p className="contact-hero__subtitle">{t(dict, "hero_subtitle")}</p>
-
           <div className="contact-hero__actions row-gap-sm">
-            <Link href="/register" className="btn btn--primary btn--shine">
+            <Link
+              href={`${prefix}/register`}
+              className="btn btn--primary btn--shine"
+            >
               <span>{t(dict, "hero_cta_primary")}</span>
               <svg
                 className="btn__arrow"
@@ -320,7 +324,7 @@ function Contact() {
                 />
                 <span>
                   {t(dict, "form_privacy_label")}{" "}
-                  <Link href="/privacy" className="link">
+                  <Link href={`${prefix}/privacy`} className="link">
                     {t(dict, "form_privacy_link")}
                   </Link>
                   .
@@ -504,23 +508,25 @@ function Contact() {
             <div className="lane__icon">👤</div>
             <h3>{t(dict, "lanes_individual_title")}</h3>
             <p>{t(dict, "lanes_individual_body")}</p>
-            <Link className="btn btn--ghost" href="/individual">
+            <Link className="btn btn--ghost" href={`${prefix}/individual`}>
               {t(dict, "lanes_individual_cta")}
             </Link>
           </div>
+
           <div className="lane stack-xs">
             <div className="lane__icon">👥</div>
             <h3>{t(dict, "lanes_teams_title")}</h3>
             <p>{t(dict, "lanes_teams_body")}</p>
-            <Link className="btn btn--ghost" href="/corporate">
+            <Link className="btn btn--ghost" href={`${prefix}/corporate`}>
               {t(dict, "lanes_teams_cta")}
             </Link>
           </div>
+
           <div className="lane stack-xs">
             <div className="lane__icon">💎</div>
             <h3>{t(dict, "lanes_packages_title")}</h3>
             <p>{t(dict, "lanes_packages_body")}</p>
-            <Link className="btn btn--ghost" href="/packages">
+            <Link className="btn btn--ghost" href={`${prefix}/packages`}>
               {t(dict, "lanes_packages_cta")}
             </Link>
           </div>

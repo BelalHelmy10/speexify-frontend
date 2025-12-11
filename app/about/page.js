@@ -107,6 +107,9 @@ export default function AboutPage() {
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = getDictionary(locale, "about");
 
+  // ✅ only for URLs, not for translations
+  const prefix = locale === "ar" ? "/ar" : "";
+
   return (
     <main className="about">
       {/* HERO */}
@@ -134,7 +137,7 @@ export default function AboutPage() {
 
             <div className="about-cta-row">
               <Link
-                href="/demo"
+                href={`${prefix}/demo`}
                 className="about-btn about-btn--primary about-btn--lg"
               >
                 <span>{t(dict, "hero_cta_primary")}</span>
@@ -155,7 +158,7 @@ export default function AboutPage() {
                 </svg>
               </Link>
               <Link
-                href="/packages"
+                href={`${prefix}/packages`}
                 className="about-btn about-btn--outline about-btn--lg"
               >
                 {t(dict, "hero_cta_secondary")}
@@ -352,7 +355,7 @@ export default function AboutPage() {
           <p>{t(dict, "cta_text")}</p>
           <div className="about-cta-row">
             <Link
-              href="/careers"
+              href={`${prefix}/careers`}
               className="about-btn about-btn--secondary about-btn--lg"
             >
               <span>{t(dict, "cta_primary")}</span>
@@ -373,7 +376,7 @@ export default function AboutPage() {
               </svg>
             </Link>
             <Link
-              href="/contact"
+              href={`${prefix}/contact`}
               className="about-btn about-btn--ghost about-btn--lg"
             >
               {t(dict, "cta_secondary")}

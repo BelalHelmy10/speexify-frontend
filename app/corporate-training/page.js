@@ -8,7 +8,7 @@ import api from "@/lib/api";
 import "@/styles/corporate.scss";
 import { getDictionary, t } from "@/app/i18n";
 
-function CorporateTraining({ dict }) {
+function CorporateTraining({ dict, locale }) {
   const formRef = useRef(null);
 
   const [sending, setSending] = useState(false);
@@ -23,6 +23,9 @@ function CorporateTraining({ dict }) {
     message: "",
     agree: false,
   });
+
+  // ✅ prefix ONLY for URLs, not for translations
+  const prefix = locale === "ar" ? "/ar" : "";
 
   const onChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -118,8 +121,9 @@ function CorporateTraining({ dict }) {
                   />
                 </svg>
               </a>
+              {/* ✅ locale-aware packages link */}
               <Link
-                href="/packages?tab=corporate"
+                href={`${prefix}/packages?tab=corporate`}
                 className="spx-corp-btn spx-corp-btn--ghost"
               >
                 {t(dict, "hero_cta_secondary")}
@@ -229,6 +233,8 @@ function CorporateTraining({ dict }) {
                 t(dict, "plan1_b2"),
                 t(dict, "plan1_b3"),
               ]}
+              dict={dict}
+              prefix={prefix}
             />
             <Plan
               img="/images/team.avif"
@@ -241,6 +247,8 @@ function CorporateTraining({ dict }) {
               ]}
               popular
               popularLabel={t(dict, "plan2_badge")}
+              dict={dict}
+              prefix={prefix}
             />
             <Plan
               img="/images/company.avif"
@@ -251,12 +259,15 @@ function CorporateTraining({ dict }) {
                 t(dict, "plan3_b2"),
                 t(dict, "plan3_b3"),
               ]}
+              dict={dict}
+              prefix={prefix}
             />
           </div>
 
           <div className="spx-corp-center">
+            {/* ✅ locale-aware plans link */}
             <Link
-              href="/packages?tab=corporate"
+              href={`${prefix}/packages?tab=corporate`}
               className="spx-corp-btn spx-corp-btn--primary"
             >
               {t(dict, "plans_view_corp")}
@@ -423,7 +434,8 @@ function CorporateTraining({ dict }) {
                 />
                 <span>
                   {t(dict, "check_privacy_prefix")}{" "}
-                  <Link href="/privacy" className="spx-corp-link">
+                  {/* ✅ locale-aware privacy link */}
+                  <Link href={`${prefix}/privacy`} className="spx-corp-link">
                     {t(dict, "check_privacy_link")}
                   </Link>
                   .
@@ -469,8 +481,9 @@ function CorporateTraining({ dict }) {
             >
               {t(dict, "cta_btn_primary")}
             </a>
+            {/* ✅ locale-aware packages link */}
             <Link
-              href="/packages?tab=corporate"
+              href={`${prefix}/packages?tab=corporate`}
               className="spx-corp-btn spx-corp-btn--ghost spx-corp-btn--lg"
             >
               {t(dict, "cta_btn_secondary")}
@@ -482,7 +495,7 @@ function CorporateTraining({ dict }) {
   );
 }
 
-/* helpers (unchanged except text now passed in) */
+/* helpers */
 
 function HeroFeature({ children }) {
   return (
@@ -570,6 +583,8 @@ function Plan({
   bullets = [],
   popular = false,
   popularLabel,
+  dict,
+  prefix,
 }) {
   return (
     <div
@@ -590,13 +605,13 @@ function Plan({
       </ul>
       <div className="spx-corp-plan__actions">
         <a href="#rfp" className="spx-corp-btn spx-corp-btn--primary">
-          {t(getDictionary("en", "corporate"), "btn_request_proposal")}
+          {t(dict, "btn_request_proposal")}
         </a>
         <Link
-          href="/packages?tab=corporate"
+          href={`${prefix}/packages?tab=corporate`}
           className="spx-corp-btn spx-corp-btn--ghost"
         >
-          {t(getDictionary("en", "corporate"), "hero_cta_secondary")}
+          {t(dict, "hero_cta_secondary")}
         </Link>
       </div>
     </div>
@@ -638,5 +653,5 @@ export default function CorporateTrainingPage() {
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = getDictionary(locale, "corporate");
 
-  return <CorporateTraining dict={dict} />;
+  return <CorporateTraining dict={dict} locale={locale} />;
 }

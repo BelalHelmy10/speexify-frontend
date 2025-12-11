@@ -1,8 +1,10 @@
-// web/src/pages/Admin.jsx
+// app/admin/page.js
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import api from "@/lib/api";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import api, { clearCsrfToken } from "@/lib/api";
 import "@/styles/admin.scss";
 import useAuth from "@/hooks/useAuth";
 import { useToast, useConfirm } from "@/components/ToastProvider";
@@ -12,6 +14,9 @@ function Admin() {
   const { toast } = useToast();
   const { confirmModal } = useConfirm();
   const { user, checking } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const router = useRouter();
+
   const [status, setStatus] = useState("");
   const [users, setUsers] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -95,30 +100,9 @@ function Admin() {
     return Math.round(ms / 60000);
   };
 
+  // Load learners (only for admins)
   useEffect(() => {
-    if (form.date && form.startTime && form.endTime) {
-      const start = joinDateTime(form.date, form.startTime);
-      const end = joinDateTime(form.date, form.endTime);
-      const mins = diffMinutes(start, end);
-      setForm((f) =>
-        f.duration === String(mins) ? f : { ...f, duration: String(mins) }
-      );
-    }
-  }, [form.date, form.startTime, form.endTime]);
-
-  useEffect(() => {
-    if (editingId && editForm.date && editForm.startTime && editForm.endTime) {
-      const start = joinDateTime(editForm.date, editForm.startTime);
-      const end = joinDateTime(editForm.date, editForm.endTime);
-      const mins = diffMinutes(start, end);
-      setEditForm((f) =>
-        f.duration === String(mins) ? f : { ...f, duration: String(mins) }
-      );
-    }
-  }, [editingId, editForm.date, editForm.startTime, editForm.endTime]);
-
-  useEffect(() => {
-    if (checking || !user) return;
+    if (checking || !isAdmin) return;
     (async () => {
       try {
         const u = await api.get("/users?role=learner");
@@ -127,10 +111,11 @@ function Admin() {
         setStatus(e.response?.data?.error || "Failed to load learners");
       }
     })();
-  }, [checking, user]);
+  }, [checking, isAdmin]);
 
+  // Load teachers (only for admins)
   useEffect(() => {
-    if (checking || !user) return;
+    if (checking || !isAdmin) return;
     (async () => {
       try {
         const { data } = await api.get("/teachers?active=1");
@@ -139,8 +124,9 @@ function Admin() {
         setStatus(e.response?.data?.error || "Failed to load teachers");
       }
     })();
-  }, [checking, user]);
+  }, [checking, isAdmin]);
 
+  // Debounce search query for sessions
   useEffect(() => {
     const t = setTimeout(() => setQDebounced(q), 300);
     return () => clearTimeout(t);
@@ -171,6 +157,13 @@ function Admin() {
   };
 
   const reloadSessions = async () => {
+    if (!isAdmin) {
+      setSessions([]);
+      setTotal(0);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data } = await api.get(`/admin/sessions?${params}`);
@@ -186,7 +179,30 @@ function Admin() {
 
   useEffect(() => {
     reloadSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
+
+  useEffect(() => {
+    if (form.date && form.startTime && form.endTime) {
+      const start = joinDateTime(form.date, form.startTime);
+      const end = joinDateTime(form.date, form.endTime);
+      const mins = diffMinutes(start, end);
+      setForm((f) =>
+        f.duration === String(mins) ? f : { ...f, duration: String(mins) }
+      );
+    }
+  }, [form.date, form.startTime, form.endTime]);
+
+  useEffect(() => {
+    if (editingId && editForm.date && editForm.startTime && editForm.endTime) {
+      const start = joinDateTime(editForm.date, editForm.startTime);
+      const end = joinDateTime(editForm.date, editForm.endTime);
+      const mins = diffMinutes(start, end);
+      setEditForm((f) =>
+        f.duration === String(mins) ? f : { ...f, duration: String(mins) }
+      );
+    }
+  }, [editingId, editForm.date, editForm.startTime, editForm.endTime]);
 
   const onCreateChange = (e) => {
     const { name, value } = e.target;
@@ -214,10 +230,10 @@ function Admin() {
 
       const { data } = await api.post("/admin/sessions", payload);
 
-      // 🔹 Analytics: session booked (admin)
+      // Analytics: session booked (admin)
       trackEvent("session_booked", {
         source: "admin",
-        sessionId: data?.id, // if backend returns it
+        sessionId: data?.id,
         learnerId: payload.userId,
         teacherId: payload.teacherId || null,
       });
@@ -318,6 +334,12 @@ function Admin() {
   };
 
   async function loadUsersAdmin() {
+    if (!isAdmin) {
+      setUsersAdmin([]);
+      setUsersBusy(false);
+      return;
+    }
+
     setUsersBusy(true);
     try {
       const { data } = await api.get(
@@ -331,11 +353,13 @@ function Admin() {
 
   useEffect(() => {
     loadUsersAdmin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     const t = setTimeout(loadUsersAdmin, 300);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usersQ]);
 
   async function changeRole(u, role) {
@@ -376,8 +400,11 @@ function Admin() {
   async function impersonate(u) {
     try {
       await api.post(`/admin/impersonate/${u.id}`);
+      clearCsrfToken(); // Clear CSRF token since session context changed
       toast.success(`Viewing as ${u.email}`);
       setStatus("");
+      // optional: navigate them somewhere as the impersonated user
+      // router.push("/dashboard");
     } catch (e) {
       toast.error(e.response?.data?.error || "Failed to impersonate");
       setStatus("");
@@ -387,12 +414,79 @@ function Admin() {
   async function stopImpersonate() {
     try {
       await api.post(`/admin/impersonate/stop`);
+      clearCsrfToken(); // Clear CSRF token since session context changed
       toast.success("Back to admin");
       setStatus("");
+      // Force a full reload so useAuth refetches /me as the real admin
+      window.location.href = "/admin";
+      // or: router.refresh();
     } catch (e) {
-      setStatus(e.response?.data?.error || "Failed to stop impersonation");
+      toast.error(e?.response?.data?.error || "Failed to stop impersonation");
+      setStatus("");
     }
   }
+
+  // ─────────────────────────────────────────────
+  // ACCESS CONTROL
+  // ─────────────────────────────────────────────
+
+  if (checking) {
+    return (
+      <div className="adm-admin-modern adm-admin-loading">
+        Checking your permissions…
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="adm-admin-modern adm-admin-denied">
+        <div className="adm-admin-card">
+          <div className="adm-admin-card__header">
+            <div className="adm-admin-card__title-group">
+              <div className="adm-admin-card__icon adm-admin-card__icon--warning">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 2L2 22H22L12 2Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M12 9V14"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="12" cy="17" r="1" fill="currentColor" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="adm-admin-card__title">Access denied</h1>
+                <p className="adm-admin-card__subtitle">
+                  You don&apos;t have permission to view this page.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: "1.5rem" }}>
+            <p style={{ marginBottom: "1rem" }}>
+              If you think this is a mistake, please contact the site
+              administrator.
+            </p>
+            <Link href="/dashboard" className="adm-btn-primary">
+              Go to dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // ADMIN UI
+  // ─────────────────────────────────────────────
 
   return (
     <div className="adm-admin-modern">
@@ -407,6 +501,7 @@ function Admin() {
         </div>
       </div>
 
+      {/* USER MANAGEMENT */}
       <section className="adm-admin-card">
         <div className="adm-admin-card__header">
           <div className="adm-admin-card__title-group">
@@ -609,6 +704,7 @@ function Admin() {
         </div>
       </section>
 
+      {/* CREATE SESSION */}
       <section className="adm-admin-card">
         <div className="adm-admin-card__header">
           <div className="adm-admin-card__title-group">
@@ -794,6 +890,7 @@ function Admin() {
         </form>
       </section>
 
+      {/* ALL SESSIONS */}
       <section className="adm-admin-card">
         <div className="adm-admin-card__header">
           <div className="adm-admin-card__title-group">
@@ -1183,6 +1280,7 @@ function Admin() {
         </div>
       </section>
 
+      {/* TEACHER WORKLOAD */}
       <section className="adm-admin-card">
         <div className="adm-admin-card__header">
           <div className="adm-admin-card__title-group">
