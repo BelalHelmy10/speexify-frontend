@@ -7,15 +7,18 @@ import { getDictionary, t } from "@/app/i18n";
 export default function PdfViewerWithSidebar({
   fileUrl,
   onFatalError,
-  children, // overlay from PrepShell will be rendered over the page
-  onContainerReady, // exposes the page wrapper (annotation container) to parent
+  children,
+  onContainerReady,
   hideControls = false,
   hideSidebar = false,
   locale = "en",
+  // NEW: External nav support
+  externalNav = false,
+  onNavStateChange,
 }) {
-  const mainRef = useRef(null); // scroll container
-  const pdfCanvasRef = useRef(null); // main PDF canvas
-  const pageWrapperRef = useRef(null); // wrapper that matches the PDF page (used for annotations)
+  const mainRef = useRef(null);
+  const pdfCanvasRef = useRef(null);
+  const pageWrapperRef = useRef(null);
 
   const [pdfjs, setPdfjs] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
@@ -26,10 +29,13 @@ export default function PdfViewerWithSidebar({
   const [error, setError] = useState(null);
 
   const dict = getDictionary(locale, "resources");
-
   const renderTaskRef = useRef(null);
 
-  // Expose the page wrapper element to parent (for normalized coords)
+  const MIN_ZOOM = 0.5;
+  const MAX_ZOOM = 3.0;
+  const ZOOM_STEP = 0.25;
+
+  // Expose the page wrapper element to parent
   const updateContainerRef = useCallback(() => {
     if (typeof onContainerReady === "function" && pageWrapperRef.current) {
       onContainerReady(pageWrapperRef.current);
@@ -40,21 +46,45 @@ export default function PdfViewerWithSidebar({
     updateContainerRef();
   }, [updateContainerRef]);
 
+  // NEW: Notify parent of nav state changes
+  useEffect(() => {
+    if (typeof onNavStateChange === "function") {
+      onNavStateChange({
+        currentPage,
+        numPages,
+        zoom,
+        canGoPrev: currentPage > 1,
+        canGoNext: currentPage < numPages,
+        goPrevPage: () => setCurrentPage((p) => Math.max(1, p - 1)),
+        goNextPage: () => setCurrentPage((p) => Math.min(numPages, p + 1)),
+        zoomIn: () =>
+          setZoom((z) =>
+            Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100)
+          ),
+        zoomOut: () =>
+          setZoom((z) =>
+            Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100)
+          ),
+        zoomFit: () => setZoom(1.0),
+        setPage: (page) =>
+          setCurrentPage(Math.max(1, Math.min(numPages, page))),
+      });
+    }
+  }, [currentPage, numPages, zoom, onNavStateChange]);
+
   // Load pdf.js lazily
   useEffect(() => {
+    if (!fileUrl) return;
+
     let cancelled = false;
 
     async function loadPdfJs() {
       try {
-        const pdfjsLib = await import("pdfjs-dist/build/pdf");
+        const mod = await import("pdfjs-dist/build/pdf");
+        const pdfjsLib = mod.default || mod;
 
-        try {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-        } catch (workerErr) {
-          console.warn(
-            "Failed to set PDF.js worker, using main thread:",
-            workerErr
-          );
+        if (typeof window !== "undefined") {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
         }
 
         if (!cancelled) {
@@ -75,7 +105,7 @@ export default function PdfViewerWithSidebar({
     return () => {
       cancelled = true;
     };
-  }, [onFatalError, dict]);
+  }, [fileUrl, onFatalError, dict]);
 
   // Load the PDF document
   useEffect(() => {
@@ -139,7 +169,7 @@ export default function PdfViewerWithSidebar({
     return () => {
       cancelled = true;
     };
-  }, [pdfjs, fileUrl, onFatalError, dict]);
+  }, [pdfjs, fileUrl]);
 
   // Render the current page
   useEffect(() => {
@@ -151,7 +181,6 @@ export default function PdfViewerWithSidebar({
       setLoading(true);
       setError(null);
 
-      // Cancel any previous render
       if (renderTaskRef.current) {
         try {
           renderTaskRef.current.cancel();
@@ -167,19 +196,15 @@ export default function PdfViewerWithSidebar({
         const context = canvas.getContext("2d");
 
         const devicePixelRatio = window.devicePixelRatio || 1;
-
         const viewport = page.getViewport({ scale: zoom });
         const outputScale = devicePixelRatio;
 
-        // Pixel size of the canvas backing store
         canvas.width = viewport.width * outputScale;
         canvas.height = viewport.height * outputScale;
 
-        // CSS size (visual size) – overlay & normalized coords match this
         canvas.style.width = `${viewport.width}px`;
         canvas.style.height = `${viewport.height}px`;
 
-        // Scale drawing for high-DPI displays
         context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
         context.clearRect(0, 0, viewport.width, viewport.height);
 
@@ -195,7 +220,6 @@ export default function PdfViewerWithSidebar({
 
         if (!cancelled) {
           setLoading(false);
-          // Ensure parent gets the up-to-date container size
           updateContainerRef();
         }
       } catch (err) {
@@ -233,13 +257,9 @@ export default function PdfViewerWithSidebar({
     };
   }, [pdfDoc]);
 
-  // Controls
+  // Controls (for internal use only when not using external nav)
   const canGoPrev = currentPage > 1;
   const canGoNext = currentPage < numPages;
-
-  const MIN_ZOOM = 0.5;
-  const MAX_ZOOM = 3.0;
-  const ZOOM_STEP = 0.25;
 
   function goPrevPage() {
     if (!canGoPrev) return;
@@ -292,6 +312,9 @@ export default function PdfViewerWithSidebar({
     );
   }
 
+  // Show internal nav only if not hidden AND not using external nav
+  const showInternalNav = !hideControls && !externalNav && numPages > 0;
+
   return (
     <div className="prep-pdf-layout">
       {/* MAIN AREA */}
@@ -332,70 +355,70 @@ export default function PdfViewerWithSidebar({
               </div>
             )}
           </div>
-
-          {/* Bottom nav */}
-          {!hideControls && numPages > 0 && (
-            <div className="cpv-nav">
-              <div className="cpv-nav__left">
-                <button
-                  type="button"
-                  className="cpv-nav__btn"
-                  onClick={zoomOut}
-                  disabled={zoom <= MIN_ZOOM}
-                  title={t(dict, "resources_pdf_zoom_out")}
-                >
-                  −
-                </button>
-                <div
-                  className="cpv-nav__zoom"
-                  onClick={zoomFit}
-                  style={{ cursor: "pointer" }}
-                  title={t(dict, "resources_pdf_zoom_reset")}
-                >
-                  {Math.round(zoom * 100)}%
-                </div>
-                <button
-                  type="button"
-                  className="cpv-nav__btn"
-                  onClick={zoomIn}
-                  disabled={zoom >= MAX_ZOOM}
-                  title={t(dict, "resources_pdf_zoom_in")}
-                >
-                  +
-                </button>
-              </div>
-
-              <div className="cpv-nav__center">
-                <button
-                  type="button"
-                  className="cpv-nav__btn"
-                  onClick={goPrevPage}
-                  disabled={!canGoPrev}
-                  title={t(dict, "resources_pdf_prev_page")}
-                >
-                  ←
-                </button>
-                <div className="cpv-nav__pages">
-                  {t(dict, "resources_pdf_page_label", {
-                    current: currentPage,
-                    total: numPages || "…",
-                  })}
-                </div>
-                <button
-                  type="button"
-                  className="cpv-nav__btn"
-                  onClick={goNextPage}
-                  disabled={!canGoNext}
-                  title={t(dict, "resources_pdf_next_page")}
-                >
-                  →
-                </button>
-              </div>
-
-              <div className="cpv-nav__right">{/* future controls */}</div>
-            </div>
-          )}
         </div>
+
+        {/* INTERNAL NAV - only shown if not using external nav */}
+        {showInternalNav && (
+          <div className="cpv-nav">
+            <div className="cpv-nav__left">
+              <button
+                type="button"
+                className="cpv-nav__btn"
+                onClick={zoomOut}
+                disabled={zoom <= MIN_ZOOM}
+                title={t(dict, "resources_pdf_zoom_out")}
+              >
+                −
+              </button>
+              <div
+                className="cpv-nav__zoom"
+                onClick={zoomFit}
+                style={{ cursor: "pointer" }}
+                title={t(dict, "resources_pdf_zoom_reset")}
+              >
+                {Math.round(zoom * 100)}%
+              </div>
+              <button
+                type="button"
+                className="cpv-nav__btn"
+                onClick={zoomIn}
+                disabled={zoom >= MAX_ZOOM}
+                title={t(dict, "resources_pdf_zoom_in")}
+              >
+                +
+              </button>
+            </div>
+
+            <div className="cpv-nav__center">
+              <button
+                type="button"
+                className="cpv-nav__btn"
+                onClick={goPrevPage}
+                disabled={!canGoPrev}
+                title={t(dict, "resources_pdf_prev_page")}
+              >
+                ←
+              </button>
+              <div className="cpv-nav__pages">
+                {t(dict, "resources_pdf_page_label", {
+                  current: currentPage,
+                  total: numPages || "…",
+                })}
+              </div>
+              <button
+                type="button"
+                className="cpv-nav__btn"
+                onClick={goNextPage}
+                disabled={!canGoNext}
+                title={t(dict, "resources_pdf_next_page")}
+              >
+                →
+              </button>
+            </div>
+
+            <div className="cpv-nav__right">{/* future controls */}</div>
+          </div>
+        )}
       </div>
 
       {/* SIDEBAR */}
@@ -426,6 +449,90 @@ export default function PdfViewerWithSidebar({
           )}
         </aside>
       )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// EXPORTED: PdfNavBar component for external use
+// ─────────────────────────────────────────────────────────────
+export function PdfNavBar({ navState, locale = "en", className = "" }) {
+  const dict = getDictionary(locale, "resources");
+
+  if (!navState || navState.numPages === 0) return null;
+
+  const {
+    currentPage,
+    numPages,
+    zoom,
+    canGoPrev,
+    canGoNext,
+    goPrevPage,
+    goNextPage,
+    zoomIn,
+    zoomOut,
+    zoomFit,
+  } = navState;
+
+  return (
+    <div className={`cpv-nav cpv-nav--external ${className}`}>
+      <div className="cpv-nav__left">
+        <button
+          type="button"
+          className="cpv-nav__btn"
+          onClick={zoomOut}
+          disabled={zoom <= 0.5}
+          title={t(dict, "resources_pdf_zoom_out")}
+        >
+          −
+        </button>
+        <div
+          className="cpv-nav__zoom"
+          onClick={zoomFit}
+          style={{ cursor: "pointer" }}
+          title={t(dict, "resources_pdf_zoom_reset")}
+        >
+          {Math.round(zoom * 100)}%
+        </div>
+        <button
+          type="button"
+          className="cpv-nav__btn"
+          onClick={zoomIn}
+          disabled={zoom >= 3.0}
+          title={t(dict, "resources_pdf_zoom_in")}
+        >
+          +
+        </button>
+      </div>
+
+      <div className="cpv-nav__center">
+        <button
+          type="button"
+          className="cpv-nav__btn"
+          onClick={goPrevPage}
+          disabled={!canGoPrev}
+          title={t(dict, "resources_pdf_prev_page")}
+        >
+          ←
+        </button>
+        <div className="cpv-nav__pages">
+          {t(dict, "resources_pdf_page_label", {
+            current: currentPage,
+            total: numPages || "…",
+          })}
+        </div>
+        <button
+          type="button"
+          className="cpv-nav__btn"
+          onClick={goNextPage}
+          disabled={!canGoNext}
+          title={t(dict, "resources_pdf_next_page")}
+        >
+          →
+        </button>
+      </div>
+
+      <div className="cpv-nav__right">{/* future controls */}</div>
     </div>
   );
 }

@@ -146,5 +146,23 @@
   "resources_toolbar_clear_all": "مسح الكل",
 
   "resources_viewer_no_preview_title": "لا يوجد معاينة للملف",
-  "resources_viewer_no_preview_text": "ما زال بإمكانك فتح الملف الأصلي من الزر في الجانب الأيسر."
+  "resources_viewer_no_preview_text": "ما زال بإمكانك فتح الملف الأصلي من الزر في الجانب الأيسر.",
+  "resources_prep_notes_label": "ملاحظات التحضير",
+  "resources_prep_notes_hint": "محفوظة محليًا في متصفحك",
+  "resources_prep_notes_placeholder": "اكتب ملاحظات الدرس هنا...",
+  "resources_pdf_engine_error": "حدثت مشكلة في تحميل مُعرِض ملفات PDF.",
+  "resources_pdf_load_generic_error": "تعذّر تحميل ملف الـ PDF.",
+  "resources_pdf_missing_error": "تعذّر العثور على ملف الـ PDF.",
+  "resources_pdf_invalid_error": "يبدو أن ملف الـ PDF غير صالح أو تالف.",
+  "resources_pdf_network_error": "حدث خطأ في الاتصال أثناء تحميل ملف الـ PDF. من فضلك تحقق من الاتصال أو جرّب فتح الملف الأصلي.",
+  "resources_pdf_error_retry": "إعادة المحاولة",
+  "resources_pdf_no_file": "لم يتم توفير رابط ملف لهذا المصدر.",
+  "resources_pdf_loading": "جارٍ تحميل ملف الـ PDF…",
+  "resources_pdf_zoom_out": "تصغير",
+  "resources_pdf_zoom_reset": "إعادة ضبط التكبير",
+  "resources_pdf_zoom_in": "تكبير",
+  "resources_pdf_prev_page": "الصفحة السابقة",
+  "resources_pdf_next_page": "الصفحة التالية",
+  "resources_pdf_sidebar_empty": "لا توجد صفحات لعرضها.",
+  "resources_pdf_page_label": "الصفحة {{current}} من {{total}}"
 }

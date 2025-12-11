@@ -28,53 +28,6 @@ const PEN_COLORS = [
 // HELPER: Detect and convert Google Drive URLs
 // ─────────────────────────────────────────────────────────────
 
-function parseGoogleDriveUrl(url) {
-  if (!url) return null;
-
-  const patterns = [
-    /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
-    /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
-    /drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/,
-    /docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/,
-  ];
-
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return match[1];
-    }
-  }
-
-  return null;
-}
-
-function getDirectPdfUrl(url) {
-  if (!url) return null;
-
-  const fileId = parseGoogleDriveUrl(url);
-  if (fileId) {
-    return `https://drive.google.com/uc?export=download&id=${fileId}`;
-  }
-
-  return url;
-}
-
-function isGoogleDriveUrl(url) {
-  if (!url) return false;
-  return url.includes("drive.google.com") || url.includes("docs.google.com");
-}
-
-function isPdfUrl(url) {
-  if (!url) return false;
-  const lowerUrl = url.toLowerCase();
-  return (
-    lowerUrl.endsWith(".pdf") ||
-    lowerUrl.includes(".pdf?") ||
-    lowerUrl.includes("/pdf") ||
-    isGoogleDriveUrl(url)
-  );
-}
-
 export default function PrepShell({
   resource,
   viewer,
@@ -138,18 +91,17 @@ export default function PrepShell({
   const hasScreenShare = !!isScreenShareActive;
 
   // ─────────────────────────────────────────────────────────────
-  // PDF detection
+  // PDF detection - comprehensive check using multiple signals
   // ─────────────────────────────────────────────────────────────
-  const isPdf = (() => {
-    if (pdfFallback) return false;
-    if (viewer?.type === "pdf") return true;
-    if (isPdfUrl(viewerUrl)) return true;
-    if (resource.fileName?.toLowerCase().endsWith(".pdf")) return true;
-    if (resource.sourceType?.toLowerCase() === "pdf") return true;
-    return false;
-  })();
+  // Use pdf.js unless we've hit a fatal error and decided to fall back
+  // ─────────────────────────────────────────────────────────────
+  // PDF detection – trust viewerHelpers + proxy
+  // ─────────────────────────────────────────────────────────────
+  console.log("DEBUG viewerUrl:", viewerUrl);
+  const isPdf = viewer?.type === "pdf";
 
-  const pdfViewerUrl = isPdf ? getDirectPdfUrl(viewerUrl) : null;
+  // For PDFs we use the viewerUrl coming from getViewerInfo (already proxied)
+  const pdfViewerUrl = isPdf ? viewerUrl : null;
 
   const showSidebar = !hideSidebar && !sidebarCollapsed;
   const showBreadcrumbs = !hideBreadcrumbs;
@@ -1287,13 +1239,18 @@ export default function PrepShell({
                   <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={pdfViewerUrl}
-                      onFatalError={() => setPdfFallback(true)}
+                      onFatalError={(err) => {
+                        console.error("PDF failed to load in pdf.js", err);
+                        // We do NOT fall back to iframe viewer – no embedded Google.
+                      }}
                       onContainerReady={(el) => {
                         // el is the page wrapper that matches the PDF page
                         containerRef.current = el;
                       }}
-                      hideControls={!hideBreadcrumbs ? false : true}
-                      hideSidebar={hideBreadcrumbs}
+                      // Always show PDF controls + page sidebar,
+                      // even if breadcrumbs are hidden.
+                      hideControls={false}
+                      hideSidebar={false}
                       locale={locale}
                     >
                       {renderAnnotationsOverlay()}

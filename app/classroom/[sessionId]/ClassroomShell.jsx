@@ -393,8 +393,8 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
               <PrepShell
                 resource={resource}
                 viewer={viewer}
-                hideSidebar
-                hideBreadcrumbs
+                hideSidebar={true} // hide left info panel in classroom
+                hideBreadcrumbs={true} // hide top breadcrumbs + "Prep room"
                 classroomChannel={classroomChannel}
                 isTeacher={isTeacher}
                 isScreenShareActive={isScreenShareActive}

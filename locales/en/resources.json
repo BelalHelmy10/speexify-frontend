@@ -146,5 +146,25 @@
   "resources_toolbar_clear_all": "Clear all",
 
   "resources_viewer_no_preview_title": "No preview available",
-  "resources_viewer_no_preview_text": "You can still open the original file using the button on the left."
+  "resources_viewer_no_preview_text": "You can still open the original file using the button on the left.",
+
+  "resources_prep_notes_label": "Prep Notes",
+  "resources_prep_notes_hint": "Saved locally in your browser",
+  "resources_prep_notes_placeholder": "Write your lesson notes here...",
+
+  "resources_pdf_engine_error": "There was a problem loading the PDF engine.",
+  "resources_pdf_load_generic_error": "We couldn’t load this PDF file.",
+  "resources_pdf_missing_error": "The PDF file could not be found.",
+  "resources_pdf_invalid_error": "This PDF file appears to be invalid or corrupted.",
+  "resources_pdf_network_error": "Network error while loading the PDF. Please check your connection or try opening the original file.",
+  "resources_pdf_error_retry": "Try again",
+  "resources_pdf_no_file": "No file URL was provided for this resource.",
+  "resources_pdf_loading": "Loading PDF…",
+  "resources_pdf_zoom_out": "Zoom out",
+  "resources_pdf_zoom_reset": "Reset zoom",
+  "resources_pdf_zoom_in": "Zoom in",
+  "resources_pdf_prev_page": "Previous page",
+  "resources_pdf_next_page": "Next page",
+  "resources_pdf_sidebar_empty": "No pages to show.",
+  "resources_pdf_page_label": "Page {{current}} of {{total}}"
 }
