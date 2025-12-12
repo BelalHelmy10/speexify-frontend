@@ -209,20 +209,43 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const subscribe = classroomChannel?.subscribe ?? (() => () => {});
 
   // Learner listens for teacher's resource updates
+  // Sync resource selection between teacher and learner
   useEffect(() => {
     if (!ready) return;
 
     const unsub = subscribe((msg) => {
-      if (msg?.type === "SET_RESOURCE") {
+      if (!msg) return;
+
+      // Teacher tells everyone which resource should be open
+      if (msg.type === "SET_RESOURCE") {
         const { resourceId } = msg;
         if (resourceId && resourcesById[resourceId]) {
           setSelectedResourceId(resourceId);
         }
       }
+
+      // Learner just joined and asked for the current resource
+      if (
+        msg.type === "REQUEST_RESOURCE" &&
+        isTeacher &&
+        selectedResourceId &&
+        resourcesById[selectedResourceId]
+      ) {
+        send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
+      }
     });
 
     return unsub;
-  }, [ready, resourcesById, subscribe]);
+  }, [ready, resourcesById, isTeacher, selectedResourceId, send, subscribe]);
+
+  // When a learner connects, ask the teacher for the current resource
+  useEffect(() => {
+    if (!ready) return;
+    if (isTeacher) return;
+
+    // Fire once when the learner's channel is ready
+    send({ type: "REQUEST_RESOURCE" });
+  }, [ready, isTeacher, send]);
 
   // Teacher auto-selects the first resource when entering
   useEffect(() => {
