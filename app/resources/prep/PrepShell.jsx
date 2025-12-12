@@ -477,17 +477,98 @@ export default function PrepShell({
     const unsubscribe = classroomChannel.subscribe((msg) => {
       if (!msg || msg.resourceId !== resource._id) return;
 
+      // Existing sync
       if (msg.type === "ANNOTATION_STATE") {
         applyRemoteAnnotationState(msg);
-      } else if (msg.type === "POINTER_MOVE") {
+        return;
+      }
+      if (msg.type === "POINTER_MOVE") {
         setPointer({ x: msg.xNorm, y: msg.yNorm });
-      } else if (msg.type === "POINTER_HIDE") {
+        return;
+      }
+      if (msg.type === "POINTER_HIDE") {
         setPointer(null);
+        return;
+      }
+
+      // Only learners should *react* to teacher audio commands
+      if (isTeacher) return;
+
+      const el = audioRef.current;
+      if (!el) return;
+
+      const safeSetTime = (time) => {
+        if (typeof time !== "number") return;
+        try {
+          el.currentTime = Math.max(0, time);
+        } catch (_) {}
+      };
+
+      // Helper: when we switch src (track), wait until the audio element can seek/play
+      const runAfterLoad = (fn) => {
+        const ready = el.readyState >= 1; // HAVE_METADATA
+        if (ready) {
+          fn();
+          return;
+        }
+        const onLoaded = () => {
+          el.removeEventListener("loadedmetadata", onLoaded);
+          fn();
+        };
+        el.addEventListener("loadedmetadata", onLoaded);
+      };
+
+      if (msg.type === "AUDIO_TRACK") {
+        const nextIndex = Number(msg.trackIndex) || 0;
+        setCurrentTrackIndex(nextIndex);
+        setIsAudioPlaying(false);
+
+        runAfterLoad(() => {
+          safeSetTime(msg.time ?? 0);
+
+          if (msg.playing) {
+            el.play().then(
+              () => setIsAudioPlaying(true),
+              () => setIsAudioPlaying(false)
+            );
+          } else {
+            el.pause();
+            setIsAudioPlaying(false);
+          }
+        });
+        return;
+      }
+
+      if (msg.type === "AUDIO_PLAY") {
+        runAfterLoad(() => {
+          safeSetTime(msg.time);
+          el.play().then(
+            () => setIsAudioPlaying(true),
+            () => setIsAudioPlaying(false)
+          );
+        });
+        return;
+      }
+
+      if (msg.type === "AUDIO_PAUSE") {
+        runAfterLoad(() => {
+          safeSetTime(msg.time);
+          el.pause();
+          setIsAudioPlaying(false);
+        });
+        return;
+      }
+
+      if (msg.type === "AUDIO_SEEK") {
+        runAfterLoad(() => {
+          safeSetTime(msg.time);
+        });
+        return;
       }
     });
 
     return unsubscribe;
-  }, [classroomChannel, resource._id]);
+  }, [classroomChannel, resource._id, isTeacher]);
 
   // ─────────────────────────────────────────────────────────────
   // Drawing tools (pen / highlighter / eraser) using normalized coords
@@ -1550,6 +1631,7 @@ export default function PrepShell({
                         value={safeTrackIndex}
                         onChange={(e) => {
                           const nextIndex = Number(e.target.value) || 0;
+
                           setCurrentTrackIndex(nextIndex);
                           setIsAudioPlaying(false);
 
@@ -1557,6 +1639,16 @@ export default function PrepShell({
                           if (el) {
                             el.pause();
                             el.currentTime = 0;
+                          }
+
+                          if (isTeacher && channelReady && sendOnChannel) {
+                            sendOnChannel({
+                              type: "AUDIO_TRACK",
+                              resourceId: resource._id,
+                              trackIndex: nextIndex,
+                              time: 0,
+                              playing: false,
+                            });
                           }
                         }}
                       >
@@ -1575,12 +1667,33 @@ export default function PrepShell({
                       onClick={() => {
                         const el = audioRef.current;
                         if (!el) return;
+
                         if (isAudioPlaying) {
                           el.pause();
                           setIsAudioPlaying(false);
+
+                          if (isTeacher && channelReady && sendOnChannel) {
+                            sendOnChannel({
+                              type: "AUDIO_PAUSE",
+                              resourceId: resource._id,
+                              trackIndex: safeTrackIndex,
+                              time: el.currentTime || 0,
+                            });
+                          }
                         } else {
                           el.play().then(
-                            () => setIsAudioPlaying(true),
+                            () => {
+                              setIsAudioPlaying(true);
+
+                              if (isTeacher && channelReady && sendOnChannel) {
+                                sendOnChannel({
+                                  type: "AUDIO_PLAY",
+                                  resourceId: resource._id,
+                                  trackIndex: safeTrackIndex,
+                                  time: el.currentTime || 0,
+                                });
+                              }
+                            },
                             () => setIsAudioPlaying(false)
                           );
                         }
@@ -1597,9 +1710,31 @@ export default function PrepShell({
                       onClick={() => {
                         const el = audioRef.current;
                         if (!el) return;
+
                         el.currentTime = 0;
+
+                        if (isTeacher && channelReady && sendOnChannel) {
+                          sendOnChannel({
+                            type: "AUDIO_SEEK",
+                            resourceId: resource._id,
+                            trackIndex: safeTrackIndex,
+                            time: 0,
+                          });
+                        }
+
                         el.play().then(
-                          () => setIsAudioPlaying(true),
+                          () => {
+                            setIsAudioPlaying(true);
+
+                            if (isTeacher && channelReady && sendOnChannel) {
+                              sendOnChannel({
+                                type: "AUDIO_PLAY",
+                                resourceId: resource._id,
+                                trackIndex: safeTrackIndex,
+                                time: 0,
+                              });
+                            }
+                          },
                           () => setIsAudioPlaying(false)
                         );
                       }}
