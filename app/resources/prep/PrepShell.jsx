@@ -14,6 +14,7 @@ const TOOL_NOTE = "note";
 const TOOL_POINTER = "pointer";
 const TOOL_ERASER = "eraser";
 const TOOL_TEXT = "text";
+const TOOL_MASK = "mask"; // white block to hide parts of the page
 
 const PEN_COLORS = [
   "#000000",
@@ -63,8 +64,10 @@ export default function PrepShell({
   const [pointer, setPointer] = useState(null); // { x,y } normalized
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
+  const [masks, setMasks] = useState([]); // white blocks to hide content
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
   const [dragState, setDragState] = useState(null); // { kind: "note"|"text", id, offsetX, offsetY }
+  const [maskDrag, setMaskDrag] = useState(null); // { mode: "creating"|"moving", ... }
   const [activeTextId, setActiveTextId] = useState(null);
   const [pdfFallback, setPdfFallback] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -90,17 +93,10 @@ export default function PrepShell({
 
   const hasScreenShare = !!isScreenShareActive;
 
-  // ─────────────────────────────────────────────────────────────
-  // PDF detection - comprehensive check using multiple signals
-  // ─────────────────────────────────────────────────────────────
-  // Use pdf.js unless we've hit a fatal error and decided to fall back
-  // ─────────────────────────────────────────────────────────────
-  // PDF detection – trust viewerHelpers + proxy
-  // ─────────────────────────────────────────────────────────────
+  // PDF detection
   console.log("DEBUG viewerUrl:", viewerUrl);
   const isPdf = viewer?.type === "pdf";
 
-  // For PDFs we use the viewerUrl coming from getViewerInfo (already proxied)
   const pdfViewerUrl = isPdf ? viewerUrl : null;
 
   const showSidebar = !hideSidebar && !sidebarCollapsed;
@@ -240,8 +236,15 @@ export default function PrepShell({
       if (Array.isArray(parsed.textBoxes)) {
         setTextBoxes(parsed.textBoxes);
       }
+      if (Array.isArray(parsed.masks)) {
+        setMasks(parsed.masks);
+      }
       if (Array.isArray(parsed.strokes)) {
-        setStrokes(parsed.strokes);
+        setStrokes(
+          parsed.strokes.filter(
+            (s) => s.tool === TOOL_PEN || s.tool === TOOL_HIGHLIGHTER
+          )
+        );
       } else if (parsed.canvasData && canvasRef.current) {
         // Legacy fallback: old saved raster image
         const img = new Image();
@@ -317,6 +320,7 @@ export default function PrepShell({
         strokes: opts.strokes ?? strokes,
         stickyNotes: opts.stickyNotes ?? stickyNotes,
         textBoxes: opts.textBoxes ?? textBoxes,
+        masks: opts.masks ?? masks,
       };
 
       window.localStorage.setItem(storageKey, JSON.stringify(data));
@@ -340,6 +344,7 @@ export default function PrepShell({
       strokes: custom.strokes ?? strokes,
       stickyNotes: custom.stickyNotes ?? stickyNotes,
       textBoxes: custom.textBoxes ?? textBoxes,
+      masks: custom.masks ?? masks,
     };
 
     try {
@@ -375,12 +380,15 @@ export default function PrepShell({
       strokes: remoteStrokes,
       stickyNotes: remoteNotes,
       textBoxes: remoteText,
+      masks: remoteMasks,
     } = message;
 
     applyingRemoteRef.current = true;
     try {
       if (Array.isArray(remoteNotes)) setStickyNotes(remoteNotes);
       if (Array.isArray(remoteText)) setTextBoxes(remoteText);
+      if (Array.isArray(remoteMasks)) setMasks(remoteMasks);
+
       if (Array.isArray(remoteStrokes)) {
         setStrokes(remoteStrokes);
         // redraw handled by useEffect
@@ -408,6 +416,7 @@ export default function PrepShell({
         strokes: Array.isArray(remoteStrokes) ? remoteStrokes : strokes,
         stickyNotes: Array.isArray(remoteNotes) ? remoteNotes : stickyNotes,
         textBoxes: Array.isArray(remoteText) ? remoteText : textBoxes,
+        masks: Array.isArray(remoteMasks) ? remoteMasks : masks,
       });
     } finally {
       applyingRemoteRef.current = false;
@@ -441,9 +450,63 @@ export default function PrepShell({
   // Drawing tools (pen / highlighter / eraser) using normalized coords
   // ─────────────────────────────────────────────────────────────
 
+  function eraseAtPoint(e) {
+    const p = getNormalizedPoint(e);
+    if (!p) return;
+
+    const R = 0.03; // erase radius in normalized coords
+
+    // Erase strokes near the eraser path
+    setStrokes((prev) => {
+      const next = prev.filter((stroke) => {
+        // We only erase pen & highlighter strokes
+        if (stroke.tool !== TOOL_PEN && stroke.tool !== TOOL_HIGHLIGHTER) {
+          return true;
+        }
+
+        const hit = stroke.points.some((pt) => {
+          const dx = pt.x - p.x;
+          const dy = pt.y - p.y;
+          return dx * dx + dy * dy <= R * R;
+        });
+
+        // If hit, drop this stroke entirely
+        return !hit;
+      });
+
+      saveAnnotations({ strokes: next });
+      broadcastAnnotations({ strokes: next });
+      return next;
+    });
+
+    // Erase masks (white blocks) if eraser passes through them
+    setMasks((prev) => {
+      const next = prev.filter((m) => {
+        const inside =
+          p.x >= m.x &&
+          p.x <= m.x + m.width &&
+          p.y >= m.y &&
+          p.y <= m.y + m.height;
+        return !inside;
+      });
+      if (next !== prev) {
+        saveAnnotations({ masks: next });
+        broadcastAnnotations({ masks: next });
+      }
+      return next;
+    });
+  }
+
   function startDrawing(e) {
-    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
+    // ERASER: start erasing, but do NOT create a stroke
+    if (tool === TOOL_ERASER) {
+      e.preventDefault();
+      setIsDrawing(true);
+      eraseAtPoint(e);
       return;
+    }
+
+    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER) return;
 
     const p = getNormalizedPoint(e);
     if (!p) return;
@@ -507,9 +570,14 @@ export default function PrepShell({
 
     if (!isDrawing) return;
 
-    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER && tool !== TOOL_ERASER)
+    // ERASER: keep erasing as we move
+    if (tool === TOOL_ERASER) {
+      e.preventDefault();
+      eraseAtPoint(e);
       return;
+    }
 
+    if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER) return;
     if (!currentStrokeId) return;
 
     const p = getNormalizedPoint(e);
@@ -525,7 +593,7 @@ export default function PrepShell({
   }
 
   function stopDrawing() {
-    if (!isDrawing && !dragState) return;
+    if (!isDrawing && !dragState && !maskDrag) return;
     setIsDrawing(false);
     setCurrentStrokeId(null);
 
@@ -534,6 +602,12 @@ export default function PrepShell({
 
     if (dragState) {
       setDragState(null);
+      saveAnnotations();
+      broadcastAnnotations();
+    }
+
+    if (maskDrag) {
+      setMaskDrag(null);
       saveAnnotations();
       broadcastAnnotations();
     }
@@ -650,6 +724,64 @@ export default function PrepShell({
   }
 
   // ─────────────────────────────────────────────────────────────
+  // Mask blocks (white rectangles to hide content)
+  // ─────────────────────────────────────────────────────────────
+
+  function startMaskMove(e, mask) {
+    e.stopPropagation();
+    e.preventDefault();
+    const p = getNormalizedPoint(e);
+    if (!p) return;
+
+    setMaskDrag({
+      mode: "moving",
+      id: mask.id,
+      offsetX: p.x - mask.x,
+      offsetY: p.y - mask.y,
+    });
+  }
+
+  function deleteMask(id) {
+    setMasks((prev) => {
+      const next = prev.filter((m) => m.id !== id);
+      saveAnnotations({ masks: next });
+      broadcastAnnotations({ masks: next });
+      return next;
+    });
+  }
+
+  function finalizeCreatingMask(endPoint) {
+    if (!maskDrag || maskDrag.mode !== "creating") return;
+    const startX = maskDrag.startX;
+    const startY = maskDrag.startY;
+    const endX = endPoint?.x ?? maskDrag.currentX;
+    const endY = endPoint?.y ?? maskDrag.currentY;
+
+    const left = Math.min(startX, endX);
+    const top = Math.min(startY, endY);
+    const width = Math.abs(endX - startX);
+    const height = Math.abs(endY - startY);
+
+    const MIN = 0.01; // ignore very tiny rectangles
+    if (width < MIN || height < MIN) return;
+
+    const newMask = {
+      id: `mask_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      x: left,
+      y: top,
+      width,
+      height,
+    };
+
+    setMasks((prev) => {
+      const next = [...prev, newMask];
+      saveAnnotations({ masks: next });
+      broadcastAnnotations({ masks: next });
+      return next;
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // Clear everything
   // ─────────────────────────────────────────────────────────────
 
@@ -662,7 +794,9 @@ export default function PrepShell({
     setStrokes([]);
     setStickyNotes([]);
     setTextBoxes([]);
+    setMasks([]);
     setDragState(null);
+    setMaskDrag(null);
     setActiveTextId(null);
     setPointer(null);
     try {
@@ -673,6 +807,7 @@ export default function PrepShell({
           strokes: [],
           stickyNotes: [],
           textBoxes: [],
+          masks: [],
         })
       );
     } catch (err) {
@@ -683,21 +818,24 @@ export default function PrepShell({
       strokes: [],
       stickyNotes: [],
       textBoxes: [],
+      masks: [],
     });
     broadcastPointer(null);
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Mouse handlers (attached to canvas)
+  // Mouse handlers (attached to canvas/overlay)
   // ─────────────────────────────────────────────────────────────
 
   function handleMouseDown(e) {
     const target = e.target;
     if (
       target.closest &&
-      (target.closest(".prep-sticky-note") || target.closest(".prep-text-box"))
+      (target.closest(".prep-sticky-note") ||
+        target.closest(".prep-text-box") ||
+        target.closest(".prep-mask-block"))
     ) {
-      // Note/text header handles its own drag start
+      // Note/text/mask header handles its own drag start
       return;
     }
 
@@ -708,6 +846,21 @@ export default function PrepShell({
       if (!p) return;
       setPointer(p);
       broadcastPointer(p);
+      return;
+    }
+
+    // White mask block: click-and-drag to create
+    if (tool === TOOL_MASK) {
+      e.preventDefault();
+      const p = getNormalizedPoint(e);
+      if (!p) return;
+      setMaskDrag({
+        mode: "creating",
+        startX: p.x,
+        startY: p.y,
+        currentX: p.x,
+        currentY: p.y,
+      });
       return;
     }
 
@@ -736,6 +889,44 @@ export default function PrepShell({
   }
 
   function handleMouseMove(e) {
+    // Creating or moving a mask
+    if (maskDrag) {
+      e.preventDefault();
+      const p = getNormalizedPoint(e);
+      if (!p) return;
+
+      if (maskDrag.mode === "creating") {
+        setMaskDrag((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentX: p.x,
+                currentY: p.y,
+              }
+            : prev
+        );
+      } else if (maskDrag.mode === "moving") {
+        const { id, offsetX, offsetY } = maskDrag;
+        const newX = p.x - offsetX;
+        const newY = p.y - offsetY;
+
+        setMasks((prev) => {
+          const next = prev.map((m) => {
+            if (m.id !== id) return m;
+            const clampedX = Math.min(1 - m.width, Math.max(0, newX));
+            const clampedY = Math.min(1 - m.height, Math.max(0, newY));
+            return { ...m, x: clampedX, y: clampedY };
+          });
+          saveAnnotations({ masks: next });
+          broadcastAnnotations({ masks: next });
+          return next;
+        });
+      }
+
+      return;
+    }
+
+    // Existing drag logic (notes / text + drawing)
     if (dragState) {
       e.preventDefault();
       draw(e);
@@ -752,7 +943,12 @@ export default function PrepShell({
     }
   }
 
-  function handleMouseUp() {
+  function handleMouseUp(e) {
+    if (maskDrag && maskDrag.mode === "creating") {
+      const p = e ? getNormalizedPoint(e) : null;
+      finalizeCreatingMask(p || null);
+    }
+
     stopDrawing();
   }
 
@@ -775,15 +971,40 @@ export default function PrepShell({
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Render overlay (canvas + SVG + notes + text + pointer)
+  // Render overlay (canvas + SVG + notes + text + masks + pointer)
   // ─────────────────────────────────────────────────────────────
 
   function renderAnnotationsOverlay() {
     // Enable overlay only when interaction is needed
     const needsInteraction =
-      tool !== TOOL_NONE || stickyNotes.length > 0 || textBoxes.length > 0;
+      tool !== TOOL_NONE ||
+      stickyNotes.length > 0 ||
+      textBoxes.length > 0 ||
+      masks.length > 0;
     const overlayPointerEvents = needsInteraction ? "auto" : "none";
     const overlayTouchAction = needsInteraction ? "none" : "auto";
+
+    // Live preview for mask creation
+    let maskPreview = null;
+    if (maskDrag && maskDrag.mode === "creating") {
+      const startX = maskDrag.startX;
+      const startY = maskDrag.startY;
+      const endX =
+        typeof maskDrag.currentX === "number"
+          ? maskDrag.currentX
+          : maskDrag.startX;
+      const endY =
+        typeof maskDrag.currentY === "number"
+          ? maskDrag.currentY
+          : maskDrag.startY;
+
+      const left = Math.min(startX, endX);
+      const top = Math.min(startY, endY);
+      const width = Math.abs(endX - startX);
+      const height = Math.abs(endY - startY);
+
+      maskPreview = { left, top, width, height };
+    }
 
     return (
       <div
@@ -951,6 +1172,42 @@ export default function PrepShell({
             />
           </div>
         ))}
+
+        {/* Saved mask blocks (white rectangles that hide content) */}
+        {masks.map((mask) => (
+          <div
+            key={mask.id}
+            className="prep-mask-block"
+            style={{
+              position: "absolute",
+              left: `${mask.x * 100}%`,
+              top: `${mask.y * 100}%`,
+              width: `${mask.width * 100}%`,
+              height: `${mask.height * 100}%`,
+              backgroundColor: "#ffffff",
+              boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
+              pointerEvents: "auto",
+            }}
+            onMouseDown={(e) => startMaskMove(e, mask)}
+          />
+        ))}
+
+        {/* Live mask preview while dragging */}
+        {maskPreview && (
+          <div
+            className="prep-mask-block prep-mask-block--preview"
+            style={{
+              position: "absolute",
+              left: `${maskPreview.left * 100}%`,
+              top: `${maskPreview.top * 100}%`,
+              width: `${maskPreview.width * 100}%`,
+              height: `${maskPreview.height * 100}%`,
+              backgroundColor: "rgba(255,255,255,0.85)",
+              boxShadow: "0 0 0 1px rgba(0,0,0,0.2)",
+              pointerEvents: "none", // don't block drag
+            }}
+          />
+        )}
 
         {/* Pointer */}
         {pointer && (
@@ -1127,7 +1384,7 @@ export default function PrepShell({
                         : t(dict, "resources_toolbar_sidebar_hide")
                     }
                   >
-                    {sidebarCollapsed ? "📋" : "📋"}
+                    {"📋"}
                     <span>
                       {sidebarCollapsed
                         ? t(dict, "resources_toolbar_sidebar_show")
@@ -1157,6 +1414,16 @@ export default function PrepShell({
                   onClick={() => setToolSafe(TOOL_HIGHLIGHTER)}
                 >
                   ✨ <span>{t(dict, "resources_toolbar_highlighter")}</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    "prep-annotate-toolbar__btn" +
+                    (tool === TOOL_MASK ? " is-active" : "")
+                  }
+                  onClick={() => setToolSafe(TOOL_MASK)}
+                >
+                  ⬜ <span>Hide area</span>
                 </button>
                 <button
                   type="button"
