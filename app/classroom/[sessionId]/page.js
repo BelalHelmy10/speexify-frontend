@@ -45,21 +45,39 @@ const CLASSROOM_RESOURCES_QUERY = `
             order
           }
         },
-        "resources": *[_type == "resource" && references(^._id)] | order(order asc) {
-          _id,
-          title,
-          description,
-          kind,
-          cecrLevel,
-          tags,
-          sourceType,
-          "fileUrl": file.asset->url,
-          "fileName": file.asset->originalFilename,
-          "audioUrl": audio.asset->url,
-          externalUrl,
-          googleSlidesUrl,
-          youtubeUrl
-        }
+"resources": *[_type == "resource" && references(^._id)] | order(order asc) {
+  _id,
+  title,
+  description,
+  kind,
+  cecrLevel,
+  tags,
+  sourceType,
+
+  // PDF / File
+  "fileUrl": file.asset->url,
+  "fileName": file.asset->originalFilename,
+
+  // 🔥 NEW — single audio support
+  "audioUrl": audio.asset->url,
+
+  // 🔥 NEW — multiple audio tracks support
+  audioTracks[] {
+    _key,
+    label,
+    file {
+      asset-> {
+        url,
+        originalFilename
+      }
+    }
+  },
+
+  externalUrl,
+  googleSlidesUrl,
+  youtubeUrl
+}
+
 
       }
     }

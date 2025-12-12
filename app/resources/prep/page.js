@@ -22,6 +22,10 @@ const RESOURCE_WITH_CONTEXT_QUERY = `
   "fileUrl": file.asset->url,
   "fileName": file.asset->originalFilename,
   "audioUrl": audio.asset->url,
+  "audioTracks": audioTracks[]{
+    label,
+    "url": file.asset->url
+  },
   externalUrl,
   googleSlidesUrl,
   youtubeUrl,

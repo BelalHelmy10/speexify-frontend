@@ -84,6 +84,7 @@ export default function PrepShell({
 
   const applyingRemoteRef = useRef(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -1252,7 +1253,52 @@ export default function PrepShell({
   // Viewer activity flag
   // ─────────────────────────────────────────────────────────────
 
+  // ─────────────────────────────────────────────────────────────
+  // Viewer activity flag
+  // ─────────────────────────────────────────────────────────────
+
   const viewerIsActive = hasScreenShare || !!viewerUrl;
+
+  // ─────────────────────────────────────────────────────────────
+  // Audio tracks (single + multiple)
+  // ─────────────────────────────────────────────────────────────
+
+  const audioTracks = [];
+
+  // New multi-track field from Sanity (optional)
+  if (Array.isArray(resource.audioTracks)) {
+    resource.audioTracks.forEach((track, index) => {
+      if (!track) return;
+
+      const url =
+        track.fileUrl ||
+        track.url ||
+        (track.file && track.file.asset && track.file.asset.url);
+
+      if (!url) return;
+
+      audioTracks.push({
+        id: track._key || `track_${index}`,
+        label: track.label || `Track ${index + 1}`,
+        url,
+      });
+    });
+  }
+
+  // Old single audio field (kept for compatibility / default)
+  if (resource.audioUrl) {
+    audioTracks.unshift({
+      id: "main-audio",
+      label: "Main audio",
+      url: resource.audioUrl,
+    });
+  }
+
+  const hasAudio = audioTracks.length > 0;
+  const safeTrackIndex = hasAudio
+    ? Math.min(currentTrackIndex, Math.max(audioTracks.length - 1, 0))
+    : 0;
+  const currentTrack = hasAudio ? audioTracks[safeTrackIndex] : null;
 
   // ─────────────────────────────────────────────────────────────
   // RENDER
@@ -1413,12 +1459,39 @@ export default function PrepShell({
 
                 <div className="prep-annotate-toolbar__separator" />
 
-                {resource.audioUrl && (
-                  <>
+                {hasAudio && (
+                  <div className="prep-audio-controls">
+                    {audioTracks.length > 1 && (
+                      <select
+                        className="prep-annotate-toolbar__audio-select"
+                        value={safeTrackIndex}
+                        onChange={(e) => {
+                          const nextIndex = Number(e.target.value) || 0;
+                          setCurrentTrackIndex(nextIndex);
+                          setIsAudioPlaying(false);
+
+                          const el = audioRef.current;
+                          if (el) {
+                            el.pause();
+                            el.currentTime = 0;
+                          }
+                        }}
+                      >
+                        {audioTracks.map((track, idx) => (
+                          <option key={track.id || idx} value={idx}>
+                            {track.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
                     {/* Play / Pause toggle */}
                     <button
                       type="button"
-                      className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--audio"
+                      className={
+                        "prep-annotate-toolbar__btn prep-audio-controls__btn" +
+                        (isAudioPlaying ? " is-active" : "")
+                      }
                       onClick={() => {
                         const el = audioRef.current;
                         if (!el) return;
@@ -1440,7 +1513,7 @@ export default function PrepShell({
                     {/* Restart from beginning */}
                     <button
                       type="button"
-                      className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--audio-restart"
+                      className="prep-annotate-toolbar__btn prep-audio-controls__btn"
                       onClick={() => {
                         const el = audioRef.current;
                         if (!el) return;
@@ -1458,10 +1531,10 @@ export default function PrepShell({
                     {/* hidden actual audio element */}
                     <audio
                       ref={audioRef}
-                      src={resource.audioUrl}
+                      src={currentTrack ? currentTrack.url : undefined}
                       style={{ display: "none" }}
                     />
-                  </>
+                  </div>
                 )}
 
                 <button
