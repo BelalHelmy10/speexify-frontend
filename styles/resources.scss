@@ -2122,6 +2122,7 @@ body.classroom-active {
     transition: color $cr-transition-fast;
     &:hover {
       color: $cr-accent-primary;
+      text-decoration: none;
     }
   }
   &__separator {
