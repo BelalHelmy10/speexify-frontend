@@ -72,6 +72,9 @@ export default function PrepShell({
   const [pdfFallback, setPdfFallback] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  const [toolMenuOpen, setToolMenuOpen] = useState(false);
+  const [colorMenuOpen, setColorMenuOpen] = useState(false);
+
   // Vector strokes using normalized coords
   // stroke: { id, tool, color, points: [{ x,y } in [0,1]] }
   const [strokes, setStrokes] = useState([]);
@@ -81,6 +84,8 @@ export default function PrepShell({
   const containerRef = useRef(null); // element that matches the page (for normalized coords)
   const screenVideoRef = useRef(null);
   const audioRef = useRef(null);
+  const toolMenuRef = useRef(null);
+  const colorMenuRef = useRef(null);
 
   const applyingRemoteRef = useRef(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -136,6 +141,26 @@ export default function PrepShell({
       audioEl.removeEventListener("pause", handleEnded);
     };
   }, [resource._id]);
+
+  // ─────────────────────────────────────────────────────────────
+  // Close tool / color menus when clicking outside
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (toolMenuRef.current && !toolMenuRef.current.contains(e.target)) {
+        setToolMenuOpen(false);
+      }
+
+      if (colorMenuRef.current && !colorMenuRef.current.contains(e.target)) {
+        setColorMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [toolMenuRef, colorMenuRef]);
 
   // ─────────────────────────────────────────────────────────────
   // Utility: normalized point relative to containerRef
@@ -602,11 +627,24 @@ export default function PrepShell({
     if (!p) return;
 
     setStrokes((prev) =>
-      prev.map((stroke) =>
-        stroke.id === currentStrokeId
-          ? { ...stroke, points: [...stroke.points, p] }
-          : stroke
-      )
+      prev.map((stroke) => {
+        if (stroke.id !== currentStrokeId) return stroke;
+
+        // 🔒 Highlighter = lock Y to first point
+        if (stroke.tool === TOOL_HIGHLIGHTER && stroke.points.length > 0) {
+          const firstY = stroke.points[0].y;
+          return {
+            ...stroke,
+            points: [...stroke.points, { x: p.x, y: firstY }],
+          };
+        }
+
+        // ✍️ Pen = free drawing
+        return {
+          ...stroke,
+          points: [...stroke.points, p],
+        };
+      })
     );
   }
 
@@ -993,12 +1031,17 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
 
   function renderAnnotationsOverlay() {
+    // If a menu is open, DISABLE overlay interaction completely
+    const menusOpen = toolMenuOpen || colorMenuOpen;
+
     // Enable overlay only when interaction is needed
     const needsInteraction =
-      tool !== TOOL_NONE ||
-      stickyNotes.length > 0 ||
-      textBoxes.length > 0 ||
-      masks.length > 0;
+      !menusOpen &&
+      (tool !== TOOL_NONE ||
+        stickyNotes.length > 0 ||
+        textBoxes.length > 0 ||
+        masks.length > 0);
+
     const overlayPointerEvents = needsInteraction ? "auto" : "none";
     const overlayTouchAction = needsInteraction ? "none" : "auto";
 
@@ -1047,8 +1090,8 @@ export default function PrepShell({
           style={{
             width: "100%",
             height: "100%",
-            pointerEvents: tool === TOOL_NONE ? "none" : "auto",
-            touchAction: tool === TOOL_NONE ? "auto" : "none",
+            pointerEvents: needsInteraction ? "auto" : "none",
+            touchAction: needsInteraction ? "none" : "auto",
           }}
           onMouseDown={handleMouseDown}
         />
@@ -1076,7 +1119,7 @@ export default function PrepShell({
                   ? "rgba(255,255,0,0.5)"
                   : stroke.color || "#111"
               }
-              strokeWidth={stroke.tool === TOOL_HIGHLIGHTER ? 0.04 : 0.01}
+              strokeWidth={stroke.tool === TOOL_HIGHLIGHTER ? 0.014 : 0.005}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -1301,6 +1344,44 @@ export default function PrepShell({
   const currentTrack = hasAudio ? audioTracks[safeTrackIndex] : null;
 
   // ─────────────────────────────────────────────────────────────
+  // Current tool meta (for compact dropdown button)
+  // ─────────────────────────────────────────────────────────────
+
+  const currentToolIcon =
+    tool === TOOL_PEN
+      ? "🖊️"
+      : tool === TOOL_HIGHLIGHTER
+      ? "✨"
+      : tool === TOOL_MASK
+      ? "⬜"
+      : tool === TOOL_TEXT
+      ? "✍️"
+      : tool === TOOL_ERASER
+      ? "🧽"
+      : tool === TOOL_NOTE
+      ? "🗒️"
+      : tool === TOOL_POINTER
+      ? "➤"
+      : "🛠️";
+
+  const currentToolLabel =
+    tool === TOOL_PEN
+      ? t(dict, "resources_toolbar_pen")
+      : tool === TOOL_HIGHLIGHTER
+      ? t(dict, "resources_toolbar_highlighter")
+      : tool === TOOL_MASK
+      ? "Hide area"
+      : tool === TOOL_TEXT
+      ? t(dict, "resources_toolbar_text")
+      : tool === TOOL_ERASER
+      ? t(dict, "resources_toolbar_eraser")
+      : tool === TOOL_NOTE
+      ? t(dict, "resources_toolbar_note")
+      : tool === TOOL_POINTER
+      ? t(dict, "resources_toolbar_pointer")
+      : t(dict, "resources_toolbar_pen");
+
+  // ─────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────
 
@@ -1431,8 +1512,10 @@ export default function PrepShell({
           {viewerIsActive ? (
             <>
               {/* Toolbar */}
-              {/* Toolbar */}
-              <div className="prep-annotate-toolbar">
+              <div
+                className="prep-annotate-toolbar"
+                style={{ position: "relative", zIndex: 50 }}
+              >
                 {/* Sidebar toggle */}
                 {!hideSidebar && (
                   <button
@@ -1460,7 +1543,7 @@ export default function PrepShell({
                 <div className="prep-annotate-toolbar__separator" />
 
                 {hasAudio && (
-                  <div className="prep-audio-controls">
+                  <>
                     {audioTracks.length > 1 && (
                       <select
                         className="prep-annotate-toolbar__audio-select"
@@ -1488,10 +1571,7 @@ export default function PrepShell({
                     {/* Play / Pause toggle */}
                     <button
                       type="button"
-                      className={
-                        "prep-annotate-toolbar__btn prep-audio-controls__btn" +
-                        (isAudioPlaying ? " is-active" : "")
-                      }
+                      className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--audio"
                       onClick={() => {
                         const el = audioRef.current;
                         if (!el) return;
@@ -1513,7 +1593,7 @@ export default function PrepShell({
                     {/* Restart from beginning */}
                     <button
                       type="button"
-                      className="prep-annotate-toolbar__btn prep-audio-controls__btn"
+                      className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--audio-restart"
                       onClick={() => {
                         const el = audioRef.current;
                         if (!el) return;
@@ -1534,79 +1614,179 @@ export default function PrepShell({
                       src={currentTrack ? currentTrack.url : undefined}
                       style={{ display: "none" }}
                     />
-                  </div>
+                  </>
                 )}
+                {/* TOOL DROPDOWN (compact) */}
+                <div
+                  className="prep-annotate-toolbar__dropdown"
+                  ref={toolMenuRef}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <button
+                    type="button"
+                    className={
+                      "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--primary" +
+                      (tool !== TOOL_NONE ? " is-active" : "")
+                    }
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setToolMenuOpen((v) => !v);
+                      setColorMenuOpen(false);
+                    }}
+                  >
+                    <span className="prep-annotate-toolbar__dropdown-icon">
+                      {currentToolIcon}
+                    </span>
+                    <span>{currentToolLabel}</span>
+                    <span className="prep-annotate-toolbar__dropdown-caret">
+                      ▾
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  className={
-                    "prep-annotate-toolbar__btn" +
-                    (tool === TOOL_PEN ? " is-active" : "")
-                  }
-                  onClick={() => setToolSafe(TOOL_PEN)}
-                >
-                  🖊️ <span>{t(dict, "resources_toolbar_pen")}</span>
-                </button>
-                <button
-                  type="button"
-                  className={
-                    "prep-annotate-toolbar__btn" +
-                    (tool === TOOL_HIGHLIGHTER ? " is-active" : "")
-                  }
-                  onClick={() => setToolSafe(TOOL_HIGHLIGHTER)}
-                >
-                  ✨ <span>{t(dict, "resources_toolbar_highlighter")}</span>
-                </button>
-                <button
-                  type="button"
-                  className={
-                    "prep-annotate-toolbar__btn" +
-                    (tool === TOOL_MASK ? " is-active" : "")
-                  }
-                  onClick={() => setToolSafe(TOOL_MASK)}
-                >
-                  ⬜ <span>Hide area</span>
-                </button>
-                <button
-                  type="button"
-                  className={
-                    "prep-annotate-toolbar__btn" +
-                    (tool === TOOL_TEXT ? " is-active" : "")
-                  }
-                  onClick={() => setToolSafe(TOOL_TEXT)}
-                >
-                  ✍️ <span>{t(dict, "resources_toolbar_text")}</span>
-                </button>
-                <button
-                  type="button"
-                  className={
-                    "prep-annotate-toolbar__btn" +
-                    (tool === TOOL_ERASER ? " is-active" : "")
-                  }
-                  onClick={() => setToolSafe(TOOL_ERASER)}
-                >
-                  🧽 <span>{t(dict, "resources_toolbar_eraser")}</span>
-                </button>
-                <button
-                  type="button"
-                  className={
-                    "prep-annotate-toolbar__btn" +
-                    (tool === TOOL_NOTE ? " is-active" : "")
-                  }
-                  onClick={() => setToolSafe(TOOL_NOTE)}
-                >
-                  🗒️ <span>{t(dict, "resources_toolbar_note")}</span>
-                </button>
-                <button
-                  type="button"
-                  className={
-                    "prep-annotate-toolbar__btn" +
-                    (tool === TOOL_POINTER ? " is-active" : "")
-                  }
-                  onClick={() => setToolSafe(TOOL_POINTER)}
-                >
-                  ➤ <span>{t(dict, "resources_toolbar_pointer")}</span>
-                </button>
+                  {toolMenuOpen && (
+                    <div
+                      className="prep-annotate-toolbar__dropdown-menu"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className={
+                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
+                          (tool === TOOL_NONE ? " is-active" : "")
+                        }
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setToolSafe(TOOL_NONE);
+                          setToolMenuOpen(false);
+                        }}
+                      >
+                        🚫 <span>Turn off tools</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={
+                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
+                          (tool === TOOL_PEN ? " is-active" : "")
+                        }
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setToolSafe(TOOL_PEN);
+                          setToolMenuOpen(false);
+                        }}
+                      >
+                        🖊️ <span>{t(dict, "resources_toolbar_pen")}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={
+                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
+                          (tool === TOOL_HIGHLIGHTER ? " is-active" : "")
+                        }
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setToolSafe(TOOL_HIGHLIGHTER);
+                          setToolMenuOpen(false);
+                        }}
+                      >
+                        ✨{" "}
+                        <span>{t(dict, "resources_toolbar_highlighter")}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={
+                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
+                          (tool === TOOL_MASK ? " is-active" : "")
+                        }
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setToolSafe(TOOL_MASK);
+                          setToolMenuOpen(false);
+                        }}
+                      >
+                        ⬜ <span>Hide area</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={
+                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
+                          (tool === TOOL_TEXT ? " is-active" : "")
+                        }
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setToolSafe(TOOL_TEXT);
+                          setToolMenuOpen(false);
+                        }}
+                      >
+                        ✍️ <span>{t(dict, "resources_toolbar_text")}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={
+                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
+                          (tool === TOOL_ERASER ? " is-active" : "")
+                        }
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setToolSafe(TOOL_ERASER);
+                          setToolMenuOpen(false);
+                        }}
+                      >
+                        🧽 <span>{t(dict, "resources_toolbar_eraser")}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={
+                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
+                          (tool === TOOL_NOTE ? " is-active" : "")
+                        }
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setToolSafe(TOOL_NOTE);
+                          setToolMenuOpen(false);
+                        }}
+                      >
+                        🗒️ <span>{t(dict, "resources_toolbar_note")}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={
+                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
+                          (tool === TOOL_POINTER ? " is-active" : "")
+                        }
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setToolSafe(TOOL_POINTER);
+                          setToolMenuOpen(false);
+                        }}
+                      >
+                        ➤ <span>{t(dict, "resources_toolbar_pointer")}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="button"
                   className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--danger"
@@ -1615,19 +1795,58 @@ export default function PrepShell({
                   🗑️ <span>{t(dict, "resources_toolbar_clear_all")}</span>
                 </button>
 
+                {/* COLOR PICKER DROPDOWN */}
                 <div className="prep-annotate-colors">
-                  {PEN_COLORS.map((c) => (
+                  <div
+                    className="prep-annotate-colors__dropdown"
+                    ref={colorMenuRef}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
                     <button
-                      key={c}
                       type="button"
                       className={
-                        "prep-annotate-color" +
-                        (penColor === c ? " is-active" : "")
+                        "prep-annotate-color prep-annotate-color--picker"
                       }
-                      style={{ backgroundColor: c }}
-                      onClick={() => setPenColor(c)}
+                      style={{ backgroundColor: penColor }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setColorMenuOpen((v) => !v);
+                        setToolMenuOpen(false);
+                      }}
                     />
-                  ))}
+
+                    {colorMenuOpen && (
+                      <div
+                        className="prep-annotate-colors__menu"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        {PEN_COLORS.map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            className={
+                              "prep-annotate-color" +
+                              (penColor === c ? " is-active" : "")
+                            }
+                            style={{ backgroundColor: c }}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setPenColor(c);
+                              setColorMenuOpen(false);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

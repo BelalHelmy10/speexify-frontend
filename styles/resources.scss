@@ -1277,7 +1277,7 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   background: $cr-bg-secondary;
   border-bottom: 1px solid $cr-border-subtle;
   flex-wrap: wrap;
@@ -1358,17 +1358,24 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 2px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   cursor: pointer;
-  transition: all $cr-transition-fast;
+  transition: transform $cr-transition-fast, box-shadow $cr-transition-fast;
   flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+
   &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px) scale(1.06);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+    z-index: 2;
   }
+
   &.is-active {
-    border-color: $cr-accent-primary;
-    box-shadow: 0 0 0 2px rgba($cr-accent-primary, 0.3);
+    border-color: rgba($cr-accent-primary, 0.9);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32),
+      0 0 0 2px rgba($cr-accent-primary, 0.35);
+    z-index: 3;
   }
 }
 
@@ -1668,7 +1675,7 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   background: $cr-bg-secondary;
   border-top: 1px solid $cr-border-subtle;
   flex-shrink: 0;
@@ -3332,4 +3339,121 @@ body.classroom-active {
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+}
+
+/* ─── Compact tool & color dropdowns ─────────────────────────────────────── */
+
+.prep-annotate-toolbar__dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.prep-annotate-toolbar__btn--primary {
+  background: $cr-bg-tertiary;
+  border-color: $cr-border-default;
+}
+
+.prep-annotate-toolbar__dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prep-annotate-toolbar__dropdown-caret {
+  font-size: 0.6rem;
+  color: $cr-text-muted;
+}
+
+.prep-annotate-toolbar__dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  min-width: 190px;
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-lg;
+  border: 1px solid $cr-border-default;
+  box-shadow: $cr-shadow-md;
+  z-index: 40;
+}
+
+.prep-annotate-toolbar__btn--dropdown {
+  width: 100%;
+  justify-content: flex-start;
+  background: transparent;
+  border-radius: $cr-radius-md;
+  border-color: transparent;
+
+  &:hover {
+    background: $cr-bg-tertiary;
+    border-color: $cr-border-default;
+  }
+}
+
+/* Color dropdown */
+
+.prep-annotate-colors {
+  position: relative;
+  margin-left: auto;
+  padding-left: 0.5rem;
+  border-left: 1px solid $cr-border-subtle;
+  display: flex;
+  align-items: center;
+}
+
+.prep-annotate-colors__dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.prep-annotate-color--picker {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 2px solid $cr-border-default;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  position: relative;
+}
+
+/* stacked illusion */
+.prep-annotate-color--picker::before,
+.prep-annotate-color--picker::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.prep-annotate-color--picker::before {
+  transform: translate(-4px, -3px);
+  opacity: 0.45;
+}
+
+.prep-annotate-color--picker::after {
+  transform: translate(-2px, -2px);
+  opacity: 0.7;
+}
+
+.prep-annotate-colors__menu {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 10px); /* OPEN TO THE LEFT */
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: -6px; /* subtle stacking overlap */
+  padding: 0.45rem 0.6rem;
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-lg;
+  border: 1px solid $cr-border-default;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  z-index: 50;
 }
