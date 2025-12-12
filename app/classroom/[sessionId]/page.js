@@ -55,10 +55,12 @@ const CLASSROOM_RESOURCES_QUERY = `
           sourceType,
           "fileUrl": file.asset->url,
           "fileName": file.asset->originalFilename,
+          "audioUrl": audio.asset->url,
           externalUrl,
           googleSlidesUrl,
           youtubeUrl
         }
+
       }
     }
   }

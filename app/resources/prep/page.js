@@ -21,6 +21,7 @@ const RESOURCE_WITH_CONTEXT_QUERY = `
   order,
   "fileUrl": file.asset->url,
   "fileName": file.asset->originalFilename,
+  "audioUrl": audio.asset->url,
   externalUrl,
   googleSlidesUrl,
   youtubeUrl,

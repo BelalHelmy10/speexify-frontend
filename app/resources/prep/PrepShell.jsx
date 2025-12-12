@@ -80,8 +80,10 @@ export default function PrepShell({
   const canvasRef = useRef(null);
   const containerRef = useRef(null); // element that matches the page (for normalized coords)
   const screenVideoRef = useRef(null);
+  const audioRef = useRef(null);
 
   const applyingRemoteRef = useRef(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
   const storageKey = `prep_annotations_${resource._id}`;
 
@@ -118,6 +120,21 @@ export default function PrepShell({
     const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
     if (el) el.focus();
   }, [activeTextId]);
+
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl) return;
+
+    const handleEnded = () => setIsAudioPlaying(false);
+
+    audioEl.addEventListener("ended", handleEnded);
+    audioEl.addEventListener("pause", handleEnded);
+
+    return () => {
+      audioEl.removeEventListener("ended", handleEnded);
+      audioEl.removeEventListener("pause", handleEnded);
+    };
+  }, [resource._id]);
 
   // ─────────────────────────────────────────────────────────────
   // Utility: normalized point relative to containerRef
@@ -1368,6 +1385,7 @@ export default function PrepShell({
           {viewerIsActive ? (
             <>
               {/* Toolbar */}
+              {/* Toolbar */}
               <div className="prep-annotate-toolbar">
                 {/* Sidebar toggle */}
                 {!hideSidebar && (
@@ -1394,6 +1412,57 @@ export default function PrepShell({
                 )}
 
                 <div className="prep-annotate-toolbar__separator" />
+
+                {resource.audioUrl && (
+                  <>
+                    {/* Play / Pause toggle */}
+                    <button
+                      type="button"
+                      className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--audio"
+                      onClick={() => {
+                        const el = audioRef.current;
+                        if (!el) return;
+                        if (isAudioPlaying) {
+                          el.pause();
+                          setIsAudioPlaying(false);
+                        } else {
+                          el.play().then(
+                            () => setIsAudioPlaying(true),
+                            () => setIsAudioPlaying(false)
+                          );
+                        }
+                      }}
+                      aria-label={isAudioPlaying ? "Pause audio" : "Play audio"}
+                    >
+                      {isAudioPlaying ? "⏸" : "▶️"}
+                    </button>
+
+                    {/* Restart from beginning */}
+                    <button
+                      type="button"
+                      className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--audio-restart"
+                      onClick={() => {
+                        const el = audioRef.current;
+                        if (!el) return;
+                        el.currentTime = 0;
+                        el.play().then(
+                          () => setIsAudioPlaying(true),
+                          () => setIsAudioPlaying(false)
+                        );
+                      }}
+                      aria-label="Play from beginning"
+                    >
+                      ⏮
+                    </button>
+
+                    {/* hidden actual audio element */}
+                    <audio
+                      ref={audioRef}
+                      src={resource.audioUrl}
+                      style={{ display: "none" }}
+                    />
+                  </>
+                )}
 
                 <button
                   type="button"

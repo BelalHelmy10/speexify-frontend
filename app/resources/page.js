@@ -71,6 +71,7 @@ const RESOURCES_PICKER_QUERY = `
         },
 
         // All resources attached to this unit
+        // All resources attached to this unit
         "resources": *[_type == "resource" && references(^._id)] | order(order asc) {
           _id,
           title,
@@ -81,10 +82,12 @@ const RESOURCES_PICKER_QUERY = `
           sourceType,
           "fileUrl": file.asset->url,
           "fileName": file.asset->originalFilename,
+          "audioUrl": audio.asset->url,
           externalUrl,
           googleSlidesUrl,
           youtubeUrl
         }
+
       }
     }
   }

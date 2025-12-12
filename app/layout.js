@@ -5,12 +5,14 @@ import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../styles/calendar.scss";
 
+import { Suspense } from "react";
+
 import { getServerUser } from "./server-auth";
 import Providers from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ClientProviders from "./ClientProviders";
-import LocaleShell from "./LocaleShell"; // ✅ NEW
+import LocaleShell from "./LocaleShell";
 
 // Force dynamic rendering so the first paint always reflects the live auth state
 export const dynamic = "force-dynamic";
@@ -40,12 +42,14 @@ export default async function RootLayout({ children }) {
         {/* Jitsi external API for embedded meetings */}
         <script src="https://meet.speexify.com/external_api.js"></script>
       </head>
-      <body suppressHydrationWarning>
+      <body>
         <LocaleShell>
           <ClientProviders>
             <Providers initialUser={user}>
               <Header />
-              <main>{children}</main>
+              <Suspense fallback={null}>
+                <main>{children}</main>
+              </Suspense>
               <Footer />
             </Providers>
           </ClientProviders>
