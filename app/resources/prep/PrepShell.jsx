@@ -796,7 +796,7 @@ export default function PrepShell({
     setStickyNotes(nextNotes);
     saveAnnotations({ stickyNotes: nextNotes });
     broadcastAnnotations({ stickyNotes: nextNotes });
-    setTool(TOOL_NONE);
+    // Tool stays active - user can place more notes
   }
 
   function updateNoteText(id, text) {
@@ -1118,7 +1118,6 @@ export default function PrepShell({
       e.preventDefault();
       if (activeTextId) {
         setActiveTextId(null);
-        setTool(TOOL_NONE);
         return;
       }
       createTextBox(e);
