@@ -1821,20 +1821,14 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   pointer-events: auto;
   transform: translate(-50%, -50%);
 
-  &--editing {
-    min-width: 140px;
-    background: transparent;
-    border-radius: $cr-radius-md;
-  }
-
-  &__header {
+  // ─── Toolbar (Delete & Move buttons) ───────────────────────────
+  &__toolbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 2px 4px;
-    background: transparent;
-    cursor: move;
-    opacity: 0.6;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    opacity: 0.7;
     transition: opacity $cr-transition-fast;
 
     &:hover {
@@ -1842,67 +1836,145 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     }
   }
 
-  &__drag-handle {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 10px;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-    &::before {
-      content: "⋮⋮";
-    }
-  }
-
-  &__close {
+  &__toolbar-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(0, 0, 0, 0.3);
-    border: none;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #ccc;
     border-radius: 50%;
     cursor: pointer;
     transition: all $cr-transition-fast;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    color: #999;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
 
     &:hover {
-      color: white;
-      background: $cr-accent-danger;
+      border-color: #999;
+      color: #666;
     }
+
+    &--delete:hover {
+      border-color: $cr-accent-danger;
+      color: $cr-accent-danger;
+      background: rgba($cr-accent-danger, 0.1);
+    }
+
+    &--move {
+      cursor: move;
+
+      &:hover {
+        border-color: $cr-accent-primary;
+        color: $cr-accent-primary;
+        background: rgba($cr-accent-primary, 0.1);
+      }
+    }
+  }
+
+  // ─── Main Container ────────────────────────────────────────────
+  &__container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  // ─── Side Resize Handles (Left & Right) ────────────────────────
+  &__side-handle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid $cr-accent-primary;
+    border-radius: 2px;
+    cursor: ew-resize;
+    z-index: 5;
+    transition: all $cr-transition-fast;
+
+    &:hover {
+      background: $cr-accent-primary;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    &--left {
+      left: -6px;
+    }
+
+    &--right {
+      right: -6px;
+    }
+  }
+
+  // ─── Input Area ────────────────────────────────────────────────
+  // ─── Input Area ────────────────────────────────────────────────
+  &__input-area {
+    position: relative;
+    min-width: 100px;
+    padding: 4px 12px;
+    background: transparent;
+    border: 2px dashed rgba($cr-accent-primary, 0.5);
+    border-radius: 4px;
   }
 
   &__textarea {
     width: 100%;
-    min-width: 120px;
-    min-height: 40px;
-    padding: 4px 8px;
+    min-width: 60px;
+    height: auto;
+    padding: 0;
+    margin: 0;
     font-size: 16px;
     font-weight: 600;
     font-family: inherit;
+    line-height: 1.2;
     background: transparent;
     border: none;
-    border-left: 2px solid rgba($cr-accent-primary, 0.6);
-    resize: both;
+    resize: none;
     outline: none;
-    caret-color: $cr-accent-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    field-sizing: content; /* Modern browsers: auto-size to content */
     text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.9),
       1px -1px 0 rgba(255, 255, 255, 0.9), -1px 1px 0 rgba(255, 255, 255, 0.9),
       1px 1px 0 rgba(255, 255, 255, 0.9), 0 0 10px rgba(255, 255, 255, 0.6);
 
     &::placeholder {
-      color: rgba(100, 100, 100, 0.8);
+      color: rgba(100, 100, 100, 0.7);
       font-weight: 400;
       text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.7),
         1px -1px 0 rgba(255, 255, 255, 0.7), -1px 1px 0 rgba(255, 255, 255, 0.7),
         1px 1px 0 rgba(255, 255, 255, 0.7);
     }
+  }
 
-    &:focus {
-      border-left-color: $cr-accent-primary;
+  // ─── Font Size Handle (Bottom Right Circle) ────────────────────
+  // ─── Font Size Handle (Bottom Right Circle) ────────────────────
+  &__fontsize-handle {
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    width: 18px;
+    height: 18px;
+    background: $cr-accent-primary;
+    border: 3px solid white;
+    border-radius: 50%;
+    cursor: nwse-resize;
+    z-index: 5;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    transition: all $cr-transition-fast;
+
+    &:hover {
+      transform: scale(1.15);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
     }
   }
 
+  // ─── Displayed Label (non-editing mode) ────────────────────────
   &__label {
     padding: 4px 8px;
     font-size: 16px;
@@ -1910,45 +1982,52 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     background: transparent;
     border-radius: 4px;
     box-shadow: none;
-    cursor: move;
+    cursor: pointer;
     white-space: pre-wrap;
     word-break: break-word;
-    max-width: 400px;
+    max-width: 500px;
     position: relative;
     text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.8),
       1px -1px 0 rgba(255, 255, 255, 0.8), -1px 1px 0 rgba(255, 255, 255, 0.8),
       1px 1px 0 rgba(255, 255, 255, 0.8), 0 0 8px rgba(255, 255, 255, 0.5);
 
     &:hover {
-      outline: 1px dashed rgba($cr-accent-primary, 0.5);
-      outline-offset: 2px;
+      outline: 2px dashed rgba($cr-accent-primary, 0.4);
+      outline-offset: 4px;
     }
   }
 
   &__resize-handle {
     position: absolute;
-    bottom: -4px;
-    right: -4px;
-    width: 12px;
-    height: 12px;
+    bottom: -6px;
+    right: -6px;
+    width: 14px;
+    height: 14px;
     background: $cr-accent-primary;
     border: 2px solid white;
-    border-radius: 2px;
+    border-radius: 50%;
     cursor: nwse-resize;
     opacity: 0;
     transition: opacity $cr-transition-fast;
     z-index: 5;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 
-    .prep-text-box:hover &,
-    .prep-text-box--resizing & {
+    .prep-text-box:hover & {
       opacity: 1;
     }
   }
 
-  &--resizing {
-    outline: 1px dashed $cr-accent-primary;
-    outline-offset: 2px;
+  // ─── States ────────────────────────────────────────────────────
+  &--editing {
+    // Editing mode specific styles
+  }
+
+  &--resizing &__input-area {
+    border-color: darken($cr-accent-primary, 10%);
+  }
+
+  &--width-resizing &__input-area {
+    border-style: dashed;
   }
 }
 

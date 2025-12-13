@@ -68,6 +68,7 @@ export default function PrepShell({
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
   const [dragState, setDragState] = useState(null); // { kind: "note"|"text", id, offsetX, offsetY }
   const [resizeState, setResizeState] = useState(null); // { id, startY, startFontSize }
+  const [widthResizeState, setWidthResizeState] = useState(null); // { id, startX, startWidth, direction }
   const [maskDrag, setMaskDrag] = useState(null); // { mode: "creating"|"moving", ... }
   const [activeTextId, setActiveTextId] = useState(null);
   const [pdfFallback, setPdfFallback] = useState(false);
@@ -844,6 +845,7 @@ export default function PrepShell({
       text: "",
       color: penColor,
       fontSize: 16,
+      width: 150,
       page: isPdf ? pdfCurrentPage : 1,
     };
 
@@ -886,22 +888,30 @@ export default function PrepShell({
     });
   }
 
-  function startTextResize(e, box) {
+  // Font size resize (bottom-right circle)
+  // Font size resize (bottom-right circle) - follows diagonal movement
+  function startFontSizeResize(e, box) {
     e.stopPropagation();
     e.preventDefault();
     setResizeState({
       id: box.id,
+      startX: e.clientX,
       startY: e.clientY,
       startFontSize: box.fontSize || 16,
     });
   }
-  function handleTextResize(e) {
+
+  function handleFontSizeResize(e) {
     if (!resizeState) return;
 
+    const deltaX = e.clientX - resizeState.startX;
     const deltaY = e.clientY - resizeState.startY;
+
+    // Diagonal movement: dragging toward bottom-right = bigger, top-left = smaller
+    const diagonalDelta = (deltaX + deltaY) / 2;
     const newFontSize = Math.max(
-      8,
-      Math.min(72, resizeState.startFontSize + deltaY * 0.5)
+      10,
+      Math.min(120, resizeState.startFontSize + diagonalDelta * 0.4)
     );
 
     setTextBoxes((prev) => {
@@ -913,16 +923,54 @@ export default function PrepShell({
     });
   }
 
-  function stopTextResize() {
+  function stopFontSizeResize() {
     if (!resizeState) return;
     setResizeState(null);
     saveAnnotations();
     broadcastAnnotations();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Mask blocks (white rectangles to hide content)
-  // ─────────────────────────────────────────────────────────────
+  // Width resize (left/right square handles)
+  function startWidthResize(e, box, direction) {
+    e.stopPropagation();
+    e.preventDefault();
+    setWidthResizeState({
+      id: box.id,
+      startX: e.clientX,
+      startWidth: box.width || 150,
+      direction, // 'left' or 'right'
+    });
+  }
+
+  function handleWidthResize(e) {
+    if (!widthResizeState) return;
+
+    const deltaX = e.clientX - widthResizeState.startX;
+    let newWidth;
+
+    if (widthResizeState.direction === "right") {
+      newWidth = widthResizeState.startWidth + deltaX;
+    } else {
+      newWidth = widthResizeState.startWidth - deltaX;
+    }
+
+    newWidth = Math.max(80, Math.min(600, newWidth));
+
+    setTextBoxes((prev) => {
+      const updated = prev.map((t) => {
+        if (t.id !== widthResizeState.id) return t;
+        return { ...t, width: Math.round(newWidth) };
+      });
+      return updated;
+    });
+  }
+
+  function stopWidthResize() {
+    if (!widthResizeState) return;
+    setWidthResizeState(null);
+    saveAnnotations();
+    broadcastAnnotations();
+  }
 
   // ─────────────────────────────────────────────────────────────
   // Mask blocks (white rectangles to hide content)
@@ -1091,10 +1139,17 @@ export default function PrepShell({
   }
 
   function handleMouseMove(e) {
-    // Handle text resize
+    // Handle font size resize
     if (resizeState) {
       e.preventDefault();
-      handleTextResize(e);
+      handleFontSizeResize(e);
+      return;
+    }
+
+    // Handle width resize
+    if (widthResizeState) {
+      e.preventDefault();
+      handleWidthResize(e);
       return;
     }
 
@@ -1154,7 +1209,12 @@ export default function PrepShell({
 
   function handleMouseUp(e) {
     if (resizeState) {
-      stopTextResize();
+      stopFontSizeResize();
+      return;
+    }
+
+    if (widthResizeState) {
+      stopWidthResize();
       return;
     }
 
@@ -1302,14 +1362,18 @@ export default function PrepShell({
             .map((box) => {
               const isEditing = activeTextId === box.id;
               const isResizing = resizeState?.id === box.id;
+              const isWidthResizing = widthResizeState?.id === box.id;
               const fontSize = box.fontSize || 16;
+              const boxWidth = box.width || 150;
+
               return (
                 <div
                   key={box.id}
                   className={
                     "prep-text-box" +
                     (isEditing ? " prep-text-box--editing" : "") +
-                    (isResizing ? " prep-text-box--resizing" : "")
+                    (isResizing ? " prep-text-box--resizing" : "") +
+                    (isWidthResizing ? " prep-text-box--width-resizing" : "")
                   }
                   style={{
                     position: "absolute",
@@ -1321,34 +1385,100 @@ export default function PrepShell({
                 >
                   {isEditing ? (
                     <>
-                      <div
-                        className="prep-text-box__header"
-                        onMouseDown={(e) => startTextDrag(e, box)}
-                      >
-                        <span className="prep-text-box__drag-handle" />
+                      {/* Toolbar with Delete and Move buttons */}
+                      <div className="prep-text-box__toolbar">
                         <button
                           type="button"
-                          className="prep-text-box__close"
-                          onClick={(e) => {
+                          className="prep-text-box__toolbar-btn prep-text-box__toolbar-btn--delete"
+                          onMouseDown={(e) => {
                             e.stopPropagation();
+                            e.preventDefault();
                             deleteTextBox(box.id);
                           }}
+                          title="Delete"
                         >
-                          ×
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          className="prep-text-box__toolbar-btn prep-text-box__toolbar-btn--move"
+                          onMouseDown={(e) => startTextDrag(e, box)}
+                          title="Move"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="5 9 2 12 5 15" />
+                            <polyline points="9 5 12 2 15 5" />
+                            <polyline points="15 19 12 22 9 19" />
+                            <polyline points="19 9 22 12 19 15" />
+                            <line x1="2" y1="12" x2="22" y2="12" />
+                            <line x1="12" y1="2" x2="12" y2="22" />
+                          </svg>
                         </button>
                       </div>
-                      <textarea
-                        data-textbox-id={box.id}
-                        className="prep-text-box__textarea"
-                        style={{ color: box.color, fontSize: `${fontSize}px` }}
-                        placeholder={t(dict, "resources_prep_text_placeholder")}
-                        value={box.text}
-                        onChange={(e) =>
-                          updateTextBoxText(box.id, e.target.value)
-                        }
-                        onBlur={() => setActiveTextId(null)}
-                        onMouseDown={(e) => e.stopPropagation()}
-                      />
+
+                      {/* Main container with resize handles */}
+                      <div className="prep-text-box__container">
+                        {/* Left resize handle */}
+                        <span
+                          className="prep-text-box__side-handle prep-text-box__side-handle--left"
+                          onMouseDown={(e) => startWidthResize(e, box, "left")}
+                        />
+
+                        {/* Input area */}
+                        <div
+                          className="prep-text-box__input-area"
+                          style={{ width: `${boxWidth}px` }}
+                        >
+                          <textarea
+                            data-textbox-id={box.id}
+                            className="prep-text-box__textarea"
+                            style={{
+                              color: box.color,
+                              fontSize: `${fontSize}px`,
+                            }}
+                            placeholder={t(
+                              dict,
+                              "resources_prep_text_placeholder"
+                            )}
+                            value={box.text}
+                            onChange={(e) =>
+                              updateTextBoxText(box.id, e.target.value)
+                            }
+                            onBlur={() => setActiveTextId(null)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                          />
+
+                          {/* Font size resize handle (circle) */}
+                          <span
+                            className="prep-text-box__fontsize-handle"
+                            onMouseDown={(e) => startFontSizeResize(e, box)}
+                            title="Resize font"
+                          />
+                        </div>
+
+                        {/* Right resize handle */}
+                        <span
+                          className="prep-text-box__side-handle prep-text-box__side-handle--right"
+                          onMouseDown={(e) => startWidthResize(e, box, "right")}
+                        />
+                      </div>
                     </>
                   ) : (
                     <div
@@ -1363,7 +1493,10 @@ export default function PrepShell({
                       {box.text}
                       <span
                         className="prep-text-box__resize-handle"
-                        onMouseDown={(e) => startTextResize(e, box)}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          startFontSizeResize(e, box);
+                        }}
                       />
                     </div>
                   )}
