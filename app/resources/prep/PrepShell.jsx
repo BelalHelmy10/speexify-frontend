@@ -1,7 +1,7 @@
 // app/resources/prep/PrepShell.jsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import PrepNotes from "./PrepNotes";
 import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
@@ -67,6 +67,7 @@ export default function PrepShell({
   const [masks, setMasks] = useState([]); // white blocks to hide content
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
   const [dragState, setDragState] = useState(null); // { kind: "note"|"text", id, offsetX, offsetY }
+  const [resizeState, setResizeState] = useState(null); // { id, startY, startFontSize }
   const [maskDrag, setMaskDrag] = useState(null); // { mode: "creating"|"moving", ... }
   const [activeTextId, setActiveTextId] = useState(null);
   const [pdfFallback, setPdfFallback] = useState(false);
@@ -74,6 +75,17 @@ export default function PrepShell({
 
   const [toolMenuOpen, setToolMenuOpen] = useState(false);
   const [colorMenuOpen, setColorMenuOpen] = useState(false);
+
+  // PDF page tracking for per-page annotations
+  const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
+
+  const handlePdfNavStateChange = useCallback((navState) => {
+    if (navState?.currentPage) {
+      setPdfCurrentPage(navState.currentPage);
+    }
+  }, []);
+
+  // Vector strokes using normalized coords
 
   // Vector strokes using normalized coords
   // stroke: { id, tool, color, points: [{ x,y } in [0,1]] }
@@ -580,9 +592,14 @@ export default function PrepShell({
 
     const R = 0.03; // erase radius in normalized coords
 
-    // Erase strokes near the eraser path
+    // Erase strokes near the eraser path (only on current page for PDFs)
     setStrokes((prev) => {
       const next = prev.filter((stroke) => {
+        // Skip strokes on other pages (keep them)
+        if (isPdf && stroke.page && stroke.page !== pdfCurrentPage) {
+          return true;
+        }
+
         // We only erase pen & highlighter strokes
         if (stroke.tool !== TOOL_PEN && stroke.tool !== TOOL_HIGHLIGHTER) {
           return true;
@@ -603,9 +620,14 @@ export default function PrepShell({
       return next;
     });
 
-    // Erase masks (white blocks) if eraser passes through them
+    // Erase masks (white blocks) if eraser passes through them (only on current page for PDFs)
     setMasks((prev) => {
       const next = prev.filter((m) => {
+        // Skip masks on other pages (keep them)
+        if (isPdf && m.page && m.page !== pdfCurrentPage) {
+          return true;
+        }
+
         const inside =
           p.x >= m.x &&
           p.x <= m.x + m.width &&
@@ -613,7 +635,7 @@ export default function PrepShell({
           p.y <= m.y + m.height;
         return !inside;
       });
-      if (next !== prev) {
+      if (next.length !== prev.length) {
         saveAnnotations({ masks: next });
         broadcastAnnotations({ masks: next });
       }
@@ -642,6 +664,7 @@ export default function PrepShell({
       tool,
       color: penColor,
       points: [p],
+      page: isPdf ? pdfCurrentPage : 1,
     };
 
     setStrokes((prev) => [...prev, stroke]);
@@ -765,6 +788,7 @@ export default function PrepShell({
       x: x / width,
       y: y / height,
       text: "",
+      page: isPdf ? pdfCurrentPage : 1,
     };
 
     const nextNotes = [...stickyNotes, note];
@@ -819,6 +843,8 @@ export default function PrepShell({
       y: p.y,
       text: "",
       color: penColor,
+      fontSize: 16,
+      page: isPdf ? pdfCurrentPage : 1,
     };
 
     const next = [...textBoxes, box];
@@ -859,6 +885,44 @@ export default function PrepShell({
       offsetY: currentY - y,
     });
   }
+
+  function startTextResize(e, box) {
+    e.stopPropagation();
+    e.preventDefault();
+    setResizeState({
+      id: box.id,
+      startY: e.clientY,
+      startFontSize: box.fontSize || 16,
+    });
+  }
+  function handleTextResize(e) {
+    if (!resizeState) return;
+
+    const deltaY = e.clientY - resizeState.startY;
+    const newFontSize = Math.max(
+      8,
+      Math.min(72, resizeState.startFontSize + deltaY * 0.5)
+    );
+
+    setTextBoxes((prev) => {
+      const updated = prev.map((t) => {
+        if (t.id !== resizeState.id) return t;
+        return { ...t, fontSize: Math.round(newFontSize) };
+      });
+      return updated;
+    });
+  }
+
+  function stopTextResize() {
+    if (!resizeState) return;
+    setResizeState(null);
+    saveAnnotations();
+    broadcastAnnotations();
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Mask blocks (white rectangles to hide content)
+  // ─────────────────────────────────────────────────────────────
 
   // ─────────────────────────────────────────────────────────────
   // Mask blocks (white rectangles to hide content)
@@ -908,6 +972,7 @@ export default function PrepShell({
       y: top,
       width,
       height,
+      page: isPdf ? pdfCurrentPage : 1,
     };
 
     setMasks((prev) => {
@@ -1026,6 +1091,13 @@ export default function PrepShell({
   }
 
   function handleMouseMove(e) {
+    // Handle text resize
+    if (resizeState) {
+      e.preventDefault();
+      handleTextResize(e);
+      return;
+    }
+
     // Creating or moving a mask
     if (maskDrag) {
       e.preventDefault();
@@ -1081,6 +1153,11 @@ export default function PrepShell({
   }
 
   function handleMouseUp(e) {
+    if (resizeState) {
+      stopTextResize();
+      return;
+    }
+
     if (maskDrag && maskDrag.mode === "creating") {
       const p = e ? getNormalizedPoint(e) : null;
       finalizeCreatingMask(p || null);
@@ -1178,6 +1255,7 @@ export default function PrepShell({
         />
 
         {/* SVG strokes layer */}
+        {/* SVG strokes layer */}
         <svg
           className="annotation-svg-layer"
           width="100%"
@@ -1190,23 +1268,27 @@ export default function PrepShell({
             pointerEvents: "none",
           }}
         >
-          {strokes.map((stroke) => (
-            <polyline
-              key={stroke.id}
-              points={stroke.points.map((p) => `${p.x},${p.y}`).join(" ")}
-              fill="none"
-              stroke={
-                stroke.tool === TOOL_HIGHLIGHTER
-                  ? "rgba(255,255,0,0.5)"
-                  : stroke.color || "#111"
-              }
-              strokeWidth={stroke.tool === TOOL_HIGHLIGHTER ? 0.014 : 0.005}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          ))}
+          {strokes
+            .filter(
+              (stroke) =>
+                !isPdf || stroke.page === pdfCurrentPage || !stroke.page
+            )
+            .map((stroke) => (
+              <polyline
+                key={stroke.id}
+                points={stroke.points.map((p) => `${p.x},${p.y}`).join(" ")}
+                fill="none"
+                stroke={
+                  stroke.tool === TOOL_HIGHLIGHTER
+                    ? "rgba(255,255,0,0.5)"
+                    : stroke.color || "#111"
+                }
+                strokeWidth={stroke.tool === TOOL_HIGHLIGHTER ? 0.014 : 0.005}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
         </svg>
-
         {/* Text boxes layer */}
         <div
           style={{
@@ -1215,124 +1297,144 @@ export default function PrepShell({
             pointerEvents: "none",
           }}
         >
-          {textBoxes.map((box) => {
-            const isEditing = activeTextId === box.id;
-            return (
-              <div
-                key={box.id}
-                className={
-                  "prep-text-box" + (isEditing ? " prep-text-box--editing" : "")
-                }
-                style={{
-                  position: "absolute",
-                  left: `${box.x * 100}%`,
-                  top: `${box.y * 100}%`,
-                  transform: "translate(-50%, -50%)",
-                  pointerEvents: "auto",
-                }}
-              >
-                {isEditing ? (
-                  <>
-                    <div
-                      className="prep-text-box__header"
-                      onMouseDown={(e) => startTextDrag(e, box)}
-                    >
-                      <span className="prep-text-box__drag-handle" />
-                      <button
-                        type="button"
-                        className="prep-text-box__close"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteTextBox(box.id);
-                        }}
+          {textBoxes
+            .filter((box) => !isPdf || box.page === pdfCurrentPage || !box.page)
+            .map((box) => {
+              const isEditing = activeTextId === box.id;
+              const isResizing = resizeState?.id === box.id;
+              const fontSize = box.fontSize || 16;
+              return (
+                <div
+                  key={box.id}
+                  className={
+                    "prep-text-box" +
+                    (isEditing ? " prep-text-box--editing" : "") +
+                    (isResizing ? " prep-text-box--resizing" : "")
+                  }
+                  style={{
+                    position: "absolute",
+                    left: `${box.x * 100}%`,
+                    top: `${box.y * 100}%`,
+                    transform: "translate(-50%, -50%)",
+                    pointerEvents: "auto",
+                  }}
+                >
+                  {isEditing ? (
+                    <>
+                      <div
+                        className="prep-text-box__header"
+                        onMouseDown={(e) => startTextDrag(e, box)}
                       >
-                        ×
-                      </button>
+                        <span className="prep-text-box__drag-handle" />
+                        <button
+                          type="button"
+                          className="prep-text-box__close"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTextBox(box.id);
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <textarea
+                        data-textbox-id={box.id}
+                        className="prep-text-box__textarea"
+                        style={{ color: box.color, fontSize: `${fontSize}px` }}
+                        placeholder={t(dict, "resources_prep_text_placeholder")}
+                        value={box.text}
+                        onChange={(e) =>
+                          updateTextBoxText(box.id, e.target.value)
+                        }
+                        onBlur={() => setActiveTextId(null)}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      />
+                    </>
+                  ) : (
+                    <div
+                      className="prep-text-box__label"
+                      style={{ color: box.color, fontSize: `${fontSize}px` }}
+                      onMouseDown={(e) => startTextDrag(e, box)}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        setActiveTextId(box.id);
+                      }}
+                    >
+                      {box.text}
+                      <span
+                        className="prep-text-box__resize-handle"
+                        onMouseDown={(e) => startTextResize(e, box)}
+                      />
                     </div>
-                    <textarea
-                      data-textbox-id={box.id}
-                      className="prep-text-box__textarea"
-                      style={{ color: box.color }}
-                      placeholder={t(dict, "resources_prep_text_placeholder")}
-                      value={box.text}
-                      onChange={(e) =>
-                        updateTextBoxText(box.id, e.target.value)
-                      }
-                      onBlur={() => setActiveTextId(null)}
-                      onMouseDown={(e) => e.stopPropagation()}
-                    />
-                  </>
-                ) : (
-                  <div
-                    className="prep-text-box__label"
-                    style={{ color: box.color }}
-                    onMouseDown={(e) => startTextDrag(e, box)}
-                    onDoubleClick={(e) => {
-                      e.stopPropagation();
-                      setActiveTextId(box.id);
-                    }}
-                  >
-                    {box.text}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  )}
+                </div>
+              );
+            })}
         </div>
 
         {/* Sticky notes */}
-        {stickyNotes.map((note) => (
-          <div
-            key={note.id}
-            className="prep-sticky-note"
-            style={{
-              left: `${note.x * 100}%`,
-              top: `${note.y * 100}%`,
-            }}
-          >
+        {/* Sticky notes */}
+        {stickyNotes
+          .filter(
+            (note) => !isPdf || note.page === pdfCurrentPage || !note.page
+          )
+          .map((note) => (
             <div
-              className="prep-sticky-note__header"
-              onMouseDown={(e) => startNoteDrag(e, note)}
+              key={note.id}
+              className="prep-sticky-note"
+              style={{
+                left: `${note.x * 100}%`,
+                top: `${note.y * 100}%`,
+              }}
             >
-              <button
-                type="button"
-                className="prep-sticky-note__close"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteNote(note.id);
-                }}
+              <div
+                className="prep-sticky-note__header"
+                onMouseDown={(e) => startNoteDrag(e, note)}
               >
-                ×
-              </button>
+                <button
+                  type="button"
+                  className="prep-sticky-note__close"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNote(note.id);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              <textarea
+                className="prep-sticky-note__textarea"
+                placeholder={t(dict, "resources_prep_note_placeholder")}
+                value={note.text}
+                onChange={(e) => updateNoteText(note.id, e.target.value)}
+                onMouseDown={(e) => e.stopPropagation()}
+              />
             </div>
-            <textarea
-              className="prep-sticky-note__textarea"
-              placeholder={t(dict, "resources_prep_note_placeholder")}
-              value={note.text}
-              onChange={(e) => updateNoteText(note.id, e.target.value)}
-              onMouseDown={(e) => e.stopPropagation()}
-            />
-          </div>
-        ))}
+          ))}
 
         {/* Saved mask blocks (white rectangles that hide content) */}
-        {masks.map((mask) => (
-          <div
-            key={mask.id}
-            className="prep-mask-block"
-            style={{
-              position: "absolute",
-              left: `${mask.x * 100}%`,
-              top: `${mask.y * 100}%`,
-              width: `${mask.width * 100}%`,
-              height: `${mask.height * 100}%`,
-              backgroundColor: "#ffffff",
-              boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
-              pointerEvents: "auto",
-            }}
-            onMouseDown={(e) => startMaskMove(e, mask)}
-          />
-        ))}
+        {/* Saved mask blocks (white rectangles that hide content) */}
+        {masks
+          .filter(
+            (mask) => !isPdf || mask.page === pdfCurrentPage || !mask.page
+          )
+          .map((mask) => (
+            <div
+              key={mask.id}
+              className="prep-mask-block"
+              style={{
+                position: "absolute",
+                left: `${mask.x * 100}%`,
+                top: `${mask.y * 100}%`,
+                width: `${mask.width * 100}%`,
+                height: `${mask.height * 100}%`,
+                backgroundColor: "#ffffff",
+                boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
+                pointerEvents: "auto",
+              }}
+              onMouseDown={(e) => startMaskMove(e, mask)}
+            />
+          ))}
 
         {/* Live mask preview while dragging */}
         {maskPreview && (
@@ -2013,6 +2115,7 @@ export default function PrepShell({
                         // el is the page wrapper that matches the PDF page
                         containerRef.current = el;
                       }}
+                      onNavStateChange={handlePdfNavStateChange}
                       // Always show PDF controls + page sidebar,
                       // even if breadcrumbs are hidden.
                       hideControls={false}

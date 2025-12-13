@@ -1820,74 +1820,135 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
   z-index: 20;
   pointer-events: auto;
   transform: translate(-50%, -50%);
+
   &--editing {
-    min-width: 120px;
-    background: rgba($cr-bg-secondary, 0.95);
-    border-radius: $cr-radius-sm;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    min-width: 140px;
+    background: transparent;
+    border-radius: $cr-radius-md;
   }
+
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: $cr-radius-sm $cr-radius-sm 0 0;
+    padding: 2px 4px;
+    background: transparent;
     cursor: move;
+    opacity: 0.6;
+    transition: opacity $cr-transition-fast;
+
+    &:hover {
+      opacity: 1;
+    }
   }
+
   &__drag-handle {
-    color: $cr-text-muted;
-    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 10px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     &::before {
       content: "⋮⋮";
     }
   }
+
   &__close {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
-    font-size: 16px;
-    color: $cr-text-muted;
-    background: transparent;
+    width: 18px;
+    height: 18px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 0, 0, 0.3);
     border: none;
     border-radius: 50%;
     cursor: pointer;
     transition: all $cr-transition-fast;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+
     &:hover {
-      color: $cr-accent-danger;
-      background: rgba($cr-accent-danger, 0.15);
+      color: white;
+      background: $cr-accent-danger;
     }
   }
+
   &__textarea {
     width: 100%;
-    min-width: 150px;
-    min-height: 60px;
-    padding: 8px 12px;
+    min-width: 120px;
+    min-height: 40px;
+    padding: 4px 8px;
     font-size: 16px;
     font-weight: 600;
     font-family: inherit;
     background: transparent;
     border: none;
+    border-left: 2px solid rgba($cr-accent-primary, 0.6);
     resize: both;
     outline: none;
+    caret-color: $cr-accent-primary;
+    text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.9),
+      1px -1px 0 rgba(255, 255, 255, 0.9), -1px 1px 0 rgba(255, 255, 255, 0.9),
+      1px 1px 0 rgba(255, 255, 255, 0.9), 0 0 10px rgba(255, 255, 255, 0.6);
+
     &::placeholder {
-      color: $cr-text-muted;
+      color: rgba(100, 100, 100, 0.8);
       font-weight: 400;
+      text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.7),
+        1px -1px 0 rgba(255, 255, 255, 0.7), -1px 1px 0 rgba(255, 255, 255, 0.7),
+        1px 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    &:focus {
+      border-left-color: $cr-accent-primary;
     }
   }
+
   &__label {
     padding: 4px 8px;
     font-size: 16px;
     font-weight: 600;
-    background: rgba(255, 255, 255, 0.95);
+    background: transparent;
     border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: none;
     cursor: move;
     white-space: pre-wrap;
     word-break: break-word;
-    max-width: 300px;
+    max-width: 400px;
+    position: relative;
+    text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.8),
+      1px -1px 0 rgba(255, 255, 255, 0.8), -1px 1px 0 rgba(255, 255, 255, 0.8),
+      1px 1px 0 rgba(255, 255, 255, 0.8), 0 0 8px rgba(255, 255, 255, 0.5);
+
+    &:hover {
+      outline: 1px dashed rgba($cr-accent-primary, 0.5);
+      outline-offset: 2px;
+    }
+  }
+
+  &__resize-handle {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 12px;
+    height: 12px;
+    background: $cr-accent-primary;
+    border: 2px solid white;
+    border-radius: 2px;
+    cursor: nwse-resize;
+    opacity: 0;
+    transition: opacity $cr-transition-fast;
+    z-index: 5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+    .prep-text-box:hover &,
+    .prep-text-box--resizing & {
+      opacity: 1;
+    }
+  }
+
+  &--resizing {
+    outline: 1px dashed $cr-accent-primary;
+    outline-offset: 2px;
   }
 }
 
