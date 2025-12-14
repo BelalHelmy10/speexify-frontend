@@ -3,10 +3,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import ClassroomShell from "./ClassroomShell";
 
 export default function ClassroomPageClient({ sessionId, tracks }) {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const prefix = locale === "ar" ? "/ar" : "";
+
   const [session, setSession] = useState(null);
   const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"
   const [error, setError] = useState("");
@@ -91,7 +96,7 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
           <p className="cr-error-screen__text">
             {error || `Unable to load classroom session #${sessionId}.`}
           </p>
-          <Link href="/dashboard" className="cr-error-screen__btn">
+          <Link href={`${prefix}/dashboard`} className="cr-error-screen__btn">
             ← Back to dashboard
           </Link>
         </div>
@@ -99,13 +104,13 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
     );
   }
 
-  // NORMAL STATE → render ClassroomShell WITHOUT any wrappers
-  // The shell takes over the entire viewport
   return (
     <ClassroomShell
       session={session}
       sessionId={String(sessionId)}
       tracks={tracks}
+      locale={locale}
+      prefix={prefix}
     />
   );
 }

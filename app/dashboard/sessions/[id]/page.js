@@ -7,17 +7,24 @@ import Link from "next/link";
 import api from "@/lib/api";
 import "@/styles/session-detail.scss";
 import { getDictionary, t } from "@/app/i18n";
+import { useToast } from "@/components/ToastProvider";
+import { getSafeExternalUrl } from "@/utils/url";
 
 export default function SessionDetailPage() {
   const router = useRouter();
   const { id } = useParams();
   const pathname = usePathname();
+
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const prefix = locale === "ar" ? "/ar" : "";
   const dict = getDictionary(locale, "session");
+
+  const { toast, confirmModal } = useToast();
 
   const [session, setSession] = useState(null);
   const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -136,16 +143,84 @@ export default function SessionDetailPage() {
   // NORMAL STATE
   // ─────────────────────────────────────
   const {
+    id: sessionId,
     title,
     startAt,
     endAt,
     meetingUrl,
+    joinUrl,
     notes,
-    user,
+    user: legacyLearner,
     teacher,
     status: s,
+    type,
+    capacity,
+    participantCount,
+    participants,
+    isLearner,
+    isTeacher: sessionIsTeacher,
+    isAdmin: sessionIsAdmin,
     teacherFeedback,
   } = session;
+
+  const isGroup = String(type || "").toUpperCase() === "GROUP";
+
+  const list = Array.isArray(participants) ? participants : [];
+  const activeParticipants = list.filter((p) => p.status !== "canceled");
+
+  const learnerLabel = isGroup
+    ? t(dict, "section_learners_title") || "Learners"
+    : t(dict, "section_learner_title") || "Learner";
+
+  const canCancelOrLeave = !!(sessionIsAdmin || sessionIsTeacher || isLearner);
+  const canReschedule = !!(sessionIsAdmin || sessionIsTeacher);
+
+  const cancelLabel =
+    isGroup && !sessionIsTeacher && !sessionIsAdmin
+      ? t(dict, "session_leave") || "Leave session"
+      : t(dict, "session_cancel") || "Cancel";
+
+  const cancelTitle =
+    isGroup && !sessionIsTeacher && !sessionIsAdmin
+      ? t(dict, "session_leave_title") || "Leave this group session?"
+      : t(dict, "session_cancel_title") || "Cancel session?";
+
+  const handleCancelOrLeave = async () => {
+    if (!canCancelOrLeave || busy) return;
+
+    const ok = await confirmModal(cancelTitle);
+    if (!ok) return;
+
+    try {
+      setBusy(true);
+
+      const res = await api.post(`/sessions/${sessionId}/cancel`);
+      const scope = res?.data?.scope;
+
+      if (scope === "participant") {
+        toast.success(
+          t(dict, "session_left_success") || "You left the session."
+        );
+      } else if (scope === "session") {
+        toast.success(
+          t(dict, "session_canceled_success") || "Session canceled."
+        );
+      } else {
+        toast.success(t(dict, "success_saved") || "Done.");
+      }
+
+      const { data } = await api.get(`/sessions/${sessionId}`, {
+        params: { t: Date.now() },
+      });
+      setSession(data?.session || null);
+    } catch (e) {
+      toast.error(e?.response?.data?.error || t(dict, "generic_error"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const hasExternal = !!(meetingUrl || joinUrl);
 
   return (
     <div className="page-session-detail">
@@ -209,24 +284,63 @@ export default function SessionDetailPage() {
             </section>
 
             <section className="session-detail-section">
-              <h3 className="session-detail-section__title">
-                {t(dict, "section_learner_title")}
-              </h3>
-              {user ? (
-                <p className="session-detail-section__body">
-                  {user.name || user.email}
-                  <br />
-                  <span className="session-detail-muted">{user.email}</span>
-                </p>
+              <h3 className="session-detail-section__title">{learnerLabel}</h3>
+
+              {!isGroup ? (
+                legacyLearner ? (
+                  <p className="session-detail-section__body">
+                    {legacyLearner.name || legacyLearner.email}
+                    <br />
+                    <span className="session-detail-muted">
+                      {legacyLearner.email}
+                    </span>
+                  </p>
+                ) : (
+                  <p className="session-detail-section__body">
+                    {t(dict, "section_learner_not_found")}
+                  </p>
+                )
+              ) : activeParticipants.length ? (
+                <div className="session-detail-section__body">
+                  <div
+                    className="session-detail-muted"
+                    style={{ marginBottom: 8 }}
+                  >
+                    {t(dict, "session_participants") || "Participants"}:{" "}
+                    {typeof participantCount === "number"
+                      ? participantCount
+                      : activeParticipants.length}
+                    {capacity ? ` / ${capacity}` : ""}
+                  </div>
+
+                  <ul style={{ margin: 0, paddingInlineStart: 18 }}>
+                    {activeParticipants.map((p) => {
+                      const u = p.user || {};
+                      const name = u.name || u.email || `#${p.userId}`;
+                      const email = u.email || "";
+                      return (
+                        <li key={p.userId} style={{ marginBottom: 6 }}>
+                          <span>{name}</span>
+                          {email ? (
+                            <span className="session-detail-muted">
+                              {" "}
+                              — {email}
+                            </span>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               ) : (
                 <p className="session-detail-section__body">
-                  {t(dict, "section_learner_not_found")}
+                  {t(dict, "session_no_participants") || "No participants yet."}
                 </p>
               )}
             </section>
           </div>
 
-          {/* UPDATED JOIN SECTION */}
+          {/* JOIN SECTION */}
           <section className="session-detail-section session-detail-section--wide">
             <div className="session-detail-section__header">
               <h3 className="session-detail-section__title">
@@ -235,17 +349,16 @@ export default function SessionDetailPage() {
             </div>
 
             <div className="session-detail-join-actions">
-              {/* Classroom is always available for this session */}
               <Link
-                href={`/classroom/${session.id}`}
+                href={`${prefix}/classroom/${sessionId}`}
                 className="btn btn--primary session-detail-join-btn"
               >
                 {t(dict, "join_open_classroom")}
               </Link>
 
-              {meetingUrl && (
+              {hasExternal && (
                 <a
-                  href={meetingUrl}
+                  href={getSafeExternalUrl(meetingUrl || joinUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="btn btn--ghost session-detail-join-btn"
@@ -254,13 +367,42 @@ export default function SessionDetailPage() {
                 </a>
               )}
 
-              {!meetingUrl && (
+              {!hasExternal && (
                 <p className="session-detail-section__body">
                   {t(dict, "join_no_meeting")}
                 </p>
               )}
             </div>
           </section>
+
+          {canCancelOrLeave && (
+            <section className="session-detail-section session-detail-section--wide">
+              <div className="session-detail-section__header">
+                <h3 className="session-detail-section__title">
+                  {t(dict, "actions_title") || "Actions"}
+                </h3>
+              </div>
+
+              <div className="session-detail-join-actions">
+                <button
+                  className="btn btn--ghost btn--danger"
+                  onClick={handleCancelOrLeave}
+                  disabled={busy}
+                  title={cancelTitle}
+                >
+                  {busy
+                    ? t(dict, "loading_badge") || "Loading..."
+                    : cancelLabel}
+                </button>
+
+                {canReschedule && (
+                  <Link href={`${prefix}/calendar`} className="btn btn--ghost">
+                    {t(dict, "session_reschedule") || "Reschedule"}
+                  </Link>
+                )}
+              </div>
+            </section>
+          )}
 
           <section className="session-detail-section session-detail-section--wide">
             <div className="session-detail-section__header">

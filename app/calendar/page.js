@@ -26,7 +26,7 @@ import {
   format,
 } from "date-fns";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { getDictionary, t } from "@/app/i18n";
 
 // date-fns localizer for RBC
@@ -43,11 +43,16 @@ const localizer = dateFnsLocalizer({
 const toRbcEvents = (arr = []) =>
   arr.map((s) => ({
     id: String(s.id),
-    title: s.title || "", // fallback will be translated in EventComp
+    title: s.title || "",
     start: new Date(s.startAt),
     end: s.endAt ? new Date(s.endAt) : new Date(s.startAt),
-    status: s.status, // "scheduled" | "canceled"
+    status: s.status,
     meetingUrl: s.meetingUrl || "",
+    joinUrl: s.joinUrl || "",
+    type: s.type || "",
+    capacity: s.capacity ?? null,
+    participantCount: s.participantCount ?? null,
+    _raw: s,
   }));
 
 // Compute visible range for a given date + view
@@ -209,16 +214,11 @@ const canJoin = (startAt, endAt, windowMins = 15) => {
 export default function CalendarPage() {
   const { user, checking } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
-  // i18n: default EN, then update from URL (/ar/…)
-  const [dict, setDict] = useState(() => getDictionary("en", "calendar"));
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const isArabic = window.location.pathname.startsWith("/ar");
-    const locale = isArabic ? "ar" : "en";
-    setDict(getDictionary(locale, "calendar"));
-  }, []);
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const prefix = locale === "ar" ? "/ar" : "";
+  const dict = useMemo(() => getDictionary(locale, "calendar"), [locale]);
 
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -324,9 +324,9 @@ export default function CalendarPage() {
   const onSelectEvent = useCallback(
     (event) => {
       if (!event?.id) return;
-      router.push(`/dashboard/sessions/${event.id}`);
+      router.push(`${prefix}/dashboard/sessions/${event.id}`);
     },
-    [router]
+    [router, prefix]
   );
 
   // Mini calendar → jump date

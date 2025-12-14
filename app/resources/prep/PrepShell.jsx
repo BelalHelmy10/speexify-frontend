@@ -41,6 +41,7 @@ export default function PrepShell({
   unitIdFromQuery,
 }) {
   const dict = getDictionary(locale, "resources");
+  const prefix = locale === "ar" ? "/ar" : "";
 
   // ─────────────────────────────────────────────────────────────
   // SAFETY GUARD
@@ -86,9 +87,6 @@ export default function PrepShell({
     }
   }, []);
 
-  // Vector strokes using normalized coords
-
-  // Vector strokes using normalized coords
   // stroke: { id, tool, color, points: [{ x,y } in [0,1]] }
   const [strokes, setStrokes] = useState([]);
   const [currentStrokeId, setCurrentStrokeId] = useState(null);
@@ -117,7 +115,6 @@ export default function PrepShell({
   // PDF detection
   console.log("DEBUG viewerUrl:", viewerUrl);
   const isPdf = viewer?.type === "pdf";
-
   const pdfViewerUrl = isPdf ? viewerUrl : null;
 
   const showSidebar = !hideSidebar && !sidebarCollapsed;
@@ -269,7 +266,6 @@ export default function PrepShell({
     });
   }
 
-  // Whenever strokes change, redraw bitmap (for saving/broadcast)
   useEffect(() => {
     redrawCanvasFromStrokes(strokes);
   }, [strokes]);
@@ -302,7 +298,6 @@ export default function PrepShell({
           )
         );
       } else if (parsed.canvasData && canvasRef.current) {
-        // Legacy fallback: old saved raster image
         const img = new Image();
         img.onload = () => {
           const canvas = canvasRef.current;
@@ -372,7 +367,7 @@ export default function PrepShell({
         opts.canvasData ?? (canvas ? canvas.toDataURL("image/png") : undefined);
 
       const data = {
-        canvasData: canvasData || null, // legacy/fallback
+        canvasData: canvasData || null,
         strokes: opts.strokes ?? strokes,
         stickyNotes: opts.stickyNotes ?? stickyNotes,
         textBoxes: opts.textBoxes ?? textBoxes,
@@ -396,7 +391,7 @@ export default function PrepShell({
     const payload = {
       type: "ANNOTATION_STATE",
       resourceId: resource._id,
-      canvasData: canvasData || null, // legacy
+      canvasData: canvasData || null,
       strokes: custom.strokes ?? strokes,
       stickyNotes: custom.stickyNotes ?? stickyNotes,
       textBoxes: custom.textBoxes ?? textBoxes,
@@ -447,9 +442,7 @@ export default function PrepShell({
 
       if (Array.isArray(remoteStrokes)) {
         setStrokes(remoteStrokes);
-        // redraw handled by useEffect
       } else if (canvasData && canvasRef.current) {
-        // legacy image path
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
         if (ctx) {
@@ -490,7 +483,6 @@ export default function PrepShell({
     const unsubscribe = classroomChannel.subscribe((msg) => {
       if (!msg || msg.resourceId !== resource._id) return;
 
-      // Existing sync
       if (msg.type === "ANNOTATION_STATE") {
         applyRemoteAnnotationState(msg);
         return;
@@ -504,7 +496,6 @@ export default function PrepShell({
         return;
       }
 
-      // Only learners should *react* to teacher audio commands
       if (isTeacher) return;
 
       const el = audioRef.current;
@@ -517,9 +508,8 @@ export default function PrepShell({
         } catch (_) {}
       };
 
-      // Helper: when we switch src (track), wait until the audio element can seek/play
       const runAfterLoad = (fn) => {
-        const ready = el.readyState >= 1; // HAVE_METADATA
+        const ready = el.readyState >= 1;
         if (ready) {
           fn();
           return;
@@ -591,17 +581,14 @@ export default function PrepShell({
     const p = getNormalizedPoint(e);
     if (!p) return;
 
-    const R = 0.03; // erase radius in normalized coords
+    const R = 0.03;
 
-    // Erase strokes near the eraser path (only on current page for PDFs)
     setStrokes((prev) => {
       const next = prev.filter((stroke) => {
-        // Skip strokes on other pages (keep them)
         if (isPdf && stroke.page && stroke.page !== pdfCurrentPage) {
           return true;
         }
 
-        // We only erase pen & highlighter strokes
         if (stroke.tool !== TOOL_PEN && stroke.tool !== TOOL_HIGHLIGHTER) {
           return true;
         }
@@ -612,7 +599,6 @@ export default function PrepShell({
           return dx * dx + dy * dy <= R * R;
         });
 
-        // If hit, drop this stroke entirely
         return !hit;
       });
 
@@ -621,10 +607,8 @@ export default function PrepShell({
       return next;
     });
 
-    // Erase masks (white blocks) if eraser passes through them (only on current page for PDFs)
     setMasks((prev) => {
       const next = prev.filter((m) => {
-        // Skip masks on other pages (keep them)
         if (isPdf && m.page && m.page !== pdfCurrentPage) {
           return true;
         }
@@ -645,7 +629,6 @@ export default function PrepShell({
   }
 
   function startDrawing(e) {
-    // ERASER: start erasing, but do NOT create a stroke
     if (tool === TOOL_ERASER) {
       e.preventDefault();
       setIsDrawing(true);
@@ -674,7 +657,6 @@ export default function PrepShell({
   }
 
   function draw(e) {
-    // Dragging sticky notes / text boxes
     if (dragState) {
       const coords = getCanvasCoordinates(e);
       if (!coords) return;
@@ -718,7 +700,6 @@ export default function PrepShell({
 
     if (!isDrawing) return;
 
-    // ERASER: keep erasing as we move
     if (tool === TOOL_ERASER) {
       e.preventDefault();
       eraseAtPoint(e);
@@ -735,7 +716,6 @@ export default function PrepShell({
       prev.map((stroke) => {
         if (stroke.id !== currentStrokeId) return stroke;
 
-        // 🔒 Highlighter = lock Y to first point
         if (stroke.tool === TOOL_HIGHLIGHTER && stroke.points.length > 0) {
           const firstY = stroke.points[0].y;
           return {
@@ -744,7 +724,6 @@ export default function PrepShell({
           };
         }
 
-        // ✍️ Pen = free drawing
         return {
           ...stroke,
           points: [...stroke.points, p],
@@ -796,7 +775,6 @@ export default function PrepShell({
     setStickyNotes(nextNotes);
     saveAnnotations({ stickyNotes: nextNotes });
     broadcastAnnotations({ stickyNotes: nextNotes });
-    // Tool stays active - user can place more notes
   }
 
   function updateNoteText(id, text) {
@@ -888,8 +866,6 @@ export default function PrepShell({
     });
   }
 
-  // Font size resize (bottom-right circle)
-  // Font size resize (bottom-right circle) - follows diagonal movement
   function startFontSizeResize(e, box) {
     e.stopPropagation();
     e.preventDefault();
@@ -907,7 +883,6 @@ export default function PrepShell({
     const deltaX = e.clientX - resizeState.startX;
     const deltaY = e.clientY - resizeState.startY;
 
-    // Diagonal movement: dragging toward bottom-right = bigger, top-left = smaller
     const diagonalDelta = (deltaX + deltaY) / 2;
     const newFontSize = Math.max(
       10,
@@ -930,7 +905,6 @@ export default function PrepShell({
     broadcastAnnotations();
   }
 
-  // Width resize (left/right square handles)
   function startWidthResize(e, box, direction) {
     e.stopPropagation();
     e.preventDefault();
@@ -938,7 +912,7 @@ export default function PrepShell({
       id: box.id,
       startX: e.clientX,
       startWidth: box.width || 150,
-      direction, // 'left' or 'right'
+      direction,
     });
   }
 
@@ -973,7 +947,7 @@ export default function PrepShell({
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Mask blocks (white rectangles to hide content)
+  // Mask blocks
   // ─────────────────────────────────────────────────────────────
 
   function startMaskMove(e, mask) {
@@ -1011,7 +985,7 @@ export default function PrepShell({
     const width = Math.abs(endX - startX);
     const height = Math.abs(endY - startY);
 
-    const MIN = 0.01; // ignore very tiny rectangles
+    const MIN = 0.01;
     if (width < MIN || height < MIN) return;
 
     const newMask = {
@@ -1074,7 +1048,7 @@ export default function PrepShell({
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Mouse handlers (attached to canvas/overlay)
+  // Mouse handlers
   // ─────────────────────────────────────────────────────────────
 
   function handleMouseDown(e) {
@@ -1085,11 +1059,9 @@ export default function PrepShell({
         target.closest(".prep-text-box") ||
         target.closest(".prep-mask-block"))
     ) {
-      // Note/text/mask header handles its own drag start
       return;
     }
 
-    // Pointer: click-to-stick (normalized)
     if (tool === TOOL_POINTER) {
       e.preventDefault();
       const p = getNormalizedPoint(e);
@@ -1099,7 +1071,6 @@ export default function PrepShell({
       return;
     }
 
-    // White mask block: click-and-drag to create
     if (tool === TOOL_MASK) {
       e.preventDefault();
       const p = getNormalizedPoint(e);
@@ -1138,21 +1109,18 @@ export default function PrepShell({
   }
 
   function handleMouseMove(e) {
-    // Handle font size resize
     if (resizeState) {
       e.preventDefault();
       handleFontSizeResize(e);
       return;
     }
 
-    // Handle width resize
     if (widthResizeState) {
       e.preventDefault();
       handleWidthResize(e);
       return;
     }
 
-    // Creating or moving a mask
     if (maskDrag) {
       e.preventDefault();
       const p = getNormalizedPoint(e);
@@ -1189,7 +1157,6 @@ export default function PrepShell({
       return;
     }
 
-    // Existing drag logic (notes / text + drawing)
     if (dragState) {
       e.preventDefault();
       draw(e);
@@ -1244,14 +1211,12 @@ export default function PrepShell({
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Render overlay (canvas + SVG + notes + text + masks + pointer)
+  // Render overlay
   // ─────────────────────────────────────────────────────────────
 
   function renderAnnotationsOverlay() {
-    // If a menu is open, DISABLE overlay interaction completely
     const menusOpen = toolMenuOpen || colorMenuOpen;
 
-    // Enable overlay only when interaction is needed
     const needsInteraction =
       !menusOpen &&
       (tool !== TOOL_NONE ||
@@ -1262,7 +1227,6 @@ export default function PrepShell({
     const overlayPointerEvents = needsInteraction ? "auto" : "none";
     const overlayTouchAction = needsInteraction ? "none" : "auto";
 
-    // Live preview for mask creation
     let maskPreview = null;
     if (maskDrag && maskDrag.mode === "creating") {
       const startX = maskDrag.startX;
@@ -1297,7 +1261,6 @@ export default function PrepShell({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {/* Canvas for drawing */}
         <canvas
           ref={canvasRef}
           className={
@@ -1313,8 +1276,6 @@ export default function PrepShell({
           onMouseDown={handleMouseDown}
         />
 
-        {/* SVG strokes layer */}
-        {/* SVG strokes layer */}
         <svg
           className="annotation-svg-layer"
           width="100%"
@@ -1348,14 +1309,9 @@ export default function PrepShell({
               />
             ))}
         </svg>
-        {/* Text boxes layer */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-          }}
-        >
+
+        {/* Text boxes */}
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
           {textBoxes
             .filter((box) => !isPdf || box.page === pdfCurrentPage || !box.page)
             .map((box) => {
@@ -1384,7 +1340,6 @@ export default function PrepShell({
                 >
                   {isEditing ? (
                     <>
-                      {/* Toolbar with Delete and Move buttons */}
                       <div className="prep-text-box__toolbar">
                         <button
                           type="button"
@@ -1432,15 +1387,12 @@ export default function PrepShell({
                         </button>
                       </div>
 
-                      {/* Main container with resize handles */}
                       <div className="prep-text-box__container">
-                        {/* Left resize handle */}
                         <span
                           className="prep-text-box__side-handle prep-text-box__side-handle--left"
                           onMouseDown={(e) => startWidthResize(e, box, "left")}
                         />
 
-                        {/* Input area */}
                         <div
                           className="prep-text-box__input-area"
                           style={{ width: `${boxWidth}px` }}
@@ -1464,7 +1416,6 @@ export default function PrepShell({
                             onMouseDown={(e) => e.stopPropagation()}
                           />
 
-                          {/* Font size resize handle (circle) */}
                           <span
                             className="prep-text-box__fontsize-handle"
                             onMouseDown={(e) => startFontSizeResize(e, box)}
@@ -1472,7 +1423,6 @@ export default function PrepShell({
                           />
                         </div>
 
-                        {/* Right resize handle */}
                         <span
                           className="prep-text-box__side-handle prep-text-box__side-handle--right"
                           onMouseDown={(e) => startWidthResize(e, box, "right")}
@@ -1504,7 +1454,6 @@ export default function PrepShell({
             })}
         </div>
 
-        {/* Sticky notes */}
         {/* Sticky notes */}
         {stickyNotes
           .filter(
@@ -1544,8 +1493,7 @@ export default function PrepShell({
             </div>
           ))}
 
-        {/* Saved mask blocks (white rectangles that hide content) */}
-        {/* Saved mask blocks (white rectangles that hide content) */}
+        {/* Masks */}
         {masks
           .filter(
             (mask) => !isPdf || mask.page === pdfCurrentPage || !mask.page
@@ -1568,7 +1516,6 @@ export default function PrepShell({
             />
           ))}
 
-        {/* Live mask preview while dragging */}
         {maskPreview && (
           <div
             className="prep-mask-block prep-mask-block--preview"
@@ -1580,7 +1527,7 @@ export default function PrepShell({
               height: `${maskPreview.height * 100}%`,
               backgroundColor: "rgba(255,255,255,0.85)",
               boxShadow: "0 0 0 1px rgba(0,0,0,0.2)",
-              pointerEvents: "none", // don't block drag
+              pointerEvents: "none",
             }}
           />
         )}
@@ -1611,10 +1558,6 @@ export default function PrepShell({
   // Viewer activity flag
   // ─────────────────────────────────────────────────────────────
 
-  // ─────────────────────────────────────────────────────────────
-  // Viewer activity flag
-  // ─────────────────────────────────────────────────────────────
-
   const viewerIsActive = hasScreenShare || !!viewerUrl;
 
   // ─────────────────────────────────────────────────────────────
@@ -1623,7 +1566,6 @@ export default function PrepShell({
 
   const audioTracks = [];
 
-  // New multi-track field from Sanity (optional)
   if (Array.isArray(resource.audioTracks)) {
     resource.audioTracks.forEach((track, index) => {
       if (!track) return;
@@ -1643,7 +1585,6 @@ export default function PrepShell({
     });
   }
 
-  // Old single audio field (kept for compatibility / default)
   if (resource.audioUrl) {
     audioTracks.unshift({
       id: "main-audio",
@@ -1659,7 +1600,7 @@ export default function PrepShell({
   const currentTrack = hasAudio ? audioTracks[safeTrackIndex] : null;
 
   // ─────────────────────────────────────────────────────────────
-  // Current tool meta (for compact dropdown button)
+  // Current tool meta
   // ─────────────────────────────────────────────────────────────
 
   const currentToolIcon =
@@ -1704,7 +1645,7 @@ export default function PrepShell({
     <>
       {showBreadcrumbs && (
         <nav className="unit-breadcrumbs prep-breadcrumbs">
-          <Link href="/resources" className="unit-breadcrumbs__link">
+          <Link href={`${prefix}/resources`} className="unit-breadcrumbs__link">
             {t(dict, "resources_breadcrumb_root")}
           </Link>
           {track && (
@@ -1782,14 +1723,14 @@ export default function PrepShell({
 
             <div className="prep-info-card__actions">
               <Link
-                href="/resources"
+                href={`${prefix}/resources`}
                 className="resources-button resources-button--ghost"
               >
                 {t(dict, "resources_prep_info_back_to_picker")}
               </Link>
               {unit?.slug && (
                 <Link
-                  href={`/resources/units/${unit.slug}`}
+                  href={`${prefix}/resources/units/${unit.slug}`}
                   className="resources-button resources-button--ghost"
                 >
                   {t(dict, "resources_prep_info_view_unit")}
@@ -1831,7 +1772,6 @@ export default function PrepShell({
                 className="prep-annotate-toolbar"
                 style={{ position: "relative", zIndex: 50 }}
               >
-                {/* Sidebar toggle */}
                 {!hideSidebar && (
                   <button
                     type="button"
@@ -1894,7 +1834,6 @@ export default function PrepShell({
                       </select>
                     )}
 
-                    {/* Play / Pause toggle */}
                     <button
                       type="button"
                       className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--audio"
@@ -1937,7 +1876,6 @@ export default function PrepShell({
                       {isAudioPlaying ? "⏸" : "▶️"}
                     </button>
 
-                    {/* Restart from beginning */}
                     <button
                       type="button"
                       className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--audio-restart"
@@ -1977,7 +1915,6 @@ export default function PrepShell({
                       ⏮
                     </button>
 
-                    {/* hidden actual audio element */}
                     <audio
                       ref={audioRef}
                       src={currentTrack ? currentTrack.url : undefined}
@@ -1985,7 +1922,8 @@ export default function PrepShell({
                     />
                   </>
                 )}
-                {/* TOOL DROPDOWN (compact) */}
+
+                {/* TOOL DROPDOWN */}
                 <div
                   className="prep-annotate-toolbar__dropdown"
                   ref={toolMenuRef}
@@ -2220,7 +2158,6 @@ export default function PrepShell({
               </div>
 
               <div className="prep-viewer__frame-wrapper">
-                {/* SCREEN SHARE MODE */}
                 {hasScreenShare ? (
                   <div
                     className="prep-viewer__canvas-container"
@@ -2235,21 +2172,16 @@ export default function PrepShell({
                     {renderAnnotationsOverlay()}
                   </div>
                 ) : isPdf ? (
-                  // PDF MODE
                   <div className="prep-viewer__canvas-container">
                     <PdfViewerWithSidebar
                       fileUrl={pdfViewerUrl}
                       onFatalError={(err) => {
                         console.error("PDF failed to load in pdf.js", err);
-                        // We do NOT fall back to iframe viewer – no embedded Google.
                       }}
                       onContainerReady={(el) => {
-                        // el is the page wrapper that matches the PDF page
                         containerRef.current = el;
                       }}
                       onNavStateChange={handlePdfNavStateChange}
-                      // Always show PDF controls + page sidebar,
-                      // even if breadcrumbs are hidden.
                       hideControls={false}
                       hideSidebar={false}
                       locale={locale}
@@ -2258,7 +2190,6 @@ export default function PrepShell({
                     </PdfViewerWithSidebar>
                   </div>
                 ) : (
-                  // IFRAME MODE (Google viewer, etc.)
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
@@ -2266,9 +2197,9 @@ export default function PrepShell({
                     <iframe
                       src={viewerUrl}
                       className="prep-viewer__frame"
-                      title={`${resource.title} – ${viewer.label}`}
+                      title={`${resource.title} – ${viewer?.label || "Viewer"}`}
                       allow={
-                        viewer.type === "youtube"
+                        viewer?.type === "youtube"
                           ? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           : undefined
                       }

@@ -2,19 +2,24 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/components/ToastProvider";
 import "@/styles/session-feedback.scss";
 import { trackEvent } from "@/lib/analytics";
+import { getDictionary, t } from "@/app/i18n";
 
 export default function SessionFeedbackPage() {
-  // ✅ Correct way to read [id] in a client component
   const params = useParams();
   const id = params?.id;
 
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const prefix = locale === "ar" ? "/ar" : "";
+  const dict = getDictionary(locale, "session_feedback");
+
   const { user, checking } = useAuth();
 
   const [session, setSession] = useState(null);
@@ -27,7 +32,9 @@ export default function SessionFeedbackPage() {
   const [futureSteps, setFutureSteps] = useState("");
 
   const isTeacher = user?.role === "teacher";
-  const toast = useToast();
+
+  const toastApi = useToast();
+  const toast = toastApi?.toast || toastApi; // supports both {toast} style or direct toast object
 
   const canEdit = useMemo(() => {
     if (!session) return false;
@@ -73,41 +80,36 @@ export default function SessionFeedbackPage() {
 
   const handleBack = () => {
     if (id) {
-      router.push(`/dashboard/sessions/${id}`);
+      router.push(`${prefix}/dashboard/sessions/${id}`);
     } else {
-      router.push("/dashboard/sessions");
+      router.push(`${prefix}/dashboard`);
     }
   };
 
   const handleSave = async () => {
     if (!canEdit || !id) return;
+
     try {
       setSaving(true);
       setError("");
 
-      await api.post(`/sessions/${id}/feedback/teacher`, {
+      await api.post(`/sessions/${id}/feedback`, {
         messageToLearner,
         commentsOnSession,
         futureSteps,
       });
 
-      // 🔹 Analytics: teacher feedback submitted
-      trackEvent("feedback_submitted", {
-        role: "teacher",
-        sessionId: id,
-      });
+      trackEvent("feedback_submitted", { role: "teacher", sessionId: id });
 
-      // 🔹 Optionally treat this as the moment session is completed
-      trackEvent("session_completed", {
-        sessionId: id,
-        by: "teacher_feedback",
-      });
-
-      toast.success("Feedback saved.");
+      toast?.success?.(t(dict, "saved_ok") || "Feedback saved.");
     } catch (err) {
       console.error("Failed to save feedback", err);
-      setError(err?.response?.data?.error || "Failed to save feedback");
-      toast.error("Failed to save feedback");
+      const msg =
+        err?.response?.data?.error ||
+        t(dict, "save_failed") ||
+        "Failed to save feedback";
+      setError(msg);
+      toast?.error?.(msg);
     } finally {
       setSaving(false);
     }

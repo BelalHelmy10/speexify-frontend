@@ -77,15 +77,33 @@ function SessionRow({
   onRescheduleClick,
   isUpcoming = true,
   isTeacher = false,
+  isAdmin = false,
   dict,
-  prefix, // 👈 NEW
+  prefix,
 }) {
   const countdown = useCountdown(s.startAt, s.endAt, {
     startsIn: t(dict, "countdown_starts_in"),
     live: t(dict, "countdown_live"),
     ended: t(dict, "countdown_ended"),
   });
+
   const joinable = canJoin(s.startAt, s.endAt);
+
+  const isGroup = String(s.type || "").toUpperCase() === "GROUP";
+  const participantCount =
+    typeof s.participantCount === "number" ? s.participantCount : null;
+
+  const canReschedule = isTeacher || isAdmin;
+
+  const cancelLabel =
+    isGroup && !isTeacher && !isAdmin
+      ? t(dict, "session_leave") || "Leave session"
+      : t(dict, "session_cancel") || "Cancel";
+
+  const cancelTitle =
+    isGroup && !isTeacher && !isAdmin
+      ? t(dict, "session_leave_title") || "Leave this group session"
+      : t(dict, "session_cancel_title") || "Cancel session";
 
   return (
     <div className="session-item">
@@ -95,6 +113,7 @@ function SessionRow({
           <div className="session-item__title">
             {s.title || t(dict, "session_title_default")}
           </div>
+
           <div className="session-item__meta">
             <span className="session-item__time">
               <svg
@@ -111,6 +130,20 @@ function SessionRow({
               {fmtInTz(s.startAt, timezone)}
               {s.endAt ? ` — ${fmt(s.endAt)}` : ""}
             </span>
+
+            {isGroup && (
+              <span className="badge badge--info">
+                {t(dict, "session_group") || "Group"}
+              </span>
+            )}
+
+            {participantCount !== null && (
+              <span className="badge badge--neutral">
+                {t(dict, "session_participants") || "Participants"}:{" "}
+                {participantCount}
+              </span>
+            )}
+
             {s.status && (
               <span className={`badge badge--${s.status}`}>{s.status}</span>
             )}
@@ -120,9 +153,8 @@ function SessionRow({
         <div className="session-item__actions">
           {isUpcoming ? (
             <>
-              {/* built-in classroom join button */}
               <Link
-                href={`${prefix}/classroom/${s.id}`} // 👈 prefix added
+                href={`${prefix}/classroom/${s.id}`}
                 className={`btn ${
                   joinable ? "btn--primary btn--glow" : "btn--ghost"
                 }`}
@@ -137,7 +169,6 @@ function SessionRow({
                   : countdown || t(dict, "session_join_soon")}
               </Link>
 
-              {/* Optional external meeting link (Zoom/Teams, etc.) */}
               {s.meetingUrl && (
                 <a
                   href={getSafeExternalUrl(s.meetingUrl)}
@@ -150,24 +181,27 @@ function SessionRow({
                 </a>
               )}
 
-              <button
-                className="btn btn--ghost"
-                onClick={() => onRescheduleClick(s)}
-              >
-                {t(dict, "session_reschedule")}
-              </button>
+              {canReschedule && (
+                <button
+                  className="btn btn--ghost"
+                  onClick={() => onRescheduleClick(s)}
+                >
+                  {t(dict, "session_reschedule")}
+                </button>
+              )}
+
               <button
                 className="btn btn--ghost btn--danger"
                 onClick={() => onCancel(s)}
-                title={t(dict, "session_cancel_title")}
+                title={cancelTitle}
               >
-                {t(dict, "session_cancel")}
+                {cancelLabel}
               </button>
             </>
           ) : (
             <>
               <Link
-                href={`${prefix}/dashboard/sessions/${s.id}`} // 👈 prefix added
+                href={`${prefix}/dashboard/sessions/${s.id}`}
                 className="btn btn--ghost"
               >
                 {t(dict, "session_view_details")}
@@ -183,10 +217,9 @@ function SessionRow({
                 </svg>
               </Link>
 
-              {/* Teacher: give OR edit feedback on completed sessions */}
               {isTeacher && s.status === "completed" && (
                 <Link
-                  href={`${prefix}/dashboard/sessions/${s.id}/feedback`} // 👈
+                  href={`${prefix}/dashboard/sessions/${s.id}/feedback`}
                   className="btn btn--primary"
                 >
                   {s.teacherFeedback
@@ -195,10 +228,9 @@ function SessionRow({
                 </Link>
               )}
 
-              {/* Learner: View feedback (only after teacher filled it) */}
               {!isTeacher && s.teacherFeedback && (
                 <Link
-                  href={`${prefix}/dashboard/sessions/${s.id}/feedback`} // 👈
+                  href={`${prefix}/dashboard/sessions/${s.id}/feedback`}
                   className="btn btn--primary"
                 >
                   {t(dict, "session_view_feedback")}
@@ -257,6 +289,7 @@ function DashboardInner({ dict, prefix }) {
   const [summary, setSummary] = useState(null);
   const { user, checking } = useAuth();
   const isTeacher = user?.role === "teacher";
+  const isAdmin = user?.role === "admin";
 
   const [teachSummary, setTeachSummary] = useState({
     nextTeach: null,
@@ -404,10 +437,31 @@ function DashboardInner({ dict, prefix }) {
   }, [refreshAll]);
 
   const handleCancel = async (s) => {
-    const ok = await confirmModal(t(dict, "session_cancel_title"));
+    const isGroup = String(s.type || "").toUpperCase() === "GROUP";
+    const title =
+      isGroup && !isTeacher && user?.role !== "admin"
+        ? t(dict, "session_leave_title") || "Leave this group session?"
+        : t(dict, "session_cancel_title") || "Cancel session?";
+
+    const ok = await confirmModal(title);
     if (!ok) return;
+
     try {
-      await api.post(`/sessions/${s.id}/cancel`);
+      const res = await api.post(`/sessions/${s.id}/cancel`);
+      const scope = res?.data?.scope;
+
+      if (scope === "participant") {
+        toast.success(
+          t(dict, "session_left_success") || "You left the session."
+        );
+      } else if (scope === "session") {
+        toast.success(
+          t(dict, "session_canceled_success") || "Session canceled."
+        );
+      } else {
+        toast.success(t(dict, "success_saved") || "Done.");
+      }
+
       await refreshAll();
     } catch (e) {
       toast.error(e?.response?.data?.error || t(dict, "error_cancel_failed"));
@@ -861,8 +915,9 @@ function DashboardInner({ dict, prefix }) {
                 onCancel={handleCancel}
                 onRescheduleClick={openReschedule}
                 isTeacher={isTeacher}
+                isAdmin={isAdmin}
                 dict={dict}
-                prefix={prefix} // 👈 pass down
+                prefix={prefix}
               />
             ))}
           </div>

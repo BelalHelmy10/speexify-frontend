@@ -93,13 +93,19 @@ const FOCUS_MODE_ORDER = [
 /* -----------------------------------------------------------
    MAIN COMPONENT
 ----------------------------------------------------------- */
-export default function ClassroomShell({ session, sessionId, tracks }) {
+export default function ClassroomShell({
+  session,
+  sessionId,
+  tracks,
+  locale = "en",
+  prefix = "",
+}) {
   const { teacherName, learnerName } = getParticipantsFromSession(session);
 
-  // Determine teacher vs learner
+  // Determine teacher vs learner (prefer server-provided flags if present)
   const isTeacher =
-    session?.role === "teacher" ||
     session?.isTeacher === true ||
+    session?.role === "teacher" ||
     session?.userType === "teacher" ||
     (session?.currentUser && session.currentUser.role === "teacher");
 
@@ -178,9 +184,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
 
   // When chat opens, clear unread counter
   useEffect(() => {
-    if (isChatOpen) {
-      setChatUnreadCount(0);
-    }
+    if (isChatOpen) setChatUnreadCount(0);
   }, [isChatOpen]);
 
   // Calculate split percentages
@@ -208,7 +212,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const send = classroomChannel?.send ?? (() => {});
   const subscribe = classroomChannel?.subscribe ?? (() => () => {});
 
-  // Learner listens for teacher's resource updates
   // Sync resource selection between teacher and learner
   useEffect(() => {
     if (!ready) return;
@@ -216,7 +219,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     const unsub = subscribe((msg) => {
       if (!msg) return;
 
-      // Teacher tells everyone which resource should be open
       if (msg.type === "SET_RESOURCE") {
         const { resourceId } = msg;
         if (resourceId && resourcesById[resourceId]) {
@@ -224,7 +226,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
         }
       }
 
-      // Learner just joined and asked for the current resource
       if (
         msg.type === "REQUEST_RESOURCE" &&
         isTeacher &&
@@ -242,8 +243,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   useEffect(() => {
     if (!ready) return;
     if (isTeacher) return;
-
-    // Fire once when the learner's channel is ready
     send({ type: "REQUEST_RESOURCE" });
   }, [ready, isTeacher, send]);
 
@@ -266,7 +265,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId]
     : null;
-
   const viewer = resource ? getViewerInfo(resource) : null;
 
   /* -----------------------------------------------------------
@@ -277,7 +275,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
     setIsPickerOpen(false);
   }
 
-  // stable callback so PrepVideoCall's effect doesn't re-run on every render
   const handleScreenShareStreamChange = useCallback((isActive) => {
     setIsScreenShareActive(Boolean(isActive));
   }, []);
@@ -295,7 +292,7 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
       {/* Header */}
       <header className="cr-header">
         <div className="cr-header__left">
-          <a href="/dashboard" className="cr-header__logo">
+          <a href={`${prefix}/dashboard`} className="cr-header__logo">
             Speexify
           </a>
           <span className="cr-header__separator">›</span>
@@ -378,7 +375,6 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
               </span>
             </button>
 
-            {/* Chat stays mounted so it can track unread messages */}
             <ClassroomChat
               classroomChannel={classroomChannel}
               sessionId={sessionId}
@@ -416,12 +412,12 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
               <PrepShell
                 resource={resource}
                 viewer={viewer}
-                hideSidebar={true} // hide left info panel in classroom
-                hideBreadcrumbs={true} // hide top breadcrumbs + "Prep room"
+                hideSidebar={true}
+                hideBreadcrumbs={true}
                 classroomChannel={classroomChannel}
                 isTeacher={isTeacher}
                 isScreenShareActive={isScreenShareActive}
-                locale="en"
+                locale={locale}
                 className="cr-prep-shell-fullsize"
               />
             ) : (
@@ -575,7 +571,10 @@ export default function ClassroomShell({ session, sessionId, tracks }) {
               >
                 Cancel
               </button>
-              <a href="/dashboard" className="cr-button cr-button--danger">
+              <a
+                href={`${prefix}/dashboard`}
+                className="cr-button cr-button--danger"
+              >
                 Yes, leave
               </a>
             </div>
