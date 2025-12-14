@@ -137,10 +137,13 @@ function SessionRow({
               </span>
             )}
 
-            {participantCount !== null && (
+            {(participantCount !== null || (isGroup && s.capacity)) && (
               <span className="badge badge--neutral">
                 {t(dict, "session_participants") || "Participants"}:{" "}
-                {participantCount}
+                {participantCount !== null ? participantCount : 0}
+                {isGroup && typeof s.capacity === "number"
+                  ? ` / ${s.capacity}`
+                  : ""}
               </span>
             )}
 

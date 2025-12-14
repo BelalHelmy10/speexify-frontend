@@ -30,7 +30,10 @@ function Admin() {
   const [total, setTotal] = useState(0);
 
   const [form, setForm] = useState({
-    userId: "",
+    type: "ONE_ON_ONE", // "ONE_ON_ONE" | "GROUP"
+    userId: "", // used for ONE_ON_ONE
+    participantIds: [], // used for GROUP
+    capacity: "", // used for GROUP
     teacherId: "",
     title: "",
     date: "",
@@ -43,7 +46,10 @@ function Admin() {
 
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({
+    type: "ONE_ON_ONE",
     userId: "",
+    participantIds: [],
+    capacity: "",
     teacherId: "",
     title: "",
     date: "",
@@ -98,6 +104,78 @@ function Admin() {
     let ms = end - start;
     if (ms < 0) ms += 24 * 60 * 60 * 1000;
     return Math.round(ms / 60000);
+  };
+
+  const normType = (v) => String(v || "ONE_ON_ONE").toUpperCase();
+
+  const onCreateParticipantsChange = (e) => {
+    const ids = Array.from(e.target.selectedOptions).map((o) => o.value);
+    setForm((f) => ({ ...f, participantIds: ids }));
+  };
+
+  const onEditParticipantsChange = (e) => {
+    const ids = Array.from(e.target.selectedOptions).map((o) => o.value);
+    setEditForm((f) => ({ ...f, participantIds: ids }));
+  };
+
+  const refreshEditingFromServer = async (sessionId) => {
+    try {
+      const { data } = await api.get(`/sessions/${sessionId}`, {
+        params: { t: Date.now() },
+      });
+      const sess = data?.session;
+      if (!sess) return;
+
+      const type = normType(sess.type);
+      const list = Array.isArray(sess.participants) ? sess.participants : [];
+
+      setEditForm((f) => ({
+        ...f,
+        type,
+        capacity:
+          typeof sess.capacity === "number"
+            ? String(sess.capacity)
+            : f.capacity,
+        participantIds:
+          type === "GROUP"
+            ? list
+                .filter((p) => p.status !== "canceled")
+                .map((p) => String(p.userId || p.user?.id))
+                .filter(Boolean)
+            : f.participantIds,
+      }));
+    } catch {
+      // silent — editing still works, just won't refresh participant list
+    }
+  };
+
+  const addParticipant = async (sessionId, userId) => {
+    if (!userId) return;
+    try {
+      await api.post(`/admin/sessions/${sessionId}/participants`, {
+        userId: Number(userId),
+      });
+      toast.success("Participant added");
+      await refreshEditingFromServer(sessionId);
+      await reloadSessions();
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Failed to add participant");
+    }
+  };
+
+  const removeParticipant = async (sessionId, userId) => {
+    if (!userId) return;
+    const ok = await confirmModal("Remove this participant from the session?");
+    if (!ok) return;
+
+    try {
+      await api.delete(`/admin/sessions/${sessionId}/participants/${userId}`);
+      toast.success("Participant removed");
+      await refreshEditingFromServer(sessionId);
+      await reloadSessions();
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Failed to remove participant");
+    }
   };
 
   // Load learners (only for admins)
@@ -206,6 +284,20 @@ function Admin() {
 
   const onCreateChange = (e) => {
     const { name, value } = e.target;
+
+    // when switching session type, reset fields that no longer apply
+    if (name === "type") {
+      const t = normType(value);
+      setForm((f) => ({
+        ...f,
+        type: t,
+        userId: t === "ONE_ON_ONE" ? f.userId : "",
+        participantIds: t === "GROUP" ? f.participantIds : [],
+        capacity: t === "GROUP" ? f.capacity : "",
+      }));
+      return;
+    }
+
     setForm((f) => ({ ...f, [name]: value }));
   };
 
@@ -228,16 +320,29 @@ function Admin() {
     try {
       const endAt = form.endTime ? joinDateTime(form.date, form.endTime) : null;
 
+      const type = normType(form.type);
+
       const payload = {
-        userId: Number(form.userId),
+        type,
         ...(form.teacherId ? { teacherId: Number(form.teacherId) } : {}),
-        title: form.title.trim() || "Lesson",
+        title:
+          form.title.trim() || (type === "GROUP" ? "Group Session" : "Lesson"),
         startAt: startAt.toISOString(),
         ...(endAt
           ? { endAt: endAt.toISOString() }
           : { durationMin: Number(form.duration || 60) }),
         meetingUrl: form.meetingUrl || null,
         notes: form.notes || null,
+        ...(type === "GROUP"
+          ? {
+              capacity: form.capacity ? Number(form.capacity) : null,
+              participantIds: (form.participantIds || [])
+                .map((x) => Number(x))
+                .filter((n) => Number.isFinite(n) && n > 0),
+            }
+          : {
+              userId: Number(form.userId),
+            }),
       };
 
       const { data } = await api.post("/admin/sessions", payload);
@@ -255,6 +360,10 @@ function Admin() {
       await reloadSessions();
       setForm((f) => ({
         ...f,
+        type: "ONE_ON_ONE",
+        userId: "",
+        participantIds: [],
+        capacity: "",
         teacherId: "",
         title: "",
         startTime: "",
@@ -281,9 +390,21 @@ function Admin() {
   };
 
   const startEdit = (row) => {
+    const type = normType(row.type);
+    const list = Array.isArray(row.participants) ? row.participants : [];
+
     setEditingId(row.id);
     setEditForm({
+      type,
       userId: String(row.user?.id || ""),
+      participantIds:
+        type === "GROUP"
+          ? list
+              .filter((p) => p.status !== "canceled")
+              .map((p) => String(p.userId || p.user?.id))
+              .filter(Boolean)
+          : [],
+      capacity: typeof row.capacity === "number" ? String(row.capacity) : "",
       teacherId: String(row.teacher?.id || ""),
       title: row.title || "",
       date: toDateInput(row.startAt),
@@ -314,7 +435,10 @@ function Admin() {
           ? joinDateTime(editForm.date, editForm.endTime)
           : null;
 
+      const type = normType(editForm.type);
+
       const payload = {
+        type,
         title: editForm.title.trim(),
         ...(startAt ? { startAt: startAt.toISOString() } : {}),
         ...(endAt !== null
@@ -322,9 +446,13 @@ function Admin() {
           : {}),
         meetingUrl: editForm.meetingUrl || null,
         notes: editForm.notes || null,
-        ...(editForm.userId ? { userId: Number(editForm.userId) } : {}),
         ...(editForm.teacherId
           ? { teacherId: Number(editForm.teacherId) }
+          : {}),
+        ...(type === "GROUP"
+          ? { capacity: editForm.capacity ? Number(editForm.capacity) : null }
+          : editForm.userId
+          ? { userId: Number(editForm.userId) }
           : {}),
       };
 
@@ -754,41 +882,192 @@ function Admin() {
         <form onSubmit={createSession} className="adm-modern-form">
           <div className="adm-form-grid">
             <div className="adm-form-field">
-              <label className="adm-form-label">
-                Learner<span className="adm-form-required">*</span>
-              </label>
+              <label className="adm-form-label">Session Type</label>
               <select
-                name="userId"
+                name="type"
                 className="adm-form-input"
-                value={form.userId}
+                value={form.type}
                 onChange={onCreateChange}
-                required
               >
-                <option value="">Select learner...</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name ? `${u.name} — ${u.email}` : u.email}
-                  </option>
-                ))}
+                <option value="ONE_ON_ONE">1:1</option>
+                <option value="GROUP">Group</option>
               </select>
             </div>
 
+            {normType(form.type) === "ONE_ON_ONE" ? (
+              <div className="adm-form-field">
+                <label className="adm-form-label">
+                  Learner<span className="adm-form-required">*</span>
+                </label>
+                <select
+                  name="userId"
+                  className="adm-form-input"
+                  value={form.userId}
+                  onChange={onCreateChange}
+                  required
+                >
+                  <option value="">Select learner...</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name ? `${u.name} — ${u.email}` : u.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <>
+                <div className="adm-form-field">
+                  <label className="adm-form-label">
+                    Participants<span className="adm-form-required">*</span>
+                  </label>
+                  <select
+                    multiple
+                    className="adm-form-input"
+                    value={form.participantIds}
+                    onChange={onCreateParticipantsChange}
+                    required
+                    style={{ minHeight: 120 }}
+                  >
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name ? `${u.name} — ${u.email}` : u.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="adm-form-field">
+                  <label className="adm-form-label">Capacity</label>
+                  <input
+                    type="number"
+                    name="capacity"
+                    className="adm-form-input"
+                    value={form.capacity}
+                    onChange={onCreateChange}
+                    min="1"
+                    placeholder="e.g., 10"
+                  />
+                </div>
+              </>
+            )}
+
             <div className="adm-form-field">
-              <label className="adm-form-label">Teacher</label>
+              <label className="adm-form-label">Session Type</label>
               <select
-                name="teacherId"
+                name="type"
                 className="adm-form-input"
-                value={form.teacherId}
-                onChange={onCreateChange}
+                value={editForm.type}
+                onChange={onEditChange}
               >
-                <option value="">Unassigned</option>
-                {teachers.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name ? `${t.name} — ${t.email}` : t.email}
-                  </option>
-                ))}
+                <option value="ONE_ON_ONE">1:1</option>
+                <option value="GROUP">Group</option>
               </select>
             </div>
+
+            {normType(editForm.type) === "ONE_ON_ONE" ? (
+              <div className="adm-form-field">
+                <label className="adm-form-label">Learner</label>
+                <select
+                  name="userId"
+                  className="adm-form-input"
+                  value={editForm.userId}
+                  onChange={onEditChange}
+                >
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name ? `${u.name} — ${u.email}` : u.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <>
+                <div className="adm-form-field">
+                  <label className="adm-form-label">Capacity</label>
+                  <input
+                    type="number"
+                    name="capacity"
+                    className="adm-form-input"
+                    value={editForm.capacity}
+                    onChange={onEditChange}
+                    min="1"
+                    placeholder="e.g., 10"
+                  />
+                </div>
+
+                <div className="adm-form-field adm-form-field--full">
+                  <label className="adm-form-label">
+                    Participants (active)
+                  </label>
+
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    <select
+                      multiple
+                      className="adm-form-input"
+                      value={editForm.participantIds}
+                      onChange={onEditParticipantsChange}
+                      style={{ minHeight: 120, flex: "1 1 320px" }}
+                    >
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name ? `${u.name} — ${u.email}` : u.email}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div style={{ flex: "0 0 220px" }}>
+                      <div
+                        style={{ fontSize: 12, opacity: 0.75, marginBottom: 8 }}
+                      >
+                        Add / remove uses seat-level endpoints.
+                      </div>
+
+                      <button
+                        type="button"
+                        className="adm-btn-secondary"
+                        style={{ width: "100%", marginBottom: 8 }}
+                        onClick={async () => {
+                          const last =
+                            editForm.participantIds?.[
+                              editForm.participantIds.length - 1
+                            ];
+                          if (!last) {
+                            toast.error(
+                              "Select at least one participant in the list first."
+                            );
+                            return;
+                          }
+                          await addParticipant(s.id, last);
+                        }}
+                      >
+                        Add selected (last)
+                      </button>
+
+                      <button
+                        type="button"
+                        className="adm-btn-danger"
+                        style={{ width: "100%" }}
+                        onClick={async () => {
+                          const last =
+                            editForm.participantIds?.[
+                              editForm.participantIds.length - 1
+                            ];
+                          if (!last) {
+                            toast.error(
+                              "Select at least one participant in the list first."
+                            );
+                            return;
+                          }
+                          await removeParticipant(s.id, last);
+                        }}
+                      >
+                        Remove selected (last)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="adm-form-field adm-form-field--full">
               <label className="adm-form-label">
@@ -1201,7 +1480,13 @@ function Admin() {
                       </button>
                     </div>
                   </div>
-                  <h3 className="adm-session-card-modern__title">{s.title}</h3>
+                  <h3 className="adm-session-card-modern__title">
+                    {s.title ||
+                      (normType(s.type) === "GROUP"
+                        ? "Group Session"
+                        : "Lesson")}
+                  </h3>
+
                   <div className="adm-session-card-modern__info">
                     <div className="adm-info-row">
                       <svg
@@ -1224,29 +1509,71 @@ function Admin() {
                       </svg>
                       <span>{fmt(s.startAt)}</span>
                     </div>
-                    <div className="adm-info-row">
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                      >
-                        <circle
-                          cx="8"
-                          cy="5"
-                          r="2.5"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
-                        <path
-                          d="M2 13C2 11 5 9 8 9C11 9 14 11 14 13"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <span>{s.user?.name || s.user?.email}</span>
-                    </div>
+                    {normType(s.type) === "GROUP" ? (
+                      <div className="adm-info-row">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                        >
+                          <path
+                            d="M2 13C2 11 5 9 8 9C11 9 14 11 14 13"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                          />
+                          <circle
+                            cx="6"
+                            cy="5"
+                            r="2.2"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <circle
+                            cx="10"
+                            cy="5"
+                            r="2.2"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                        </svg>
+                        <span>
+                          Group session · Participants:{" "}
+                          {typeof s.participantCount === "number"
+                            ? s.participantCount
+                            : "—"}
+                          {typeof s.capacity === "number"
+                            ? ` / ${s.capacity}`
+                            : ""}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="adm-info-row">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                        >
+                          <circle
+                            cx="8"
+                            cy="5"
+                            r="2.5"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <path
+                            d="M2 13C2 11 5 9 8 9C11 9 14 11 14 13"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <span>{s.user?.name || s.user?.email}</span>
+                      </div>
+                    )}
+
                     {s.teacher && (
                       <div className="adm-info-row">
                         <svg

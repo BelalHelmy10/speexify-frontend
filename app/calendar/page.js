@@ -40,20 +40,34 @@ const localizer = dateFnsLocalizer({
 });
 
 // Map backend sessions → RBC events
+// Map backend sessions → RBC events
 const toRbcEvents = (arr = []) =>
-  arr.map((s) => ({
-    id: String(s.id),
-    title: s.title || "",
-    start: new Date(s.startAt),
-    end: s.endAt ? new Date(s.endAt) : new Date(s.startAt),
-    status: s.status,
-    meetingUrl: s.meetingUrl || "",
-    joinUrl: s.joinUrl || "",
-    type: s.type || "",
-    capacity: s.capacity ?? null,
-    participantCount: s.participantCount ?? null,
-    _raw: s,
-  }));
+  arr.map((s) => {
+    const type = String(s.type || "").toUpperCase();
+    const isGroup = type === "GROUP";
+    const cap = typeof s.capacity === "number" ? s.capacity : null;
+    const count =
+      typeof s.participantCount === "number" ? s.participantCount : null;
+
+    return {
+      id: String(s.id),
+      title: s.title || "",
+      start: new Date(s.startAt),
+      end: s.endAt ? new Date(s.endAt) : new Date(s.startAt),
+      status: s.status,
+      meetingUrl: s.meetingUrl || "",
+      joinUrl: s.joinUrl || "",
+      type,
+      isGroup,
+      capacity: cap,
+      participantCount: count,
+      seatsLabel:
+        isGroup && (count !== null || cap !== null)
+          ? `${count ?? 0}${cap ? `/${cap}` : ""}`
+          : "",
+      _raw: s,
+    };
+  });
 
 // Compute visible range for a given date + view
 function getVisibleRange(date, view) {
@@ -122,14 +136,43 @@ function SessionRow({
   onRescheduleClick,
   isUpcoming = true,
   isTeacher = false,
+  isAdmin = false,
   dict,
+  prefix = "",
 }) {
   const countdown = useCountdown(s.startAt, s.endAt, {
     startsIn: t(dict, "countdown_starts_in"),
     live: t(dict, "countdown_live"),
     ended: t(dict, "countdown_ended"),
   });
+
   const joinable = canJoin(s.startAt, s.endAt);
+
+  const isGroup = String(s.type || "").toUpperCase() === "GROUP";
+  const cap = typeof s.capacity === "number" ? s.capacity : null;
+  const count =
+    typeof s.participantCount === "number" ? s.participantCount : null;
+
+  const canReschedule = isTeacher || isAdmin;
+
+  const cancelLabel =
+    isGroup && !isTeacher && !isAdmin
+      ? t(dict, "session_leave") || "Leave session"
+      : t(dict, "session_cancel") || "Cancel";
+
+  const cancelTitle =
+    isGroup && !isTeacher && !isAdmin
+      ? t(dict, "session_leave_title") || "Leave this group session"
+      : t(dict, "session_cancel_title") || "Cancel session";
+
+  const seatsLabel =
+    isGroup && (count !== null || cap !== null)
+      ? `${count ?? 0}${cap ? ` / ${cap}` : ""}`
+      : "";
+
+  const startText = s.startAt?.toLocaleString
+    ? s.startAt.toLocaleString()
+    : new Date(s.startAt).toLocaleString();
 
   return (
     <div className="session-item">
@@ -139,6 +182,7 @@ function SessionRow({
           <div className="session-item__title">
             {s.title || t(dict, "session_default_title")}
           </div>
+
           <div className="session-item__meta">
             <span className="session-item__time">
               <svg
@@ -152,10 +196,21 @@ function SessionRow({
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
-              {s.startAt.toLocaleString
-                ? s.startAt.toLocaleString()
-                : new Date(s.startAt).toLocaleString()}
+              {startText}
             </span>
+
+            {isGroup && (
+              <span className="badge badge--info">
+                {t(dict, "session_group") || "Group"}
+              </span>
+            )}
+
+            {isGroup && seatsLabel && (
+              <span className="badge badge--neutral">
+                {t(dict, "session_seats") || "Seats"}: {seatsLabel}
+              </span>
+            )}
+
             {s.status && (
               <span className={`badge badge--${s.status}`}>{s.status}</span>
             )}
@@ -165,9 +220,8 @@ function SessionRow({
         <div className="session-item__actions">
           {isUpcoming ? (
             <>
-              {/* built-in classroom join button */}
               <a
-                href={`/classroom/${s.id}`}
+                href={`${prefix}/classroom/${s.id}`}
                 className={`btn ${
                   joinable ? "btn--primary btn--glow" : "btn--ghost"
                 }`}
@@ -180,17 +234,21 @@ function SessionRow({
                 {joinable ? t(dict, "countdown_live") : countdown}
               </a>
 
-              <button
-                className="btn btn--ghost"
-                onClick={() => onRescheduleClick(s)}
-              >
-                {t(dict, "session_default_title")}
-              </button>
+              {canReschedule && (
+                <button
+                  className="btn btn--ghost"
+                  onClick={() => onRescheduleClick(s)}
+                >
+                  {t(dict, "session_reschedule") || "Reschedule"}
+                </button>
+              )}
+
               <button
                 className="btn btn--ghost btn--danger"
                 onClick={() => onCancel(s)}
+                title={cancelTitle}
               >
-                {t(dict, "countdown_ended")}
+                {cancelLabel}
               </button>
             </>
           ) : null}
@@ -307,12 +365,18 @@ export default function CalendarPage() {
   }, []);
 
   // Custom event component with elegant icon (uses translated default title)
+  // Custom event component with group + seats
   const EventComp = ({ event }) => {
+    const isGroup = !!event?.isGroup;
+    const seats = event?.seatsLabel ? ` · ${event.seatsLabel}` : "";
+
     return (
       <div className="ev-pill">
         <span className="ev-icon">●</span>
         <span className="ev-title">
           {event.title || t(dict, "session_default_title")}
+          {isGroup ? ` · ${t(dict, "session_group") || "Group"}` : ""}
+          {isGroup ? seats : ""}
         </span>
       </div>
     );
