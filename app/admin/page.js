@@ -1,7 +1,6 @@
 // app/admin/page.js
 "use client";
-
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api, { clearCsrfToken } from "@/lib/api";
@@ -9,14 +8,12 @@ import "@/styles/admin.scss";
 import useAuth from "@/hooks/useAuth";
 import { useToast, useConfirm } from "@/components/ToastProvider";
 import { trackEvent } from "@/lib/analytics";
-
 function Admin() {
   const { toast } = useToast();
   const { confirmModal } = useConfirm();
   const { user, checking } = useAuth();
   const isAdmin = user?.role === "admin";
   const router = useRouter();
-
   const [status, setStatus] = useState("");
   const [users, setUsers] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -28,7 +25,6 @@ function Admin() {
   const [to, setTo] = useState("");
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
-
   // ─────────────────────────────────────────────
   // CREATE FORM STATE
   // ─────────────────────────────────────────────
@@ -46,7 +42,6 @@ function Admin() {
     meetingUrl: "",
     notes: "",
   });
-
   // ─────────────────────────────────────────────
   // EDIT FORM STATE
   // ─────────────────────────────────────────────
@@ -65,14 +60,20 @@ function Admin() {
     meetingUrl: "",
     notes: "",
   });
-
   // ─────────────────────────────────────────────
   // USER MANAGEMENT STATE
   // ─────────────────────────────────────────────
   const [usersAdmin, setUsersAdmin] = useState([]);
   const [usersQ, setUsersQ] = useState("");
   const [usersBusy, setUsersBusy] = useState(false);
-
+  // ─────────────────────────────────────────────
+  // PACKAGES MODAL STATE
+  // ─────────────────────────────────────────────
+  const [showPackagesModal, setShowPackagesModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [packages, setPackages] = useState([]);
+  const [packagesLoading, setPackagesLoading] = useState(false);
+  const modalRef = useRef(null);
   // ─────────────────────────────────────────────
   // HELPER FUNCTIONS
   // ─────────────────────────────────────────────
@@ -85,7 +86,6 @@ function Admin() {
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
   };
-
   const toTimeInput = (iso) => {
     if (!iso) return "";
     const d = new Date(iso);
@@ -94,7 +94,6 @@ function Admin() {
     const mi = String(d.getMinutes()).padStart(2, "0");
     return `${hh}:${mi}`;
   };
-
   const fmt = (iso) =>
     new Date(iso).toLocaleString([], {
       weekday: "short",
@@ -103,23 +102,19 @@ function Admin() {
       hour: "2-digit",
       minute: "2-digit",
     });
-
   const joinDateTime = (dateStr, timeStr) => {
     if (!dateStr || !timeStr) return null;
     const [y, m, d] = dateStr.split("-").map(Number);
     const [hh, mm] = timeStr.split(":").map(Number);
     return new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
   };
-
   const diffMinutes = (start, end) => {
     if (!start || !end) return 0;
     let ms = end - start;
     if (ms < 0) ms += 24 * 60 * 60 * 1000;
     return Math.round(ms / 60000);
   };
-
   const normType = (v) => String(v || "ONE_ON_ONE").toUpperCase();
-
   // ─────────────────────────────────────────────
   // PARTICIPANT MANAGEMENT (for editing GROUP sessions)
   // ─────────────────────────────────────────────
@@ -130,11 +125,9 @@ function Admin() {
       });
       const sess = data?.session;
       if (!sess) return;
-
       const type = normType(sess.type);
       const list = Array.isArray(sess.participants) ? sess.participants : [];
       const learners = Array.isArray(sess.learners) ? sess.learners : [];
-
       // Use learners array if available, otherwise extract from participants
       const activeIds =
         learners.length > 0
@@ -145,7 +138,6 @@ function Admin() {
               .filter((p) => p.status !== "canceled")
               .map((p) => String(p.userId || p.user?.id))
               .filter(Boolean);
-
       setEditForm((f) => ({
         ...f,
         type,
@@ -161,7 +153,6 @@ function Admin() {
       console.error("Failed to refresh session:", err);
     }
   };
-
   const addParticipant = async (sessionId, userId) => {
     if (!userId || !sessionId) return;
     try {
@@ -175,12 +166,10 @@ function Admin() {
       toast.error(e?.response?.data?.error || "Failed to add participant");
     }
   };
-
   const removeParticipant = async (sessionId, userId) => {
     if (!userId || !sessionId) return;
     const ok = await confirmModal("Remove this participant from the session?");
     if (!ok) return;
-
     try {
       await api.delete(`/admin/sessions/${sessionId}/participants/${userId}`);
       toast.success("Participant removed");
@@ -190,11 +179,9 @@ function Admin() {
       toast.error(e?.response?.data?.error || "Failed to remove participant");
     }
   };
-
   // ─────────────────────────────────────────────
   // DATA LOADING
   // ─────────────────────────────────────────────
-
   // Load learners
   useEffect(() => {
     if (checking || !isAdmin) return;
@@ -207,7 +194,6 @@ function Admin() {
       }
     })();
   }, [checking, isAdmin]);
-
   // Load teachers
   useEffect(() => {
     if (checking || !isAdmin) return;
@@ -220,13 +206,11 @@ function Admin() {
       }
     })();
   }, [checking, isAdmin]);
-
   // Debounce search
   useEffect(() => {
     const t = setTimeout(() => setQDebounced(q), 300);
     return () => clearTimeout(t);
   }, [q]);
-
   // Build query params
   const params = useMemo(() => {
     const p = new URLSearchParams();
@@ -238,7 +222,6 @@ function Admin() {
     p.set("offset", "0");
     return p.toString();
   }, [qDebounced, from, to, teacherIdFilter]);
-
   const normalizeSessionsResponse = (data) => {
     if (Array.isArray(data)) return { items: data, total: data.length };
     return {
@@ -247,7 +230,6 @@ function Admin() {
         typeof data?.total === "number" ? data.total : data?.items?.length || 0,
     };
   };
-
   const reloadSessions = async () => {
     if (!isAdmin) {
       setSessions([]);
@@ -255,7 +237,6 @@ function Admin() {
       setLoading(false);
       return;
     }
-
     setLoading(true);
     try {
       const { data } = await api.get(`/admin/sessions?${params}`);
@@ -268,12 +249,10 @@ function Admin() {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     reloadSessions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
-
   // Auto-calculate duration for create form
   useEffect(() => {
     if (form.date && form.startTime && form.endTime) {
@@ -287,7 +266,6 @@ function Admin() {
       }
     }
   }, [form.date, form.startTime, form.endTime]);
-
   // Auto-calculate duration for edit form
   useEffect(() => {
     if (editingId && editForm.date && editForm.startTime && editForm.endTime) {
@@ -301,13 +279,11 @@ function Admin() {
       }
     }
   }, [editingId, editForm.date, editForm.startTime, editForm.endTime]);
-
   // ─────────────────────────────────────────────
   // CREATE FORM HANDLERS
   // ─────────────────────────────────────────────
   const onCreateChange = (e) => {
     const { name, value } = e.target;
-
     if (name === "type") {
       const t = normType(value);
       setForm((f) => ({
@@ -319,25 +295,19 @@ function Admin() {
       }));
       return;
     }
-
     setForm((f) => ({ ...f, [name]: value }));
   };
-
   const onCreateLearnersChange = (e) => {
     const ids = Array.from(e.target.selectedOptions).map((o) => o.value);
     setForm((f) => ({ ...f, learnerIds: ids }));
   };
-
   const createSession = async (e) => {
     e.preventDefault();
-
     const startAt = joinDateTime(form.date, form.startTime);
-
     if (!startAt) {
       toast.error("Please select a valid date and time");
       return;
     }
-
     // Warn if session is in the past
     if (startAt < new Date()) {
       const proceed = await confirmModal(
@@ -345,15 +315,12 @@ function Admin() {
       );
       if (!proceed) return;
     }
-
     const type = normType(form.type);
-
     // Validation
     if (type === "ONE_ON_ONE" && !form.userId) {
       toast.error("Please select a learner for the 1:1 session");
       return;
     }
-
     if (
       type === "GROUP" &&
       (!form.learnerIds || form.learnerIds.length === 0)
@@ -361,11 +328,9 @@ function Admin() {
       toast.error("Please select at least one learner for the group session");
       return;
     }
-
     setStatus("Saving…");
     try {
       const endAt = form.endTime ? joinDateTime(form.date, form.endTime) : null;
-
       const payload = {
         type,
         title:
@@ -378,7 +343,6 @@ function Admin() {
         joinUrl: form.meetingUrl || null,
         notes: form.notes || null,
       };
-
       if (type === "GROUP") {
         payload.learnerIds = form.learnerIds
           .map((x) => Number(x))
@@ -387,9 +351,7 @@ function Admin() {
       } else {
         payload.learnerId = Number(form.userId);
       }
-
       const { data } = await api.post("/admin/sessions", payload);
-
       trackEvent("session_booked", {
         source: "admin",
         sessionId: data?.session?.id || data?.id,
@@ -398,7 +360,6 @@ function Admin() {
         learnerCount: type === "GROUP" ? payload.learnerIds?.length : 1,
         teacherId: payload.teacherId || null,
       });
-
       toast.success(
         `${
           type === "GROUP" ? "Group session" : "Session"
@@ -406,7 +367,6 @@ function Admin() {
       );
       setStatus("");
       await reloadSessions();
-
       // Reset form but keep date for convenience
       setForm((f) => ({
         ...f,
@@ -439,7 +399,6 @@ function Admin() {
       }
     }
   };
-
   // ─────────────────────────────────────────────
   // EDIT FORM HANDLERS
   // ─────────────────────────────────────────────
@@ -449,7 +408,6 @@ function Admin() {
     const participants = Array.isArray(row.participants)
       ? row.participants
       : [];
-
     // Extract learner IDs from either learners array or participants
     const learnerIds =
       learners.length > 0
@@ -460,7 +418,6 @@ function Admin() {
             .filter((p) => p.status !== "canceled")
             .map((p) => String(p.userId || p.user?.id))
             .filter(Boolean);
-
     setEditingId(row.id);
     setEditForm({
       type,
@@ -477,7 +434,6 @@ function Admin() {
       notes: row.notes || "",
     });
   };
-
   const cancelEdit = () => {
     setEditingId(null);
     setEditForm({
@@ -495,12 +451,10 @@ function Admin() {
       notes: "",
     });
   };
-
   const onEditChange = (e) => {
     const { name, value } = e.target;
     setEditForm((f) => ({ ...f, [name]: value }));
   };
-
   const updateSession = async (id) => {
     setStatus("Updating…");
     try {
@@ -512,9 +466,7 @@ function Admin() {
         editForm.date && editForm.endTime
           ? joinDateTime(editForm.date, editForm.endTime)
           : null;
-
       const type = normType(editForm.type);
-
       const payload = {
         title: editForm.title.trim(),
         ...(startAt ? { startAt: startAt.toISOString() } : {}),
@@ -527,14 +479,12 @@ function Admin() {
           ? { teacherId: Number(editForm.teacherId) }
           : { teacherId: null }),
       };
-
       // Only include type-specific fields
       if (type === "GROUP") {
         payload.capacity = editForm.capacity ? Number(editForm.capacity) : null;
       } else if (editForm.userId) {
         payload.userId = Number(editForm.userId);
       }
-
       await api.patch(`/admin/sessions/${id}`, payload);
       toast.success("Session updated");
       setStatus("");
@@ -545,13 +495,11 @@ function Admin() {
       setStatus("");
     }
   };
-
   const deleteSession = async (id) => {
     const ok = await confirmModal(
       "Delete this session? This cannot be undone."
     );
     if (!ok) return;
-
     setStatus("Deleting…");
     try {
       await api.delete(`/admin/sessions/${id}`);
@@ -565,17 +513,30 @@ function Admin() {
       setStatus("");
     }
   };
-
   // ─────────────────────────────────────────────
   // USER MANAGEMENT
   // ─────────────────────────────────────────────
+  // ─────────────────────────────────────────────
+  // PACKAGES HANDLERS
+  // ─────────────────────────────────────────────
+  async function loadPackages(userId) {
+    setPackagesLoading(true);
+    try {
+      const { data } = await api.get(`/admin/users/${userId}/packages`);
+      setPackages(Array.isArray(data) ? data : []);
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to load packages");
+      setPackages([]);
+    } finally {
+      setPackagesLoading(false);
+    }
+  }
   async function loadUsersAdmin() {
     if (!isAdmin) {
       setUsersAdmin([]);
       setUsersBusy(false);
       return;
     }
-
     setUsersBusy(true);
     try {
       const { data } = await api.get(
@@ -586,18 +547,15 @@ function Admin() {
       setUsersBusy(false);
     }
   }
-
   useEffect(() => {
     loadUsersAdmin();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   useEffect(() => {
     const t = setTimeout(loadUsersAdmin, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usersQ]);
-
   async function changeRole(u, role) {
     try {
       await api.patch(`/admin/users/${u.id}`, { role });
@@ -607,7 +565,6 @@ function Admin() {
       toast.error(e.response?.data?.error || "Failed to update role");
     }
   }
-
   async function toggleDisabled(u) {
     try {
       await api.patch(`/admin/users/${u.id}`, { isDisabled: !u.isDisabled });
@@ -617,7 +574,6 @@ function Admin() {
       toast.error(e.response?.data?.error || "Failed to change status");
     }
   }
-
   async function sendReset(u) {
     try {
       await api.post(`/admin/users/${u.id}/reset-password`);
@@ -626,7 +582,6 @@ function Admin() {
       toast.error(e.response?.data?.error || "Failed to send reset");
     }
   }
-
   async function impersonate(u) {
     try {
       await api.post(`/admin/impersonate/${u.id}`);
@@ -636,7 +591,6 @@ function Admin() {
       toast.error(e.response?.data?.error || "Failed to impersonate");
     }
   }
-
   async function stopImpersonate() {
     try {
       await api.post(`/admin/impersonate/stop`);
@@ -647,7 +601,20 @@ function Admin() {
       toast.error(e?.response?.data?.error || "Failed to stop impersonation");
     }
   }
-
+  // Close modal on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        setShowPackagesModal(false);
+      }
+    }
+    if (showPackagesModal) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showPackagesModal]);
   // ─────────────────────────────────────────────
   // ACCESS CONTROL
   // ─────────────────────────────────────────────
@@ -658,7 +625,6 @@ function Admin() {
       </div>
     );
   }
-
   if (!isAdmin) {
     return (
       <div className="adm-admin-modern adm-admin-denied">
@@ -704,40 +670,33 @@ function Admin() {
       </div>
     );
   }
-
   // ─────────────────────────────────────────────
   // Get learner display for a session
   // ─────────────────────────────────────────────
   const getSessionLearnerDisplay = (s) => {
     const type = normType(s.type);
-
     if (type === "GROUP") {
       const learners = s.learners || [];
       const count =
         s.participantCount ??
         learners.filter((l) => l.status !== "canceled").length;
       const cap = s.capacity;
-
       if (learners.length === 0) {
         return `${count} participant${count !== 1 ? "s" : ""}${
           cap ? ` / ${cap}` : ""
         }`;
       }
-
       const names = learners
         .filter((l) => l.status !== "canceled")
         .slice(0, 2)
         .map((l) => l.name || l.email?.split("@")[0] || "Learner")
         .join(", ");
-
       const extra = count > 2 ? ` +${count - 2} more` : "";
       return `${names}${extra}${cap ? ` (${count}/${cap})` : ` (${count})`}`;
     }
-
     // ONE_ON_ONE
     return s.user?.name || s.user?.email || "No learner";
   };
-
   // ─────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────
@@ -753,7 +712,6 @@ function Admin() {
           </h1>
         </div>
       </div>
-
       {/* ═══════════════════════════════════════════════════════════════════
           USER MANAGEMENT
           ═══════════════════════════════════════════════════════════════════ */}
@@ -806,7 +764,6 @@ function Admin() {
             </button>
           </div>
         </div>
-
         <div className="adm-data-table">
           {usersBusy ? (
             <div className="adm-table-skeleton">
@@ -939,6 +896,37 @@ function Admin() {
                             />
                           </svg>
                         </button>
+                        <button
+                          className="adm-btn-action"
+                          onClick={() => {
+                            setSelectedUser(u);
+                            loadPackages(u.id);
+                            setShowPackagesModal(true);
+                          }}
+                          title="View Packages"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <path
+                              d="M2 4H14V12H2V4ZM8 4V12"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M4 2L6 4H10L12 2"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -948,7 +936,6 @@ function Admin() {
           )}
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════════════════════════════
           CREATE SESSION
           ═══════════════════════════════════════════════════════════════════ */}
@@ -975,7 +962,6 @@ function Admin() {
             </div>
           </div>
         </div>
-
         <form onSubmit={createSession} className="adm-modern-form">
           <div className="adm-form-grid">
             {/* Session Type */}
@@ -991,7 +977,6 @@ function Admin() {
                 <option value="GROUP">👥 Group Session</option>
               </select>
             </div>
-
             {/* Teacher (same for both types) */}
             <div className="adm-form-field">
               <label className="adm-form-label">Teacher</label>
@@ -1009,7 +994,6 @@ function Admin() {
                 ))}
               </select>
             </div>
-
             {/* ONE_ON_ONE: Single learner */}
             {normType(form.type) === "ONE_ON_ONE" && (
               <div className="adm-form-field">
@@ -1032,7 +1016,6 @@ function Admin() {
                 </select>
               </div>
             )}
-
             {/* GROUP: Multiple learners + capacity */}
             {normType(form.type) === "GROUP" && (
               <>
@@ -1049,7 +1032,6 @@ function Admin() {
                     placeholder="Max participants (optional)"
                   />
                 </div>
-
                 <div className="adm-form-field adm-form-field--full">
                   <label className="adm-form-label">
                     Participants<span className="adm-form-required">*</span>
@@ -1081,7 +1063,6 @@ function Admin() {
                 </div>
               </>
             )}
-
             {/* Title */}
             <div className="adm-form-field adm-form-field--full">
               <label className="adm-form-label">
@@ -1100,7 +1081,6 @@ function Admin() {
                 required
               />
             </div>
-
             {/* Date & Time */}
             <div className="adm-form-field">
               <label className="adm-form-label">
@@ -1115,7 +1095,6 @@ function Admin() {
                 required
               />
             </div>
-
             <div className="adm-form-field">
               <label className="adm-form-label">
                 Start Time<span className="adm-form-required">*</span>
@@ -1129,7 +1108,6 @@ function Admin() {
                 required
               />
             </div>
-
             <div className="adm-form-field">
               <label className="adm-form-label">End Time</label>
               <input
@@ -1140,7 +1118,6 @@ function Admin() {
                 onChange={onCreateChange}
               />
             </div>
-
             <div className="adm-form-field">
               <label className="adm-form-label">Duration (minutes)</label>
               <input
@@ -1154,7 +1131,6 @@ function Admin() {
                 disabled={!!form.endTime}
               />
             </div>
-
             {/* Meeting URL */}
             <div className="adm-form-field adm-form-field--full">
               <label className="adm-form-label">Meeting URL</label>
@@ -1166,7 +1142,6 @@ function Admin() {
                 placeholder="https://meet.google.com/... (leave empty for built-in classroom)"
               />
             </div>
-
             {/* Notes */}
             <div className="adm-form-field adm-form-field--full">
               <label className="adm-form-label">Notes</label>
@@ -1180,7 +1155,6 @@ function Admin() {
               />
             </div>
           </div>
-
           <div className="adm-form-actions">
             <button type="submit" className="adm-btn-primary">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -1217,7 +1191,6 @@ function Admin() {
           </div>
         </form>
       </section>
-
       {/* ═══════════════════════════════════════════════════════════════════
           ALL SESSIONS
           ═══════════════════════════════════════════════════════════════════ */}
@@ -1301,9 +1274,18 @@ function Admin() {
               onChange={(e) => setTo(e.target.value)}
               placeholder="To"
             />
+            <button
+              className="adm-btn-primary"
+              onClick={() =>
+                document
+                  .querySelector(".adm-modern-form")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              + Create Session
+            </button>
           </div>
         </div>
-
         <div className="adm-sessions-grid">
           {loading ? (
             <div className="adm-sessions-skeleton">
@@ -1364,7 +1346,6 @@ function Admin() {
                       </svg>
                     </button>
                   </div>
-
                   <div className="adm-form-grid">
                     {/* ONE_ON_ONE: Show learner dropdown */}
                     {normType(editForm.type) === "ONE_ON_ONE" && (
@@ -1385,7 +1366,6 @@ function Admin() {
                         </select>
                       </div>
                     )}
-
                     {/* GROUP: Show capacity and participant management */}
                     {normType(editForm.type) === "GROUP" && (
                       <>
@@ -1401,7 +1381,6 @@ function Admin() {
                             placeholder="Max participants"
                           />
                         </div>
-
                         <div className="adm-form-field adm-form-field--full">
                           <label className="adm-form-label">
                             Current Participants ({editForm.learnerIds.length})
@@ -1477,7 +1456,6 @@ function Admin() {
                                   const toAdd = selectedInList.find(
                                     (id) => !editForm.learnerIds.includes(id)
                                   );
-
                                   if (!toAdd) {
                                     toast.error(
                                       "Select a learner NOT already in the session"
@@ -1503,7 +1481,6 @@ function Admin() {
                                   const toRemove = selectedInList.find((id) =>
                                     editForm.learnerIds.includes(id)
                                   );
-
                                   if (!toRemove) {
                                     toast.error(
                                       "Select a participant to remove"
@@ -1520,7 +1497,6 @@ function Admin() {
                         </div>
                       </>
                     )}
-
                     {/* Teacher */}
                     <div className="adm-form-field">
                       <label className="adm-form-label">Teacher</label>
@@ -1538,7 +1514,6 @@ function Admin() {
                         ))}
                       </select>
                     </div>
-
                     {/* Title */}
                     <div className="adm-form-field adm-form-field--full">
                       <label className="adm-form-label">Title</label>
@@ -1549,7 +1524,6 @@ function Admin() {
                         onChange={onEditChange}
                       />
                     </div>
-
                     {/* Date & Time */}
                     <div className="adm-form-field">
                       <label className="adm-form-label">Date</label>
@@ -1594,7 +1568,6 @@ function Admin() {
                         disabled={!!editForm.endTime}
                       />
                     </div>
-
                     {/* Meeting URL */}
                     <div className="adm-form-field adm-form-field--full">
                       <label className="adm-form-label">Meeting URL</label>
@@ -1606,7 +1579,6 @@ function Admin() {
                       />
                     </div>
                   </div>
-
                   <div className="adm-session-edit-actions">
                     <button className="adm-btn-secondary" onClick={cancelEdit}>
                       Cancel
@@ -1678,14 +1650,12 @@ function Admin() {
                       </button>
                     </div>
                   </div>
-
                   <h3 className="adm-session-card-modern__title">
                     {s.title ||
                       (normType(s.type) === "GROUP"
                         ? "Group Session"
                         : "Lesson")}
                   </h3>
-
                   <div className="adm-session-card-modern__info">
                     {/* Date/Time */}
                     <div className="adm-info-row">
@@ -1709,7 +1679,6 @@ function Admin() {
                       </svg>
                       <span>{fmt(s.startAt)}</span>
                     </div>
-
                     {/* Learners */}
                     <div className="adm-info-row">
                       <svg
@@ -1761,7 +1730,6 @@ function Admin() {
                       </svg>
                       <span>{getSessionLearnerDisplay(s)}</span>
                     </div>
-
                     {/* Teacher */}
                     {s.teacher && (
                       <div className="adm-info-row">
@@ -1788,7 +1756,6 @@ function Admin() {
                         <span>{s.teacher?.name || s.teacher?.email}</span>
                       </div>
                     )}
-
                     {/* Status badge */}
                     {s.status && s.status !== "scheduled" && (
                       <div className="adm-info-row">
@@ -1816,7 +1783,6 @@ function Admin() {
                         </span>
                       </div>
                     )}
-
                     {/* Meeting link */}
                     {(s.meetingUrl || s.joinUrl) && (
                       <a
@@ -1849,7 +1815,6 @@ function Admin() {
           )}
         </div>
       </section>
-
       {/* ═══════════════════════════════════════════════════════════════════
           TEACHER WORKLOAD
           ═══════════════════════════════════════════════════════════════════ */}
@@ -1904,20 +1869,91 @@ function Admin() {
             />
           </div>
         </div>
-
         <TeacherWorkload teacherId={teacherIdFilter} from={from} to={to} />
       </section>
+      {/* ═══════════════════════════════════════════════════════════════════
+          PACKAGES MODAL
+          ═══════════════════════════════════════════════════════════════════ */}
+      {showPackagesModal && (
+        <div className="adm-modal-overlay">
+          <div className="adm-modal-content" ref={modalRef}>
+            <div className="adm-modal-header">
+              <h2>
+                Packages for{" "}
+                {selectedUser?.name || selectedUser?.email || "User"}
+              </h2>
+              <button
+                className="adm-btn-close"
+                onClick={() => setShowPackagesModal(false)}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M12 4L4 12M4 4L12 12"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            {packagesLoading ? (
+              <div className="adm-table-skeleton">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="skeleton skeleton--row" />
+                ))}
+              </div>
+            ) : packages.length === 0 ? (
+              <div className="adm-empty">No packages found for this user.</div>
+            ) : (
+              <table className="adm-packages-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Total</th>
+                    <th>Used</th>
+                    <th>Remaining</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {packages.map((p) => (
+                    <tr key={p.id}>
+                      <td>{p.packageTitle}</td>
+                      <td>{p.sessionsTotal}</td>
+                      <td>{p.sessionsUsed}</td>
+                      <td>{p.remaining}</td>
+                      <td>{p.expiresAt ? toDateInput(p.expiresAt) : "None"}</td>
+                      <td>
+                        <span
+                          className={`adm-status-badge ${
+                            p.status === "active"
+                              ? "adm-status-badge--active"
+                              : "adm-status-badge--inactive"
+                          }`}
+                        >
+                          {p.status?.toUpperCase() || "UNKNOWN"}
+                        </span>
+                      </td>
+                      <td>{fmt(p.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
 /* ═══════════════════════════════════════════════════════════════════════════
    TEACHER WORKLOAD COMPONENT
    ═══════════════════════════════════════════════════════════════════════════ */
 function TeacherWorkload({ teacherId, from, to }) {
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
-
   useEffect(() => {
     (async () => {
       setBusy(true);
@@ -1938,7 +1974,6 @@ function TeacherWorkload({ teacherId, from, to }) {
       }
     })();
   }, [teacherId, from, to]);
-
   if (busy) {
     return (
       <div className="adm-workload-skeleton">
@@ -1953,7 +1988,6 @@ function TeacherWorkload({ teacherId, from, to }) {
       </div>
     );
   }
-
   if (rows.length === 0) {
     return (
       <div className="adm-empty">
@@ -1961,7 +1995,6 @@ function TeacherWorkload({ teacherId, from, to }) {
       </div>
     );
   }
-
   return (
     <div className="adm-workload-grid">
       {rows.map((w) => (
@@ -2005,5 +2038,4 @@ function TeacherWorkload({ teacherId, from, to }) {
     </div>
   );
 }
-
 export default Admin;
