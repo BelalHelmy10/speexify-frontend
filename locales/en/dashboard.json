@@ -71,5 +71,11 @@
   "modal_save_changes": "Save changes",
 
   "error_cancel_failed": "Failed to cancel",
-  "error_reschedule_failed": "Failed to reschedule"
+  "error_reschedule_failed": "Failed to reschedule",
+  "session_group": "Group",
+  "session_participants": "Participants",
+  "session_leave": "Leave session",
+  "session_leave_title": "Leave this group session?",
+  "session_scheduled": "Scheduled",
+  "session_starts_in": "Starts in"
 }

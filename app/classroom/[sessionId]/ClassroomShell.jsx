@@ -32,7 +32,6 @@ function buildDisplayName(source) {
 function getParticipantsFromSession(session) {
   const s = session || {};
 
-  // Teacher extraction (same as before)
   const teacherObj =
     s.teacherUser ||
     s.teacher ||
@@ -47,11 +46,9 @@ function getParticipantsFromSession(session) {
     buildDisplayName(teacherObj) ||
     "Teacher";
 
-  // NEW: Handle GROUP sessions with multiple learners
   const isGroup = s.type === "GROUP";
   const learners = s.learners || [];
 
-  // For single learner (1:1 or first learner)
   const learnerObj =
     s.learnerUser ||
     s.learner ||
@@ -66,7 +63,6 @@ function getParticipantsFromSession(session) {
     buildDisplayName(learnerObj) ||
     "Learner";
 
-  // Build list of all learner names for GROUP display
   const allLearnerNames = learners.map(
     (l) => buildDisplayName(l) || l.email?.split("@")[0] || "Learner"
   );
@@ -120,7 +116,6 @@ export default function ClassroomShell({
   locale = "en",
   prefix = "",
 }) {
-  // UPDATED: Get all participant info including GROUP support
   const {
     teacherName,
     learnerName,
@@ -131,7 +126,6 @@ export default function ClassroomShell({
     capacity,
   } = getParticipantsFromSession(session);
 
-  // Determine teacher vs learner
   const isTeacher =
     session?.isTeacher === true ||
     session?.role === "teacher" ||
@@ -159,17 +153,11 @@ export default function ClassroomShell({
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
-  // Chat visibility + unread
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
-  // Resource picker modal
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-
-  // Leave confirmation modal
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-
-  // NEW: Participant list panel (for GROUP sessions)
   const [showParticipantList, setShowParticipantList] = useState(false);
 
   /* -----------------------------------------------------------
@@ -214,12 +202,10 @@ export default function ClassroomShell({
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  // When chat opens, clear unread counter
   useEffect(() => {
     if (isChatOpen) setChatUnreadCount(0);
   }, [isChatOpen]);
 
-  // Calculate split percentages
   const getSplitPercentage = () => {
     if (customSplit !== null) return customSplit;
 
@@ -249,7 +235,6 @@ export default function ClassroomShell({
   const send = classroomChannel?.send ?? (() => {});
   const subscribe = classroomChannel?.subscribe ?? (() => () => {});
 
-  // Sync resource selection between teacher and learner
   useEffect(() => {
     if (!ready) return;
 
@@ -276,14 +261,12 @@ export default function ClassroomShell({
     return unsub;
   }, [ready, resourcesById, isTeacher, selectedResourceId, send, subscribe]);
 
-  // When a learner connects, ask the teacher for the current resource
   useEffect(() => {
     if (!ready) return;
     if (isTeacher) return;
     send({ type: "REQUEST_RESOURCE" });
   }, [ready, isTeacher, send]);
 
-  // Teacher auto-selects the first resource when entering
   useEffect(() => {
     if (!isTeacher || selectedResourceId) return;
 
@@ -315,71 +298,58 @@ export default function ClassroomShell({
   }, []);
 
   /* -----------------------------------------------------------
-     Render
+     Header (FIXED: match SCSS classnames)
   ----------------------------------------------------------- */
+  const headerTitle = session?.title || "Classroom";
+  const typeLabel = isGroup ? "GROUP" : "1:1";
+  const countLabel = isGroup
+    ? `${participantCount}${capacity ? `/${capacity}` : ""}`
+    : "";
+
   return (
     <div className="cr-shell">
       {/* Header */}
       <header className="cr-header">
         <div className="cr-header__left">
-          <button
-            className="cr-header__leave-btn"
-            onClick={() => setShowLeaveConfirm(true)}
+          <a
+            href={`${prefix}/dashboard`}
+            className="cr-header__leave"
+            onClick={(e) => {
+              e.preventDefault();
+              setShowLeaveConfirm(true);
+            }}
             title="Leave classroom"
           >
-            ←
-          </button>
-          <div className="cr-header__info">
-            <h1 className="cr-header__title">
-              {session?.title || "Classroom"}
-            </h1>
-            <div className="cr-header__meta">
-              {/* NEW: Show session type badge */}
-              {isGroup ? (
-                <span className="cr-header__type-badge cr-header__type-badge--group">
-                  👥 GROUP
-                </span>
-              ) : (
-                <span className="cr-header__type-badge cr-header__type-badge--one-on-one">
-                  👤 1:1
-                </span>
-              )}
-              {/* NEW: Show participant count for GROUP */}
-              {isGroup && (
-                <button
-                  className="cr-header__participants-btn"
-                  onClick={() => setShowParticipantList(true)}
-                >
-                  {participantCount}
-                  {capacity && `/${capacity}`} participants
-                </button>
-              )}
-            </div>
+            <span aria-hidden="true">←</span>
+            <span>Leave</span>
+          </a>
+        </div>
+
+        <div className="cr-header__center">
+          <div className="cr-header__resource-name">
+            {headerTitle} • {typeLabel}
+            {isGroup ? ` • ${countLabel} participants` : ""}
           </div>
         </div>
 
         <div className="cr-header__right">
-          <span className="cr-header__role">
-            {isTeacher ? `👨‍🏫 ${teacherName}` : `👨‍🎓 ${learnerName}`}
-          </span>
-          <button
-            className="cr-header__menu-btn"
-            onClick={() => setShowLeaveConfirm(true)}
-            title="Leave"
+          <span
+            className="cr-header__role-badge"
+            data-role={isTeacher ? "teacher" : "learner"}
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+            {isTeacher ? "👨‍🏫" : "👨‍🎓"} {isTeacher ? teacherName : learnerName}
+          </span>
+
+          {isGroup && (
+            <button
+              type="button"
+              className="cr-header__leave"
+              onClick={() => setShowParticipantList(true)}
+              title="View participants"
             >
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-          </button>
+              👥 <span>{countLabel}</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -437,7 +407,6 @@ export default function ClassroomShell({
               learnerName={learnerName}
               isOpen={isChatOpen}
               onUnreadCountChange={setChatUnreadCount}
-              // NEW: Pass all learner names for GROUP sessions
               allLearnerNames={allLearnerNames}
               isGroup={isGroup}
             />
@@ -521,7 +490,6 @@ export default function ClassroomShell({
             </button>
           )}
 
-          {/* NEW: Participant list button for GROUP sessions */}
           {isGroup && (
             <button
               className="cr-controls__btn cr-controls__btn--secondary"
@@ -614,7 +582,7 @@ export default function ClassroomShell({
         </div>
       )}
 
-      {/* NEW: Participant List Modal (for GROUP sessions) */}
+      {/* Participant List Modal (GROUP) */}
       {showParticipantList && (
         <div
           className="cr-modal-overlay"
@@ -638,7 +606,6 @@ export default function ClassroomShell({
               </button>
             </div>
             <div className="cr-modal__body">
-              {/* Teacher */}
               <div className="cr-participant-list">
                 <div className="cr-participant cr-participant--teacher">
                   <span className="cr-participant__avatar">👨‍🏫</span>
@@ -646,12 +613,10 @@ export default function ClassroomShell({
                   <span className="cr-participant__role">Teacher</span>
                 </div>
 
-                {/* Divider */}
                 <div className="cr-participant-list__divider">
                   Learners ({learners.length})
                 </div>
 
-                {/* Learners */}
                 {learners.length === 0 ? (
                   <p className="cr-participant-list__empty">
                     No learners in this session
