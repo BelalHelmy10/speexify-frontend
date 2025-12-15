@@ -26,6 +26,21 @@ export default function SessionDetailPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Helper: get translation with fallback (prevents __key__ display)
+  const txt = (key, fallback) => {
+    const result = t(dict, key);
+    // If translation returns the key format (__key__) or is empty, use fallback
+    if (
+      !result ||
+      result === key ||
+      result.startsWith("__") ||
+      result.endsWith("__")
+    ) {
+      return fallback;
+    }
+    return result;
+  };
+
   useEffect(() => {
     if (!id) return;
 
@@ -42,7 +57,10 @@ export default function SessionDetailPage() {
       } catch (err) {
         console.error("Failed to load session", err);
         if (cancelled) return;
-        setError(err?.response?.data?.error || t(dict, "generic_error"));
+        setError(
+          err?.response?.data?.error ||
+            txt("generic_error", "Something went wrong")
+        );
         setStatus("error");
       }
     }
@@ -51,14 +69,14 @@ export default function SessionDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, dict]);
+  }, [id]);
 
   const handleBack = () => {
     router.back();
   };
 
   const formatDateTime = (value) => {
-    if (!value) return t(dict, "datetime_na");
+    if (!value) return txt("datetime_na", "N/A");
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return String(value);
     return d.toLocaleString(locale === "ar" ? "ar" : undefined, {
@@ -78,21 +96,24 @@ export default function SessionDetailPage() {
             onClick={handleBack}
             className="btn btn--ghost page-session-detail__back"
           >
-            {t(dict, "back_btn")}
+            {txt("back_btn", "← Back")}
           </button>
 
           <div className="session-detail-card session-detail-card--state">
             <header className="session-detail-header">
               <div>
                 <h1 className="session-detail-title">
-                  {t(dict, "loading_title")}
+                  {txt("loading_title", "Loading...")}
                 </h1>
                 <p className="session-detail-subtitle">
-                  {t(dict, "loading_subtitle")}
+                  {txt(
+                    "loading_subtitle",
+                    "Please wait while we load the session details."
+                  )}
                 </p>
               </div>
               <span className="session-detail-status session-detail-status--loading">
-                {t(dict, "loading_badge")}
+                {txt("loading_badge", "Loading")}
               </span>
             </header>
           </div>
@@ -112,26 +133,26 @@ export default function SessionDetailPage() {
             onClick={handleBack}
             className="btn btn--ghost page-session-detail__back"
           >
-            {t(dict, "back_btn")}
+            {txt("back_btn", "← Back")}
           </button>
 
           <div className="session-detail-card session-detail-card--state">
             <header className="session-detail-header">
               <div>
                 <h1 className="session-detail-title">
-                  {t(dict, "error_title")}
+                  {txt("error_title", "Session Not Found")}
                 </h1>
                 <p className="session-detail-subtitle">
-                  {t(dict, "error_subtitle")}
+                  {txt("error_subtitle", "We couldn't find this session.")}
                 </p>
               </div>
               <span className="session-detail-status session-detail-status--error">
-                {t(dict, "error_badge")}
+                {txt("error_badge", "Error")}
               </span>
             </header>
 
             <p className="session-detail-error">
-              {error || t(dict, "error_fallback")}
+              {error || txt("error_fallback", "Could not load session.")}
             </p>
           </div>
         </div>
@@ -152,11 +173,12 @@ export default function SessionDetailPage() {
     notes,
     user: legacyLearner,
     teacher,
-    status: s,
+    status: sessionStatus,
     type,
     capacity,
     participantCount,
     participants,
+    learners, // ✅ Use learners array from backend (has full user data)
     isLearner,
     isTeacher: sessionIsTeacher,
     isAdmin: sessionIsAdmin,
@@ -165,25 +187,47 @@ export default function SessionDetailPage() {
 
   const isGroup = String(type || "").toUpperCase() === "GROUP";
 
-  const list = Array.isArray(participants) ? participants : [];
-  const activeParticipants = list.filter((p) => p.status !== "canceled");
+  // ✅ FIX: Use `learners` array first (has name/email), fallback to participants
+  const learnersList = (() => {
+    // Prefer learners array (backend provides this with full user data)
+    if (Array.isArray(learners) && learners.length > 0) {
+      return learners;
+    }
+    // Fallback to participants if learners not available
+    if (Array.isArray(participants) && participants.length > 0) {
+      return participants.map((p) => ({
+        id: p.userId || p.id,
+        name: p.user?.name || p.name || null,
+        email: p.user?.email || p.email || null,
+        status: p.status,
+      }));
+    }
+    return [];
+  })();
+
+  const activeParticipants = learnersList.filter(
+    (l) => l.status !== "canceled"
+  );
 
   const learnerLabel = isGroup
-    ? t(dict, "section_learners_title") || "Learners"
-    : t(dict, "section_learner_title") || "Learner";
+    ? txt("section_learners_title", "Learners")
+    : txt("section_learner_title", "Learner");
 
   const canCancelOrLeave = !!(sessionIsAdmin || sessionIsTeacher || isLearner);
   const canReschedule = !!(sessionIsAdmin || sessionIsTeacher);
 
+  // Only show actions if session is not already canceled/completed
+  const showActions = sessionStatus === "scheduled" && canCancelOrLeave;
+
   const cancelLabel =
     isGroup && !sessionIsTeacher && !sessionIsAdmin
-      ? t(dict, "session_leave") || "Leave session"
-      : t(dict, "session_cancel") || "Cancel";
+      ? txt("session_leave", "Leave Session")
+      : txt("session_cancel", "Cancel Session");
 
   const cancelTitle =
     isGroup && !sessionIsTeacher && !sessionIsAdmin
-      ? t(dict, "session_leave_title") || "Leave this group session?"
-      : t(dict, "session_cancel_title") || "Cancel session?";
+      ? txt("session_leave_title", "Leave this group session?")
+      : txt("session_cancel_title", "Cancel this session?");
 
   const handleCancelOrLeave = async () => {
     if (!canCancelOrLeave || busy) return;
@@ -198,15 +242,11 @@ export default function SessionDetailPage() {
       const scope = res?.data?.scope;
 
       if (scope === "participant") {
-        toast.success(
-          t(dict, "session_left_success") || "You left the session."
-        );
+        toast.success(txt("session_left_success", "You left the session."));
       } else if (scope === "session") {
-        toast.success(
-          t(dict, "session_canceled_success") || "Session canceled."
-        );
+        toast.success(txt("session_canceled_success", "Session canceled."));
       } else {
-        toast.success(t(dict, "success_saved") || "Done.");
+        toast.success(txt("success_saved", "Done."));
       }
 
       const { data } = await api.get(`/sessions/${sessionId}`, {
@@ -214,13 +254,32 @@ export default function SessionDetailPage() {
       });
       setSession(data?.session || null);
     } catch (e) {
-      toast.error(e?.response?.data?.error || t(dict, "generic_error"));
+      toast.error(
+        e?.response?.data?.error || txt("generic_error", "Something went wrong")
+      );
     } finally {
       setBusy(false);
     }
   };
 
   const hasExternal = !!(meetingUrl || joinUrl);
+
+  // Status display config
+  const statusConfig = {
+    scheduled: {
+      label: "SCHEDULED",
+      className: "session-detail-status--scheduled",
+    },
+    completed: {
+      label: "COMPLETED",
+      className: "session-detail-status--completed",
+    },
+    canceled: {
+      label: "CANCELED",
+      className: "session-detail-status--canceled",
+    },
+  };
+  const currentStatus = statusConfig[sessionStatus] || statusConfig.scheduled;
 
   return (
     <div className="page-session-detail">
@@ -229,46 +288,49 @@ export default function SessionDetailPage() {
           onClick={handleBack}
           className="btn btn--ghost page-session-detail__back"
         >
-          {t(dict, "back_btn")}
+          {txt("back_btn", "← Back")}
         </button>
 
         <div className="session-detail-card">
           <header className="session-detail-header">
             <div>
               <h1 className="session-detail-title">
-                {title || t(dict, "normal_title_fallback")}
+                {title || txt("normal_title_fallback", "Session")}
               </h1>
               <p className="session-detail-subtitle">
-                {t(dict, "normal_subtitle")}
+                {txt(
+                  "normal_subtitle",
+                  "Overview of this lesson, participants, and feedback."
+                )}
               </p>
             </div>
 
-            {s && (
-              <span
-                className={`session-detail-status session-detail-status--${s}`}
-              >
-                {s}
-              </span>
-            )}
+            <span
+              className={`session-detail-status ${currentStatus.className}`}
+            >
+              {currentStatus.label}
+            </span>
           </header>
 
           <div className="session-detail-grid">
+            {/* TIME SECTION */}
             <section className="session-detail-section">
               <h3 className="session-detail-section__title">
-                {t(dict, "section_time_title")}
+                {txt("section_time_title", "Time")}
               </h3>
               <p className="session-detail-section__body">
-                <strong>{t(dict, "time_start_label")}</strong>{" "}
+                <strong>{txt("time_start_label", "Start:")}</strong>{" "}
                 {formatDateTime(startAt)}
                 <br />
-                <strong>{t(dict, "time_end_label")}</strong>{" "}
+                <strong>{txt("time_end_label", "End:")}</strong>{" "}
                 {formatDateTime(endAt)}
               </p>
             </section>
 
+            {/* TEACHER SECTION */}
             <section className="session-detail-section">
               <h3 className="session-detail-section__title">
-                {t(dict, "section_teacher_title")}
+                {txt("section_teacher_title", "Teacher")}
               </h3>
               {teacher ? (
                 <p className="session-detail-section__body">
@@ -278,15 +340,17 @@ export default function SessionDetailPage() {
                 </p>
               ) : (
                 <p className="session-detail-section__body">
-                  {t(dict, "section_teacher_not_assigned")}
+                  {txt("section_teacher_not_assigned", "No teacher assigned")}
                 </p>
               )}
             </section>
 
+            {/* LEARNERS SECTION */}
             <section className="session-detail-section">
               <h3 className="session-detail-section__title">{learnerLabel}</h3>
 
               {!isGroup ? (
+                // ONE_ON_ONE: Show single learner
                 legacyLearner ? (
                   <p className="session-detail-section__body">
                     {legacyLearner.name || legacyLearner.email}
@@ -295,47 +359,68 @@ export default function SessionDetailPage() {
                       {legacyLearner.email}
                     </span>
                   </p>
+                ) : activeParticipants.length > 0 ? (
+                  <p className="session-detail-section__body">
+                    {activeParticipants[0].name ||
+                      activeParticipants[0].email ||
+                      "Learner"}
+                    <br />
+                    {activeParticipants[0].email && (
+                      <span className="session-detail-muted">
+                        {activeParticipants[0].email}
+                      </span>
+                    )}
+                  </p>
                 ) : (
                   <p className="session-detail-section__body">
-                    {t(dict, "section_learner_not_found")}
+                    {txt("section_learner_not_found", "No learner assigned")}
                   </p>
                 )
-              ) : activeParticipants.length ? (
+              ) : (
+                // GROUP: Show multiple learners
                 <div className="session-detail-section__body">
+                  {/* Participant count */}
                   <div
                     className="session-detail-muted"
                     style={{ marginBottom: 8 }}
                   >
-                    {t(dict, "session_participants") || "Participants"}:{" "}
+                    {txt("session_participants", "Participants")}:{" "}
                     {typeof participantCount === "number"
                       ? participantCount
                       : activeParticipants.length}
-                    {capacity ? ` / ${capacity}` : ""}
+                    {typeof capacity === "number" ? ` / ${capacity}` : ""}
                   </div>
 
-                  <ul style={{ margin: 0, paddingInlineStart: 18 }}>
-                    {activeParticipants.map((p) => {
-                      const u = p.user || {};
-                      const name = u.name || u.email || `#${p.userId}`;
-                      const email = u.email || "";
-                      return (
-                        <li key={p.userId} style={{ marginBottom: 6 }}>
-                          <span>{name}</span>
-                          {email ? (
-                            <span className="session-detail-muted">
-                              {" "}
-                              — {email}
-                            </span>
-                          ) : null}
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  {activeParticipants.length > 0 ? (
+                    <ul style={{ margin: 0, paddingInlineStart: 18 }}>
+                      {activeParticipants.map((learner, idx) => {
+                        // ✅ FIX: Display name/email, not ID
+                        const displayName =
+                          learner.name || learner.email || `Learner ${idx + 1}`;
+                        const displayEmail = learner.email || "";
+
+                        return (
+                          <li
+                            key={learner.id || idx}
+                            style={{ marginBottom: 6 }}
+                          >
+                            <span>{displayName}</span>
+                            {displayEmail && displayEmail !== displayName && (
+                              <span className="session-detail-muted">
+                                {" "}
+                                — {displayEmail}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p>
+                      {txt("session_no_participants", "No participants yet.")}
+                    </p>
+                  )}
                 </div>
-              ) : (
-                <p className="session-detail-section__body">
-                  {t(dict, "session_no_participants") || "No participants yet."}
-                </p>
               )}
             </section>
           </div>
@@ -344,7 +429,7 @@ export default function SessionDetailPage() {
           <section className="session-detail-section session-detail-section--wide">
             <div className="session-detail-section__header">
               <h3 className="session-detail-section__title">
-                {t(dict, "join_title")}
+                {txt("join_title", "Join link")}
               </h3>
             </div>
 
@@ -353,7 +438,7 @@ export default function SessionDetailPage() {
                 href={`${prefix}/classroom/${sessionId}`}
                 className="btn btn--primary session-detail-join-btn"
               >
-                {t(dict, "join_open_classroom")}
+                {txt("join_open_classroom", "Open Speexify classroom")}
               </Link>
 
               {hasExternal && (
@@ -363,23 +448,27 @@ export default function SessionDetailPage() {
                   rel="noreferrer"
                   className="btn btn--ghost session-detail-join-btn"
                 >
-                  {t(dict, "join_external_link")}
+                  {txt("join_external_link", "Open external link")}
                 </a>
               )}
 
               {!hasExternal && (
                 <p className="session-detail-section__body">
-                  {t(dict, "join_no_meeting")}
+                  {txt(
+                    "join_no_meeting",
+                    "No external meeting link set; use the Speexify classroom above."
+                  )}
                 </p>
               )}
             </div>
           </section>
 
-          {canCancelOrLeave && (
+          {/* ACTIONS SECTION - Only show if session is scheduled */}
+          {showActions && (
             <section className="session-detail-section session-detail-section--wide">
               <div className="session-detail-section__header">
                 <h3 className="session-detail-section__title">
-                  {t(dict, "actions_title") || "Actions"}
+                  {txt("actions_title", "Actions")}
                 </h3>
               </div>
 
@@ -390,73 +479,84 @@ export default function SessionDetailPage() {
                   disabled={busy}
                   title={cancelTitle}
                 >
-                  {busy
-                    ? t(dict, "loading_badge") || "Loading..."
-                    : cancelLabel}
+                  {busy ? txt("loading_badge", "Loading...") : cancelLabel}
                 </button>
 
                 {canReschedule && (
                   <Link href={`${prefix}/calendar`} className="btn btn--ghost">
-                    {t(dict, "session_reschedule") || "Reschedule"}
+                    {txt("session_reschedule", "Reschedule")}
                   </Link>
                 )}
               </div>
             </section>
           )}
 
+          {/* NOTES SECTION */}
           <section className="session-detail-section session-detail-section--wide">
             <div className="session-detail-section__header">
               <h3 className="session-detail-section__title">
-                {t(dict, "notes_title")}
+                {txt("notes_title", "Notes / Homework")}
               </h3>
             </div>
             <p className="session-detail-section__body">
-              {notes && notes.trim() ? notes : t(dict, "notes_empty")}
+              {notes && notes.trim()
+                ? notes
+                : txt(
+                    "notes_empty",
+                    "No notes or homework have been added for this session yet."
+                  )}
             </p>
           </section>
 
+          {/* FEEDBACK SECTION */}
           {teacherFeedback && (
             <section className="session-detail-section session-detail-section--wide">
               <div className="session-detail-section__header">
                 <h3 className="session-detail-section__title">
-                  {t(dict, "feedback_title")}
+                  {txt("feedback_title", "Teacher Feedback")}
                 </h3>
                 <p className="session-detail-section__hint">
-                  {t(dict, "feedback_hint")}
+                  {txt(
+                    "feedback_hint",
+                    "Feedback from your teacher for this session."
+                  )}
                 </p>
               </div>
 
               <div className="session-detail-feedback-grid">
                 <div className="session-detail-feedback">
                   <h4 className="session-detail-feedback__title">
-                    {t(dict, "feedback_msg_title")}
+                    {txt("feedback_msg_title", "Message to Learner")}
                   </h4>
                   <p className="session-detail-feedback__body">
                     {teacherFeedback.messageToLearner?.trim()
                       ? teacherFeedback.messageToLearner
-                      : t(dict, "feedback_msg_empty")}
+                      : txt("feedback_msg_empty", "No message provided.")}
                   </p>
                 </div>
 
                 <div className="session-detail-feedback">
                   <h4 className="session-detail-feedback__title">
-                    {t(dict, "feedback_comments_title")}
+                    {txt("feedback_comments_title", "Session Comments")}
                   </h4>
                   <p className="session-detail-feedback__body">
                     {teacherFeedback.commentsOnSession?.trim()
                       ? teacherFeedback.commentsOnSession
-                      : t(dict, "feedback_comments_empty")}
+                      : txt("feedback_comments_empty", "No comments provided.")}
                   </p>
                 </div>
 
                 <div className="session-detail-feedback">
                   <h4 className="session-detail-feedback__title">
-                    {t(dict, "feedback_future_title")}
+                    {txt("feedback_future_title", "Future Steps")}
                   </h4>
                   <p className="session-detail-feedback__body">
                     {teacherFeedback.futureSteps?.trim()
                       ? teacherFeedback.futureSteps
-                      : t(dict, "feedback_future_empty")}
+                      : txt(
+                          "feedback_future_empty",
+                          "No future steps provided."
+                        )}
                   </p>
                 </div>
               </div>

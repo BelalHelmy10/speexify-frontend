@@ -27,10 +27,12 @@ function buildDisplayName(source) {
 
 /* -----------------------------------------------------------
    Utility: Extract teacher & learner details from session
+   UPDATED: Handle GROUP sessions with multiple learners
 ----------------------------------------------------------- */
 function getParticipantsFromSession(session) {
   const s = session || {};
 
+  // Teacher extraction (same as before)
   const teacherObj =
     s.teacherUser ||
     s.teacher ||
@@ -39,19 +41,24 @@ function getParticipantsFromSession(session) {
     s.teacherAccount ||
     null;
 
+  const teacherName =
+    s.teacherName ||
+    s.teacherDisplayName ||
+    buildDisplayName(teacherObj) ||
+    "Teacher";
+
+  // NEW: Handle GROUP sessions with multiple learners
+  const isGroup = s.type === "GROUP";
+  const learners = s.learners || [];
+
+  // For single learner (1:1 or first learner)
   const learnerObj =
     s.learnerUser ||
     s.learner ||
     s.student ||
     s.learnerProfile ||
     s.user ||
-    null;
-
-  const teacherName =
-    s.teacherName ||
-    s.teacherDisplayName ||
-    buildDisplayName(teacherObj) ||
-    "Teacher";
+    (learners.length > 0 ? learners[0] : null);
 
   const learnerName =
     s.learnerName ||
@@ -59,7 +66,21 @@ function getParticipantsFromSession(session) {
     buildDisplayName(learnerObj) ||
     "Learner";
 
-  return { teacherName, learnerName };
+  // Build list of all learner names for GROUP display
+  const allLearnerNames = learners.map(
+    (l) => buildDisplayName(l) || l.email?.split("@")[0] || "Learner"
+  );
+
+  return {
+    teacherName,
+    learnerName,
+    isGroup,
+    learners,
+    allLearnerNames,
+    participantCount:
+      s.participantCount || learners.length || (learnerObj ? 1 : 0),
+    capacity: s.capacity,
+  };
 }
 
 /* -----------------------------------------------------------
@@ -83,7 +104,6 @@ const focusModeIcon = {
   [FOCUS_MODES.CONTENT]: "📄",
 };
 
-// BALANCED (⚖️) in the middle
 const FOCUS_MODE_ORDER = [
   FOCUS_MODES.VIDEO,
   FOCUS_MODES.BALANCED,
@@ -100,9 +120,18 @@ export default function ClassroomShell({
   locale = "en",
   prefix = "",
 }) {
-  const { teacherName, learnerName } = getParticipantsFromSession(session);
+  // UPDATED: Get all participant info including GROUP support
+  const {
+    teacherName,
+    learnerName,
+    isGroup,
+    learners,
+    allLearnerNames,
+    participantCount,
+    capacity,
+  } = getParticipantsFromSession(session);
 
-  // Determine teacher vs learner (prefer server-provided flags if present)
+  // Determine teacher vs learner
   const isTeacher =
     session?.isTeacher === true ||
     session?.role === "teacher" ||
@@ -126,7 +155,7 @@ export default function ClassroomShell({
      Focus Mode & Layout State
   ----------------------------------------------------------- */
   const [focusMode, setFocusMode] = useState(FOCUS_MODES.BALANCED);
-  const [customSplit, setCustomSplit] = useState(null); // null = use focusMode default
+  const [customSplit, setCustomSplit] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
@@ -139,6 +168,9 @@ export default function ClassroomShell({
 
   // Leave confirmation modal
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+
+  // NEW: Participant list panel (for GROUP sessions)
+  const [showParticipantList, setShowParticipantList] = useState(false);
 
   /* -----------------------------------------------------------
      Drag-to-resize logic
@@ -204,6 +236,11 @@ export default function ClassroomShell({
 
   const leftPanelWidth = getSplitPercentage();
 
+  const resetToMode = (mode) => {
+    setFocusMode(mode);
+    setCustomSplit(null);
+  };
+
   /* -----------------------------------------------------------
      Realtime sync (classroom channel)
   ----------------------------------------------------------- */
@@ -254,82 +291,92 @@ export default function ClassroomShell({
     if (all.length && all[0]?._id) {
       setSelectedResourceId(all[0]._id);
     }
-  }, [isTeacher, resourcesById, selectedResourceId]);
+  }, [isTeacher, selectedResourceId, resourcesById]);
 
-  // Teacher broadcasts resource changes
-  useEffect(() => {
-    if (!isTeacher || !ready || !selectedResourceId) return;
-    send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
-  }, [isTeacher, ready, selectedResourceId, send]);
-
+  /* -----------------------------------------------------------
+     Resource & viewer
+  ----------------------------------------------------------- */
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId]
     : null;
   const viewer = resource ? getViewerInfo(resource) : null;
 
-  /* -----------------------------------------------------------
-     Handlers
-  ----------------------------------------------------------- */
-  function handleChangeResourceId(id) {
-    setSelectedResourceId(id || null);
+  const handleChangeResourceId = (newId) => {
+    setSelectedResourceId(newId);
     setIsPickerOpen(false);
-  }
 
-  const handleScreenShareStreamChange = useCallback((isActive) => {
-    setIsScreenShareActive(Boolean(isActive));
+    if (ready && isTeacher) {
+      send({ type: "SET_RESOURCE", resourceId: newId });
+    }
+  };
+
+  const handleScreenShareStreamChange = useCallback((active) => {
+    setIsScreenShareActive(!!active);
   }, []);
 
-  function resetToMode(mode) {
-    setCustomSplit(null);
-    setFocusMode(mode);
-  }
-
   /* -----------------------------------------------------------
-     RENDER
+     Render
   ----------------------------------------------------------- */
   return (
     <div className="cr-shell">
       {/* Header */}
       <header className="cr-header">
         <div className="cr-header__left">
-          <a href={`${prefix}/dashboard`} className="cr-header__logo">
-            Speexify
-          </a>
-          <span className="cr-header__separator">›</span>
-          <span className="cr-header__session">Classroom #{sessionId}</span>
-        </div>
-
-        <div className="cr-header__center">
-          {resource && (
-            <span className="cr-header__resource-name">
-              {resource.title || "Untitled Resource"}
-            </span>
-          )}
+          <button
+            className="cr-header__leave-btn"
+            onClick={() => setShowLeaveConfirm(true)}
+            title="Leave classroom"
+          >
+            ←
+          </button>
+          <div className="cr-header__info">
+            <h1 className="cr-header__title">
+              {session?.title || "Classroom"}
+            </h1>
+            <div className="cr-header__meta">
+              {/* NEW: Show session type badge */}
+              {isGroup ? (
+                <span className="cr-header__type-badge cr-header__type-badge--group">
+                  👥 GROUP
+                </span>
+              ) : (
+                <span className="cr-header__type-badge cr-header__type-badge--one-on-one">
+                  👤 1:1
+                </span>
+              )}
+              {/* NEW: Show participant count for GROUP */}
+              {isGroup && (
+                <button
+                  className="cr-header__participants-btn"
+                  onClick={() => setShowParticipantList(true)}
+                >
+                  {participantCount}
+                  {capacity && `/${capacity}`} participants
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="cr-header__right">
-          <div
-            className="cr-header__role-badge"
-            data-role={isTeacher ? "teacher" : "learner"}
-          >
-            {isTeacher ? "👨‍🏫 Teacher" : "👨‍🎓 Learner"}
-          </div>
+          <span className="cr-header__role">
+            {isTeacher ? `👨‍🏫 ${teacherName}` : `👨‍🎓 ${learnerName}`}
+          </span>
           <button
-            type="button"
-            className="cr-header__leave"
+            className="cr-header__menu-btn"
             onClick={() => setShowLeaveConfirm(true)}
+            title="Leave"
           >
-            <span>Leave</span>
             <svg
-              width="16"
-              height="16"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
             >
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16,17 21,12 16,7" />
+              <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
           </button>
@@ -365,7 +412,14 @@ export default function ClassroomShell({
               onClick={() => setIsChatOpen(!isChatOpen)}
               aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
             >
-              <span className="cr-chat-toggle__label">💬 Chat</span>
+              <span className="cr-chat-toggle__label">
+                💬 Chat
+                {chatUnreadCount > 0 && !isChatOpen && (
+                  <span className="cr-chat-toggle__unread">
+                    {chatUnreadCount}
+                  </span>
+                )}
+              </span>
               <span
                 className={`cr-chat-toggle__icon ${
                   isChatOpen ? "cr-chat-toggle__icon--open" : ""
@@ -383,6 +437,9 @@ export default function ClassroomShell({
               learnerName={learnerName}
               isOpen={isChatOpen}
               onUnreadCountChange={setChatUnreadCount}
+              // NEW: Pass all learner names for GROUP sessions
+              allLearnerNames={allLearnerNames}
+              isGroup={isGroup}
             />
           </div>
         </aside>
@@ -463,6 +520,19 @@ export default function ClassroomShell({
               <span className="cr-controls__btn-label">Resources</span>
             </button>
           )}
+
+          {/* NEW: Participant list button for GROUP sessions */}
+          {isGroup && (
+            <button
+              className="cr-controls__btn cr-controls__btn--secondary"
+              onClick={() => setShowParticipantList(true)}
+            >
+              <span className="cr-controls__btn-icon">👥</span>
+              <span className="cr-controls__btn-label">
+                Participants ({participantCount})
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="cr-controls__center">
@@ -539,6 +609,80 @@ export default function ClassroomShell({
                 onChangeResourceId={handleChangeResourceId}
                 isTeacher={isTeacher}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: Participant List Modal (for GROUP sessions) */}
+      {showParticipantList && (
+        <div
+          className="cr-modal-overlay"
+          onClick={() => setShowParticipantList(false)}
+        >
+          <div
+            className="cr-modal cr-modal--small"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="cr-modal__header">
+              <h2 className="cr-modal__title">
+                👥 Participants ({participantCount}
+                {capacity && `/${capacity}`})
+              </h2>
+              <button
+                className="cr-modal__close"
+                onClick={() => setShowParticipantList(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="cr-modal__body">
+              {/* Teacher */}
+              <div className="cr-participant-list">
+                <div className="cr-participant cr-participant--teacher">
+                  <span className="cr-participant__avatar">👨‍🏫</span>
+                  <span className="cr-participant__name">{teacherName}</span>
+                  <span className="cr-participant__role">Teacher</span>
+                </div>
+
+                {/* Divider */}
+                <div className="cr-participant-list__divider">
+                  Learners ({learners.length})
+                </div>
+
+                {/* Learners */}
+                {learners.length === 0 ? (
+                  <p className="cr-participant-list__empty">
+                    No learners in this session
+                  </p>
+                ) : (
+                  learners.map((learner, idx) => (
+                    <div
+                      key={learner.id || idx}
+                      className={`cr-participant ${
+                        learner.status === "canceled"
+                          ? "cr-participant--canceled"
+                          : ""
+                      }`}
+                    >
+                      <span className="cr-participant__avatar">👨‍🎓</span>
+                      <span className="cr-participant__name">
+                        {buildDisplayName(learner) ||
+                          learner.email?.split("@")[0] ||
+                          "Learner"}
+                      </span>
+                      {learner.status && learner.status !== "booked" && (
+                        <span
+                          className={`cr-participant__status cr-participant__status--${learner.status}`}
+                        >
+                          {learner.status}
+                        </span>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>

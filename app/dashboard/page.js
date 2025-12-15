@@ -293,6 +293,7 @@ function DashboardInner({ dict, prefix }) {
   const { user, checking } = useAuth();
   const isTeacher = user?.role === "teacher";
   const isAdmin = user?.role === "admin";
+  const isLearner = !!user && !isTeacher && !isAdmin;
 
   const [teachSummary, setTeachSummary] = useState({
     nextTeach: null,
@@ -397,10 +398,41 @@ function DashboardInner({ dict, prefix }) {
       setStatus(t(dict, "status_not_auth"));
       return;
     }
+
+    // Admin dashboard should not use learner endpoints (/me/*) at all.
+    if (isAdmin) {
+      setSummary({
+        nextSession: null,
+        upcomingCount: 0,
+        completedCount: 0,
+        timezone: user?.timezone || null,
+      });
+      setUpcoming([]);
+      setPast([]);
+      setPacks([]);
+      setOnboarding(null);
+      setAssessment(null);
+      setStatus("");
+      return;
+    }
+
     refreshAll();
-    fetchOnboarding();
-    fetchAssessment();
-  }, [checking, user, refreshAll, fetchOnboarding, fetchAssessment, dict]);
+
+    // Only learners have onboarding + assessment
+    if (isLearner) {
+      fetchOnboarding();
+      fetchAssessment();
+    }
+  }, [
+    checking,
+    user,
+    isAdmin,
+    isLearner,
+    refreshAll,
+    fetchOnboarding,
+    fetchAssessment,
+    dict,
+  ]);
 
   // Teacher summary
   useEffect(() => {
@@ -427,9 +459,11 @@ function DashboardInner({ dict, prefix }) {
 
   // Keep fresh when tab regains focus / becomes visible
   useEffect(() => {
-    const onFocus = () => refreshAll();
+    const onFocus = () => {
+      if (!isAdmin) refreshAll();
+    };
     const onVis = () => {
-      if (document.visibilityState === "visible") refreshAll();
+      if (document.visibilityState === "visible" && !isAdmin) refreshAll();
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVis);
@@ -437,7 +471,7 @@ function DashboardInner({ dict, prefix }) {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [refreshAll]);
+  }, [refreshAll, isAdmin]);
 
   const handleCancel = async (s) => {
     const isGroup = String(s.type || "").toUpperCase() === "GROUP";
@@ -605,7 +639,7 @@ function DashboardInner({ dict, prefix }) {
       </div>
 
       {/* Out-of-credits warning – learners only */}
-      {!isTeacher && outOfCredits && (
+      {!isTeacher && !isAdmin && outOfCredits && (
         <div
           className="panel panel--warning"
           style={{ borderLeft: "4px solid #f59e0b" }}
@@ -631,7 +665,7 @@ function DashboardInner({ dict, prefix }) {
       )}
 
       {/* Plan / packages panel – learners only */}
-      {!isTeacher && (
+      {!isTeacher && !isAdmin && (
         <div className="panel panel--featured">
           <div className="panel__badge">{t(dict, "plan_badge")}</div>
 
