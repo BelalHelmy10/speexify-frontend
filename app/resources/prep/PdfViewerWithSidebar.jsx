@@ -94,11 +94,14 @@ export default function PdfViewerWithSidebar({
 
     async function loadPdfJs() {
       try {
-        const mod = await import("pdfjs-dist/build/pdf");
+        // Use legacy build for better compatibility in Next apps
+        const mod = await import("pdfjs-dist/legacy/build/pdf");
         const pdfjsLib = mod.default || mod;
 
         if (typeof window !== "undefined") {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+          // Use a stable worker that matches pdfjs v3
+          pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
         }
 
         if (!cancelled) {
