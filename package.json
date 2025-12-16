@@ -11,7 +11,7 @@
     "date-fns": "^4.1.0",
     "next": "^16.0.7",
     "next-intl": "^4.5.8",
-    "pdfjs-dist": "^3.11.174",
+    "pdfjs-dist": "3.11.174",
     "react": "^19.2.0",
     "react-big-calendar": "^1.19.4",
     "react-calendar": "^6.0.0",
@@ -26,7 +26,7 @@
   },
   "scripts": {
     "dev": "./node_modules/.bin/next dev",
-    "build": "./node_modules/.bin/next build --no-lint",
+    "build": "./node_modules/.bin/next build",
     "start": "./node_modules/.bin/next start",
     "lint": "./node_modules/.bin/next lint"
   },
