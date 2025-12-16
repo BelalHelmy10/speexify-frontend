@@ -1115,56 +1115,213 @@
     transform: translateX(100%);
   }
 }
-
-/* Modal Overlay */
+/* Modal Overlay - Add transition for smooth appearance */
 .adm-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4); /* Slightly lighter for better contrast */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out, backdrop-filter 0.3s ease-in-out;
+  backdrop-filter: blur(4px); /* Modern blur effect for depth */
+
+  &.visible {
+    /* Assume you add a 'visible' class in JS when showing */
+    opacity: 1;
+  }
 }
 
-/* Modal Content */
+/* Modal Content - Enhanced with scale animation and better padding */
 .adm-modal-content {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  max-width: 800px;
-  width: 90%;
-  max-height: 80vh;
+  background: #ffffff;
+  border-radius: 12px; /* Softer corners */
+  padding: 2rem;
+  max-width: 900px; /* Wider for tables */
+  width: 95%;
+  max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); /* Deeper shadow for elevation */
+  transform: scale(0.95); /* Start slightly scaled down */
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  opacity: 0;
+
+  &.visible {
+    /* Animate in */
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  /* Scrollbar styling for modern look */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+    &:hover {
+      background: #aaa;
+    }
+  }
 }
 
+/* Modal Header - Flex with better spacing and close button */
 .adm-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #eee; /* Subtle separator */
+  padding-bottom: 1rem;
+
   h2 {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333;
     margin: 0;
+  }
+
+  .adm-modal-close {
+    /* Style the close button */
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #999;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #666;
+    }
   }
 }
 
-/* Packages Table */
+/* Packages Table - Modern, responsive table with hover effects */
 .adm-packages-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden; /* For rounded corners on table */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Light shadow */
+
   th,
   td {
-    padding: 0.75rem;
+    padding: 1rem 1.25rem;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.95rem;
+    color: #444;
   }
+
   th {
     background: #f8f9fa;
     font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    color: #666;
+    letter-spacing: 0.5px;
   }
+
+  tr {
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: #f9fafb; /* Subtle hover */
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  /* Status Badge Styling */
+  .adm-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+
+    &.active {
+      background: #e6fffa;
+      color: #10b981;
+    }
+
+    &.expired {
+      background: #fff0f0;
+      color: #ef4444;
+    }
+
+    /* Add more statuses as needed */
+  }
+
+  /* Responsive: On small screens, convert to cards */
+  @media (max-width: 768px) {
+    display: block;
+
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: block;
+      margin-bottom: 1rem;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    td {
+      display: block;
+      border: none;
+      padding: 0.5rem 0;
+      position: relative;
+      padding-left: 50%;
+
+      &:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 50%;
+        padding-right: 1rem;
+        font-weight: 600;
+        text-align: right;
+        color: #666;
+      }
+    }
+  }
+}
+
+/* General Improvements */
+.adm-modal-content {
+  /* Ensure modal doesn't disappear: Add if JS issue, but this is CSS */
+  pointer-events: auto; /* Prevent clicks outside closing it accidentally if not handled in JS */
+}
+
+/* Animation for Disappearing Fix: If it's fading out, ensure JS keeps it visible */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.adm-modal-content.visible {
+  animation: modalFadeIn 0.3s ease-out forwards;
 }
