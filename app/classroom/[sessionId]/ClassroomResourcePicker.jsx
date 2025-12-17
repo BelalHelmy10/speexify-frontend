@@ -4,33 +4,62 @@
 import { useMemo, useState, useEffect } from "react";
 import { buildPickerIndex } from "./classroomHelpers";
 
+/**
+ * FINAL BEHAVIOR (Sanity-driven only):
+ * Dropdowns become:
+ *   Course (track) -> Book -> CEFR (A1.1 / A1.2 / ...) -> Unit -> Resources
+ *
+ * IMPORTANT:
+ * This component expects buildPickerIndex(tracks) to return these NEW keys:
+ *   - subLevelOptionsByTrackBookKey: { "<trackId>:<bookId>": [{ value, label, code? }, ...] }
+ *   - unitOptionsByBookSubLevelKey: { "<bookId>:<subLevelId>": [{ value, label }, ...] }
+ *
+ * If you haven't updated buildPickerIndex yet, CEFR dropdown will show "—" (empty),
+ * which is correct (because this component won't guess CEFR from book levels).
+ */
+
 export default function ClassroomResourcePicker({
   tracks,
   selectedResourceId,
   onChangeResourceId,
   isTeacher,
 }) {
+  const index = useMemo(() => buildPickerIndex(tracks || []), [tracks]);
+
   const {
-    trackOptions,
-    booksByTrackId,
-    bookLevelsByBookId,
-    unitOptionsByBookLevelId,
-    resourcesByUnitId,
-  } = useMemo(() => buildPickerIndex(tracks || []), [tracks]);
+    trackOptions = [],
+    booksByTrackId = {},
+    resourcesByUnitId = {},
+
+    // NEW (CEFR)
+    subLevelOptionsByTrackBookKey = {},
+    unitOptionsByBookSubLevelKey = {},
+
+    // Legacy (still returned in some older builds; not used for CEFR)
+    // bookLevelsByBookId = {},
+    // unitOptionsByBookLevelId = {},
+  } = index || {};
 
   // ─────────────────────────────────────────────
   // Local selection state (teacher’s controls)
   // ─────────────────────────────────────────────
   const [trackId, setTrackId] = useState(trackOptions[0]?.value || "");
   const [bookId, setBookId] = useState("");
-  const [bookLevelId, setBookLevelId] = useState("");
+  const [subLevelId, setSubLevelId] = useState(""); // ✅ CEFR (A1.1, A1.2...) -> stored as subLevel _id
   const [unitId, setUnitId] = useState("");
 
   const bookOptions = trackId ? booksByTrackId[trackId] || [] : [];
-  const bookLevelOptions = bookId ? bookLevelsByBookId[bookId] || [] : [];
-  const unitOptions = bookLevelId
-    ? unitOptionsByBookLevelId[bookLevelId] || []
-    : [];
+
+  const subLevelOptions =
+    trackId && bookId
+      ? subLevelOptionsByTrackBookKey[`${trackId}:${bookId}`] || []
+      : [];
+
+  const unitOptions =
+    bookId && subLevelId
+      ? unitOptionsByBookSubLevelKey[`${bookId}:${subLevelId}`] || []
+      : [];
+
   const resourceOptions = unitId ? resourcesByUnitId[unitId] || [] : [];
 
   // ─────────────────────────────────────────────
@@ -54,7 +83,7 @@ export default function ClassroomResourcePicker({
     const list = booksByTrackId[trackId] || [];
     if (!list.length) {
       setBookId("");
-      setBookLevelId("");
+      setSubLevelId("");
       setUnitId("");
       return;
     }
@@ -64,27 +93,35 @@ export default function ClassroomResourcePicker({
     );
   }, [trackId, booksByTrackId, isTeacher]);
 
-  // Book level when book changes
+  // CEFR sub-level when book changes
   useEffect(() => {
     if (!isTeacher) return;
 
-    const list = bookLevelsByBookId[bookId] || [];
+    const list =
+      trackId && bookId
+        ? subLevelOptionsByTrackBookKey[`${trackId}:${bookId}`] || []
+        : [];
+
     if (!list.length) {
-      setBookLevelId("");
+      setSubLevelId("");
       setUnitId("");
       return;
     }
 
-    setBookLevelId((prev) =>
+    setSubLevelId((prev) =>
       list.some((l) => l.value === prev) ? prev : list[0].value
     );
-  }, [bookId, bookLevelsByBookId, isTeacher]);
+  }, [trackId, bookId, subLevelOptionsByTrackBookKey, isTeacher]);
 
-  // Unit when book level changes
+  // Unit when CEFR sub-level changes
   useEffect(() => {
     if (!isTeacher) return;
 
-    const list = unitOptionsByBookLevelId[bookLevelId] || [];
+    const list =
+      bookId && subLevelId
+        ? unitOptionsByBookSubLevelKey[`${bookId}:${subLevelId}`] || []
+        : [];
+
     if (!list.length) {
       setUnitId("");
       return;
@@ -93,7 +130,7 @@ export default function ClassroomResourcePicker({
     setUnitId((prev) =>
       list.some((u) => u.value === prev) ? prev : list[0].value
     );
-  }, [bookLevelId, unitOptionsByBookLevelId, isTeacher]);
+  }, [bookId, subLevelId, unitOptionsByBookSubLevelKey, isTeacher]);
 
   // ─────────────────────────────────────────────
   // Currently selected resource (for footer)
@@ -160,18 +197,18 @@ export default function ClassroomResourcePicker({
             </div>
           </div>
 
-          {/* Book Level */}
+          {/* CEFR (SubLevel) */}
           <div className="cr-picker__field">
-            <label className="cr-picker__label">Level</label>
+            <label className="cr-picker__label">CEFR</label>
             <div className="cr-picker__select-wrapper">
               <select
                 className="cr-picker__select"
-                value={bookLevelId}
-                onChange={(e) => setBookLevelId(e.target.value)}
-                disabled={!bookLevelOptions.length || !isTeacher}
+                value={subLevelId}
+                onChange={(e) => setSubLevelId(e.target.value)}
+                disabled={!subLevelOptions.length || !isTeacher}
               >
-                {!bookLevelOptions.length && <option>—</option>}
-                {bookLevelOptions.map((l) => (
+                {!subLevelOptions.length && <option>—</option>}
+                {subLevelOptions.map((l) => (
                   <option key={l.value} value={l.value}>
                     {l.label}
                   </option>
