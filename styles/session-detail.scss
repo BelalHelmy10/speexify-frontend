@@ -197,6 +197,13 @@
   margin-top: $space-4;
 }
 
+.session-detail-join-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px; // ✅ adds space between buttons
+  align-items: center;
+}
+
 /* ─────────────────────────────────────────────
    FEEDBACK
    ───────────────────────────────────────────── */

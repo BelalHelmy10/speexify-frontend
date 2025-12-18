@@ -156,21 +156,27 @@ function SessionRow({
         <div className="session-item__actions">
           {isUpcoming ? (
             <>
+              {/* Countdown should go to Session page (details hub) */}
               <Link
-                href={`${prefix}/classroom/${s.id}`}
-                className={`btn ${
-                  joinable ? "btn--primary btn--glow" : "btn--ghost"
-                }`}
+                href={`${prefix}/dashboard/sessions/${s.id}`}
+                className="btn btn--ghost"
                 title={
-                  joinable
-                    ? t(dict, "session_join_classroom")
-                    : t(dict, "session_join_tooltip_early")
+                  t(dict, "session_view_details") || "View session details"
                 }
               >
-                {joinable
-                  ? t(dict, "session_join_classroom")
-                  : countdown || t(dict, "session_join_soon")}
+                {countdown || t(dict, "session_view_details") || "View session"}
               </Link>
+
+              {/* Join appears only when joinable */}
+              {joinable && (
+                <Link
+                  href={`${prefix}/classroom/${s.id}`}
+                  className="btn btn--primary btn--glow"
+                  title={t(dict, "session_join_classroom") || "Join classroom"}
+                >
+                  {t(dict, "session_join_classroom") || "Join"}
+                </Link>
+              )}
 
               {s.meetingUrl && (
                 <a

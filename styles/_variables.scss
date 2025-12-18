@@ -1,31 +1,39 @@
 // ===========================================
-// COLORS - Brand & Primary
+// SPEEXIFY - REFINED COLOR SYSTEM
+// All original variable names preserved
+// Only color values updated for brand cohesion
 // ===========================================
-$primary: #0070f3;
-$secondary: #00b894;
-$color-primary: #0ea5e9;
-$color-primary-dark: #0d666f;
+
+// ===========================================
+// COLORS - Brand & Primary
+// REFINED: Unified to "Deep Sky" palette
+// ===========================================
+$primary: #0284c7;
+$secondary: #10b981;
+$color-primary: #0284c7;
+$color-primary-dark: #0369a1;
 $color-primary-light: #38bdf8;
 
-$brand: #0ea5e9;
-$brand-dark: #0284c7;
+$brand: #0284c7;
+$brand-dark: #0369a1;
 $brand-light: #38bdf8;
-$brand-ink: #0b6fa3;
+$brand-ink: #075985;
 $brand-700: color-mix(in srgb, $brand 85%, #000);
 
-$accent: #0ea5e9;
-$accent-ink: #0b6fa3;
+$accent: #0284c7;
+$accent-ink: #075985;
 $accent-light: #38bdf8;
-$color-primary-ink: #0b6fa3;
+$color-primary-ink: #075985;
 
 // ===========================================
 // COLORS - Secondary & Tertiary
+// REFINED: Harmonized with brand
 // ===========================================
-$color-secondary-light: #ffb900;
-$color-secondary-dark: #ff7730;
+$color-secondary-light: #10b981;
+$color-secondary-dark: #059669;
 
-$color-tertiary-light: #2998ff;
-$color-tertiary-dark: #5643fa;
+$color-tertiary-light: #38bdf8;
+$color-tertiary-dark: #0369a1;
 
 // ===========================================
 // COLORS - Neutral & Grayscale
@@ -82,18 +90,18 @@ $success-bg: #ecfdf5;
 // ===========================================
 $border: #e2e8f0;
 $color-border: #e2e8f0;
-$border-focus: rgba(14, 165, 233, 0.4);
+$border-focus: rgba(2, 132, 199, 0.4);
 $ring: #e5e7eb;
 
 // ===========================================
 // THEME - Calendar
-// Indigo / purple gradient & states
+// REFINED: Brand-based gradient (no more purple)
 // ===========================================
-$calendar-primary: #667eea; // was #667eea
-$calendar-secondary: #764ba2; // was #764ba2
+$calendar-primary: #0284c7;
+$calendar-secondary: #0369a1;
 
-$calendar-error: #ff6b6b; // calendar error gradient start
-$calendar-error-alt: #ee5a6f; // calendar error gradient end
+$calendar-error: #ef4444;
+$calendar-error-alt: #dc2626;
 
 // ===========================================
 // SHADOWS
@@ -163,15 +171,16 @@ $radius-card: 20px;
 
 // ===========================================
 // THEME - Main (CSS Custom Properties)
+// REFINED: Unified accent color
 // ===========================================
 :root {
-  --accent: #5a67d8;
-  --accent-soft: rgba(90, 103, 216, 0.25);
+  --accent: #0284c7;
+  --accent-soft: rgba(2, 132, 199, 0.25);
   --panel-bg: #fff;
   --text: #111;
   --muted: #6b7280;
   --border: #e5e7eb;
-  --ok: #0ea5e9;
+  --ok: #0284c7;
   --good: #10b981;
   --warn: #f59e0b;
   --bad: #ef4444;
@@ -189,12 +198,12 @@ $radius-card: 20px;
   --admin-text-secondary: #94a3b8;
   --admin-text-muted: #64748b;
 
-  --admin-primary: #3b82f6;
-  --admin-primary-dark: #2563eb;
+  --admin-primary: #0284c7;
+  --admin-primary-dark: #0369a1;
   --admin-success: #10b981;
   --admin-success-dark: #059669;
-  --admin-accent: #8b5cf6;
-  --admin-accent-dark: #7c3aed;
+  --admin-accent: #0ea5e9;
+  --admin-accent-dark: #0284c7;
   --admin-warning: #f59e0b;
   --admin-warning-dark: #d97706;
   --admin-danger: #ef4444;
@@ -207,18 +216,19 @@ $radius-card: 20px;
 
 // ===========================================
 // THEME - Settings (CSS Custom Properties)
+// REFINED: Brand-based gradient
 // ===========================================
 :root {
-  --settings-bg-start: #667eea;
-  --settings-bg-end: #764ba2;
+  --settings-bg-start: #0284c7;
+  --settings-bg-end: #0369a1;
   --settings-surface: rgba(255, 255, 255, 0.95);
   --settings-border: rgba(148, 163, 184, 0.2);
   --settings-text: #1e293b;
   --settings-text-light: #64748b;
   --settings-text-muted: #94a3b8;
 
-  --settings-primary: #3b82f6;
-  --settings-primary-dark: #2563eb;
+  --settings-primary: #0284c7;
+  --settings-primary-dark: #0369a1;
   --settings-success: #10b981;
   --settings-warning: #f59e0b;
   --settings-danger: #ef4444;
@@ -263,8 +273,8 @@ $transition-slow: 0.6s ease;
 
 // Variables (adjust to match your design system)
 // Colors
-$primary-color: #2563eb;
-$primary-hover: #1d4ed8;
+$primary-color: #0284c7;
+$primary-hover: #0369a1;
 $gray-50: #f9fafb;
 $gray-100: #f3f4f6;
 $gray-400: #9ca3af;
@@ -276,9 +286,9 @@ $yellow-200: #fef08a;
 $yellow-400: #facc15;
 $yellow-700: #a16207;
 $yellow-800: #854d0e;
-$blue-50: #eff6ff;
-$blue-600: #2563eb;
-$blue-800: #1e40af;
+$blue-50: #e0f2fe;
+$blue-600: #0284c7;
+$blue-800: #075985;
 $white: #ffffff;
 $shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
@@ -289,8 +299,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 // ============================================================================
 
 // Colors
-$payment-primary: #2563eb;
-$payment-primary-hover: #1d4ed8;
+$payment-primary: #0284c7;
+$payment-primary-hover: #0369a1;
 $payment-white: #ffffff;
 $payment-gray-600: #4b5563;
 $payment-gray-900: #111827;
