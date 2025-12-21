@@ -805,7 +805,7 @@
 
 .ev-pill {
   display: flex;
-  align-items: center;
+  align-items: flex-start; // ✅ allow multi-line title to align nicely
   gap: 0.5rem;
   font-weight: 700;
 
@@ -817,9 +817,14 @@
 
   .ev-title {
     flex: 1;
+    min-width: 0; // ✅ IMPORTANT for flex ellipsis + clamp
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+
+    white-space: normal; // ✅ allow wrap
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; // ✅ 2 lines max (use 3 if you want)
+    line-height: 1.15;
   }
 }
 
