@@ -1554,21 +1554,29 @@ export default function PrepShell({
 
         {/* Pointer */}
         {pointer && (
-          <div
-            className="prep-pointer"
+          <svg
             style={{
               position: "absolute",
               left: `${pointer.x * 100}%`,
               top: `${pointer.y * 100}%`,
-              transform: "translate(-50%, -50%)",
-              width: 16,
-              height: 16,
-              borderRadius: "999px",
-              border: "2px solid #ef4444",
-              background: "rgba(239,68,68,0.3)",
+              transform: "translate(-100%, -50%)",
               pointerEvents: "none",
+              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))",
+              animation: "blink 1s ease-in-out infinite",
             }}
-          />
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <path
+              d="M4 12H17M17 12L12 7M17 12L12 17"
+              stroke="#ef4444"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         )}
       </div>
     );
