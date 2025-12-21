@@ -6,6 +6,7 @@ import Link from "next/link";
 import PrepNotes from "./PrepNotes";
 import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
 import { getDictionary, t } from "@/app/i18n";
+import useAuth from "@/hooks/useAuth";
 
 const TOOL_NONE = "none";
 const TOOL_PEN = "pen";
@@ -24,6 +25,23 @@ const PEN_COLORS = [
   "#f97316",
   "#22c55e",
 ];
+
+const POINTER_COLORS = [
+  "#ef4444", // red
+  "#3b82f6", // blue
+  "#22c55e", // green
+  "#f97316", // orange
+  "#a855f7", // purple
+  "#06b6d4", // cyan
+  "#eab308", // yellow
+];
+
+function colorForId(id) {
+  const s = String(id || "");
+  let hash = 0;
+  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+  return POINTER_COLORS[hash % POINTER_COLORS.length];
+}
 
 // ─────────────────────────────────────────────────────────────
 // HELPER: Detect and convert Google Drive URLs
@@ -62,7 +80,12 @@ export default function PrepShell({
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [pointer, setPointer] = useState(null); // { x,y } normalized
+  // Teacher's pointer (shared)
+  const [teacherPointer, setTeacherPointer] = useState(null); // { x,y }
+
+  // Learners' pointers (per user)
+  const [learnerPointers, setLearnerPointers] = useState({});
+  // shape: { [userId]: { x, y } }
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
   const [masks, setMasks] = useState([]); // white blocks to hide content
@@ -133,6 +156,10 @@ export default function PrepShell({
 
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
+
+  // Get authenticated user
+  const { user } = useAuth();
+  const myUserId = user?._id || user?.id || null;
 
   const layoutClasses =
     "prep-layout" +
@@ -510,17 +537,42 @@ export default function PrepShell({
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return;
 
-    if (!normalizedPosOrNull) {
-      sendOnChannel({ type: "POINTER_HIDE", resourceId: resource._id });
+    // Teacher broadcasts a shared pointer
+    if (isTeacher) {
+      if (!normalizedPosOrNull) {
+        sendOnChannel({
+          type: "TEACHER_POINTER_HIDE",
+          resourceId: resource._id,
+        });
+        return;
+      }
+      sendOnChannel({
+        type: "TEACHER_POINTER_MOVE",
+        resourceId: resource._id,
+        xNorm: normalizedPosOrNull.x,
+        yNorm: normalizedPosOrNull.y,
+      });
       return;
     }
 
-    const { x, y } = normalizedPosOrNull;
+    // Learner broadcasts THEIR OWN pointer (keyed by userId)
+    if (!myUserId) return;
+
+    if (!normalizedPosOrNull) {
+      sendOnChannel({
+        type: "LEARNER_POINTER_HIDE",
+        resourceId: resource._id,
+        userId: myUserId,
+      });
+      return;
+    }
+
     sendOnChannel({
-      type: "POINTER_MOVE",
+      type: "LEARNER_POINTER_MOVE",
       resourceId: resource._id,
-      xNorm: x,
-      yNorm: y,
+      userId: myUserId,
+      xNorm: normalizedPosOrNull.x,
+      yNorm: normalizedPosOrNull.y,
     });
   }
 
@@ -602,12 +654,37 @@ export default function PrepShell({
         applyRemoteAnnotationState(msg);
         return;
       }
-      if (msg.type === "POINTER_MOVE") {
-        setPointer({ x: msg.xNorm, y: msg.yNorm });
+      // Teacher shared pointer (everyone should follow this)
+      if (msg.type === "TEACHER_POINTER_MOVE") {
+        setTeacherPointer({ x: msg.xNorm, y: msg.yNorm });
         return;
       }
-      if (msg.type === "POINTER_HIDE") {
-        setPointer(null);
+      if (msg.type === "TEACHER_POINTER_HIDE") {
+        setTeacherPointer(null);
+        return;
+      }
+
+      // Learners' individual pointers (teacher sees all; learners can see others too)
+      if (msg.type === "LEARNER_POINTER_MOVE") {
+        const uid = msg.userId || msg.senderId;
+        if (!uid) return;
+
+        setLearnerPointers((prev) => ({
+          ...prev,
+          [uid]: { x: msg.xNorm, y: msg.yNorm },
+        }));
+        return;
+      }
+
+      if (msg.type === "LEARNER_POINTER_HIDE") {
+        const uid = msg.userId || msg.senderId;
+        if (!uid) return;
+
+        setLearnerPointers((prev) => {
+          const next = { ...prev };
+          delete next[uid];
+          return next;
+        });
         return;
       }
 
@@ -1187,7 +1264,8 @@ export default function PrepShell({
     setDragState(null);
     setMaskDrag(null);
     setActiveTextId(null);
-    setPointer(null);
+    setTeacherPointer(null);
+    setLearnerPointers({});
     try {
       window.localStorage.setItem(
         storageKey,
@@ -1231,7 +1309,13 @@ export default function PrepShell({
       e.preventDefault();
       const p = getNormalizedPoint(e);
       if (!p) return;
-      setPointer(p);
+
+      if (isTeacher) {
+        setTeacherPointer(p);
+      } else if (myUserId) {
+        setLearnerPointers((prev) => ({ ...prev, [myUserId]: p }));
+      }
+
       broadcastPointer(p);
       return;
     }
@@ -1364,12 +1448,34 @@ export default function PrepShell({
   function setToolSafe(nextTool) {
     if (tool === nextTool) {
       setTool(TOOL_NONE);
-      setPointer(null);
+
+      if (isTeacher) {
+        setTeacherPointer(null);
+      } else {
+        setLearnerPointers((prev) => {
+          if (!myUserId) return prev;
+          const next = { ...prev };
+          delete next[myUserId];
+          return next;
+        });
+      }
+
       broadcastPointer(null);
     } else {
       setTool(nextTool);
+
       if (nextTool !== TOOL_POINTER) {
-        setPointer(null);
+        if (isTeacher) {
+          setTeacherPointer(null);
+        } else {
+          setLearnerPointers((prev) => {
+            if (!myUserId) return prev;
+            const next = { ...prev };
+            delete next[myUserId];
+            return next;
+          });
+        }
+
         broadcastPointer(null);
       }
     }
@@ -1697,17 +1803,18 @@ export default function PrepShell({
           />
         )}
 
-        {/* Pointer */}
-        {pointer && (
+        {/* Teacher pointer */}
+        {teacherPointer && (
           <svg
             style={{
               position: "absolute",
-              left: `${pointer.x * 100}%`,
-              top: `${pointer.y * 100}%`,
+              left: `${teacherPointer.x * 100}%`,
+              top: `${teacherPointer.y * 100}%`,
               transform: "translate(-100%, -50%)",
               pointerEvents: "none",
               filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))",
               animation: "blink 1s ease-in-out infinite",
+              zIndex: 9999,
             }}
             width="40"
             height="40"
@@ -1723,6 +1830,34 @@ export default function PrepShell({
             />
           </svg>
         )}
+
+        {/* Learner pointers */}
+        {Object.entries(learnerPointers).map(([uid, pos]) => (
+          <svg
+            key={uid}
+            style={{
+              position: "absolute",
+              left: `${pos.x * 100}%`,
+              top: `${pos.y * 100}%`,
+              transform: "translate(-100%, -50%)",
+              pointerEvents: "none",
+              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.35))",
+              zIndex: 9998,
+            }}
+            width="36"
+            height="36"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <path
+              d="M4 12H17M17 12L12 7M17 12L12 17"
+              stroke={colorForId(uid)}
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ))}
       </div>
     );
   }
