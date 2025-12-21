@@ -153,8 +153,37 @@ export default function ClassroomShell({
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
+  // ✅ Layout sync throttling (teacher -> learners)
+  const lastLayoutSentAtRef = useRef(0);
+  const layoutRafPendingRef = useRef(false);
+
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
+
+  // ✅ Learner-only: follow teacher layout toggle (persisted per session)
+  const followLayoutStorageKey = `classroom_follow_layout_${sessionId}`;
+  const [followTeacherLayout, setFollowTeacherLayout] = useState(() => {
+    // Teachers always lead
+    if (typeof window === "undefined") return true;
+    if (session?.isTeacher === true) return true;
+
+    try {
+      const raw = window.localStorage.getItem(followLayoutStorageKey);
+      if (raw === "0") return false;
+      if (raw === "1") return true;
+    } catch (_) {}
+    return true; // default: follow
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        followLayoutStorageKey,
+        followTeacherLayout ? "1" : "0"
+      );
+    } catch (_) {}
+  }, [followLayoutStorageKey, followTeacherLayout]);
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -163,14 +192,23 @@ export default function ClassroomShell({
   /* -----------------------------------------------------------
      Drag-to-resize logic
   ----------------------------------------------------------- */
-  const handleMouseDown = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
+  const handleMouseDown = useCallback(
+    (e) => {
+      // ✅ Learners can drag only if they turned follow OFF
+      if (!isTeacher && followTeacherLayout) return;
+
+      e.preventDefault();
+      setIsDragging(true);
+    },
+    [isTeacher, followTeacherLayout]
+  );
 
   const handleMouseMove = useCallback(
     (e) => {
       if (!isDragging || !containerRef.current) return;
+
+      // ✅ If learner is following, ignore local resizing
+      if (!isTeacher && followTeacherLayout) return;
 
       const container = containerRef.current;
       const rect = container.getBoundingClientRect();
@@ -179,7 +217,7 @@ export default function ClassroomShell({
 
       setCustomSplit(percentage);
     },
-    [isDragging]
+    [isDragging, isTeacher, followTeacherLayout]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -235,11 +273,68 @@ export default function ClassroomShell({
   const send = classroomChannel?.send ?? (() => {});
   const subscribe = classroomChannel?.subscribe ?? (() => () => {});
 
+  // ✅ Teacher: broadcast layout (focusMode + customSplit)
+  useEffect(() => {
+    if (!ready) return;
+    if (!isTeacher) return;
+
+    const now = Date.now();
+    if (now - lastLayoutSentAtRef.current < 50) return; // ~20/sec
+    if (layoutRafPendingRef.current) return;
+
+    layoutRafPendingRef.current = true;
+
+    requestAnimationFrame(() => {
+      layoutRafPendingRef.current = false;
+      lastLayoutSentAtRef.current = Date.now();
+
+      send({
+        type: "LAYOUT_STATE",
+        focusMode,
+        customSplit, // number | null
+      });
+    });
+  }, [ready, isTeacher, send, focusMode, customSplit]);
+
   useEffect(() => {
     if (!ready) return;
 
     const unsub = subscribe((msg) => {
       if (!msg) return;
+
+      // ✅ Learner: follow teacher layout ONLY if toggle is ON
+      if (msg.type === "LAYOUT_STATE" && !isTeacher && followTeacherLayout) {
+        if (
+          msg.focusMode &&
+          Object.values(FOCUS_MODES).includes(msg.focusMode)
+        ) {
+          setFocusMode(msg.focusMode);
+        }
+
+        // customSplit can be null (meaning “use preset focusMode”)
+        const nextSplit =
+          msg.customSplit === null || msg.customSplit === undefined
+            ? null
+            : Number(msg.customSplit);
+
+        if (nextSplit === null) {
+          setCustomSplit(null);
+        } else if (Number.isFinite(nextSplit)) {
+          // clamp to safe range
+          setCustomSplit(Math.min(Math.max(nextSplit, 15), 85));
+        }
+        return;
+      }
+
+      // ✅ Teacher: respond to learner asking for current layout
+      if (msg.type === "REQUEST_LAYOUT" && isTeacher) {
+        send({
+          type: "LAYOUT_STATE",
+          focusMode,
+          customSplit,
+        });
+        return;
+      }
 
       if (msg.type === "SET_RESOURCE") {
         const { resourceId } = msg;
@@ -259,13 +354,38 @@ export default function ClassroomShell({
     });
 
     return unsub;
-  }, [ready, resourcesById, isTeacher, selectedResourceId, send, subscribe]);
+  }, [
+    ready,
+    resourcesById,
+    isTeacher,
+    selectedResourceId,
+    send,
+    subscribe,
+    focusMode,
+    customSplit,
+    followTeacherLayout,
+  ]);
 
   useEffect(() => {
     if (!ready) return;
     if (isTeacher) return;
+
     send({ type: "REQUEST_RESOURCE" });
-  }, [ready, isTeacher, send]);
+
+    // ✅ only request layout if learner is following
+    if (followTeacherLayout) {
+      send({ type: "REQUEST_LAYOUT" });
+    }
+  }, [ready, isTeacher, send, followTeacherLayout]);
+
+  // ✅ Learner: when turning follow back ON, immediately sync to teacher layout
+  useEffect(() => {
+    if (!ready) return;
+    if (isTeacher) return;
+    if (!followTeacherLayout) return;
+
+    send({ type: "REQUEST_LAYOUT" });
+  }, [ready, isTeacher, followTeacherLayout, send]);
 
   useEffect(() => {
     if (!isTeacher || selectedResourceId) return;
@@ -416,10 +536,15 @@ export default function ClassroomShell({
         {/* Drag Handle */}
         <div
           className={`cr-divider ${isDragging ? "cr-divider--active" : ""}`}
-          onMouseDown={handleMouseDown}
+          onMouseDown={
+            isTeacher || (!isTeacher && !followTeacherLayout)
+              ? handleMouseDown
+              : undefined
+          }
           role="separator"
           aria-orientation="vertical"
           aria-label="Resize panels"
+          aria-disabled={isTeacher ? false : followTeacherLayout}
         >
           <div className="cr-divider__handle">
             <span></span>
@@ -537,6 +662,26 @@ export default function ClassroomShell({
         </div>
 
         <div className="cr-controls__right">
+          {/* ✅ Learner-only: Follow teacher layout toggle */}
+          {!isTeacher && (
+            <button
+              className="cr-controls__btn cr-controls__btn--ghost"
+              onClick={() => setFollowTeacherLayout((v) => !v)}
+              title={
+                followTeacherLayout
+                  ? "Following teacher layout (click to unlock)"
+                  : "Layout unlocked (click to follow teacher)"
+              }
+            >
+              <span className="cr-controls__btn-icon">
+                {followTeacherLayout ? "🔒" : "🔓"}
+              </span>
+              <span className="cr-controls__btn-label">
+                {followTeacherLayout ? "Follow layout" : "Free layout"}
+              </span>
+            </button>
+          )}
+
           <button
             className="cr-controls__btn cr-controls__btn--ghost"
             onClick={() => setIsChatOpen(!isChatOpen)}
