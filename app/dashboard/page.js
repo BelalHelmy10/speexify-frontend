@@ -170,7 +170,7 @@ function SessionRow({
               {/* Join appears only when joinable */}
               {joinable && (
                 <Link
-                  href={`${prefix}/classroom/${s.id}`}
+                  href={`/classroom/${s.id}`}
                   className="btn btn--primary btn--glow"
                   title={t(dict, "session_join_classroom") || "Join classroom"}
                 >
@@ -894,7 +894,7 @@ function DashboardInner({ dict, prefix }) {
               <div className="button-row">
                 {joinableTeach ? (
                   <Link
-                    href={`${prefix}/classroom/${teachSummary.nextTeach.id}`} // 👈
+                    href={`/classroom/${teachSummary.nextTeach.id}`}
                     className="btn btn--primary btn--glow"
                   >
                     {t(dict, "session_join_classroom")}
