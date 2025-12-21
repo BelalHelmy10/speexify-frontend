@@ -82,7 +82,12 @@ export default function PrepShell({
   const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
 
   const handlePdfNavStateChange = useCallback((navState) => {
-    if (navState?.currentPage) {
+    if (!navState) return;
+
+    // ✅ store full API so learners can be forced to page/position
+    pdfNavApiRef.current = navState;
+
+    if (navState.currentPage) {
       setPdfCurrentPage(navState.currentPage);
     }
   }, []);
@@ -97,6 +102,12 @@ export default function PrepShell({
   const audioRef = useRef(null);
   const toolMenuRef = useRef(null);
   const colorMenuRef = useRef(null);
+
+  // ✅ PDF scroll/page sync refs (teacher -> learners)
+  const pdfScrollRef = useRef(null); // scroll container (mainRef inside PdfViewerWithSidebar)
+  const pdfNavApiRef = useRef(null); // nav API from PdfViewerWithSidebar (setPage, etc.)
+  const lastScrollSentAtRef = useRef(0); // throttle
+  const rafPendingRef = useRef(false); // throttle (rAF)
 
   const applyingRemoteRef = useRef(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -130,6 +141,76 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Focus newly-activated text box
   // ─────────────────────────────────────────────────────────────
+
+  // ✅ Teacher: broadcast PDF page changes
+  useEffect(() => {
+    if (!isPdf) return;
+    if (!isTeacher) return;
+    if (!channelReady || !sendOnChannel) return;
+
+    sendOnChannel({
+      type: "PDF_SET_PAGE",
+      resourceId: resource._id,
+      page: pdfCurrentPage,
+    });
+  }, [
+    isPdf,
+    isTeacher,
+    channelReady,
+    sendOnChannel,
+    resource._id,
+    pdfCurrentPage,
+  ]);
+
+  // ✅ Teacher: broadcast PDF scroll position (normalized)
+  useEffect(() => {
+    if (!isPdf) return;
+    if (!isTeacher) return;
+    if (!channelReady || !sendOnChannel) return;
+
+    const el = pdfScrollRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const now = Date.now();
+      if (now - lastScrollSentAtRef.current < 50) return; // ~20/sec
+      if (rafPendingRef.current) return;
+
+      rafPendingRef.current = true;
+
+      requestAnimationFrame(() => {
+        rafPendingRef.current = false;
+
+        const target = pdfScrollRef.current;
+        if (!target) return;
+
+        const maxScroll = Math.max(
+          1,
+          target.scrollHeight - target.clientHeight
+        );
+        const scrollNorm = target.scrollTop / maxScroll;
+
+        lastScrollSentAtRef.current = Date.now();
+
+        sendOnChannel({
+          type: "PDF_SCROLL",
+          resourceId: resource._id,
+          page: pdfCurrentPage,
+          scrollNorm,
+        });
+      });
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [
+    isPdf,
+    isTeacher,
+    channelReady,
+    sendOnChannel,
+    resource._id,
+    pdfCurrentPage,
+  ]);
 
   useEffect(() => {
     if (!activeTextId) return;
@@ -516,6 +597,37 @@ export default function PrepShell({
         return;
       }
 
+      // ✅ Learner: follow teacher PDF page
+      if (msg.type === "PDF_SET_PAGE" && !isTeacher && isPdf) {
+        const page = Number(msg.page) || 1;
+        const api = pdfNavApiRef.current;
+        if (api?.setPage) api.setPage(page);
+        return;
+      }
+
+      // ✅ Learner: follow teacher PDF scroll
+      if (msg.type === "PDF_SCROLL" && !isTeacher && isPdf) {
+        const api = pdfNavApiRef.current;
+        const targetPage = Number(msg.page) || 1;
+
+        // switch page first if needed
+        if (api?.setPage && targetPage !== pdfCurrentPage) {
+          api.setPage(targetPage);
+        }
+
+        // apply scroll after render tick
+        setTimeout(() => {
+          const el = pdfScrollRef.current;
+          if (!el) return;
+
+          const maxScroll = Math.max(1, el.scrollHeight - el.clientHeight);
+          const norm = Math.min(1, Math.max(0, Number(msg.scrollNorm) || 0));
+          el.scrollTop = norm * maxScroll;
+        }, 0);
+
+        return;
+      }
+
       if (isTeacher) return;
 
       const el = audioRef.current;
@@ -591,7 +703,7 @@ export default function PrepShell({
     });
 
     return unsubscribe;
-  }, [classroomChannel, resource._id, isTeacher]);
+  }, [classroomChannel, resource._id, isTeacher, isPdf, pdfCurrentPage]);
 
   // ─────────────────────────────────────────────────────────────
   // Drawing tools (pen / highlighter / eraser) using normalized coords
@@ -2208,6 +2320,9 @@ export default function PrepShell({
                       }}
                       onContainerReady={(el) => {
                         containerRef.current = el;
+                      }}
+                      onScrollContainerReady={(el) => {
+                        pdfScrollRef.current = el;
                       }}
                       onNavStateChange={handlePdfNavStateChange}
                       hideControls={false}

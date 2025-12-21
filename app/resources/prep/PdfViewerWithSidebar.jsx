@@ -15,6 +15,8 @@ export default function PdfViewerWithSidebar({
   // NEW: External nav support
   externalNav = false,
   onNavStateChange,
+  // ✅ NEW: expose the scroll container (mainRef)
+  onScrollContainerReady,
 }) {
   const mainRef = useRef(null);
   const pdfCanvasRef = useRef(null);
@@ -58,6 +60,17 @@ export default function PdfViewerWithSidebar({
   useEffect(() => {
     updateContainerRef();
   }, [updateContainerRef]);
+
+  // ✅ Expose the scroll container element to parent
+  const updateScrollContainerRef = useCallback(() => {
+    if (typeof onScrollContainerReady === "function" && mainRef.current) {
+      onScrollContainerReady(mainRef.current);
+    }
+  }, [onScrollContainerReady]);
+
+  useEffect(() => {
+    updateScrollContainerRef();
+  }, [updateScrollContainerRef]);
 
   // NEW: Notify parent of nav state changes, including fitToPage
   useEffect(() => {
