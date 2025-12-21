@@ -267,8 +267,12 @@ export default function PrepShell({
   }
 
   useEffect(() => {
-    redrawCanvasFromStrokes(strokes);
-  }, [strokes]);
+    const visibleStrokes = isPdf
+      ? strokes.filter((s) => (s.page ?? 1) === pdfCurrentPage)
+      : strokes;
+
+    redrawCanvasFromStrokes(visibleStrokes);
+  }, [strokes, isPdf, pdfCurrentPage]);
 
   // ─────────────────────────────────────────────────────────────
   // Load annotations from localStorage
@@ -340,7 +344,11 @@ export default function PrepShell({
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
 
-      redrawCanvasFromStrokes(strokes);
+      const visibleStrokes = isPdf
+        ? strokes.filter((s) => (s.page ?? 1) === pdfCurrentPage)
+        : strokes;
+
+      redrawCanvasFromStrokes(visibleStrokes);
     }
 
     resizeCanvas();
@@ -353,7 +361,7 @@ export default function PrepShell({
       window.addEventListener("resize", resizeCanvas);
       return () => window.removeEventListener("resize", resizeCanvas);
     }
-  }, [hasScreenShare, strokes]);
+  }, [hasScreenShare, strokes, isPdf, pdfCurrentPage]);
 
   // ─────────────────────────────────────────────────────────────
   // Persistence + broadcasting
