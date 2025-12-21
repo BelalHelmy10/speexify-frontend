@@ -435,7 +435,7 @@ export default function SessionDetailPage() {
 
             <div className="session-detail-join-actions">
               <Link
-                href={`${prefix}/classroom/${sessionId}`}
+                href={`/classroom/${sessionId}`}
                 className="btn btn--primary session-detail-join-btn"
               >
                 {txt("join_open_classroom", "Open Speexify classroom")}
