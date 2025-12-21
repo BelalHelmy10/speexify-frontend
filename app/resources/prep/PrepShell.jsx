@@ -524,6 +524,20 @@ export default function PrepShell({
     });
   }
 
+  function broadcastPdfFitToPage() {
+    if (!channelReady || !sendOnChannel) return;
+    if (!isTeacher) return;
+    if (!isPdf) return;
+    if (applyingRemoteRef.current) return;
+
+    sendOnChannel({
+      type: "PDF_FIT_TO_PAGE",
+      resourceId: resource._id,
+      page: pdfCurrentPage, // optional, but useful for consistency
+      at: Date.now(),
+    });
+  }
+
   function applyRemoteAnnotationState(message) {
     if (!message || message.resourceId !== resource._id) return;
 
@@ -623,6 +637,25 @@ export default function PrepShell({
           const maxScroll = Math.max(1, el.scrollHeight - el.clientHeight);
           const norm = Math.min(1, Math.max(0, Number(msg.scrollNorm) || 0));
           el.scrollTop = norm * maxScroll;
+        }, 0);
+
+        return;
+      }
+
+      // ✅ Learner: teacher pressed "fit to page"
+      if (msg.type === "PDF_FIT_TO_PAGE" && !isTeacher && isPdf) {
+        const api = pdfNavApiRef.current;
+
+        // If message included a page, align page first (optional but nice)
+        const targetPage = Number(msg.page) || pdfCurrentPage;
+        if (api?.setPage && targetPage !== pdfCurrentPage) {
+          api.setPage(targetPage);
+        }
+
+        // Run after render tick so container sizes are correct
+        setTimeout(() => {
+          const a = pdfNavApiRef.current;
+          if (a?.fitToPage) a.fitToPage();
         }, 0);
 
         return;
@@ -2325,6 +2358,10 @@ export default function PrepShell({
                         pdfScrollRef.current = el;
                       }}
                       onNavStateChange={handlePdfNavStateChange}
+                      onFitToPage={() => {
+                        // teacher clicked the internal PDF “fit to page” button
+                        broadcastPdfFitToPage();
+                      }}
                       hideControls={false}
                       hideSidebar={false}
                       locale={locale}

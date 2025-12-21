@@ -17,6 +17,9 @@ export default function PdfViewerWithSidebar({
   onNavStateChange,
   // ✅ NEW: expose the scroll container (mainRef)
   onScrollContainerReady,
+
+  // ✅ NEW: notify parent when "fit to page" is triggered (for classroom sync)
+  onFitToPage,
 }) {
   const mainRef = useRef(null);
   const pdfCanvasRef = useRef(null);
@@ -418,7 +421,10 @@ export default function PdfViewerWithSidebar({
               <button
                 type="button"
                 className="cpv-nav__btn"
-                onClick={fitToPage}
+                onClick={() => {
+                  fitToPage();
+                  onFitToPage?.();
+                }}
                 title={t(dict, "resources_pdf_fit_to_page")}
               >
                 <svg
