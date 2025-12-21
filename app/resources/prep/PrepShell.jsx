@@ -281,20 +281,32 @@ export default function PrepShell({
   useEffect(() => {
     if (!storageKey) return;
 
+    // ✅ Reset state when switching resources/materials
+    setStickyNotes([]);
+    setTextBoxes([]);
+    setMasks([]);
+    setStrokes([]);
+    setCurrentStrokeId(null);
+
+    // Also clear the canvas immediately so nothing "sticks"
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext("2d");
+      if (ctx)
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
+
     try {
       const raw = window.localStorage.getItem(storageKey);
+
+      // ✅ If no saved annotations for this resource, we keep the reset (empty) state
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed.stickyNotes)) {
-        setStickyNotes(parsed.stickyNotes);
-      }
-      if (Array.isArray(parsed.textBoxes)) {
-        setTextBoxes(parsed.textBoxes);
-      }
-      if (Array.isArray(parsed.masks)) {
-        setMasks(parsed.masks);
-      }
+
+      if (Array.isArray(parsed.stickyNotes)) setStickyNotes(parsed.stickyNotes);
+      if (Array.isArray(parsed.textBoxes)) setTextBoxes(parsed.textBoxes);
+      if (Array.isArray(parsed.masks)) setMasks(parsed.masks);
+
       if (Array.isArray(parsed.strokes)) {
         setStrokes(
           parsed.strokes.filter(
