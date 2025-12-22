@@ -77,14 +77,32 @@ export default function PrepShell({
     );
   }
 
+  const storageKey = `prep_annotations_${resource._id}`;
+
+  // ✅ define viewerUrl FIRST
+  const viewerUrl = viewer?.viewerUrl || null;
+
+  // ✅ then define isPdf/pdfViewerUrl
+  const isPdf = viewer?.type === "pdf";
+  const pdfViewerUrl = isPdf ? viewerUrl : null;
+
+  // ✅ then auth
+  const { user } = useAuth();
+  const myUserId = user?._id || user?.id || null;
+
+  console.log("DEBUG viewerUrl:", viewerUrl);
+
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
-  // Teacher's pointer (shared)
-  const [teacherPointer, setTeacherPointer] = useState(null); // { x,y }
+  // Teacher pointer is now per-page
+  const [teacherPointerByPage, setTeacherPointerByPage] = useState({});
+  // shape: { [pageNumber]: { x, y } }
 
-  // Learners' pointers (per user)
-  const [learnerPointers, setLearnerPointers] = useState({});
+  // Learner pointers are now per-page, per-user
+  const [learnerPointersByPage, setLearnerPointersByPage] = useState({});
+  // shape: { [pageNumber]: { [userId]: { x, y } } }
+
   // shape: { [userId]: { x, y } }
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
@@ -115,6 +133,41 @@ export default function PrepShell({
     }
   }, []);
 
+  // ✅ Pointer must be tied to the current PDF page.
+  // When the page changes, clear local pointer for previous page so it doesn't "travel".
+  const prevPointerPageRef = useRef(null);
+
+  useEffect(() => {
+    const page = isPdf ? pdfCurrentPage : 1;
+    const prevPage = prevPointerPageRef.current;
+
+    if (prevPage !== null && prevPage !== page) {
+      // Clear my local pointer on the old page
+      if (isTeacher) {
+        setTeacherPointerByPage((prev) => {
+          const next = { ...prev };
+          delete next[prevPage];
+          return next;
+        });
+      } else if (myUserId) {
+        setLearnerPointersByPage((prev) => {
+          const next = { ...prev };
+          if (!next[prevPage]) return next;
+          const perPage = { ...next[prevPage] };
+          delete perPage[myUserId];
+          if (Object.keys(perPage).length === 0) delete next[prevPage];
+          else next[prevPage] = perPage;
+          return next;
+        });
+      }
+
+      // Also broadcast hide for old page
+      broadcastPointer(null);
+    }
+
+    prevPointerPageRef.current = page;
+  }, [isPdf, pdfCurrentPage, isTeacher, myUserId]); // broadcastPointer uses current page automatically
+
   // stroke: { id, tool, color, points: [{ x,y } in [0,1]] }
   const [strokes, setStrokes] = useState([]);
   const [currentStrokeId, setCurrentStrokeId] = useState(null);
@@ -136,9 +189,6 @@ export default function PrepShell({
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
-  const storageKey = `prep_annotations_${resource._id}`;
-
-  const viewerUrl = viewer?.viewerUrl || null;
   const unit = resource.unit;
   const subLevel = unit?.subLevel;
   const level = subLevel?.level;
@@ -146,20 +196,11 @@ export default function PrepShell({
 
   const hasScreenShare = !!isScreenShareActive;
 
-  // PDF detection
-  console.log("DEBUG viewerUrl:", viewerUrl);
-  const isPdf = viewer?.type === "pdf";
-  const pdfViewerUrl = isPdf ? viewerUrl : null;
-
   const showSidebar = !hideSidebar && !sidebarCollapsed;
   const showBreadcrumbs = !hideBreadcrumbs;
 
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
-
-  // Get authenticated user
-  const { user } = useAuth();
-  const myUserId = user?._id || user?.id || null;
 
   const layoutClasses =
     "prep-layout" +
@@ -537,18 +578,22 @@ export default function PrepShell({
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return;
 
+    const page = isPdf ? pdfCurrentPage : 1;
+
     // Teacher broadcasts a shared pointer
     if (isTeacher) {
       if (!normalizedPosOrNull) {
         sendOnChannel({
           type: "TEACHER_POINTER_HIDE",
           resourceId: resource._id,
+          page,
         });
         return;
       }
       sendOnChannel({
         type: "TEACHER_POINTER_MOVE",
         resourceId: resource._id,
+        page,
         xNorm: normalizedPosOrNull.x,
         yNorm: normalizedPosOrNull.y,
       });
@@ -562,6 +607,7 @@ export default function PrepShell({
       sendOnChannel({
         type: "LEARNER_POINTER_HIDE",
         resourceId: resource._id,
+        page,
         userId: myUserId,
       });
       return;
@@ -570,6 +616,7 @@ export default function PrepShell({
     sendOnChannel({
       type: "LEARNER_POINTER_MOVE",
       resourceId: resource._id,
+      page,
       userId: myUserId,
       xNorm: normalizedPosOrNull.x,
       yNorm: normalizedPosOrNull.y,
@@ -656,22 +703,35 @@ export default function PrepShell({
       }
       // Teacher shared pointer (everyone should follow this)
       if (msg.type === "TEACHER_POINTER_MOVE") {
-        setTeacherPointer({ x: msg.xNorm, y: msg.yNorm });
+        const page = Number(msg.page) || 1;
+        setTeacherPointerByPage((prev) => ({
+          ...prev,
+          [page]: { x: msg.xNorm, y: msg.yNorm },
+        }));
         return;
       }
       if (msg.type === "TEACHER_POINTER_HIDE") {
-        setTeacherPointer(null);
+        const page = Number(msg.page) || 1;
+        setTeacherPointerByPage((prev) => {
+          const next = { ...prev };
+          delete next[page];
+          return next;
+        });
         return;
       }
 
-      // Learners' individual pointers (teacher sees all; learners can see others too)
       if (msg.type === "LEARNER_POINTER_MOVE") {
         const uid = msg.userId || msg.senderId;
         if (!uid) return;
 
-        setLearnerPointers((prev) => ({
+        const page = Number(msg.page) || 1;
+
+        setLearnerPointersByPage((prev) => ({
           ...prev,
-          [uid]: { x: msg.xNorm, y: msg.yNorm },
+          [page]: {
+            ...(prev[page] || {}),
+            [uid]: { x: msg.xNorm, y: msg.yNorm },
+          },
         }));
         return;
       }
@@ -680,9 +740,18 @@ export default function PrepShell({
         const uid = msg.userId || msg.senderId;
         if (!uid) return;
 
-        setLearnerPointers((prev) => {
+        const page = Number(msg.page) || 1;
+
+        setLearnerPointersByPage((prev) => {
           const next = { ...prev };
-          delete next[uid];
+          if (!next[page]) return next;
+          const perPage = { ...next[page] };
+          delete perPage[uid];
+          if (Object.keys(perPage).length === 0) {
+            delete next[page];
+          } else {
+            next[page] = perPage;
+          }
           return next;
         });
         return;
@@ -1264,8 +1333,8 @@ export default function PrepShell({
     setDragState(null);
     setMaskDrag(null);
     setActiveTextId(null);
-    setTeacherPointer(null);
-    setLearnerPointers({});
+    setTeacherPointerByPage({});
+    setLearnerPointersByPage({});
     try {
       window.localStorage.setItem(
         storageKey,
@@ -1310,10 +1379,15 @@ export default function PrepShell({
       const p = getNormalizedPoint(e);
       if (!p) return;
 
+      const page = isPdf ? pdfCurrentPage : 1;
+
       if (isTeacher) {
-        setTeacherPointer(p);
+        setTeacherPointerByPage((prev) => ({ ...prev, [page]: p }));
       } else if (myUserId) {
-        setLearnerPointers((prev) => ({ ...prev, [myUserId]: p }));
+        setLearnerPointersByPage((prev) => ({
+          ...prev,
+          [page]: { ...(prev[page] || {}), [myUserId]: p },
+        }));
       }
 
       broadcastPointer(p);
@@ -1449,13 +1523,23 @@ export default function PrepShell({
     if (tool === nextTool) {
       setTool(TOOL_NONE);
 
+      const page = isPdf ? pdfCurrentPage : 1;
+
       if (isTeacher) {
-        setTeacherPointer(null);
+        setTeacherPointerByPage((prev) => {
+          const next = { ...prev };
+          delete next[page];
+          return next;
+        });
       } else {
-        setLearnerPointers((prev) => {
+        setLearnerPointersByPage((prev) => {
           if (!myUserId) return prev;
           const next = { ...prev };
-          delete next[myUserId];
+          if (!next[page]) return next;
+          const perPage = { ...next[page] };
+          delete perPage[myUserId];
+          if (Object.keys(perPage).length === 0) delete next[page];
+          else next[page] = perPage;
           return next;
         });
       }
@@ -1465,13 +1549,23 @@ export default function PrepShell({
       setTool(nextTool);
 
       if (nextTool !== TOOL_POINTER) {
+        const page = isPdf ? pdfCurrentPage : 1;
+
         if (isTeacher) {
-          setTeacherPointer(null);
+          setTeacherPointerByPage((prev) => {
+            const next = { ...prev };
+            delete next[page];
+            return next;
+          });
         } else {
-          setLearnerPointers((prev) => {
+          setLearnerPointersByPage((prev) => {
             if (!myUserId) return prev;
             const next = { ...prev };
-            delete next[myUserId];
+            if (!next[page]) return next;
+            const perPage = { ...next[page] };
+            delete perPage[myUserId];
+            if (Object.keys(perPage).length === 0) delete next[page];
+            else next[page] = perPage;
             return next;
           });
         }
@@ -1487,6 +1581,10 @@ export default function PrepShell({
 
   function renderAnnotationsOverlay() {
     const menusOpen = toolMenuOpen || colorMenuOpen;
+
+    const pointerPage = isPdf ? pdfCurrentPage : 1;
+    const teacherPointer = teacherPointerByPage[pointerPage] || null;
+    const learnerPointers = learnerPointersByPage[pointerPage] || {};
 
     const needsInteraction =
       !menusOpen &&
@@ -1804,7 +1902,7 @@ export default function PrepShell({
         )}
 
         {/* Teacher pointer */}
-        {teacherPointer && (
+        {!menusOpen && teacherPointer && (
           <svg
             style={{
               position: "absolute",
@@ -1832,32 +1930,33 @@ export default function PrepShell({
         )}
 
         {/* Learner pointers */}
-        {Object.entries(learnerPointers).map(([uid, pos]) => (
-          <svg
-            key={uid}
-            style={{
-              position: "absolute",
-              left: `${pos.x * 100}%`,
-              top: `${pos.y * 100}%`,
-              transform: "translate(-100%, -50%)",
-              pointerEvents: "none",
-              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.35))",
-              zIndex: 9998,
-            }}
-            width="36"
-            height="36"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <path
-              d="M4 12H17M17 12L12 7M17 12L12 17"
-              stroke={colorForId(uid)}
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        ))}
+        {!menusOpen &&
+          Object.entries(learnerPointers).map(([uid, pos]) => (
+            <svg
+              key={uid}
+              style={{
+                position: "absolute",
+                left: `${pos.x * 100}%`,
+                top: `${pos.y * 100}%`,
+                transform: "translate(-100%, -50%)",
+                pointerEvents: "none",
+                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.35))",
+                zIndex: 9998,
+              }}
+              width="36"
+              height="36"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M4 12H17M17 12L12 7M17 12L12 17"
+                stroke={colorForId(uid)}
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ))}
       </div>
     );
   }
