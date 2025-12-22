@@ -44,6 +44,11 @@ export default function ClassroomChat({
   const localTypingTimeoutRef = useRef(null);
   const hasSentTypingRef = useRef(false);
 
+  // ✅ NEW: prevent duplicate join/leave spam on reconnects
+  const hasAnnouncedJoinRef = useRef(false);
+  const hasAnnouncedLeaveRef = useRef(false);
+  const seenSystemEventsRef = useRef(new Set());
+
   // ─────────────────────────────────────────────────────────────
   // Load persisted chat from localStorage
   // ─────────────────────────────────────────────────────────────
@@ -68,6 +73,12 @@ export default function ClassroomChat({
       console.warn("Failed to persist classroom chat history", err);
     }
   }, [messages, storageKey]);
+
+  useEffect(() => {
+    hasAnnouncedJoinRef.current = false;
+    hasAnnouncedLeaveRef.current = false;
+    seenSystemEventsRef.current = new Set();
+  }, [sessionId]);
 
   // ─────────────────────────────────────────────────────────────
   // Helper: push message into state
@@ -96,31 +107,39 @@ export default function ClassroomChat({
   useEffect(() => {
     if (!ready) return;
 
-    // Broadcast join
-    send({
-      type: "CHAT_SYSTEM",
-      kind: "join",
-      role: myRole,
-      name: myName,
-      sessionId,
-      at: new Date().toISOString(),
-    });
+    // ✅ Only announce JOIN once per session/page load (not on every reconnect)
+    if (!hasAnnouncedJoinRef.current) {
+      hasAnnouncedJoinRef.current = true;
 
-    // Local “you joined” message (not broadcast)
-    appendMessage(
-      {
-        id: `local_join_${myRole}`,
-        type: "system_local",
-        text: `You joined as ${myName} (${
-          myRole === "teacher" ? "teacher" : "learner"
-        })`,
+      // Broadcast join
+      send({
+        type: "CHAT_SYSTEM",
+        kind: "join",
+        role: myRole,
+        name: myName,
+        sessionId,
         at: new Date().toISOString(),
-      },
-      { countAsUnread: false }
-    );
+      });
+
+      // Local “you joined” message (not broadcast)
+      appendMessage(
+        {
+          id: `local_join_${sessionId}_${myRole}`,
+          type: "system_local",
+          text: `You joined as ${myName} (${
+            myRole === "teacher" ? "teacher" : "learner"
+          })`,
+          at: new Date().toISOString(),
+        },
+        { countAsUnread: false }
+      );
+    }
 
     return () => {
-      // Try to broadcast leave
+      // ✅ Only announce LEAVE once
+      if (hasAnnouncedLeaveRef.current) return;
+      hasAnnouncedLeaveRef.current = true;
+
       try {
         send({
           type: "CHAT_SYSTEM",
@@ -135,7 +154,7 @@ export default function ClassroomChat({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]); // <- intentionally only when we first become ready
+  }, [ready]);
 
   // ─────────────────────────────────────────────────────────────
   // Listen to incoming messages on the channel
@@ -173,26 +192,33 @@ export default function ClassroomChat({
         }
 
         case "CHAT_SYSTEM": {
-          // join / leave
-          const systemText =
-            msg.kind === "join"
-              ? `${msg.name || "Someone"} joined the classroom`
-              : msg.kind === "leave"
-              ? `${msg.name || "Someone"} left the classroom`
-              : "";
+          const who = (msg.name || "Someone").trim();
+          const kind =
+            msg.kind === "join" ? "join" : msg.kind === "leave" ? "leave" : "";
+          if (!kind) return;
 
-          if (!systemText) return;
+          // ✅ Dedupe: ignore repeated join/leave spam (usually from reconnects)
+          const dedupeKey = `${sessionId}:${kind}:${who}`;
+          if (seenSystemEventsRef.current.has(dedupeKey)) return;
+          seenSystemEventsRef.current.add(dedupeKey);
+
+          const systemText =
+            kind === "join"
+              ? `${who} joined the classroom`
+              : `${who} left the classroom`;
 
           appendMessage(
             {
               id:
                 msg.id ||
-                `system_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+                `system_${kind}_${Date.now()}_${Math.random()
+                  .toString(16)
+                  .slice(2)}`,
               type: "system",
               text: systemText,
               at: msg.at || new Date().toISOString(),
             },
-            { countAsUnread: false } // system messages don’t bump unread
+            { countAsUnread: false }
           );
           break;
         }
