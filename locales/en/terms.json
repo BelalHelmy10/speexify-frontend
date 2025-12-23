@@ -1,0 +1,33 @@
+{
+  "title": "Terms & Conditions",
+  "intro": "Welcome to Speexify. By accessing or using our platform, you agree to be bound by these Terms & Conditions. If you do not agree, please do not use the platform.",
+
+  "s1_title": "1. Platform Description",
+  "s1_body": "Speexify provides digital educational and professional services to both individual users (B2C) and organizations (B2B). All services are delivered electronically through our website and platform.",
+
+  "s2_title": "2. Digital Service Delivery",
+  "s2_body": "All services offered on this platform are digital-only. Upon successful payment, access to the purchased service is granted electronically. No physical goods are shipped or delivered.",
+
+  "s3_title": "3. Payments & Refunds",
+  "s3_body": "Payments are processed securely through authorized payment providers. Refunds, if applicable, depend on the nature of the digital service provided. Once a digital service has been accessed or delivered, refunds may not be possible unless required by applicable law.",
+
+  "s4_title": "4. User Responsibilities",
+  "s4_li1": "Provide accurate and complete information",
+  "s4_li2": "Maintain the confidentiality of account credentials",
+  "s4_li3": "Use the platform for lawful purposes only",
+  "s4_li4": "Not copy, reproduce, resell, or misuse platform content without authorization",
+
+  "s5_title": "5. Account Termination",
+  "s5_body": "We reserve the right to suspend or terminate user accounts that violate these Terms, misuse the platform, or engage in unlawful activity, without prior notice when necessary.",
+
+  "s6_title": "6. Limitation of Liability",
+  "s6_body": "Speexify shall not be liable for any indirect, incidental, or consequential damages arising from the use of or inability to use the platform.",
+
+  "s7_title": "7. Governing Law",
+  "s7_body": "These Terms & Conditions are governed by and construed in accordance with the laws of the Arab Republic of Egypt.",
+
+  "s8_title": "8. Contact Information",
+  "s8_body": "For any questions regarding these Terms & Conditions, please contact us at:",
+  "contact_email_label": "Email:",
+  "contact_email_value": "support@speexify.com"
+}

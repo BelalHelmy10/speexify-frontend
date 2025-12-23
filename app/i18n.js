@@ -60,6 +60,9 @@ import arFooter from "@/locales/ar/footer.json";
 import enCheckout from "@/locales/en/checkout.json";
 import arCheckout from "@/locales/ar/checkout.json";
 
+import enTerms from "@/locales/en/terms.json";
+import arTerms from "@/locales/ar/terms.json";
+
 const dictionaries = {
   en: {
     home: enHome,
@@ -82,6 +85,7 @@ const dictionaries = {
     resources: enResources,
     footer: enFooter,
     checkout: enCheckout,
+    terms: enTerms,
   },
   ar: {
     home: arHome,
@@ -104,6 +108,7 @@ const dictionaries = {
     resources: arResources,
     footer: arFooter,
     checkout: arCheckout,
+    terms: arTerms,
   },
 };
 
