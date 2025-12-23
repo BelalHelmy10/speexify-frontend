@@ -63,6 +63,9 @@ import arCheckout from "@/locales/ar/checkout.json";
 import enTerms from "@/locales/en/terms.json";
 import arTerms from "@/locales/ar/terms.json";
 
+import enPrivacy from "@/locales/en/privacy.json";
+import arPrivacy from "@/locales/ar/privacy.json";
+
 const dictionaries = {
   en: {
     home: enHome,
@@ -86,6 +89,7 @@ const dictionaries = {
     footer: enFooter,
     checkout: enCheckout,
     terms: enTerms,
+    privacy: enPrivacy,
   },
   ar: {
     home: arHome,
@@ -109,6 +113,7 @@ const dictionaries = {
     footer: arFooter,
     checkout: arCheckout,
     terms: arTerms,
+    privacy: arPrivacy,
   },
 };
 

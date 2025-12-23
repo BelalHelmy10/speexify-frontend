@@ -1,0 +1,49 @@
+{
+  "title": "Privacy Policy",
+  "last_updated": "Last updated: {date}",
+
+  "intro": "This Privacy Policy explains how Speexify collects, uses, discloses, and protects your information when you use our website and services. By using the platform, you consent to the practices described in this policy.",
+
+  "s1_title": "1. Data We Collect",
+  "s1_p1": "We may collect the following types of information:",
+  "s1_li1": "Account information (such as name, email address, phone number, and password)",
+  "s1_li2": "Profile and learning-related information you provide on the platform",
+  "s1_li3": "Communications (messages you send to us, support requests, feedback)",
+  "s1_li4": "Technical data (IP address, device type, browser type, operating system, and usage logs)",
+  "s1_li5": "Cookies and similar technologies (as described below)",
+
+  "s2_title": "2. Purpose of Data Use",
+  "s2_p1": "We use your information to:",
+  "s2_li1": "Provide and operate the platform and deliver digital services",
+  "s2_li2": "Create and manage user accounts",
+  "s2_li3": "Process payments and confirm transactions",
+  "s2_li4": "Improve platform performance, security, and user experience",
+  "s2_li5": "Communicate with you about updates, service-related notices, and support",
+  "s2_li6": "Comply with legal obligations and enforce our terms",
+
+  "s3_title": "3. Payment Data Handling (Paymob)",
+  "s3_p1": "Payments on Speexify are processed through Paymob and other authorized payment providers. We do not store your full card details on our servers.",
+  "s3_p2": "Payment providers may collect and process payment-related information (such as card details) according to their own privacy and security practices. We may receive confirmation details such as payment status, transaction reference, and basic billing information when necessary for record-keeping and support.",
+
+  "s4_title": "4. Cookies",
+  "s4_p1": "We may use cookies and similar technologies to:",
+  "s4_li1": "Keep you signed in and maintain session security",
+  "s4_li2": "Remember preferences such as language selection",
+  "s4_li3": "Analyze usage patterns to improve the platform",
+  "s4_p2": "You can control cookies through your browser settings. Disabling cookies may affect certain features of the platform.",
+
+  "s5_title": "5. User Rights",
+  "s5_p1": "Depending on applicable law, you may have the right to:",
+  "s5_li1": "Request access to the personal data we hold about you",
+  "s5_li2": "Request correction of inaccurate or incomplete information",
+  "s5_li3": "Request deletion of your account and personal data, subject to legal and contractual requirements",
+  "s5_li4": "Object to or request restriction of certain processing activities",
+  "s5_p2": "To exercise these rights, please contact us using the details below.",
+
+  "s6_title": "6. Contact Information",
+  "s6_p1": "If you have questions about this Privacy Policy or our data practices, contact us at:",
+  "contact_email_label": "Email:",
+  "contact_email_value": "support@speexify.com",
+
+  "date_value": "2025-01-01"
+}
