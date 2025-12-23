@@ -66,6 +66,9 @@ import arTerms from "@/locales/ar/terms.json";
 import enPrivacy from "@/locales/en/privacy.json";
 import arPrivacy from "@/locales/ar/privacy.json";
 
+import enRefundPolicy from "@/locales/en/refund-policy.json";
+import arRefundPolicy from "@/locales/ar/refund-policy.json";
+
 const dictionaries = {
   en: {
     home: enHome,
@@ -90,6 +93,7 @@ const dictionaries = {
     checkout: enCheckout,
     terms: enTerms,
     privacy: enPrivacy,
+    refundPolicy: enRefundPolicy,
   },
   ar: {
     home: arHome,
@@ -114,6 +118,7 @@ const dictionaries = {
     checkout: arCheckout,
     terms: arTerms,
     privacy: arPrivacy,
+    refundPolicy: arRefundPolicy,
   },
 };
 

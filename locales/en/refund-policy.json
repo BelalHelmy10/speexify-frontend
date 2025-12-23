@@ -1,0 +1,39 @@
+{
+  "title": "Refund Policy",
+  "last_updated": "Last updated: {date}",
+  "date_value": "2025-01-01",
+
+  "intro": "This Refund Policy explains when refunds may be available for purchases made on Speexify. Because our services are digital, some purchases may become non-refundable once access is granted or the service is delivered.",
+
+  "s1_title": "1. Digital-Service Clarification",
+  "s1_p1": "Speexify provides digital services (such as online sessions, digital content, and platform access). No physical goods are shipped.",
+  "s1_p2": "Once access to a digital service is provided, the service may be considered delivered.",
+
+  "s2_title": "2. Eligibility Rules",
+  "s2_p1": "A refund may be considered in the following cases:",
+  "s2_li1": "A payment was successfully made but the service was not provided due to a technical error attributable to Speexify",
+  "s2_li2": "A duplicate charge occurred for the same purchase",
+  "s2_li3": "A session or service was cancelled by Speexify and no suitable alternative or rescheduling was offered",
+  "s2_li4": "Other cases required by applicable law",
+
+  "s3_title": "3. Non-Refundable Cases",
+  "s3_p1": "Refunds are generally not available in the following cases:",
+  "s3_li1": "The user has accessed or used the digital content or service",
+  "s3_li2": "A service has been delivered, started, or consumed (including attending a session or using platform access)",
+  "s3_li3": "The request is based on change of mind after access is granted",
+  "s3_li4": "The issue is caused by the user’s device, internet connection, or failure to follow instructions",
+  "s3_li5": "Any promotional, discounted, or limited-time offers where stated as non-refundable",
+
+  "s4_title": "4. Time Limits",
+  "s4_p1": "Refund requests must be submitted within {days} days of the payment date, unless a longer period is required by applicable law.",
+  "days_value": "7",
+
+  "s5_title": "5. Refund Method",
+  "s5_p1": "If a refund is approved, it will be processed using the same payment method used for the original transaction whenever possible.",
+  "s5_p2": "Refund processing times depend on the payment provider and your bank. Speexify cannot control bank processing timelines.",
+
+  "s6_title": "6. Contact Information",
+  "s6_p1": "To request a refund or ask questions about this policy, contact us at:",
+  "contact_email_label": "Email:",
+  "contact_email_value": "support@speexify.com"
+}
