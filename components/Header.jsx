@@ -56,22 +56,31 @@ function LanguageSwitcher({ locale, pathname }) {
   };
 
   return (
-    <div className="spx-lang-switcher">
+    <div className="spx-lang-toggle">
       <button
         type="button"
-        className={"spx-lang-btn" + (!isArabic ? " spx-lang-btn--active" : "")}
+        className={`spx-lang-toggle__btn${
+          !isArabic ? " spx-lang-toggle__btn--active" : ""
+        }`}
         onClick={() => handleSwitch("en")}
+        aria-label="Switch to English"
       >
         EN
       </button>
-      <span className="spx-lang-separator">|</span>
       <button
         type="button"
-        className={"spx-lang-btn" + (isArabic ? " spx-lang-btn--active" : "")}
+        className={`spx-lang-toggle__btn${
+          isArabic ? " spx-lang-toggle__btn--active" : ""
+        }`}
         onClick={() => handleSwitch("ar")}
+        aria-label="Switch to Arabic"
       >
-        AR
+        عربي
       </button>
+      <span
+        className="spx-lang-toggle__slider"
+        style={{ transform: isArabic ? "translateX(100%)" : "translateX(0)" }}
+      />
     </div>
   );
 }
