@@ -80,7 +80,7 @@ function getParticipantsFromSession(session) {
 }
 
 /* -----------------------------------------------------------
-   Focus Modes
+   Focus Modes (Desktop)
 ----------------------------------------------------------- */
 const FOCUS_MODES = {
   BALANCED: "balanced",
@@ -105,6 +105,37 @@ const FOCUS_MODE_ORDER = [
   FOCUS_MODES.BALANCED,
   FOCUS_MODES.CONTENT,
 ];
+
+/* -----------------------------------------------------------
+   Mobile View Modes
+----------------------------------------------------------- */
+const MOBILE_VIEWS = {
+  VIDEO: "video",
+  CONTENT: "content",
+  SPLIT: "split",
+  CHAT: "chat",
+};
+
+/* -----------------------------------------------------------
+   Hook: Detect mobile viewport
+----------------------------------------------------------- */
+function useIsMobile(breakpoint = 900) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= breakpoint);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, [breakpoint]);
+
+  return isMobile;
+}
 
 /* -----------------------------------------------------------
    MAIN COMPONENT
@@ -134,6 +165,9 @@ export default function ClassroomShell({
 
   const userName = isTeacher ? teacherName : learnerName;
 
+  // Mobile detection
+  const isMobile = useIsMobile(900);
+
   /* -----------------------------------------------------------
      Resources
   ----------------------------------------------------------- */
@@ -146,7 +180,7 @@ export default function ClassroomShell({
   const [isScreenShareActive, setIsScreenShareActive] = useState(false);
 
   /* -----------------------------------------------------------
-     Focus Mode & Layout State
+     Focus Mode & Layout State (Desktop)
   ----------------------------------------------------------- */
   const [focusMode, setFocusMode] = useState(FOCUS_MODES.BALANCED);
   const [customSplit, setCustomSplit] = useState(null);
@@ -159,6 +193,11 @@ export default function ClassroomShell({
 
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
+
+  /* -----------------------------------------------------------
+     Mobile View State
+  ----------------------------------------------------------- */
+  const [mobileView, setMobileView] = useState(MOBILE_VIEWS.SPLIT);
 
   // ✅ Learner-only: follow teacher layout toggle (persisted per session)
   const followLayoutStorageKey = `classroom_follow_layout_${sessionId}`;
@@ -190,22 +229,24 @@ export default function ClassroomShell({
   const [showParticipantList, setShowParticipantList] = useState(false);
 
   /* -----------------------------------------------------------
-     Drag-to-resize logic
+     Drag-to-resize logic (Desktop only)
   ----------------------------------------------------------- */
   const handleMouseDown = useCallback(
     (e) => {
+      if (isMobile) return;
       // ✅ Learners can drag only if they turned follow OFF
       if (!isTeacher && followTeacherLayout) return;
 
       e.preventDefault();
       setIsDragging(true);
     },
-    [isTeacher, followTeacherLayout]
+    [isTeacher, followTeacherLayout, isMobile]
   );
 
   const handleMouseMove = useCallback(
     (e) => {
       if (!isDragging || !containerRef.current) return;
+      if (isMobile) return;
 
       // ✅ If learner is following, ignore local resizing
       if (!isTeacher && followTeacherLayout) return;
@@ -217,7 +258,7 @@ export default function ClassroomShell({
 
       setCustomSplit(percentage);
     },
-    [isDragging, isTeacher, followTeacherLayout]
+    [isDragging, isTeacher, followTeacherLayout, isMobile]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -311,7 +352,7 @@ export default function ClassroomShell({
           setFocusMode(msg.focusMode);
         }
 
-        // customSplit can be null (meaning “use preset focusMode”)
+        // customSplit can be null (meaning "use preset focusMode")
         const nextSplit =
           msg.customSplit === null || msg.customSplit === undefined
             ? null
@@ -426,8 +467,24 @@ export default function ClassroomShell({
     ? `${participantCount}${capacity ? `/${capacity}` : ""}`
     : "";
 
+  /* -----------------------------------------------------------
+     Mobile View Helpers
+  ----------------------------------------------------------- */
+  const showVideoPanel =
+    !isMobile ||
+    mobileView === MOBILE_VIEWS.VIDEO ||
+    mobileView === MOBILE_VIEWS.SPLIT;
+  const showContentPanel =
+    !isMobile ||
+    mobileView === MOBILE_VIEWS.CONTENT ||
+    mobileView === MOBILE_VIEWS.SPLIT;
+  const showChatPanel = !isMobile || mobileView === MOBILE_VIEWS.CHAT;
+
+  // Mobile: show chat in a different way (integrated or overlay)
+  const mobileShowChat = isMobile && mobileView === MOBILE_VIEWS.CHAT;
+
   return (
-    <div className="cr-shell">
+    <div className={`cr-shell ${isMobile ? "cr-shell--mobile" : ""}`}>
       {/* Header */}
       <header className="cr-header">
         <div className="cr-header__left">
@@ -441,14 +498,14 @@ export default function ClassroomShell({
             title="Leave classroom"
           >
             <span aria-hidden="true">←</span>
-            <span>Leave</span>
+            <span className="cr-header__leave-text">Leave</span>
           </a>
         </div>
 
         <div className="cr-header__center">
           <div className="cr-header__resource-name">
             {headerTitle} • {typeLabel}
-            {isGroup ? ` • ${countLabel} participants` : ""}
+            {isGroup ? ` • ${countLabel}` : ""}
           </div>
         </div>
 
@@ -457,10 +514,13 @@ export default function ClassroomShell({
             className="cr-header__role-badge"
             data-role={isTeacher ? "teacher" : "learner"}
           >
-            {isTeacher ? "👨‍🏫" : "👨‍🎓"} {isTeacher ? teacherName : learnerName}
+            {isTeacher ? "👨‍🏫" : "👨‍🎓"}{" "}
+            <span className="cr-header__role-name">
+              {isTeacher ? teacherName : learnerName}
+            </span>
           </span>
 
-          {isGroup && (
+          {isGroup && !isMobile && (
             <button
               type="button"
               className="cr-header__leave"
@@ -473,137 +533,230 @@ export default function ClassroomShell({
         </div>
       </header>
 
+      {/* Mobile Tab Bar */}
+      {isMobile && (
+        <nav className="cr-mobile-tabs">
+          <button
+            className={`cr-mobile-tabs__tab ${
+              mobileView === MOBILE_VIEWS.VIDEO
+                ? "cr-mobile-tabs__tab--active"
+                : ""
+            }`}
+            onClick={() => setMobileView(MOBILE_VIEWS.VIDEO)}
+          >
+            <span className="cr-mobile-tabs__icon">🎥</span>
+            <span className="cr-mobile-tabs__label">Video</span>
+          </button>
+          <button
+            className={`cr-mobile-tabs__tab ${
+              mobileView === MOBILE_VIEWS.SPLIT
+                ? "cr-mobile-tabs__tab--active"
+                : ""
+            }`}
+            onClick={() => setMobileView(MOBILE_VIEWS.SPLIT)}
+          >
+            <span className="cr-mobile-tabs__icon">⚖️</span>
+            <span className="cr-mobile-tabs__label">Split</span>
+          </button>
+          <button
+            className={`cr-mobile-tabs__tab ${
+              mobileView === MOBILE_VIEWS.CONTENT
+                ? "cr-mobile-tabs__tab--active"
+                : ""
+            }`}
+            onClick={() => setMobileView(MOBILE_VIEWS.CONTENT)}
+          >
+            <span className="cr-mobile-tabs__icon">📄</span>
+            <span className="cr-mobile-tabs__label">Content</span>
+          </button>
+          <button
+            className={`cr-mobile-tabs__tab ${
+              mobileView === MOBILE_VIEWS.CHAT
+                ? "cr-mobile-tabs__tab--active"
+                : ""
+            }`}
+            onClick={() => setMobileView(MOBILE_VIEWS.CHAT)}
+          >
+            <span className="cr-mobile-tabs__icon">💬</span>
+            <span className="cr-mobile-tabs__label">
+              Chat
+              {chatUnreadCount > 0 && (
+                <span className="cr-mobile-tabs__badge">{chatUnreadCount}</span>
+              )}
+            </span>
+          </button>
+        </nav>
+      )}
+
       {/* Main Content */}
       <div
-        className={`cr-main ${isDragging ? "cr-main--dragging" : ""}`}
+        className={`cr-main ${isDragging ? "cr-main--dragging" : ""} ${
+          isMobile ? `cr-main--mobile cr-main--mobile-${mobileView}` : ""
+        }`}
         ref={containerRef}
       >
-        {/* Left Panel: Video + Chat */}
-        <aside
-          className="cr-panel cr-panel--left"
-          style={{ width: `${leftPanelWidth}%` }}
-        >
-          <div className="cr-video-container">
-            <PrepVideoCall
-              roomId={sessionId}
-              userName={userName}
-              isTeacher={isTeacher}
-              onScreenShareStreamChange={handleScreenShareStreamChange}
-            />
-          </div>
-
-          <div
-            className={`cr-chat-container ${
-              !isChatOpen ? "cr-chat-container--collapsed" : ""
+        {/* Left Panel: Video + Chat (Desktop) / Video (Mobile) */}
+        {showVideoPanel && (
+          <aside
+            className={`cr-panel cr-panel--left ${
+              isMobile ? "cr-panel--mobile" : ""
             }`}
+            style={!isMobile ? { width: `${leftPanelWidth}%` } : undefined}
           >
-            <button
-              className="cr-chat-toggle"
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
-            >
-              <span className="cr-chat-toggle__label">
-                💬 Chat
-                {chatUnreadCount > 0 && !isChatOpen && (
-                  <span className="cr-chat-toggle__unread">
-                    {chatUnreadCount}
-                  </span>
-                )}
-              </span>
-              <span
-                className={`cr-chat-toggle__icon ${
-                  isChatOpen ? "cr-chat-toggle__icon--open" : ""
+            <div className="cr-video-container">
+              <PrepVideoCall
+                roomId={sessionId}
+                userName={userName}
+                isTeacher={isTeacher}
+                onScreenShareStreamChange={handleScreenShareStreamChange}
+              />
+            </div>
+
+            {/* Chat - Desktop only (inside left panel) */}
+            {!isMobile && (
+              <div
+                className={`cr-chat-container ${
+                  !isChatOpen ? "cr-chat-container--collapsed" : ""
                 }`}
               >
-                ▼
-              </span>
-            </button>
-
-            <ClassroomChat
-              classroomChannel={classroomChannel}
-              sessionId={sessionId}
-              isTeacher={isTeacher}
-              teacherName={teacherName}
-              learnerName={learnerName}
-              isOpen={isChatOpen}
-              onUnreadCountChange={setChatUnreadCount}
-              allLearnerNames={allLearnerNames}
-              isGroup={isGroup}
-            />
-          </div>
-        </aside>
-
-        {/* Drag Handle */}
-        <div
-          className={`cr-divider ${isDragging ? "cr-divider--active" : ""}`}
-          onMouseDown={
-            isTeacher || (!isTeacher && !followTeacherLayout)
-              ? handleMouseDown
-              : undefined
-          }
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize panels"
-          aria-disabled={isTeacher ? false : followTeacherLayout}
-        >
-          <div className="cr-divider__handle">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </div>
-
-        {/* Right Panel: Content Viewer */}
-        <section
-          className="cr-panel cr-panel--right"
-          style={{ width: `${100 - leftPanelWidth}%` }}
-        >
-          <div className="cr-content-viewer">
-            {resource ? (
-              <PrepShell
-                resource={resource}
-                viewer={viewer}
-                hideSidebar={true}
-                hideBreadcrumbs={true}
-                classroomChannel={classroomChannel}
-                isTeacher={isTeacher}
-                isScreenShareActive={isScreenShareActive}
-                locale={locale}
-                className="cr-prep-shell-fullsize"
-              />
-            ) : (
-              <div className="cr-placeholder">
-                <div className="cr-placeholder__icon">
-                  {isScreenShareActive ? "🖥️" : "📚"}
-                </div>
-                <h2 className="cr-placeholder__title">
-                  {isScreenShareActive
-                    ? "Screen sharing is active"
-                    : "No resource selected"}
-                </h2>
-                <p className="cr-placeholder__text">
-                  {isScreenShareActive
-                    ? "The teacher is sharing their screen in the video call."
-                    : isTeacher
-                    ? "Click the resource picker below to choose content."
-                    : "Waiting for the teacher to select a resource."}
-                </p>
-                {isTeacher && !isScreenShareActive && (
-                  <button
-                    className="cr-placeholder__action"
-                    onClick={() => setIsPickerOpen(true)}
+                <button
+                  className="cr-chat-toggle"
+                  onClick={() => setIsChatOpen(!isChatOpen)}
+                  aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
+                >
+                  <span className="cr-chat-toggle__label">
+                    💬 Chat
+                    {chatUnreadCount > 0 && !isChatOpen && (
+                      <span className="cr-chat-toggle__unread">
+                        {chatUnreadCount}
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    className={`cr-chat-toggle__icon ${
+                      isChatOpen ? "cr-chat-toggle__icon--open" : ""
+                    }`}
                   >
-                    📚 Choose Resource
-                  </button>
-                )}
+                    ▼
+                  </span>
+                </button>
+
+                <ClassroomChat
+                  classroomChannel={classroomChannel}
+                  sessionId={sessionId}
+                  isTeacher={isTeacher}
+                  teacherName={teacherName}
+                  learnerName={learnerName}
+                  isOpen={isChatOpen}
+                  onUnreadCountChange={setChatUnreadCount}
+                  allLearnerNames={allLearnerNames}
+                  isGroup={isGroup}
+                />
               </div>
             )}
+          </aside>
+        )}
+
+        {/* Drag Handle - Desktop only */}
+        {!isMobile && (
+          <div
+            className={`cr-divider ${isDragging ? "cr-divider--active" : ""}`}
+            onMouseDown={
+              isTeacher || (!isTeacher && !followTeacherLayout)
+                ? handleMouseDown
+                : undefined
+            }
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize panels"
+            aria-disabled={isTeacher ? false : followTeacherLayout}
+          >
+            <div className="cr-divider__handle">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
           </div>
-        </section>
+        )}
+
+        {/* Right Panel: Content Viewer */}
+        {showContentPanel && (
+          <section
+            className={`cr-panel cr-panel--right ${
+              isMobile ? "cr-panel--mobile" : ""
+            }`}
+            style={
+              !isMobile ? { width: `${100 - leftPanelWidth}%` } : undefined
+            }
+          >
+            <div className="cr-content-viewer">
+              {resource ? (
+                <PrepShell
+                  resource={resource}
+                  viewer={viewer}
+                  hideSidebar={true}
+                  hideBreadcrumbs={true}
+                  classroomChannel={classroomChannel}
+                  isTeacher={isTeacher}
+                  isScreenShareActive={isScreenShareActive}
+                  locale={locale}
+                  className="cr-prep-shell-fullsize"
+                />
+              ) : (
+                <div className="cr-placeholder">
+                  <div className="cr-placeholder__icon">
+                    {isScreenShareActive ? "🖥️" : "📚"}
+                  </div>
+                  <h2 className="cr-placeholder__title">
+                    {isScreenShareActive
+                      ? "Screen sharing is active"
+                      : "No resource selected"}
+                  </h2>
+                  <p className="cr-placeholder__text">
+                    {isScreenShareActive
+                      ? "The teacher is sharing their screen in the video call."
+                      : isTeacher
+                      ? "Click the resource picker below to choose content."
+                      : "Waiting for the teacher to select a resource."}
+                  </p>
+                  {isTeacher && !isScreenShareActive && (
+                    <button
+                      className="cr-placeholder__action"
+                      onClick={() => setIsPickerOpen(true)}
+                    >
+                      📚 Choose Resource
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Mobile Chat Panel */}
+        {mobileShowChat && (
+          <div className="cr-panel cr-panel--chat cr-panel--mobile">
+            <div className="cr-chat-container cr-chat-container--mobile-full">
+              <ClassroomChat
+                classroomChannel={classroomChannel}
+                sessionId={sessionId}
+                isTeacher={isTeacher}
+                teacherName={teacherName}
+                learnerName={learnerName}
+                isOpen={true}
+                onUnreadCountChange={setChatUnreadCount}
+                allLearnerNames={allLearnerNames}
+                isGroup={isGroup}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom Control Bar */}
-      <footer className="cr-controls">
+      <footer
+        className={`cr-controls ${isMobile ? "cr-controls--mobile" : ""}`}
+      >
         <div className="cr-controls__left">
           {isTeacher && (
             <button
@@ -622,48 +775,53 @@ export default function ClassroomShell({
             >
               <span className="cr-controls__btn-icon">👥</span>
               <span className="cr-controls__btn-label">
-                Participants ({participantCount})
+                {isMobile
+                  ? participantCount
+                  : `Participants (${participantCount})`}
               </span>
             </button>
           )}
         </div>
 
-        <div className="cr-controls__center">
-          <div className="cr-focus-switcher">
-            {FOCUS_MODE_ORDER.map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                className={
-                  "cr-focus-btn" +
-                  (focusMode === mode ? " cr-focus-btn--active" : "")
-                }
-                onClick={() => resetToMode(mode)}
-                aria-pressed={focusMode === mode}
-                aria-label={focusModeLabel[mode]}
-                title={focusModeLabel[mode]}
-              >
-                <span className="cr-controls__btn-icon">
-                  {focusModeIcon[mode]}
-                </span>
-              </button>
-            ))}
-          </div>
+        {/* Desktop Focus Mode Switcher */}
+        {!isMobile && (
+          <div className="cr-controls__center">
+            <div className="cr-focus-switcher">
+              {FOCUS_MODE_ORDER.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={
+                    "cr-focus-btn" +
+                    (focusMode === mode ? " cr-focus-btn--active" : "")
+                  }
+                  onClick={() => resetToMode(mode)}
+                  aria-pressed={focusMode === mode}
+                  aria-label={focusModeLabel[mode]}
+                  title={focusModeLabel[mode]}
+                >
+                  <span className="cr-controls__btn-icon">
+                    {focusModeIcon[mode]}
+                  </span>
+                </button>
+              ))}
+            </div>
 
-          {customSplit !== null && (
-            <button
-              className="cr-controls__reset"
-              onClick={() => setCustomSplit(null)}
-              title="Reset to preset layout"
-            >
-              Reset
-            </button>
-          )}
-        </div>
+            {customSplit !== null && (
+              <button
+                className="cr-controls__reset"
+                onClick={() => setCustomSplit(null)}
+                title="Reset to preset layout"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="cr-controls__right">
-          {/* ✅ Learner-only: Follow teacher layout toggle */}
-          {!isTeacher && (
+          {/* ✅ Learner-only: Follow teacher layout toggle (Desktop only) */}
+          {!isTeacher && !isMobile && (
             <button
               className="cr-controls__btn cr-controls__btn--ghost"
               onClick={() => setFollowTeacherLayout((v) => !v)}
@@ -682,19 +840,33 @@ export default function ClassroomShell({
             </button>
           )}
 
-          <button
-            className="cr-controls__btn cr-controls__btn--ghost"
-            onClick={() => setIsChatOpen(!isChatOpen)}
-          >
-            <span className="cr-controls__btn-icon">💬</span>
-            <span className="cr-controls__btn-label">
-              {isChatOpen
-                ? "Hide Chat"
-                : chatUnreadCount > 0
-                ? `Show Chat (${chatUnreadCount})`
-                : "Show Chat"}
-            </span>
-          </button>
+          {/* Desktop Chat Toggle */}
+          {!isMobile && (
+            <button
+              className="cr-controls__btn cr-controls__btn--ghost"
+              onClick={() => setIsChatOpen(!isChatOpen)}
+            >
+              <span className="cr-controls__btn-icon">💬</span>
+              <span className="cr-controls__btn-label">
+                {isChatOpen
+                  ? "Hide Chat"
+                  : chatUnreadCount > 0
+                  ? `Show Chat (${chatUnreadCount})`
+                  : "Show Chat"}
+              </span>
+            </button>
+          )}
+
+          {/* Mobile: More options */}
+          {isMobile && (
+            <button
+              className="cr-controls__btn cr-controls__btn--ghost"
+              onClick={() => setShowLeaveConfirm(true)}
+            >
+              <span className="cr-controls__btn-icon">🚪</span>
+              <span className="cr-controls__btn-label">Leave</span>
+            </button>
+          )}
         </div>
       </footer>
 
