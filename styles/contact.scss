@@ -572,3 +572,69 @@
     transform: translateX(120%);
   }
 }
+/* ---------------------------------------
+   CONTACT FORM HEADER (SPLIT)
+----------------------------------------*/
+.contact-form__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-lg;
+}
+
+.contact-form__header-left {
+  min-width: 0; // prevent overflow
+}
+
+.contact-form__header-right {
+  font-size: 0.875rem;
+  color: $color-muted;
+  white-space: nowrap;
+}
+
+.contact-form__header-hint {
+  color: $color-muted;
+}
+
+.contact-form .card__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.contact-form .card__subtitle {
+  margin-top: $space-2xs;
+  font-size: 0.875rem;
+  color: $color-muted;
+}
+
+@media (max-width: $bp-sm) {
+  .contact-form__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .contact-form__header-right {
+    white-space: normal;
+  }
+}
+
+/* ---------------------------------------
+   FORM ACTIONS + STATUS
+----------------------------------------*/
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-md;
+  margin-top: $space-lg;
+}
+
+.form-status {
+  font-size: 0.875rem;
+  color: $color-muted;
+}
+.row-gap-sm {
+  display: flex;
+  gap: $space-sm;
+  flex-wrap: wrap;
+}

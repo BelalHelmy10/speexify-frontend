@@ -172,16 +172,22 @@ function Contact() {
         <div className="container contact-grid">
           {/* LEFT: Form */}
           <div className="card contact-form stack-md">
-            <div className="card__header stack-xs">
-              <h2 className="card__title">{t(dict, "form_card_title")}</h2>
-              <p className="card__subtitle">{t(dict, "form_card_subtitle")}</p>
+            <div className="card__header contact-form__header">
+              <div className="contact-form__header-left">
+                <h2 className="card__title">{t(dict, "form_card_title")}</h2>
+                <p className="card__subtitle">
+                  {t(dict, "form_card_subtitle")}
+                </p>
+              </div>
 
-              <p className="card__subtitle">
-                {t(dict, "form_support_line_prefix")}{" "}
+              <div className="contact-form__header-right">
+                <span className="contact-form__header-hint">
+                  {t(dict, "form_support_line_prefix")}
+                </span>{" "}
                 <a className="link" href="mailto:support@speexify.com">
                   support@speexify.com
                 </a>
-              </p>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} noValidate className="stack-md">
@@ -356,7 +362,7 @@ function Contact() {
                 </span>
               </label>
 
-              <div className="actions row-gap-sm">
+              <div className="actions">
                 <button
                   className="btn btn--primary btn--shine"
                   type="submit"
