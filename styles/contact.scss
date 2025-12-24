@@ -217,6 +217,17 @@
     max-width: 36rem;
     margin: 0;
   }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-md;
+    align-items: center;
+
+    @media (max-width: $bp-sm) {
+      gap: $space-sm;
+    }
+  }
 }
 
 /* ---------------------------------------
@@ -271,6 +282,50 @@
 .card__subtitle {
   color: $color-muted;
   font-size: 0.9375rem;
+}
+
+.kvs {
+  display: grid;
+  gap: $space-sm;
+  margin-top: $space-sm;
+
+  > div {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    align-items: start;
+    gap: $space-sm;
+    padding-top: $space-xs;
+
+    &:not(:first-child) {
+      border-top: 1px solid rgba($color-border, 0.7);
+    }
+
+    span {
+      color: $color-muted;
+      font-size: 0.875rem;
+      font-weight: 600;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    strong {
+      color: $color-black;
+      font-weight: 800;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+  }
+
+  @media (max-width: $bp-sm) {
+    > div {
+      grid-template-columns: 1fr;
+      gap: $space-2xs;
+
+      span {
+        white-space: normal;
+      }
+    }
+  }
 }
 
 /* ---------------------------------------
@@ -392,6 +447,35 @@
   &__canvas {
     border-radius: $radius-lg;
     overflow: hidden;
+  }
+
+  .bullets {
+    list-style: none;
+    padding: 0;
+    margin: $space-md 0 0;
+
+    display: grid;
+    gap: $space-sm;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: $space-sm;
+      line-height: 1.45;
+    }
+
+    svg {
+      flex: 0 0 auto;
+      margin-top: 2px;
+      opacity: 0.95;
+    }
+
+    span {
+      display: inline;
+      color: $color-black;
+      font-weight: 600;
+      word-break: break-word;
+    }
   }
 }
 

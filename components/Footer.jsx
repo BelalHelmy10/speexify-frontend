@@ -317,10 +317,9 @@ function Footer() {
               <h4 className="nav-col-title">{$t("legalTitle")}</h4>
               <ul className="nav-col-list">
                 <li>
-                  <a
-                    href="#privacy"
+                  <Link
+                    href={`${prefix}/privacy`}
                     className="nav-col-link"
-                    onClick={(e) => e.preventDefault()}
                     aria-label={$t("ariaPrivacy")}
                   >
                     <span>{$t("privacyPolicy")}</span>
@@ -340,13 +339,13 @@ function Footer() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                  </a>
+                  </Link>
                 </li>
+
                 <li>
-                  <a
-                    href="#terms"
+                  <Link
+                    href={`${prefix}/terms`}
                     className="nav-col-link"
-                    onClick={(e) => e.preventDefault()}
                     aria-label={$t("ariaTerms")}
                   >
                     <span>{$t("termsOfService")}</span>
@@ -366,16 +365,16 @@ function Footer() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                  </a>
+                  </Link>
                 </li>
+
                 <li>
-                  <a
-                    href="#cookies"
+                  <Link
+                    href={`${prefix}/refund-policy`}
                     className="nav-col-link"
-                    onClick={(e) => e.preventDefault()}
-                    aria-label={$t("ariaCookies")}
+                    aria-label={$t("ariaRefund")}
                   >
-                    <span>{$t("cookiePolicy")}</span>
+                    <span>{$t("refundPolicy")}</span>
                     <svg
                       className="link-arrow"
                       width="14"
@@ -392,7 +391,7 @@ function Footer() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>

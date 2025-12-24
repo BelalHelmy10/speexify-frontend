@@ -45,7 +45,7 @@
 
   "form_status_required": "Please fill required fields.",
   "form_status_sent": "Sent ✓ Thanks — we'll get back to you shortly.",
-  "form_status_email_fallback": "Opened your email client. If that didn't work, email hello@speexify.com.",
+  "form_status_email_fallback": "Opened your email client. If that didn't work, email {email}.",
 
   "sidebar_talk_title": "Talk to a human",
   "sidebar_sales_label": "Sales (teams & companies)",
@@ -55,11 +55,11 @@
 
   "sidebar_office_title": "Office & hours",
   "sidebar_office_hq_label": "HQ",
-  "sidebar_office_hq_value": "London, UK",
+  "sidebar_office_hq_value": "New Cairo – Fifth Settlement, Egypt",
   "sidebar_office_support_label": "Support",
-  "sidebar_office_support_value": "Mon–Fri, 9–6 (UTC)",
+  "sidebar_office_support_value": "Mon–Fri, 9–6 (Cairo time)",
   "sidebar_office_phone_label": "Phone",
-  "sidebar_office_phone_value": "+44 20 0000 0000",
+  "sidebar_office_phone_value": "+201111153366",
 
   "sidebar_social_title": "Follow us",
   "sidebar_social_linkedin": "LinkedIn",
@@ -91,5 +91,9 @@
   "faq_2_q": "Do you offer corporate invoicing?",
   "faq_2_a": "Yes. We support invoicing & purchase orders for approved accounts.",
   "faq_3_q": "What languages do you coach?",
-  "faq_3_a": "English-focused today, with custom programs available on request."
+  "faq_3_a": "English-focused today, with custom programs available on request.",
+  "form_support_line_prefix": "Prefer email? Write to",
+  "map_point_egypt": "🇪🇬 New Cairo – Fifth Settlement\u00A0(HQ)",
+  "map_iframe_title": "Map — New Cairo, Fifth Settlement, Egypt",
+  "map_iframe_aria": "Interactive map centered on Fifth Settlement, New Cairo, Egypt"
 }

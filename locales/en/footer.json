@@ -29,11 +29,13 @@
   "ariaBlog": "Blog (coming soon)",
   "ariaGuides": "Guides (coming soon)",
   "ariaHelp": "Help Center (coming soon)",
-  "ariaPrivacy": "Privacy Policy (coming soon)",
-  "ariaTerms": "Terms of Service (coming soon)",
-  "ariaCookies": "Cookie Policy (coming soon)",
+  "ariaPrivacy": "Privacy Policy",
+  "ariaTerms": "Terms of Service",
+  "ariaCookies": "Cookie Policy",
 
   "ariaLinkedIn": "LinkedIn (opens in a new tab)",
   "ariaTwitter": "Twitter (opens in a new tab)",
-  "ariaYouTube": "YouTube (opens in a new tab)"
+  "ariaYouTube": "YouTube (opens in a new tab)",
+  "refundPolicy": "Refund Policy",
+  "ariaRefund": "Refund Policy"
 }

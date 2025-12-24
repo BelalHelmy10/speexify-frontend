@@ -27,6 +27,22 @@ function getTopicLabel(topic, dict) {
   }
 }
 
+function getTopicEmail(topic) {
+  switch (topic) {
+    case "SALES":
+      return "sales@speexify.com";
+    case "PARTNERSHIPS":
+      return "partners@speexify.com";
+    case "MEDIA":
+      return "support@speexify.com";
+    case "SUPPORT":
+      return "support@speexify.com";
+    case "GENERAL":
+    default:
+      return "support@speexify.com";
+  }
+}
+
 function Contact() {
   const { user } = useAuth();
   const pathname = usePathname();
@@ -84,14 +100,15 @@ function Contact() {
       setStatus(t(dict, "form_status_sent"));
       setForm((f) => ({ ...f, message: "" }));
     } catch {
+      const to = getTopicEmail(form.topic);
       const subject = encodeURIComponent(
         `[Contact] ${getTopicLabel(form.topic, dict)} — ${form.name}`
       );
       const body = encodeURIComponent(
         `Name: ${form.name}\nEmail: ${form.email}\nCompany: ${form.company}\nPhone: ${form.phone}\nRole: ${form.role}\nBudget: ${form.budget}\n\nMessage:\n${form.message}`
       );
-      window.location.href = `mailto:hello@speexify.com?subject=${subject}&body=${body}`;
-      setStatus(t(dict, "form_status_email_fallback"));
+      window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+      setStatus(t(dict, "form_status_email_fallback", { email: to }));
     } finally {
       setSending(false);
     }
@@ -120,7 +137,7 @@ function Contact() {
           </h1>
 
           <p className="contact-hero__subtitle">{t(dict, "hero_subtitle")}</p>
-          <div className="contact-hero__actions row-gap-sm">
+          <div className="contact-hero__actions">
             <Link
               href={`${prefix}/register`}
               className="btn btn--primary btn--shine"
@@ -132,6 +149,7 @@ function Contact() {
                 height="16"
                 viewBox="0 0 16 16"
                 fill="none"
+                aria-hidden="true"
               >
                 <path
                   d="M6 3L11 8L6 13"
@@ -142,7 +160,7 @@ function Contact() {
                 />
               </svg>
             </Link>
-            <a href="mailto:hello@speexify.com" className="btn btn--ghost">
+            <a href="mailto:support@speexify.com" className="btn btn--ghost">
               {t(dict, "hero_cta_secondary")}
             </a>
           </div>
@@ -157,6 +175,13 @@ function Contact() {
             <div className="card__header stack-xs">
               <h2 className="card__title">{t(dict, "form_card_title")}</h2>
               <p className="card__subtitle">{t(dict, "form_card_subtitle")}</p>
+
+              <p className="card__subtitle">
+                {t(dict, "form_support_line_prefix")}{" "}
+                <a className="link" href="mailto:support@speexify.com">
+                  support@speexify.com
+                </a>
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} noValidate className="stack-md">
@@ -365,6 +390,7 @@ function Contact() {
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
+                    aria-hidden="true"
                   >
                     <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
@@ -398,7 +424,13 @@ function Contact() {
                 </li>
               </ul>
               <div className="pill row-gap-xs">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
                   <path
                     d="M8 14A6 6 0 108 2a6 6 0 000 12z"
                     stroke="currentColor"
@@ -426,6 +458,7 @@ function Contact() {
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
+                    aria-hidden="true"
                   >
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
                     <circle cx="12" cy="10" r="3" />
@@ -446,7 +479,11 @@ function Contact() {
                 </div>
                 <div>
                   <span>{t(dict, "sidebar_office_phone_label")}</span>
-                  <strong>{t(dict, "sidebar_office_phone_value")}</strong>
+                  <strong>
+                    <a className="link" href="tel:+201111153366">
+                      {t(dict, "sidebar_office_phone_value")}
+                    </a>
+                  </strong>
                 </div>
               </div>
             </div>
@@ -462,6 +499,7 @@ function Contact() {
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
+                    aria-hidden="true"
                   >
                     <path d="M17 2l4 4-4 4M3 11V9a4 4 0 014-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 01-4 4H3" />
                   </svg>
@@ -548,11 +586,28 @@ function Contact() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1Z" />
+                </svg>
+                <span>{t(dict, "map_point_egypt")}</span>
+              </li>
+
+              <li>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
                 >
                   <path d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z" />
                 </svg>
                 <span>{t(dict, "map_point_london")}</span>
               </li>
+
               <li>
                 <svg
                   width="20"
@@ -561,11 +616,13 @@ function Contact() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
+                  aria-hidden="true"
                 >
                   <path d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z" />
                 </svg>
                 <span>{t(dict, "map_point_eu")}</span>
               </li>
+
               <li>
                 <svg
                   width="20"
@@ -574,6 +631,7 @@ function Contact() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
+                  aria-hidden="true"
                 >
                   <path d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z" />
                 </svg>
@@ -582,27 +640,24 @@ function Contact() {
             </ul>
           </div>
 
-          <div className="contact-map__canvas">
-            <div className="map-placeholder stack-2xs center">
-              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                <path
-                  d="M32 58C46.9117 58 59 45.9117 59 31C59 16.0883 46.9117 4 32 4C17.0883 4 5 16.0883 5 31C5 45.9117 17.0883 58 32 58Z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                />
-                <path
-                  d="M32 4C32 4 40 18 40 31C40 44 32 58 32 58M32 4C32 4 24 18 24 31C24 44 32 58 32 58"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                />
-                <path
-                  d="M7 31H57M10 18H54M10 44H54"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                />
-              </svg>
-              <span>{t(dict, "map_placeholder")}</span>
-            </div>
+          <div
+            className="contact-map__canvas"
+            aria-label={t(dict, "map_iframe_aria")}
+          >
+            <iframe
+              title={t(dict, "map_iframe_title")}
+              src="https://www.google.com/maps?q=5th%20Settlement%2C%20New%20Cairo%2C%20Egypt&z=14&output=embed"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              style={{
+                width: "100%",
+                height: "100%",
+                border: 0,
+                borderRadius: 16,
+                display: "block",
+              }}
+              allowFullScreen
+            />
           </div>
         </div>
       </section>
@@ -613,18 +668,9 @@ function Contact() {
           <h2 className="faq__title">{t(dict, "faq_title")}</h2>
           <Accordion
             items={[
-              {
-                q: t(dict, "faq_1_q"),
-                a: t(dict, "faq_1_a"),
-              },
-              {
-                q: t(dict, "faq_2_q"),
-                a: t(dict, "faq_2_a"),
-              },
-              {
-                q: t(dict, "faq_3_q"),
-                a: t(dict, "faq_3_a"),
-              },
+              { q: t(dict, "faq_1_q"), a: t(dict, "faq_1_a") },
+              { q: t(dict, "faq_2_q"), a: t(dict, "faq_2_a") },
+              { q: t(dict, "faq_3_q"), a: t(dict, "faq_3_a") },
             ]}
           />
         </div>
