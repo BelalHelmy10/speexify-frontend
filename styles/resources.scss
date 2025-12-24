@@ -3599,105 +3599,13 @@ body.classroom-active {
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
   z-index: 50;
 }
-
 // ═══════════════════════════════════════════════════════════════════════════
-// CLASSROOM MOBILE RESPONSIVE STYLES
-// Add this to the end of your resources.scss file
+// CLASSROOM MOBILE RESPONSIVE STYLES - FINAL COMPLETE VERSION
+// Add this to the END of your resources.scss file
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ─── Mobile Tab Navigation ─────────────────────────────────────────────────
-.cr-mobile-tabs {
-  display: none; // Hidden on desktop
-
-  @media (max-width: 900px) {
-    display: flex;
-    align-items: stretch;
-    background: linear-gradient(
-      180deg,
-      rgba(17, 24, 39, 0.98) 0%,
-      rgba(10, 15, 26, 0.95) 100%
-    );
-    border-bottom: 1px solid $cr-border-subtle;
-    padding: 0;
-    flex-shrink: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-
-    // Hide scrollbar but allow scrolling
-    scrollbar-width: none;
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-
-  &__tab {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    padding: 0.625rem 0.5rem;
-    min-width: 70px;
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: $cr-text-muted;
-    font-family: $cr-font-sans;
-    cursor: pointer;
-    transition: all $cr-transition-fast;
-    position: relative;
-
-    &:hover {
-      color: $cr-text-secondary;
-      background: rgba($cr-accent-primary, 0.05);
-    }
-
-    &--active {
-      color: $cr-accent-primary;
-      border-bottom-color: $cr-accent-primary;
-      background: rgba($cr-accent-primary, 0.1);
-
-      .cr-mobile-tabs__icon {
-        transform: scale(1.1);
-      }
-    }
-  }
-
-  &__icon {
-    font-size: 1.125rem;
-    transition: transform $cr-transition-fast;
-  }
-
-  &__label {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  &__badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
-    font-size: 0.625rem;
-    font-weight: 700;
-    color: white;
-    background: $cr-accent-danger;
-    border-radius: $cr-radius-full;
-    animation: cr-badge-pulse 2s infinite;
-  }
-}
-
-// ─── Mobile Shell Modifications ────────────────────────────────────────────
+// ─── Mobile Shell - Base Modifications ─────────────────────────────────────
 .cr-shell--mobile {
-  // Ensure proper mobile viewport handling
   position: fixed;
   inset: 0;
   display: flex;
@@ -3707,454 +3615,8 @@ body.classroom-active {
   // Prevent iOS rubber banding
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
-}
 
-// ─── Mobile Header Modifications ───────────────────────────────────────────
-@media (max-width: 900px) {
-  .cr-header {
-    padding: 0 0.75rem;
-    height: 48px;
-
-    &__leave {
-      padding: 0.375rem 0.5rem;
-
-      &-text {
-        display: none;
-      }
-    }
-
-    &__resource-name {
-      display: none;
-    }
-
-    &__role-badge {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.625rem;
-    }
-
-    &__role-name {
-      display: none;
-
-      @media (min-width: 500px) {
-        display: inline;
-      }
-    }
-  }
-}
-
-// ─── Mobile Main Content Area ──────────────────────────────────────────────
-.cr-main--mobile {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-
-  // Different layout modes
-  &-video {
-    .cr-panel--left {
-      flex: 1;
-      max-height: none;
-    }
-    .cr-panel--right {
-      display: none;
-    }
-  }
-
-  &-content {
-    .cr-panel--left {
-      display: none;
-    }
-    .cr-panel--right {
-      flex: 1;
-    }
-  }
-
-  &-split {
-    .cr-panel--left {
-      flex: 0 0 40%;
-      max-height: 40%;
-      min-height: 160px;
-    }
-    .cr-panel--right {
-      flex: 1;
-      min-height: 0;
-    }
-  }
-
-  &-chat {
-    .cr-panel--left {
-      display: none;
-    }
-    .cr-panel--right {
-      display: none;
-    }
-    .cr-panel--chat {
-      flex: 1;
-    }
-  }
-}
-
-// ─── Mobile Panel Modifications ────────────────────────────────────────────
-.cr-panel--mobile {
-  width: 100% !important;
-  transition: none; // Remove width transition on mobile
-
-  &.cr-panel--left {
-    padding: 0.5rem;
-    border-right: none;
-    border-bottom: 1px solid $cr-border-subtle;
-    overflow: hidden;
-
-    .cr-video-container {
-      min-height: 120px;
-      max-height: none;
-      height: 100%;
-      border-radius: $cr-radius-md;
-    }
-
-    // Hide chat in left panel on mobile
-    .cr-chat-container {
-      display: none;
-    }
-  }
-
-  &.cr-panel--right {
-    padding: 0;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  &.cr-panel--chat {
-    padding: 0.5rem;
-    background: $cr-bg-secondary;
-  }
-}
-
-// ─── Mobile Chat Container ─────────────────────────────────────────────────
-.cr-chat-container--mobile-full {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  max-height: none;
-  background: $cr-bg-tertiary;
-  border-radius: $cr-radius-lg;
-  border: 1px solid $cr-border-subtle;
-  overflow: hidden;
-
-  .cr-chat {
-    flex: 1;
-    border: none;
-    border-radius: 0;
-
-    &__messages {
-      flex: 1;
-      padding: 1rem;
-    }
-  }
-
-  .cr-chat-toggle {
-    display: none; // Hide toggle on mobile full chat
-  }
-}
-
-// ─── Mobile Controls Bar ───────────────────────────────────────────────────
-.cr-controls--mobile {
-  height: auto;
-  min-height: 52px;
-  padding: 0.5rem 0.75rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-
-  // Safe area for notched phones
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-
-  .cr-controls__left,
-  .cr-controls__right {
-    gap: 0.375rem;
-  }
-
-  .cr-controls__center {
-    display: none; // Hide focus mode on mobile (using tabs instead)
-  }
-
-  .cr-controls__btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
-
-    &-icon {
-      font-size: 1rem;
-    }
-
-    &-label {
-      display: inline; // Show labels on mobile
-      font-size: 0.6875rem;
-    }
-  }
-}
-
-// ─── Mobile Video Container ────────────────────────────────────────────────
-@media (max-width: 900px) {
-  .cr-video-container {
-    border-radius: $cr-radius-md;
-
-    // Ensure video fills container properly
-    .cr-video {
-      &__frame {
-        border-radius: $cr-radius-md;
-      }
-    }
-  }
-}
-
-// ─── Mobile Content Viewer ─────────────────────────────────────────────────
-@media (max-width: 900px) {
-  .cr-content-viewer {
-    height: 100%;
-
-    .prep-layout {
-      flex-direction: column !important;
-    }
-
-    .prep-pdf-sidebar {
-      width: 100%;
-      max-height: 80px;
-      border-left: none;
-      border-top: 1px solid $cr-border-subtle;
-
-      &__pages {
-        flex-direction: row;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        padding: 0.5rem;
-      }
-
-      &__page-button {
-        flex-shrink: 0;
-        width: 36px;
-        height: 36px;
-        font-size: 0.75rem;
-      }
-    }
-  }
-
-  .cr-placeholder {
-    padding: 1.5rem;
-
-    &__icon {
-      font-size: 2.5rem;
-    }
-
-    &__title {
-      font-size: 1.125rem;
-    }
-
-    &__text {
-      font-size: 0.875rem;
-    }
-
-    &__action {
-      padding: 0.625rem 1.25rem;
-      font-size: 0.875rem;
-    }
-  }
-}
-
-// ─── Mobile Modal Adjustments ──────────────────────────────────────────────
-@media (max-width: 900px) {
-  .cr-modal-overlay {
-    padding: 0.5rem;
-    align-items: flex-end; // Slide up from bottom on mobile
-  }
-
-  .cr-modal {
-    max-height: 90vh;
-    border-radius: $cr-radius-xl $cr-radius-xl 0 0;
-
-    // Add grab handle for mobile
-    &::before {
-      content: "";
-      display: block;
-      width: 40px;
-      height: 4px;
-      background: $cr-border-default;
-      border-radius: $cr-radius-full;
-      margin: 0.75rem auto 0;
-    }
-
-    &--small {
-      max-width: 100%;
-    }
-
-    &__header {
-      padding: 1rem 1.25rem;
-    }
-
-    &__title {
-      font-size: 1rem;
-    }
-
-    &__body {
-      padding: 1rem 1.25rem;
-    }
-
-    &__footer {
-      padding: 1rem 1.25rem;
-      flex-direction: column;
-      gap: 0.5rem;
-
-      .cr-button {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  }
-}
-
-// ─── Mobile Resource Picker ────────────────────────────────────────────────
-@media (max-width: 900px) {
-  .cr-picker {
-    &__nav-row {
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    &__field {
-      width: 100%;
-    }
-
-    &__select {
-      font-size: 0.875rem;
-      padding: 0.75rem 1rem;
-    }
-
-    &__resources-header {
-      padding: 0.75rem 0;
-    }
-
-    &__list {
-      max-height: 35vh;
-    }
-
-    &__item {
-      padding: 0.875rem 1rem;
-    }
-  }
-}
-
-// ─── Touch-friendly Interactions ───────────────────────────────────────────
-@media (max-width: 900px) {
-  // Increase tap targets
-  button,
-  a,
-  .cr-controls__btn,
-  .cr-mobile-tabs__tab,
-  .cr-picker__item {
-    min-height: 44px; // iOS recommended minimum
-  }
-
-  // Remove hover effects on touch devices
-  @media (hover: none) {
-    .cr-controls__btn:hover,
-    .cr-mobile-tabs__tab:hover,
-    .cr-picker__item:hover {
-      background: inherit;
-      transform: none;
-      box-shadow: inherit;
-    }
-
-    // Add active states instead
-    .cr-controls__btn:active,
-    .cr-mobile-tabs__tab:active,
-    .cr-picker__item:active {
-      opacity: 0.7;
-      transform: scale(0.98);
-    }
-  }
-}
-
-// ─── Landscape Mobile Optimizations ────────────────────────────────────────
-@media (max-width: 900px) and (orientation: landscape) {
-  .cr-header {
-    height: 40px;
-  }
-
-  .cr-mobile-tabs {
-    &__tab {
-      padding: 0.375rem 0.5rem;
-    }
-
-    &__icon {
-      font-size: 0.875rem;
-    }
-
-    &__label {
-      font-size: 0.5625rem;
-    }
-  }
-
-  .cr-main--mobile {
-    &-split {
-      flex-direction: row;
-
-      .cr-panel--left {
-        flex: 0 0 40%;
-        max-height: none;
-        max-width: 40%;
-        border-bottom: none;
-        border-right: 1px solid $cr-border-subtle;
-      }
-
-      .cr-panel--right {
-        flex: 1;
-      }
-    }
-  }
-
-  .cr-controls--mobile {
-    min-height: 44px;
-    padding: 0.375rem 0.75rem;
-  }
-}
-
-// ─── Small Phone Optimizations (< 375px) ───────────────────────────────────
-@media (max-width: 375px) {
-  .cr-mobile-tabs {
-    &__tab {
-      min-width: 60px;
-      padding: 0.5rem 0.25rem;
-    }
-
-    &__label {
-      font-size: 0.5625rem;
-    }
-  }
-
-  .cr-controls--mobile {
-    .cr-controls__btn {
-      padding: 0.375rem 0.5rem;
-
-      &-label {
-        display: none; // Hide labels on very small screens
-      }
-    }
-  }
-}
-
-// ─── PWA / Full Screen Mode ────────────────────────────────────────────────
-@media (display-mode: standalone), (display-mode: fullscreen) {
-  .cr-shell {
-    // Account for system UI in PWA mode
-    padding-top: env(safe-area-inset-top);
-  }
-
-  .cr-controls {
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-  }
-}
-
-// ─── Prevent Text Selection During Interaction ─────────────────────────────
-.cr-shell--mobile {
+  // Prevent text selection during interaction
   -webkit-user-select: none;
   user-select: none;
 
@@ -4167,15 +3629,589 @@ body.classroom-active {
   }
 }
 
+// ─── Mobile Landscape - Full Immersive Experience ──────────────────────────
+.cr-shell--mobile-landscape {
+  // No header in landscape - maximum screen real estate
+  .cr-header {
+    display: none !important;
+  }
+
+  // Prevent text selection
+  -webkit-user-select: none;
+  user-select: none;
+
+  input,
+  textarea,
+  .cr-chat__input {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+// ─── Mobile Header (Portrait only) ─────────────────────────────────────────
+@media (max-width: 900px) {
+  .cr-header {
+    padding: 0 0.75rem;
+    height: 44px;
+
+    &__leave {
+      padding: 0.375rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    &__leave-text {
+      display: none;
+    }
+
+    &__center {
+      padding: 0 0.5rem;
+    }
+
+    &__resource-name {
+      display: block;
+      font-size: 0.6875rem;
+      max-width: 180px;
+      padding: 0.25rem 0.5rem;
+    }
+
+    &__role-badge {
+      display: none; // Hidden on mobile
+    }
+
+    &__role-name {
+      display: none;
+    }
+  }
+}
+
+// ─── Mobile Main Content - Landscape Side-by-Side ──────────────────────────
+.cr-main--landscape {
+  flex: 1;
+  display: flex;
+  flex-direction: row !important;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// ─── Mobile Landscape Panels ───────────────────────────────────────────────
+.cr-panel--landscape {
+  height: 100% !important;
+  max-height: none !important;
+  transition: none;
+
+  &.cr-panel--left {
+    padding: 0.375rem;
+    border-right: 1px solid $cr-border-subtle;
+    border-bottom: none;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .cr-video-container {
+      flex: 1;
+      min-height: 0;
+      max-height: none;
+      border-radius: $cr-radius-sm;
+    }
+
+    // No chat on mobile
+    .cr-chat-container {
+      display: none;
+    }
+  }
+
+  &.cr-panel--right {
+    flex: 1;
+    padding: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+// ─── Mobile Portrait Layout ────────────────────────────────────────────────
+@media (max-width: 900px) and (orientation: portrait) {
+  .cr-main {
+    flex-direction: column;
+  }
+
+  .cr-panel--left {
+    width: 100% !important;
+    height: 35vh;
+    min-height: 180px;
+    max-height: 280px;
+    padding: 0.5rem;
+    border-right: none;
+    border-bottom: 1px solid $cr-border-subtle;
+
+    .cr-video-container {
+      height: 100%;
+      max-height: none;
+      border-radius: $cr-radius-md;
+    }
+
+    .cr-chat-container {
+      display: none;
+    }
+  }
+
+  .cr-panel--right {
+    width: 100% !important;
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+// ─── Mobile Controls Bar - Compact ─────────────────────────────────────────
+.cr-controls--mobile {
+  height: auto;
+  min-height: 44px;
+  padding: 0.375rem 0.5rem;
+
+  // Safe area for notched phones
+  padding-bottom: max(0.375rem, env(safe-area-inset-bottom));
+
+  .cr-controls__left,
+  .cr-controls__right {
+    gap: 0.25rem;
+  }
+
+  .cr-controls__center {
+    display: none; // No focus mode on mobile
+  }
+
+  .cr-controls__btn {
+    padding: 0.375rem 0.625rem;
+    min-height: 36px;
+    font-size: 0.75rem;
+    border-radius: $cr-radius-md;
+
+    &-icon {
+      font-size: 0.875rem;
+    }
+
+    &-label {
+      font-size: 0.6875rem;
+    }
+  }
+}
+
+// ─── Mobile Landscape Controls - Ultra Compact ─────────────────────────────
+.cr-controls--landscape {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0.25rem 0.5rem !important;
+  padding-bottom: max(0.25rem, env(safe-area-inset-bottom)) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 15, 26, 0.9) 0%,
+    rgba(17, 24, 39, 0.95) 100%
+  );
+
+  .cr-controls__left,
+  .cr-controls__right {
+    gap: 0.25rem;
+  }
+
+  .cr-controls__btn {
+    padding: 0.25rem 0.5rem;
+    min-height: 28px;
+    height: 28px;
+    border-radius: $cr-radius-sm;
+
+    &-icon {
+      font-size: 0.8125rem;
+    }
+
+    &-label {
+      display: none !important; // Icons only in landscape
+    }
+
+    &--primary {
+      background: $cr-accent-primary;
+      box-shadow: none;
+
+      &:hover {
+        transform: none;
+      }
+    }
+
+    &--danger {
+      background: transparent;
+      border: 1px solid rgba($cr-accent-danger, 0.5);
+      color: $cr-accent-danger;
+      box-shadow: none;
+
+      &:hover {
+        background: rgba($cr-accent-danger, 0.1);
+        transform: none;
+      }
+    }
+  }
+}
+
+// ─── Mobile Video Container ────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .cr-video-container {
+    border-radius: $cr-radius-md;
+
+    .cr-video {
+      &__frame {
+        border-radius: $cr-radius-md;
+      }
+
+      &__loading,
+      &__error {
+        font-size: 0.75rem;
+
+        span {
+          font-size: 0.8125rem;
+        }
+      }
+
+      &__spinner {
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+}
+
+// ─── Mobile Content Viewer Adjustments ─────────────────────────────────────
+@media (max-width: 900px) {
+  .cr-content-viewer {
+    height: 100%;
+
+    .prep-layout {
+      flex-direction: column !important;
+    }
+
+    // Compact PDF sidebar on mobile
+    .prep-pdf-sidebar {
+      width: 100%;
+      max-height: 60px;
+      border-left: none;
+      border-top: 1px solid $cr-border-subtle;
+
+      &__pages {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 0.375rem;
+        gap: 0.375rem;
+      }
+
+      &__page-button {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        font-size: 0.6875rem;
+      }
+    }
+
+    // Compact annotation toolbar
+    .prep-annotate-toolbar {
+      padding: 0.375rem 0.5rem;
+      gap: 0.375rem;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+
+      &__btn {
+        min-width: 32px;
+        height: 32px;
+        padding: 0.25rem;
+        font-size: 0.75rem;
+      }
+    }
+  }
+
+  .cr-placeholder {
+    padding: 1rem;
+
+    &__icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    &__title {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    &__text {
+      font-size: 0.75rem;
+      max-width: 280px;
+    }
+
+    &__action {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.8125rem;
+    }
+  }
+}
+
+// ─── Landscape Specific Content Adjustments ────────────────────────────────
+@media (max-width: 900px) and (orientation: landscape) {
+  .cr-content-viewer {
+    .prep-pdf-sidebar {
+      max-height: 50px;
+
+      &__pages {
+        padding: 0.25rem;
+      }
+
+      &__page-button {
+        width: 28px;
+        height: 28px;
+        font-size: 0.625rem;
+      }
+    }
+
+    .prep-annotate-toolbar {
+      padding: 0.25rem 0.375rem;
+
+      &__btn {
+        min-width: 28px;
+        height: 28px;
+      }
+    }
+  }
+
+  .cr-placeholder {
+    flex-direction: row;
+    gap: 1rem;
+
+    &__icon {
+      font-size: 1.5rem;
+      margin-bottom: 0;
+    }
+
+    &__title {
+      font-size: 0.875rem;
+    }
+
+    &__text {
+      font-size: 0.6875rem;
+    }
+  }
+}
+
+// ─── Mobile Modal Adjustments ──────────────────────────────────────────────
+@media (max-width: 900px) {
+  .cr-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .cr-modal {
+    max-height: 85vh;
+    border-radius: $cr-radius-xl $cr-radius-xl 0 0;
+    width: 100%;
+    max-width: 100%;
+
+    // Grab handle
+    &::before {
+      content: "";
+      display: block;
+      width: 36px;
+      height: 4px;
+      background: $cr-border-default;
+      border-radius: $cr-radius-full;
+      margin: 0.625rem auto 0;
+    }
+
+    &--small {
+      max-height: 70vh;
+    }
+
+    &__header {
+      padding: 0.75rem 1rem;
+    }
+
+    &__title {
+      font-size: 0.9375rem;
+    }
+
+    &__close {
+      width: 28px;
+      height: 28px;
+      font-size: 0.875rem;
+    }
+
+    &__body {
+      padding: 0.75rem 1rem;
+      max-height: 50vh;
+      overflow-y: auto;
+    }
+
+    &__footer {
+      padding: 0.75rem 1rem;
+      gap: 0.5rem;
+
+      .cr-button {
+        flex: 1;
+        justify-content: center;
+        padding: 0.625rem 1rem;
+      }
+    }
+  }
+}
+
+// ─── Landscape Modal Adjustments ───────────────────────────────────────────
+@media (max-width: 900px) and (orientation: landscape) {
+  .cr-modal-overlay {
+    align-items: center;
+    padding: 0.5rem;
+  }
+
+  .cr-modal {
+    max-height: 90vh;
+    max-width: 500px;
+    border-radius: $cr-radius-lg;
+
+    &::before {
+      display: none;
+    }
+
+    &__body {
+      max-height: 40vh;
+    }
+  }
+}
+
+// ─── Mobile Resource Picker ────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .cr-picker {
+    &__nav-row {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    &__field {
+      width: 100%;
+    }
+
+    &__label {
+      font-size: 0.625rem;
+    }
+
+    &__select {
+      font-size: 0.8125rem;
+      padding: 0.625rem 0.75rem;
+    }
+
+    &__resources-header {
+      padding: 0.5rem 0;
+    }
+
+    &__resources-title {
+      font-size: 0.75rem;
+    }
+
+    &__list {
+      max-height: 30vh;
+    }
+
+    &__item {
+      padding: 0.625rem 0.75rem;
+      min-height: 44px;
+    }
+
+    &__item-title {
+      font-size: 0.8125rem;
+    }
+
+    &__item-desc {
+      font-size: 0.6875rem;
+    }
+  }
+}
+
+// ─── Touch-friendly Interactions ───────────────────────────────────────────
+@media (max-width: 900px) {
+  // Minimum tap targets
+  button,
+  a,
+  .cr-controls__btn,
+  .cr-picker__item {
+    min-height: 36px;
+  }
+
+  // Remove hover effects on touch
+  @media (hover: none) {
+    .cr-controls__btn:hover,
+    .cr-picker__item:hover {
+      background: inherit;
+      transform: none;
+      box-shadow: inherit;
+    }
+
+    // Active states for touch feedback
+    .cr-controls__btn:active,
+    .cr-picker__item:active {
+      opacity: 0.8;
+      transform: scale(0.97);
+    }
+  }
+}
+
+// ─── Small Phone Optimizations (< 375px) ───────────────────────────────────
+@media (max-width: 375px) {
+  .cr-header {
+    height: 40px;
+    padding: 0 0.5rem;
+
+    &__resource-name {
+      font-size: 0.5625rem;
+      max-width: 140px;
+    }
+  }
+
+  .cr-controls--mobile {
+    min-height: 40px;
+    padding: 0.25rem 0.375rem;
+
+    .cr-controls__btn {
+      padding: 0.25rem 0.5rem;
+      min-height: 32px;
+
+      &-label {
+        display: none;
+      }
+    }
+  }
+
+  .cr-panel--left {
+    height: 30vh;
+    min-height: 150px;
+    padding: 0.375rem;
+  }
+}
+
 // ─── iOS Safari Specific Fixes ─────────────────────────────────────────────
 @supports (-webkit-touch-callout: none) {
   .cr-shell--mobile {
-    // Fix for iOS Safari address bar
     min-height: -webkit-fill-available;
   }
 
-  .cr-main--mobile {
-    // Prevent overscroll
-    overscroll-behavior-y: contain;
+  .cr-shell--mobile-landscape {
+    min-height: -webkit-fill-available;
+  }
+
+  .cr-main--landscape {
+    height: 100%;
+    max-height: -webkit-fill-available;
+  }
+}
+
+// ─── PWA / Full Screen Mode ────────────────────────────────────────────────
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .cr-shell--mobile {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .cr-controls--mobile,
+  .cr-controls--landscape {
+    padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
   }
 }
