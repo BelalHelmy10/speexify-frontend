@@ -1,0 +1,383 @@
+// ==========================================================================
+// Policy Pages Stylesheet (Terms, Privacy, Refund)
+// Performance-optimized: No heavy animations, minimal transitions
+// ==========================================================================
+
+// Variables
+$policy-max-width: 900px;
+$policy-spacing-xs: 0.5rem;
+$policy-spacing-sm: 1rem;
+$policy-spacing-md: 1.5rem;
+$policy-spacing-lg: 2rem;
+$policy-spacing-xl: 3rem;
+
+$policy-color-bg: #ffffff;
+$policy-color-bg-alt: #f8f9fa;
+$policy-color-text: #1a1a2e;
+$policy-color-text-muted: #6c757d;
+$policy-color-primary: #4f46e5;
+$policy-color-primary-hover: #4338ca;
+$policy-color-border: #e5e7eb;
+$policy-color-link: #4f46e5;
+$policy-color-link-hover: #4338ca;
+
+$policy-font-size-base: 1rem;
+$policy-font-size-sm: 0.875rem;
+$policy-font-size-lg: 1.125rem;
+$policy-font-size-xl: 1.5rem;
+$policy-font-size-2xl: 2rem;
+
+$policy-line-height: 1.7;
+$policy-border-radius: 8px;
+
+// Fixed header height - adjust this to match your actual header height
+$header-height: 80px;
+
+// ==========================================================================
+// Smooth Scrolling
+// ==========================================================================
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+// ==========================================================================
+// Base Layout
+// ==========================================================================
+
+.policy {
+  min-height: 100vh;
+  background-color: $policy-color-bg-alt;
+  padding: $policy-spacing-xl 0;
+
+  @media (max-width: 768px) {
+    padding: $policy-spacing-lg 0;
+  }
+}
+
+.policy .container {
+  max-width: $policy-max-width;
+  margin: 0 auto;
+  padding: 0 $policy-spacing-md;
+
+  @media (max-width: 768px) {
+    padding: 0 $policy-spacing-sm;
+  }
+}
+
+// ==========================================================================
+// Card Container
+// ==========================================================================
+
+.policy__card {
+  background-color: $policy-color-bg;
+  border-radius: $policy-border-radius;
+  border: 1px solid $policy-color-border;
+  padding: $policy-spacing-xl;
+
+  @media (max-width: 768px) {
+    padding: $policy-spacing-lg $policy-spacing-md;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+}
+
+// ==========================================================================
+// Header
+// ==========================================================================
+
+.policy__header {
+  margin-bottom: $policy-spacing-lg;
+  padding-bottom: $policy-spacing-lg;
+  border-bottom: 1px solid $policy-color-border;
+  text-align: center;
+}
+
+.policy__title {
+  font-size: $policy-font-size-2xl;
+  font-weight: 700;
+  color: $policy-color-text;
+  margin: 0 0 $policy-spacing-sm 0;
+  line-height: 1.3;
+
+  @media (max-width: 768px) {
+    font-size: $policy-font-size-xl;
+  }
+}
+
+.policy__meta {
+  font-size: $policy-font-size-sm;
+  color: $policy-color-text-muted;
+  margin: 0;
+}
+
+// ==========================================================================
+// Table of Contents
+// ==========================================================================
+
+.policy__toc {
+  background-color: $policy-color-bg-alt;
+  border: 1px solid $policy-color-border;
+  border-radius: $policy-border-radius;
+  padding: $policy-spacing-md;
+  margin-bottom: $policy-spacing-lg;
+}
+
+.policy__tocTitle {
+  font-size: $policy-font-size-lg;
+  font-weight: 600;
+  color: $policy-color-text;
+  margin-bottom: $policy-spacing-sm;
+}
+
+.policy__tocList {
+  margin: 0;
+  padding: 0;
+
+  &--unstyled {
+    list-style: none;
+  }
+
+  li {
+    margin-bottom: $policy-spacing-xs;
+    line-height: 1.5;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  a {
+    color: $policy-color-link;
+    text-decoration: none;
+    font-size: $policy-font-size-sm;
+
+    &:hover,
+    &:focus {
+      color: $policy-color-link-hover;
+      text-decoration: underline;
+    }
+  }
+}
+
+// ==========================================================================
+// Content Area
+// ==========================================================================
+
+.policy__content {
+  font-size: $policy-font-size-base;
+  line-height: $policy-line-height;
+  color: $policy-color-text;
+
+  > p:first-child {
+    font-size: $policy-font-size-lg;
+    color: $policy-color-text-muted;
+    margin-bottom: $policy-spacing-lg;
+  }
+
+  p {
+    margin: 0 0 $policy-spacing-md 0;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  a {
+    color: $policy-color-link;
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+      color: $policy-color-link-hover;
+      text-decoration: underline;
+    }
+  }
+
+  strong {
+    font-weight: 600;
+    color: $policy-color-text;
+  }
+}
+
+// ==========================================================================
+// Sections
+// ==========================================================================
+
+.policy__section {
+  margin-bottom: $policy-spacing-xl;
+  // Offset for fixed header when scrolling to anchor
+  scroll-margin-top: calc(#{$header-height} + #{$policy-spacing-lg});
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h2 {
+    font-size: $policy-font-size-xl;
+    font-weight: 600;
+    color: $policy-color-text;
+    margin: 0 0 $policy-spacing-md 0;
+    line-height: 1.4;
+
+    @media (max-width: 768px) {
+      font-size: $policy-font-size-lg;
+    }
+  }
+
+  h3 {
+    font-size: $policy-font-size-lg;
+    font-weight: 600;
+    color: $policy-color-text;
+    margin: $policy-spacing-md 0 $policy-spacing-sm 0;
+    line-height: 1.4;
+  }
+
+  ul,
+  ol {
+    margin: 0 0 $policy-spacing-md 0;
+    padding-left: $policy-spacing-lg;
+
+    [dir="rtl"] & {
+      padding-left: 0;
+      padding-right: $policy-spacing-lg;
+    }
+  }
+
+  li {
+    margin-bottom: $policy-spacing-xs;
+    line-height: $policy-line-height;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  ul {
+    list-style-type: disc;
+
+    ul {
+      list-style-type: circle;
+      margin-top: $policy-spacing-xs;
+    }
+  }
+
+  ol {
+    list-style-type: decimal;
+  }
+}
+
+// ==========================================================================
+// Contact Section
+// ==========================================================================
+
+.policy__contactLine {
+  margin-bottom: $policy-spacing-xs;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  a {
+    word-break: break-word;
+  }
+}
+
+// ==========================================================================
+// RTL Support
+// ==========================================================================
+
+[dir="rtl"] {
+  .policy__content,
+  .policy__section {
+    text-align: right;
+  }
+
+  .policy__header {
+    text-align: center;
+  }
+
+  .policy__toc {
+    text-align: right;
+  }
+}
+
+// ==========================================================================
+// Print Styles
+// ==========================================================================
+
+@media print {
+  .policy {
+    background-color: #fff;
+    padding: 0;
+  }
+
+  .policy__card {
+    border: none;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .policy__toc {
+    background-color: #fff;
+    border: 1px solid #000;
+    page-break-inside: avoid;
+  }
+
+  .policy__section {
+    page-break-inside: avoid;
+  }
+
+  a {
+    color: #000;
+    text-decoration: underline;
+
+    &::after {
+      content: " (" attr(href) ")";
+      font-size: 0.8em;
+      color: #666;
+    }
+  }
+}
+
+// ==========================================================================
+// Accessibility
+// ==========================================================================
+
+.policy a:focus-visible {
+  outline: 2px solid $policy-color-primary;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+// Reduced motion preference
+@media (prefers-reduced-motion: reduce) {
+  .policy,
+  .policy * {
+    transition: none !important;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .policy__card {
+    border-width: 2px;
+    border-color: #000;
+  }
+
+  .policy__toc {
+    border-width: 2px;
+    border-color: #000;
+  }
+
+  .policy a {
+    text-decoration: underline;
+  }
+}

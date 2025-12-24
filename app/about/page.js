@@ -28,45 +28,17 @@ const statsConfig = [
 ];
 
 const valuesConfig = [
-  {
-    icon: valuesIconA,
-    titleKey: "value1_title",
-    descKey: "value1_desc",
-  },
-  {
-    icon: valuesIconB,
-    titleKey: "value2_title",
-    descKey: "value2_desc",
-  },
-  {
-    icon: valuesIconC,
-    titleKey: "value3_title",
-    descKey: "value3_desc",
-  },
-  {
-    icon: valuesIconD,
-    titleKey: "value4_title",
-    descKey: "value4_desc",
-  },
+  { icon: valuesIconA, titleKey: "value1_title", descKey: "value1_desc" },
+  { icon: valuesIconB, titleKey: "value2_title", descKey: "value2_desc" },
+  { icon: valuesIconC, titleKey: "value3_title", descKey: "value3_desc" },
+  { icon: valuesIconD, titleKey: "value4_title", descKey: "value4_desc" },
 ];
 
 const timelineConfig = [
-  {
-    yearKey: "timeline1_year",
-    textKey: "timeline1_text",
-  },
-  {
-    yearKey: "timeline2_year",
-    textKey: "timeline2_text",
-  },
-  {
-    yearKey: "timeline3_year",
-    textKey: "timeline3_text",
-  },
-  {
-    yearKey: "timeline4_year",
-    textKey: "timeline4_text",
-  },
+  { yearKey: "timeline1_year", textKey: "timeline1_text" },
+  { yearKey: "timeline2_year", textKey: "timeline2_text" },
+  { yearKey: "timeline3_year", textKey: "timeline3_text" },
+  { yearKey: "timeline4_year", textKey: "timeline4_text" },
 ];
 
 const leadersConfig = [
@@ -157,6 +129,7 @@ export default function AboutPage() {
                   />
                 </svg>
               </Link>
+
               <Link
                 href={`${prefix}/packages`}
                 className="about-btn about-btn--outline about-btn--lg"
@@ -169,7 +142,7 @@ export default function AboutPage() {
           <div className="about__hero-right">
             <div className="about__hero-media">
               <div className="about__hero-media-glow"></div>
-              <img src={heroImg} alt="Learner using Speexify" />
+              <img src={heroImg} alt={t(dict, "hero_image_alt")} />
               <div className="about__hero-media-badge">
                 <span className="about__hero-media-badge-dot"></span>
                 <span>{t(dict, "hero_trusted")}</span>
@@ -192,11 +165,66 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* OFFER (B2C + B2B + DIGITAL-ONLY) */}
+      {/* OFFER (B2C + B2B + FLEX + OUTCOMES) */}
+      <section className="about__values">
+        <div className="container">
+          <div className="about__section-header">
+            <h2 className="about__section-title">{t(dict, "offer_title")}</h2>
+            <p className="about__section-subtitle">
+              {t(dict, "offer_subtitle")}
+            </p>
+          </div>
+
+          <div className="about__values-grid">
+            <article className="about__value">
+              <div className="about__value-icon-wrap">
+                <span aria-hidden="true" style={{ fontSize: 22 }}>
+                  👤
+                </span>
+              </div>
+              <h3>{t(dict, "offer_card1_title")}</h3>
+              <p>{t(dict, "offer_card1_text")}</p>
+            </article>
+
+            <article className="about__value">
+              <div className="about__value-icon-wrap">
+                <span aria-hidden="true" style={{ fontSize: 22 }}>
+                  🏢
+                </span>
+              </div>
+              <h3>{t(dict, "offer_card2_title")}</h3>
+              <p>{t(dict, "offer_card2_text")}</p>
+            </article>
+
+            <article className="about__value">
+              <div className="about__value-icon-wrap">
+                <span aria-hidden="true" style={{ fontSize: 22 }}>
+                  🔄
+                </span>
+              </div>
+              <h3>{t(dict, "offer_card3_title")}</h3>
+              <p>{t(dict, "offer_card3_text")}</p>
+            </article>
+
+            <article className="about__value">
+              <div className="about__value-icon-wrap">
+                <span aria-hidden="true" style={{ fontSize: 22 }}>
+                  📊
+                </span>
+              </div>
+              <h3>{t(dict, "offer_card4_title")}</h3>
+              <p>{t(dict, "offer_card4_text")}</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
       {/* HISTORY */}
       <section className="about__history">
         <div className="container about__history-grid">
           <div className="about__history-media">
-            <img src={historyImg} alt="Speexify team" />
+            <img src={historyImg} alt={t(dict, "history_image_alt")} />
             <div className="about__history-overlay"></div>
           </div>
           <div className="about__history-copy">
@@ -221,7 +249,12 @@ export default function AboutPage() {
             {valuesConfig.map((v) => (
               <article className="about__value" key={v.titleKey}>
                 <div className="about__value-icon-wrap">
-                  <img className="about__value-icon" src={v.icon} alt="" />
+                  <img
+                    className="about__value-icon"
+                    src={v.icon}
+                    alt=""
+                    aria-hidden="true"
+                  />
                 </div>
                 <h3>{t(dict, v.titleKey)}</h3>
                 <p>{t(dict, v.descKey)}</p>
@@ -243,12 +276,12 @@ export default function AboutPage() {
             <img
               className="about__life-img about__life-img--top"
               src={lifeImgA}
-              alt="Team event"
+              alt={t(dict, "life_image_alt_1")}
             />
             <img
               className="about__life-img about__life-img--bottom"
               src={lifeImgB}
-              alt="Learning in action"
+              alt={t(dict, "life_image_alt_2")}
             />
           </div>
         </div>
@@ -322,7 +355,7 @@ export default function AboutPage() {
           <div className="about__quote-grid">
             {testimonialsConfig.map((q, i) => (
               <blockquote className="about__quote" key={i}>
-                <div className="about__quote-stars">
+                <div className="about__quote-stars" aria-hidden="true">
                   {[...Array(q.rating)].map((_, idx) => (
                     <span key={idx} className="about__quote-star">
                       ★
@@ -352,7 +385,16 @@ export default function AboutPage() {
 
         <div className="container about__cta-inner">
           <h2>{t(dict, "cta_title")}</h2>
-          <p>{t(dict, "cta_text")}</p>
+          <p>
+            {t(dict, "cta_text")}{" "}
+            <span>
+              {t(dict, "about_contact_line", { email: "support@speexify.com" })}{" "}
+              <a href="mailto:support@speexify.com" className="about-link">
+                support@speexify.com
+              </a>
+            </span>
+          </p>
+
           <div className="about-cta-row">
             <Link
               href={`${prefix}/careers`}
@@ -375,6 +417,7 @@ export default function AboutPage() {
                 />
               </svg>
             </Link>
+
             <Link
               href={`${prefix}/contact`}
               className="about-btn about-btn--ghost about-btn--lg"

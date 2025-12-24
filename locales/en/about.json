@@ -73,5 +73,23 @@
   "cta_title": "Join the Speexify team",
   "cta_text": "Help us build the most effective, human-centered language learning platform in the world.",
   "cta_primary": "See open roles",
-  "cta_secondary": "Connect with us"
+  "cta_secondary": "Connect with us",
+  "hero_image_alt": "Learner using Speexify",
+  "history_image_alt": "Speexify team",
+  "life_image_alt_1": "Team event",
+  "life_image_alt_2": "Learning in action",
+
+  "offer_title": "What we offer",
+  "offer_subtitle": "Built for individuals and teams — designed for measurable progress",
+  "offer_card1_title": "For individuals (B2C)",
+  "offer_card1_text": "Personalized coaching to improve speaking confidence, comprehension, and real-life communication.",
+  "offer_card2_title": "For teams & companies (B2B)",
+  "offer_card2_text": "Role-specific programs that strengthen collaboration, meetings, presentations, and customer communication.",
+  "offer_card3_title": "Flexible delivery models",
+  "offer_card3_text": "Online, hybrid, and customized training formats designed around your learners and goals.",
+  "digital_only_note": "All Speexify services are delivered digitally (online coaching and platform access). No physical goods are shipped.",
+  "about_contact_line": "Questions? Email us at {email}.",
+
+  "offer_card4_title": "Measurable outcomes",
+  "offer_card4_text": "Clear progress tracking, practical assessments, and communication results you can measure."
 }
