@@ -27,6 +27,7 @@ function buildDisplayName(source) {
 
 /* -----------------------------------------------------------
    Utility: Extract teacher & learner details from session
+   UPDATED: Handle GROUP sessions with multiple learners
 ----------------------------------------------------------- */
 function getParticipantsFromSession(session) {
   const s = session || {};
@@ -79,7 +80,7 @@ function getParticipantsFromSession(session) {
 }
 
 /* -----------------------------------------------------------
-   Focus Modes (Desktop)
+   Focus Modes
 ----------------------------------------------------------- */
 const FOCUS_MODES = {
   BALANCED: "balanced",
@@ -104,53 +105,6 @@ const FOCUS_MODE_ORDER = [
   FOCUS_MODES.BALANCED,
   FOCUS_MODES.CONTENT,
 ];
-
-/* -----------------------------------------------------------
-   Hook: Detect mobile viewport
------------------------------------------------------------ */
-function useIsMobile(breakpoint = 900) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= breakpoint);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, [breakpoint]);
-
-  return isMobile;
-}
-
-/* -----------------------------------------------------------
-   Hook: Detect orientation
------------------------------------------------------------ */
-function useOrientation() {
-  const [isLandscape, setIsLandscape] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const checkOrientation = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight);
-    };
-
-    checkOrientation();
-    window.addEventListener("resize", checkOrientation);
-    window.addEventListener("orientationchange", checkOrientation);
-
-    return () => {
-      window.removeEventListener("resize", checkOrientation);
-      window.removeEventListener("orientationchange", checkOrientation);
-    };
-  }, []);
-
-  return isLandscape;
-}
 
 /* -----------------------------------------------------------
    MAIN COMPONENT
@@ -180,10 +134,6 @@ export default function ClassroomShell({
 
   const userName = isTeacher ? teacherName : learnerName;
 
-  // Mobile and orientation detection
-  const isMobile = useIsMobile(900);
-  const isLandscape = useOrientation();
-
   /* -----------------------------------------------------------
      Resources
   ----------------------------------------------------------- */
@@ -196,23 +146,24 @@ export default function ClassroomShell({
   const [isScreenShareActive, setIsScreenShareActive] = useState(false);
 
   /* -----------------------------------------------------------
-     Focus Mode & Layout State (Desktop)
+     Focus Mode & Layout State
   ----------------------------------------------------------- */
   const [focusMode, setFocusMode] = useState(FOCUS_MODES.BALANCED);
   const [customSplit, setCustomSplit] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
-  // Layout sync throttling (teacher -> learners)
+  // ✅ Layout sync throttling (teacher -> learners)
   const lastLayoutSentAtRef = useRef(0);
   const layoutRafPendingRef = useRef(false);
 
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
-  // Learner-only: follow teacher layout toggle
+  // ✅ Learner-only: follow teacher layout toggle (persisted per session)
   const followLayoutStorageKey = `classroom_follow_layout_${sessionId}`;
   const [followTeacherLayout, setFollowTeacherLayout] = useState(() => {
+    // Teachers always lead
     if (typeof window === "undefined") return true;
     if (session?.isTeacher === true) return true;
 
@@ -221,7 +172,7 @@ export default function ClassroomShell({
       if (raw === "0") return false;
       if (raw === "1") return true;
     } catch (_) {}
-    return true;
+    return true; // default: follow
   });
 
   useEffect(() => {
@@ -239,23 +190,24 @@ export default function ClassroomShell({
   const [showParticipantList, setShowParticipantList] = useState(false);
 
   /* -----------------------------------------------------------
-     Drag-to-resize logic (Desktop only)
+     Drag-to-resize logic
   ----------------------------------------------------------- */
   const handleMouseDown = useCallback(
     (e) => {
-      if (isMobile) return; // No drag on mobile
+      // ✅ Learners can drag only if they turned follow OFF
       if (!isTeacher && followTeacherLayout) return;
 
       e.preventDefault();
       setIsDragging(true);
     },
-    [isTeacher, followTeacherLayout, isMobile]
+    [isTeacher, followTeacherLayout]
   );
 
   const handleMouseMove = useCallback(
     (e) => {
       if (!isDragging || !containerRef.current) return;
-      if (isMobile) return;
+
+      // ✅ If learner is following, ignore local resizing
       if (!isTeacher && followTeacherLayout) return;
 
       const container = containerRef.current;
@@ -265,7 +217,7 @@ export default function ClassroomShell({
 
       setCustomSplit(percentage);
     },
-    [isDragging, isTeacher, followTeacherLayout, isMobile]
+    [isDragging, isTeacher, followTeacherLayout]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -295,9 +247,6 @@ export default function ClassroomShell({
   const getSplitPercentage = () => {
     if (customSplit !== null) return customSplit;
 
-    // Mobile landscape: fixed 35% for video
-    if (isMobile && isLandscape) return 35;
-
     switch (focusMode) {
       case FOCUS_MODES.VIDEO:
         return 55;
@@ -324,13 +273,13 @@ export default function ClassroomShell({
   const send = classroomChannel?.send ?? (() => {});
   const subscribe = classroomChannel?.subscribe ?? (() => () => {});
 
-  // Teacher: broadcast layout
+  // ✅ Teacher: broadcast layout (focusMode + customSplit)
   useEffect(() => {
     if (!ready) return;
     if (!isTeacher) return;
 
     const now = Date.now();
-    if (now - lastLayoutSentAtRef.current < 50) return;
+    if (now - lastLayoutSentAtRef.current < 50) return; // ~20/sec
     if (layoutRafPendingRef.current) return;
 
     layoutRafPendingRef.current = true;
@@ -342,7 +291,7 @@ export default function ClassroomShell({
       send({
         type: "LAYOUT_STATE",
         focusMode,
-        customSplit,
+        customSplit, // number | null
       });
     });
   }, [ready, isTeacher, send, focusMode, customSplit]);
@@ -353,6 +302,7 @@ export default function ClassroomShell({
     const unsub = subscribe((msg) => {
       if (!msg) return;
 
+      // ✅ Learner: follow teacher layout ONLY if toggle is ON
       if (msg.type === "LAYOUT_STATE" && !isTeacher && followTeacherLayout) {
         if (
           msg.focusMode &&
@@ -361,6 +311,7 @@ export default function ClassroomShell({
           setFocusMode(msg.focusMode);
         }
 
+        // customSplit can be null (meaning “use preset focusMode”)
         const nextSplit =
           msg.customSplit === null || msg.customSplit === undefined
             ? null
@@ -369,11 +320,13 @@ export default function ClassroomShell({
         if (nextSplit === null) {
           setCustomSplit(null);
         } else if (Number.isFinite(nextSplit)) {
+          // clamp to safe range
           setCustomSplit(Math.min(Math.max(nextSplit, 15), 85));
         }
         return;
       }
 
+      // ✅ Teacher: respond to learner asking for current layout
       if (msg.type === "REQUEST_LAYOUT" && isTeacher) {
         send({
           type: "LAYOUT_STATE",
@@ -419,11 +372,13 @@ export default function ClassroomShell({
 
     send({ type: "REQUEST_RESOURCE" });
 
+    // ✅ only request layout if learner is following
     if (followTeacherLayout) {
       send({ type: "REQUEST_LAYOUT" });
     }
   }, [ready, isTeacher, send, followTeacherLayout]);
 
+  // ✅ Learner: when turning follow back ON, immediately sync to teacher layout
   useEffect(() => {
     if (!ready) return;
     if (isTeacher) return;
@@ -463,7 +418,7 @@ export default function ClassroomShell({
   }, []);
 
   /* -----------------------------------------------------------
-     Header info
+     Header (FIXED: match SCSS classnames)
   ----------------------------------------------------------- */
   const headerTitle = session?.title || "Classroom";
   const typeLabel = isGroup ? "GROUP" : "1:1";
@@ -471,83 +426,62 @@ export default function ClassroomShell({
     ? `${participantCount}${capacity ? `/${capacity}` : ""}`
     : "";
 
-  // Determine if we're in mobile landscape mode (side-by-side layout)
-  const isMobileLandscape = isMobile && isLandscape;
-  // Show side-by-side layout for desktop OR mobile landscape
-  const showSideBySide = !isMobile || isMobileLandscape;
-
   return (
-    <div
-      className={`cr-shell ${isMobile ? "cr-shell--mobile" : ""} ${
-        isMobileLandscape ? "cr-shell--mobile-landscape" : ""
-      }`}
-    >
-      {/* Header - Hidden on mobile landscape for maximum screen space */}
-      {!isMobileLandscape && (
-        <header className="cr-header">
-          <div className="cr-header__left">
-            <a
-              href={`${prefix}/dashboard`}
+    <div className="cr-shell">
+      {/* Header */}
+      <header className="cr-header">
+        <div className="cr-header__left">
+          <a
+            href={`${prefix}/dashboard`}
+            className="cr-header__leave"
+            onClick={(e) => {
+              e.preventDefault();
+              setShowLeaveConfirm(true);
+            }}
+            title="Leave classroom"
+          >
+            <span aria-hidden="true">←</span>
+            <span>Leave</span>
+          </a>
+        </div>
+
+        <div className="cr-header__center">
+          <div className="cr-header__resource-name">
+            {headerTitle} • {typeLabel}
+            {isGroup ? ` • ${countLabel} participants` : ""}
+          </div>
+        </div>
+
+        <div className="cr-header__right">
+          <span
+            className="cr-header__role-badge"
+            data-role={isTeacher ? "teacher" : "learner"}
+          >
+            {isTeacher ? "👨‍🏫" : "👨‍🎓"} {isTeacher ? teacherName : learnerName}
+          </span>
+
+          {isGroup && (
+            <button
+              type="button"
               className="cr-header__leave"
-              onClick={(e) => {
-                e.preventDefault();
-                setShowLeaveConfirm(true);
-              }}
-              title="Leave classroom"
+              onClick={() => setShowParticipantList(true)}
+              title="View participants"
             >
-              <span aria-hidden="true">←</span>
-              <span className="cr-header__leave-text">Leave</span>
-            </a>
-          </div>
+              👥 <span>{countLabel}</span>
+            </button>
+          )}
+        </div>
+      </header>
 
-          <div className="cr-header__center">
-            <div className="cr-header__resource-name">
-              {headerTitle} • {typeLabel}
-              {isGroup ? ` • ${countLabel}` : ""}
-            </div>
-          </div>
-
-          <div className="cr-header__right">
-            {/* Role badge hidden on mobile */}
-            {!isMobile && (
-              <span
-                className="cr-header__role-badge"
-                data-role={isTeacher ? "teacher" : "learner"}
-              >
-                {isTeacher ? "👨‍🏫" : "👨‍🎓"}{" "}
-                <span className="cr-header__role-name">
-                  {isTeacher ? teacherName : learnerName}
-                </span>
-              </span>
-            )}
-
-            {isGroup && !isMobile && (
-              <button
-                type="button"
-                className="cr-header__leave"
-                onClick={() => setShowParticipantList(true)}
-                title="View participants"
-              >
-                👥 <span>{countLabel}</span>
-              </button>
-            )}
-          </div>
-        </header>
-      )}
-
-      {/* Main Content - Side by side on desktop and mobile landscape */}
+      {/* Main Content */}
       <div
-        className={`cr-main ${isDragging ? "cr-main--dragging" : ""} ${
-          isMobileLandscape ? "cr-main--landscape" : ""
-        }`}
+        className={`cr-main ${isDragging ? "cr-main--dragging" : ""}`}
         ref={containerRef}
       >
-        {/* Left Panel: Video */}
+        {/* Left Panel: Video + Chat */}
         <aside
-          className={`cr-panel cr-panel--left ${
-            isMobileLandscape ? "cr-panel--landscape" : ""
-          }`}
-          style={showSideBySide ? { width: `${leftPanelWidth}%` } : undefined}
+          className="cr-panel cr-panel--left"
+          style={{ width: `${leftPanelWidth}%` }}
         >
           <div className="cr-video-container">
             <PrepVideoCall
@@ -558,80 +492,71 @@ export default function ClassroomShell({
             />
           </div>
 
-          {/* Chat - Desktop only */}
-          {!isMobile && (
-            <div
-              className={`cr-chat-container ${
-                !isChatOpen ? "cr-chat-container--collapsed" : ""
-              }`}
+          <div
+            className={`cr-chat-container ${
+              !isChatOpen ? "cr-chat-container--collapsed" : ""
+            }`}
+          >
+            <button
+              className="cr-chat-toggle"
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
             >
-              <button
-                className="cr-chat-toggle"
-                onClick={() => setIsChatOpen(!isChatOpen)}
-                aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
+              <span className="cr-chat-toggle__label">
+                💬 Chat
+                {chatUnreadCount > 0 && !isChatOpen && (
+                  <span className="cr-chat-toggle__unread">
+                    {chatUnreadCount}
+                  </span>
+                )}
+              </span>
+              <span
+                className={`cr-chat-toggle__icon ${
+                  isChatOpen ? "cr-chat-toggle__icon--open" : ""
+                }`}
               >
-                <span className="cr-chat-toggle__label">
-                  💬 Chat
-                  {chatUnreadCount > 0 && !isChatOpen && (
-                    <span className="cr-chat-toggle__unread">
-                      {chatUnreadCount}
-                    </span>
-                  )}
-                </span>
-                <span
-                  className={`cr-chat-toggle__icon ${
-                    isChatOpen ? "cr-chat-toggle__icon--open" : ""
-                  }`}
-                >
-                  ▼
-                </span>
-              </button>
+                ▼
+              </span>
+            </button>
 
-              <ClassroomChat
-                classroomChannel={classroomChannel}
-                sessionId={sessionId}
-                isTeacher={isTeacher}
-                teacherName={teacherName}
-                learnerName={learnerName}
-                isOpen={isChatOpen}
-                onUnreadCountChange={setChatUnreadCount}
-                allLearnerNames={allLearnerNames}
-                isGroup={isGroup}
-              />
-            </div>
-          )}
+            <ClassroomChat
+              classroomChannel={classroomChannel}
+              sessionId={sessionId}
+              isTeacher={isTeacher}
+              teacherName={teacherName}
+              learnerName={learnerName}
+              isOpen={isChatOpen}
+              onUnreadCountChange={setChatUnreadCount}
+              allLearnerNames={allLearnerNames}
+              isGroup={isGroup}
+            />
+          </div>
         </aside>
 
-        {/* Drag Handle - Desktop only */}
-        {!isMobile && (
-          <div
-            className={`cr-divider ${isDragging ? "cr-divider--active" : ""}`}
-            onMouseDown={
-              isTeacher || (!isTeacher && !followTeacherLayout)
-                ? handleMouseDown
-                : undefined
-            }
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize panels"
-            aria-disabled={isTeacher ? false : followTeacherLayout}
-          >
-            <div className="cr-divider__handle">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
+        {/* Drag Handle */}
+        <div
+          className={`cr-divider ${isDragging ? "cr-divider--active" : ""}`}
+          onMouseDown={
+            isTeacher || (!isTeacher && !followTeacherLayout)
+              ? handleMouseDown
+              : undefined
+          }
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize panels"
+          aria-disabled={isTeacher ? false : followTeacherLayout}
+        >
+          <div className="cr-divider__handle">
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
-        )}
+        </div>
 
         {/* Right Panel: Content Viewer */}
         <section
-          className={`cr-panel cr-panel--right ${
-            isMobileLandscape ? "cr-panel--landscape" : ""
-          }`}
-          style={
-            showSideBySide ? { width: `${100 - leftPanelWidth}%` } : undefined
-          }
+          className="cr-panel cr-panel--right"
+          style={{ width: `${100 - leftPanelWidth}%` }}
         >
           <div className="cr-content-viewer">
             {resource ? (
@@ -653,15 +578,15 @@ export default function ClassroomShell({
                 </div>
                 <h2 className="cr-placeholder__title">
                   {isScreenShareActive
-                    ? "Screen sharing"
+                    ? "Screen sharing is active"
                     : "No resource selected"}
                 </h2>
                 <p className="cr-placeholder__text">
                   {isScreenShareActive
-                    ? "Teacher is sharing their screen."
+                    ? "The teacher is sharing their screen in the video call."
                     : isTeacher
-                    ? "Tap Resources to choose content."
-                    : "Waiting for teacher to select content."}
+                    ? "Click the resource picker below to choose content."
+                    : "Waiting for the teacher to select a resource."}
                 </p>
                 {isTeacher && !isScreenShareActive && (
                   <button
@@ -677,12 +602,8 @@ export default function ClassroomShell({
         </section>
       </div>
 
-      {/* Bottom Control Bar - Compact on mobile landscape */}
-      <footer
-        className={`cr-controls ${isMobile ? "cr-controls--mobile" : ""} ${
-          isMobileLandscape ? "cr-controls--landscape" : ""
-        }`}
-      >
+      {/* Bottom Control Bar */}
+      <footer className="cr-controls">
         <div className="cr-controls__left">
           {isTeacher && (
             <button
@@ -690,66 +611,59 @@ export default function ClassroomShell({
               onClick={() => setIsPickerOpen(true)}
             >
               <span className="cr-controls__btn-icon">📚</span>
-              {!isMobileLandscape && (
-                <span className="cr-controls__btn-label">Resources</span>
-              )}
+              <span className="cr-controls__btn-label">Resources</span>
             </button>
           )}
 
           {isGroup && (
             <button
-              className="cr-controls__btn cr-controls__btn--ghost"
+              className="cr-controls__btn cr-controls__btn--secondary"
               onClick={() => setShowParticipantList(true)}
             >
               <span className="cr-controls__btn-icon">👥</span>
-              {!isMobileLandscape && (
-                <span className="cr-controls__btn-label">
-                  {participantCount}
-                </span>
-              )}
+              <span className="cr-controls__btn-label">
+                Participants ({participantCount})
+              </span>
             </button>
           )}
         </div>
 
-        {/* Desktop Focus Mode Switcher - Hidden on mobile */}
-        {!isMobile && (
-          <div className="cr-controls__center">
-            <div className="cr-focus-switcher">
-              {FOCUS_MODE_ORDER.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className={
-                    "cr-focus-btn" +
-                    (focusMode === mode ? " cr-focus-btn--active" : "")
-                  }
-                  onClick={() => resetToMode(mode)}
-                  aria-pressed={focusMode === mode}
-                  aria-label={focusModeLabel[mode]}
-                  title={focusModeLabel[mode]}
-                >
-                  <span className="cr-controls__btn-icon">
-                    {focusModeIcon[mode]}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {customSplit !== null && (
+        <div className="cr-controls__center">
+          <div className="cr-focus-switcher">
+            {FOCUS_MODE_ORDER.map((mode) => (
               <button
-                className="cr-controls__reset"
-                onClick={() => setCustomSplit(null)}
-                title="Reset to preset layout"
+                key={mode}
+                type="button"
+                className={
+                  "cr-focus-btn" +
+                  (focusMode === mode ? " cr-focus-btn--active" : "")
+                }
+                onClick={() => resetToMode(mode)}
+                aria-pressed={focusMode === mode}
+                aria-label={focusModeLabel[mode]}
+                title={focusModeLabel[mode]}
               >
-                Reset
+                <span className="cr-controls__btn-icon">
+                  {focusModeIcon[mode]}
+                </span>
               </button>
-            )}
+            ))}
           </div>
-        )}
+
+          {customSplit !== null && (
+            <button
+              className="cr-controls__reset"
+              onClick={() => setCustomSplit(null)}
+              title="Reset to preset layout"
+            >
+              Reset
+            </button>
+          )}
+        </div>
 
         <div className="cr-controls__right">
-          {/* Learner-only: Follow teacher layout toggle (Desktop only) */}
-          {!isTeacher && !isMobile && (
+          {/* ✅ Learner-only: Follow teacher layout toggle */}
+          {!isTeacher && (
             <button
               className="cr-controls__btn cr-controls__btn--ghost"
               onClick={() => setFollowTeacherLayout((v) => !v)}
@@ -768,32 +682,18 @@ export default function ClassroomShell({
             </button>
           )}
 
-          {/* Desktop Chat Toggle */}
-          {!isMobile && (
-            <button
-              className="cr-controls__btn cr-controls__btn--ghost"
-              onClick={() => setIsChatOpen(!isChatOpen)}
-            >
-              <span className="cr-controls__btn-icon">💬</span>
-              <span className="cr-controls__btn-label">
-                {isChatOpen
-                  ? "Hide Chat"
-                  : chatUnreadCount > 0
-                  ? `Chat (${chatUnreadCount})`
-                  : "Show Chat"}
-              </span>
-            </button>
-          )}
-
-          {/* Leave button */}
           <button
-            className="cr-controls__btn cr-controls__btn--danger"
-            onClick={() => setShowLeaveConfirm(true)}
+            className="cr-controls__btn cr-controls__btn--ghost"
+            onClick={() => setIsChatOpen(!isChatOpen)}
           >
-            <span className="cr-controls__btn-icon">🚪</span>
-            {!isMobileLandscape && (
-              <span className="cr-controls__btn-label">Leave</span>
-            )}
+            <span className="cr-controls__btn-icon">💬</span>
+            <span className="cr-controls__btn-label">
+              {isChatOpen
+                ? "Hide Chat"
+                : chatUnreadCount > 0
+                ? `Show Chat (${chatUnreadCount})`
+                : "Show Chat"}
+            </span>
           </button>
         </div>
       </footer>
