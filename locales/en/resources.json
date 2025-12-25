@@ -166,5 +166,6 @@
   "resources_pdf_prev_page": "Previous page",
   "resources_pdf_next_page": "Next page",
   "resources_pdf_sidebar_empty": "No pages to show.",
-  "resources_pdf_page_label": "Page {{current}} of {{total}}"
+  "resources_pdf_page_label": "Page {{current}} of {{total}}",
+  "resources_pdf_fit_to_page": "Fit to page"
 }
