@@ -25,6 +25,15 @@ export default function PdfViewerWithSidebar({
   const pdfCanvasRef = useRef(null);
   const pageWrapperRef = useRef(null);
 
+  // ✅ Auto-fit helpers
+  // We auto-fit when:
+  // - a PDF is first loaded
+  // - the container resizes (window resize, sidebar open/close, rotation, etc.)
+  // - a new material loads (fileUrl changes)
+  const didAutoFitRef = useRef(false);
+  const autoFitRafRef = useRef(null);
+  const lastAutoFitAtRef = useRef(0);
+
   const [pdfjs, setPdfjs] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
   const [numPages, setNumPages] = useState(0);
@@ -46,12 +55,32 @@ export default function PdfViewerWithSidebar({
     if (!pdfDoc || !pageWrapperRef.current || !mainRef.current) return;
 
     pdfDoc.getPage(currentPage).then((page) => {
-      const viewport = page.getViewport({ scale: 1.0 });
-      const containerWidth = mainRef.current.clientWidth - 20; // Subtract padding/margins if needed (adjust based on CSS)
+      const viewport = page.getViewport({ scale: 1 });
+      const containerWidth = mainRef.current.clientWidth - 20;
       const fitZoom = containerWidth / viewport.width;
       setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fitZoom)));
     });
   }, [pdfDoc, currentPage]);
+
+  // ✅ Auto-fit driver (throttled) so you don't have to click "Fit to page".
+  // - Runs automatically on load
+  // - Runs automatically on resize
+  // - Runs automatically when fileUrl changes (new material)
+  const requestAutoFit = useCallback(() => {
+    if (!pdfDoc) return;
+
+    const now = Date.now();
+    if (now - lastAutoFitAtRef.current < 80) return; // throttle
+    lastAutoFitAtRef.current = now;
+
+    if (autoFitRafRef.current) cancelAnimationFrame(autoFitRafRef.current);
+
+    autoFitRafRef.current = requestAnimationFrame(() => {
+      // Don’t wait for user click — fit immediately
+      fitToPage();
+      didAutoFitRef.current = true;
+    });
+  }, [pdfDoc, fitToPage]);
 
   // Expose the page wrapper element to parent
   const updateContainerRef = useCallback(() => {
@@ -136,6 +165,47 @@ export default function PdfViewerWithSidebar({
       cancelled = true;
     };
   }, [fileUrl, onFatalError, dict]);
+
+  // ✅ Auto-fit when a new PDF loads (or when the URL changes)
+  useEffect(() => {
+    // reset so each new material auto-fits again
+    didAutoFitRef.current = false;
+
+    // wait a tick for layout to stabilize
+    const id = setTimeout(() => {
+      requestAutoFit();
+    }, 0);
+
+    return () => clearTimeout(id);
+  }, [fileUrl, pdfDoc, requestAutoFit]);
+
+  // ✅ Auto-fit when the container changes size (mobile rotation, responsive layout, etc.)
+  useEffect(() => {
+    if (!pdfDoc) return;
+
+    const el = mainRef.current;
+    if (!el) return;
+
+    const handle = () => requestAutoFit();
+
+    // ResizeObserver catches sidebar toggles, container changes, etc.
+    let ro = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(handle);
+      ro.observe(el);
+    } else {
+      window.addEventListener("resize", handle, { passive: true });
+    }
+
+    // Mobile rotation
+    window.addEventListener("orientationchange", handle, { passive: true });
+
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener("resize", handle);
+      window.removeEventListener("orientationchange", handle);
+    };
+  }, [pdfDoc, requestAutoFit]);
 
   // Load the PDF document
   useEffect(() => {
@@ -251,6 +321,10 @@ export default function PdfViewerWithSidebar({
         if (!cancelled) {
           setLoading(false);
           updateContainerRef();
+
+          // ✅ Auto-fit after the canvas has real dimensions
+          // This is the reliable moment for initial load and after page renders.
+          requestAutoFit();
         }
       } catch (err) {
         if (cancelled) return;
@@ -274,7 +348,23 @@ export default function PdfViewerWithSidebar({
         } catch (_) {}
       }
     };
-  }, [pdfDoc, currentPage, zoom, updateContainerRef, dict]);
+  }, [pdfDoc, currentPage, zoom, updateContainerRef, dict, requestAutoFit]);
+
+  // ✅ Auto-fit when page changes (optional but matches "always fitted" behavior)
+  useEffect(() => {
+    if (!pdfDoc) return;
+    requestAutoFit();
+  }, [pdfDoc, currentPage, requestAutoFit]);
+
+  // ✅ Cleanup auto-fit RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (autoFitRafRef.current) {
+        cancelAnimationFrame(autoFitRafRef.current);
+        autoFitRafRef.current = null;
+      }
+    };
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -566,7 +656,7 @@ export function PdfNavBar({ navState, locale = "en", className = "" }) {
           type="button"
           className="cpv-nav__btn"
           onClick={zoomOut}
-          disabled={zoom <= 0.5}
+          disabled={zoom <= 0.1}
           title={t(dict, "resources_pdf_zoom_out")}
         >
           −
