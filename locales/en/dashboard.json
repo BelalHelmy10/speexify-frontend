@@ -77,5 +77,6 @@
   "session_leave": "Leave session",
   "session_leave_title": "Leave this group session?",
   "session_scheduled": "Scheduled",
-  "session_starts_in": "Starts in"
+  "session_starts_in": "Starts in",
+  "session_canceled_success": "The session has been canceled successfully."
 }
