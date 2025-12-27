@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import { logout as apiLogout } from "@/lib/auth";
 import { getDictionary, t } from "@/app/i18n";
+import NotificationsBell from "@/components/NotificationsBell";
 
 /* ------------------------------------------------------------------
    Locale helpers
@@ -305,6 +306,16 @@ export default function Header() {
               </li>
             )}
 
+            {/* Desktop notifications bell (only when logged in) */}
+            {!checking && user && (
+              <li
+                className="spx-nav-item spx-nav-item-notif"
+                style={{ "--item-index": links.length + 0.5 }}
+              >
+                <NotificationsBell locale={locale} />
+              </li>
+            )}
+
             {/* Desktop language switcher */}
             <li
               className="spx-nav-item spx-nav-item-lang"
@@ -447,36 +458,51 @@ export default function Header() {
             )}
 
             {!checking && user && (
-              <li
-                className="spx-mobile-item spx-mobile-item-cta"
-                style={{ "--item-index": links.length }}
-              >
-                <button
-                  className="spx-mobile-cta spx-logout-btn"
-                  onClick={logout}
-                  type="button"
+              <>
+                {/* Mobile notifications bell */}
+                <li
+                  className="spx-mobile-item spx-mobile-item-notif"
+                  style={{ "--item-index": links.length }}
                 >
-                  <span className="spx-mobile-cta-bg"></span>
-                  <span className="spx-mobile-cta-content">
-                    <span>{t(navDict, "logout")}</span>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M6 14H3.33333C2.59695 14 2 13.403 2 12.6667V3.33333C2 2.59695 2.59695 2 3.33333 2H6"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M10.6667 11.3333L14 8M14 8L10.6667 4.66667M14 8H6"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </li>
+                  <NotificationsBell locale={locale} />
+                </li>
+
+                <li
+                  className="spx-mobile-item spx-mobile-item-cta"
+                  style={{ "--item-index": links.length + 1 }}
+                >
+                  <button
+                    className="spx-mobile-cta spx-logout-btn"
+                    onClick={logout}
+                    type="button"
+                  >
+                    <span className="spx-mobile-cta-bg"></span>
+                    <span className="spx-mobile-cta-content">
+                      <span>{t(navDict, "logout")}</span>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                      >
+                        <path
+                          d="M6 14H3.33333C2.59695 14 2 13.403 2 12.6667V3.33333C2 2.59695 2.59695 2 3.33333 2H6"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M10.6667 11.3333L14 8M14 8L10.6667 4.66667M14 8H6"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                </li>
+              </>
             )}
 
             {/* Mobile language switcher */}
