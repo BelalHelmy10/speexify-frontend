@@ -36,6 +36,8 @@ export default function NotificationsBell({ locale = "en" }) {
       empty: ar ? "لا توجد إشعارات بعد" : "No notifications yet",
       markAll: ar ? "تحديد الكل كمقروء" : "Mark all as read",
       open: ar ? "فتح الإشعارات" : "Open notifications",
+      del: ar ? "حذف" : "Delete",
+      deleting: ar ? "جارٍ الحذف…" : "Deleting…",
     };
   }, [locale]);
 
@@ -84,7 +86,25 @@ export default function NotificationsBell({ locale = "en" }) {
     }
   }
 
-  // Load count once on mount
+  async function deleteOne(id) {
+    // optimistic: remove immediately
+    setItems((prev) => {
+      const target = prev.find((n) => n.id === id);
+      if (target && !target.readAt) {
+        setUnreadCount((c) => Math.max(0, c - 1));
+      }
+      return prev.filter((n) => n.id !== id);
+    });
+
+    try {
+      await api.post(`/notifications/${id}/delete`);
+    } catch {
+      // If delete fails, reload to re-sync
+      refresh();
+    }
+  }
+
+  // Load once on mount
   useEffect(() => {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -161,7 +181,7 @@ export default function NotificationsBell({ locale = "en" }) {
             </button>
           </div>
 
-          <div className="spx-notif__body">
+          <div className="spx-notif__body" role="presentation">
             {loading ? (
               <div className="spx-notif__empty">
                 {locale === "ar" ? "جارٍ التحميل…" : "Loading…"}
@@ -180,21 +200,55 @@ export default function NotificationsBell({ locale = "en" }) {
                         (isUnread ? " spx-notif__item--unread" : "")
                       }
                     >
-                      <button
-                        type="button"
-                        className="spx-notif__itembtn"
-                        onClick={() => markOneRead(n.id)}
-                      >
-                        <div className="spx-notif__itemtop">
-                          <div className="spx-notif__itemtitle">{n.title}</div>
-                          <div className="spx-notif__time">
-                            {timeAgo(n.createdAt)}
+                      <div className="spx-notif__row">
+                        <button
+                          type="button"
+                          className="spx-notif__itembtn"
+                          onClick={() => markOneRead(n.id)}
+                        >
+                          <div className="spx-notif__itemtop">
+                            <div className="spx-notif__itemtitle">
+                              {n.title}
+                            </div>
+                            <div className="spx-notif__time">
+                              {timeAgo(n.createdAt)}
+                            </div>
                           </div>
-                        </div>
-                        {n.body && (
-                          <div className="spx-notif__itembody">{n.body}</div>
-                        )}
-                      </button>
+                          {n.body && (
+                            <div className="spx-notif__itembody">{n.body}</div>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="spx-notif__del"
+                          aria-label={labels.del}
+                          title={labels.del}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            deleteOne(n.id);
+                          }}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M9 3h6l1 2h4v2H4V5h4l1-2Z"
+                              fill="currentColor"
+                            />
+                            <path
+                              d="M6 9h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 9Z"
+                              fill="currentColor"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
