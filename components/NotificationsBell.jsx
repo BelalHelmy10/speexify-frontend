@@ -138,6 +138,12 @@ export default function NotificationsBell({ locale = "en" }) {
     [items]
   );
 
+  // Separate state for polled unread count (used when dropdown is closed)
+  const [polledUnreadCount, setPolledUnreadCount] = useState(0);
+
+  // Display count: use items count when we have items, otherwise use polled count
+  const displayUnreadCount = items.length > 0 ? unreadCount : polledUnreadCount;
+
   // Fetch CSRF token on mount
   useEffect(() => {
     const fetchCsrf = async () => {
@@ -153,6 +159,38 @@ export default function NotificationsBell({ locale = "en" }) {
     };
     fetchCsrf();
   }, []);
+
+  // Poll for unread count every 30 seconds (only when dropdown is closed)
+  useEffect(() => {
+    if (!user) return;
+
+    const pollUnreadCount = async () => {
+      // Don't poll if dropdown is open (we already have fresh data)
+      if (open) return;
+
+      try {
+        const res = await fetch(`${API_LIST}?limit=1`, {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.unreadCount === "number") {
+            setPolledUnreadCount(data.unreadCount);
+          }
+        }
+      } catch (e) {
+        // Silent fail - polling is best-effort
+      }
+    };
+
+    // Initial poll
+    pollUnreadCount();
+
+    // Poll every 30 seconds
+    const interval = setInterval(pollUnreadCount, 30000);
+
+    return () => clearInterval(interval);
+  }, [user, open]);
 
   // Helper for POST requests with CSRF
   const postWithCsrf = useCallback(
@@ -181,7 +219,14 @@ export default function NotificationsBell({ locale = "en" }) {
       const data = await res.json();
       if (!res.ok)
         throw new Error(data?.error || "Failed to load notifications");
-      setItems(Array.isArray(data) ? data : data?.items || []);
+      const loadedItems = Array.isArray(data) ? data : data?.items || [];
+      setItems(loadedItems);
+      // Sync polled count with actual data
+      if (typeof data.unreadCount === "number") {
+        setPolledUnreadCount(data.unreadCount);
+      } else {
+        setPolledUnreadCount(loadedItems.filter((n) => !n.readAt).length);
+      }
     } catch (e) {
       setError(e.message || "Failed to load");
     } finally {
@@ -236,6 +281,8 @@ export default function NotificationsBell({ locale = "en" }) {
               n.id === id ? { ...n, readAt: new Date().toISOString() } : n
             )
           );
+          // Sync polled count
+          setPolledUnreadCount((prev) => Math.max(0, prev - 1));
         } else {
           console.error("Mark read failed:", await res.text());
         }
@@ -259,6 +306,8 @@ export default function NotificationsBell({ locale = "en" }) {
             readAt: n.readAt || new Date().toISOString(),
           }))
         );
+        // Sync polled count
+        setPolledUnreadCount(0);
       } else {
         console.error("Mark all read failed:", await res.text());
       }
@@ -294,17 +343,25 @@ export default function NotificationsBell({ locale = "en" }) {
       e.stopPropagation();
       e.preventDefault();
       try {
+        // Check if notification is unread before deleting
+        const notification = items.find((n) => n.id === id);
+        const wasUnread = notification && !notification.readAt;
+
         const res = await postWithCsrf(API_DELETE(id));
         if (res.ok) {
           setItems((prev) => prev.filter((n) => n.id !== id));
+          // Sync polled count if was unread
+          if (wasUnread) {
+            setPolledUnreadCount((prev) => Math.max(0, prev - 1));
+          }
         } else {
           console.error("Delete failed:", await res.text());
         }
-      } catch (e) {
-        console.error("Failed to delete notification:", e);
+      } catch (err) {
+        console.error("Failed to delete notification:", err);
       }
     },
-    [postWithCsrf]
+    [postWithCsrf, items]
   );
 
   // Handle notification click - mark as read and navigate
@@ -342,12 +399,12 @@ export default function NotificationsBell({ locale = "en" }) {
         onClick={() => setOpen((v) => !v)}
       >
         <Bell size={20} />
-        {unreadCount > 0 && (
+        {displayUnreadCount > 0 && (
           <span
             className="spx-notif__badge"
-            aria-label={`${unreadCount} unread`}
+            aria-label={`${displayUnreadCount} unread`}
           >
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {displayUnreadCount > 9 ? "9+" : displayUnreadCount}
           </span>
         )}
       </button>
