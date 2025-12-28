@@ -2,7 +2,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, X, CheckCheck, Trash2, RefreshCw } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
@@ -14,6 +13,7 @@ import useAuth from "@/hooks/useAuth";
  * - Fetches /api/notifications
  * - Mark read, mark all read, clear read, delete individual
  * - Click notification to navigate to relevant page
+ * - Includes CSRF token support
  */
 
 const API_LIST = "/api/notifications";
@@ -21,6 +21,7 @@ const API_MARK_READ = (id) => `/api/notifications/${id}/read`;
 const API_MARK_ALL_READ = "/api/notifications/read-all";
 const API_CLEAR_READ = "/api/notifications/clear-read";
 const API_DELETE = (id) => `/api/notifications/${id}/delete`;
+const API_CSRF = "/api/csrf-token";
 
 function useIsMobile(breakpoint = 640) {
   const [isMobile, setIsMobile] = useState(false);
@@ -122,6 +123,7 @@ export default function NotificationsBell({ locale = "en" }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
+  const [csrfToken, setCsrfToken] = useState("");
 
   const panelRef = useRef(null);
   const btnRef = useRef(null);
@@ -134,6 +136,40 @@ export default function NotificationsBell({ locale = "en" }) {
   const readCount = useMemo(
     () => items.filter((n) => n.readAt).length,
     [items]
+  );
+
+  // Fetch CSRF token on mount
+  useEffect(() => {
+    const fetchCsrf = async () => {
+      try {
+        const res = await fetch(API_CSRF, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          setCsrfToken(data.csrfToken || "");
+        }
+      } catch (e) {
+        console.error("Failed to fetch CSRF token:", e);
+      }
+    };
+    fetchCsrf();
+  }, []);
+
+  // Helper for POST requests with CSRF
+  const postWithCsrf = useCallback(
+    async (url) => {
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      if (csrfToken) {
+        headers["x-csrf-token"] = csrfToken;
+      }
+      return fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers,
+      });
+    },
+    [csrfToken]
   );
 
   const fetchNotifications = useCallback(async () => {
@@ -190,33 +226,32 @@ export default function NotificationsBell({ locale = "en" }) {
   }, [open]);
 
   // Mark single notification as read
-  const markRead = useCallback(async (id) => {
-    try {
-      const res = await fetch(API_MARK_READ(id), {
-        method: "POST",
-        credentials: "include",
-      });
-      if (res.ok) {
-        setItems((prev) =>
-          prev.map((n) =>
-            n.id === id ? { ...n, readAt: new Date().toISOString() } : n
-          )
-        );
+  const markRead = useCallback(
+    async (id) => {
+      try {
+        const res = await postWithCsrf(API_MARK_READ(id));
+        if (res.ok) {
+          setItems((prev) =>
+            prev.map((n) =>
+              n.id === id ? { ...n, readAt: new Date().toISOString() } : n
+            )
+          );
+        } else {
+          console.error("Mark read failed:", await res.text());
+        }
+      } catch (e) {
+        console.error("Failed to mark as read:", e);
       }
-    } catch (e) {
-      console.error("Failed to mark as read:", e);
-    }
-  }, []);
+    },
+    [postWithCsrf]
+  );
 
   // Mark all notifications as read
   const markAllRead = useCallback(async () => {
     if (unreadCount === 0) return;
     setActionLoading(true);
     try {
-      const res = await fetch(API_MARK_ALL_READ, {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await postWithCsrf(API_MARK_ALL_READ);
       if (res.ok) {
         setItems((prev) =>
           prev.map((n) => ({
@@ -224,55 +259,59 @@ export default function NotificationsBell({ locale = "en" }) {
             readAt: n.readAt || new Date().toISOString(),
           }))
         );
+      } else {
+        console.error("Mark all read failed:", await res.text());
       }
     } catch (e) {
       console.error("Failed to mark all as read:", e);
     } finally {
       setActionLoading(false);
     }
-  }, [unreadCount]);
+  }, [unreadCount, postWithCsrf]);
 
   // Clear all read notifications (delete them)
   const clearRead = useCallback(async () => {
     if (readCount === 0) return;
     setActionLoading(true);
     try {
-      const res = await fetch(API_CLEAR_READ, {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await postWithCsrf(API_CLEAR_READ);
       if (res.ok) {
         // Remove read notifications from state
         setItems((prev) => prev.filter((n) => !n.readAt));
+      } else {
+        console.error("Clear read failed:", await res.text());
       }
     } catch (e) {
       console.error("Failed to clear read:", e);
     } finally {
       setActionLoading(false);
     }
-  }, [readCount]);
+  }, [readCount, postWithCsrf]);
 
   // Delete single notification
-  const deleteNotification = useCallback(async (id, e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    try {
-      const res = await fetch(API_DELETE(id), {
-        method: "POST",
-        credentials: "include",
-      });
-      if (res.ok) {
-        setItems((prev) => prev.filter((n) => n.id !== id));
+  const deleteNotification = useCallback(
+    async (id, e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      try {
+        const res = await postWithCsrf(API_DELETE(id));
+        if (res.ok) {
+          setItems((prev) => prev.filter((n) => n.id !== id));
+        } else {
+          console.error("Delete failed:", await res.text());
+        }
+      } catch (e) {
+        console.error("Failed to delete notification:", e);
       }
-    } catch (e) {
-      console.error("Failed to delete notification:", e);
-    }
-  }, []);
+    },
+    [postWithCsrf]
+  );
 
   // Handle notification click - mark as read and navigate
   const handleNotificationClick = useCallback(
     async (notification, e) => {
       e.preventDefault();
+      e.stopPropagation();
 
       // Mark as read first
       if (!notification.readAt) {
