@@ -306,6 +306,14 @@ export default function Header() {
               </li>
             )}
 
+            {/* Desktop language switcher */}
+            <li
+              className="spx-nav-item spx-nav-item-lang"
+              style={{ "--item-index": links.length + 1 }}
+            >
+              <LanguageSwitcher locale={locale} pathname={pathname} />
+            </li>
+
             {/* Desktop notifications bell (only when logged in) */}
             {!checking && user && (
               <li
@@ -315,14 +323,6 @@ export default function Header() {
                 <NotificationsBell locale={locale} />
               </li>
             )}
-
-            {/* Desktop language switcher */}
-            <li
-              className="spx-nav-item spx-nav-item-lang"
-              style={{ "--item-index": links.length + 1 }}
-            >
-              <LanguageSwitcher locale={locale} pathname={pathname} />
-            </li>
           </ul>
         </nav>
 

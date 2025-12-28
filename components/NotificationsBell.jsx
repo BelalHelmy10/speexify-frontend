@@ -2,258 +2,291 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import api from "@/lib/api";
+import Link from "next/link";
+import { Bell, X, CheckCheck } from "lucide-react";
+import useAuth from "@/hooks/useAuth";
 
-function timeAgo(iso) {
+/**
+ * NotificationsBell
+ * - Desktop: anchored popover dropdown
+ * - Mobile: bottom-sheet
+ * - Fetches /api/notifications (assumes you already have it working in-app)
+ * - Marks read + clear read if endpoints exist
+ *
+ * If your endpoints differ, adjust the fetch URLs at the top.
+ */
+
+const API_LIST = "/api/notifications";
+const API_MARK_READ = (id) => `/api/notifications/${id}/read`;
+const API_MARK_ALL_READ = "/api/notifications/read-all";
+const API_CLEAR_READ = "/api/notifications/clear-read";
+
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= breakpoint);
+    check();
+    window.addEventListener("resize", check, { passive: true });
+    return () => window.removeEventListener("resize", check);
+  }, [breakpoint]);
+  return isMobile;
+}
+
+function fmtTime(ts, locale = "en") {
   try {
-    const d = new Date(iso);
-    const diff = Date.now() - d.getTime();
-    const sec = Math.floor(diff / 1000);
-    if (sec < 10) return "just now";
-    if (sec < 60) return `${sec}s ago`;
-    const min = Math.floor(sec / 60);
-    if (min < 60) return `${min}m ago`;
-    const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr}h ago`;
-    const day = Math.floor(hr / 24);
-    return `${day}d ago`;
+    const d = new Date(ts);
+    return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
   } catch {
     return "";
   }
 }
 
 export default function NotificationsBell({ locale = "en" }) {
+  const { user } = useAuth();
+  const isMobile = useIsMobile(640);
+
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const rootRef = useRef(null);
+  const [error, setError] = useState("");
 
-  const labels = useMemo(() => {
-    const ar = locale === "ar";
-    return {
-      title: ar ? "الإشعارات" : "Notifications",
-      empty: ar ? "لا توجد إشعارات بعد" : "No notifications yet",
-      markAll: ar ? "تحديد الكل كمقروء" : "Mark all as read",
-      open: ar ? "فتح الإشعارات" : "Open notifications",
-      del: ar ? "حذف" : "Delete",
-      deleting: ar ? "جارٍ الحذف…" : "Deleting…",
-    };
-  }, [locale]);
+  const panelRef = useRef(null);
+  const btnRef = useRef(null);
 
-  async function refresh() {
+  const unreadCount = useMemo(
+    () => items.filter((n) => !n.readAt).length,
+    [items]
+  );
+
+  async function fetchNotifications() {
+    if (!user) return;
     setLoading(true);
+    setError("");
     try {
-      const res = await api.get("/notifications", {
-        headers: { "Cache-Control": "no-store" },
-      });
-      setItems(res.data?.items || []);
-      setUnreadCount(Number(res.data?.unreadCount || 0));
+      const res = await fetch(API_LIST, { credentials: "include" });
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data?.error || "Failed to load notifications");
+      setItems(Array.isArray(data) ? data : data?.items || []);
+    } catch (e) {
+      setError(e.message || "Failed to load");
     } finally {
       setLoading(false);
     }
   }
 
-  async function markOneRead(id) {
+  // Open -> load
+  useEffect(() => {
+    if (open) fetchNotifications();
+    // lock body scroll on mobile sheet
+    if (open && isMobile) document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => {
+      const panel = panelRef.current;
+      const btn = btnRef.current;
+      if (!panel || !btn) return;
+      if (panel.contains(e.target) || btn.contains(e.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+    };
+  }, [open]);
+
+  // close on ESC
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  async function markRead(id) {
     try {
-      await api.post(`/notifications/${id}/read`);
-      // Optimistic UI
+      await fetch(API_MARK_READ(id), {
+        method: "POST",
+        credentials: "include",
+      });
       setItems((prev) =>
         prev.map((n) =>
-          n.id === id
-            ? { ...n, readAt: n.readAt || new Date().toISOString() }
-            : n
+          n.id === id ? { ...n, readAt: new Date().toISOString() } : n
         )
       );
-      setUnreadCount((c) => Math.max(0, c - 1));
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
   async function markAllRead() {
     try {
-      await api.post("/notifications/read-all");
+      await fetch(API_MARK_ALL_READ, {
+        method: "POST",
+        credentials: "include",
+      });
       setItems((prev) =>
         prev.map((n) => ({
           ...n,
           readAt: n.readAt || new Date().toISOString(),
         }))
       );
-      setUnreadCount(0);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
-  async function deleteOne(id) {
-    // optimistic: remove immediately
-    setItems((prev) => {
-      const target = prev.find((n) => n.id === id);
-      if (target && !target.readAt) {
-        setUnreadCount((c) => Math.max(0, c - 1));
-      }
-      return prev.filter((n) => n.id !== id);
-    });
-
+  async function clearRead() {
     try {
-      await api.post(`/notifications/${id}/delete`);
-    } catch {
-      // If delete fails, reload to re-sync
-      refresh();
-    }
+      await fetch(API_CLEAR_READ, { method: "POST", credentials: "include" });
+      setItems((prev) => prev.filter((n) => !n.readAt));
+    } catch {}
   }
 
-  // Load once on mount
-  useEffect(() => {
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Click-outside to close
-  useEffect(() => {
-    function onDocDown(e) {
-      if (!rootRef.current) return;
-      if (!rootRef.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocDown);
-    return () => document.removeEventListener("mousedown", onDocDown);
-  }, []);
-
-  // Refresh whenever dropdown opens (so it feels live)
-  useEffect(() => {
-    if (open) refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  if (!user) return null;
 
   return (
-    <div className="spx-notif" ref={rootRef}>
+    <div className="spx-notif">
       <button
+        ref={btnRef}
         type="button"
-        className={"spx-notif__btn" + (open ? " spx-notif__btn--open" : "")}
-        aria-label={labels.open}
-        aria-haspopup="menu"
+        className={`spx-notif__btn${open ? " is-open" : ""}`}
+        aria-label="Notifications"
+        aria-haspopup="dialog"
         aria-expanded={open ? "true" : "false"}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="spx-notif__icon" aria-hidden="true">
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <path
-              d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2Z"
-              fill="currentColor"
-            />
-            <path
-              d="M18 16v-5c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h20v-1l-2-2Z"
-              fill="currentColor"
-            />
-          </svg>
-        </span>
-
+        <Bell size={20} />
         {unreadCount > 0 && (
           <span
             className="spx-notif__badge"
             aria-label={`${unreadCount} unread`}
           >
-            {unreadCount > 99 ? "99+" : unreadCount}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
+      {open && <div className="spx-notif__backdrop" />}
+
       {open && (
-        <div className="spx-notif__panel" role="menu" aria-label={labels.title}>
+        <div
+          ref={panelRef}
+          className={`spx-notif__panel${isMobile ? " is-sheet" : ""}`}
+          role="dialog"
+        >
           <div className="spx-notif__header">
-            <div className="spx-notif__title">{labels.title}</div>
+            <div className="spx-notif__title">
+              {locale === "ar" ? "الإشعارات" : "Notifications"}
+              {unreadCount > 0 ? ` (${unreadCount})` : ""}
+            </div>
+
+            <div className="spx-notif__actions">
+              <button
+                type="button"
+                className="spx-notif__iconBtn"
+                onClick={markAllRead}
+                title={locale === "ar" ? "تحديد الكل كمقروء" : "Mark all read"}
+              >
+                <CheckCheck size={18} />
+              </button>
+
+              <button
+                type="button"
+                className="spx-notif__iconBtn"
+                onClick={() => setOpen(false)}
+                title={locale === "ar" ? "إغلاق" : "Close"}
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="spx-notif__body">
+            {loading && (
+              <div className="spx-notif__state">
+                {locale === "ar" ? "جار التحميل..." : "Loading..."}
+              </div>
+            )}
+
+            {!loading && error && (
+              <div className="spx-notif__state">{error}</div>
+            )}
+
+            {!loading && !error && items.length === 0 && (
+              <div className="spx-notif__state">
+                {locale === "ar" ? "لا توجد إشعارات" : "No notifications"}
+              </div>
+            )}
+
+            {!loading &&
+              !error &&
+              items.map((n) => {
+                const isUnread = !n.readAt;
+                const title = n.title || "";
+                const body = n.body || "";
+                const sessionId = n?.data?.sessionId;
+
+                // If you have a session details page, link it here:
+                const href = sessionId
+                  ? `/dashboard?sessionId=${sessionId}`
+                  : "/dashboard";
+
+                return (
+                  <div
+                    key={n.id}
+                    className={`spx-notif__item${isUnread ? " is-unread" : ""}`}
+                    onClick={() => markRead(n.id)}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <Link
+                      href={href}
+                      className="spx-notif__itemLink"
+                      onClick={() => setOpen(false)}
+                    >
+                      <div className="spx-notif__itemTop">
+                        <div className="spx-notif__itemTitle">{title}</div>
+                        <div className="spx-notif__itemTime">
+                          {n.createdAt ? fmtTime(n.createdAt, locale) : ""}
+                        </div>
+                      </div>
+
+                      {body && (
+                        <div className="spx-notif__itemBody">{body}</div>
+                      )}
+                    </Link>
+                  </div>
+                );
+              })}
+          </div>
+
+          <div className="spx-notif__footer">
+            <button
+              type="button"
+              className="spx-notif__ghost"
+              onClick={fetchNotifications}
+            >
+              {locale === "ar" ? "تحديث" : "Refresh"}
+            </button>
 
             <button
               type="button"
-              className="spx-notif__markall"
-              onClick={markAllRead}
-              disabled={unreadCount === 0}
+              className="spx-notif__ghost"
+              onClick={clearRead}
             >
-              {labels.markAll}
+              {locale === "ar" ? "حذف المقروء" : "Clear read"}
             </button>
-          </div>
-
-          <div className="spx-notif__body" role="presentation">
-            {loading ? (
-              <div className="spx-notif__empty">
-                {locale === "ar" ? "جارٍ التحميل…" : "Loading…"}
-              </div>
-            ) : items.length === 0 ? (
-              <div className="spx-notif__empty">{labels.empty}</div>
-            ) : (
-              <ul className="spx-notif__list">
-                {items.map((n) => {
-                  const isUnread = !n.readAt;
-                  return (
-                    <li
-                      key={n.id}
-                      className={
-                        "spx-notif__item" +
-                        (isUnread ? " spx-notif__item--unread" : "")
-                      }
-                    >
-                      <div className="spx-notif__row">
-                        <button
-                          type="button"
-                          className="spx-notif__itembtn"
-                          onClick={() => markOneRead(n.id)}
-                        >
-                          <div className="spx-notif__itemtop">
-                            <div className="spx-notif__itemtitle">
-                              {n.title}
-                            </div>
-                            <div className="spx-notif__time">
-                              {timeAgo(n.createdAt)}
-                            </div>
-                          </div>
-                          {n.body && (
-                            <div className="spx-notif__itembody">{n.body}</div>
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
-                          className="spx-notif__del"
-                          aria-label={labels.del}
-                          title={labels.del}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            deleteOne(n.id);
-                          }}
-                        >
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            aria-hidden="true"
-                          >
-                            <path
-                              d="M9 3h6l1 2h4v2H4V5h4l1-2Z"
-                              fill="currentColor"
-                            />
-                            <path
-                              d="M6 9h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 9Z"
-                              fill="currentColor"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
           </div>
         </div>
       )}
