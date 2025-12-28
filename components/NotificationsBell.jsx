@@ -1,25 +1,26 @@
 // src/components/NotificationsBell.jsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, X, CheckCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bell, X, CheckCheck, Trash2, RefreshCw } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 
 /**
  * NotificationsBell
  * - Desktop: anchored popover dropdown
  * - Mobile: bottom-sheet
- * - Fetches /api/notifications (assumes you already have it working in-app)
- * - Marks read + clear read if endpoints exist
- *
- * If your endpoints differ, adjust the fetch URLs at the top.
+ * - Fetches /api/notifications
+ * - Mark read, mark all read, clear read, delete individual
+ * - Click notification to navigate to relevant page
  */
 
 const API_LIST = "/api/notifications";
 const API_MARK_READ = (id) => `/api/notifications/${id}/read`;
 const API_MARK_ALL_READ = "/api/notifications/read-all";
 const API_CLEAR_READ = "/api/notifications/clear-read";
+const API_DELETE = (id) => `/api/notifications/${id}/delete`;
 
 function useIsMobile(breakpoint = 640) {
   const [isMobile, setIsMobile] = useState(false);
@@ -35,6 +36,22 @@ function useIsMobile(breakpoint = 640) {
 function fmtTime(ts, locale = "en") {
   try {
     const d = new Date(ts);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    // Relative time for recent notifications
+    if (diffMins < 1) return locale === "ar" ? "الآن" : "Just now";
+    if (diffMins < 60)
+      return locale === "ar" ? `منذ ${diffMins} دقيقة` : `${diffMins}m ago`;
+    if (diffHours < 24)
+      return locale === "ar" ? `منذ ${diffHours} ساعة` : `${diffHours}h ago`;
+    if (diffDays < 7)
+      return locale === "ar" ? `منذ ${diffDays} يوم` : `${diffDays}d ago`;
+
+    // Absolute date for older notifications
     return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
       month: "short",
       day: "2-digit",
@@ -46,12 +63,63 @@ function fmtTime(ts, locale = "en") {
   }
 }
 
+// Get icon based on notification type
+function getNotificationIcon(type) {
+  switch (type) {
+    case "booking_confirmed":
+    case "new_booking":
+      return "📅";
+    case "session_canceled":
+      return "❌";
+    case "reminder_24h":
+    case "reminder_6h":
+    case "reminder_1h":
+      return "⏰";
+    case "session_completed":
+      return "✅";
+    case "feedback_received":
+      return "💬";
+    case "payment_receipt":
+      return "💳";
+    default:
+      return "🔔";
+  }
+}
+
+// Determine where to navigate based on notification type and data
+function getNotificationHref(notification) {
+  const data = notification?.data || {};
+
+  switch (notification.type) {
+    case "booking_confirmed":
+    case "new_booking":
+    case "session_canceled":
+    case "reminder_24h":
+    case "reminder_6h":
+    case "reminder_1h":
+    case "session_completed":
+    case "feedback_received":
+      if (data.sessionId) {
+        return `/dashboard/sessions/${data.sessionId}`;
+      }
+      return "/dashboard";
+
+    case "payment_receipt":
+      return "/dashboard/packages";
+
+    default:
+      return "/dashboard";
+  }
+}
+
 export default function NotificationsBell({ locale = "en" }) {
   const { user } = useAuth();
+  const router = useRouter();
   const isMobile = useIsMobile(640);
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
 
@@ -63,7 +131,12 @@ export default function NotificationsBell({ locale = "en" }) {
     [items]
   );
 
-  async function fetchNotifications() {
+  const readCount = useMemo(
+    () => items.filter((n) => n.readAt).length,
+    [items]
+  );
+
+  const fetchNotifications = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setError("");
@@ -78,7 +151,7 @@ export default function NotificationsBell({ locale = "en" }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
   // Open -> load
   useEffect(() => {
@@ -88,8 +161,7 @@ export default function NotificationsBell({ locale = "en" }) {
     return () => {
       document.body.style.overflow = "";
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, fetchNotifications, isMobile]);
 
   // close on outside click
   useEffect(() => {
@@ -117,41 +189,105 @@ export default function NotificationsBell({ locale = "en" }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
-  async function markRead(id) {
+  // Mark single notification as read
+  const markRead = useCallback(async (id) => {
     try {
-      await fetch(API_MARK_READ(id), {
+      const res = await fetch(API_MARK_READ(id), {
         method: "POST",
         credentials: "include",
       });
-      setItems((prev) =>
-        prev.map((n) =>
-          n.id === id ? { ...n, readAt: new Date().toISOString() } : n
-        )
-      );
-    } catch {}
-  }
+      if (res.ok) {
+        setItems((prev) =>
+          prev.map((n) =>
+            n.id === id ? { ...n, readAt: new Date().toISOString() } : n
+          )
+        );
+      }
+    } catch (e) {
+      console.error("Failed to mark as read:", e);
+    }
+  }, []);
 
-  async function markAllRead() {
+  // Mark all notifications as read
+  const markAllRead = useCallback(async () => {
+    if (unreadCount === 0) return;
+    setActionLoading(true);
     try {
-      await fetch(API_MARK_ALL_READ, {
+      const res = await fetch(API_MARK_ALL_READ, {
         method: "POST",
         credentials: "include",
       });
-      setItems((prev) =>
-        prev.map((n) => ({
-          ...n,
-          readAt: n.readAt || new Date().toISOString(),
-        }))
-      );
-    } catch {}
-  }
+      if (res.ok) {
+        setItems((prev) =>
+          prev.map((n) => ({
+            ...n,
+            readAt: n.readAt || new Date().toISOString(),
+          }))
+        );
+      }
+    } catch (e) {
+      console.error("Failed to mark all as read:", e);
+    } finally {
+      setActionLoading(false);
+    }
+  }, [unreadCount]);
 
-  async function clearRead() {
+  // Clear all read notifications (delete them)
+  const clearRead = useCallback(async () => {
+    if (readCount === 0) return;
+    setActionLoading(true);
     try {
-      await fetch(API_CLEAR_READ, { method: "POST", credentials: "include" });
-      setItems((prev) => prev.filter((n) => !n.readAt));
-    } catch {}
-  }
+      const res = await fetch(API_CLEAR_READ, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        // Remove read notifications from state
+        setItems((prev) => prev.filter((n) => !n.readAt));
+      }
+    } catch (e) {
+      console.error("Failed to clear read:", e);
+    } finally {
+      setActionLoading(false);
+    }
+  }, [readCount]);
+
+  // Delete single notification
+  const deleteNotification = useCallback(async (id, e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+      const res = await fetch(API_DELETE(id), {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setItems((prev) => prev.filter((n) => n.id !== id));
+      }
+    } catch (e) {
+      console.error("Failed to delete notification:", e);
+    }
+  }, []);
+
+  // Handle notification click - mark as read and navigate
+  const handleNotificationClick = useCallback(
+    async (notification, e) => {
+      e.preventDefault();
+
+      // Mark as read first
+      if (!notification.readAt) {
+        await markRead(notification.id);
+      }
+
+      // Close the panel
+      setOpen(false);
+
+      // Navigate to relevant page
+      const href = getNotificationHref(notification);
+      router.push(href);
+    },
+    [markRead, router]
+  );
 
   if (!user) return null;
 
@@ -177,18 +313,23 @@ export default function NotificationsBell({ locale = "en" }) {
         )}
       </button>
 
-      {open && <div className="spx-notif__backdrop" />}
+      {open && (
+        <div className="spx-notif__backdrop" onClick={() => setOpen(false)} />
+      )}
 
       {open && (
         <div
           ref={panelRef}
           className={`spx-notif__panel${isMobile ? " is-sheet" : ""}`}
           role="dialog"
+          aria-label="Notifications"
         >
           <div className="spx-notif__header">
             <div className="spx-notif__title">
               {locale === "ar" ? "الإشعارات" : "Notifications"}
-              {unreadCount > 0 ? ` (${unreadCount})` : ""}
+              {unreadCount > 0 && (
+                <span className="spx-notif__unreadBadge">{unreadCount}</span>
+              )}
             </div>
 
             <div className="spx-notif__actions">
@@ -196,6 +337,7 @@ export default function NotificationsBell({ locale = "en" }) {
                 type="button"
                 className="spx-notif__iconBtn"
                 onClick={markAllRead}
+                disabled={unreadCount === 0 || actionLoading}
                 title={locale === "ar" ? "تحديد الكل كمقروء" : "Mark all read"}
               >
                 <CheckCheck size={18} />
@@ -215,17 +357,28 @@ export default function NotificationsBell({ locale = "en" }) {
           <div className="spx-notif__body">
             {loading && (
               <div className="spx-notif__state">
+                <RefreshCw size={20} className="spx-notif__spinner" />
                 {locale === "ar" ? "جار التحميل..." : "Loading..."}
               </div>
             )}
 
             {!loading && error && (
-              <div className="spx-notif__state">{error}</div>
+              <div className="spx-notif__state spx-notif__state--error">
+                {error}
+                <button
+                  type="button"
+                  className="spx-notif__retryBtn"
+                  onClick={fetchNotifications}
+                >
+                  {locale === "ar" ? "إعادة المحاولة" : "Retry"}
+                </button>
+              </div>
             )}
 
             {!loading && !error && items.length === 0 && (
-              <div className="spx-notif__state">
-                {locale === "ar" ? "لا توجد إشعارات" : "No notifications"}
+              <div className="spx-notif__state spx-notif__state--empty">
+                <span className="spx-notif__emptyIcon">🔔</span>
+                {locale === "ar" ? "لا توجد إشعارات" : "No notifications yet"}
               </div>
             )}
 
@@ -235,26 +388,25 @@ export default function NotificationsBell({ locale = "en" }) {
                 const isUnread = !n.readAt;
                 const title = n.title || "";
                 const body = n.body || "";
-                const sessionId = n?.data?.sessionId;
-
-                // If you have a session details page, link it here:
-                const href = sessionId
-                  ? `/dashboard?sessionId=${sessionId}`
-                  : "/dashboard";
+                const icon = getNotificationIcon(n.type);
 
                 return (
                   <div
                     key={n.id}
                     className={`spx-notif__item${isUnread ? " is-unread" : ""}`}
-                    onClick={() => markRead(n.id)}
+                    onClick={(e) => handleNotificationClick(n, e)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        handleNotificationClick(n, e);
+                      }
+                    }}
                     role="button"
                     tabIndex={0}
+                    aria-label={`${isUnread ? "Unread: " : ""}${title}`}
                   >
-                    <Link
-                      href={href}
-                      className="spx-notif__itemLink"
-                      onClick={() => setOpen(false)}
-                    >
+                    <div className="spx-notif__itemIcon">{icon}</div>
+
+                    <div className="spx-notif__itemContent">
                       <div className="spx-notif__itemTop">
                         <div className="spx-notif__itemTitle">{title}</div>
                         <div className="spx-notif__itemTime">
@@ -265,7 +417,17 @@ export default function NotificationsBell({ locale = "en" }) {
                       {body && (
                         <div className="spx-notif__itemBody">{body}</div>
                       )}
-                    </Link>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="spx-notif__itemDelete"
+                      onClick={(e) => deleteNotification(n.id, e)}
+                      title={locale === "ar" ? "حذف" : "Delete"}
+                      aria-label="Delete notification"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 );
               })}
@@ -276,16 +438,24 @@ export default function NotificationsBell({ locale = "en" }) {
               type="button"
               className="spx-notif__ghost"
               onClick={fetchNotifications}
+              disabled={loading}
             >
+              <RefreshCw
+                size={14}
+                className={loading ? "spx-notif__spinner" : ""}
+              />
               {locale === "ar" ? "تحديث" : "Refresh"}
             </button>
 
             <button
               type="button"
-              className="spx-notif__ghost"
+              className="spx-notif__ghost spx-notif__ghost--danger"
               onClick={clearRead}
+              disabled={readCount === 0 || actionLoading}
             >
+              <Trash2 size={14} />
               {locale === "ar" ? "حذف المقروء" : "Clear read"}
+              {readCount > 0 && <span>({readCount})</span>}
             </button>
           </div>
         </div>
