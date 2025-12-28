@@ -8,6 +8,8 @@ import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/components/ToastProvider";
 import { trackEvent } from "@/lib/analytics";
+import AttendancePanel from "./AttendancePanel";
+import { LearnerFeedbackModal } from "./LearnerFeedbackForm";
 
 /**
  * SessionDetailPage - Full session details with participant management
@@ -31,6 +33,7 @@ export default function SessionDetailPage() {
   // Modal states
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   // User role helpers
   const isTeacher = user?.role === "teacher";
@@ -257,43 +260,31 @@ export default function SessionDetailPage() {
       className: "session-detail__status--canceled",
     },
   };
-  const currentStatus = statusConfig[session.status] || statusConfig.scheduled;
+
+  const status = statusConfig[session.status] || statusConfig.scheduled;
 
   return (
     <div className="session-detail">
       {/* Header */}
       <header className="session-detail__header">
-        <Link
-          href={`${prefix}/dashboard`}
-          className="session-detail__back-link"
-        >
-          ← Back to Dashboard
-        </Link>
+        <div className="session-detail__header-top">
+          <Link
+            href={`${prefix}/dashboard`}
+            className="session-detail__back-link"
+          >
+            ← Back
+          </Link>
+          <span className={`session-detail__status ${status.className}`}>
+            {status.label}
+          </span>
+        </div>
 
-        <div className="session-detail__header-main">
-          <div className="session-detail__title-row">
-            <h1 className="session-detail__title">
-              {session.title || "Session"}
-            </h1>
-            <div className="session-detail__badges">
-              {isGroup ? (
-                <span className="session-detail__type-badge session-detail__type-badge--group">
-                  👥 GROUP
-                </span>
-              ) : (
-                <span className="session-detail__type-badge session-detail__type-badge--one-on-one">
-                  👤 1:1
-                </span>
-              )}
-              <span
-                className={`session-detail__status ${currentStatus.className}`}
-              >
-                {currentStatus.label}
-              </span>
-            </div>
-          </div>
+        <h1 className="session-detail__title">
+          {session.title || "Session"}
+          {isGroup && <span className="session-detail__type-badge">GROUP</span>}
+        </h1>
 
-          {/* Quick actions */}
+        <div className="session-detail__header-actions">
           {canJoin && (
             <button
               type="button"
@@ -389,6 +380,27 @@ export default function SessionDetailPage() {
               </div>
             ))}
           </div>
+
+          {/* Attendance Panel for Teachers */}
+          {(isTeacher || isAdmin) && session.status !== "canceled" && (
+            <AttendancePanel
+              sessionId={Number(id)}
+              participants={
+                session.participants?.length > 0
+                  ? session.participants
+                  : (session.learners || []).map((l) => ({
+                      userId: l.id,
+                      status: l.status || "booked",
+                      attendedAt: l.attendedAt,
+                      user: { id: l.id, name: l.name, email: l.email },
+                    }))
+              }
+              isTeacher={isTeacher || isAdmin}
+              sessionStatus={session.status}
+              sessionStartAt={session.startAt}
+              onUpdate={loadSession}
+            />
+          )}
         </section>
 
         {/* Feedback Card */}
@@ -443,6 +455,21 @@ export default function SessionDetailPage() {
               </Link>
             </section>
           )}
+
+        {/* Learner: Rate this session */}
+        {isLearner && session.status === "completed" && (
+          <section className="session-detail__card">
+            <h2 className="session-detail__card-title">⭐ Rate Your Session</h2>
+            <p>How was your learning experience?</p>
+            <button
+              type="button"
+              className="session-detail__add-feedback-btn"
+              onClick={() => setShowFeedbackModal(true)}
+            >
+              Rate This Session
+            </button>
+          </section>
+        )}
 
         {/* Actions Card */}
         <section className="session-detail__card session-detail__card--actions">
@@ -547,6 +574,19 @@ export default function SessionDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Learner Feedback Modal */}
+      <LearnerFeedbackModal
+        isOpen={showFeedbackModal}
+        sessionId={Number(id)}
+        sessionTitle={session?.title}
+        teacherName={session?.teacher?.name}
+        sessionDate={session?.startAt}
+        onSubmit={() => {
+          loadSession();
+        }}
+        onClose={() => setShowFeedbackModal(false)}
+      />
     </div>
   );
 }

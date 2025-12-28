@@ -8,6 +8,7 @@ import ClassroomResourcePicker from "./ClassroomResourcePicker";
 import ClassroomChat from "./ClassroomChat";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
+import api from "@/lib/api";
 
 /* -----------------------------------------------------------
    Utility: Safely generate a display name
@@ -311,7 +312,7 @@ export default function ClassroomShell({
           setFocusMode(msg.focusMode);
         }
 
-        // customSplit can be null (meaning “use preset focusMode”)
+        // customSplit can be null (meaning "use preset focusMode")
         const nextSplit =
           msg.customSplit === null || msg.customSplit === undefined
             ? null
@@ -404,9 +405,23 @@ export default function ClassroomShell({
     : null;
   const viewer = resource ? getViewerInfo(resource) : null;
 
-  const handleChangeResourceId = (newId) => {
+  // ✅ Track resource usage when teacher changes resource
+  const handleChangeResourceId = async (newId) => {
     setSelectedResourceId(newId);
     setIsPickerOpen(false);
+
+    // Track resource usage (teacher only)
+    if (isTeacher && newId && sessionId) {
+      try {
+        const resource = resourcesById[newId];
+        await api.post(`/sessions/${sessionId}/resources-used`, {
+          resourceId: newId,
+          resourceTitle: resource?.title || resource?.name || null,
+        });
+      } catch (err) {
+        console.warn("Failed to track resource:", err);
+      }
+    }
 
     if (ready && isTeacher) {
       send({ type: "SET_RESOURCE", resourceId: newId });

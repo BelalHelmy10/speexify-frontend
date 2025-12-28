@@ -1,0 +1,280 @@
+// app/dashboard/sessions/[id]/AttendancePanel.jsx
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import api from "@/lib/api";
+import { useToast } from "@/components/ToastProvider";
+
+/**
+ * AttendancePanel - Allows teachers to mark attendance for session participants
+ *
+ * Props:
+ * - sessionId: number
+ * - participants: Array<{ userId, status, attendedAt, user: { id, name, email } }>
+ * - isTeacher: boolean
+ * - sessionStatus: string
+ * - sessionStartAt: string (ISO date)
+ * - onUpdate: () => void - callback to refresh parent data
+ */
+export default function AttendancePanel({
+  sessionId,
+  participants = [],
+  isTeacher,
+  sessionStatus,
+  sessionStartAt,
+  onUpdate,
+}) {
+  const toast = useToast();
+  const [localParticipants, setLocalParticipants] = useState(participants);
+  const [saving, setSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Sync local state when prop changes
+  useEffect(() => {
+    setLocalParticipants(participants);
+    setHasChanges(false);
+  }, [participants]);
+
+  // Check if session has started
+  const sessionStarted = new Date(sessionStartAt) <= new Date();
+  const canMarkAttendance =
+    isTeacher && sessionStarted && sessionStatus !== "canceled";
+
+  // Handle status change for a participant
+  const handleStatusChange = useCallback((userId, newStatus) => {
+    setLocalParticipants((prev) =>
+      prev.map((p) =>
+        p.userId === userId || p.user?.id === userId
+          ? { ...p, status: newStatus }
+          : p
+      )
+    );
+    setHasChanges(true);
+  }, []);
+
+  // Mark all as attended
+  const markAllAttended = useCallback(() => {
+    setLocalParticipants((prev) =>
+      prev.map((p) =>
+        p.status !== "canceled" ? { ...p, status: "attended" } : p
+      )
+    );
+    setHasChanges(true);
+  }, []);
+
+  // Save attendance
+  const saveAttendance = async () => {
+    if (!hasChanges || saving) return;
+
+    try {
+      setSaving(true);
+
+      const attendanceData = localParticipants
+        .filter((p) => p.status !== "canceled")
+        .map((p) => ({
+          userId: p.userId || p.user?.id,
+          status: p.status,
+        }));
+
+      await api.post(`/sessions/${sessionId}/attendance`, {
+        participants: attendanceData,
+      });
+
+      toast?.success?.("Attendance saved successfully");
+      setHasChanges(false);
+
+      if (typeof onUpdate === "function") {
+        onUpdate();
+      }
+    } catch (err) {
+      console.error("Failed to save attendance:", err);
+      toast?.error?.(err?.response?.data?.error || "Failed to save attendance");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Status options
+  const statusOptions = [
+    { value: "booked", label: "Enrolled", icon: "📋", color: "#6b7280" },
+    { value: "attended", label: "Attended", icon: "✓", color: "#10b981" },
+    { value: "no_show", label: "No Show", icon: "✗", color: "#ef4444" },
+    { value: "excused", label: "Excused", icon: "⚠", color: "#f59e0b" },
+  ];
+
+  const getStatusConfig = (status) =>
+    statusOptions.find((o) => o.value === status) || statusOptions[0];
+
+  // Filter out canceled participants for display
+  const activeParticipants = localParticipants.filter(
+    (p) => p.status !== "canceled"
+  );
+  const canceledParticipants = localParticipants.filter(
+    (p) => p.status === "canceled"
+  );
+
+  if (!isTeacher) {
+    // Read-only view for learners
+    return (
+      <div className="attendance-panel attendance-panel--readonly">
+        <h3 className="attendance-panel__title">📋 Attendance</h3>
+        <div className="attendance-panel__list">
+          {activeParticipants.map((p) => {
+            const config = getStatusConfig(p.status);
+            return (
+              <div
+                key={p.userId || p.user?.id}
+                className="attendance-panel__item"
+              >
+                <span className="attendance-panel__name">
+                  {p.user?.name || p.user?.email || "Participant"}
+                </span>
+                <span
+                  className="attendance-panel__status"
+                  style={{ color: config.color }}
+                >
+                  {config.icon} {config.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="attendance-panel">
+      <div className="attendance-panel__header">
+        <h3 className="attendance-panel__title">📋 Mark Attendance</h3>
+        {canMarkAttendance && activeParticipants.length > 1 && (
+          <button
+            type="button"
+            className="attendance-panel__mark-all"
+            onClick={markAllAttended}
+            disabled={saving}
+          >
+            ✓ Mark All Attended
+          </button>
+        )}
+      </div>
+
+      {!sessionStarted && (
+        <div className="attendance-panel__notice">
+          ⏰ Attendance can be marked once the session starts.
+        </div>
+      )}
+
+      {sessionStatus === "canceled" && (
+        <div className="attendance-panel__notice attendance-panel__notice--warning">
+          ⚠ This session has been canceled.
+        </div>
+      )}
+
+      <div className="attendance-panel__list">
+        {activeParticipants.length === 0 ? (
+          <div className="attendance-panel__empty">
+            No participants enrolled in this session.
+          </div>
+        ) : (
+          activeParticipants.map((p) => {
+            const userId = p.userId || p.user?.id;
+            const currentStatus = p.status;
+            const config = getStatusConfig(currentStatus);
+
+            return (
+              <div key={userId} className="attendance-panel__item">
+                <div className="attendance-panel__participant">
+                  <span className="attendance-panel__avatar">👤</span>
+                  <div className="attendance-panel__info">
+                    <span className="attendance-panel__name">
+                      {p.user?.name || p.user?.email || "Participant"}
+                    </span>
+                    {p.attendedAt && (
+                      <span className="attendance-panel__time">
+                        Marked at {new Date(p.attendedAt).toLocaleTimeString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {canMarkAttendance ? (
+                  <div className="attendance-panel__controls">
+                    {statusOptions
+                      .filter((opt) => opt.value !== "booked")
+                      .map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          className={`attendance-panel__btn ${
+                            currentStatus === opt.value
+                              ? "attendance-panel__btn--active"
+                              : ""
+                          }`}
+                          style={{
+                            "--btn-color": opt.color,
+                            borderColor:
+                              currentStatus === opt.value
+                                ? opt.color
+                                : undefined,
+                            backgroundColor:
+                              currentStatus === opt.value
+                                ? `${opt.color}15`
+                                : undefined,
+                          }}
+                          onClick={() => handleStatusChange(userId, opt.value)}
+                          disabled={saving}
+                          title={opt.label}
+                        >
+                          {opt.icon}
+                        </button>
+                      ))}
+                  </div>
+                ) : (
+                  <span
+                    className="attendance-panel__status-badge"
+                    style={{ color: config.color }}
+                  >
+                    {config.icon} {config.label}
+                  </span>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {canceledParticipants.length > 0 && (
+        <div className="attendance-panel__canceled">
+          <h4 className="attendance-panel__canceled-title">
+            Canceled ({canceledParticipants.length})
+          </h4>
+          {canceledParticipants.map((p) => (
+            <div
+              key={p.userId || p.user?.id}
+              className="attendance-panel__item attendance-panel__item--canceled"
+            >
+              <span className="attendance-panel__name">
+                {p.user?.name || p.user?.email || "Participant"}
+              </span>
+              <span className="attendance-panel__status-badge">✗ Canceled</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {canMarkAttendance && hasChanges && (
+        <div className="attendance-panel__actions">
+          <button
+            type="button"
+            className="attendance-panel__save"
+            onClick={saveAttendance}
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save Attendance"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

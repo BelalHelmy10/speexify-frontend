@@ -9,6 +9,7 @@ import "@/styles/session-detail.scss";
 import { getDictionary, t } from "@/app/i18n";
 import { useToast } from "@/components/ToastProvider";
 import { getSafeExternalUrl } from "@/utils/url";
+import AttendancePanel from "./AttendancePanel";
 
 export default function SessionDetailPage() {
   const router = useRouter();
@@ -41,34 +42,27 @@ export default function SessionDetailPage() {
     return result;
   };
 
-  useEffect(() => {
+  const loadSession = async () => {
     if (!id) return;
 
-    let cancelled = false;
-
-    async function load() {
-      try {
-        setStatus("loading");
-        const { data } = await api.get(`/sessions/${id}`);
-        if (cancelled) return;
-
-        setSession(data?.session || null);
-        setStatus("ok");
-      } catch (err) {
-        console.error("Failed to load session", err);
-        if (cancelled) return;
-        setError(
-          err?.response?.data?.error ||
-            txt("generic_error", "Something went wrong")
-        );
-        setStatus("error");
-      }
+    try {
+      setStatus("loading");
+      const { data } = await api.get(`/sessions/${id}`);
+      setSession(data?.session || null);
+      setStatus("ok");
+    } catch (err) {
+      console.error("Failed to load session", err);
+      setError(
+        err?.response?.data?.error ||
+          txt("generic_error", "Something went wrong")
+      );
+      setStatus("error");
     }
+  };
 
-    load();
-    return () => {
-      cancelled = true;
-    };
+  useEffect(() => {
+    if (!id) return;
+    loadSession();
   }, [id]);
 
   const handleBack = () => {
@@ -208,6 +202,18 @@ export default function SessionDetailPage() {
   const activeParticipants = learnersList.filter(
     (l) => l.status !== "canceled"
   );
+
+  // ✅ Transform learners for AttendancePanel format
+  const attendanceParticipants = learnersList.map((l) => ({
+    userId: l.id,
+    status: l.status || "booked",
+    attendedAt: l.attendedAt || null,
+    user: {
+      id: l.id,
+      name: l.name,
+      email: l.email,
+    },
+  }));
 
   const learnerLabel = isGroup
     ? txt("section_learners_title", "Learners")
@@ -424,6 +430,21 @@ export default function SessionDetailPage() {
               )}
             </section>
           </div>
+
+          {/* ✅ ATTENDANCE PANEL - For Teachers/Admins */}
+          {(sessionIsTeacher || sessionIsAdmin) &&
+            sessionStatus !== "canceled" && (
+              <section className="session-detail-section session-detail-section--wide">
+                <AttendancePanel
+                  sessionId={Number(sessionId)}
+                  participants={attendanceParticipants}
+                  isTeacher={sessionIsTeacher || sessionIsAdmin}
+                  sessionStatus={sessionStatus}
+                  sessionStartAt={startAt}
+                  onUpdate={loadSession}
+                />
+              </section>
+            )}
 
           {/* JOIN SECTION */}
           <section className="session-detail-section session-detail-section--wide">
