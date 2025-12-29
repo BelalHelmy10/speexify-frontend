@@ -864,3 +864,166 @@
     padding: 15px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADD THESE STYLES TO YOUR dashboard.scss
+   Fixes: Infinite scrolling past sessions
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ============================================================================
+// SCROLLABLE SESSION LIST VARIANT
+// ============================================================================
+.session-list--scrollable {
+  // Maximum height before scrolling kicks in
+  // Shows ~5-6 sessions before scroll
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  // Smooth scrolling
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  // Modern scrollbar styling
+  scrollbar-width: thin;
+  scrollbar-color: rgba($text-muted, 0.3) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 8px 0;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($text-muted, 0.3);
+    border-radius: 3px;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: rgba($text-muted, 0.5);
+    }
+  }
+
+  // Fade effect at top/bottom to indicate more content
+  &::before,
+  &::after {
+    content: "";
+    position: sticky;
+    left: 0;
+    right: 0;
+    height: 20px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  &::before {
+    top: 0;
+    background: linear-gradient(to bottom, $card-bg 0%, rgba($card-bg, 0) 100%);
+  }
+
+  &::after {
+    bottom: 0;
+    background: linear-gradient(to top, $card-bg 0%, rgba($card-bg, 0) 100%);
+  }
+}
+
+// ============================================================================
+// SESSION COUNT BADGE
+// ============================================================================
+.session-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  margin-left: 10px;
+  background: rgba($brand, 0.1);
+  color: $brand;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
+// ============================================================================
+// PANEL FOOTER (for "View all" link)
+// ============================================================================
+.panel__footer {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba($border, 0.6);
+}
+
+// Update panel__head to support flex column for title + badge
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  h3 {
+    margin: 0;
+  }
+}
+
+// ============================================================================
+// RESPONSIVE ADJUSTMENTS
+// ============================================================================
+@media (max-width: 768px) {
+  .session-list--scrollable {
+    // Slightly shorter on mobile
+    max-height: 500px;
+  }
+
+  .session-count {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+}
+
+// ============================================================================
+// SMOOTH LOADING STATE
+// ============================================================================
+.session-list--loading {
+  opacity: 0.6;
+  pointer-events: none;
+
+  .session-item {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// ============================================================================
+// IMPROVED BUTTON FULL WIDTH VARIANT
+// ============================================================================
+.btn--full {
+  width: 100%;
+  justify-content: center;
+
+  svg {
+    margin-left: auto;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   END OF ADDITIONS
+   ═══════════════════════════════════════════════════════════════════════════ */

@@ -292,7 +292,6 @@ function Card({ title, value, icon, gradient }) {
 }
 
 function DashboardInner({ dict, prefix }) {
-  // 👈 prefix here
   const { toast, confirmModal } = useToast();
   const [status, setStatus] = useState(() => t(dict, "status_loading"));
   const [summary, setSummary] = useState(null);
@@ -923,9 +922,21 @@ function DashboardInner({ dict, prefix }) {
         </div>
       )}
 
+      {/* =========================================================================
+          ✅ UPDATED SECTION 1: UPCOMING SESSIONS
+         ========================================================================= */}
       <div className="panel">
         <div className="panel__head">
-          <h3>{t(dict, "upcoming_title")}</h3>
+          <div>
+            <h3>{t(dict, "upcoming_title")}</h3>
+            {upcoming.length > 0 && (
+              <span className="session-count">
+                {upcoming.length}{" "}
+                {upcoming.length === 1 ? "session" : "sessions"}
+              </span>
+            )}
+          </div>
+
           <Link href={`${prefix}/calendar`} className="btn btn--ghost btn--sm">
             <svg
               width="16"
@@ -943,33 +954,60 @@ function DashboardInner({ dict, prefix }) {
             {t(dict, "upcoming_open_calendar")}
           </Link>
         </div>
+
         {upcoming.length === 0 ? (
           <div className="empty-state empty-state--compact">
             <p>{t(dict, "upcoming_none")}</p>
           </div>
         ) : (
-          <div className="session-list">
-            {upcoming.map((s) => (
-              <SessionRow
-                key={s.id}
-                s={s}
-                timezone={timezone}
-                isUpcoming
-                onCancel={handleCancel}
-                onRescheduleClick={openReschedule}
-                isTeacher={isTeacher}
-                isAdmin={isAdmin}
-                dict={dict}
-                prefix={prefix}
-              />
-            ))}
-          </div>
+          <>
+            {/* ✅ FIXED: Scrollable container for upcoming sessions */}
+            <div className="session-list session-list--scrollable">
+              {upcoming.map((s) => (
+                <SessionRow
+                  key={s.id}
+                  s={s}
+                  timezone={timezone}
+                  isUpcoming
+                  onCancel={handleCancel}
+                  onRescheduleClick={openReschedule}
+                  isTeacher={isTeacher}
+                  isAdmin={isAdmin}
+                  dict={dict}
+                  prefix={prefix}
+                />
+              ))}
+            </div>
+
+            {/* Optional: Footer for many upcoming sessions */}
+            {upcoming.length >= 10 && (
+              <div className="panel__footer">
+                <Link
+                  href={`${prefix}/calendar`}
+                  className="btn btn--secondary btn--full"
+                >
+                  View all sessions in calendar →
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </div>
 
+      {/* =========================================================================
+          ✅ UPDATED SECTION 2: PAST SESSIONS
+         ========================================================================= */}
       <div className="panel">
         <div className="panel__head">
-          <h3>{t(dict, "past_title")}</h3>
+          <div>
+            <h3>{t(dict, "past_title")}</h3>
+            {past.length > 0 && (
+              <span className="session-count">
+                {past.length} {past.length === 1 ? "session" : "sessions"}
+              </span>
+            )}
+          </div>
+
           <Link href={`${prefix}/calendar`} className="btn btn--ghost btn--sm">
             {t(dict, "past_view_all")}
             <svg
@@ -984,26 +1022,42 @@ function DashboardInner({ dict, prefix }) {
             </svg>
           </Link>
         </div>
+
         {past.length === 0 ? (
           <div className="empty-state empty-state--compact">
             <p>{t(dict, "past_none")}</p>
           </div>
         ) : (
-          <div className="session-list">
-            {past.map((s) => (
-              <SessionRow
-                key={s.id}
-                s={s}
-                timezone={timezone}
-                isUpcoming={false}
-                onCancel={() => {}}
-                onRescheduleClick={() => {}}
-                isTeacher={isTeacher}
-                dict={dict}
-                prefix={prefix} // 👈 pass down
-              />
-            ))}
-          </div>
+          <>
+            {/* ✅ FIXED: Scrollable container for past sessions */}
+            <div className="session-list session-list--scrollable">
+              {past.map((s) => (
+                <SessionRow
+                  key={s.id}
+                  s={s}
+                  timezone={timezone}
+                  isUpcoming={false}
+                  onCancel={() => {}}
+                  onRescheduleClick={() => {}}
+                  isTeacher={isTeacher}
+                  dict={dict}
+                  prefix={prefix}
+                />
+              ))}
+            </div>
+
+            {/* Optional: Footer for many past sessions */}
+            {past.length >= 10 && (
+              <div className="panel__footer">
+                <Link
+                  href={`${prefix}/calendar`}
+                  className="btn btn--secondary btn--full"
+                >
+                  View all {past.length} past sessions →
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -1050,7 +1104,7 @@ function DashboardInner({ dict, prefix }) {
 export default function DashboardPage() {
   const pathname = usePathname();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
-  const prefix = locale === "ar" ? "/ar" : ""; // 👈 central prefix
+  const prefix = locale === "ar" ? "/ar" : "";
   const dict = getDictionary(locale, "dashboard");
   return <DashboardInner dict={dict} prefix={prefix} />;
 }
