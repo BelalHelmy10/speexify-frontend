@@ -204,3 +204,56 @@
   max-width: 180px;
   border-radius: 8px;
 }
+
+.support-widget__mychats {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 12px 0;
+  text-align: left;
+
+  &:hover {
+    background: #f9fafb;
+  }
+}
+
+.support-widget__ticketlist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.support-widget__ticket {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+
+  &:hover {
+    background: #f9fafb;
+  }
+}
+
+.support-widget__ticketTop {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: #6b7280;
+}
+
+.support-widget__ticketPreview {
+  font-size: 13px;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
