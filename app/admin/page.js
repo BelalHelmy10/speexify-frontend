@@ -751,7 +751,15 @@ function Admin() {
             </span>
           </h1>
         </div>
+
+        {/* ✅ NEW: Admin Support Inbox shortcut */}
+        <div className="adm-admin-header__actions">
+          <Link href="/admin/support" className="adm-btn-primary">
+            🛟 Support Inbox
+          </Link>
+        </div>
       </div>
+
       {/* ═══════════════════════════════════════════════════════════════════
           USER MANAGEMENT
           ═══════════════════════════════════════════════════════════════════ */}

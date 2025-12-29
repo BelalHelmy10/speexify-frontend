@@ -21,6 +21,8 @@ const CATEGORIES = [
 ];
 
 export default function SupportWidget() {
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +34,108 @@ export default function SupportWidget() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState(null);
 
+  // Unread badge + auto-open
+  const [unreadCount, setUnreadCount] = useState(0);
+  const lastStaffMsgRef = useRef({}); // { [ticketId]: lastStaffMessageId }
+
   const fileInputRef = useRef(null);
+
+  function getStoredSeen() {
+    if (typeof window === "undefined") return {};
+    try {
+      return JSON.parse(localStorage.getItem("support_seen") || "{}");
+    } catch {
+      return {};
+    }
+  }
+
+  function setStoredSeen(map) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("support_seen", JSON.stringify(map));
+  }
+
+  async function loadTicket(id) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getSupportTicket(id);
+      const ticket = res.ticket;
+      setActiveTicket(ticket);
+      setView("home");
+
+      // Mark as seen up to latest message
+      const latest = ticket?.messages?.[ticket.messages.length - 1];
+      if (latest) {
+        const seen = getStoredSeen();
+        seen[id] = Number(latest.id);
+        setStoredSeen(seen);
+      }
+
+      // Recompute unread badge after opening a ticket
+      await refreshTicketsAndUnread({ autoOpenIfClosed: false });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function refreshTicketsAndUnread({ autoOpenIfClosed } = {}) {
+    const res = await listSupportTickets().catch(() => null);
+    const t = res?.tickets || [];
+    setTickets(t);
+
+    // Calculate unread staff replies based on lastMessage
+    const seen = getStoredSeen();
+
+    const unread = t.filter((ticket) => {
+      const lm = ticket.lastMessage;
+      if (!lm) return false;
+
+      // staff message = not authored by ticket owner
+      const isStaffMsg = lm.authorId !== ticket.userId;
+      if (!isStaffMsg) return false;
+
+      const lastSeenId = Number(seen[ticket.id] || 0);
+      return Number(lm.id) > lastSeenId;
+    });
+
+    setUnreadCount(unread.length);
+
+    // Auto-open on newest unread staff reply
+    if (autoOpenIfClosed && !open && unread.length > 0) {
+      const newest = unread
+        .slice()
+        .sort((a, b) => Number(b.lastMessage.id) - Number(a.lastMessage.id))[0];
+
+      const lastOpenedId = Number(lastStaffMsgRef.current[newest.id] || 0);
+      const newestMsgId = Number(newest.lastMessage.id);
+
+      if (newestMsgId > lastOpenedId) {
+        lastStaffMsgRef.current[newest.id] = newestMsgId;
+        setOpen(true);
+        await loadTicket(newest.id);
+      }
+    }
+  }
+
+  // Poll tickets for badge + auto-open behavior
+  useEffect(() => {
+    let cancelled = false;
+
+    async function tick() {
+      if (cancelled) return;
+      await refreshTicketsAndUnread({ autoOpenIfClosed: true });
+    }
+
+    tick();
+    const id = setInterval(tick, 20000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Load tickets when widget opens
   useEffect(() => {
@@ -45,28 +148,13 @@ export default function SupportWidget() {
       .then((res) => {
         const t = res?.tickets || [];
         setTickets(t);
-        // Default to "home" screen; user can choose "My conversations"
         setView("home");
       })
       .catch(() => {
-        // If unauthenticated or API error, just keep UI usable
+        // keep UI usable even if unauthenticated / error
       })
       .finally(() => setLoading(false));
   }, [open]);
-
-  async function loadTicket(id) {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await getSupportTicket(id);
-      setActiveTicket(res.ticket);
-      setView("home");
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function sendMessage() {
     if (!message.trim()) return;
@@ -81,7 +169,7 @@ export default function SupportWidget() {
           message,
         });
 
-        // Reload ticket so you always see the latest server truth
+        // Reload ticket so you always see server truth
         await loadTicket(activeTicket.id);
       } else {
         const res = await createSupportTicket({
@@ -89,10 +177,7 @@ export default function SupportWidget() {
           message,
         });
 
-        // Refresh list + open created ticket
-        const list = await listSupportTickets().catch(() => null);
-        if (list?.tickets) setTickets(list.tickets);
-
+        await refreshTicketsAndUnread({ autoOpenIfClosed: false });
         await loadTicket(res.ticket.id);
       }
 
@@ -117,15 +202,20 @@ export default function SupportWidget() {
         file,
       });
 
-      // Append the returned message immediately for snappy UI
+      // Append returned message immediately for snappy UI
       setActiveTicket((prev) => ({
         ...prev,
         messages: [...(prev?.messages || []), res.message],
       }));
 
-      // Refresh list (so preview/lastMessage stays current, if your API provides it)
-      const list = await listSupportTickets().catch(() => null);
-      if (list?.tickets) setTickets(list.tickets);
+      // Mark seen to include attachment message
+      const seen = getStoredSeen();
+      seen[activeTicket.id] = Number(
+        res.message?.id || seen[activeTicket.id] || 0
+      );
+      setStoredSeen(seen);
+
+      await refreshTicketsAndUnread({ autoOpenIfClosed: false });
     } catch (e2) {
       setError(e2.message);
     } finally {
@@ -152,6 +242,11 @@ export default function SupportWidget() {
         aria-label="Contact support"
       >
         <MessageCircle size={22} />
+        {unreadCount > 0 && (
+          <span className="support-widget__badge">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
       </button>
 
       {open && (
@@ -189,14 +284,16 @@ export default function SupportWidget() {
                         ? m.attachments.map((a) => (
                             <a
                               key={a.id}
-                              href={`/uploads/support/${a.filePath}`}
+                              href={`${API_BASE}/uploads/support/${a.filePath}`}
                               target="_blank"
                               rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <img
-                                src={`/uploads/support/${a.filePath}`}
+                                src={`${API_BASE}/uploads/support/${a.filePath}`}
                                 alt={a.fileName}
                                 className="support-widget__image"
+                                loading="lazy"
                               />
                             </a>
                           ))
@@ -212,6 +309,7 @@ export default function SupportWidget() {
                     onClick={() => fileInputRef.current?.click()}
                     title="Attach screenshot"
                     aria-label="Attach screenshot"
+                    disabled={loading}
                   >
                     📎
                   </button>
