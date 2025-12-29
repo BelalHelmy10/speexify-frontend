@@ -11,6 +11,7 @@ import { getServerUser } from "./server-auth";
 import Providers from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SupportWidget from "@/components/SupportWidget";
 import ClientProviders from "./ClientProviders";
 import LocaleShell from "./LocaleShell";
 
@@ -51,6 +52,7 @@ export default async function RootLayout({ children }) {
                 <main>{children}</main>
               </Suspense>
               <Footer />
+              <SupportWidget />
             </Providers>
           </ClientProviders>
         </LocaleShell>
