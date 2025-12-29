@@ -222,9 +222,14 @@ export default function AdminSupportInboxPage() {
           messages: [...(prev?.messages || []), message],
         }));
 
-        // Scroll to bottom
+        // Scroll to bottom (messages container only, not entire page)
         setTimeout(
-          () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+          () =>
+            bottomRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+              inline: "nearest",
+            }),
           100
         );
       }
@@ -362,8 +367,14 @@ export default function AdminSupportInboxPage() {
       });
 
       setActiveTicket(data?.ticket || null);
+      // Scroll messages to bottom (container only, not entire page)
       setTimeout(
-        () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+        () =>
+          bottomRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "nearest",
+          }),
         50
       );
     } catch (e) {
