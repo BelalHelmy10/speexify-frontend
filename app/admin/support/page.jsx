@@ -1,12 +1,43 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
-import "@/styles/admin.scss";
+import {
+  MessageCircle,
+  Send,
+  Loader2,
+  RefreshCw,
+  Search,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  User,
+  Filter,
+  StickyNote,
+  UserPlus,
+  ArrowUp,
+  ArrowDown,
+  Minus,
+} from "lucide-react";
+import "@/styles/admin-support.scss";
 
 const STATUS_OPTIONS = ["OPEN", "IN_PROGRESS", "RESOLVED"];
+const PRIORITY_OPTIONS = ["LOW", "NORMAL", "HIGH", "URGENT"];
+
+const PRIORITY_CONFIG = {
+  LOW: { color: "#6b7280", icon: ArrowDown, label: "Low" },
+  NORMAL: { color: "#3b82f6", icon: Minus, label: "Normal" },
+  HIGH: { color: "#f59e0b", icon: ArrowUp, label: "High" },
+  URGENT: { color: "#ef4444", icon: ArrowUp, label: "Urgent" },
+};
+
+const STATUS_CONFIG = {
+  OPEN: { color: "#f59e0b", icon: Clock, label: "Open" },
+  IN_PROGRESS: { color: "#3b82f6", icon: Loader2, label: "In Progress" },
+  RESOLVED: { color: "#10b981", icon: CheckCircle, label: "Resolved" },
+};
 
 function niceCategory(cat) {
   if (!cat) return "";
@@ -21,12 +52,26 @@ function fmtTime(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleString([], {
-    year: "numeric",
     month: "short",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function getInitials(name, email) {
+  if (name) {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  }
+  if (email) {
+    return email.slice(0, 2).toUpperCase();
+  }
+  return "??";
 }
 
 export default function AdminSupportInboxPage() {
@@ -35,42 +80,255 @@ export default function AdminSupportInboxPage() {
   const isAdmin = user?.role === "admin";
   const router = useRouter();
 
+  // Loading states
   const [loadingList, setLoadingList] = useState(false);
   const [loadingTicket, setLoadingTicket] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
   const [sendingReply, setSendingReply] = useState(false);
+  const [savingAssignment, setSavingAssignment] = useState(false);
+  const [savingPriority, setSavingPriority] = useState(false);
+  const [addingNote, setAddingNote] = useState(false);
 
+  // Filters
   const [q, setQ] = useState("");
   const [qDebounced, setQDebounced] = useState("");
   const [statusFilter, setStatusFilter] = useState("OPEN");
+  const [priorityFilter, setPriorityFilter] = useState("");
 
+  // Data
   const [tickets, setTickets] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [activeTicket, setActiveTicket] = useState(null);
+  const [staffMembers, setStaffMembers] = useState([]);
 
+  // UI state
   const [reply, setReply] = useState("");
+  const [internalNote, setInternalNote] = useState("");
+  const [showNoteInput, setShowNoteInput] = useState(false);
   const [error, setError] = useState(null);
+  const [typingUsers, setTypingUsers] = useState(new Set());
 
+  // WebSocket
+  const wsRef = useRef(null);
+  const [wsConnected, setWsConnected] = useState(false);
+  const reconnectTimeoutRef = useRef(null);
   const bottomRef = useRef(null);
 
-  useEffect(() => {
-    if (checking) return;
-    if (!user) router.push("/login");
-    else if (!isAdmin) router.push("/dashboard");
-  }, [checking, user, isAdmin, router]);
-
+  // Debounce search
   useEffect(() => {
     const t = setTimeout(() => setQDebounced(q.trim()), 300);
     return () => clearTimeout(t);
   }, [q]);
 
+  // Build list params
   const listParams = useMemo(() => {
     const params = {};
     if (statusFilter) params.status = statusFilter;
+    if (priorityFilter) params.priority = priorityFilter;
     if (qDebounced) params.q = qDebounced;
     return params;
-  }, [statusFilter, qDebounced]);
+  }, [statusFilter, priorityFilter, qDebounced]);
 
+  // ============================================================================
+  // WebSocket Connection
+  // ============================================================================
+  const connectWebSocket = useCallback(() => {
+    if (!isAdmin) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws/support`;
+
+    try {
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log("[Admin Support WS] Connected");
+        setWsConnected(true);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleWebSocketMessage(data);
+        } catch (err) {
+          console.error("[Admin Support WS] Failed to parse message:", err);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error("[Admin Support WS] Error:", error);
+      };
+
+      ws.onclose = () => {
+        console.log("[Admin Support WS] Disconnected");
+        setWsConnected(false);
+
+        // Reconnect after 3 seconds
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, 3000);
+      };
+    } catch (err) {
+      console.error("[Admin Support WS] Connection failed:", err);
+    }
+  }, [isAdmin]);
+
+  const handleWebSocketMessage = useCallback(
+    (data) => {
+      const { type } = data;
+
+      switch (type) {
+        case "connected":
+          console.log("[Admin Support WS] Connection confirmed");
+          break;
+
+        case "new_message":
+          handleNewMessage(data);
+          break;
+
+        case "new_ticket":
+          handleNewTicket(data);
+          break;
+
+        case "ticket_status_change":
+          handleTicketStatusChange(data);
+          break;
+
+        case "typing":
+          handleTypingIndicator(data);
+          break;
+
+        case "pong":
+          // Heartbeat response
+          break;
+
+        default:
+          console.warn("[Admin Support WS] Unknown message type:", type);
+      }
+    },
+    [activeId, activeTicket]
+  );
+
+  const handleNewMessage = useCallback(
+    (data) => {
+      const { ticketId, message } = data;
+
+      // Update active ticket if viewing
+      if (activeTicket?.id === ticketId) {
+        setActiveTicket((prev) => ({
+          ...prev,
+          messages: [...(prev?.messages || []), message],
+        }));
+
+        // Scroll to bottom
+        setTimeout(
+          () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+          100
+        );
+      }
+
+      // Update ticket list
+      setTickets((prev) => {
+        const updated = prev.map((t) =>
+          t.id === ticketId
+            ? {
+                ...t,
+                lastMessage: message,
+                updatedAt: new Date().toISOString(),
+              }
+            : t
+        );
+        return updated.sort(
+          (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+        );
+      });
+    },
+    [activeTicket]
+  );
+
+  const handleNewTicket = useCallback((data) => {
+    const { ticket } = data;
+
+    // Add to ticket list
+    setTickets((prev) => [ticket, ...prev]);
+
+    // Show notification
+    if (Notification.permission === "granted") {
+      new Notification("New Support Ticket", {
+        body: `${ticket.category}: ${ticket.subject || "New ticket"}`,
+        icon: "/logo.png",
+      });
+    }
+  }, []);
+
+  const handleTicketStatusChange = useCallback(
+    (data) => {
+      const { ticketId, status } = data;
+
+      // Update active ticket
+      if (activeTicket?.id === ticketId) {
+        setActiveTicket((prev) => ({
+          ...prev,
+          status,
+        }));
+      }
+
+      // Update ticket list
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticketId ? { ...t, status } : t))
+      );
+    },
+    [activeTicket]
+  );
+
+  const handleTypingIndicator = useCallback(
+    (data) => {
+      const { ticketId, userId, isTyping } = data;
+
+      if (activeTicket?.id === ticketId) {
+        setTypingUsers((prev) => {
+          const next = new Set(prev);
+          if (isTyping) {
+            next.add(userId);
+          } else {
+            next.delete(userId);
+          }
+          return next;
+        });
+      }
+    },
+    [activeTicket]
+  );
+
+  // Connect WebSocket on mount
+  useEffect(() => {
+    if (isAdmin) {
+      connectWebSocket();
+
+      // Send heartbeat every 30 seconds
+      const heartbeat = setInterval(() => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ type: "ping" }));
+        }
+      }, 30000);
+
+      return () => {
+        clearInterval(heartbeat);
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+      };
+    }
+  }, [isAdmin, connectWebSocket]);
+
+  // ============================================================================
+  // API Functions
+  // ============================================================================
   async function loadTickets() {
     setLoadingList(true);
     setError(null);
@@ -115,6 +373,17 @@ export default function AdminSupportInboxPage() {
     }
   }
 
+  async function loadStaffMembers() {
+    try {
+      const { data } = await api.get("/admin/users", {
+        params: { role: "admin", t: Date.now() },
+      });
+      setStaffMembers(Array.isArray(data?.users) ? data.users : []);
+    } catch (e) {
+      console.error("Failed to load staff members:", e);
+    }
+  }
+
   async function updateStatus(nextStatus) {
     if (!activeTicket?.id) return;
     setSavingStatus(true);
@@ -124,12 +393,64 @@ export default function AdminSupportInboxPage() {
         status: nextStatus,
       });
 
-      await loadTicket(activeTicket.id);
-      await loadTickets();
+      setActiveTicket((prev) => ({ ...prev, status: nextStatus }));
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === activeTicket.id ? { ...t, status: nextStatus } : t
+        )
+      );
     } catch (e) {
       setError(e?.response?.data?.error || "Failed to update status");
     } finally {
       setSavingStatus(false);
+    }
+  }
+
+  async function updatePriority(nextPriority) {
+    if (!activeTicket?.id) return;
+    setSavingPriority(true);
+    setError(null);
+    try {
+      await api.patch(`/support/admin/tickets/${activeTicket.id}/priority`, {
+        priority: nextPriority,
+      });
+
+      setActiveTicket((prev) => ({ ...prev, priority: nextPriority }));
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === activeTicket.id ? { ...t, priority: nextPriority } : t
+        )
+      );
+    } catch (e) {
+      setError(e?.response?.data?.error || "Failed to update priority");
+    } finally {
+      setSavingPriority(false);
+    }
+  }
+
+  async function updateAssignment(assignedToId) {
+    if (!activeTicket?.id) return;
+    setSavingAssignment(true);
+    setError(null);
+    try {
+      await api.patch(`/support/admin/tickets/${activeTicket.id}/assign`, {
+        assignedToId: assignedToId || null,
+      });
+
+      const assignedTo = assignedToId
+        ? staffMembers.find((s) => s.id === assignedToId)
+        : null;
+
+      setActiveTicket((prev) => ({ ...prev, assignedToId, assignedTo }));
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === activeTicket.id ? { ...t, assignedToId, assignedTo } : t
+        )
+      );
+    } catch (e) {
+      setError(e?.response?.data?.error || "Failed to update assignment");
+    } finally {
+      setSavingAssignment(false);
     }
   }
 
@@ -145,8 +466,6 @@ export default function AdminSupportInboxPage() {
       });
 
       setReply("");
-      await loadTicket(activeTicket.id);
-      await loadTickets();
     } catch (e) {
       setError(e?.response?.data?.error || "Failed to send reply");
     } finally {
@@ -154,321 +473,520 @@ export default function AdminSupportInboxPage() {
     }
   }
 
+  async function addInternalNote() {
+    if (!activeTicket?.id) return;
+    if (!internalNote.trim()) return;
+
+    setAddingNote(true);
+    setError(null);
+    try {
+      const { data } = await api.post(
+        `/support/admin/tickets/${activeTicket.id}/notes`,
+        {
+          note: internalNote.trim(),
+        }
+      );
+
+      setActiveTicket((prev) => ({
+        ...prev,
+        internalNotes: [...(prev.internalNotes || []), data.note],
+      }));
+
+      setInternalNote("");
+      setShowNoteInput(false);
+    } catch (e) {
+      setError(e?.response?.data?.error || "Failed to add note");
+    } finally {
+      setAddingNote(false);
+    }
+  }
+
+  // Load tickets on filter change
   useEffect(() => {
     if (!isAdmin) return;
     loadTickets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, statusFilter, qDebounced]);
+  }, [isAdmin, statusFilter, priorityFilter, qDebounced]);
 
+  // Load active ticket
   useEffect(() => {
     if (!isAdmin) return;
     if (!activeId) return;
     loadTicket(activeId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, activeId]);
+
+  // Load staff members
+  useEffect(() => {
+    if (isAdmin) {
+      loadStaffMembers();
+    }
+  }, [isAdmin]);
+
+  // Redirect if not admin
+  useEffect(() => {
+    if (checking) return;
+    if (!user) router.push("/login");
+    else if (!isAdmin) router.push("/dashboard");
+  }, [checking, user, isAdmin, router]);
+
+  // Request notification permission
+  useEffect(() => {
+    if (isAdmin && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, [isAdmin]);
 
   if (checking || !user || !isAdmin) return null;
 
+  const activePriorityConfig = activeTicket
+    ? PRIORITY_CONFIG[activeTicket.priority]
+    : null;
+  const activeStatusConfig = activeTicket
+    ? STATUS_CONFIG[activeTicket.status]
+    : null;
+
   return (
-    <main className="adm-admin-modern">
-      <div className="adm-admin-header">
-        <div>
-          <h1 className="adm-admin-title">Support Inbox</h1>
-          <p className="adm-admin-subtitle">
-            View tickets • reply • change status
-          </p>
+    <main className="asp-admin-support">
+      {/* Header */}
+      <header className="asp-header">
+        <div className="asp-header__left">
+          <div className="asp-header__icon">
+            <MessageCircle size={28} />
+          </div>
+          <div>
+            <h1 className="asp-header__title">Support Inbox</h1>
+            <p className="asp-header__subtitle">
+              {wsConnected ? (
+                <>
+                  <span className="asp-status-dot"></span>
+                  Real-time updates enabled
+                </>
+              ) : (
+                <>Connecting...</>
+              )}
+            </p>
+          </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="adm-filter"
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search subject / email / name / text…"
-            className="adm-search"
-          />
-
+        <div className="asp-header__actions">
           <button
-            className="adm-btn"
+            className="asp-btn asp-btn--secondary"
             onClick={loadTickets}
             disabled={loadingList}
           >
-            {loadingList ? "Loading…" : "Refresh"}
+            <RefreshCw size={16} className={loadingList ? "asp-spin" : ""} />
+            Refresh
           </button>
         </div>
+      </header>
+
+      {/* Filters */}
+      <div className="asp-filters">
+        <div className="asp-search-box">
+          <Search size={18} />
+          <input
+            type="text"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search tickets..."
+            className="asp-search-input"
+          />
+        </div>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="asp-filter-select"
+        >
+          <option value="">All Status</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s.replace("_", " ")}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={priorityFilter}
+          onChange={(e) => setPriorityFilter(e.target.value)}
+          className="asp-filter-select"
+        >
+          <option value="">All Priority</option>
+          {PRIORITY_OPTIONS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {error ? (
-        <div className="adm-admin-card" style={{ marginBottom: 16 }}>
-          <p style={{ color: "crimson", margin: 0 }}>{error}</p>
+      {/* Error */}
+      {error && (
+        <div className="asp-error">
+          <AlertCircle size={16} />
+          {error}
         </div>
-      ) : null}
+      )}
 
-      <div
-        className="adm-admin-card"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "420px 1fr",
-          gap: 16,
-          alignItems: "stretch",
-          minHeight: "70vh",
-        }}
-      >
-        {/* LEFT: Ticket list */}
-        <div
-          style={{
-            borderRight: "1px solid rgba(0,0,0,0.06)",
-            paddingRight: 16,
-          }}
-        >
-          <h3 style={{ marginTop: 0 }}>Tickets</h3>
+      {/* Main Content */}
+      <div className="asp-content">
+        {/* Ticket List */}
+        <aside className="asp-sidebar">
+          <div className="asp-sidebar__header">
+            <h2>Tickets</h2>
+            <span className="asp-badge">{tickets.length}</span>
+          </div>
 
-          {loadingList ? (
-            <p className="adm-muted">Loading…</p>
-          ) : tickets.length === 0 ? (
-            <p className="adm-muted">No tickets found.</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {tickets.map((t) => {
+          <div className="asp-ticket-list">
+            {loadingList ? (
+              <div className="asp-loading">
+                <Loader2 size={24} className="asp-spin" />
+                <p>Loading tickets...</p>
+              </div>
+            ) : tickets.length === 0 ? (
+              <div className="asp-empty">
+                <MessageCircle size={48} />
+                <p>No tickets found</p>
+              </div>
+            ) : (
+              tickets.map((t) => {
                 const isActive = t.id === activeId;
+                const priorityConf = PRIORITY_CONFIG[t.priority];
+                const PriorityIcon = priorityConf?.icon;
+
                 return (
                   <button
                     key={t.id}
                     onClick={() => setActiveId(t.id)}
-                    className="adm-admin-card"
-                    style={{
-                      textAlign: "left",
-                      cursor: "pointer",
-                      padding: 12,
-                      border: isActive
-                        ? "2px solid rgba(59,130,246,0.7)"
-                        : "1px solid rgba(0,0,0,0.06)",
-                      background: isActive ? "rgba(59,130,246,0.06)" : "white",
-                    }}
+                    className={`asp-ticket-card ${
+                      isActive ? "asp-ticket-card--active" : ""
+                    }`}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 10,
-                      }}
-                    >
-                      <strong>{niceCategory(t.category)}</strong>
-                      <span className="adm-muted">{t.status}</span>
-                    </div>
-
-                    <div className="adm-muted" style={{ marginTop: 6 }}>
-                      {t.user?.email || `User #${t.userId}`}
-                    </div>
-
-                    {t.lastMessage?.body ? (
-                      <div style={{ marginTop: 6, opacity: 0.9 }}>
-                        {t.lastMessage.body.length > 90
-                          ? t.lastMessage.body.slice(0, 90) + "…"
-                          : t.lastMessage.body}
+                    <div className="asp-ticket-card__header">
+                      <div className="asp-ticket-card__category">
+                        {niceCategory(t.category)}
                       </div>
-                    ) : null}
+                      <div
+                        className="asp-ticket-card__priority"
+                        style={{ color: priorityConf?.color }}
+                      >
+                        {PriorityIcon && <PriorityIcon size={14} />}
+                      </div>
+                    </div>
 
-                    <div
-                      className="adm-muted"
-                      style={{ marginTop: 6, fontSize: 12 }}
-                    >
-                      {fmtTime(t.updatedAt || t.createdAt)}
+                    <div className="asp-ticket-card__user">
+                      <div className="asp-avatar asp-avatar--small">
+                        {getInitials(t.user?.name, t.user?.email)}
+                      </div>
+                      <div className="asp-user-info">
+                        <div className="asp-user-name">
+                          {t.user?.name || "User"}
+                        </div>
+                        <div className="asp-user-email">{t.user?.email}</div>
+                      </div>
+                    </div>
+
+                    {t.lastMessage?.body && (
+                      <div className="asp-ticket-card__preview">
+                        {t.lastMessage.body.slice(0, 80)}
+                        {t.lastMessage.body.length > 80 ? "..." : ""}
+                      </div>
+                    )}
+
+                    <div className="asp-ticket-card__footer">
+                      <div
+                        className="asp-status-badge"
+                        style={{
+                          background: `${STATUS_CONFIG[t.status]?.color}20`,
+                          color: STATUS_CONFIG[t.status]?.color,
+                        }}
+                      >
+                        {t.status}
+                      </div>
+                      <div className="asp-ticket-card__time">
+                        {fmtTime(t.updatedAt || t.createdAt)}
+                      </div>
                     </div>
                   </button>
                 );
-              })}
-            </div>
-          )}
-        </div>
+              })
+            )}
+          </div>
+        </aside>
 
-        {/* RIGHT: Ticket detail */}
-        <div
-          style={{ paddingLeft: 4, display: "flex", flexDirection: "column" }}
-        >
+        {/* Ticket Detail */}
+        <main className="asp-main">
           {!activeId ? (
-            <p className="adm-muted">Select a ticket.</p>
+            <div className="asp-empty">
+              <MessageCircle size={64} />
+              <p>Select a ticket to view details</p>
+            </div>
           ) : loadingTicket || !activeTicket ? (
-            <p className="adm-muted">Loading ticket…</p>
+            <div className="asp-loading">
+              <Loader2 size={32} className="asp-spin" />
+              <p>Loading ticket...</p>
+            </div>
           ) : (
             <>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: 0 }}>
-                    {niceCategory(activeTicket.category)}
-                  </h3>
-                  <div className="adm-muted" style={{ marginTop: 6 }}>
-                    From:{" "}
-                    <strong>
-                      {activeTicket.user?.email ||
-                        `User #${activeTicket.userId}`}
-                    </strong>
+              {/* Ticket Header */}
+              <div className="asp-ticket-header">
+                <div className="asp-ticket-header__left">
+                  <div className="asp-avatar asp-avatar--large">
+                    {getInitials(
+                      activeTicket.user?.name,
+                      activeTicket.user?.email
+                    )}
                   </div>
-                  <div
-                    className="adm-muted"
-                    style={{ marginTop: 4, fontSize: 12 }}
-                  >
-                    Created: {fmtTime(activeTicket.createdAt)} • Updated:{" "}
-                    {fmtTime(activeTicket.updatedAt)}
+                  <div>
+                    <h2 className="asp-ticket-title">
+                      {niceCategory(activeTicket.category)}
+                    </h2>
+                    <div className="asp-ticket-meta">
+                      <span>
+                        <User size={14} />
+                        {activeTicket.user?.name || "User"}
+                      </span>
+                      <span>{activeTicket.user?.email}</span>
+                      <span>Created {fmtTime(activeTicket.createdAt)}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <span className="adm-muted">Status</span>
-                  <select
-                    value={activeTicket.status}
-                    onChange={(e) => updateStatus(e.target.value)}
-                    disabled={savingStatus}
-                    className="adm-filter"
-                  >
-                    {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
+                <div className="asp-ticket-header__right">
+                  {/* Status */}
+                  <div className="asp-control-group">
+                    <label>Status</label>
+                    <select
+                      value={activeTicket.status}
+                      onChange={(e) => updateStatus(e.target.value)}
+                      disabled={savingStatus}
+                      className="asp-select"
+                    >
+                      {STATUS_OPTIONS.map((s) => (
+                        <option key={s} value={s}>
+                          {s.replace("_", " ")}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Priority */}
+                  <div className="asp-control-group">
+                    <label>Priority</label>
+                    <select
+                      value={activeTicket.priority}
+                      onChange={(e) => updatePriority(e.target.value)}
+                      disabled={savingPriority}
+                      className="asp-select"
+                      style={{ color: activePriorityConfig?.color }}
+                    >
+                      {PRIORITY_OPTIONS.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Assignment */}
+                  <div className="asp-control-group">
+                    <label>Assigned to</label>
+                    <select
+                      value={activeTicket.assignedToId || ""}
+                      onChange={(e) =>
+                        updateAssignment(Number(e.target.value) || null)
+                      }
+                      disabled={savingAssignment}
+                      className="asp-select"
+                    >
+                      <option value="">Unassigned</option>
+                      {staffMembers.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name || s.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div
-                className="adm-admin-card"
-                style={{
-                  marginTop: 14,
-                  flex: 1,
-                  overflow: "auto",
-                  padding: 14,
-                  background: "rgba(255,255,255,0.9)",
-                }}
-              >
+              {/* Internal Notes */}
+              {activeTicket.internalNotes &&
+                activeTicket.internalNotes.length > 0 && (
+                  <div className="asp-internal-notes">
+                    <h3>
+                      <StickyNote size={16} />
+                      Internal Notes (Staff Only)
+                    </h3>
+                    {activeTicket.internalNotes.map((note) => (
+                      <div key={note.id} className="asp-internal-note">
+                        <div className="asp-internal-note__header">
+                          <span className="asp-internal-note__author">
+                            {note.author?.name || "Staff"}
+                          </span>
+                          <span className="asp-internal-note__time">
+                            {fmtTime(note.createdAt)}
+                          </span>
+                        </div>
+                        <div className="asp-internal-note__body">
+                          {note.body}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              {/* Messages */}
+              <div className="asp-messages">
                 {(activeTicket.messages || []).length === 0 ? (
-                  <p className="adm-muted">No messages yet.</p>
+                  <div className="asp-empty">
+                    <p>No messages yet</p>
+                  </div>
                 ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 10,
-                    }}
-                  >
+                  <>
                     {(activeTicket.messages || []).map((m) => {
                       const isStaff = !!m.isStaff;
                       return (
                         <div
                           key={m.id}
-                          style={{
-                            maxWidth: "85%",
-                            alignSelf: isStaff ? "flex-start" : "flex-end",
-                            padding: "10px 12px",
-                            borderRadius: 14,
-                            border: "1px solid rgba(0,0,0,0.06)",
-                            background: isStaff
-                              ? "rgba(0,0,0,0.03)"
-                              : "rgba(59,130,246,0.12)",
-                          }}
+                          className={`asp-message ${
+                            isStaff ? "asp-message--staff" : "asp-message--user"
+                          }`}
                         >
-                          <div style={{ fontSize: 12 }} className="adm-muted">
-                            {isStaff ? "Support" : "User"} •{" "}
-                            {fmtTime(m.createdAt)}
+                          <div className="asp-message__header">
+                            <span className="asp-message__author">
+                              {isStaff
+                                ? "Support"
+                                : activeTicket.user?.name || "User"}
+                            </span>
+                            <span className="asp-message__time">
+                              {fmtTime(m.createdAt)}
+                            </span>
                           </div>
 
-                          {m.body ? (
-                            <div
-                              style={{ marginTop: 6, whiteSpace: "pre-wrap" }}
-                            >
-                              {m.body}
-                            </div>
-                          ) : null}
+                          {m.body && (
+                            <div className="asp-message__body">{m.body}</div>
+                          )}
 
-                          {Array.isArray(m.attachments) &&
-                          m.attachments.length > 0 ? (
-                            <div
-                              style={{
-                                marginTop: 8,
-                                display: "flex",
-                                gap: 10,
-                                flexWrap: "wrap",
-                              }}
-                            >
+                          {m.attachments && m.attachments.length > 0 && (
+                            <div className="asp-message__attachments">
                               {m.attachments.map((a) => (
                                 <a
                                   key={a.id}
                                   href={`${API_BASE}/uploads/support/${a.filePath}`}
                                   target="_blank"
                                   rel="noreferrer"
-                                  style={{ textDecoration: "underline" }}
+                                  className="asp-attachment"
                                 >
-                                  {a.fileName || "Attachment"}
+                                  <img
+                                    src={`${API_BASE}/uploads/support/${a.filePath}`}
+                                    alt={a.fileName}
+                                  />
                                 </a>
                               ))}
                             </div>
-                          ) : null}
+                          )}
                         </div>
                       );
                     })}
+
+                    {typingUsers.size > 0 && (
+                      <div className="asp-typing">
+                        User is typing
+                        <span className="asp-typing__dots">...</span>
+                      </div>
+                    )}
+
                     <div ref={bottomRef} />
-                  </div>
+                  </>
                 )}
               </div>
 
-              <div
-                style={{
-                  marginTop: 12,
-                  display: "flex",
-                  gap: 10,
-                  alignItems: "stretch",
-                }}
-              >
-                <textarea
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value)}
-                  placeholder="Write a reply as admin…"
-                  style={{
-                    flex: 1,
-                    minHeight: 46,
-                    maxHeight: 140,
-                    resize: "vertical",
-                    padding: 12,
-                    borderRadius: 12,
-                    border: "1px solid rgba(0,0,0,0.12)",
-                    outline: "none",
-                  }}
-                />
-                <button
-                  className="adm-btn adm-btn--primary"
-                  onClick={sendReply}
-                  disabled={sendingReply || !reply.trim()}
-                >
-                  {sendingReply ? "Sending…" : "Send"}
-                </button>
+              {/* Input Area */}
+              <div className="asp-input-area">
+                {/* Internal Note Input */}
+                {showNoteInput && (
+                  <div className="asp-note-input">
+                    <textarea
+                      value={internalNote}
+                      onChange={(e) => setInternalNote(e.target.value)}
+                      placeholder="Add internal note (visible to staff only)..."
+                      className="asp-textarea"
+                      rows={3}
+                    />
+                    <div className="asp-note-input__actions">
+                      <button
+                        className="asp-btn asp-btn--secondary asp-btn--small"
+                        onClick={() => {
+                          setShowNoteInput(false);
+                          setInternalNote("");
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="asp-btn asp-btn--primary asp-btn--small"
+                        onClick={addInternalNote}
+                        disabled={addingNote || !internalNote.trim()}
+                      >
+                        {addingNote ? (
+                          <>
+                            <Loader2 size={14} className="asp-spin" />
+                            Adding...
+                          </>
+                        ) : (
+                          <>Add Note</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Reply Input */}
+                <div className="asp-reply-area">
+                  <button
+                    className="asp-btn asp-btn--ghost"
+                    onClick={() => setShowNoteInput(!showNoteInput)}
+                    title="Add internal note"
+                  >
+                    <StickyNote size={18} />
+                  </button>
+
+                  <textarea
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
+                    placeholder="Type your reply to the customer..."
+                    className="asp-textarea"
+                    rows={2}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendReply();
+                      }
+                    }}
+                  />
+
+                  <button
+                    className="asp-btn asp-btn--primary"
+                    onClick={sendReply}
+                    disabled={sendingReply || !reply.trim()}
+                  >
+                    {sendingReply ? (
+                      <>
+                        <Loader2 size={18} className="asp-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={18} />
+                        Send Reply
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </>
           )}
-        </div>
+        </main>
       </div>
     </main>
   );

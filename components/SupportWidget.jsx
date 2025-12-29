@@ -1,4 +1,3 @@
-// components/SupportWidget.jsx
 "use client";
 
 import { useEffect, useState, useRef, useCallback, memo } from "react";
@@ -12,6 +11,8 @@ import {
   AlertCircle,
   Check,
   CheckCheck,
+  Download,
+  FileText,
 } from "lucide-react";
 import {
   listSupportTickets,
@@ -30,42 +31,180 @@ const CATEGORIES = [
   { key: "OTHER", label: "Other", icon: "💬" },
 ];
 
-// Memoized message component for performance
-const Message = memo(({ message, isUser, API_BASE }) => (
-  <div
-    className={`sw-message ${
-      isUser ? "sw-message--user" : "sw-message--staff"
-    }`}
-  >
-    {message.attachments?.length > 0 ? (
-      message.attachments.map((a) => (
-        <a
-          key={a.id}
-          href={`${API_BASE}/uploads/support/${a.filePath}`}
-          target="_blank"
-          rel="noreferrer"
-          className="sw-message__attachment"
-        >
-          <img
-            src={`${API_BASE}/uploads/support/${a.filePath}`}
-            alt={a.fileName}
-            loading="lazy"
-          />
-        </a>
-      ))
-    ) : (
-      <div className="sw-message__text">{message.body}</div>
-    )}
-    <div className="sw-message__time">
-      {new Date(message.createdAt).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}
+// Check if file is an image
+function isImageFile(mimeType, fileName) {
+  if (mimeType && mimeType.startsWith("image/")) return true;
+  if (!fileName) return false;
+  const ext = fileName.toLowerCase().split(".").pop();
+  return ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(ext);
+}
+
+// Format file size
+function formatFileSize(bytes) {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+}
+
+// Memoized message component - FIXED: Proper image and file handling
+const Message = memo(({ message, isUser, API_BASE, onImageClick }) => {
+  const hasAttachments = message.attachments?.length > 0;
+
+  return (
+    <div
+      className={`sw-message ${
+        isUser ? "sw-message--user" : "sw-message--staff"
+      }`}
+    >
+      {message.body && <div className="sw-message__text">{message.body}</div>}
+
+      {hasAttachments && (
+        <div className="sw-message__attachments">
+          {message.attachments.map((a) => {
+            const isImage = isImageFile(a.mimeType, a.fileName);
+            const fileUrl = `${API_BASE}/uploads/support/${a.filePath}`;
+
+            if (isImage) {
+              // FIXED: Display image inline with proper loading
+              return (
+                <div key={a.id} className="sw-message__image-wrapper">
+                  <img
+                    src={fileUrl}
+                    alt={a.fileName || "Attachment"}
+                    className="sw-message__image"
+                    loading="lazy"
+                    onClick={() => onImageClick?.(fileUrl, a.fileName)}
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      e.target.style.display = "none";
+                      const parent = e.target.parentElement;
+                      if (parent) {
+                        parent.innerHTML = `
+                          <div class="sw-message__file-download" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: rgba(0,0,0,0.05); border-radius: 8px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                              <polyline points="7 10 12 15 17 10"></polyline>
+                              <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>${a.fileName || "Download file"}</span>
+                          </div>
+                        `;
+                        parent.onclick = () => {
+                          const link = document.createElement("a");
+                          link.href = fileUrl;
+                          link.download = a.fileName || "file";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        };
+                      }
+                    }}
+                  />
+                </div>
+              );
+            } else {
+              // FIXED: Show download link for non-images with proper download behavior
+              return (
+                <button
+                  key={a.id}
+                  className="sw-message__file-download"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // Force download instead of navigation
+                    const link = document.createElement("a");
+                    link.href = fileUrl;
+                    link.download = a.fileName || "file";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                >
+                  <FileText size={16} />
+                  <div className="sw-message__file-info">
+                    <div className="sw-message__file-name">
+                      {a.fileName || "Download file"}
+                    </div>
+                    {a.fileSize && (
+                      <div className="sw-message__file-size">
+                        {formatFileSize(a.fileSize)}
+                      </div>
+                    )}
+                  </div>
+                  <Download size={14} />
+                </button>
+              );
+            }
+          })}
+        </div>
+      )}
+
+      <div className="sw-message__time">
+        {new Date(message.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </div>
     </div>
-  </div>
-));
+  );
+});
 
 Message.displayName = "Message";
+
+// Image lightbox modal - FIXED: Better overlay
+const ImageLightbox = memo(({ imageUrl, fileName, onClose }) => {
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+
+    // Prevent body scroll when lightbox is open
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="sw-lightbox" onClick={onClose}>
+      <button
+        className="sw-lightbox__close"
+        onClick={onClose}
+        aria-label="Close"
+      >
+        <X size={24} />
+      </button>
+      <div
+        className="sw-lightbox__content"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img src={imageUrl} alt={fileName} className="sw-lightbox__image" />
+        {fileName && <div className="sw-lightbox__caption">{fileName}</div>}
+        <button
+          className="sw-lightbox__download"
+          onClick={(e) => {
+            e.stopPropagation();
+            const link = document.createElement("a");
+            link.href = imageUrl;
+            link.download = fileName || "image";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}
+        >
+          <Download size={16} />
+          Download
+        </button>
+      </div>
+    </div>
+  );
+});
+
+ImageLightbox.displayName = "ImageLightbox";
 
 export default function SupportWidget() {
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
@@ -85,24 +224,27 @@ export default function SupportWidget() {
   // Unread badge
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // WebSocket connection
+  // WebSocket
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const [wsConnected, setWsConnected] = useState(false);
 
-  // Typing indicator
+  // Typing
   const [typingUsers, setTypingUsers] = useState(new Set());
   const typingTimeoutRef = useRef(null);
 
   // Message status
-  const [messageStatus, setMessageStatus] = useState("sent"); // sending | sent | delivered
+  const [messageStatus, setMessageStatus] = useState("sent");
+
+  // Image lightbox
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
   // ============================================================================
-  // LocalStorage helpers for seen messages
+  // LocalStorage helpers
   // ============================================================================
   const getStoredSeen = useCallback(() => {
     if (typeof window === "undefined") return {};
@@ -157,7 +299,6 @@ export default function SupportWidget() {
         console.log("[Support WS] Disconnected");
         setWsConnected(false);
 
-        // Reconnect after 3 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
           connectWebSocket();
         }, 3000);
@@ -167,66 +308,64 @@ export default function SupportWidget() {
     }
   }, []);
 
-  const handleWebSocketMessage = useCallback((data) => {
-    const { type } = data;
+  const handleWebSocketMessage = useCallback(
+    (data) => {
+      const { type } = data;
 
-    switch (type) {
-      case "connected":
-        console.log("[Support WS] Connection confirmed");
-        break;
+      switch (type) {
+        case "connected":
+          console.log("[Support WS] Connection confirmed");
+          break;
 
-      case "new_message":
-        handleNewMessage(data);
-        break;
+        case "new_message":
+          handleNewMessage(data);
+          break;
 
-      case "ticket_status_change":
-        handleTicketStatusChange(data);
-        break;
+        case "ticket_status_change":
+          handleTicketStatusChange(data);
+          break;
 
-      case "new_ticket":
-        // Admin only
-        break;
+        case "typing":
+          handleTypingIndicator(data);
+          break;
 
-      case "typing":
-        handleTypingIndicator(data);
-        break;
+        case "pong":
+          break;
 
-      case "pong":
-        // Heartbeat response
-        break;
-
-      default:
-        console.warn("[Support WS] Unknown message type:", type);
-    }
-  }, []);
+        default:
+          console.warn("[Support WS] Unknown message type:", type);
+      }
+    },
+    [activeTicket, open]
+  );
 
   const handleNewMessage = useCallback(
     (data) => {
-      const { ticketId, message, ticket } = data;
+      const { ticketId, message } = data;
 
-      // Update active ticket if viewing
       if (activeTicket?.id === ticketId) {
         setActiveTicket((prev) => ({
           ...prev,
           messages: [...(prev?.messages || []), message],
         }));
 
-        // Mark as seen
         const seen = getStoredSeen();
         seen[ticketId] = Number(message.id);
         setStoredSeen(seen);
 
-        // Scroll to bottom
         setTimeout(
           () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
           100
         );
       } else {
-        // Update ticket list
         setTickets((prev) => {
           const updated = prev.map((t) =>
             t.id === ticketId
-              ? { ...t, lastMessage: message, updatedAt: ticket.updatedAt }
+              ? {
+                  ...t,
+                  lastMessage: message,
+                  updatedAt: new Date().toISOString(),
+                }
               : t
           );
           return updated.sort(
@@ -234,11 +373,8 @@ export default function SupportWidget() {
           );
         });
 
-        // Increment unread if staff message
         if (message.isStaff && !open) {
           setUnreadCount((prev) => prev + 1);
-
-          // Play subtle notification sound (optional)
           playNotificationSound();
         }
       }
@@ -250,9 +386,8 @@ export default function SupportWidget() {
 
   const handleTicketStatusChange = useCallback(
     (data) => {
-      const { ticketId, status, ticket } = data;
+      const { ticketId, status } = data;
 
-      // Update active ticket
       if (activeTicket?.id === ticketId) {
         setActiveTicket((prev) => ({
           ...prev,
@@ -260,7 +395,6 @@ export default function SupportWidget() {
         }));
       }
 
-      // Update ticket list
       setTickets((prev) =>
         prev.map((t) => (t.id === ticketId ? { ...t, status } : t))
       );
@@ -283,7 +417,6 @@ export default function SupportWidget() {
           return next;
         });
 
-        // Clear typing after 3 seconds
         if (isTyping) {
           clearTimeout(typingTimeoutRef.current);
           typingTimeoutRef.current = setTimeout(() => {
@@ -317,24 +450,17 @@ export default function SupportWidget() {
   );
 
   const playNotificationSound = useCallback(() => {
-    // Optional: play a subtle notification sound
     try {
       const audio = new Audio("/sounds/notification.mp3");
       audio.volume = 0.3;
-      audio.play().catch(() => {
-        // Ignore errors (user interaction required)
-      });
-    } catch (err) {
-      // Sound not available
-    }
+      audio.play().catch(() => {});
+    } catch (err) {}
   }, []);
 
-  // Connect WebSocket when widget opens
   useEffect(() => {
     if (open) {
       connectWebSocket();
 
-      // Send heartbeat every 30 seconds
       const heartbeat = setInterval(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ type: "ping" }));
@@ -345,7 +471,6 @@ export default function SupportWidget() {
         clearInterval(heartbeat);
       };
     } else {
-      // Close WebSocket when widget closes
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;
@@ -353,7 +478,6 @@ export default function SupportWidget() {
     }
   }, [open, connectWebSocket]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (wsRef.current) {
@@ -382,7 +506,6 @@ export default function SupportWidget() {
         setActiveTicket(ticket);
         setView("ticket");
 
-        // Mark as seen
         const latest = ticket?.messages?.[ticket.messages.length - 1];
         if (latest) {
           const seen = getStoredSeen();
@@ -390,10 +513,8 @@ export default function SupportWidget() {
           setStoredSeen(seen);
         }
 
-        // Recalculate unread
         await refreshTickets();
 
-        // Scroll to bottom
         setTimeout(
           () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
           100
@@ -413,7 +534,6 @@ export default function SupportWidget() {
       const t = res?.tickets || [];
       setTickets(t);
 
-      // Calculate unread
       const seen = getStoredSeen();
       const unread = t.filter((ticket) => {
         const lm = ticket.lastMessage;
@@ -427,12 +547,9 @@ export default function SupportWidget() {
       });
 
       setUnreadCount(unread.length);
-    } catch (err) {
-      // Silent fail for background refresh
-    }
+    } catch (err) {}
   }, [getStoredSeen]);
 
-  // Load tickets when widget opens
   useEffect(() => {
     if (open) {
       setLoading(true);
@@ -452,16 +569,13 @@ export default function SupportWidget() {
 
     try {
       if (activeTicket) {
-        // Reply to existing ticket
         await replyToSupportTicket({
           ticketId: activeTicket.id,
           message,
         });
 
-        // Reload ticket
         await loadTicket(activeTicket.id);
       } else {
-        // Create new ticket
         const res = await createSupportTicket({
           category,
           message,
@@ -481,7 +595,6 @@ export default function SupportWidget() {
     }
   }, [message, sending, activeTicket, category, loadTicket, refreshTickets]);
 
-  // Handle file upload
   const handleFileSelect = useCallback(
     async (e) => {
       const file = e.target.files?.[0];
@@ -496,7 +609,6 @@ export default function SupportWidget() {
           file,
         });
 
-        // Reload ticket
         await loadTicket(activeTicket.id);
       } catch (e) {
         setError(e.message);
@@ -508,7 +620,6 @@ export default function SupportWidget() {
     [activeTicket, loadTicket]
   );
 
-  // Handle Enter key
   const handleKeyPress = useCallback(
     (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
@@ -519,12 +630,10 @@ export default function SupportWidget() {
     [sendMessage]
   );
 
-  // Handle typing
   const handleTyping = useCallback(
     (e) => {
       setMessage(e.target.value);
 
-      // Send typing indicator (debounced)
       if (activeTicket) {
         sendTypingIndicator(true);
 
@@ -537,7 +646,6 @@ export default function SupportWidget() {
     [activeTicket, sendTypingIndicator]
   );
 
-  // Reset to home
   const reset = useCallback(() => {
     setActiveTicket(null);
     setCategory(null);
@@ -546,7 +654,15 @@ export default function SupportWidget() {
     setView("home");
   }, []);
 
-  // Focus textarea when view changes
+  // FIXED: Proper toggle function
+  const toggleWidget = useCallback(() => {
+    setOpen((prev) => !prev);
+    // Reset unread count when opening
+    if (!open) {
+      setUnreadCount(0);
+    }
+  }, [open]);
+
   useEffect(() => {
     if (open && (view === "ticket" || category)) {
       textareaRef.current?.focus();
@@ -557,24 +673,24 @@ export default function SupportWidget() {
 
   return (
     <>
-      {/* FAB Button */}
+      {/* FIXED: FAB Button with proper toggle */}
       <button
         className="sw-fab"
-        onClick={() => setOpen(true)}
-        aria-label="Contact support"
+        onClick={toggleWidget}
+        aria-label={open ? "Close support" : "Contact support"}
       >
-        <MessageCircle size={24} />
-        {unreadCount > 0 && (
+        {open ? <X size={24} /> : <MessageCircle size={24} />}
+        {!open && unreadCount > 0 && (
           <span className="sw-fab__badge">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Widget Panel */}
+      {/* FIXED: Widget Panel with proper positioning */}
       {open && (
         <div className="sw-panel">
-          {/* Header */}
+          {/* FIXED: Header always visible */}
           <header className="sw-header">
             <div className="sw-header__left">
               {showBack && (
@@ -597,6 +713,7 @@ export default function SupportWidget() {
               </div>
             </div>
 
+            {/* FIXED: Close button always visible */}
             <button
               onClick={() => setOpen(false)}
               className="sw-header__close"
@@ -633,6 +750,9 @@ export default function SupportWidget() {
                       message={m}
                       isUser={m.authorId === activeTicket.userId}
                       API_BASE={API_BASE}
+                      onImageClick={(url, name) =>
+                        setLightboxImage({ url, name })
+                      }
                     />
                   ))}
 
@@ -707,7 +827,7 @@ export default function SupportWidget() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.pdf,.doc,.docx"
                   hidden
                   onChange={handleFileSelect}
                 />
@@ -855,6 +975,15 @@ export default function SupportWidget() {
             )}
           </div>
         </div>
+      )}
+
+      {/* FIXED: Image Lightbox with download */}
+      {lightboxImage && (
+        <ImageLightbox
+          imageUrl={lightboxImage.url}
+          fileName={lightboxImage.name}
+          onClose={() => setLightboxImage(null)}
+        />
       )}
     </>
   );
