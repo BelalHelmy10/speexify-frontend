@@ -24,15 +24,13 @@ export default function AttendancePanel({
   sessionStartAt,
   onUpdate,
 }) {
-  const toast = useToast();
+  const { toast } = useToast();
   const [localParticipants, setLocalParticipants] = useState(participants);
-  const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [saving, setSaving] = useState(null); // Track which participant is being saved
 
   // Sync local state when prop changes
   useEffect(() => {
     setLocalParticipants(participants);
-    setHasChanges(false);
   }, [participants]);
 
   // Check if session has started
@@ -40,59 +38,103 @@ export default function AttendancePanel({
   const canMarkAttendance =
     isTeacher && sessionStarted && sessionStatus !== "canceled";
 
-  // Handle status change for a participant
-  const handleStatusChange = useCallback((userId, newStatus) => {
+  // ✅ FIXED: Handle status change with IMMEDIATE save
+  const handleStatusChange = useCallback(
+    async (userId, newStatus) => {
+      // Optimistic update - update UI immediately
+      setLocalParticipants((prev) =>
+        prev.map((p) =>
+          p.userId === userId || p.user?.id === userId
+            ? { ...p, status: newStatus, attendedAt: new Date().toISOString() }
+            : p
+        )
+      );
+
+      try {
+        setSaving(userId);
+
+        // Save to backend
+        await api.post(`/sessions/${sessionId}/attendance`, {
+          participants: [
+            {
+              userId,
+              status: newStatus,
+            },
+          ],
+        });
+
+        toast?.success?.(
+          `Marked as ${
+            newStatus === "attended"
+              ? "attended"
+              : newStatus === "no_show"
+              ? "no show"
+              : "excused"
+          }`
+        );
+
+        // ✅ KEY FIX: Refresh data from server
+        if (typeof onUpdate === "function") {
+          onUpdate();
+        }
+      } catch (err) {
+        console.error("Failed to save attendance:", err);
+        toast?.error?.(
+          err?.response?.data?.error || "Failed to save attendance"
+        );
+
+        // Revert optimistic update on error
+        setLocalParticipants(participants);
+      } finally {
+        setSaving(null);
+      }
+    },
+    [sessionId, participants, toast, onUpdate]
+  );
+
+  // Mark all as attended
+  const markAllAttended = useCallback(async () => {
+    const activeUserIds = localParticipants
+      .filter((p) => p.status !== "canceled")
+      .map((p) => p.userId || p.user?.id);
+
+    // Optimistic update
     setLocalParticipants((prev) =>
       prev.map((p) =>
-        p.userId === userId || p.user?.id === userId
-          ? { ...p, status: newStatus }
+        p.status !== "canceled"
+          ? { ...p, status: "attended", attendedAt: new Date().toISOString() }
           : p
       )
     );
-    setHasChanges(true);
-  }, []);
-
-  // Mark all as attended
-  const markAllAttended = useCallback(() => {
-    setLocalParticipants((prev) =>
-      prev.map((p) =>
-        p.status !== "canceled" ? { ...p, status: "attended" } : p
-      )
-    );
-    setHasChanges(true);
-  }, []);
-
-  // Save attendance
-  const saveAttendance = async () => {
-    if (!hasChanges || saving) return;
 
     try {
-      setSaving(true);
-
-      const attendanceData = localParticipants
-        .filter((p) => p.status !== "canceled")
-        .map((p) => ({
-          userId: p.userId || p.user?.id,
-          status: p.status,
-        }));
+      setSaving("all");
 
       await api.post(`/sessions/${sessionId}/attendance`, {
-        participants: attendanceData,
+        participants: activeUserIds.map((userId) => ({
+          userId,
+          status: "attended",
+        })),
       });
 
-      toast?.success?.("Attendance saved successfully");
-      setHasChanges(false);
+      toast?.success?.("All marked as attended");
 
+      // Refresh from server
       if (typeof onUpdate === "function") {
         onUpdate();
       }
     } catch (err) {
-      console.error("Failed to save attendance:", err);
-      toast?.error?.(err?.response?.data?.error || "Failed to save attendance");
+      console.error("Failed to mark all attended:", err);
+      toast?.error?.(
+        err?.response?.data?.error || "Failed to mark all attended"
+      );
+
+      // Revert on error
+      setLocalParticipants(participants);
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
-  };
+  }, [localParticipants, sessionId, participants, toast, onUpdate]);
 
   // Status options
   const statusOptions = [
@@ -152,9 +194,9 @@ export default function AttendancePanel({
             type="button"
             className="attendance-panel__mark-all"
             onClick={markAllAttended}
-            disabled={saving}
+            disabled={saving === "all"}
           >
-            ✓ Mark All Attended
+            {saving === "all" ? "Saving..." : "✓ Mark All Attended"}
           </button>
         )}
       </div>
@@ -181,6 +223,7 @@ export default function AttendancePanel({
             const userId = p.userId || p.user?.id;
             const currentStatus = p.status;
             const config = getStatusConfig(currentStatus);
+            const isSaving = saving === userId;
 
             return (
               <div key={userId} className="attendance-panel__item">
@@ -223,10 +266,10 @@ export default function AttendancePanel({
                                 : undefined,
                           }}
                           onClick={() => handleStatusChange(userId, opt.value)}
-                          disabled={saving}
+                          disabled={isSaving}
                           title={opt.label}
                         >
-                          {opt.icon}
+                          {isSaving ? "..." : opt.icon}
                         </button>
                       ))}
                   </div>
@@ -260,19 +303,6 @@ export default function AttendancePanel({
               <span className="attendance-panel__status-badge">✗ Canceled</span>
             </div>
           ))}
-        </div>
-      )}
-
-      {canMarkAttendance && hasChanges && (
-        <div className="attendance-panel__actions">
-          <button
-            type="button"
-            className="attendance-panel__save"
-            onClick={saveAttendance}
-            disabled={saving}
-          >
-            {saving ? "Saving..." : "Save Attendance"}
-          </button>
         </div>
       )}
     </div>
