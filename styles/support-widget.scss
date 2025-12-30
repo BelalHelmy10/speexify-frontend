@@ -2,17 +2,22 @@
 // FIXED VERSION - Proper positioning, no navbar overlap, images work, files download correctly
 
 // ============================================================================
-// Variables
+// Theme tokens
 // ============================================================================
-$sw-primary: #6366f1;
-$sw-primary-hover: #4f46e5;
-$sw-primary-active: #4338ca;
+// Use your site-wide palette instead of widget-only colors.
+// (Assumes this file lives next to _variables.scss in /styles)
+@use "./variables" as *;
 
-$sw-surface: #ffffff;
-$sw-border: #e5e7eb;
-$sw-text: #111827;
-$sw-text-secondary: #6b7280;
-$sw-text-light: #9ca3af;
+// Map widget tokens -> existing theme variables
+$sw-primary: $brand;
+$sw-primary-hover: $brand-dark;
+$sw-primary-active: $brand-ink;
+
+$sw-surface: $card-bg;
+$sw-border: $border;
+$sw-text: $text-primary;
+$sw-text-secondary: $text-secondary;
+$sw-text-light: $text-muted;
 
 $sw-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
 $sw-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
@@ -75,7 +80,7 @@ $sw-z-lightbox: 10000;
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    background: #ef4444;
+    background: $error;
     color: white;
     font-size: 11px;
     font-weight: 600;
@@ -234,7 +239,7 @@ $sw-z-lightbox: 10000;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #10b981;
+  background: $success;
   animation: sw-pulse 2s ease-in-out infinite;
 }
 
@@ -325,7 +330,7 @@ $sw-z-lightbox: 10000;
 
   &--staff {
     align-self: flex-start;
-    background: #f3f4f6;
+    background: $bg-secondary;
     color: $sw-text;
     border-bottom-left-radius: 4px;
   }
@@ -431,7 +436,7 @@ $sw-z-lightbox: 10000;
 .sw-typing {
   align-self: flex-start;
   padding: 10px 14px;
-  background: #f3f4f6;
+  background: $bg-secondary;
   border-radius: $sw-radius;
   font-size: 13px;
   color: $sw-text-secondary;
@@ -860,8 +865,8 @@ $sw-z-lightbox: 10000;
     }
 
     &--resolved {
-      background: rgba(#10b981, 0.15);
-      color: #10b981;
+      background: rgba($success, 0.15);
+      color: $success;
     }
   }
 
@@ -886,10 +891,10 @@ $sw-z-lightbox: 10000;
 
 .sw-error {
   padding: 10px 12px;
-  background: rgba(#ef4444, 0.1);
-  border: 1px solid rgba(#ef4444, 0.3);
+  background: rgba($error, 0.1);
+  border: 1px solid rgba($error, 0.3);
   border-radius: $sw-radius-sm;
-  color: #ef4444;
+  color: $error;
   font-size: 13px;
 
   display: flex;
@@ -921,7 +926,7 @@ $sw-z-lightbox: 10000;
 
 .sw-badge {
   padding: 2px 8px;
-  background: #ef4444;
+  background: $error;
   color: white;
   font-size: 11px;
   font-weight: 600;
