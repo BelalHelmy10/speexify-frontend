@@ -19,18 +19,83 @@ import LocaleShell from "./LocaleShell";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: { default: "Speexify", template: "%s — Speexify" },
-  description:
-    "Welcome to Speexify — personalized language and communication coaching for teams and professionals.",
   metadataBase: new URL("https://speexify.com"),
+
+  // Basic SEO
+  title: {
+    default: "Speexify — Personalized Language & Communication Coaching",
+    template: "%s — Speexify",
+  },
+  description:
+    "Personalized language and communication coaching for teams and professionals. Improve your speaking skills, communication confidence, and professional presence with expert guidance.",
+  keywords: [
+    "language coaching",
+    "communication coaching",
+    "speech training",
+    "professional communication",
+    "team communication",
+    "public speaking",
+    "language learning",
+    "business communication",
+  ],
+
+  // Authors and creators
+  authors: [{ name: "Speexify" }],
+  creator: "Speexify",
+  publisher: "Speexify",
+
+  // Open Graph (Facebook, LinkedIn, WhatsApp)
   openGraph: {
-    title: "Speexify",
+    type: "website",
+    locale: "en_US",
+    url: "https://speexify.com",
+    title: "Speexify — Personalized Language & Communication Coaching",
     description:
       "Personalized language and communication coaching for teams and professionals.",
-    url: "/",
     siteName: "Speexify",
-    type: "website",
+    images: [
+      {
+        url: "/og-image.png", // Create this: 1200x630px
+        width: 1200,
+        height: 630,
+        alt: "Speexify - Language and Communication Coaching",
+      },
+    ],
   },
+
+  // Twitter Card
+  twitter: {
+    card: "summary_large_image",
+    title: "Speexify — Personalized Language & Communication Coaching",
+    description:
+      "Personalized language and communication coaching for teams and professionals.",
+    creator: "@YOUR_HANDLE_HERE",
+    images: ["/twitter-image.png"],
+  },
+
+  // Robots directives
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+
+  // Canonical URL
+  alternates: {
+    canonical: "https://speexify.com",
+  },
+
+  // Uncomment after you verify with each service:
+  // verification: {
+  //   google: "your-google-verification-code",
+  //   yandex: "your-yandex-verification-code",
+  // },
 };
 
 export default async function RootLayout({ children }) {
@@ -42,6 +107,14 @@ export default async function RootLayout({ children }) {
       <head>
         {/* Jitsi external API for embedded meetings */}
         <script src="https://meet.speexify.com/external_api.js"></script>
+
+        {/* Favicons */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+        {/* Theme color for mobile browsers */}
+        <meta name="theme-color" content="#0284c7" />
       </head>
       <body>
         <LocaleShell>
