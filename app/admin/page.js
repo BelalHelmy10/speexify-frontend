@@ -609,12 +609,11 @@ function Admin() {
     try {
       await api.post(`/admin/impersonate/${u.id}`);
       clearCsrfToken();
-
-      // Show toast with user info
       toast.success(`Now viewing as ${u.name || u.email}`);
 
-      // Redirect to the dashboard to see the impersonated user's view
-      router.push("/dashboard");
+      // IMPORTANT: Use window.location.href for FULL page navigation
+      // This forces useAuth to re-fetch from /auth/me with the new session
+      window.location.href = "/dashboard";
     } catch (e) {
       toast.error(e.response?.data?.error || "Failed to impersonate");
     }
