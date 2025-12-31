@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback, memo } from "react";
+import { usePathname } from "next/navigation";
 import {
   MessageCircle,
   X,
@@ -207,6 +208,11 @@ const ImageLightbox = memo(({ imageUrl, fileName, onClose }) => {
 ImageLightbox.displayName = "ImageLightbox";
 
 export default function SupportWidget() {
+  const pathname = usePathname();
+
+  // Hide support widget in classroom
+  const isClassroom = pathname?.startsWith("/classroom");
+
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
   const [open, setOpen] = useState(false);
@@ -670,6 +676,11 @@ export default function SupportWidget() {
   }, [open, view, category]);
 
   const showBack = activeTicket || category || view === "list";
+
+  // Don't render support widget in classroom
+  if (isClassroom) {
+    return null;
+  }
 
   return (
     <>
