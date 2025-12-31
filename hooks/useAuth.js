@@ -38,8 +38,15 @@ export function AuthProvider({ children, initialUser = null }) {
   const refresh = useCallback(async () => {
     safeSet(() => setChecking(true));
     try {
-      const { data } = await api.get("/auth/me"); // ← rewrite (same-origin + cookies)
-      safeSet(() => setUser(data?.user ?? null));
+      const { data } = await api.get("/auth/me");
+
+      // When impersonating, backend returns { user: impersonatedUser, admin: realAdmin }
+      // Preserve the admin info for permission checks
+      if (data?.admin && data?.user?._impersonating) {
+        safeSet(() => setUser({ ...data.user, _adminRole: data.admin.role }));
+      } else {
+        safeSet(() => setUser(data?.user ?? null));
+      }
     } catch (e) {
       if (process.env.NODE_ENV !== "production") {
         // eslint-disable-next-line no-console
@@ -56,7 +63,7 @@ export function AuthProvider({ children, initialUser = null }) {
 
   const logout = useCallback(async () => {
     try {
-      await api.post("/auth/logout"); // ← rewrite (clears speexify.sid)
+      await api.post("/auth/logout");
     } catch (e) {
       if (process.env.NODE_ENV !== "production") {
         // eslint-disable-next-line no-console
