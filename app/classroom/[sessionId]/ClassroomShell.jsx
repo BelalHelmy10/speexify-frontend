@@ -734,9 +734,9 @@ export default function ClassroomShell({
               <ClassroomResourcePicker
                 tracks={tracks}
                 selectedResourceId={selectedResourceId}
-                onChangeResourceId={handleResourceChange}
+                onChangeResourceId={handleChangeResourceId} // ✅ CORRECT NAME
                 isTeacher={isTeacher}
-                sessionId={sessionId} // ← ADD THIS
+                sessionId={sessionId}
               />
             </div>
           </div>
