@@ -609,12 +609,12 @@ function Admin() {
     try {
       await api.post(`/admin/impersonate/${u.id}`);
       clearCsrfToken();
-      toast.success(`Viewing as ${u.email}`);
+      toast.success(
+        `Now viewing as ${u.email}. Navigate to Dashboard or Calendar to see their view.`
+      );
 
-      // Wait a moment for the toast to show, then do a full page reload
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 500);
+      // Reload the page to refresh auth and show banner
+      window.location.reload();
     } catch (e) {
       toast.error(e.response?.data?.error || "Failed to impersonate");
     }
@@ -623,8 +623,8 @@ function Admin() {
     try {
       await api.post(`/admin/impersonate/stop`);
       clearCsrfToken();
-      toast.success("Back to admin");
-      window.location.href = "/admin"; // ← This redirect is already there!
+      toast.success("Stopped viewing as user");
+      window.location.reload(); // ← Stays on current page
     } catch (e) {
       toast.error(e?.response?.data?.error || "Failed to stop impersonation");
     }
