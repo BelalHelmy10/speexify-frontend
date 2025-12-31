@@ -11,8 +11,8 @@ import { trackEvent } from "@/lib/analytics";
 function Admin() {
   const { toast } = useToast();
   const { confirmModal } = useConfirm();
-  const { user, checking, refresh } = useAuth();
-  const isAdmin = user?.role === "admin" || user?._adminRole === "admin";
+  const { user, checking } = useAuth();
+  const isAdmin = user?.role === "admin";
   const router = useRouter();
   const [status, setStatus] = useState("");
   const [users, setUsers] = useState([]);
@@ -609,13 +609,12 @@ function Admin() {
     try {
       await api.post(`/admin/impersonate/${u.id}`);
       clearCsrfToken();
-
-      // Refresh auth to get the impersonated user data
-      await refresh();
-
       toast.success(
         `Now viewing as ${u.email}. Navigate to Dashboard or Calendar to see their view.`
       );
+
+      // Reload the page to refresh auth and show banner
+      window.location.reload();
     } catch (e) {
       toast.error(e.response?.data?.error || "Failed to impersonate");
     }
@@ -624,11 +623,8 @@ function Admin() {
     try {
       await api.post(`/admin/impersonate/stop`);
       clearCsrfToken();
-
-      // Refresh auth to get back to admin view
-      await refresh();
-
       toast.success("Stopped viewing as user");
+      window.location.reload(); // ← Stays on current page
     } catch (e) {
       toast.error(e?.response?.data?.error || "Failed to stop impersonation");
     }
@@ -751,103 +747,6 @@ function Admin() {
   // ─────────────────────────────────────────────
   return (
     <div className="adm-admin-modern">
-      {/* ═══════════════════════════════════════════════════════════════════
-          IMPERSONATION BANNER
-          ═══════════════════════════════════════════════════════════════════ */}
-      {user?._impersonating && (
-        <div
-          style={{
-            backgroundColor: "#fef3c7",
-            borderBottom: "2px solid #f59e0b",
-            padding: "16px 24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "20px",
-            fontWeight: "500",
-            color: "#92400e",
-            position: "sticky",
-            top: 0,
-            zIndex: 100,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              flex: 1,
-            }}
-          >
-            <span style={{ fontSize: "24px" }}>👤</span>
-            <div>
-              <div style={{ fontSize: "14px", fontWeight: "600" }}>
-                Viewing as: <strong>{user.name || user.email}</strong>
-              </div>
-              <div style={{ fontSize: "12px", opacity: 0.8, marginTop: "2px" }}>
-                Role: {user.role} • Navigate to see their view
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <Link
-              href="/dashboard"
-              style={{
-                backgroundColor: "white",
-                color: "#92400e",
-                border: "1px solid #f59e0b",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                textDecoration: "none",
-                fontSize: "14px",
-                fontWeight: "600",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              📊 Dashboard
-            </Link>
-            <Link
-              href="/calendar"
-              style={{
-                backgroundColor: "white",
-                color: "#92400e",
-                border: "1px solid #f59e0b",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                textDecoration: "none",
-                fontSize: "14px",
-                fontWeight: "600",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              📅 Calendar
-            </Link>
-            <button
-              onClick={stopImpersonate}
-              style={{
-                backgroundColor: "#f59e0b",
-                color: "white",
-                border: "none",
-                padding: "8px 18px",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontWeight: "600",
-                fontSize: "14px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Stop Viewing
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="adm-admin-header">
         <div className="adm-admin-header__content">
           <h1 className="adm-admin-title">
@@ -913,11 +812,9 @@ function Admin() {
                 onChange={(e) => setUsersQ(e.target.value)}
               />
             </div>
-            {user?._impersonating && (
-              <button className="adm-btn-secondary" onClick={stopImpersonate}>
-                Stop Viewing
-              </button>
-            )}
+            <button className="adm-btn-secondary" onClick={stopImpersonate}>
+              Return to admin
+            </button>
           </div>
         </div>
         <div className="adm-data-table">

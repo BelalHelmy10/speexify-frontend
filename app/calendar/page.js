@@ -1,14 +1,14 @@
-// web/src/pages/Calendar.jsx
+// web/src/pages/Calendar.jsx (or app/calendar/page.js)
 // ─────────────────────────────────────────────────────────────────────────────
 // Premium Calendar Experience with Modern Aesthetics & Smooth Interactions
-// Left: Enhanced mini calendar with stats
-// Right: Polished React Big Calendar with gradient events
+// FIXED: Added impersonation support with banner
 // ─────────────────────────────────────────────────────────────────────────────
 
 "use client";
 
 import { useCallback, useMemo, useRef, useState, useEffect } from "react";
-import api from "@/lib/api";
+import Link from "next/link";
+import api, { clearCsrfToken } from "@/lib/api";
 import MiniCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import useAuth from "@/hooks/useAuth";
@@ -28,6 +28,7 @@ import {
 
 import { useRouter, usePathname } from "next/navigation";
 import { getDictionary, t } from "@/app/i18n";
+import { useToast } from "@/components/ToastProvider";
 
 // date-fns localizer for RBC
 const locales = {};
@@ -39,7 +40,6 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Map backend sessions → RBC events
 // Map backend sessions → RBC events
 const toRbcEvents = (arr = []) =>
   arr.map((s) => {
@@ -129,6 +129,17 @@ const useCountdown = (startAt, endAt, labels = {}) => {
   return ended;
 };
 
+// time window in which user can "join"
+const canJoin = (startAt, endAt, windowMins = 15) => {
+  const now = new Date();
+  const start = new Date(startAt);
+  const end = endAt
+    ? new Date(endAt)
+    : new Date(start.getTime() + 60 * 60 * 1000);
+  const early = new Date(start.getTime() - windowMins * 60 * 1000);
+  return now >= early && now <= end;
+};
+
 function SessionRow({
   s,
   timezone,
@@ -137,6 +148,7 @@ function SessionRow({
   isUpcoming = true,
   isTeacher = false,
   isAdmin = false,
+  isImpersonating = false,
   dict,
   prefix = "",
 }) {
@@ -153,15 +165,15 @@ function SessionRow({
   const count =
     typeof s.participantCount === "number" ? s.participantCount : null;
 
-  const canReschedule = isTeacher || isAdmin;
+  const canReschedule = isTeacher || isAdmin || isImpersonating;
 
   const cancelLabel =
-    isGroup && !isTeacher && !isAdmin
+    isGroup && !isTeacher && !isAdmin && !isImpersonating
       ? t(dict, "session_leave") || "Leave session"
       : t(dict, "session_cancel") || "Cancel";
 
   const cancelTitle =
-    isGroup && !isTeacher && !isAdmin
+    isGroup && !isTeacher && !isAdmin && !isImpersonating
       ? t(dict, "session_leave_title") || "Leave this group session"
       : t(dict, "session_cancel_title") || "Cancel session";
 
@@ -258,19 +270,86 @@ function SessionRow({
   );
 }
 
-// time window in which user can "join"
-const canJoin = (startAt, endAt, windowMins = 15) => {
-  const now = new Date();
-  const start = new Date(startAt);
-  const end = endAt
-    ? new Date(endAt)
-    : new Date(start.getTime() + 60 * 60 * 1000);
-  const early = new Date(start.getTime() - windowMins * 60 * 1000);
-  return now >= early && now <= end;
-};
+/* ═══════════════════════════════════════════════════════════════════════════
+   IMPERSONATION BANNER COMPONENT
+   ═══════════════════════════════════════════════════════════════════════════ */
+function ImpersonationBanner({ user, onStop }) {
+  return (
+    <div
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 1000,
+        background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+        color: "#fff",
+        padding: "12px 24px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "16px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+          <path d="M12 14l-3-3m3 3l3-3" />
+        </svg>
+        <div>
+          <strong style={{ display: "block", fontSize: "14px" }}>
+            👁️ Viewing as: {user?.name || user?.email}
+          </strong>
+          <span style={{ fontSize: "12px", opacity: 0.9 }}>
+            Role: {user?.role} • You are impersonating this user
+          </span>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: "12px" }}>
+        <Link
+          href="/dashboard"
+          style={{
+            background: "rgba(255,255,255,0.2)",
+            color: "#fff",
+            padding: "8px 16px",
+            borderRadius: "8px",
+            textDecoration: "none",
+            fontSize: "14px",
+            fontWeight: "500",
+          }}
+        >
+          📊 View Dashboard
+        </Link>
+        <button
+          onClick={onStop}
+          style={{
+            background: "#fff",
+            color: "#d97706",
+            border: "none",
+            padding: "8px 16px",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: "600",
+            fontSize: "14px",
+          }}
+        >
+          ✕ Stop Impersonating
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function CalendarPage() {
   const { user, checking } = useAuth();
+  const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -278,12 +357,33 @@ export default function CalendarPage() {
   const prefix = locale === "ar" ? "/ar" : "";
   const dict = useMemo(() => getDictionary(locale, "calendar"), [locale]);
 
+  // ─────────────────────────────────────────────
+  // IMPERSONATION DETECTION
+  // ─────────────────────────────────────────────
+  const isImpersonating = !!user?._impersonating;
+  const realAdminRole = user?._adminRole;
+
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState("week");
   const calRef = useRef(null);
+
+  // ─────────────────────────────────────────────
+  // STOP IMPERSONATION HANDLER
+  // ─────────────────────────────────────────────
+  const handleStopImpersonate = async () => {
+    try {
+      await api.post("/admin/impersonate/stop");
+      clearCsrfToken();
+      toast.success("Stopped viewing as user");
+      router.push("/admin");
+      setTimeout(() => window.location.reload(), 100);
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Failed to stop impersonation");
+    }
+  };
 
   // Fetch sessions for a range
   const fetchEvents = useCallback(async (startISO, endISO) => {
@@ -364,7 +464,6 @@ export default function CalendarPage() {
     return { style, className: isCanceled ? "ev--canceled" : "ev--scheduled" };
   }, []);
 
-  // Custom event component with elegant icon (uses translated default title)
   // Custom event component with group + seats
   const EventComp = ({ event }) => {
     const isGroup = !!event?.isGroup;
@@ -414,117 +513,176 @@ export default function CalendarPage() {
     );
 
   return (
-    <div className="calendar-premium-container">
-      {/* Animated gradient background */}
-      <div className="calendar-bg-gradient"></div>
-
-      {/* Header Section */}
-      <div className="calendar-header">
-        <div className="calendar-header-content">
-          <h1 className="calendar-title">
-            <span className="calendar-icon">📅</span>
-            {t(dict, "title")}
-          </h1>
-          <p className="calendar-subtitle">{t(dict, "subtitle")}</p>
-        </div>
-      </div>
-
-      {events.length === 0 && (
-        <p className="calendar-empty">{t(dict, "empty")}</p>
-      )}
-      {error && (
-        <div className="calendar-error-banner">
-          <span className="error-icon">⚠️</span>
-          <span>{error}</span>
-        </div>
+    <>
+      {/* ═══════════════════════════════════════════════════════════════════
+          IMPERSONATION BANNER - Shows when admin is viewing as another user
+          ═══════════════════════════════════════════════════════════════════ */}
+      {isImpersonating && (
+        <ImpersonationBanner user={user} onStop={handleStopImpersonate} />
       )}
 
-      <div className="calendar-two-pane">
-        <div className="calendar-two-pane__wrap">
-          {/* Left: Mini Calendar Sidebar */}
-          <div className="calendar-two-pane__left">
-            <div className="mini-cal-wrapper">
-              <div className="mini-cal-header">
-                <h3 className="mini-cal-title">{t(dict, "quick_nav")}</h3>
-                <div className="mini-cal-month">{currentMonthYear}</div>
-              </div>
+      <div className="calendar-premium-container">
+        {/* Animated gradient background */}
+        <div className="calendar-bg-gradient"></div>
 
-              <MiniCalendar
-                value={selectedDate}
-                onChange={onMiniChange}
-                showNeighboringMonth={false}
-                next2Label={null}
-                prev2Label={null}
-                className="mini-cal"
-              />
+        {/* Header Section */}
+        <div className="calendar-header">
+          <div className="calendar-header-content">
+            <h1 className="calendar-title">
+              <span className="calendar-icon">📅</span>
+              {t(dict, "title")}
+            </h1>
+            <p className="calendar-subtitle">
+              {t(dict, "subtitle")}
+              {isImpersonating && (
+                <span
+                  style={{
+                    color: "#d97706",
+                    marginLeft: "8px",
+                    fontWeight: "500",
+                  }}
+                >
+                  • Viewing {user?.name || user?.email}'s calendar
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
 
-              <div className="mini-legend">
-                <div className="legend-item">
-                  <span className="legend-dot legend-dot--scheduled"></span>
-                  <span className="legend-text">
-                    {t(dict, "legend_scheduled")}
-                  </span>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-dot legend-dot--canceled"></span>
-                  <span className="legend-text">
-                    {t(dict, "legend_canceled")}
-                  </span>
-                </div>
-              </div>
+        {events.length === 0 && (
+          <p className="calendar-empty">{t(dict, "empty")}</p>
+        )}
+        {error && (
+          <div className="calendar-error-banner">
+            <span className="error-icon">⚠️</span>
+            <span>{error}</span>
+          </div>
+        )}
 
-              {/* Stats Card */}
-              <div className="mini-stats-card">
-                <div className="stat-item">
-                  <div className="stat-value">{scheduledCount}</div>
-                  <div className="stat-label">{t(dict, "stats_upcoming")}</div>
+        <div className="calendar-two-pane">
+          <div className="calendar-two-pane__wrap">
+            {/* Left: Mini Calendar Sidebar */}
+            <div className="calendar-two-pane__left">
+              <div className="mini-cal-wrapper">
+                <div className="mini-cal-header">
+                  <h3 className="mini-cal-title">{t(dict, "quick_nav")}</h3>
+                  <div className="mini-cal-month">{currentMonthYear}</div>
                 </div>
-                <div className="stat-divider"></div>
-                <div className="stat-item">
-                  <div className="stat-value">{canceledCount}</div>
-                  <div className="stat-label">{t(dict, "stats_canceled")}</div>
+
+                <MiniCalendar
+                  value={selectedDate}
+                  onChange={onMiniChange}
+                  showNeighboringMonth={false}
+                  next2Label={null}
+                  prev2Label={null}
+                  className="mini-cal"
+                />
+
+                <div className="mini-legend">
+                  <div className="legend-item">
+                    <span className="legend-dot legend-dot--scheduled"></span>
+                    <span className="legend-text">
+                      {t(dict, "legend_scheduled")}
+                    </span>
+                  </div>
+                  <div className="legend-item">
+                    <span className="legend-dot legend-dot--canceled"></span>
+                    <span className="legend-text">
+                      {t(dict, "legend_canceled")}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Stats Card */}
+                <div className="mini-stats-card">
+                  <div className="stat-item">
+                    <div className="stat-value">{scheduledCount}</div>
+                    <div className="stat-label">
+                      {t(dict, "stats_upcoming")}
+                    </div>
+                  </div>
+                  <div className="stat-divider"></div>
+                  <div className="stat-item">
+                    <div className="stat-value">{canceledCount}</div>
+                    <div className="stat-label">
+                      {t(dict, "stats_canceled")}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Impersonation info card */}
+                {isImpersonating && (
+                  <div
+                    style={{
+                      marginTop: "16px",
+                      padding: "12px",
+                      background: "#fef3c7",
+                      borderRadius: "8px",
+                      border: "1px solid #f59e0b",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#92400e",
+                        fontWeight: "600",
+                      }}
+                    >
+                      👁️ Admin Preview
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#a16207",
+                        marginTop: "4px",
+                      }}
+                    >
+                      Viewing {user?.role}'s calendar as admin
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Right: Main Calendar */}
-          <div className="calendar-two-pane__right">
-            <BigCalendar
-              ref={calRef}
-              localizer={localizer}
-              date={currentDate}
-              view={view}
-              onView={(v) => setView(v)}
-              onNavigate={(d) => setCurrentDate(d)}
-              onRangeChange={handleRangeChange}
-              onSelectEvent={onSelectEvent}
-              events={events}
-              startAccessor="start"
-              endAccessor="end"
-              components={components}
-              eventPropGetter={eventPropGetter}
-              views={["month", "week", "day", "agenda"]}
-              defaultView="week"
-              drilldownView="day"
-              popup
-              step={30}
-              timeslots={2}
-              min={new Date(1970, 1, 1, 0, 0, 0)}
-              max={new Date(1970, 1, 1, 23, 59, 59)}
-              scrollToTime={new Date(1970, 1, 1, 8, 0, 0)}
-              formats={{
-                dayFormat: (date, culture, lzr) => lzr.format(date, "EEE d"),
-                weekdayFormat: (date, culture, lzr) => lzr.format(date, "EEEE"),
-                dayHeaderFormat: (date, culture, lzr) =>
-                  lzr.format(date, "EEEE, MMMM d"),
-              }}
-              style={{ height: 800 }}
-              toolbar
-            />
+            {/* Right: Main Calendar */}
+            <div className="calendar-two-pane__right">
+              <BigCalendar
+                ref={calRef}
+                localizer={localizer}
+                date={currentDate}
+                view={view}
+                onView={(v) => setView(v)}
+                onNavigate={(d) => setCurrentDate(d)}
+                onRangeChange={handleRangeChange}
+                onSelectEvent={onSelectEvent}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                components={components}
+                eventPropGetter={eventPropGetter}
+                views={["month", "week", "day", "agenda"]}
+                defaultView="week"
+                drilldownView="day"
+                popup
+                step={30}
+                timeslots={2}
+                min={new Date(1970, 1, 1, 0, 0, 0)}
+                max={new Date(1970, 1, 1, 23, 59, 59)}
+                scrollToTime={new Date(1970, 1, 1, 8, 0, 0)}
+                formats={{
+                  dayFormat: (date, culture, lzr) => lzr.format(date, "EEE d"),
+                  weekdayFormat: (date, culture, lzr) =>
+                    lzr.format(date, "EEEE"),
+                  dayHeaderFormat: (date, culture, lzr) =>
+                    lzr.format(date, "EEEE, MMMM d"),
+                }}
+                style={{ height: 800 }}
+                toolbar
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
