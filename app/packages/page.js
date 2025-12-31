@@ -71,15 +71,35 @@ function Packages() {
     (async () => {
       let c = null;
 
-      // Try server geo first (best-effort)
+      // 1) Best: client-side IP geo (uses the visitor's IP, not the server)
       try {
-        const r = await fetch("/api/geo");
+        const r = await fetch("https://ipapi.co/json/");
         const j = await r.json();
         c = j?.currency || null;
       } catch {}
 
-      // Fallback: browser locale guess
+      // 2) Fallback: server geo (works on some hosts, but can be server-location-biased)
+      if (!c) {
+        try {
+          const r = await fetch("/api/geo");
+          const j = await r.json();
+          c = j?.currency || null;
+        } catch {}
+      }
+
+      // 3) Fallback: timezone heuristic (helps in Egypt even if browser lang is en-US)
+      if (!c) {
+        try {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          if (tz === "Africa/Cairo") c = "EGP";
+        } catch {}
+      }
+
+      // 4) Last fallback: navigator guess
       if (!c) c = guessCurrencyFromNavigator();
+
+      // 5) Absolute fallback
+      if (!c) c = "EGP";
 
       setCurrency(c);
 
