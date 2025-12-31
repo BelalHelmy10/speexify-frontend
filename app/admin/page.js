@@ -611,11 +611,10 @@ function Admin() {
       clearCsrfToken();
       toast.success(`Viewing as ${u.email}`);
 
-      // Refresh auth context to load the impersonated user
-      await refresh();
-
-      // Redirect to dashboard to see the impersonated user's view
-      router.push("/dashboard");
+      // Wait a moment for the toast to show, then do a full page reload
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 500);
     } catch (e) {
       toast.error(e.response?.data?.error || "Failed to impersonate");
     }
