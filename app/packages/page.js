@@ -6,6 +6,11 @@ import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import "@/styles/packages.scss";
 import { getDictionary, t } from "@/app/i18n";
+import {
+  formatMoney,
+  getRateEGPTo,
+  guessCurrencyFromNavigator,
+} from "@/lib/currency";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
@@ -47,6 +52,10 @@ function Packages() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
+  // Visitor currency (base prices are EGP; we convert to viewer currency)
+  const [currency, setCurrency] = useState("EGP");
+  const [rate, setRate] = useState(1);
+
   // Seats estimator for corporate
   const [seats, setSeats] = useState(15);
 
@@ -55,6 +64,32 @@ function Packages() {
     const p = new URLSearchParams(window.location.search);
     if ((p.get("tab") || "").toLowerCase() === "corporate")
       setTab(AUD.CORPORATE);
+  }, []);
+
+  // Detect viewer currency + FX rate (EGP -> viewer currency)
+  useEffect(() => {
+    (async () => {
+      let c = null;
+
+      // Try server geo first (best-effort)
+      try {
+        const r = await fetch("/api/geo");
+        const j = await r.json();
+        c = j?.currency || null;
+      } catch {}
+
+      // Fallback: browser locale guess
+      if (!c) c = guessCurrencyFromNavigator();
+
+      setCurrency(c);
+
+      try {
+        const fx = await getRateEGPTo(c);
+        setRate(fx || 1);
+      } catch {
+        setRate(1);
+      }
+    })();
   }, []);
 
   // Get current plans based on selection
@@ -251,6 +286,8 @@ function Packages() {
                 audience={tab}
                 dict={dict}
                 locale={locale}
+                currency={currency}
+                rate={rate}
               />
             ))}
           </div>
@@ -517,11 +554,12 @@ function Packages() {
 }
 
 /* Components */
-function PricingCard({ plan, audience, dict, locale }) {
+function PricingCard({ plan, audience, dict, locale, currency, rate }) {
   const {
     title,
     description,
     priceUSD,
+    priceEGP,
     priceType,
     startingAtUSD,
     isPopular,
@@ -534,23 +572,39 @@ function PricingCard({ plan, audience, dict, locale }) {
   const isCorp = audience === AUD.CORPORATE;
   const localePrefix = locale === "ar" ? "/ar" : "";
 
+  // Base price is EGP; support legacy priceUSD if priceEGP isn't provided
+  const baseEGP =
+    typeof priceEGP === "number"
+      ? priceEGP
+      : typeof priceUSD === "number"
+      ? priceUSD
+      : null;
+
   const totalLabel = (() => {
-    if (priceType === "CUSTOM" || (!priceUSD && !startingAtUSD))
+    if (priceType === "CUSTOM" || (!baseEGP && !startingAtUSD))
       return t(dict, "price_custom", "Custom Pricing");
-    if (startingAtUSD && !priceUSD)
+
+    // If you ever use startingAt again, treat startingAtUSD as base EGP too (legacy name)
+    if (startingAtUSD && !baseEGP) {
+      const converted = Math.round(Number(startingAtUSD) * (rate || 1));
       return t(
         dict,
         "price_from",
-        `From $${Number(startingAtUSD).toLocaleString()}`
+        `From ${formatMoney(converted, currency || "EGP", locale)}`
       );
-    if (typeof priceUSD === "number")
-      return `$${Number(priceUSD).toLocaleString()}`;
+    }
+
+    if (typeof baseEGP === "number") {
+      const converted = Math.round(baseEGP * (rate || 1));
+      return formatMoney(converted, currency || "EGP", locale);
+    }
+
     return t(dict, "price_custom", "Custom Pricing");
   })();
 
   const perSessionPrice =
-    typeof priceUSD === "number" && sessionsPerPack
-      ? Math.round(priceUSD / sessionsPerPack)
+    typeof baseEGP === "number" && sessionsPerPack
+      ? Math.round((baseEGP / sessionsPerPack) * (rate || 1))
       : null;
 
   return (
@@ -577,7 +631,8 @@ function PricingCard({ plan, audience, dict, locale }) {
         <div className="ecp-card__value">{totalLabel}</div>
         {perSessionPrice && (
           <div className="ecp-card__sub">
-            ${perSessionPrice}/{t(dict, "label_per_session", "session")}
+            {formatMoney(perSessionPrice, currency || "EGP", locale)}/
+            {t(dict, "label_per_session", "session")}
           </div>
         )}
         {durationMin && !isCorp && (
@@ -655,13 +710,13 @@ function Faq({ q, a }) {
   );
 }
 
-/* Plan Data (fixed decimals to integers where needed) */
+/* Plan Data (EGP base totals; shown in viewer currency via FX) */
 const oneOnOnePlans = [
   {
     id: "1on1-4",
     title: "Starter",
     description: "Perfect for trying out personalized coaching",
-    priceUSD: 240,
+    priceEGP: 800,
     durationMin: 60,
     sessionsPerPack: 4,
     priceType: "BUNDLE",
@@ -673,7 +728,7 @@ const oneOnOnePlans = [
     id: "1on1-12",
     title: "Professional",
     description: "Build lasting skills with consistent practice",
-    priceUSD: 660,
+    priceEGP: 2200,
     durationMin: 60,
     sessionsPerPack: 12,
     priceType: "BUNDLE",
@@ -686,7 +741,7 @@ const oneOnOnePlans = [
     id: "1on1-24",
     title: "Intensive",
     description: "Accelerate your progress with deep practice",
-    priceUSD: 1248,
+    priceEGP: 3800,
     durationMin: 60,
     sessionsPerPack: 24,
     priceType: "BUNDLE",
@@ -699,7 +754,7 @@ const oneOnOnePlans = [
     id: "1on1-48",
     title: "Master",
     description: "Maximum commitment for transformation",
-    priceUSD: 2304,
+    priceEGP: 6800,
     durationMin: 60,
     sessionsPerPack: 48,
     priceType: "BUNDLE",
@@ -715,7 +770,7 @@ const groupPlans = [
     id: "group-4",
     title: "Group Starter",
     description: "Learn together in a small, focused group",
-    priceUSD: 160,
+    priceEGP: 600,
     durationMin: 90,
     sessionsPerPack: 4,
     priceType: "BUNDLE",
@@ -727,7 +782,7 @@ const groupPlans = [
     id: "group-12",
     title: "Group Professional",
     description: "Consistent group practice for steady growth",
-    priceUSD: 420,
+    priceEGP: 1600,
     durationMin: 90,
     sessionsPerPack: 12,
     priceType: "BUNDLE",
@@ -740,7 +795,7 @@ const groupPlans = [
     id: "group-24",
     title: "Group Intensive",
     description: "Immersive collaborative learning experience",
-    priceUSD: 768,
+    priceEGP: 2800,
     durationMin: 90,
     sessionsPerPack: 24,
     priceType: "BUNDLE",
@@ -753,7 +808,7 @@ const groupPlans = [
     id: "group-48",
     title: "Group Master",
     description: "Complete transformation through group dynamics",
-    priceUSD: 1392,
+    priceEGP: 5000,
     durationMin: 90,
     sessionsPerPack: 48,
     priceType: "BUNDLE",

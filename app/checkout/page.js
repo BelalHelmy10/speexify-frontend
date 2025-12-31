@@ -102,8 +102,9 @@ export default function CheckoutPage() {
         return;
       }
 
-      const USD_TO_EGP_RATE = 50;
-      const amountEGP = pkg.priceUSD * USD_TO_EGP_RATE;
+      // pkg.priceUSD is now treated as "base price in EGP" until you rename the field in DB/schema
+      const amountEGP = pkg.priceUSD;
+
       const amountCents = Math.round(amountEGP * 100);
 
       const nameParts = (user.name || "User").split(" ");
