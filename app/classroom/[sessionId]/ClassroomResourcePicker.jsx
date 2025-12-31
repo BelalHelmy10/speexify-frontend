@@ -1,7 +1,7 @@
 // app/classroom/[sessionId]/ClassroomResourcePicker.jsx
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { buildPickerIndex } from "./classroomHelpers";
 
 /**
@@ -9,20 +9,46 @@ import { buildPickerIndex } from "./classroomHelpers";
  * Dropdowns become:
  *   Course (track) -> Book -> CEFR (A1.1 / A1.2 / ...) -> Unit -> Resources
  *
- * IMPORTANT:
- * This component expects buildPickerIndex(tracks) to return these NEW keys:
- *   - subLevelOptionsByTrackBookKey: { "<trackId>:<bookId>": [{ value, label, code? }, ...] }
- *   - unitOptionsByBookSubLevelKey: { "<bookId>:<subLevelId>": [{ value, label }, ...] }
- *
- * If you haven't updated buildPickerIndex yet, CEFR dropdown will show "—" (empty),
- * which is correct (because this component won't guess CEFR from book levels).
+ * NEW: Picker state is persisted to sessionStorage so reopening the picker
+ * within the same classroom session restores the last navigation position.
  */
+
+// ─────────────────────────────────────────────────────────────
+// Helper: Session storage for picker state
+// ─────────────────────────────────────────────────────────────
+function getPickerStorageKey(sessionId) {
+  return `speexify_classroom_picker_${sessionId}`;
+}
+
+function loadPickerState(sessionId) {
+  if (typeof window === "undefined" || !sessionId) return null;
+  try {
+    const raw = sessionStorage.getItem(getPickerStorageKey(sessionId));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function savePickerState(sessionId, state) {
+  if (typeof window === "undefined" || !sessionId) return;
+  try {
+    sessionStorage.setItem(
+      getPickerStorageKey(sessionId),
+      JSON.stringify(state)
+    );
+  } catch {
+    // ignore storage errors
+  }
+}
 
 export default function ClassroomResourcePicker({
   tracks,
   selectedResourceId,
   onChangeResourceId,
   isTeacher,
+  sessionId, // ← NEW PROP: pass the classroom session ID
 }) {
   const index = useMemo(() => buildPickerIndex(tracks || []), [tracks]);
 
@@ -30,23 +56,49 @@ export default function ClassroomResourcePicker({
     trackOptions = [],
     booksByTrackId = {},
     resourcesByUnitId = {},
-
-    // NEW (CEFR)
     subLevelOptionsByTrackBookKey = {},
     unitOptionsByBookSubLevelKey = {},
-
-    // Legacy (still returned in some older builds; not used for CEFR)
-    // bookLevelsByBookId = {},
-    // unitOptionsByBookLevelId = {},
   } = index || {};
 
-  // ─────────────────────────────────────────────
-  // Local selection state (teacher’s controls)
-  // ─────────────────────────────────────────────
-  const [trackId, setTrackId] = useState(trackOptions[0]?.value || "");
-  const [bookId, setBookId] = useState("");
-  const [subLevelId, setSubLevelId] = useState(""); // ✅ CEFR (A1.1, A1.2...) -> stored as subLevel _id
-  const [unitId, setUnitId] = useState("");
+  // ─────────────────────────────────────────────────────────────
+  // Load saved state from sessionStorage (once on mount)
+  // ─────────────────────────────────────────────────────────────
+  const savedState = useMemo(() => {
+    return loadPickerState(sessionId);
+  }, [sessionId]);
+
+  // ─────────────────────────────────────────────────────────────
+  // Local selection state (teacher's controls)
+  // Initialize from saved state if available
+  // ─────────────────────────────────────────────────────────────
+  const [trackId, setTrackId] = useState(() => {
+    if (
+      savedState?.trackId &&
+      trackOptions.some((t) => t.value === savedState.trackId)
+    ) {
+      return savedState.trackId;
+    }
+    return trackOptions[0]?.value || "";
+  });
+
+  const [bookId, setBookId] = useState(() => savedState?.bookId || "");
+  const [subLevelId, setSubLevelId] = useState(
+    () => savedState?.subLevelId || ""
+  );
+  const [unitId, setUnitId] = useState(() => savedState?.unitId || "");
+
+  // ─────────────────────────────────────────────────────────────
+  // Save state to sessionStorage whenever it changes
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!sessionId) return;
+    savePickerState(sessionId, {
+      trackId,
+      bookId,
+      subLevelId,
+      unitId,
+    });
+  }, [sessionId, trackId, bookId, subLevelId, unitId]);
 
   const bookOptions = trackId ? booksByTrackId[trackId] || [] : [];
 
