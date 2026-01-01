@@ -89,6 +89,7 @@
   &:hover {
     transform: translateY(-1px);
     box-shadow: 0 10px 24px rgba($primary, 0.12);
+    text-decoration: none;
     background: linear-gradient(
       180deg,
       rgba($primary, 0.1),

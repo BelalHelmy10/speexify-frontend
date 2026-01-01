@@ -565,6 +565,7 @@
   align-items: center;
   gap: 0.625rem;
   padding: 0.875rem 1.75rem;
+
   background: linear-gradient(
     135deg,
     var(--admin-primary),
@@ -583,6 +584,7 @@
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba($brand, 0.4);
+    text-decoration: none;
   }
 
   &:active {
@@ -757,6 +759,7 @@
   &:hover {
     transform: translateX(4px);
     box-shadow: 0 4px 12px rgba($brand, 0.3);
+    text-decoration: none;
   }
 }
 
