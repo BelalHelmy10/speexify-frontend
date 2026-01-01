@@ -186,6 +186,7 @@ export default function PrepShell({
   const rafPendingRef = useRef(false); // throttle (rAF)
 
   const applyingRemoteRef = useRef(false);
+  const prevChannelReadyRef = useRef(false); // detect reconnect edges
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
@@ -201,6 +202,29 @@ export default function PrepShell({
 
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
+
+  // ✅ Learner: request a full state snapshot whenever we (re)connect
+  useEffect(() => {
+    if (!resource?._id) return;
+
+    if (!channelReady) {
+      prevChannelReadyRef.current = false;
+      return;
+    }
+
+    // Only fire on the transition to ready (initial connect or reconnect)
+    if (prevChannelReadyRef.current) return;
+    prevChannelReadyRef.current = true;
+
+    if (isTeacher) return;
+    if (!sendOnChannel) return;
+
+    sendOnChannel({
+      type: "REQUEST_PREP_STATE",
+      resourceId: resource._id,
+      at: Date.now(),
+    });
+  }, [channelReady, isTeacher, sendOnChannel, resource?._id]);
 
   const layoutClasses =
     "prep-layout" +
@@ -583,6 +607,13 @@ export default function PrepShell({
     // Teacher broadcasts a shared pointer
     if (isTeacher) {
       if (!normalizedPosOrNull) {
+        // keep local in sync too (useful for reconnect snapshots)
+        setTeacherPointerByPage((prev) => {
+          const next = { ...prev };
+          delete next[page];
+          return next;
+        });
+
         sendOnChannel({
           type: "TEACHER_POINTER_HIDE",
           resourceId: resource._id,
@@ -590,6 +621,12 @@ export default function PrepShell({
         });
         return;
       }
+
+      setTeacherPointerByPage((prev) => ({
+        ...prev,
+        [page]: { x: normalizedPosOrNull.x, y: normalizedPosOrNull.y },
+      }));
+
       sendOnChannel({
         type: "TEACHER_POINTER_MOVE",
         resourceId: resource._id,
@@ -695,6 +732,185 @@ export default function PrepShell({
     if (!classroomChannel.subscribe) return;
 
     const unsubscribe = classroomChannel.subscribe((msg) => {
+      // ✅ Reconnect snapshot: learner requests, teacher responds
+      if (msg.type === "REQUEST_PREP_STATE" && isTeacher) {
+        const page = isPdf ? pdfCurrentPage : 1;
+
+        // PDF scroll normalized (0..1)
+        const scrollEl = pdfScrollRef.current;
+        const denom = scrollEl
+          ? scrollEl.scrollHeight - scrollEl.clientHeight
+          : 0;
+        const scrollNorm =
+          scrollEl && denom > 0 ? scrollEl.scrollTop / denom : 0;
+
+        // Current canvas snapshot (PNG) can be large; only send on request
+        const c = canvasRef.current;
+        const canvasData = c ? c.toDataURL("image/png") : null;
+
+        const audioEl = audioRef.current;
+
+        const teacherPointer = teacherPointerByPage[page] || null;
+        const learnerPointers = learnerPointersByPage[page] || null;
+
+        sendOnChannel?.({
+          type: "PREP_STATE",
+          resourceId: resource._id,
+          at: Date.now(),
+
+          page,
+
+          pdf: isPdf
+            ? {
+                page: pdfCurrentPage,
+                scrollNorm: Math.max(0, Math.min(1, scrollNorm)),
+              }
+            : null,
+
+          audio: audioEl
+            ? {
+                trackIndex: currentTrackIndex,
+                time:
+                  typeof audioEl.currentTime === "number"
+                    ? audioEl.currentTime
+                    : 0,
+                playing: !audioEl.paused,
+              }
+            : null,
+
+          annotations: {
+            canvasData,
+            strokes,
+            stickyNotes,
+            textBoxes,
+            masks,
+          },
+
+          pointer: {
+            teacher: teacherPointer,
+            learners: learnerPointers,
+          },
+
+          toolState: {
+            tool,
+            penColor,
+          },
+
+          ui: {
+            sidebarCollapsed,
+          },
+        });
+
+        return;
+      }
+
+      if (msg.type === "PREP_STATE" && !isTeacher) {
+        // Apply PDF state
+        if (msg.pdf && isPdf) {
+          const api = pdfNavApiRef.current;
+          const page = Number(msg.pdf.page) || 1;
+          const scrollNorm = Number(msg.pdf.scrollNorm);
+
+          applyingRemoteRef.current = true;
+          if (api?.setPage) api.setPage(page);
+
+          // Apply scroll once the DOM has updated
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const el = pdfScrollRef.current;
+              if (el) {
+                const d = el.scrollHeight - el.clientHeight;
+                if (d > 0 && Number.isFinite(scrollNorm)) {
+                  const clamped = Math.max(0, Math.min(1, scrollNorm));
+                  el.scrollTop = clamped * d;
+                }
+              }
+              applyingRemoteRef.current = false;
+            });
+          });
+        }
+
+        // Apply audio state
+        if (msg.audio && audioRef.current) {
+          const nextIndex = Number(msg.audio.trackIndex) || 0;
+          const time = Number(msg.audio.time) || 0;
+          const playing = !!msg.audio.playing;
+
+          setCurrentTrackIndex(nextIndex);
+
+          // Wait a tick for <audio src=...> to update, then seek/play
+          setTimeout(() => {
+            const el = audioRef.current;
+            if (!el) return;
+
+            const apply = () => {
+              try {
+                el.currentTime = Math.max(0, time);
+              } catch {}
+
+              if (playing) {
+                el.play().then(
+                  () => setIsAudioPlaying(true),
+                  () => setIsAudioPlaying(false)
+                );
+              } else {
+                try {
+                  el.pause();
+                } catch {}
+                setIsAudioPlaying(false);
+              }
+            };
+
+            if (el.readyState >= 1) {
+              apply();
+            } else {
+              const onLoaded = () => {
+                el.removeEventListener("loadedmetadata", onLoaded);
+                apply();
+              };
+              el.addEventListener("loadedmetadata", onLoaded);
+            }
+          }, 0);
+        }
+
+        // Apply annotations snapshot (only if present)
+        if (msg.annotations) {
+          applyRemoteAnnotationState({
+            ...msg.annotations,
+            type: "ANNOTATION_STATE",
+            resourceId: resource._id,
+          });
+        }
+
+        // Apply pointer snapshot
+        if (msg.pointer?.teacher && typeof msg.pointer.teacher.x === "number") {
+          const page = Number(msg.page) || (isPdf ? pdfCurrentPage : 1);
+          setTeacherPointerByPage((prev) => ({
+            ...prev,
+            [page]: { x: msg.pointer.teacher.x, y: msg.pointer.teacher.y },
+          }));
+        }
+
+        if (msg.pointer?.learners && typeof msg.pointer.learners === "object") {
+          const page = Number(msg.page) || (isPdf ? pdfCurrentPage : 1);
+          setLearnerPointersByPage((prev) => ({
+            ...prev,
+            [page]: msg.pointer.learners,
+          }));
+        }
+
+        // Apply tool/color snapshot
+        if (msg.toolState?.tool) setTool(msg.toolState.tool);
+        if (msg.toolState?.penColor) setPenColor(msg.toolState.penColor);
+
+        // Apply UI snapshot
+        if (typeof msg.ui?.sidebarCollapsed === "boolean") {
+          setSidebarCollapsed(msg.ui.sidebarCollapsed);
+        }
+
+        return;
+      }
+
       if (!msg || msg.resourceId !== resource._id) return;
 
       if (msg.type === "ANNOTATION_STATE") {
@@ -820,36 +1036,16 @@ export default function PrepShell({
       };
 
       const runAfterLoad = (fn) => {
-        if (!el) return;
-
-        // Check if already loaded
-        if (el.readyState >= 2) {
-          // HAVE_CURRENT_DATA or higher
+        const ready = el.readyState >= 1;
+        if (ready) {
           fn();
           return;
         }
-
-        // Set a timeout fallback in case event doesn't fire
-        let timeout;
-        const cleanup = () => {
-          el.removeEventListener("loadedmetadata", onLoaded);
-          el.removeEventListener("loadeddata", onLoaded);
-          if (timeout) clearTimeout(timeout);
-        };
-
         const onLoaded = () => {
-          cleanup();
+          el.removeEventListener("loadedmetadata", onLoaded);
           fn();
         };
-
         el.addEventListener("loadedmetadata", onLoaded);
-        el.addEventListener("loadeddata", onLoaded);
-
-        // Fallback after 2 seconds
-        timeout = setTimeout(() => {
-          cleanup();
-          fn();
-        }, 2000);
       };
 
       if (msg.type === "AUDIO_TRACK") {
@@ -902,7 +1098,24 @@ export default function PrepShell({
     });
 
     return unsubscribe;
-  }, [classroomChannel, resource._id, isTeacher, isPdf, pdfCurrentPage]);
+  }, [
+    classroomChannel,
+    resource._id,
+    isTeacher,
+    isPdf,
+    pdfCurrentPage,
+    currentTrackIndex,
+    strokes,
+    stickyNotes,
+    textBoxes,
+    masks,
+    tool,
+    penColor,
+    sidebarCollapsed,
+    teacherPointerByPage,
+    learnerPointersByPage,
+    sendOnChannel,
+  ]);
 
   // ─────────────────────────────────────────────────────────────
   // Drawing tools (pen / highlighter / eraser) using normalized coords
