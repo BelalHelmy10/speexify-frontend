@@ -820,16 +820,36 @@ export default function PrepShell({
       };
 
       const runAfterLoad = (fn) => {
-        const ready = el.readyState >= 1;
-        if (ready) {
+        if (!el) return;
+
+        // Check if already loaded
+        if (el.readyState >= 2) {
+          // HAVE_CURRENT_DATA or higher
           fn();
           return;
         }
-        const onLoaded = () => {
+
+        // Set a timeout fallback in case event doesn't fire
+        let timeout;
+        const cleanup = () => {
           el.removeEventListener("loadedmetadata", onLoaded);
+          el.removeEventListener("loadeddata", onLoaded);
+          if (timeout) clearTimeout(timeout);
+        };
+
+        const onLoaded = () => {
+          cleanup();
           fn();
         };
+
         el.addEventListener("loadedmetadata", onLoaded);
+        el.addEventListener("loadeddata", onLoaded);
+
+        // Fallback after 2 seconds
+        timeout = setTimeout(() => {
+          cleanup();
+          fn();
+        }, 2000);
       };
 
       if (msg.type === "AUDIO_TRACK") {
