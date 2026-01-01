@@ -803,6 +803,11 @@
   }
 }
 
+.rbc-event.ev--canceled {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%) !important;
+  text-decoration: line-through;
+  opacity: 0.85;
+}
 .ev-pill {
   display: flex;
   align-items: flex-start; // ✅ allow multi-line title to align nicely
