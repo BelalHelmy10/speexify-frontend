@@ -1,3 +1,10 @@
+// app/admin/availability/page.js
+"use client";
+
+import AdminAvailabilityView from "@/components/admin/AdminAvailabilityView";
+import useAuth from "@/hooks/useAuth";
+import Link from "next/link";
+
 export default function AdminAvailabilityPage() {
   const { user, checking } = useAuth();
 
@@ -17,7 +24,7 @@ export default function AdminAvailabilityPage() {
 
   return (
     <div className="admin-availability-page">
-      {/* make space-y-6 a direct child to satisfy your SCSS selectors */}
+      {/* IMPORTANT: this must be a direct child for your SCSS selectors */}
       <div className="space-y-6">
         <Link
           href="/admin"
