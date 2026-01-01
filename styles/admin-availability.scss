@@ -1,0 +1,1099 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// SPEEXIFY - ADMIN AVAILABILITY DASHBOARD
+// Premium SaaS-level styling overlay for Tailwind component
+// Works with existing AdminAvailabilityView.jsx - NO component changes needed
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── PAGE WRAPPER ──────────────────────────────────────────────────────────────
+// Add this class to the parent wrapper in your page.js
+
+@use "variables" as *;
+
+.admin-availability-page {
+  min-height: 100vh;
+  background: linear-gradient(165deg, #f0f9ff 0%, #f8fafc 40%, #faf5ff 100%);
+  padding: 2rem;
+  font-family: $font-main;
+
+  @media (max-width: $bp-sm) {
+    padding: 1rem;
+  }
+
+  // ─── MAIN SPACING ────────────────────────────────────────────────────────────
+  > .space-y-6 {
+    max-width: 1400px;
+    margin: 0 auto;
+
+    > * + * {
+      margin-top: 2rem !important;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HEADER CARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  > .space-y-6 > .bg-white.rounded-2xl:first-child {
+    border-radius: 24px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+      0 10px 40px -10px rgba(2, 132, 199, 0.15) !important;
+    border: 1px solid rgba($border, 0.5) !important;
+    overflow: hidden;
+
+    // ─── GRADIENT HEADER ───────────────────────────────────────────────────────
+    > .px-6.py-5.border-b {
+      padding: 2.5rem !important;
+      background: linear-gradient(
+        135deg,
+        $primary 0%,
+        $brand-dark 100%
+      ) !important;
+      border: none !important;
+      position: relative;
+      overflow: hidden;
+
+      // Decorative light orbs
+      &::before {
+        content: "";
+        position: absolute;
+        top: -80px;
+        right: -40px;
+        width: 250px;
+        height: 250px;
+        background: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.15) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: -60px;
+        left: 20%;
+        width: 180px;
+        height: 180px;
+        background: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.1) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+
+      h1 {
+        font-size: 2rem !important;
+        font-weight: 800 !important;
+        color: #fff !important;
+        position: relative;
+        z-index: 1;
+        letter-spacing: -0.025em;
+
+        @media (max-width: $bp-sm) {
+          font-size: 1.5rem !important;
+        }
+      }
+
+      p {
+        font-size: 1.0625rem !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+        position: relative;
+        z-index: 1;
+        font-weight: 400;
+        margin-top: 0.5rem !important;
+      }
+    }
+
+    // ─── STATS GRID ────────────────────────────────────────────────────────────
+    > .px-6.py-4.grid {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 0 !important;
+      padding: 0 !important;
+      background: #fff !important;
+
+      @media (max-width: $bp-md) {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+
+      @media (max-width: $bp-xs) {
+        grid-template-columns: 1fr !important;
+      }
+
+      // Individual stat cell
+      > .text-center {
+        padding: 2rem 1.5rem !important;
+        border-right: 1px solid rgba($border, 0.6);
+        border-bottom: 1px solid rgba($border, 0.6);
+        transition: all 0.3s ease;
+        position: relative;
+        background: transparent;
+
+        &:nth-child(4n) {
+          border-right: none;
+        }
+
+        @media (max-width: $bp-md) {
+          &:nth-child(2n) {
+            border-right: none;
+          }
+        }
+
+        @media (max-width: $bp-xs) {
+          border-right: none !important;
+        }
+
+        &:hover {
+          background: rgba($primary, 0.02);
+        }
+
+        // Stat value - large number
+        > .text-3xl {
+          font-size: 2.75rem !important;
+          font-weight: 800 !important;
+          line-height: 1 !important;
+          margin-bottom: 0.625rem !important;
+          letter-spacing: -0.025em;
+
+          @media (max-width: $bp-sm) {
+            font-size: 2.25rem !important;
+          }
+
+          // Color variants with gradients
+          &.text-violet-600 {
+            background: linear-gradient(
+              135deg,
+              $primary 0%,
+              darken($primary, 12%) 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+
+          &.text-emerald-600 {
+            background: linear-gradient(
+              135deg,
+              $secondary 0%,
+              darken($secondary, 12%) 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+
+          &.text-amber-600 {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+
+          &.text-blue-600 {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+        }
+
+        // Stat label
+        > .text-sm.text-gray-500 {
+          font-size: 0.8125rem !important;
+          font-weight: 600 !important;
+          color: $text-secondary !important;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+
+    // ─── DAY DISTRIBUTION CHART ────────────────────────────────────────────────
+    > .px-6.py-4.border-t {
+      padding: 1.75rem 2rem !important;
+      border-top: none !important;
+      background: linear-gradient(
+        180deg,
+        rgba($bg-secondary, 0.3) 0%,
+        transparent 100%
+      );
+
+      h3 {
+        font-size: 0.875rem !important;
+        font-weight: 700 !important;
+        color: $text-primary !important;
+        margin-bottom: 1.5rem !important;
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+
+        &::before {
+          content: "";
+          display: inline-block;
+          width: 4px;
+          height: 18px;
+          background: linear-gradient(180deg, $primary 0%, $brand-dark 100%);
+          border-radius: 2px;
+        }
+      }
+
+      // Bar chart container
+      > .flex.gap-2 {
+        gap: 1rem !important;
+        align-items: flex-end !important;
+        padding: 0 0.5rem;
+      }
+
+      // Individual bar column
+      .flex-1.text-center {
+        .h-16 {
+          height: 80px !important;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+        }
+
+        // The bar itself
+        .bg-violet-500 {
+          background: linear-gradient(
+            180deg,
+            $primary 0%,
+            $brand-dark 100%
+          ) !important;
+          border-radius: 8px 8px 3px 3px !important;
+          min-width: 32px;
+          max-width: 52px !important;
+          width: 100% !important;
+          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+          position: relative;
+          box-shadow: 0 4px 12px rgba($primary, 0.2);
+
+          // Shine effect
+          &::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.25) 0%,
+              transparent 100%
+            );
+            border-radius: 8px 8px 0 0;
+          }
+
+          &:hover {
+            transform: scaleY(1.08) translateY(-2px);
+            box-shadow: 0 8px 20px rgba($primary, 0.35);
+          }
+        }
+
+        // Day label
+        > .text-xs.font-medium {
+          font-size: 0.8125rem !important;
+          font-weight: 700 !important;
+          color: $text-secondary !important;
+          margin-top: 0.75rem !important;
+        }
+
+        // Count label
+        > .text-xs.text-gray-400 {
+          font-size: 0.75rem !important;
+          font-weight: 600 !important;
+          color: $text-muted !important;
+          margin-top: 0.25rem !important;
+        }
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MAIN LAYOUT GRID
+  // ═══════════════════════════════════════════════════════════════════════════
+  .grid.grid-cols-1.lg\:grid-cols-3 {
+    display: grid !important;
+    grid-template-columns: 400px 1fr !important;
+    gap: 2rem !important;
+    align-items: start;
+
+    @media (max-width: $bp-lg) {
+      grid-template-columns: 360px 1fr !important;
+      gap: 1.5rem !important;
+    }
+
+    @media (max-width: $bp-md) {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // USER LIST PANEL (Left sidebar)
+  // ═══════════════════════════════════════════════════════════════════════════
+  .lg\:col-span-1.bg-white {
+    border-radius: 24px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+      0 10px 40px -10px rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid rgba($border, 0.5) !important;
+    position: sticky;
+    top: 2rem;
+    overflow: hidden;
+
+    @media (max-width: $bp-md) {
+      position: relative;
+      top: auto;
+    }
+
+    // ─── Panel Header ──────────────────────────────────────────────────────────
+    > .px-4.py-3.border-b.bg-gray-50 {
+      padding: 1.25rem 1.5rem !important;
+      background: linear-gradient(
+        135deg,
+        rgba($bg-secondary, 0.9) 0%,
+        rgba($bg-primary, 0.5) 100%
+      ) !important;
+      border-bottom: 1px solid rgba($border, 0.5) !important;
+
+      h2 {
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+        color: $text-primary !important;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        &::before {
+          content: "👥";
+          font-size: 1.25rem;
+        }
+      }
+    }
+
+    // ─── Filters Section ───────────────────────────────────────────────────────
+    > .p-4.border-b {
+      padding: 1.25rem 1.5rem !important;
+      border-bottom: 1px solid rgba($border, 0.5) !important;
+
+      > .space-y-3 > * + * {
+        margin-top: 0.875rem !important;
+      }
+
+      // Search input
+      input[type="text"] {
+        width: 100%;
+        padding: 0.875rem 1rem !important;
+        border: 2px solid rgba($border, 0.7) !important;
+        border-radius: 12px !important;
+        font-size: 0.875rem;
+        font-family: $font-main;
+        color: $text-primary;
+        background: #fff !important;
+        transition: all 0.25s ease;
+
+        &::placeholder {
+          color: $text-muted;
+        }
+
+        &:hover {
+          border-color: rgba($primary, 0.4) !important;
+        }
+
+        &:focus {
+          outline: none !important;
+          border-color: $primary !important;
+          box-shadow: 0 0 0 4px rgba($primary, 0.12) !important;
+        }
+      }
+
+      // Role filter buttons container
+      > .space-y-3 > .flex.gap-2,
+      .flex.gap-2:has(button) {
+        gap: 0.5rem !important;
+
+        button {
+          flex: 1;
+          padding: 0.75rem 1rem !important;
+          border: 2px solid rgba($border, 0.7) !important;
+          border-radius: 10px !important;
+          font-size: 0.8125rem !important;
+          font-weight: 600 !important;
+          font-family: $font-main;
+          transition: all 0.25s ease;
+          background: #fff !important;
+
+          &.bg-gray-100 {
+            color: $text-secondary;
+
+            &:hover {
+              border-color: rgba($primary, 0.4) !important;
+              color: $primary;
+              background: rgba($primary, 0.04) !important;
+            }
+          }
+
+          &.bg-violet-100 {
+            background: linear-gradient(
+              135deg,
+              $primary 0%,
+              $brand-dark 100%
+            ) !important;
+            border-color: transparent !important;
+            color: #fff !important;
+            box-shadow: 0 4px 14px rgba($primary, 0.35);
+
+            &:hover {
+              box-shadow: 0 6px 20px rgba($primary, 0.45);
+              transform: translateY(-1px);
+            }
+          }
+        }
+      }
+
+      // Checkbox label
+      label.flex.items-center {
+        padding: 0.5rem 0;
+        cursor: pointer;
+        font-size: 0.8125rem !important;
+        color: $text-secondary;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: $text-primary;
+        }
+
+        input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          border-radius: 5px;
+          accent-color: $primary;
+          cursor: pointer;
+        }
+      }
+    }
+
+    // ─── User List Scroll Container ────────────────────────────────────────────
+    > .max-h-\[500px\] {
+      max-height: 560px !important;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba($border, 0.5) transparent;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba($border, 0.5);
+        border-radius: 3px;
+
+        &:hover {
+          background: rgba($border, 0.7);
+        }
+      }
+    }
+
+    // ─── Section Headers (Teachers/Learners) ───────────────────────────────────
+    .bg-blue-50 {
+      padding: 0.75rem 1.5rem !important;
+      font-size: 0.6875rem !important;
+      font-weight: 700 !important;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: $primary !important;
+      background: linear-gradient(
+        90deg,
+        rgba($primary, 0.1) 0%,
+        rgba($primary, 0.05) 100%
+      ) !important;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      backdrop-filter: blur(8px);
+    }
+
+    .bg-emerald-50 {
+      padding: 0.75rem 1.5rem !important;
+      font-size: 0.6875rem !important;
+      font-weight: 700 !important;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: $secondary !important;
+      background: linear-gradient(
+        90deg,
+        rgba($secondary, 0.1) 0%,
+        rgba($secondary, 0.05) 100%
+      ) !important;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      backdrop-filter: blur(8px);
+    }
+
+    // ─── User List Items ───────────────────────────────────────────────────────
+    button.w-full.px-4.py-3 {
+      padding: 1rem 1.5rem !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 1rem !important;
+      transition: all 0.2s ease;
+      position: relative;
+      border: none;
+      background: transparent;
+
+      // Separator line
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 1.5rem;
+        right: 1.5rem;
+        height: 1px;
+        background: rgba($border, 0.5);
+      }
+
+      &:last-child::after {
+        display: none;
+      }
+
+      // Hover state
+      &.hover\:bg-gray-50:hover,
+      &:hover {
+        background: rgba($bg-secondary, 0.7) !important;
+      }
+
+      // Selected state
+      &.bg-violet-50 {
+        background: linear-gradient(
+          90deg,
+          rgba($primary, 0.12) 0%,
+          rgba($primary, 0.04) 100%
+        ) !important;
+        border-left: 4px solid $primary !important;
+        padding-left: calc(1.5rem - 4px) !important;
+
+        &:hover {
+          background: linear-gradient(
+            90deg,
+            rgba($primary, 0.16) 0%,
+            rgba($primary, 0.06) 100%
+          ) !important;
+        }
+      }
+
+      // User info
+      .flex-1.min-w-0 {
+        .font-medium {
+          font-size: 0.9375rem !important;
+          font-weight: 600 !important;
+          color: $text-primary !important;
+        }
+
+        .text-sm.text-gray-500 {
+          font-size: 0.8125rem !important;
+          color: $text-muted !important;
+          margin-top: 0.125rem;
+        }
+      }
+
+      // Slot count badges
+      .bg-emerald-100 {
+        padding: 0.3125rem 0.75rem !important;
+        border-radius: 20px !important;
+        font-size: 0.6875rem !important;
+        font-weight: 700 !important;
+        background: linear-gradient(
+          135deg,
+          rgba($secondary, 0.18) 0%,
+          rgba($secondary, 0.12) 100%
+        ) !important;
+        color: darken($secondary, 8%) !important;
+      }
+
+      .bg-gray-100 {
+        padding: 0.3125rem 0.75rem !important;
+        border-radius: 20px !important;
+        font-size: 0.6875rem !important;
+        font-weight: 600 !important;
+        background: rgba($text-muted, 0.12) !important;
+        color: $text-muted !important;
+      }
+    }
+
+    // ─── Empty State ───────────────────────────────────────────────────────────
+    .p-6.text-center.text-gray-500 {
+      padding: 3rem 2rem !important;
+      color: $text-muted !important;
+      font-size: 0.9375rem;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DETAIL PANEL (Right side)
+  // ═══════════════════════════════════════════════════════════════════════════
+  .lg\:col-span-2.bg-white {
+    border-radius: 24px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+      0 10px 40px -10px rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid rgba($border, 0.5) !important;
+    min-height: 600px;
+    overflow: hidden;
+
+    // ─── Empty State (No user selected) ────────────────────────────────────────
+    > .h-full.flex.items-center.justify-center.text-gray-500.py-20 {
+      min-height: 580px;
+      padding: 4rem 2rem !important;
+
+      .text-center {
+        .text-5xl {
+          font-size: 4rem !important;
+          margin-bottom: 1.5rem !important;
+          filter: grayscale(0.3);
+          opacity: 0.8;
+        }
+
+        p {
+          font-size: 1.0625rem !important;
+          color: $text-secondary !important;
+          max-width: 280px;
+          line-height: 1.6;
+        }
+      }
+    }
+
+    // ─── Loading State ─────────────────────────────────────────────────────────
+    > .h-full.flex.items-center.justify-center.py-20:has(.w-8) {
+      min-height: 580px;
+    }
+
+    // ─── User Detail Header ────────────────────────────────────────────────────
+    > .px-6.py-4.border-b.bg-gradient-to-r {
+      padding: 2rem !important;
+      background: linear-gradient(
+        135deg,
+        rgba($bg-secondary, 0.5) 0%,
+        rgba(255, 255, 255, 0.8) 100%
+      ) !important;
+      border-bottom: 1px solid rgba($border, 0.5) !important;
+
+      // Top row with avatar and actions
+      > .flex.items-center.justify-between {
+        @media (max-width: $bp-xs) {
+          flex-direction: column;
+          gap: 1.25rem;
+          align-items: flex-start;
+        }
+      }
+
+      // Avatar
+      .w-12.h-12.rounded-full {
+        width: 56px !important;
+        height: 56px !important;
+        border-radius: 16px !important;
+        background: linear-gradient(
+          135deg,
+          $primary 0%,
+          $brand-dark 100%
+        ) !important;
+        color: #fff !important;
+        font-size: 1.375rem !important;
+        font-weight: 700 !important;
+        box-shadow: 0 8px 24px rgba($primary, 0.3);
+      }
+
+      // User name
+      h2.text-lg.font-bold {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: $text-primary !important;
+        letter-spacing: -0.01em;
+      }
+
+      // Email
+      p.text-sm.text-gray-500 {
+        font-size: 0.9375rem !important;
+        color: $text-secondary !important;
+        margin-top: 0.25rem;
+      }
+
+      // Role badge
+      span.px-3.py-1.rounded-full {
+        padding: 0.375rem 1rem !important;
+        border-radius: 20px !important;
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        text-transform: capitalize;
+        letter-spacing: 0.025em;
+
+        &.bg-blue-100 {
+          background: linear-gradient(
+            135deg,
+            rgba($primary, 0.18) 0%,
+            rgba($primary, 0.12) 100%
+          ) !important;
+          color: $brand-ink !important;
+        }
+
+        &.bg-emerald-100 {
+          background: linear-gradient(
+            135deg,
+            rgba($secondary, 0.18) 0%,
+            rgba($secondary, 0.12) 100%
+          ) !important;
+          color: darken($secondary, 15%) !important;
+        }
+      }
+
+      // Timezone
+      span.text-sm.text-gray-500:last-child {
+        font-size: 0.875rem !important;
+        color: $text-muted !important;
+        padding: 0.5rem 1rem;
+        background: rgba($bg-secondary, 0.8);
+        border-radius: 10px;
+      }
+
+      // Quick stats row
+      > .flex.gap-6.mt-4 {
+        margin-top: 1.75rem !important;
+        gap: 2.5rem !important;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba($border, 0.4);
+
+        @media (max-width: $bp-xs) {
+          gap: 1.5rem;
+          flex-wrap: wrap;
+        }
+
+        > div {
+          .text-gray-500 {
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            color: $text-secondary !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+
+          .font-semibold {
+            font-size: 1.5rem !important;
+            font-weight: 800 !important;
+            color: $primary !important;
+            margin-left: 0.375rem;
+
+            &.text-emerald-600 {
+              color: $secondary !important;
+            }
+          }
+        }
+      }
+    }
+
+    // ─── View Toggle Tabs ──────────────────────────────────────────────────────
+    > .px-6.py-3.border-b.bg-gray-50\/50 {
+      padding: 0.875rem 2rem !important;
+      background: rgba($bg-secondary, 0.4) !important;
+      border-bottom: 1px solid rgba($border, 0.5) !important;
+      display: flex;
+      gap: 0.5rem;
+
+      button {
+        padding: 0.75rem 1.5rem !important;
+        border-radius: 10px !important;
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+        font-family: $font-main;
+        transition: all 0.25s ease;
+        border: none;
+
+        &.text-gray-600 {
+          background: transparent;
+          color: $text-secondary;
+
+          &:hover {
+            background: rgba($bg-secondary, 0.8);
+            color: $text-primary;
+          }
+        }
+
+        &.bg-white {
+          background: #fff !important;
+          color: $primary !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+      }
+    }
+
+    // ─── Calendar View ─────────────────────────────────────────────────────────
+    > .p-4.overflow-x-auto {
+      padding: 2rem !important;
+
+      // Empty state
+      > .text-center.py-12 {
+        padding: 4rem 2rem !important;
+
+        .text-4xl {
+          font-size: 3.5rem !important;
+          margin-bottom: 1rem !important;
+          filter: grayscale(0.2);
+        }
+
+        p {
+          font-size: 1rem !important;
+          color: $text-secondary !important;
+        }
+      }
+
+      // Calendar grid
+      > .grid.gap-px {
+        border-radius: 16px !important;
+        overflow: hidden;
+        border: 1px solid rgba($border, 0.5);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+        // Header cells
+        .bg-gray-50.p-2.text-center {
+          padding: 1rem 0.5rem !important;
+          background: linear-gradient(
+            180deg,
+            rgba($bg-secondary, 0.9) 0%,
+            rgba($bg-secondary, 0.6) 100%
+          ) !important;
+
+          &.text-xs.font-medium.text-gray-500 {
+            font-size: 0.6875rem !important;
+            font-weight: 600 !important;
+            color: $text-muted !important;
+          }
+
+          &.text-xs.font-semibold.text-gray-700 {
+            font-size: 0.8125rem !important;
+            font-weight: 700 !important;
+            color: $text-secondary !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+        }
+
+        // Time column cells
+        .bg-gray-50.p-1.text-center.text-\[10px\] {
+          padding: 0.5rem !important;
+          font-size: 0.6875rem !important;
+          font-weight: 600 !important;
+          color: $text-muted !important;
+          background: rgba($bg-secondary, 0.5) !important;
+          font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+        }
+
+        // Available cell
+        .min-h-\[20px\].bg-emerald-500 {
+          min-height: 24px !important;
+          background: linear-gradient(
+            180deg,
+            rgba($secondary, 0.7) 0%,
+            rgba($secondary, 0.5) 100%
+          ) !important;
+          position: relative;
+
+          &::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.2) 0%,
+              transparent 100%
+            );
+          }
+        }
+
+        // Empty cell
+        .min-h-\[20px\].bg-white {
+          min-height: 24px !important;
+          background: #fff !important;
+          transition: background 0.15s ease;
+
+          &:hover {
+            background: rgba($bg-secondary, 0.3) !important;
+          }
+        }
+      }
+    }
+
+    // ─── List View ─────────────────────────────────────────────────────────────
+    > .p-4:has(.space-y-4) {
+      padding: 2rem !important;
+
+      .space-y-4 {
+        > * + * {
+          margin-top: 1rem !important;
+        }
+      }
+
+      // Empty state
+      > .text-center.py-12 {
+        padding: 4rem 2rem !important;
+
+        .text-4xl {
+          font-size: 3.5rem !important;
+          margin-bottom: 1rem !important;
+        }
+
+        p {
+          font-size: 1rem !important;
+          color: $text-secondary !important;
+        }
+      }
+
+      // Day card
+      .border.border-gray-100.rounded-xl {
+        border-radius: 16px !important;
+        border: 1px solid rgba($border, 0.5) !important;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: #fff;
+
+        &:hover {
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+          border-color: rgba($secondary, 0.3) !important;
+        }
+
+        // Day header
+        > .bg-gray-50.px-4.py-2 {
+          padding: 1rem 1.25rem !important;
+          background: linear-gradient(
+            90deg,
+            rgba($bg-secondary, 0.6) 0%,
+            rgba($bg-secondary, 0.3) 100%
+          ) !important;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-bottom: 1px solid rgba($border, 0.3);
+
+          h4 {
+            font-size: 1rem !important;
+            font-weight: 700 !important;
+            color: $text-primary !important;
+          }
+
+          span.text-sm.text-gray-500 {
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            color: $secondary !important;
+            padding: 0.25rem 0.75rem;
+            background: rgba($secondary, 0.12);
+            border-radius: 20px;
+          }
+        }
+
+        // Slots container
+        > .divide-y {
+          > .px-4.py-3 {
+            padding: 0.875rem 1.25rem !important;
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            transition: background 0.2s ease;
+            margin: 0.375rem 0.75rem;
+            border-radius: 10px;
+            background: linear-gradient(
+              90deg,
+              rgba($secondary, 0.06) 0%,
+              transparent 100%
+            );
+            border-left: 3px solid $secondary;
+
+            &:hover {
+              background: linear-gradient(
+                90deg,
+                rgba($secondary, 0.1) 0%,
+                rgba($secondary, 0.02) 100%
+              );
+            }
+
+            // Green dot
+            .w-2.h-2.bg-emerald-500 {
+              width: 10px !important;
+              height: 10px !important;
+              background: $secondary !important;
+              box-shadow: 0 0 0 3px rgba($secondary, 0.2);
+            }
+
+            // Time text
+            .font-medium.text-gray-900 {
+              font-size: 0.9375rem !important;
+              font-weight: 600 !important;
+              color: $text-primary !important;
+            }
+
+            // Note
+            .text-sm.text-gray-500 {
+              font-size: 0.8125rem !important;
+              color: $text-muted !important;
+              margin-left: auto;
+            }
+          }
+        }
+      }
+
+      // Specific dates card (Amber)
+      .border.border-amber-100.rounded-xl {
+        border-radius: 16px !important;
+        border: 1px solid rgba(#f59e0b, 0.35) !important;
+        overflow: hidden;
+        background: #fff;
+
+        > .bg-amber-50.px-4.py-2 {
+          padding: 1rem 1.25rem !important;
+          background: linear-gradient(
+            90deg,
+            rgba(#f59e0b, 0.12) 0%,
+            rgba(#f59e0b, 0.06) 100%
+          ) !important;
+          border-bottom: 1px solid rgba(#f59e0b, 0.2);
+
+          h4 {
+            font-size: 1rem !important;
+            font-weight: 700 !important;
+            color: darken(#f59e0b, 25%) !important;
+          }
+        }
+
+        .w-2.h-2.bg-amber-500 {
+          width: 10px !important;
+          height: 10px !important;
+          background: #f59e0b !important;
+          box-shadow: 0 0 0 3px rgba(#f59e0b, 0.2);
+        }
+
+        .px-4.py-3 {
+          padding: 0.875rem 1.25rem !important;
+          margin: 0.375rem 0.75rem;
+          border-radius: 10px;
+          background: linear-gradient(
+            90deg,
+            rgba(#f59e0b, 0.06) 0%,
+            transparent 100%
+          );
+          border-left: 3px solid #f59e0b;
+        }
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LOADING SPINNER ENHANCEMENT
+  // ═══════════════════════════════════════════════════════════════════════════
+  .w-8.h-8 {
+    width: 48px !important;
+    height: 48px !important;
+  }
+}

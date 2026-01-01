@@ -8,8 +8,18 @@ import Link from "next/link";
 export default function AdminAvailabilityPage() {
   const { user, checking } = useAuth();
 
-  if (checking) return <div className="p-8">Loading...</div>;
-  if (user?.role !== "admin") return <div className="p-8">Access denied</div>;
+  if (checking)
+    return (
+      <div className="admin-availability-page">
+        <div className="p-8">Loading...</div>
+      </div>
+    );
+  if (user?.role !== "admin")
+    return (
+      <div className="admin-availability-page">
+        <div className="p-8">Access denied</div>
+      </div>
+    );
 
   return (
     <div className="p-6">
