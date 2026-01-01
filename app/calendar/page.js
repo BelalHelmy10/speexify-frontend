@@ -1,7 +1,7 @@
 // web/src/pages/Calendar.jsx (or app/calendar/page.js)
 // ─────────────────────────────────────────────────────────────────────────────
 // Premium Calendar Experience with Modern Aesthetics & Smooth Interactions
-// FIXED: Added impersonation support with banner
+// ✨ ENHANCED: Added Availability Layer for setting available time slots
 // ─────────────────────────────────────────────────────────────────────────────
 
 "use client";
@@ -24,6 +24,7 @@ import {
   endOfDay,
   getDay,
   format,
+  addDays,
 } from "date-fns";
 
 import { useRouter, usePathname } from "next/navigation";
@@ -35,7 +36,7 @@ const locales = {};
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }), // Monday
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }),
   getDay,
   locales,
 });
@@ -66,8 +67,71 @@ const toRbcEvents = (arr = []) =>
           ? `${count ?? 0}${cap ? `/${cap}` : ""}`
           : "",
       _raw: s,
+      isAvailability: false,
     };
   });
+
+// Convert availability slots to background events for the calendar
+const toAvailabilityEvents = (slots = [], weekStart) => {
+  const events = [];
+
+  slots.forEach((slot) => {
+    if (slot.status !== "active") return;
+
+    if (slot.isRecurring && slot.dayOfWeek !== null) {
+      const targetDay = slot.dayOfWeek;
+      const mondayDayOfWeek = 1;
+      let daysToAdd = targetDay - mondayDayOfWeek;
+      if (daysToAdd < 0) daysToAdd += 7;
+
+      const eventDate = addDays(weekStart, daysToAdd);
+      const [startHour, startMin] = slot.startTime.split(":").map(Number);
+      const [endHour, endMin] = slot.endTime.split(":").map(Number);
+
+      const start = new Date(eventDate);
+      start.setHours(startHour, startMin, 0, 0);
+
+      const end = new Date(eventDate);
+      end.setHours(endHour, endMin, 0, 0);
+
+      events.push({
+        id: `avail-${slot.id}`,
+        slotId: slot.id,
+        title: slot.note || "",
+        start,
+        end,
+        isAvailability: true,
+        dayOfWeek: slot.dayOfWeek,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        _raw: slot,
+      });
+    } else if (!slot.isRecurring && slot.specificDate) {
+      const eventDate = new Date(slot.specificDate);
+      const [startHour, startMin] = slot.startTime.split(":").map(Number);
+      const [endHour, endMin] = slot.endTime.split(":").map(Number);
+
+      const start = new Date(eventDate);
+      start.setHours(startHour, startMin, 0, 0);
+
+      const end = new Date(eventDate);
+      end.setHours(endHour, endMin, 0, 0);
+
+      events.push({
+        id: `avail-specific-${slot.id}`,
+        slotId: slot.id,
+        title: slot.note || "",
+        start,
+        end,
+        isAvailability: true,
+        isSpecificDate: true,
+        _raw: slot,
+      });
+    }
+  });
+
+  return events;
+};
 
 // Compute visible range for a given date + view
 function getVisibleRange(date, view) {
@@ -80,14 +144,13 @@ function getVisibleRange(date, view) {
   if (view === "day") {
     return { start: startOfDay(date), end: endOfDay(date) };
   }
-  // month (include leading/trailing days that show in the grid)
   return {
     start: startOfWeek(startOfMonth(date), { weekStartsOn: 1 }),
     end: endOfWeek(endOfMonth(date), { weekStartsOn: 1 }),
   };
 }
 
-// Countdown hook with injectable labels
+// Countdown hook
 const useCountdown = (startAt, endAt, labels = {}) => {
   const startsIn = labels.startsIn || "Starts in";
   const live = labels.live || "Live";
@@ -125,11 +188,10 @@ const useCountdown = (startAt, endAt, labels = {}) => {
   }
 
   if (now >= start && now <= end) return live;
-
   return ended;
 };
 
-// time window in which user can "join"
+// Time window in which user can "join"
 const canJoin = (startAt, endAt, windowMins = 15) => {
   const now = new Date();
   const start = new Date(startAt);
@@ -140,157 +202,13 @@ const canJoin = (startAt, endAt, windowMins = 15) => {
   return now >= early && now <= end;
 };
 
-function SessionRow({
-  s,
-  timezone,
-  onCancel,
-  onRescheduleClick,
-  isUpcoming = true,
-  isTeacher = false,
-  isAdmin = false,
-  isImpersonating = false,
-  dict,
-  prefix = "",
-}) {
-  const countdown = useCountdown(s.startAt, s.endAt, {
-    startsIn: t(dict, "countdown_starts_in"),
-    live: t(dict, "countdown_live"),
-    ended: t(dict, "countdown_ended"),
-  });
-
-  const joinable = canJoin(s.startAt, s.endAt);
-
-  const isGroup = String(s.type || "").toUpperCase() === "GROUP";
-  const cap = typeof s.capacity === "number" ? s.capacity : null;
-  const count =
-    typeof s.participantCount === "number" ? s.participantCount : null;
-
-  const canReschedule = isTeacher || isAdmin || isImpersonating;
-
-  const cancelLabel =
-    isGroup && !isTeacher && !isAdmin && !isImpersonating
-      ? t(dict, "session_leave") || "Leave session"
-      : t(dict, "session_cancel") || "Cancel";
-
-  const cancelTitle =
-    isGroup && !isTeacher && !isAdmin && !isImpersonating
-      ? t(dict, "session_leave_title") || "Leave this group session"
-      : t(dict, "session_cancel_title") || "Cancel session";
-
-  const seatsLabel =
-    isGroup && (count !== null || cap !== null)
-      ? `${count ?? 0}${cap ? ` / ${cap}` : ""}`
-      : "";
-
-  const startText = s.startAt?.toLocaleString
-    ? s.startAt.toLocaleString()
-    : new Date(s.startAt).toLocaleString();
-
-  return (
-    <div className="session-item">
-      <div className="session-item__indicator"></div>
-      <div className="session-item__content">
-        <div className="session-item__main">
-          <div className="session-item__title">
-            {s.title || t(dict, "session_default_title")}
-          </div>
-
-          <div className="session-item__meta">
-            <span className="session-item__time">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              {startText}
-            </span>
-
-            {isGroup && (
-              <span className="badge badge--info">
-                {t(dict, "session_group") || "Group"}
-              </span>
-            )}
-
-            {isGroup && seatsLabel && (
-              <span className="badge badge--neutral">
-                {t(dict, "session_seats") || "Seats"}: {seatsLabel}
-              </span>
-            )}
-
-            {s.status && (
-              <span className={`badge badge--${s.status}`}>{s.status}</span>
-            )}
-          </div>
-        </div>
-
-        <div className="session-item__actions">
-          {isUpcoming ? (
-            <>
-              <a
-                href={`${prefix}/classroom/${s.id}`}
-                className={`btn ${
-                  joinable ? "btn--primary btn--glow" : "btn--ghost"
-                }`}
-                title={
-                  joinable
-                    ? t(dict, "countdown_live")
-                    : t(dict, "countdown_starts_in")
-                }
-              >
-                {joinable ? t(dict, "countdown_live") : countdown}
-              </a>
-
-              {canReschedule && (
-                <button
-                  className="btn btn--ghost"
-                  onClick={() => onRescheduleClick(s)}
-                >
-                  {t(dict, "session_reschedule") || "Reschedule"}
-                </button>
-              )}
-
-              <button
-                className="btn btn--ghost btn--danger"
-                onClick={() => onCancel(s)}
-                title={cancelTitle}
-              >
-                {cancelLabel}
-              </button>
-            </>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    IMPERSONATION BANNER COMPONENT
    ═══════════════════════════════════════════════════════════════════════════ */
 function ImpersonationBanner({ user, onStop }) {
   return (
-    <div
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 1000,
-        background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-        color: "#fff",
-        padding: "12px 24px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "16px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+    <div className="impersonation-banner">
+      <div className="impersonation-banner__info">
         <svg
           width="24"
           height="24"
@@ -304,42 +222,15 @@ function ImpersonationBanner({ user, onStop }) {
           <path d="M12 14l-3-3m3 3l3-3" />
         </svg>
         <div>
-          <strong style={{ display: "block", fontSize: "14px" }}>
-            👁️ Viewing as: {user?.name || user?.email}
-          </strong>
-          <span style={{ fontSize: "12px", opacity: 0.9 }}>
-            Role: {user?.role} • You are impersonating this user
-          </span>
+          <strong>👁️ Viewing as: {user?.name || user?.email}</strong>
+          <span>Role: {user?.role} • You are impersonating this user</span>
         </div>
       </div>
-      <div style={{ display: "flex", gap: "12px" }}>
-        <Link
-          href="/dashboard"
-          style={{
-            background: "rgba(255,255,255,0.2)",
-            color: "#fff",
-            padding: "8px 16px",
-            borderRadius: "8px",
-            textDecoration: "none",
-            fontSize: "14px",
-            fontWeight: "500",
-          }}
-        >
+      <div className="impersonation-banner__actions">
+        <Link href="/dashboard" className="impersonation-banner__link">
           📊 View Dashboard
         </Link>
-        <button
-          onClick={onStop}
-          style={{
-            background: "#fff",
-            color: "#d97706",
-            border: "none",
-            padding: "8px 16px",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "600",
-            fontSize: "14px",
-          }}
-        >
+        <button onClick={onStop} className="impersonation-banner__stop">
           ✕ Stop Impersonating
         </button>
       </div>
@@ -347,6 +238,162 @@ function ImpersonationBanner({ user, onStop }) {
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   AVAILABILITY MODE TOGGLE COMPONENT
+   ═══════════════════════════════════════════════════════════════════════════ */
+function AvailabilityModeToggle({
+  mode,
+  onModeChange,
+  availabilityCount,
+  dict,
+}) {
+  return (
+    <div className="availability-mode-toggle">
+      <button
+        onClick={() => onModeChange("sessions")}
+        className={`availability-mode-toggle__btn ${
+          mode === "sessions" ? "availability-mode-toggle__btn--active" : ""
+        }`}
+      >
+        📅 {t(dict, "mode_sessions")}
+      </button>
+
+      <button
+        onClick={() => onModeChange("availability")}
+        className={`availability-mode-toggle__btn availability-mode-toggle__btn--availability ${
+          mode === "availability"
+            ? "availability-mode-toggle__btn--active-green"
+            : ""
+        }`}
+      >
+        🕐 {t(dict, "mode_availability")}
+        {availabilityCount > 0 && (
+          <span
+            className={`availability-mode-toggle__count ${
+              mode === "availability"
+                ? "availability-mode-toggle__count--active"
+                : ""
+            }`}
+          >
+            {availabilityCount}
+          </span>
+        )}
+      </button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AVAILABILITY INSTRUCTIONS PANEL
+   ═══════════════════════════════════════════════════════════════════════════ */
+function AvailabilityInstructions({ dict, locale, onClose }) {
+  return (
+    <div className="availability-instructions">
+      <div className="availability-instructions__icon">💡</div>
+      <div className="availability-instructions__content">
+        <h4 className="availability-instructions__title">
+          {t(dict, "instructions_title")}
+        </h4>
+        <ul className="availability-instructions__list">
+          <li>{t(dict, "instructions_drag")}</li>
+          <li>{t(dict, "instructions_click")}</li>
+          <li>{t(dict, "instructions_green")}</li>
+        </ul>
+      </div>
+      <button onClick={onClose} className="availability-instructions__close">
+        ✕
+      </button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AVAILABILITY SLOT QUICK ACTIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+function AvailabilityQuickActions({
+  onClearDay,
+  onClearAll,
+  selectedDay,
+  totalSlots,
+  saving,
+  dict,
+  locale,
+}) {
+  const isRTL = locale === "ar";
+  const dayNames = isRTL
+    ? ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+    : [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+
+  return (
+    <div className="availability-quick-actions">
+      {selectedDay !== null && (
+        <button
+          onClick={() => onClearDay(selectedDay)}
+          disabled={saving}
+          className="availability-quick-actions__btn availability-quick-actions__btn--clear-day"
+        >
+          🗑️{" "}
+          {isRTL
+            ? `مسح ${dayNames[selectedDay]}`
+            : `Clear ${dayNames[selectedDay]}`}
+        </button>
+      )}
+
+      {totalSlots > 0 && (
+        <button
+          onClick={onClearAll}
+          disabled={saving}
+          className="availability-quick-actions__btn availability-quick-actions__btn--clear-all"
+        >
+          🗑️ {t(dict, "clear_all")}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AVAILABILITY STATS CARD
+   ═══════════════════════════════════════════════════════════════════════════ */
+function AvailabilityStatsCard({ slotCount, totalHours, dict, locale }) {
+  return (
+    <div className="mini-stats-card mini-stats-card--availability">
+      <div className="stat-item">
+        <div className="stat-value stat-value--green">{slotCount}</div>
+        <div className="stat-label stat-label--green">{t(dict, "slots")}</div>
+      </div>
+      <div className="stat-divider stat-divider--green"></div>
+      <div className="stat-item">
+        <div className="stat-value stat-value--green">{totalHours}h</div>
+        <div className="stat-label stat-label--green">{t(dict, "weekly")}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAVING OVERLAY
+   ═══════════════════════════════════════════════════════════════════════════ */
+function SavingOverlay({ dict }) {
+  return (
+    <div className="availability-saving-overlay">
+      <div className="availability-saving-overlay__spinner"></div>
+      <span>{t(dict, "saving")}</span>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN CALENDAR PAGE COMPONENT
+   ═══════════════════════════════════════════════════════════════════════════ */
 export default function CalendarPage() {
   const { user, checking } = useAuth();
   const { toast } = useToast();
@@ -357,11 +404,8 @@ export default function CalendarPage() {
   const prefix = locale === "ar" ? "/ar" : "";
   const dict = useMemo(() => getDictionary(locale, "calendar"), [locale]);
 
-  // ─────────────────────────────────────────────
-  // IMPERSONATION DETECTION
-  // ─────────────────────────────────────────────
+  // Impersonation detection
   const isImpersonating = !!user?._impersonating;
-  const realAdminRole = user?._adminRole;
 
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -370,9 +414,15 @@ export default function CalendarPage() {
   const [view, setView] = useState("week");
   const calRef = useRef(null);
 
-  // ─────────────────────────────────────────────
-  // STOP IMPERSONATION HANDLER
-  // ─────────────────────────────────────────────
+  // Availability state
+  const [calendarMode, setCalendarMode] = useState("sessions");
+  const [availabilitySlots, setAvailabilitySlots] = useState([]);
+  const [availabilityEvents, setAvailabilityEvents] = useState([]);
+  const [savingAvailability, setSavingAvailability] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
+  const [selectedDayOfWeek, setSelectedDayOfWeek] = useState(null);
+
+  // Stop impersonation handler
   const handleStopImpersonate = async () => {
     try {
       await api.post("/admin/impersonate/stop");
@@ -382,6 +432,101 @@ export default function CalendarPage() {
       setTimeout(() => window.location.reload(), 100);
     } catch (e) {
       toast.error(e?.response?.data?.error || "Failed to stop impersonation");
+    }
+  };
+
+  // Fetch availability
+  const fetchAvailability = useCallback(async () => {
+    try {
+      const { data } = await api.get("/availability");
+      setAvailabilitySlots(data || []);
+    } catch (e) {
+      console.error("Failed to load availability:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!checking && user) {
+      fetchAvailability();
+    }
+  }, [checking, user, fetchAvailability]);
+
+  // Convert availability slots to calendar events
+  useEffect(() => {
+    if (availabilitySlots.length > 0) {
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const availEvents = toAvailabilityEvents(availabilitySlots, weekStart);
+      setAvailabilityEvents(availEvents);
+    } else {
+      setAvailabilityEvents([]);
+    }
+  }, [availabilitySlots, currentDate, view]);
+
+  // Add availability slot
+  const addAvailabilitySlot = async (dayOfWeek, startTime, endTime) => {
+    try {
+      setSavingAvailability(true);
+      await api.post("/availability", {
+        dayOfWeek,
+        startTime,
+        endTime,
+        isRecurring: true,
+      });
+      toast.success(t(dict, "success_add"));
+      await fetchAvailability();
+    } catch (e) {
+      const errorMsg = e?.response?.data?.error || t(dict, "error_add");
+      toast.error(errorMsg);
+    } finally {
+      setSavingAvailability(false);
+    }
+  };
+
+  // Delete availability slot
+  const deleteAvailabilitySlot = async (slotId) => {
+    try {
+      setSavingAvailability(true);
+      await api.delete(`/availability/${slotId}`);
+      toast.success(t(dict, "success_remove"));
+      await fetchAvailability();
+    } catch (e) {
+      toast.error(e?.response?.data?.error || t(dict, "error_remove"));
+    } finally {
+      setSavingAvailability(false);
+    }
+  };
+
+  // Clear day availability
+  const clearDayAvailability = async (dayOfWeek) => {
+    if (!confirm(t(dict, "confirm_clear_day"))) return;
+
+    try {
+      setSavingAvailability(true);
+      await api.delete("/availability", {
+        params: { dayOfWeek, isRecurring: true },
+      });
+      toast.success(t(dict, "success_clear"));
+      await fetchAvailability();
+    } catch (e) {
+      toast.error(e?.response?.data?.error || t(dict, "error_clear"));
+    } finally {
+      setSavingAvailability(false);
+    }
+  };
+
+  // Clear all availability
+  const clearAllAvailability = async () => {
+    if (!confirm(t(dict, "confirm_clear_all"))) return;
+
+    try {
+      setSavingAvailability(true);
+      await api.delete("/availability");
+      toast.success(t(dict, "success_clear_all"));
+      await fetchAvailability();
+    } catch (e) {
+      toast.error(e?.response?.data?.error || t(dict, "error_clear"));
+    } finally {
+      setSavingAvailability(false);
     }
   };
 
@@ -440,68 +585,130 @@ export default function CalendarPage() {
     [currentDate, view, fetchEvents, checking, user, dict]
   );
 
-  // Premium event styling with gradients and shadows
-  const eventPropGetter = useCallback((event) => {
-    const isCanceled = event.status === "canceled";
-    const style = {
-      background: isCanceled
-        ? "linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)"
-        : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      border: "none",
-      color: "#fff",
-      borderRadius: "12px",
-      padding: "6px 12px",
-      opacity: isCanceled ? 0.85 : 1,
-      textDecoration: isCanceled ? "line-through" : "none",
-      boxShadow: isCanceled
-        ? "0 4px 12px rgba(255, 107, 107, 0.3)"
-        : "0 4px 12px rgba(102, 126, 234, 0.4)",
-      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      fontWeight: "600",
-      fontSize: "13px",
-      letterSpacing: "0.3px",
-    };
-    return { style, className: isCanceled ? "ev--canceled" : "ev--scheduled" };
-  }, []);
+  // Handle slot selection (for adding availability)
+  const handleSelectSlot = useCallback(
+    ({ start, end }) => {
+      if (calendarMode !== "availability") return;
+      if (savingAvailability) return;
 
-  // Custom event component with group + seats
-  const EventComp = ({ event }) => {
-    const isGroup = !!event?.isGroup;
-    const seats = event?.seatsLabel ? ` · ${event.seatsLabel}` : "";
+      const dayOfWeek = start.getDay();
+      const startTime = format(start, "HH:mm");
+      const endTime = format(end, "HH:mm");
 
-    return (
-      <div className="ev-pill">
-        <span className="ev-icon">●</span>
-        <span className="ev-title">
-          {event.title || t(dict, "session_default_title")}
-          {isGroup ? ` · ${t(dict, "session_group") || "Group"}` : ""}
-          {isGroup ? seats : ""}
-        </span>
-      </div>
-    );
-  };
+      setSelectedDayOfWeek(dayOfWeek);
+      addAvailabilitySlot(dayOfWeek, startTime, endTime);
+    },
+    [calendarMode, savingAvailability]
+  );
 
-  const components = useMemo(() => ({ event: EventComp }), [dict]);
+  // Event styling
+  const eventPropGetter = useCallback(
+    (event) => {
+      if (event.isAvailability) {
+        return {
+          className: `ev--availability ${
+            calendarMode === "availability"
+              ? "ev--availability-active"
+              : "ev--availability-faded"
+          }`,
+        };
+      }
 
-  // Click → go to session detail page
+      const isCanceled = event.status === "canceled";
+      return {
+        className: `${isCanceled ? "ev--canceled" : "ev--scheduled"} ${
+          calendarMode === "availability" ? "ev--dimmed" : ""
+        }`,
+      };
+    },
+    [calendarMode]
+  );
+
+  // Custom event component
+  const EventComp = useCallback(
+    ({ event }) => {
+      if (event.isAvailability) {
+        return (
+          <div className="ev-pill ev-pill--availability">
+            <span className="ev-pill__check">✓</span>
+            <span className="ev-pill__text">{t(dict, "available")}</span>
+          </div>
+        );
+      }
+
+      const isGroup = !!event?.isGroup;
+      const seats = event?.seatsLabel ? ` · ${event.seatsLabel}` : "";
+
+      return (
+        <div className="ev-pill">
+          <span className="ev-icon">●</span>
+          <span className="ev-title">
+            {event.title || t(dict, "session_default_title")}
+            {isGroup ? ` · ${t(dict, "session_group") || "Group"}` : ""}
+            {isGroup ? seats : ""}
+          </span>
+        </div>
+      );
+    },
+    [dict]
+  );
+
+  const components = useMemo(() => ({ event: EventComp }), [EventComp]);
+
+  // Click handler for events
   const onSelectEvent = useCallback(
     (event) => {
+      if (event.isAvailability) {
+        if (calendarMode === "availability" && event.slotId) {
+          if (confirm(t(dict, "confirm_delete_slot"))) {
+            deleteAvailabilitySlot(event.slotId);
+          }
+        }
+        return;
+      }
+
       if (!event?.id) return;
       router.push(`${prefix}/dashboard/sessions/${event.id}`);
     },
-    [router, prefix]
+    [router, prefix, calendarMode, dict]
   );
 
-  // Mini calendar → jump date
+  // Mini calendar change
   const onMiniChange = (date) => {
     setSelectedDate(date);
     setCurrentDate(date);
+    setSelectedDayOfWeek(date.getDay());
   };
 
-  // Stats calculation
+  // Combine events
+  const combinedEvents = useMemo(() => {
+    if (calendarMode === "sessions") {
+      return [...events, ...availabilityEvents];
+    } else {
+      return [...availabilityEvents, ...events];
+    }
+  }, [events, availabilityEvents, calendarMode]);
+
+  // Stats
   const scheduledCount = events.filter((e) => e.status === "scheduled").length;
   const canceledCount = events.filter((e) => e.status === "canceled").length;
   const currentMonthYear = format(currentDate, "MMMM yyyy");
+  const activeSlotCount = availabilitySlots.filter(
+    (s) => s.status === "active"
+  ).length;
+
+  // Total availability hours
+  const totalAvailabilityHours = useMemo(() => {
+    let minutes = 0;
+    availabilitySlots.forEach((slot) => {
+      if (slot.status === "active") {
+        const [startH, startM] = slot.startTime.split(":").map(Number);
+        const [endH, endM] = slot.endTime.split(":").map(Number);
+        minutes += endH * 60 + endM - (startH * 60 + startM);
+      }
+    });
+    return (minutes / 60).toFixed(1);
+  }, [availabilitySlots]);
 
   if (checking)
     return (
@@ -514,42 +721,54 @@ export default function CalendarPage() {
 
   return (
     <>
-      {/* ═══════════════════════════════════════════════════════════════════
-          IMPERSONATION BANNER - Shows when admin is viewing as another user
-          ═══════════════════════════════════════════════════════════════════ */}
       {isImpersonating && (
         <ImpersonationBanner user={user} onStop={handleStopImpersonate} />
       )}
 
       <div className="calendar-premium-container">
-        {/* Animated gradient background */}
         <div className="calendar-bg-gradient"></div>
 
         {/* Header Section */}
         <div className="calendar-header">
-          <div className="calendar-header-content">
-            <h1 className="calendar-title">
-              <span className="calendar-icon">📅</span>
-              {t(dict, "title")}
-            </h1>
-            <p className="calendar-subtitle">
-              {t(dict, "subtitle")}
-              {isImpersonating && (
-                <span
-                  style={{
-                    color: "#d97706",
-                    marginLeft: "8px",
-                    fontWeight: "500",
-                  }}
-                >
-                  • Viewing {user?.name || user?.email}'s calendar
-                </span>
-              )}
-            </p>
+          <div className="calendar-header-content calendar-header-content--with-toggle">
+            <div className="calendar-header__left">
+              <h1 className="calendar-title">
+                <span className="calendar-icon">📅</span>
+                {t(dict, "title")}
+              </h1>
+              <p className="calendar-subtitle">
+                {calendarMode === "availability"
+                  ? t(dict, "availability_subtitle")
+                  : t(dict, "subtitle")}
+                {isImpersonating && (
+                  <span className="calendar-subtitle__impersonating">
+                    • Viewing {user?.name || user?.email}'s calendar
+                  </span>
+                )}
+              </p>
+            </div>
+
+            <AvailabilityModeToggle
+              mode={calendarMode}
+              onModeChange={setCalendarMode}
+              availabilityCount={activeSlotCount}
+              dict={dict}
+            />
           </div>
         </div>
 
-        {events.length === 0 && (
+        {/* Availability Instructions */}
+        {calendarMode === "availability" && showInstructions && (
+          <div className="calendar-instructions-wrapper">
+            <AvailabilityInstructions
+              dict={dict}
+              locale={locale}
+              onClose={() => setShowInstructions(false)}
+            />
+          </div>
+        )}
+
+        {events.length === 0 && calendarMode === "sessions" && (
           <p className="calendar-empty">{t(dict, "empty")}</p>
         )}
         {error && (
@@ -591,6 +810,12 @@ export default function CalendarPage() {
                       {t(dict, "legend_canceled")}
                     </span>
                   </div>
+                  <div className="legend-item">
+                    <span className="legend-dot legend-dot--available"></span>
+                    <span className="legend-text">
+                      {t(dict, "legend_available")}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Stats Card */}
@@ -610,33 +835,36 @@ export default function CalendarPage() {
                   </div>
                 </div>
 
+                {/* Availability Stats */}
+                {calendarMode === "availability" && (
+                  <AvailabilityStatsCard
+                    slotCount={activeSlotCount}
+                    totalHours={totalAvailabilityHours}
+                    dict={dict}
+                    locale={locale}
+                  />
+                )}
+
+                {/* Quick Actions for Availability Mode */}
+                {calendarMode === "availability" && (
+                  <AvailabilityQuickActions
+                    onClearDay={clearDayAvailability}
+                    onClearAll={clearAllAvailability}
+                    selectedDay={selectedDayOfWeek}
+                    totalSlots={activeSlotCount}
+                    saving={savingAvailability}
+                    dict={dict}
+                    locale={locale}
+                  />
+                )}
+
                 {/* Impersonation info card */}
                 {isImpersonating && (
-                  <div
-                    style={{
-                      marginTop: "16px",
-                      padding: "12px",
-                      background: "#fef3c7",
-                      borderRadius: "8px",
-                      border: "1px solid #f59e0b",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        color: "#92400e",
-                        fontWeight: "600",
-                      }}
-                    >
+                  <div className="impersonation-info-card">
+                    <div className="impersonation-info-card__title">
                       👁️ Admin Preview
                     </div>
-                    <div
-                      style={{
-                        fontSize: "11px",
-                        color: "#a16207",
-                        marginTop: "4px",
-                      }}
-                    >
+                    <div className="impersonation-info-card__text">
                       Viewing {user?.role}'s calendar as admin
                     </div>
                   </div>
@@ -645,17 +873,28 @@ export default function CalendarPage() {
             </div>
 
             {/* Right: Main Calendar */}
-            <div className="calendar-two-pane__right">
+            <div
+              className={`calendar-two-pane__right ${
+                calendarMode === "availability"
+                  ? "calendar-two-pane__right--availability-mode"
+                  : ""
+              }`}
+            >
               <BigCalendar
                 ref={calRef}
                 localizer={localizer}
                 date={currentDate}
                 view={view}
                 onView={(v) => setView(v)}
-                onNavigate={(d) => setCurrentDate(d)}
+                onNavigate={(d) => {
+                  setCurrentDate(d);
+                  setSelectedDayOfWeek(d.getDay());
+                }}
                 onRangeChange={handleRangeChange}
                 onSelectEvent={onSelectEvent}
-                events={events}
+                onSelectSlot={handleSelectSlot}
+                selectable={calendarMode === "availability"}
+                events={combinedEvents}
                 startAccessor="start"
                 endAccessor="end"
                 components={components}
@@ -679,6 +918,8 @@ export default function CalendarPage() {
                 style={{ height: 800 }}
                 toolbar
               />
+
+              {savingAvailability && <SavingOverlay dict={dict} />}
             </div>
           </div>
         </div>

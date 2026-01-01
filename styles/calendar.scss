@@ -1046,3 +1046,536 @@
 [dir="rtl"] .calendar-premium-container .rbc-toolbar .rbc-toolbar-label {
   text-align: center;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AVAILABILITY LAYER STYLES - Add to your existing calendar.scss
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── AVAILABILITY COLORS (add to your variables file or top of this file) ───
+$availability-primary: #10b981;
+$availability-secondary: #059669;
+$availability-light: #ecfdf5;
+$availability-border: #6ee7b7;
+$availability-text: #047857;
+$availability-text-dark: #065f46;
+
+// ─── IMPERSONATION BANNER ──────────────────────────────────────────────────
+.impersonation-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    svg {
+      flex-shrink: 0;
+    }
+
+    div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+
+    strong {
+      font-size: 0.875rem;
+    }
+
+    span {
+      font-size: 0.75rem;
+      opacity: 0.9;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  &__link {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  &__stop {
+    background: #fff;
+    color: #d97706;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #fef3c7;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    text-align: center;
+
+    &__info {
+      flex-direction: column;
+    }
+
+    &__actions {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+// ─── CALENDAR HEADER WITH TOGGLE ───────────────────────────────────────────
+.calendar-header-content--with-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  text-align: left;
+
+  .calendar-header__left {
+    .calendar-title {
+      justify-content: flex-start;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    text-align: center;
+
+    .calendar-header__left {
+      .calendar-title {
+        justify-content: center;
+      }
+    }
+  }
+}
+
+.calendar-subtitle__impersonating {
+  color: #d97706;
+  margin-left: 0.5rem;
+  font-weight: 500;
+}
+
+// ─── AVAILABILITY MODE TOGGLE ──────────────────────────────────────────────
+.availability-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba($card-bg, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 0.375rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+
+  &__btn {
+    padding: 0.625rem 1.25rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    color: $text-secondary;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+
+    &:hover:not(&--active):not(&--active-green) {
+      background: rgba($calendar-primary, 0.1);
+    }
+
+    &--active {
+      background: linear-gradient(
+        135deg,
+        $calendar-primary 0%,
+        $calendar-secondary 100%
+      );
+      color: #fff;
+      box-shadow: 0 4px 12px rgba($calendar-primary, 0.4);
+    }
+
+    &--active-green {
+      background: linear-gradient(
+        135deg,
+        $availability-primary 0%,
+        $availability-secondary 100%
+      );
+      color: #fff;
+      box-shadow: 0 4px 12px rgba($availability-primary, 0.4);
+    }
+  }
+
+  &__count {
+    background: #e2e8f0;
+    color: $text-secondary;
+    padding: 0.125rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    &--active {
+      background: rgba(255, 255, 255, 0.3);
+      color: #fff;
+    }
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+
+    &__btn {
+      flex: 1;
+      justify-content: center;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+    }
+  }
+}
+
+// ─── AVAILABILITY INSTRUCTIONS ─────────────────────────────────────────────
+.calendar-instructions-wrapper {
+  padding: 0 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto 1rem;
+}
+
+.availability-instructions {
+  background: linear-gradient(135deg, $availability-light 0%, #d1fae5 100%);
+  border: 1px solid $availability-border;
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  animation: slideDown 0.3s ease-out;
+
+  &__icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__title {
+    margin: 0 0 0.5rem 0;
+    color: $availability-text;
+    font-weight: 700;
+    font-size: 0.9375rem;
+  }
+
+  &__list {
+    margin: 0;
+    padding: 0 0 0 1rem;
+    color: $availability-text-dark;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+
+    [dir="rtl"] & {
+      padding: 0 1rem 0 0;
+    }
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: $availability-text;
+    font-size: 1.125rem;
+    padding: 0.25rem;
+    line-height: 1;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $availability-text-dark;
+    }
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+
+    &__close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+
+      [dir="rtl"] & {
+        right: auto;
+        left: 0.75rem;
+      }
+    }
+  }
+}
+
+// ─── AVAILABILITY QUICK ACTIONS ────────────────────────────────────────────
+.availability-quick-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+
+  &__btn {
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    &--clear-day {
+      border: 1px solid #fca5a5;
+      background: #fef2f2;
+      color: #dc2626;
+
+      &:hover:not(:disabled) {
+        background: #fee2e2;
+      }
+    }
+
+    &--clear-all {
+      border: 1px solid #fca5a5;
+      background: #fff;
+      color: #dc2626;
+
+      &:hover:not(:disabled) {
+        background: #fef2f2;
+      }
+    }
+  }
+}
+
+// ─── AVAILABILITY STATS CARD ───────────────────────────────────────────────
+.mini-stats-card--availability {
+  margin-top: 0.75rem;
+  background: linear-gradient(135deg, $availability-light 0%, #d1fae5 100%);
+  border: 1px solid $availability-border;
+}
+
+.stat-value--green {
+  background: linear-gradient(
+    135deg,
+    $availability-primary 0%,
+    $availability-secondary 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label--green {
+  color: $availability-text-dark;
+}
+
+.stat-divider--green {
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    $availability-border,
+    transparent
+  );
+}
+
+// ─── LEGEND - AVAILABLE DOT ────────────────────────────────────────────────
+.legend-dot--available {
+  background: linear-gradient(
+    135deg,
+    $availability-primary 0%,
+    $availability-secondary 100%
+  );
+}
+
+// ─── IMPERSONATION INFO CARD ───────────────────────────────────────────────
+.impersonation-info-card {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border-radius: 8px;
+  border: 1px solid #f59e0b;
+
+  &__title {
+    font-size: 0.75rem;
+    color: #92400e;
+    font-weight: 600;
+  }
+
+  &__text {
+    font-size: 0.6875rem;
+    color: #a16207;
+    margin-top: 0.25rem;
+  }
+}
+
+// ─── CALENDAR AVAILABILITY MODE INDICATOR ──────────────────────────────────
+.calendar-two-pane__right--availability-mode {
+  box-shadow: inset 0 0 0 3px $availability-primary;
+  border-radius: 24px;
+}
+
+// ─── AVAILABILITY EVENT STYLING ────────────────────────────────────────────
+.ev--availability {
+  background: linear-gradient(
+    135deg,
+    $availability-primary 0%,
+    $availability-secondary 100%
+  ) !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba($availability-primary, 0.3) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  z-index: 1 !important;
+
+  &:hover {
+    transform: translateY(-1px) scale(1.01) !important;
+    box-shadow: 0 4px 12px rgba($availability-primary, 0.4) !important;
+  }
+}
+
+.ev--availability-active {
+  opacity: 1 !important;
+  cursor: pointer !important;
+}
+
+.ev--availability-faded {
+  opacity: 0.4 !important;
+  cursor: default !important;
+}
+
+.ev--dimmed {
+  filter: brightness(0.7) !important;
+}
+
+.ev-pill--availability {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+
+  .ev-pill__check {
+    font-size: 0.625rem;
+  }
+
+  .ev-pill__text {
+    font-size: 0.6875rem;
+  }
+}
+
+// ─── TIME SLOT HOVER IN AVAILABILITY MODE ──────────────────────────────────
+.calendar-two-pane__right--availability-mode {
+  .rbc-time-slot {
+    cursor: crosshair;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: rgba($availability-primary, 0.1);
+    }
+  }
+
+  .rbc-day-slot {
+    cursor: crosshair;
+  }
+}
+
+// ─── SAVING OVERLAY ────────────────────────────────────────────────────────
+.availability-saving-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1.25rem 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 100;
+
+  &__spinner {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 3px solid $availability-primary;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  span {
+    color: $availability-text;
+    font-weight: 600;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─── SESSION EVENTS Z-INDEX ────────────────────────────────────────────────
+.ev--scheduled,
+.ev--canceled {
+  z-index: 2 !important;
+}
+
+// ─── RTL ADJUSTMENTS FOR AVAILABILITY ──────────────────────────────────────
+[dir="rtl"] {
+  .availability-mode-toggle {
+    flex-direction: row-reverse;
+  }
+
+  .availability-instructions {
+    &__list {
+      padding: 0 1rem 0 0;
+    }
+  }
+
+  .calendar-subtitle__impersonating {
+    margin-left: 0;
+    margin-right: 0.5rem;
+  }
+}
