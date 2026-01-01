@@ -1,10 +1,3 @@
-// app/admin/availability/page.js
-"use client";
-
-import AdminAvailabilityView from "@/components/admin/AdminAvailabilityView";
-import useAuth from "@/hooks/useAuth";
-import Link from "next/link";
-
 export default function AdminAvailabilityPage() {
   const { user, checking } = useAuth();
 
@@ -14,6 +7,7 @@ export default function AdminAvailabilityPage() {
         <div className="p-8">Loading...</div>
       </div>
     );
+
   if (user?.role !== "admin")
     return (
       <div className="admin-availability-page">
@@ -22,14 +16,18 @@ export default function AdminAvailabilityPage() {
     );
 
   return (
-    <div className="p-6">
-      <Link
-        href="/admin"
-        className="text-violet-600 hover:underline mb-4 inline-block"
-      >
-        ← Back to Admin
-      </Link>
-      <AdminAvailabilityView />
+    <div className="admin-availability-page">
+      {/* make space-y-6 a direct child to satisfy your SCSS selectors */}
+      <div className="space-y-6">
+        <Link
+          href="/admin"
+          className="text-violet-600 hover:underline inline-block"
+        >
+          ← Back to Admin
+        </Link>
+
+        <AdminAvailabilityView />
+      </div>
     </div>
   );
 }
