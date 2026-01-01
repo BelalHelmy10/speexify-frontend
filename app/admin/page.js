@@ -835,10 +835,13 @@ function Admin() {
                 <tr>
                   <th>User</th>
                   <th>Role</th>
+                  <th>Hourly Rate ($)</th>
+                  <th>Per Session ($)</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 {usersAdmin.map((u) => (
                   <tr key={u.id}>
@@ -864,6 +867,63 @@ function Admin() {
                         <option value="admin">Admin</option>
                       </select>
                     </td>
+
+                    <td>
+                      {u.role === "teacher" || u.role === "admin" ? (
+                        <input
+                          type="number"
+                          className="adm-form-input adm-rate-input"
+                          value={
+                            u.rateHourlyCents ? u.rateHourlyCents / 100 : ""
+                          }
+                          placeholder="—"
+                          min="0"
+                          step="0.01"
+                          onBlur={async (e) => {
+                            const value = e.target.value;
+                            await api.patch(`/admin/users/${u.id}`, {
+                              rateHourlyCents:
+                                value === ""
+                                  ? null
+                                  : Math.round(Number(value) * 100),
+                            });
+                            loadUsersAdmin();
+                          }}
+                        />
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+
+                    <td>
+                      {u.role === "teacher" || u.role === "admin" ? (
+                        <input
+                          type="number"
+                          className="adm-form-input adm-rate-input"
+                          value={
+                            u.ratePerSessionCents
+                              ? u.ratePerSessionCents / 100
+                              : ""
+                          }
+                          placeholder="—"
+                          min="0"
+                          step="0.01"
+                          onBlur={async (e) => {
+                            const value = e.target.value;
+                            await api.patch(`/admin/users/${u.id}`, {
+                              ratePerSessionCents:
+                                value === ""
+                                  ? null
+                                  : Math.round(Number(value) * 100),
+                            });
+                            loadUsersAdmin();
+                          }}
+                        />
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+
                     <td>
                       <span
                         className={`adm-status-badge ${
