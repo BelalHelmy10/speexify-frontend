@@ -759,9 +759,12 @@ function Admin() {
         </div>
 
         {/* ✅ NEW: Admin Support Inbox shortcut */}
-        <div className="adm-admin-header__actions">
+        <div className="adm-admin-header__actions" style={{ gap: 12 }}>
           <Link href="/admin/support" className="adm-btn-primary">
             🛟 Support Inbox
+          </Link>
+          <Link href="/admin/packages" className="adm-btn-secondary">
+            📦 Packages
           </Link>
         </div>
       </div>
