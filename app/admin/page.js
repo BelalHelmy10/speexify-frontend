@@ -873,19 +873,21 @@ function Admin() {
                         <input
                           type="number"
                           className="adm-form-input adm-rate-input"
-                          value={
-                            u.rateHourlyCents ? u.rateHourlyCents / 100 : ""
+                          defaultValue={
+                            typeof u.rateHourlyCents === "number"
+                              ? (u.rateHourlyCents / 100).toFixed(2)
+                              : ""
                           }
                           placeholder="—"
                           min="0"
                           step="0.01"
                           onBlur={async (e) => {
-                            const value = e.target.value;
+                            const raw = e.target.value.trim();
+                            const cents =
+                              raw === "" ? null : Math.round(Number(raw) * 100);
+
                             await api.patch(`/admin/users/${u.id}`, {
-                              rateHourlyCents:
-                                value === ""
-                                  ? null
-                                  : Math.round(Number(value) * 100),
+                              rateHourlyCents: cents,
                             });
                             loadUsersAdmin();
                           }}
@@ -900,21 +902,21 @@ function Admin() {
                         <input
                           type="number"
                           className="adm-form-input adm-rate-input"
-                          value={
-                            u.ratePerSessionCents
-                              ? u.ratePerSessionCents / 100
+                          defaultValue={
+                            typeof u.ratePerSessionCents === "number"
+                              ? (u.ratePerSessionCents / 100).toFixed(2)
                               : ""
                           }
                           placeholder="—"
                           min="0"
                           step="0.01"
                           onBlur={async (e) => {
-                            const value = e.target.value;
+                            const raw = e.target.value.trim();
+                            const cents =
+                              raw === "" ? null : Math.round(Number(raw) * 100);
+
                             await api.patch(`/admin/users/${u.id}`, {
-                              ratePerSessionCents:
-                                value === ""
-                                  ? null
-                                  : Math.round(Number(value) * 100),
+                              ratePerSessionCents: cents,
                             });
                             loadUsersAdmin();
                           }}
