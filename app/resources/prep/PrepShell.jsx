@@ -176,6 +176,111 @@ export default function PrepShell({
   const containerRef = useRef(null); // element that matches the page (for normalized coords)
   const screenVideoRef = useRef(null);
   const audioRef = useRef(null);
+
+  // ✅ AUDIO SYNC (teacher -> learners)
+  const audioSeqRef = useRef(0); // monotonically increasing sequence (teacher)
+  const lastAppliedAudioSeqRef = useRef(-1); // last seq applied (learner)
+  const lastAudioStateRef = useRef(null); // last received AUDIO_STATE for drift correction
+  const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
+
+  const sendAudioState = useCallback(
+    ({ trackIndex, time, playing } = {}) => {
+      if (!channelReady || !sendOnChannel) return;
+      if (!isTeacher) return;
+      const el = audioRef.current;
+      const nextTrack =
+        typeof trackIndex === "number" ? trackIndex : currentTrackIndex;
+      const nextTime =
+        typeof time === "number"
+          ? time
+          : el && typeof el.currentTime === "number"
+          ? el.currentTime
+          : 0;
+      const nextPlaying =
+        typeof playing === "boolean" ? playing : el ? !el.paused : false;
+
+      const seq = (audioSeqRef.current = (audioSeqRef.current || 0) + 1);
+
+      sendOnChannel({
+        type: "AUDIO_STATE",
+        resourceId: resource._id,
+        seq,
+        sentAt: Date.now(),
+        trackIndex: nextTrack,
+        time: Math.max(0, nextTime),
+        playing: !!nextPlaying,
+      });
+    },
+    [channelReady, sendOnChannel, isTeacher, resource._id, currentTrackIndex]
+  );
+
+  const applyAudioState = useCallback((msg, { isSnapshot = false } = {}) => {
+    const el = audioRef.current;
+    if (!el || !msg) return;
+
+    const seq = Number(msg.seq);
+    if (Number.isFinite(seq) && seq <= lastAppliedAudioSeqRef.current) {
+      return; // ignore old/out-of-order
+    }
+    if (Number.isFinite(seq)) lastAppliedAudioSeqRef.current = seq;
+
+    const nextIndex = Number(msg.trackIndex) || 0;
+    const baseTime = Number(msg.time) || 0;
+    const sentAt = Number(msg.sentAt) || Date.now();
+    const playing = !!msg.playing;
+
+    setCurrentTrackIndex(nextIndex);
+
+    // Compute latency-compensated target time
+    const now = Date.now();
+    const latencySec = Math.max(0, (now - sentAt) / 1000);
+    const targetTime = Math.max(0, baseTime + (playing ? latencySec : 0));
+
+    lastAudioStateRef.current = {
+      trackIndex: nextIndex,
+      time: baseTime,
+      sentAt,
+      playing,
+    };
+
+    const runAfterLoad = (fn) => {
+      // readyState 1 means metadata loaded (duration/time available)
+      if (el.readyState >= 1) {
+        fn();
+        return;
+      }
+      const onLoaded = () => {
+        el.removeEventListener("loadedmetadata", onLoaded);
+        fn();
+      };
+      el.addEventListener("loadedmetadata", onLoaded);
+    };
+
+    runAfterLoad(() => {
+      try {
+        el.currentTime = targetTime;
+      } catch {}
+
+      if (playing) {
+        el.play().then(
+          () => {
+            setIsAudioPlaying(true);
+            setNeedsAudioUnlock(false);
+          },
+          () => {
+            // Autoplay may be blocked; user must click play once
+            setIsAudioPlaying(false);
+            setNeedsAudioUnlock(true);
+          }
+        );
+      } else {
+        try {
+          el.pause();
+        } catch {}
+        setIsAudioPlaying(false);
+      }
+    });
+  }, []);
   const toolMenuRef = useRef(null);
   const colorMenuRef = useRef(null);
 
@@ -186,7 +291,6 @@ export default function PrepShell({
   const rafPendingRef = useRef(false); // throttle (rAF)
 
   const applyingRemoteRef = useRef(false);
-  const prevChannelReadyRef = useRef(false); // detect reconnect edges
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
@@ -202,29 +306,6 @@ export default function PrepShell({
 
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
-
-  // ✅ Learner: request a full state snapshot whenever we (re)connect
-  useEffect(() => {
-    if (!resource?._id) return;
-
-    if (!channelReady) {
-      prevChannelReadyRef.current = false;
-      return;
-    }
-
-    // Only fire on the transition to ready (initial connect or reconnect)
-    if (prevChannelReadyRef.current) return;
-    prevChannelReadyRef.current = true;
-
-    if (isTeacher) return;
-    if (!sendOnChannel) return;
-
-    sendOnChannel({
-      type: "REQUEST_PREP_STATE",
-      resourceId: resource._id,
-      at: Date.now(),
-    });
-  }, [channelReady, isTeacher, sendOnChannel, resource?._id]);
 
   const layoutClasses =
     "prep-layout" +
@@ -324,6 +405,22 @@ export default function PrepShell({
       audioEl.removeEventListener("pause", handleEnded);
     };
   }, [resource._id]);
+
+  // ✅ Teacher: periodically broadcast audio state while playing (keeps learners in sync)
+  useEffect(() => {
+    if (!isTeacher) return;
+    if (!channelReady || !sendOnChannel) return;
+    if (!isAudioPlaying) return;
+
+    const id = setInterval(() => {
+      const el = audioRef.current;
+      if (!el) return;
+      if (el.paused) return;
+      sendAudioState({ time: el.currentTime || 0, playing: true });
+    }, 750);
+
+    return () => clearInterval(id);
+  }, [isTeacher, channelReady, sendOnChannel, isAudioPlaying, sendAudioState]);
 
   // ─────────────────────────────────────────────────────────────
   // Close tool / color menus when clicking outside
@@ -434,6 +531,33 @@ export default function PrepShell({
           ctx.lineTo(x, y);
         }
       });
+
+      // ✅ Learner drift correction while teacher audio is playing
+      useEffect(() => {
+        if (isTeacher) return;
+        const el = audioRef.current;
+        if (!el) return;
+
+        const tick = () => {
+          const st = lastAudioStateRef.current;
+          if (!st || !st.playing) return;
+
+          const now = Date.now();
+          const target =
+            Math.max(0, Number(st.time) || 0) +
+            Math.max(0, (now - (Number(st.sentAt) || now)) / 1000);
+
+          const diff = target - (Number(el.currentTime) || 0);
+          if (Math.abs(diff) > 0.35) {
+            try {
+              el.currentTime = target;
+            } catch {}
+          }
+        };
+
+        const id = setInterval(tick, 500);
+        return () => clearInterval(id);
+      }, [isTeacher]);
       ctx.stroke();
       ctx.restore();
     });
@@ -607,13 +731,6 @@ export default function PrepShell({
     // Teacher broadcasts a shared pointer
     if (isTeacher) {
       if (!normalizedPosOrNull) {
-        // keep local in sync too (useful for reconnect snapshots)
-        setTeacherPointerByPage((prev) => {
-          const next = { ...prev };
-          delete next[page];
-          return next;
-        });
-
         sendOnChannel({
           type: "TEACHER_POINTER_HIDE",
           resourceId: resource._id,
@@ -621,12 +738,6 @@ export default function PrepShell({
         });
         return;
       }
-
-      setTeacherPointerByPage((prev) => ({
-        ...prev,
-        [page]: { x: normalizedPosOrNull.x, y: normalizedPosOrNull.y },
-      }));
-
       sendOnChannel({
         type: "TEACHER_POINTER_MOVE",
         resourceId: resource._id,
@@ -732,185 +843,6 @@ export default function PrepShell({
     if (!classroomChannel.subscribe) return;
 
     const unsubscribe = classroomChannel.subscribe((msg) => {
-      // ✅ Reconnect snapshot: learner requests, teacher responds
-      if (msg.type === "REQUEST_PREP_STATE" && isTeacher) {
-        const page = isPdf ? pdfCurrentPage : 1;
-
-        // PDF scroll normalized (0..1)
-        const scrollEl = pdfScrollRef.current;
-        const denom = scrollEl
-          ? scrollEl.scrollHeight - scrollEl.clientHeight
-          : 0;
-        const scrollNorm =
-          scrollEl && denom > 0 ? scrollEl.scrollTop / denom : 0;
-
-        // Current canvas snapshot (PNG) can be large; only send on request
-        const c = canvasRef.current;
-        const canvasData = c ? c.toDataURL("image/png") : null;
-
-        const audioEl = audioRef.current;
-
-        const teacherPointer = teacherPointerByPage[page] || null;
-        const learnerPointers = learnerPointersByPage[page] || null;
-
-        sendOnChannel?.({
-          type: "PREP_STATE",
-          resourceId: resource._id,
-          at: Date.now(),
-
-          page,
-
-          pdf: isPdf
-            ? {
-                page: pdfCurrentPage,
-                scrollNorm: Math.max(0, Math.min(1, scrollNorm)),
-              }
-            : null,
-
-          audio: audioEl
-            ? {
-                trackIndex: currentTrackIndex,
-                time:
-                  typeof audioEl.currentTime === "number"
-                    ? audioEl.currentTime
-                    : 0,
-                playing: !audioEl.paused,
-              }
-            : null,
-
-          annotations: {
-            canvasData,
-            strokes,
-            stickyNotes,
-            textBoxes,
-            masks,
-          },
-
-          pointer: {
-            teacher: teacherPointer,
-            learners: learnerPointers,
-          },
-
-          toolState: {
-            tool,
-            penColor,
-          },
-
-          ui: {
-            sidebarCollapsed,
-          },
-        });
-
-        return;
-      }
-
-      if (msg.type === "PREP_STATE" && !isTeacher) {
-        // Apply PDF state
-        if (msg.pdf && isPdf) {
-          const api = pdfNavApiRef.current;
-          const page = Number(msg.pdf.page) || 1;
-          const scrollNorm = Number(msg.pdf.scrollNorm);
-
-          applyingRemoteRef.current = true;
-          if (api?.setPage) api.setPage(page);
-
-          // Apply scroll once the DOM has updated
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              const el = pdfScrollRef.current;
-              if (el) {
-                const d = el.scrollHeight - el.clientHeight;
-                if (d > 0 && Number.isFinite(scrollNorm)) {
-                  const clamped = Math.max(0, Math.min(1, scrollNorm));
-                  el.scrollTop = clamped * d;
-                }
-              }
-              applyingRemoteRef.current = false;
-            });
-          });
-        }
-
-        // Apply audio state
-        if (msg.audio && audioRef.current) {
-          const nextIndex = Number(msg.audio.trackIndex) || 0;
-          const time = Number(msg.audio.time) || 0;
-          const playing = !!msg.audio.playing;
-
-          setCurrentTrackIndex(nextIndex);
-
-          // Wait a tick for <audio src=...> to update, then seek/play
-          setTimeout(() => {
-            const el = audioRef.current;
-            if (!el) return;
-
-            const apply = () => {
-              try {
-                el.currentTime = Math.max(0, time);
-              } catch {}
-
-              if (playing) {
-                el.play().then(
-                  () => setIsAudioPlaying(true),
-                  () => setIsAudioPlaying(false)
-                );
-              } else {
-                try {
-                  el.pause();
-                } catch {}
-                setIsAudioPlaying(false);
-              }
-            };
-
-            if (el.readyState >= 1) {
-              apply();
-            } else {
-              const onLoaded = () => {
-                el.removeEventListener("loadedmetadata", onLoaded);
-                apply();
-              };
-              el.addEventListener("loadedmetadata", onLoaded);
-            }
-          }, 0);
-        }
-
-        // Apply annotations snapshot (only if present)
-        if (msg.annotations) {
-          applyRemoteAnnotationState({
-            ...msg.annotations,
-            type: "ANNOTATION_STATE",
-            resourceId: resource._id,
-          });
-        }
-
-        // Apply pointer snapshot
-        if (msg.pointer?.teacher && typeof msg.pointer.teacher.x === "number") {
-          const page = Number(msg.page) || (isPdf ? pdfCurrentPage : 1);
-          setTeacherPointerByPage((prev) => ({
-            ...prev,
-            [page]: { x: msg.pointer.teacher.x, y: msg.pointer.teacher.y },
-          }));
-        }
-
-        if (msg.pointer?.learners && typeof msg.pointer.learners === "object") {
-          const page = Number(msg.page) || (isPdf ? pdfCurrentPage : 1);
-          setLearnerPointersByPage((prev) => ({
-            ...prev,
-            [page]: msg.pointer.learners,
-          }));
-        }
-
-        // Apply tool/color snapshot
-        if (msg.toolState?.tool) setTool(msg.toolState.tool);
-        if (msg.toolState?.penColor) setPenColor(msg.toolState.penColor);
-
-        // Apply UI snapshot
-        if (typeof msg.ui?.sidebarCollapsed === "boolean") {
-          setSidebarCollapsed(msg.ui.sidebarCollapsed);
-        }
-
-        return;
-      }
-
       if (!msg || msg.resourceId !== resource._id) return;
 
       if (msg.type === "ANNOTATION_STATE") {
@@ -1098,24 +1030,7 @@ export default function PrepShell({
     });
 
     return unsubscribe;
-  }, [
-    classroomChannel,
-    resource._id,
-    isTeacher,
-    isPdf,
-    pdfCurrentPage,
-    currentTrackIndex,
-    strokes,
-    stickyNotes,
-    textBoxes,
-    masks,
-    tool,
-    penColor,
-    sidebarCollapsed,
-    teacherPointerByPage,
-    learnerPointersByPage,
-    sendOnChannel,
-  ]);
+  }, [classroomChannel, resource._id, isTeacher, isPdf, pdfCurrentPage]);
 
   // ─────────────────────────────────────────────────────────────
   // Drawing tools (pen / highlighter / eraser) using normalized coords
@@ -2456,9 +2371,7 @@ export default function PrepShell({
                           }
 
                           if (isTeacher && channelReady && sendOnChannel) {
-                            sendOnChannel({
-                              type: "AUDIO_TRACK",
-                              resourceId: resource._id,
+                            sendAudioState({
                               trackIndex: nextIndex,
                               time: 0,
                               playing: false,
@@ -2486,11 +2399,10 @@ export default function PrepShell({
                           setIsAudioPlaying(false);
 
                           if (isTeacher && channelReady && sendOnChannel) {
-                            sendOnChannel({
-                              type: "AUDIO_PAUSE",
-                              resourceId: resource._id,
+                            sendAudioState({
                               trackIndex: safeTrackIndex,
                               time: el.currentTime || 0,
+                              playing: false,
                             });
                           }
                         } else {
@@ -2499,11 +2411,10 @@ export default function PrepShell({
                               setIsAudioPlaying(true);
 
                               if (isTeacher && channelReady && sendOnChannel) {
-                                sendOnChannel({
-                                  type: "AUDIO_PLAY",
-                                  resourceId: resource._id,
+                                sendAudioState({
                                   trackIndex: safeTrackIndex,
                                   time: el.currentTime || 0,
+                                  playing: false,
                                 });
                               }
                             },
@@ -2516,6 +2427,35 @@ export default function PrepShell({
                       {isAudioPlaying ? "⏸" : "▶️"}
                     </button>
 
+                    {needsAudioUnlock && (
+                      <button
+                        type="button"
+                        className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--audio"
+                        onClick={() => {
+                          const el = audioRef.current;
+                          if (!el) return;
+                          el.play().then(
+                            () => {
+                              setIsAudioPlaying(true);
+                              setNeedsAudioUnlock(false);
+                              if (isTeacher) {
+                                sendAudioState({
+                                  trackIndex: safeTrackIndex,
+                                  time: el.currentTime || 0,
+                                  playing: true,
+                                });
+                              }
+                            },
+                            () => {}
+                          );
+                        }}
+                        aria-label="Enable audio"
+                        title="Enable audio"
+                      >
+                        🔊
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--audio-restart"
@@ -2526,11 +2466,10 @@ export default function PrepShell({
                         el.currentTime = 0;
 
                         if (isTeacher && channelReady && sendOnChannel) {
-                          sendOnChannel({
-                            type: "AUDIO_SEEK",
-                            resourceId: resource._id,
+                          sendAudioState({
                             trackIndex: safeTrackIndex,
                             time: 0,
+                            playing: isAudioPlaying || true,
                           });
                         }
 
@@ -2539,11 +2478,10 @@ export default function PrepShell({
                             setIsAudioPlaying(true);
 
                             if (isTeacher && channelReady && sendOnChannel) {
-                              sendOnChannel({
-                                type: "AUDIO_PLAY",
-                                resourceId: resource._id,
+                              sendAudioState({
                                 trackIndex: safeTrackIndex,
                                 time: 0,
+                                playing: isAudioPlaying || true,
                               });
                             }
                           },
