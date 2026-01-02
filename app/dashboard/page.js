@@ -435,10 +435,10 @@ function DashboardInner({ dict, prefix }) {
     try {
       const [u, p] = await Promise.all([
         api.get("/me/sessions", {
-          params: { range: "upcoming", limit: 10, t: Date.now() },
+          params: { range: "upcoming", limit: 20, t: Date.now() },
         }),
         api.get("/me/sessions", {
-          params: { range: "past", limit: 10, t: Date.now() },
+          params: { range: "past", limit: 20, t: Date.now() },
         }),
       ]);
 
