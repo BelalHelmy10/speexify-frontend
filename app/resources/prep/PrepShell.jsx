@@ -182,6 +182,10 @@ export default function PrepShell({
   const lastAppliedAudioSeqRef = useRef(-1); // last seq applied (learner)
   const lastAudioStateRef = useRef(null); // last received AUDIO_STATE for drift correction
   const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
+  const channelReady = !!classroomChannel?.ready;
+  const sendOnChannel = classroomChannel?.send;
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
   const sendAudioState = useCallback(
     ({ trackIndex, time, playing } = {}) => {
@@ -291,8 +295,6 @@ export default function PrepShell({
   const rafPendingRef = useRef(false); // throttle (rAF)
 
   const applyingRemoteRef = useRef(false);
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
   const unit = resource.unit;
   const subLevel = unit?.subLevel;
@@ -303,9 +305,6 @@ export default function PrepShell({
 
   const showSidebar = !hideSidebar && !sidebarCollapsed;
   const showBreadcrumbs = !hideBreadcrumbs;
-
-  const channelReady = !!classroomChannel?.ready;
-  const sendOnChannel = classroomChannel?.send;
 
   const layoutClasses =
     "prep-layout" +
@@ -532,32 +531,6 @@ export default function PrepShell({
         }
       });
 
-      // ✅ Learner drift correction while teacher audio is playing
-      useEffect(() => {
-        if (isTeacher) return;
-        const el = audioRef.current;
-        if (!el) return;
-
-        const tick = () => {
-          const st = lastAudioStateRef.current;
-          if (!st || !st.playing) return;
-
-          const now = Date.now();
-          const target =
-            Math.max(0, Number(st.time) || 0) +
-            Math.max(0, (now - (Number(st.sentAt) || now)) / 1000);
-
-          const diff = target - (Number(el.currentTime) || 0);
-          if (Math.abs(diff) > 0.35) {
-            try {
-              el.currentTime = target;
-            } catch {}
-          }
-        };
-
-        const id = setInterval(tick, 500);
-        return () => clearInterval(id);
-      }, [isTeacher]);
       ctx.stroke();
       ctx.restore();
     });
