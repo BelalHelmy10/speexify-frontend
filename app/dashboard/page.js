@@ -158,6 +158,7 @@ function SessionRow({
         <div className="session-item__actions">
           {isUpcoming ? (
             <>
+              {/* Countdown should go to Session page (details hub) */}
               <Link
                 href={`${prefix}/dashboard/sessions/${s.id}`}
                 className="btn btn--ghost"
@@ -168,6 +169,7 @@ function SessionRow({
                 {countdown || t(dict, "session_view_details") || "View session"}
               </Link>
 
+              {/* Join appears only when joinable */}
               {joinable && (
                 <Link
                   href={`/classroom/${s.id}`}
@@ -373,15 +375,18 @@ function DashboardInner({ dict, prefix }) {
   const router = useRouter();
   const [status, setStatus] = useState(() => t(dict, "status_loading"));
   const [summary, setSummary] = useState(null);
-  const { user, checking } = useAuth();
+  const { user, checking, refresh } = useAuth();
 
   // ─────────────────────────────────────────────
   // IMPERSONATION DETECTION
   // ─────────────────────────────────────────────
   const isImpersonating = !!user?._impersonating;
+  const realAdminRole = user?._adminRole; // The actual admin's role
 
+  // Role checks - when impersonating, use the impersonated user's role for display
+  // but allow admin-level actions
   const isTeacher = user?.role === "teacher";
-  const isAdmin = user?.role === "admin" && !isImpersonating;
+  const isAdmin = user?.role === "admin" && !isImpersonating; // Real admin (not impersonating)
   const isLearner = !!user && !isTeacher && !isAdmin;
 
   const [teachSummary, setTeachSummary] = useState({
@@ -401,17 +406,6 @@ function DashboardInner({ dict, prefix }) {
   const [newEnd, setNewEnd] = useState("");
 
   // ─────────────────────────────────────────────
-  // Dashboard “SaaS-level” list behavior
-  // ─────────────────────────────────────────────
-  const UPCOMING_PREVIEW = 3;
-  const PAST_PREVIEW = 3;
-
-  const [upcomingExpanded, setUpcomingExpanded] = useState(false);
-  const [pastExpanded, setPastExpanded] = useState(false);
-  const [upcomingLoadingMore, setUpcomingLoadingMore] = useState(false);
-  const [pastLoadingMore, setPastLoadingMore] = useState(false);
-
-  // ─────────────────────────────────────────────
   // STOP IMPERSONATION HANDLER
   // ─────────────────────────────────────────────
   const handleStopImpersonate = async () => {
@@ -419,20 +413,12 @@ function DashboardInner({ dict, prefix }) {
       await api.post("/admin/impersonate/stop");
       clearCsrfToken();
       toast.success("Stopped viewing as user");
+      // Redirect back to admin page and refresh
       router.push("/admin");
       setTimeout(() => window.location.reload(), 100);
     } catch (e) {
       toast.error(e?.response?.data?.error || "Failed to stop impersonation");
     }
-  };
-
-  const pickList = (payload, preferredKey) => {
-    const d = payload?.data;
-    if (Array.isArray(d)) return d;
-    if (Array.isArray(d?.[preferredKey])) return d[preferredKey];
-    if (Array.isArray(d?.sessions)) return d.sessions;
-    if (Array.isArray(d?.data)) return d.data;
-    return [];
   };
 
   const fetchSummary = useCallback(async () => {
@@ -456,6 +442,15 @@ function DashboardInner({ dict, prefix }) {
         }),
       ]);
 
+      const pickList = (payload, preferredKey) => {
+        const d = payload?.data;
+        if (Array.isArray(d)) return d;
+        if (Array.isArray(d?.[preferredKey])) return d[preferredKey];
+        if (Array.isArray(d?.sessions)) return d.sessions;
+        if (Array.isArray(d?.data)) return d.data;
+        return [];
+      };
+
       setUpcoming(pickList(u, "upcoming"));
       setPast(pickList(p, "past"));
     } catch (e) {
@@ -463,40 +458,6 @@ function DashboardInner({ dict, prefix }) {
         "[dashboard] sessions fetch failed",
         e?.response?.data || e?.message || e
       );
-    }
-  }, []);
-
-  const fetchMoreUpcoming = useCallback(async () => {
-    try {
-      setUpcomingLoadingMore(true);
-      const res = await api.get("/me/sessions", {
-        params: { range: "upcoming", limit: 50, t: Date.now() },
-      });
-      setUpcoming(pickList(res, "upcoming"));
-    } catch (e) {
-      console.warn(
-        "[dashboard] fetchMoreUpcoming failed",
-        e?.response?.data || e?.message || e
-      );
-    } finally {
-      setUpcomingLoadingMore(false);
-    }
-  }, []);
-
-  const fetchMorePast = useCallback(async () => {
-    try {
-      setPastLoadingMore(true);
-      const res = await api.get("/me/sessions", {
-        params: { range: "past", limit: 50, t: Date.now() },
-      });
-      setPast(pickList(res, "past"));
-    } catch (e) {
-      console.warn(
-        "[dashboard] fetchMorePast failed",
-        e?.response?.data || e?.message || e
-      );
-    } finally {
-      setPastLoadingMore(false);
     }
   }, []);
 
@@ -548,8 +509,12 @@ function DashboardInner({ dict, prefix }) {
       return;
     }
 
-    // Real admin dashboard (not impersonating): don't use learner endpoints
+    // ─────────────────────────────────────────────
+    // FIXED: When impersonating, DO fetch user data (we want to see their view)
+    // Only skip for real admins who are NOT impersonating
+    // ─────────────────────────────────────────────
     if (isAdmin && !isImpersonating) {
+      // Real admin dashboard (not impersonating) - don't use learner endpoints
       setSummary({
         nextSession: null,
         upcomingCount: 0,
@@ -565,8 +530,10 @@ function DashboardInner({ dict, prefix }) {
       return;
     }
 
+    // When impersonating OR for regular learners/teachers - fetch their data
     refreshAll();
 
+    // Only learners have onboarding + assessment
     if (isLearner || (isImpersonating && user?.role === "learner")) {
       fetchOnboarding();
       fetchAssessment();
@@ -611,6 +578,7 @@ function DashboardInner({ dict, prefix }) {
   // Keep fresh when tab regains focus / becomes visible
   useEffect(() => {
     const onFocus = () => {
+      // Refresh for learners, teachers, and when impersonating
       if (!isAdmin || isImpersonating) refreshAll();
     };
     const onVis = () => {
@@ -729,6 +697,7 @@ function DashboardInner({ dict, prefix }) {
     name: user?.name || user?.email || "",
   });
 
+  // Determine if we should show learner-specific content
   const showLearnerContent =
     isLearner || (isImpersonating && user?.role === "learner");
   const showTeacherContent =
@@ -736,6 +705,9 @@ function DashboardInner({ dict, prefix }) {
 
   return (
     <>
+      {/* ═══════════════════════════════════════════════════════════════════
+          IMPERSONATION BANNER - Shows when admin is viewing as another user
+          ═══════════════════════════════════════════════════════════════════ */}
       {isImpersonating && (
         <ImpersonationBanner user={user} onStop={handleStopImpersonate} />
       )}
@@ -816,6 +788,10 @@ function DashboardInner({ dict, prefix }) {
           />
         </div>
 
+        {/* ═══════════════════════════════════════════════════════════════════
+            FIXED: Out-of-credits warning – learners only, NOT when impersonating
+            When admin is impersonating, they should see the full view without restrictions
+            ═══════════════════════════════════════════════════════════════════ */}
         {showLearnerContent && outOfCredits && !isImpersonating && (
           <div
             className="panel panel--warning"
@@ -841,6 +817,7 @@ function DashboardInner({ dict, prefix }) {
           </div>
         )}
 
+        {/* Info banner when impersonating a user with no credits */}
         {isImpersonating && outOfCredits && showLearnerContent && (
           <div
             className="panel"
@@ -1136,7 +1113,7 @@ function DashboardInner({ dict, prefix }) {
         )}
 
         {/* =========================================================================
-            UPCOMING SESSIONS (Expandable, SaaS behavior)
+            UPCOMING SESSIONS
            ========================================================================= */}
         <div className="panel">
           <div className="panel__head">
@@ -1150,62 +1127,25 @@ function DashboardInner({ dict, prefix }) {
               )}
             </div>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <Link
-                href={`${prefix}/calendar`}
-                className="btn btn--ghost btn--sm"
+            <Link
+              href={`${prefix}/calendar`}
+              className="btn btn--ghost btn--sm"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                {t(dict, "upcoming_open_calendar")}
-              </Link>
-
-              {upcoming.length > UPCOMING_PREVIEW && (
-                <button
-                  className="btn btn--ghost btn--sm"
-                  onClick={async () => {
-                    const next = !upcomingExpanded;
-                    setUpcomingExpanded(next);
-                    if (next && upcoming.length >= 10) {
-                      await fetchMoreUpcoming();
-                    }
-                  }}
-                  aria-expanded={upcomingExpanded}
-                >
-                  {upcomingExpanded
-                    ? t(dict, "show_less") || "Show less"
-                    : t(dict, "show_all") || `Show all (${upcoming.length})`}
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    style={{
-                      marginLeft: 6,
-                      transform: upcomingExpanded
-                        ? "rotate(90deg)"
-                        : "rotate(0deg)",
-                      transition: "transform .2s ease",
-                    }}
-                  >
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
-              )}
-            </div>
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              {t(dict, "upcoming_open_calendar")}
+            </Link>
           </div>
 
           {upcoming.length === 0 ? (
@@ -1215,10 +1155,7 @@ function DashboardInner({ dict, prefix }) {
           ) : (
             <>
               <div className="session-list session-list--scrollable">
-                {(upcomingExpanded
-                  ? upcoming
-                  : upcoming.slice(0, UPCOMING_PREVIEW)
-                ).map((s) => (
+                {upcoming.map((s) => (
                   <SessionRow
                     key={s.id}
                     s={s}
@@ -1235,40 +1172,22 @@ function DashboardInner({ dict, prefix }) {
                 ))}
               </div>
 
-              <div
-                className="panel__footer"
-                style={{ display: "flex", gap: 10 }}
-              >
-                {!upcomingExpanded && upcoming.length > UPCOMING_PREVIEW && (
-                  <button
+              {upcoming.length >= 10 && (
+                <div className="panel__footer">
+                  <Link
+                    href={`${prefix}/calendar`}
                     className="btn btn--secondary btn--full"
-                    onClick={async () => {
-                      setUpcomingExpanded(true);
-                      if (upcoming.length >= 10) await fetchMoreUpcoming();
-                    }}
-                    disabled={upcomingLoadingMore}
                   >
-                    {upcomingLoadingMore
-                      ? t(dict, "loading") || "Loading…"
-                      : `View all ${upcoming.length} upcoming sessions →`}
-                  </button>
-                )}
-
-                {upcomingExpanded && (
-                  <button
-                    className="btn btn--ghost btn--full"
-                    onClick={() => setUpcomingExpanded(false)}
-                  >
-                    {t(dict, "show_less") || "Show less"}
-                  </button>
-                )}
-              </div>
+                    View all sessions in calendar →
+                  </Link>
+                </div>
+              )}
             </>
           )}
         </div>
 
         {/* =========================================================================
-            PAST SESSIONS (Expandable, SaaS behavior)
+            PAST SESSIONS
            ========================================================================= */}
         <div className="panel">
           <div className="panel__head">
@@ -1281,51 +1200,22 @@ function DashboardInner({ dict, prefix }) {
               )}
             </div>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              {/* Secondary: calendar */}
-              <Link
-                href={`${prefix}/calendar`}
-                className="btn btn--ghost btn--sm"
+            <Link
+              href={`${prefix}/calendar`}
+              className="btn btn--ghost btn--sm"
+            >
+              {t(dict, "past_view_all")}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                {t(dict, "upcoming_open_calendar") || "Open calendar"}
-              </Link>
-
-              {/* Primary: expand in place */}
-              {past.length > PAST_PREVIEW && (
-                <button
-                  className="btn btn--ghost btn--sm"
-                  onClick={async () => {
-                    const next = !pastExpanded;
-                    setPastExpanded(next);
-                    if (next && past.length >= 10) {
-                      await fetchMorePast();
-                    }
-                  }}
-                  aria-expanded={pastExpanded}
-                >
-                  {pastExpanded
-                    ? t(dict, "show_less") || "Show less"
-                    : t(dict, "show_all") || `Show all (${past.length})`}
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    style={{
-                      marginLeft: 6,
-                      transform: pastExpanded
-                        ? "rotate(90deg)"
-                        : "rotate(0deg)",
-                      transition: "transform .2s ease",
-                    }}
-                  >
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
-              )}
-            </div>
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </Link>
           </div>
 
           {past.length === 0 ? (
@@ -1335,52 +1225,32 @@ function DashboardInner({ dict, prefix }) {
           ) : (
             <>
               <div className="session-list session-list--scrollable">
-                {(pastExpanded ? past : past.slice(0, PAST_PREVIEW)).map(
-                  (s) => (
-                    <SessionRow
-                      key={s.id}
-                      s={s}
-                      timezone={timezone}
-                      isUpcoming={false}
-                      onCancel={() => {}}
-                      onRescheduleClick={() => {}}
-                      isTeacher={isTeacher}
-                      isImpersonating={isImpersonating}
-                      dict={dict}
-                      prefix={prefix}
-                    />
-                  )
-                )}
+                {past.map((s) => (
+                  <SessionRow
+                    key={s.id}
+                    s={s}
+                    timezone={timezone}
+                    isUpcoming={false}
+                    onCancel={() => {}}
+                    onRescheduleClick={() => {}}
+                    isTeacher={isTeacher}
+                    isImpersonating={isImpersonating}
+                    dict={dict}
+                    prefix={prefix}
+                  />
+                ))}
               </div>
 
-              <div
-                className="panel__footer"
-                style={{ display: "flex", gap: 10 }}
-              >
-                {!pastExpanded && past.length > PAST_PREVIEW && (
-                  <button
+              {past.length >= 10 && (
+                <div className="panel__footer">
+                  <Link
+                    href={`${prefix}/calendar`}
                     className="btn btn--secondary btn--full"
-                    onClick={async () => {
-                      setPastExpanded(true);
-                      if (past.length >= 10) await fetchMorePast();
-                    }}
-                    disabled={pastLoadingMore}
                   >
-                    {pastLoadingMore
-                      ? t(dict, "loading") || "Loading…"
-                      : `View all ${past.length} past sessions →`}
-                  </button>
-                )}
-
-                {pastExpanded && (
-                  <button
-                    className="btn btn--ghost btn--full"
-                    onClick={() => setPastExpanded(false)}
-                  >
-                    {t(dict, "show_less") || "Show less"}
-                  </button>
-                )}
-              </div>
+                    View all {past.length} past sessions →
+                  </Link>
+                </div>
+              )}
             </>
           )}
         </div>
