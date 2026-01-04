@@ -7,6 +7,11 @@ import { me } from "@/lib/auth";
 import "@/styles/checkout.scss";
 import { useToast } from "@/components/ToastProvider";
 import { getDictionary, t } from "@/app/i18n";
+import { detectUserCountry } from "@/lib/geo";
+import {
+  calculatePackagePrice,
+  formatRegionalPrice,
+} from "@/lib/regional-pricing";
 
 export default function CheckoutPage() {
   const { toast, confirmModal } = useToast();
@@ -14,7 +19,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Locale & dictionary (same pattern as contact/packages)
+  // Locale & dictionary
   const locale = pathname && pathname.startsWith("/ar") ? "ar" : "en";
   const dict = useMemo(() => getDictionary(locale, "checkout"), [locale]);
 
@@ -23,8 +28,18 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [loadingPkg, setLoadingPkg] = useState(true);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [countryCode, setCountryCode] = useState(null);
 
   const planTitle = searchParams.get("plan");
+
+  // Detect country
+  useEffect(() => {
+    (async () => {
+      const detected = await detectUserCountry();
+      setCountryCode(detected);
+      console.log("🌍 Checkout - detected country:", detected || "DEFAULT");
+    })();
+  }, []);
 
   // Fetch current user
   useEffect(() => {
@@ -88,7 +103,7 @@ export default function CheckoutPage() {
 
     try {
       setLoading(true);
-      // NEW (locale-aware)
+
       if (!user) {
         const shouldLogin = await confirmModal(
           t(dict, "confirm_login_message")
@@ -96,16 +111,14 @@ export default function CheckoutPage() {
         if (shouldLogin) {
           const currentUrl = encodeURIComponent(window.location.href);
           const loginPath = locale === "ar" ? "/ar/login" : "/login";
-
           router.push(`${loginPath}?next=${currentUrl}`);
         }
         return;
       }
 
-      // pkg.priceUSD is now treated as "base price in EGP" until you rename the field in DB/schema
-      const amountEGP = pkg.priceUSD;
-
-      const amountCents = Math.round(amountEGP * 100);
+      // Always use EGP amount for Paymob (base price)
+      const baseEGP = pkg.priceEGP || pkg.priceUSD || 0;
+      const amountCents = Math.round(baseEGP * 100);
 
       const nameParts = (user.name || "User").split(" ");
       const firstName = nameParts[0] || "User";
@@ -127,23 +140,18 @@ export default function CheckoutPage() {
       const { data } = await api.post("/payments/create-intent", body);
 
       if (!data?.ok) {
-        // This path is mostly for non-4xx/5xx errors, but we keep it
         throw new Error(data?.message || "Failed to init payment");
       }
 
       window.location.href = data.iframeUrl;
     } catch (e) {
-      // 👇 Axios error: check response data
       const resp = e?.response?.data;
 
       if (resp?.code === "ALREADY_SUBSCRIBED") {
-        // Friendly message (you added this key to your i18n files)
         toast.error(t(dict, "toast_already_subscribed"));
       } else if (resp?.message) {
-        // Backend sent a specific message
         toast.error(resp.message);
       } else {
-        // Fallback generic message
         toast.error(t(dict, "toast_payment_failed"));
       }
 
@@ -152,8 +160,6 @@ export default function CheckoutPage() {
       setLoading(false);
     }
   }
-
-  const USD_TO_EGP_RATE = 50;
 
   // Show loading while fetching user and package
   if (loadingPkg || loadingUser) {
@@ -191,7 +197,21 @@ export default function CheckoutPage() {
     );
   }
 
-  const priceEGP = pkg.priceUSD * USD_TO_EGP_RATE;
+  // Calculate regional pricing
+  const regionalPrice = calculatePackagePrice(pkg, countryCode);
+  const baseEGP = pkg.priceEGP || pkg.priceUSD || 0;
+
+  // Format prices for display
+  const displayPrice = formatRegionalPrice(regionalPrice, locale);
+  const egpPrice = new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "EGP",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(baseEGP);
+
+  // Check if user is seeing a different currency than EGP
+  const isDifferentCurrency = regionalPrice.displayCurrency !== "EGP";
 
   return (
     <div className="checkout">
@@ -262,36 +282,40 @@ export default function CheckoutPage() {
           <div className="checkout__pricing">
             <div className="checkout__pricing-row">
               <span className="checkout__pricing-label">
-                {t(dict, "pricing_label_package_price_usd")}
+                {t(dict, "pricing_label_package_price")}
               </span>
-              <span className="checkout__pricing-value">${pkg.priceUSD}</span>
+              <span className="checkout__pricing-value">{displayPrice}</span>
             </div>
-            <div className="checkout__pricing-row">
-              <span className="checkout__pricing-label">
-                {t(dict, "pricing_label_price_egp")}
-              </span>
-              <span className="checkout__pricing-value">
-                {t(dict, "pricing_value_price_egp", {
-                  amount: priceEGP.toFixed(2),
-                })}
-              </span>
-            </div>
+
+            {/* Show EGP equivalent if different currency */}
+            {isDifferentCurrency && (
+              <div className="checkout__pricing-row">
+                <span className="checkout__pricing-label">
+                  {t(dict, "pricing_label_egp_equivalent")}
+                </span>
+                <span className="checkout__pricing-value">{egpPrice}</span>
+              </div>
+            )}
+
             <div className="checkout__pricing-row checkout__pricing-row--total">
               <span className="checkout__pricing-label checkout__pricing-label--total">
                 {t(dict, "pricing_label_total")}
               </span>
               <span className="checkout__pricing-value checkout__pricing-value--total">
-                {t(dict, "pricing_value_total", {
-                  amount: priceEGP.toFixed(2),
-                })}
+                {displayPrice}
               </span>
             </div>
           </div>
 
-          {/* Exchange Rate Note */}
-          <div className="checkout__exchange-note">
-            {t(dict, "exchange_note", { rate: USD_TO_EGP_RATE })}
-          </div>
+          {/* Exchange Rate Note - only show if different currency */}
+          {isDifferentCurrency && (
+            <div className="checkout__exchange-note">
+              {t(dict, "exchange_note_regional", {
+                displayCurrency: regionalPrice.displayCurrency,
+                region: regionalPrice.regionName,
+              })}
+            </div>
+          )}
         </div>
 
         {/* Customer Information Preview (if logged in) */}
@@ -331,9 +355,9 @@ export default function CheckoutPage() {
               {t(dict, "pay_button_processing")}
             </span>
           ) : (
-            t(dict, "pay_button_label_with_amount", {
-              amount: priceEGP.toFixed(2),
-            })
+            <>
+              {t(dict, "pay_button_label")} {displayPrice}
+            </>
           )}
         </button>
 

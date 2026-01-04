@@ -6,11 +6,13 @@ import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import "@/styles/packages.scss";
 import { getDictionary, t } from "@/app/i18n";
+import { guessCurrencyFromNavigator } from "@/lib/currency";
+import { detectUserCountry } from "@/lib/geo";
 import {
-  formatMoney,
-  getRateEGPTo,
-  guessCurrencyFromNavigator,
-} from "@/lib/currency";
+  calculatePackagePrice,
+  calculatePerSessionPrice,
+  formatRegionalPrice,
+} from "@/lib/regional-pricing";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
@@ -52,9 +54,9 @@ function Packages() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  // Visitor currency (base prices are EGP; we convert to viewer currency)
+  // Regional pricing
   const [currency, setCurrency] = useState("EGP");
-  const [rate, setRate] = useState(1);
+  const [countryCode, setCountryCode] = useState(null);
 
   // Seats estimator for corporate
   const [seats, setSeats] = useState(15);
@@ -66,19 +68,28 @@ function Packages() {
       setTab(AUD.CORPORATE);
   }, []);
 
-  // Detect viewer currency + FX rate (EGP -> viewer currency)
+  // Detect viewer country and currency
   useEffect(() => {
     (async () => {
+      // 1. Detect country code
+      const detectedCountry = await detectUserCountry();
+      setCountryCode(detectedCountry);
+      console.log(
+        "🌍 Using pricing for country:",
+        detectedCountry || "DEFAULT"
+      );
+
+      // 2. Still detect currency for display formatting
       let c = null;
 
-      // 1) Best: client-side IP geo (uses the visitor's IP, not the server)
+      // Try IP-based detection
       try {
         const r = await fetch("https://ipapi.co/json/");
         const j = await r.json();
         c = j?.currency || null;
       } catch {}
 
-      // 2) Fallback: server geo (works on some hosts, but can be server-location-biased)
+      // Fallback: server geo
       if (!c) {
         try {
           const r = await fetch("/api/geo");
@@ -87,7 +98,7 @@ function Packages() {
         } catch {}
       }
 
-      // 3) Fallback: timezone heuristic (helps in Egypt even if browser lang is en-US)
+      // Fallback: timezone heuristic
       if (!c) {
         try {
           const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -95,20 +106,13 @@ function Packages() {
         } catch {}
       }
 
-      // 4) Last fallback: navigator guess
+      // Fallback: navigator guess
       if (!c) c = guessCurrencyFromNavigator();
 
-      // 5) Absolute fallback
+      // Absolute fallback
       if (!c) c = "EGP";
 
       setCurrency(c);
-
-      try {
-        const fx = await getRateEGPTo(c);
-        setRate(fx || 1);
-      } catch {
-        setRate(1);
-      }
     })();
   }, []);
 
@@ -307,7 +311,7 @@ function Packages() {
                 dict={dict}
                 locale={locale}
                 currency={currency}
-                rate={rate}
+                countryCode={countryCode}
               />
             ))}
           </div>
@@ -574,14 +578,11 @@ function Packages() {
 }
 
 /* Components */
-function PricingCard({ plan, audience, dict, locale, currency, rate }) {
+function PricingCard({ plan, audience, dict, locale, currency, countryCode }) {
   const {
     title,
     description,
-    priceUSD,
-    priceEGP,
     priceType,
-    startingAtUSD,
     isPopular,
     sessionsPerPack,
     durationMin,
@@ -592,40 +593,27 @@ function PricingCard({ plan, audience, dict, locale, currency, rate }) {
   const isCorp = audience === AUD.CORPORATE;
   const localePrefix = locale === "ar" ? "/ar" : "";
 
-  // Base price is EGP; support legacy priceUSD if priceEGP isn't provided
-  const baseEGP =
-    typeof priceEGP === "number"
-      ? priceEGP
-      : typeof priceUSD === "number"
-      ? priceUSD
-      : null;
+  // Calculate regional pricing
+  const regionalPrice = calculatePackagePrice(plan, countryCode);
+  const perSessionPrice = calculatePerSessionPrice(plan, countryCode);
 
+  // Format total price label
   const totalLabel = (() => {
-    if (priceType === "CUSTOM" || (!baseEGP && !startingAtUSD))
+    if (priceType === "CUSTOM" || regionalPrice.isCustomPricing) {
       return t(dict, "price_custom", "Custom Pricing");
-
-    // If you ever use startingAt again, treat startingAtUSD as base EGP too (legacy name)
-    if (startingAtUSD && !baseEGP) {
-      const converted = Math.round(Number(startingAtUSD) * (rate || 1));
-      return t(
-        dict,
-        "price_from",
-        `From ${formatMoney(converted, currency || "EGP", locale)}`
-      );
     }
 
-    if (typeof baseEGP === "number") {
-      const converted = Math.round(baseEGP * (rate || 1));
-      return formatMoney(converted, currency || "EGP", locale);
+    if (regionalPrice.displayAmount > 0) {
+      return formatRegionalPrice(regionalPrice, locale);
     }
 
     return t(dict, "price_custom", "Custom Pricing");
   })();
 
-  const perSessionPrice =
-    typeof baseEGP === "number" && sessionsPerPack
-      ? Math.round((baseEGP / sessionsPerPack) * (rate || 1))
-      : null;
+  // Format per-session price label
+  const perSessionLabel = perSessionPrice
+    ? formatRegionalPrice(perSessionPrice, locale)
+    : null;
 
   return (
     <div className={`ecp-card ecp-card--plan ${isPopular ? "is-popular" : ""}`}>
@@ -649,10 +637,9 @@ function PricingCard({ plan, audience, dict, locale, currency, rate }) {
 
       <div className="ecp-card__price">
         <div className="ecp-card__value">{totalLabel}</div>
-        {perSessionPrice && (
+        {perSessionLabel && (
           <div className="ecp-card__sub">
-            {formatMoney(perSessionPrice, currency || "EGP", locale)}/
-            {t(dict, "label_per_session", "session")}
+            {perSessionLabel}/{t(dict, "label_per_session", "session")}
           </div>
         )}
         {durationMin && !isCorp && (
@@ -730,7 +717,7 @@ function Faq({ q, a }) {
   );
 }
 
-/* Plan Data (EGP base totals; shown in viewer currency via FX) */
+/* Plan Data (EGP base totals; shown in viewer currency via regional pricing) */
 const oneOnOnePlans = [
   {
     id: "1on1-4",

@@ -38,5 +38,9 @@
 
   "confirm_login_message": "Please log in to continue with checkout. Redirect to login page?",
   "toast_payment_failed": "Payment failed. Please try again.",
-  "toast_already_subscribed": "You already have an active package for this plan."
+  "toast_already_subscribed": "You already have an active package for this plan.",
+  "pricing_label_package_price": "Package Price",
+  "pricing_label_egp_equivalent": "EGP Equivalent (for payment)",
+  "exchange_note_regional": "Price shown in {displayCurrency} for {region}. Payment processed in EGP.",
+  "pay_button_label": "Pay"
 }
