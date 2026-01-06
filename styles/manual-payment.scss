@@ -1,0 +1,515 @@
+// ===========================================
+// MANUAL PAYMENT PAGE STYLES
+// Aligned with Speexify brand identity
+// ===========================================
+
+@import "variables"; // Your existing variables file
+
+// ===========================================
+// PAGE CONTAINER
+// ===========================================
+.manual-payment-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    rgba($color-primary-light, 0.1) 0%,
+    rgba($color-primary, 0.05) 50%,
+    rgba($color-tertiary-light, 0.1) 100%
+  );
+  padding: $space-10 $spacing-md;
+
+  @media (max-width: $bp-sm) {
+    padding: $space-8 $spacing-sm;
+  }
+}
+
+// ===========================================
+// INNER WRAPPER
+// ===========================================
+.manual-payment-wrapper {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+// ===========================================
+// HEADER SECTION
+// ===========================================
+.payment-header {
+  text-align: center;
+  margin-bottom: $space-8;
+
+  &__icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    background: $color-primary;
+    border-radius: $radius-card;
+    margin-bottom: $spacing-md;
+    box-shadow: $shadow-lg;
+
+    svg {
+      width: 2rem;
+      height: 2rem;
+      color: $color-white;
+    }
+  }
+
+  &__title {
+    font-size: clamp(1.75rem, 5vw, 2.25rem);
+    font-weight: 700;
+    color: $text-primary;
+    margin-bottom: $spacing-sm;
+    line-height: 1.2;
+  }
+
+  &__subtitle {
+    color: $text-secondary;
+    font-size: 1rem;
+  }
+}
+
+// ===========================================
+// CARD BASE STYLES
+// ===========================================
+.payment-card {
+  background: $bg-primary;
+  border-radius: $radius-card * 1.5;
+  box-shadow: $shadow-lg;
+  padding: $space-6 $space-8;
+  border: 2px solid $border;
+  margin-bottom: $space-6;
+
+  @media (max-width: $bp-sm) {
+    padding: $space-5 $space-6;
+  }
+}
+
+// ===========================================
+// PLAN DETAILS CARD
+// ===========================================
+.plan-details-card {
+  @extend .payment-card;
+  border-color: rgba($color-primary, 0.2);
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $spacing-md;
+    margin-bottom: $spacing-md;
+
+    @media (max-width: $bp-xs) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  &__info {
+    flex: 1;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $color-primary;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0;
+  }
+
+  &__amount {
+    background: $color-primary;
+    color: $color-white;
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius * 1.5;
+    font-weight: 700;
+    font-size: 1.125rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    @media (max-width: $bp-xs) {
+      align-self: flex-start;
+    }
+  }
+
+  &__notice {
+    background: rgba($calendar-error, 0.05);
+    border: 2px solid rgba($calendar-error, 0.15);
+    border-radius: $radius-card;
+    padding: $spacing-md;
+    display: flex;
+    align-items: flex-start;
+    gap: $spacing;
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: $calendar-error;
+      flex-shrink: 0;
+      margin-top: 0.125rem;
+    }
+  }
+
+  &__notice-title {
+    font-weight: 600;
+    color: darken($calendar-error, 10%);
+    margin-bottom: $spacing-xs;
+  }
+
+  &__notice-text {
+    font-size: 0.875rem;
+    color: darken($calendar-error, 15%);
+    line-height: 1.5;
+  }
+}
+
+// ===========================================
+// ACCOUNT DETAILS CARD
+// ===========================================
+.account-details-card {
+  @extend .payment-card;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $space-6;
+    padding-bottom: $space-6;
+    border-bottom: 2px solid $border;
+
+    @media (max-width: $bp-xs) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: $spacing-md;
+    }
+  }
+
+  &__header-info {
+    flex: 1;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__subtitle {
+    font-size: 0.875rem;
+    color: $text-secondary;
+  }
+
+  &__currency-badge {
+    background: rgba($color-primary, 0.1);
+    color: $color-primary-dark;
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius * 1.5;
+    font-weight: 700;
+    font-size: 1.125rem;
+
+    @media (max-width: $bp-xs) {
+      align-self: flex-start;
+    }
+  }
+
+  &__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
+
+// ===========================================
+// COPY ROW COMPONENT
+// ===========================================
+.copy-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing;
+  padding: $spacing-md 0;
+  border-top: 1px solid rgba($border, 0.5);
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__value {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: $text-primary;
+    word-break: break-all;
+    line-height: 1.4;
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: $text-muted;
+    margin-top: $spacing-sm;
+    line-height: 1.5;
+  }
+
+  &__button {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius * 1.5;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: $transition-base;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 2px solid;
+    background: $bg-primary;
+    cursor: pointer;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    &--default {
+      border-color: $border;
+      color: $text-secondary;
+
+      &:hover:not(:disabled) {
+        border-color: rgba($color-primary, 0.4);
+        background: rgba($color-primary, 0.05);
+        color: $color-primary;
+      }
+    }
+
+    &--copied {
+      border-color: rgba($success, 0.3);
+      background: rgba($success, 0.05);
+      color: darken($success, 10%);
+    }
+
+    &:disabled {
+      background: rgba($border, 0.2);
+      border-color: $border;
+      color: $text-muted;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ===========================================
+// ERROR MESSAGE
+// ===========================================
+.payment-error {
+  background: rgba($error, 0.05);
+  border: 2px solid rgba($error, 0.2);
+  border-radius: $radius-card;
+  padding: $spacing-md;
+  margin-bottom: $space-6;
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing;
+
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: $error;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+
+  &__text {
+    font-size: 0.875rem;
+    color: darken($error, 10%);
+    line-height: 1.5;
+  }
+}
+
+// ===========================================
+// CONFIRMATION CARD
+// ===========================================
+.confirmation-card {
+  @extend .payment-card;
+
+  &__button {
+    width: 100%;
+    padding: $spacing-md $space-8;
+    font-weight: 700;
+    font-size: 1.125rem;
+    border-radius: $radius-card;
+    box-shadow: $shadow-lg;
+    transition: $transition-base;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing;
+    border: none;
+    cursor: pointer;
+
+    svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    &--active {
+      background: linear-gradient(
+        135deg,
+        $color-primary 0%,
+        $color-tertiary-light 100%
+      );
+      color: $color-white;
+
+      &:hover {
+        box-shadow: $shadow-xl;
+        transform: translateY(-1px);
+        background: linear-gradient(
+          135deg,
+          $color-primary-dark 0%,
+          $color-primary 100%
+        );
+      }
+    }
+
+    &--disabled {
+      background: rgba($border, 0.4);
+      color: $text-muted;
+      cursor: not-allowed;
+      box-shadow: none;
+
+      &:hover {
+        transform: none;
+      }
+    }
+  }
+
+  &__help-text {
+    font-size: 0.875rem;
+    color: $text-secondary;
+    text-align: center;
+    margin-top: $spacing-md;
+    line-height: 1.6;
+  }
+}
+
+// ===========================================
+// SECURITY BADGE
+// ===========================================
+.security-badge {
+  text-align: center;
+  margin-top: $space-8;
+
+  &__content {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-sm;
+    font-size: 0.875rem;
+    color: $text-muted;
+  }
+
+  &__indicator {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: $success;
+    border-radius: 50%;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+// ===========================================
+// NOT FOUND STATE
+// ===========================================
+.payment-not-found {
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    rgba($color-primary-light, 0.1) 0%,
+    rgba($color-primary, 0.05) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-6;
+
+  &__card {
+    background: $bg-primary;
+    border-radius: $radius-card * 1.5;
+    box-shadow: $shadow-xl;
+    padding: $space-8;
+    max-width: 28rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  &__icon {
+    width: 4rem;
+    height: 4rem;
+    background: rgba($error, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto $spacing-md;
+
+    svg {
+      width: 2rem;
+      height: 2rem;
+      color: $error;
+    }
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__text {
+    color: $text-secondary;
+    margin-bottom: $space-6;
+    line-height: 1.6;
+  }
+
+  &__button {
+    width: 100%;
+    padding: $spacing $space-6;
+    background: $color-primary;
+    color: $color-white;
+    font-weight: 600;
+    border-radius: $radius * 1.5;
+    border: none;
+    cursor: pointer;
+    transition: $transition-base;
+
+    &:hover {
+      background: $color-primary-dark;
+    }
+  }
+}
+
+// ===========================================
+// ANIMATIONS
+// ===========================================
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
