@@ -81,6 +81,8 @@ function CopyRow({ label, value, hint }) {
 }
 
 export default function ManualPaymentPage() {
+  const [submitting, setSubmitting] = useState(false); // ✅ inside component
+  const [err, setErr] = useState(""); // ✅ inside component
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
