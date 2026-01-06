@@ -92,8 +92,29 @@ export default function ManualPaymentPage() {
   const cc = searchParams.get("cc"); // countryCode
   const cur = searchParams.get("cur"); // viewer currency (for formatting)
 
+  if (!plan) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h1>Manual payment</h1>
+        <p style={{ color: "crimson" }}>
+          Plan not found. Please go back and select a package again.
+        </p>
+        <button onClick={() => router.push(`${localePrefix}/packages`)}>
+          Back to packages
+        </button>
+      </div>
+    );
+  }
+
+  // ✅ IMPORTANT: use the SAME pricing engine as /packages (NOT priceEGP)
+  const regional = calculatePackagePrice(plan, cc || null);
+
+  // ✅ This is the actual display currency from your pricing engine
+  const pricingCurrency = regional?.displayCurrency || "USD";
+
+  // ✅ Make Wise header follow your detected region currency (no USD hard-lock)
   const wise = {
-    currency: process.env.NEXT_PUBLIC_WISE_CURRENCY || "USD",
+    currency: pricingCurrency,
     name: process.env.NEXT_PUBLIC_WISE_NAME || "",
     accountNumber: process.env.NEXT_PUBLIC_WISE_ACCOUNT_NUMBER || "",
     accountType: process.env.NEXT_PUBLIC_WISE_ACCOUNT_TYPE || "",
@@ -113,32 +134,15 @@ export default function ManualPaymentPage() {
     );
   }
 
-  if (!plan) {
-    return (
-      <div style={{ padding: 24 }}>
-        <h1>Manual payment</h1>
-        <p style={{ color: "crimson" }}>
-          Plan not found. Please go back and select a package again.
-        </p>
-        <button onClick={() => router.push(`${localePrefix}/packages`)}>
-          Back to packages
-        </button>
-      </div>
-    );
-  }
-
-  // ✅ IMPORTANT: use the SAME pricing engine as /packages (NOT priceEGP)
-  const regional = calculatePackagePrice(plan, cc || null);
-
   const amount =
     regional?.isCustomPricing || !regional?.displayAmount
       ? "Custom"
       : formatRegionalPrice(
           {
             ...regional,
-            // if your regional object already includes currency, keep it,
-            // but if you passed a formatting currency from /packages, prefer it:
-            currency: cur || regional.currency,
+            // FIX: regional-pricing uses displayCurrency, not "currency"
+            // If packages passed "cur", allow it to override formatting (optional)
+            displayCurrency: cur || pricingCurrency,
           },
           locale
         );

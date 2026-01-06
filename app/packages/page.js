@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import "@/styles/packages.scss";
 import { getDictionary, t } from "@/app/i18n";
-import { guessCurrencyFromNavigator } from "@/lib/currency";
+// import { guessCurrencyFromNavigator } from "@/lib/currency"; // no longer needed
 import { detectUserCountry } from "@/lib/geo";
 import {
   calculatePackagePrice,
@@ -14,6 +14,7 @@ import {
   formatRegionalPrice,
 } from "@/lib/regional-pricing";
 import { oneOnOnePlans, groupPlans, corporatePlans } from "@/lib/plans";
+import { getPricingRegion } from "@/lib/pricing-regions";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
@@ -70,51 +71,20 @@ function Packages() {
       setTab(AUD.CORPORATE);
   }, []);
 
-  // Detect viewer country and currency
+  // Detect viewer country and LOCK currency based on pricing region
   useEffect(() => {
     (async () => {
-      // 1. Detect country code
       const detectedCountry = await detectUserCountry();
       setCountryCode(detectedCountry);
+
+      const region = getPricingRegion(detectedCountry);
+      setCurrency(region.currency);
+
       console.log(
         "🌍 Using pricing for country:",
         detectedCountry || "DEFAULT"
       );
-
-      // 2. Still detect currency for display formatting
-      let c = null;
-
-      // Try IP-based detection
-      try {
-        const r = await fetch("https://ipapi.co/json/");
-        const j = await r.json();
-        c = j?.currency || null;
-      } catch {}
-
-      // Fallback: server geo
-      if (!c) {
-        try {
-          const r = await fetch("/api/geo");
-          const j = await r.json();
-          c = j?.currency || null;
-        } catch {}
-      }
-
-      // Fallback: timezone heuristic
-      if (!c) {
-        try {
-          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          if (tz === "Africa/Cairo") c = "EGP";
-        } catch {}
-      }
-
-      // Fallback: navigator guess
-      if (!c) c = guessCurrencyFromNavigator();
-
-      // Absolute fallback
-      if (!c) c = "EGP";
-
-      setCurrency(c);
+      console.log("💱 Currency locked to pricing region:", region.currency);
     })();
   }, []);
 
