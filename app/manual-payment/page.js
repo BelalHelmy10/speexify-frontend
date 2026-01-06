@@ -12,6 +12,8 @@ import { oneOnOnePlans, groupPlans } from "@/lib/plans";
 //   /* paste from packages page */
 // ];
 
+const [submitting, setSubmitting] = useState(false);
+const [err, setErr] = useState("");
 function findPlanByTitle(title) {
   if (!title) return null;
   const decoded = decodeURIComponent(title).trim().toLowerCase();
@@ -190,6 +192,8 @@ export default function ManualPaymentPage() {
           <CopyRow label="Bank name and address" value={wise.bankNameAddress} />
         </div>
       </div>
+
+      {err ? <p style={{ marginTop: 12, color: "crimson" }}>{err}</p> : null}
 
       <div style={{ marginTop: 16 }}>
         <button onClick={onConfirmTransferred} style={{ padding: "10px 14px" }}>
