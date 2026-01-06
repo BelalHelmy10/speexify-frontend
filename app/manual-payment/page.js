@@ -12,8 +12,6 @@ import { oneOnOnePlans, groupPlans } from "@/lib/plans";
 //   /* paste from packages page */
 // ];
 
-const [submitting, setSubmitting] = useState(false);
-const [err, setErr] = useState("");
 function findPlanByTitle(title) {
   if (!title) return null;
   const decoded = decodeURIComponent(title).trim().toLowerCase();
