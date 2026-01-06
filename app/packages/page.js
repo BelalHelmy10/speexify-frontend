@@ -741,7 +741,7 @@ const oneOnOnePlans = [
     priceType: "BUNDLE",
     featuresRaw:
       "Private 1:1 coaching\nPriority scheduling\nCustom learning plan\nDetailed progress reports\nHomework & resources\nPronunciation analysis",
-    isPopular: true,
+    isPopular: false,
     savings: "Save 8%",
   },
   {
@@ -754,7 +754,7 @@ const oneOnOnePlans = [
     priceType: "BUNDLE",
     featuresRaw:
       "Private 1:1 coaching\nPriority scheduling\nAdvanced curriculum\nWeekly progress calls\nMock interviews\nIndustry-specific content\nUnlimited email support",
-    isPopular: false,
+    isPopular: true,
     savings: "Save 13%",
   },
   {
