@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import api, { clearCsrfToken } from "@/lib/api";
 import { fmtInTz } from "@/utils/date";
@@ -373,9 +373,14 @@ function ImpersonationBanner({ user, onStop }) {
 function DashboardInner({ dict, prefix }) {
   const { toast, confirmModal } = useToast();
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+  const notice = searchParams.get("notice");
+
   const [status, setStatus] = useState(() => t(dict, "status_loading"));
   const [summary, setSummary] = useState(null);
   const { user, checking, refresh } = useAuth();
+  // ...
 
   // ─────────────────────────────────────────────
   // IMPERSONATION DETECTION
@@ -550,6 +555,13 @@ function DashboardInner({ dict, prefix }) {
     dict,
   ]);
 
+  useEffect(() => {
+    if (!notice) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("notice");
+    window.history.replaceState({}, "", url.toString());
+  }, [notice]);
+
   // Teacher summary - fetch for teachers OR when impersonating a teacher
   useEffect(() => {
     if (checking || !user) return;
@@ -713,10 +725,25 @@ function DashboardInner({ dict, prefix }) {
       )}
 
       <div className="container-narrow dashboard">
+        {notice ? (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 12,
+              border: "1px solid #cde8d5",
+              background: "#f3fff6",
+              borderRadius: 12,
+            }}
+          >
+            {notice}
+          </div>
+        ) : null}
+
         <div className="dashboard__header">
           <div>
             <h2>{t(dict, "title")}</h2>
             <p className="dashboard__subtitle">{subtitleText}</p>
+
             {isImpersonating && (
               <p
                 style={{

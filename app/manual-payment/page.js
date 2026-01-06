@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import api from "@/lib/api";
-import { me } from "@/lib/auth";
 import { oneOnOnePlans, groupPlans } from "@/lib/plans";
 
 // // --- IMPORTANT: paste your plan arrays here or import them (see note below) ---
@@ -91,9 +89,6 @@ export default function ManualPaymentPage() {
   const planTitle = searchParams.get("plan");
   const plan = useMemo(() => findPlanByTitle(planTitle), [planTitle]);
 
-  const [submitting, setSubmitting] = useState(false);
-  const [err, setErr] = useState("");
-
   const wise = {
     currency: process.env.NEXT_PUBLIC_WISE_CURRENCY || "USD",
     name: process.env.NEXT_PUBLIC_WISE_NAME || "",
@@ -107,40 +102,12 @@ export default function ManualPaymentPage() {
       "Use your email as the transfer reference",
   };
 
-  async function onConfirmTransferred() {
-    setErr("");
-
-    try {
-      // Require login (since we’ll grant the package)
-      const u = await me();
-      if (!u?.user) {
-        const next = encodeURIComponent(window.location.href);
-        router.push(`${localePrefix}/login?next=${next}`);
-        return;
-      }
-
-      if (!plan?.id) {
-        setErr("Plan not found.");
-        return;
-      }
-
-      setSubmitting(true);
-
-      // Send the plan.id to backend (backend will map it)
-      const { data } = await api.post("/payments/manual/confirm", {
-        planId: plan.id, // e.g. "1on1-12"
-      });
-
-      if (!data?.ok) throw new Error(data?.message || "Failed");
-
-      router.push(`${localePrefix}/dashboard`);
-    } catch (e) {
-      setErr(
-        e?.response?.data?.message || e?.message || "Something went wrong"
-      );
-    } finally {
-      setSubmitting(false);
-    }
+  function onConfirmTransferred() {
+    const message =
+      "Thanks for your payment. We’ll be in touch soon to confirm and activate your package.";
+    router.push(
+      `${localePrefix}/dashboard?notice=${encodeURIComponent(message)}`
+    );
   }
 
   if (!plan) {
@@ -227,16 +194,13 @@ export default function ManualPaymentPage() {
       {err ? <p style={{ marginTop: 12, color: "crimson" }}>{err}</p> : null}
 
       <div style={{ marginTop: 16 }}>
-        <button
-          onClick={onConfirmTransferred}
-          disabled={submitting}
-          style={{ padding: "10px 14px" }}
-        >
-          {submitting ? "Submitting…" : "I transferred the amount"}
+        <button onClick={onConfirmTransferred} style={{ padding: "10px 14px" }}>
+          I’ve transferred the amount
         </button>
 
         <p style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
-          Clicking this will confirm payment and activate your package.
+          After you transfer, click this and we’ll contact you shortly to
+          confirm and activate your package.
         </p>
       </div>
     </div>
