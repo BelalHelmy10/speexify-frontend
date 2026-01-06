@@ -3,14 +3,7 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { oneOnOnePlans, groupPlans } from "@/lib/plans";
-
-// // --- IMPORTANT: paste your plan arrays here or import them (see note below) ---
-// const oneOnOnePlans = [
-//   /* paste from packages page */
-// ];
-// const groupPlans = [
-//   /* paste from packages page */
-// ];
+import { Copy, Check, CreditCard, Building2, AlertCircle } from "lucide-react";
 
 function findPlanByTitle(title) {
   if (!title) return null;
@@ -37,50 +30,54 @@ function CopyRow({ label, value, hint }) {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: 12,
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "12px 0",
-        borderTop: "1px solid #eee",
-      }}
-    >
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, opacity: 0.7 }}>{label}</div>
-        <div style={{ fontSize: 18, fontWeight: 600, marginTop: 4 }}>
+    <div className="border-t border-gray-100 py-4 flex items-start justify-between gap-4">
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-gray-600 mb-1">{label}</div>
+        <div className="text-lg font-semibold text-gray-900 break-all">
           {value || "—"}
         </div>
-        {hint ? (
-          <div style={{ fontSize: 12, opacity: 0.65, marginTop: 6 }}>
+        {hint && (
+          <div className="text-xs text-gray-500 mt-2 leading-relaxed">
             {hint}
           </div>
-        ) : null}
+        )}
       </div>
 
       <button
         type="button"
         onClick={onCopy}
         disabled={!value}
-        style={{
-          padding: "8px 10px",
-          border: "1px solid #ddd",
-          borderRadius: 10,
-          cursor: value ? "pointer" : "not-allowed",
-          background: "#fff",
-          whiteSpace: "nowrap",
-        }}
+        className={`
+          flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm
+          transition-all duration-200 whitespace-nowrap shrink-0
+          ${
+            value
+              ? copied
+                ? "bg-emerald-50 text-emerald-700 border-2 border-emerald-200"
+                : "bg-white text-gray-700 border-2 border-gray-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
+              : "bg-gray-50 text-gray-400 border-2 border-gray-100 cursor-not-allowed"
+          }
+        `}
       >
-        {copied ? "Copied" : "Copy"}
+        {copied ? (
+          <>
+            <Check className="w-4 h-4" />
+            Copied
+          </>
+        ) : (
+          <>
+            <Copy className="w-4 h-4" />
+            Copy
+          </>
+        )}
       </button>
     </div>
   );
 }
 
 export default function ManualPaymentPage() {
-  const [submitting, setSubmitting] = useState(false); // ✅ inside component
-  const [err, setErr] = useState(""); // ✅ inside component
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState("");
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -106,7 +103,7 @@ export default function ManualPaymentPage() {
 
   function onConfirmTransferred() {
     const message =
-      "Thanks for your payment. We’ll be in touch soon to confirm and activate your package.";
+      "Thanks for your payment. We'll be in touch soon to confirm and activate your package.";
     router.push(
       `${localePrefix}/dashboard?notice=${encodeURIComponent(message)}`
     );
@@ -114,14 +111,24 @@ export default function ManualPaymentPage() {
 
   if (!plan) {
     return (
-      <div style={{ padding: 24 }}>
-        <h1>Manual payment</h1>
-        <p style={{ color: "crimson" }}>
-          Plan not found. Please go back and select a package again.
-        </p>
-        <button onClick={() => router.push(`${localePrefix}/packages`)}>
-          Back to packages
-        </button>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Plan Not Found
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Please go back and select a package again.
+          </p>
+          <button
+            onClick={() => router.push(`${localePrefix}/packages`)}
+            className="w-full px-6 py-3 bg-sky-600 text-white font-semibold rounded-xl hover:bg-sky-700 transition-colors duration-200"
+          >
+            Back to Packages
+          </button>
+        </div>
       </div>
     );
   }
@@ -129,81 +136,122 @@ export default function ManualPaymentPage() {
   const amount = plan.priceEGP != null ? `${plan.priceEGP} EGP` : "Custom";
 
   return (
-    <div style={{ padding: 24, maxWidth: 720, margin: "0 auto" }}>
-      <h1>Pay via bank transfer (Wise)</h1>
-
-      <div
-        style={{
-          marginTop: 12,
-          padding: 16,
-          border: "1px solid #ddd",
-          borderRadius: 14,
-        }}
-      >
-        <h3 style={{ marginTop: 0 }}>{plan.title}</h3>
-        <p style={{ margin: "8px 0" }}>
-          Amount: <b>{amount}</b>
-        </p>
-
-        <div style={{ marginTop: 8, fontSize: 13, opacity: 0.8 }}>
-          <b>Reference:</b> {wise.referenceText}
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-sky-600 rounded-2xl mb-4 shadow-lg">
+            <Building2 className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+            Bank Transfer Payment
+          </h1>
+          <p className="text-gray-600">
+            Complete your payment via Wise transfer
+          </p>
         </div>
-      </div>
 
-      <div
-        style={{
-          marginTop: 16,
-          padding: 16,
-          border: "1px solid #ddd",
-          borderRadius: 14,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "baseline",
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800 }}>{wise.currency}</div>
-            <div style={{ fontSize: 13, opacity: 0.7 }}>Account details</div>
+        {/* Plan Details Card */}
+        <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 mb-6 border-2 border-sky-100">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <div className="text-sm font-medium text-sky-700 mb-1">
+                Selected Plan
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">{plan.title}</h3>
+            </div>
+            <div className="bg-sky-600 text-white px-4 py-2 rounded-xl font-bold text-lg shrink-0">
+              {amount}
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-semibold text-amber-900 mb-1">Important</div>
+              <div className="text-sm text-amber-800">{wise.referenceText}</div>
+            </div>
           </div>
         </div>
 
-        <div style={{ marginTop: 12 }}>
-          <CopyRow label="Name" value={wise.name} />
-          <CopyRow label="Account number" value={wise.accountNumber} />
-          <CopyRow
-            label="Account type"
-            value={wise.accountType}
-            hint="Only used for domestic transfers"
-          />
-          <CopyRow
-            label="Routing number (for wire and ACH)"
-            value={wise.routingNumber}
-            hint="Only used for domestic transfers"
-          />
-          <CopyRow
-            label="Swift/BIC"
-            value={wise.swiftBic}
-            hint="Only used for international Swift transfers"
-          />
-          <CopyRow label="Bank name and address" value={wise.bankNameAddress} />
+        {/* Account Details Card */}
+        <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 mb-6 border-2 border-gray-100">
+          <div className="flex items-center justify-between mb-6 pb-6 border-b-2 border-gray-100">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">
+                Transfer Details
+              </h2>
+              <p className="text-sm text-gray-600">
+                Send funds to the following account
+              </p>
+            </div>
+            <div className="bg-sky-100 text-sky-800 px-4 py-2 rounded-xl font-bold text-lg">
+              {wise.currency}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <CopyRow label="Recipient Name" value={wise.name} />
+            <CopyRow label="Account Number" value={wise.accountNumber} />
+            <CopyRow
+              label="Account Type"
+              value={wise.accountType}
+              hint="Only used for domestic transfers"
+            />
+            <CopyRow
+              label="Routing Number"
+              value={wise.routingNumber}
+              hint="For wire and ACH transfers (domestic only)"
+            />
+            <CopyRow
+              label="SWIFT/BIC"
+              value={wise.swiftBic}
+              hint="For international wire transfers"
+            />
+            <CopyRow label="Bank Name & Address" value={wise.bankNameAddress} />
+          </div>
         </div>
-      </div>
 
-      {err ? <p style={{ marginTop: 12, color: "crimson" }}>{err}</p> : null}
+        {/* Error Message */}
+        {err && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-700 shrink-0 mt-0.5" />
+            <div className="text-sm text-red-800">{err}</div>
+          </div>
+        )}
 
-      <div style={{ marginTop: 16 }}>
-        <button onClick={onConfirmTransferred} style={{ padding: "10px 14px" }}>
-          I’ve transferred the amount
-        </button>
+        {/* Confirmation Button */}
+        <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 border-2 border-gray-100">
+          <button
+            onClick={onConfirmTransferred}
+            disabled={submitting}
+            className={`
+              w-full px-8 py-4 font-bold text-lg rounded-2xl shadow-lg
+              transition-all duration-200 flex items-center justify-center gap-3
+              ${
+                submitting
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-sky-600 to-cyan-600 text-white hover:shadow-xl hover:from-sky-700 hover:to-cyan-700"
+              }
+            `}
+          >
+            <CreditCard className="w-6 h-6" />
+            {submitting ? "Processing..." : "I've Transferred the Amount"}
+          </button>
 
-        <p style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
-          After you transfer, click this and we’ll contact you shortly to
-          confirm and activate your package.
-        </p>
+          <p className="text-sm text-gray-600 text-center mt-4 leading-relaxed">
+            After completing your transfer, click the button above. We'll
+            contact you shortly to confirm and activate your package.
+          </p>
+        </div>
+
+        {/* Security Badge */}
+        <div className="text-center mt-8">
+          <div className="inline-flex items-center gap-2 text-sm text-gray-500">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+            Secure payment processing
+          </div>
+        </div>
       </div>
     </div>
   );
