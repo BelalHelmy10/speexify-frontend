@@ -154,6 +154,10 @@ function Packages() {
         "Scalable language training for teams of all sizes"
       );
 
+  const target = `${localePrefix}/${
+    PAYMENT_MODE === "paymob" ? "checkout" : "manual-payment"
+  }?plan=${encodeURIComponent(plan.title)}`;
+
   return (
     <div className="ecp">
       {/* HERO */}
@@ -688,9 +692,7 @@ function PricingCard({ plan, audience, dict, locale, currency, countryCode }) {
             </Link> */}
 
             <Link
-              href={`${localePrefix}/${
-                PAYMENT_MODE === "paymob" ? "checkout" : "manual-payment"
-              }?plan=${encodeURIComponent(plan.title)}`}
+              href={`${localePrefix}/login?next=${encodeURIComponent(target)}`}
               className="ecp-btn ecp-btn--primary"
             >
               {t(dict, "cta_buy_now", "Buy Now")}
