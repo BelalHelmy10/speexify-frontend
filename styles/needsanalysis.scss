@@ -1,0 +1,412 @@
+/* styles/needsanalysis.scss */
+
+.naSimple {
+  --bg: #0b0c10;
+  --panel: rgba(255, 255, 255, 0.06);
+  --panel2: rgba(255, 255, 255, 0.08);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.65);
+  --muted2: rgba(255, 255, 255, 0.5);
+  --line: rgba(255, 255, 255, 0.12);
+  --shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+  --radius: 18px;
+  --urgent: rgba(255, 99, 71, 0.85);
+
+  min-height: 100vh;
+  background: radial-gradient(
+      1200px 800px at 20% -10%,
+      rgba(100, 149, 237, 0.22),
+      transparent 55%
+    ),
+    radial-gradient(
+      900px 700px at 110% 10%,
+      rgba(186, 85, 211, 0.18),
+      transparent 52%
+    ),
+    radial-gradient(
+      1000px 600px at 50% 120%,
+      rgba(0, 255, 200, 0.08),
+      transparent 58%
+    ),
+    var(--bg);
+
+  color: var(--text);
+  padding: 28px 18px 80px;
+
+  @media (min-width: 900px) {
+    padding: 34px 26px 90px;
+  }
+}
+
+.naSimple__header {
+  max-width: 1100px;
+  margin: 0 auto 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.naSimple__top {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+
+  @media (min-width: 900px) {
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: start;
+  }
+}
+
+.naSimple__titleBlock {
+  background: linear-gradient(180deg, var(--panel), transparent 120%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 18px 16px;
+  box-shadow: var(--shadow);
+}
+
+.naSimple__title {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+
+  @media (min-width: 900px) {
+    font-size: 34px;
+  }
+}
+
+.naSimple__sub {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 14px;
+}
+
+.naSimple__meta {
+  background: linear-gradient(180deg, var(--panel), transparent 120%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.naSimple__field {
+  display: grid;
+  gap: 6px;
+
+  span {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  input {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: rgba(0, 0, 0, 0.18);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 10px 12px;
+    outline: none;
+
+    &:focus {
+      border-color: rgba(255, 255, 255, 0.22);
+      box-shadow: 0 0 0 4px rgba(100, 149, 237, 0.12);
+    }
+  }
+}
+
+.naSimple__progress {
+  display: grid;
+  gap: 8px;
+}
+
+.naSimple__progressTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.naSimple__bar {
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+}
+
+.naSimple__barFill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(100, 149, 237, 0.85),
+    rgba(186, 85, 211, 0.75)
+  );
+  transition: width 240ms ease;
+}
+
+.naSimple__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.naSimple__btn {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: transform 120ms ease, background 120ms ease, border 120ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.09);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0px);
+  }
+}
+
+.naSimple__btn--ghost {
+  background: rgba(0, 0, 0, 0.12);
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.18);
+  }
+}
+
+.naSimple__scores {
+  background: linear-gradient(180deg, var(--panel2), transparent 120%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.naSimple__scoresHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+  }
+}
+
+.naSimple__avg {
+  color: var(--muted);
+  font-size: 13px;
+
+  strong {
+    color: var(--text);
+    font-size: 16px;
+  }
+}
+
+.naSimple__scoresPrompt {
+  margin: 8px 0 0;
+  color: var(--muted2);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.naSimple__scoreGrid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+
+  @media (min-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.naSimple__scoreCard {
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.14);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.naSimple__scoreLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  strong {
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  span {
+    color: var(--muted2);
+    font-size: 11px;
+    line-height: 1.35;
+    font-weight: normal;
+  }
+}
+
+.naSimple__scoreRow {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.naSimple__range {
+  width: 100%;
+  accent-color: rgba(100, 149, 237, 0.95);
+}
+
+.naSimple__scoreValue {
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 6px 10px;
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 12px;
+  transition: all 180ms ease;
+}
+
+.naSimple__scoreValue--urgent {
+  background: rgba(255, 99, 71, 0.15);
+  border-color: rgba(255, 99, 71, 0.4);
+  color: var(--urgent);
+  font-weight: 600;
+}
+
+.naSimple__toast {
+  max-width: 1100px;
+  margin: 0 auto 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.26);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.naSimple__main {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+
+.naSimple__section {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    transparent 120%
+  );
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.naSimple__section--coach {
+  background: linear-gradient(
+    180deg,
+    rgba(100, 149, 237, 0.08),
+    transparent 120%
+  );
+  border: 1px solid rgba(100, 149, 237, 0.2);
+}
+
+.naSimple__sectionHead {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+
+  h2 {
+    margin: 0;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+}
+
+.naSimple__qa {
+  padding: 14px 16px 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.naSimple__item {
+  display: grid;
+  gap: 8px;
+}
+
+.naSimple__question {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.naSimple__answer {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.16);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 12px;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+  font-size: 14px;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.38);
+  }
+
+  &:focus {
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 0 0 4px rgba(186, 85, 211, 0.1);
+  }
+}
+
+.naSimple__subPrompts {
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: rgba(100, 149, 237, 0.08);
+  border: 1px solid rgba(100, 149, 237, 0.15);
+  border-radius: 12px;
+}
+
+.naSimple__subPromptsLabel {
+  font-size: 11px;
+  color: var(--muted2);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+}
+
+.naSimple__subPrompts ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+
+  li {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+}
