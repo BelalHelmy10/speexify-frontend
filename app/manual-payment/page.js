@@ -191,8 +191,6 @@ export default function ManualPaymentPage() {
         </div>
       </div>
 
-      {err ? <p style={{ marginTop: 12, color: "crimson" }}>{err}</p> : null}
-
       <div style={{ marginTop: 16 }}>
         <button onClick={onConfirmTransferred} style={{ padding: "10px 14px" }}>
           I’ve transferred the amount
