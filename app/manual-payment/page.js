@@ -3,14 +3,10 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { oneOnOnePlans, groupPlans } from "@/lib/plans";
-
-// // --- IMPORTANT: paste your plan arrays here or import them (see note below) ---
-// const oneOnOnePlans = [
-//   /* paste from packages page */
-// ];
-// const groupPlans = [
-//   /* paste from packages page */
-// ];
+import {
+  calculatePackagePrice,
+  formatRegionalPrice,
+} from "@/lib/regional-pricing";
 
 function findPlanByTitle(title) {
   if (!title) return null;
@@ -79,8 +75,9 @@ function CopyRow({ label, value, hint }) {
 }
 
 export default function ManualPaymentPage() {
-  const [submitting, setSubmitting] = useState(false); // ✅ inside component
-  const [err, setErr] = useState(""); // ✅ inside component
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState("");
+
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -90,6 +87,10 @@ export default function ManualPaymentPage() {
 
   const planTitle = searchParams.get("plan");
   const plan = useMemo(() => findPlanByTitle(planTitle), [planTitle]);
+
+  // ✅ these are passed from /packages in the "next" target
+  const cc = searchParams.get("cc"); // countryCode
+  const cur = searchParams.get("cur"); // viewer currency (for formatting)
 
   const wise = {
     currency: process.env.NEXT_PUBLIC_WISE_CURRENCY || "USD",
@@ -126,7 +127,21 @@ export default function ManualPaymentPage() {
     );
   }
 
-  const amount = plan.priceEGP != null ? `${plan.priceEGP} EGP` : "Custom";
+  // ✅ IMPORTANT: use the SAME pricing engine as /packages (NOT priceEGP)
+  const regional = calculatePackagePrice(plan, cc || null);
+
+  const amount =
+    regional?.isCustomPricing || !regional?.displayAmount
+      ? "Custom"
+      : formatRegionalPrice(
+          {
+            ...regional,
+            // if your regional object already includes currency, keep it,
+            // but if you passed a formatting currency from /packages, prefer it:
+            currency: cur || regional.currency,
+          },
+          locale
+        );
 
   return (
     <div style={{ padding: 24, maxWidth: 720, margin: "0 auto" }}>
