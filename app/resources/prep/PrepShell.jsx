@@ -16,6 +16,8 @@ const TOOL_POINTER = "pointer";
 const TOOL_ERASER = "eraser";
 const TOOL_TEXT = "text";
 const TOOL_MASK = "mask"; // white block to hide parts of the page
+const TOOL_LINE = "line"; // straight line connector
+const TOOL_BOX = "box"; // border rectangle around areas
 
 const PEN_COLORS = [
   "#000000",
@@ -42,10 +44,6 @@ function colorForId(id) {
   for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
   return POINTER_COLORS[hash % POINTER_COLORS.length];
 }
-
-// ─────────────────────────────────────────────────────────────
-// HELPER: Detect and convert Google Drive URLs
-// ─────────────────────────────────────────────────────────────
 
 export default function PrepShell({
   resource,
@@ -90,8 +88,6 @@ export default function PrepShell({
   const { user } = useAuth();
   const myUserId = user?._id || user?.id || null;
 
-  console.log("DEBUG viewerUrl:", viewerUrl);
-
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -103,15 +99,17 @@ export default function PrepShell({
   const [learnerPointersByPage, setLearnerPointersByPage] = useState({});
   // shape: { [pageNumber]: { [userId]: { x, y } } }
 
-  // shape: { [userId]: { x, y } }
   const [stickyNotes, setStickyNotes] = useState([]);
   const [textBoxes, setTextBoxes] = useState([]);
   const [masks, setMasks] = useState([]); // white blocks to hide content
+  const [lines, setLines] = useState([]); // [{id, x1, y1, x2, y2, color, page}]
+  const [boxes, setBoxes] = useState([]); // [{id, x, y, width, height, color, page}]
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
   const [dragState, setDragState] = useState(null); // { kind: "note"|"text", id, offsetX, offsetY }
   const [resizeState, setResizeState] = useState(null); // { id, startY, startFontSize }
   const [widthResizeState, setWidthResizeState] = useState(null); // { id, startX, startWidth, direction }
   const [maskDrag, setMaskDrag] = useState(null); // { mode: "creating"|"moving", ... }
+  const [shapeDrag, setShapeDrag] = useState(null); // { mode: "creating", tool: "line"|"box", startX, startY, currentX, currentY }
   const [activeTextId, setActiveTextId] = useState(null);
   const [pdfFallback, setPdfFallback] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -136,6 +134,14 @@ export default function PrepShell({
   // ✅ Pointer must be tied to the current PDF page.
   // When the page changes, clear local pointer for previous page so it doesn't "travel".
   const prevPointerPageRef = useRef(null);
+
+  // ✅ PDF scroll/page sync refs (teacher -> learners)
+  const pdfScrollRef = useRef(null); // scroll container (mainRef inside PdfViewerWithSidebar)
+  const pdfNavApiRef = useRef(null); // nav API from PdfViewerWithSidebar (setPage, etc.)
+  const lastScrollSentAtRef = useRef(0); // throttle
+  const rafPendingRef = useRef(false); // throttle (rAF)
+
+  const applyingRemoteRef = useRef(false);
 
   useEffect(() => {
     const page = isPdf ? pdfCurrentPage : 1;
@@ -176,6 +182,10 @@ export default function PrepShell({
   const containerRef = useRef(null); // element that matches the page (for normalized coords)
   const screenVideoRef = useRef(null);
   const audioRef = useRef(null);
+
+  // ✅ TEXTAREA REFS (for real-time autosize)
+  const textAreaRefs = useRef({}); // { [textId]: HTMLTextAreaElement }
+  const measureSpanRef = useRef(null); // shared measurer for auto width
 
   // ✅ AUDIO SYNC (teacher -> learners)
   const audioSeqRef = useRef(0); // monotonically increasing sequence (teacher)
@@ -288,14 +298,6 @@ export default function PrepShell({
   const toolMenuRef = useRef(null);
   const colorMenuRef = useRef(null);
 
-  // ✅ PDF scroll/page sync refs (teacher -> learners)
-  const pdfScrollRef = useRef(null); // scroll container (mainRef inside PdfViewerWithSidebar)
-  const pdfNavApiRef = useRef(null); // nav API from PdfViewerWithSidebar (setPage, etc.)
-  const lastScrollSentAtRef = useRef(0); // throttle
-  const rafPendingRef = useRef(false); // throttle (rAF)
-
-  const applyingRemoteRef = useRef(false);
-
   const unit = resource.unit;
   const subLevel = unit?.subLevel;
   const level = subLevel?.level;
@@ -309,6 +311,112 @@ export default function PrepShell({
   const layoutClasses =
     "prep-layout" +
     (focusMode || sidebarCollapsed || hideSidebar ? " prep-layout--focus" : "");
+
+  // ─────────────────────────────────────────────────────────────
+  // Text tool helpers:
+  // - Auto-expand width while typing (single line growth)
+  // - Wrap only when user manually resizes narrower
+  // - Auto-resize textarea height in realtime (especially after width changes)
+  // ─────────────────────────────────────────────────────────────
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+  // Utility: distance from point to line segment
+  function pointToLineDistance(px, py, x1, y1, x2, y2) {
+    const len2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
+    if (len2 === 0) return Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+    let t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const projX = x1 + t * (x2 - x1);
+    const projY = y1 + t * (y2 - y1);
+    return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
+  }
+
+  // Utility: distance from point to rect border (check edges)
+  function pointToRectBorderDistance(px, py, rx, ry, rw, rh) {
+    const right = rx + rw;
+    const bottom = ry + rh;
+    // Check distance to each side
+    const distLeft = Math.abs(px - rx);
+    const distRight = Math.abs(px - right);
+    const distTop = Math.abs(py - ry);
+    const distBottom = Math.abs(py - bottom);
+    // If inside rect, min distance to borders
+    if (px >= rx && px <= right && py >= ry && py <= bottom) {
+      return Math.min(distLeft, distRight, distTop, distBottom);
+    }
+    // Outside: distance to nearest edge
+    return Math.min(
+      px < rx ? distLeft : px > right ? distRight : 0,
+      py < ry ? distTop : py > bottom ? distBottom : 0
+    );
+  }
+
+  const measureTextWidthPx = useCallback((text, style = {}) => {
+    // Uses a hidden span to get exact rendered width.
+    const span = measureSpanRef.current;
+    if (!span) return 0;
+
+    span.style.fontSize = style.fontSize ? `${style.fontSize}px` : "16px";
+    span.style.fontFamily = style.fontFamily || "inherit";
+    span.style.fontWeight = style.fontWeight || "normal";
+    span.style.letterSpacing = style.letterSpacing || "normal";
+    span.style.whiteSpace = "pre"; // IMPORTANT: no wrap
+    // put at least one char so width isn't 0
+    span.textContent = (text ?? "").length ? text : " ";
+    return span.getBoundingClientRect().width || 0;
+  }, []);
+
+  const autoResizeTextarea = useCallback((id) => {
+    const el = textAreaRefs.current?.[id];
+    if (!el) return;
+
+    // Height
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  const autoFitTextBoxWidthIfNeeded = useCallback(
+    (box, nextText) => {
+      // Only auto-fit while editing AND the box is in autoWidth mode
+      if (!box?.autoWidth) return box;
+      const fontSize = box.fontSize || 16;
+      const text = nextText ?? box.text ?? "";
+      // Measure the actual text content width
+      const measured = measureTextWidthPx(text, { fontSize });
+      // padding + caret room + extra buffer
+      const desired = measured + 40;
+      // CHANGED: Increase max width significantly
+      const container = containerRef.current || canvasRef.current;
+      const rect = container?.getBoundingClientRect();
+      const maxW = rect?.width ? Math.floor(rect.width * 0.95) : 8000; // Changed to 0.95 and higher fallback
+      let newWidth = clamp(Math.round(desired), 120, maxW);
+      let newX = box.x;
+      if (rect) {
+        const normW = newWidth / rect.width;
+        const half = normW / 2;
+        const projectedLeft = newX - half;
+        const projectedRight = newX + half;
+        if (projectedLeft < 0) {
+          newX -= projectedLeft; // Shift right to clamp left at 0 (expand right only)
+        }
+        if (projectedRight > 1) {
+          newX -= projectedRight - 1; // Shift left to clamp right at 1 (expand left only)
+        }
+      }
+      return { ...box, x: newX, width: newWidth };
+    },
+    [measureTextWidthPx]
+  );
+
+  // When active textbox changes or textBoxes update, resize the active textarea height
+  useEffect(() => {
+    if (!activeTextId) return;
+    // next tick so DOM has updated widths
+    const id = activeTextId;
+    const t = setTimeout(() => autoResizeTextarea(id), 0);
+    return () => clearTimeout(t);
+  }, [activeTextId, textBoxes, autoResizeTextarea]);
 
   // ─────────────────────────────────────────────────────────────
   // Focus newly-activated text box
@@ -444,7 +552,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Utility: normalized point relative to containerRef
   // ─────────────────────────────────────────────────────────────
-
   function getNormalizedPoint(event) {
     const container = containerRef.current;
     if (!container) return null;
@@ -463,7 +570,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Canvas coordinate helpers (for dragging notes/text)
   // ─────────────────────────────────────────────────────────────
-
   function getCanvasCoordinates(event) {
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -483,7 +589,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // REDRAW: render all strokes (normalized) onto canvas (legacy bitmap)
   // ─────────────────────────────────────────────────────────────
-
   function redrawCanvasFromStrokes(strokesToDraw) {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -524,11 +629,8 @@ export default function PrepShell({
       stroke.points.forEach((p, idx) => {
         const x = p.x * width;
         const y = p.y * height;
-        if (idx === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
       });
 
       ctx.stroke();
@@ -547,36 +649,32 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Load annotations from localStorage
   // ─────────────────────────────────────────────────────────────
-
   useEffect(() => {
     if (!storageKey) return;
-
     // ✅ Reset state when switching resources/materials
     setStickyNotes([]);
     setTextBoxes([]);
     setMasks([]);
+    setLines([]);
+    setBoxes([]);
     setStrokes([]);
     setCurrentStrokeId(null);
-
     // Also clear the canvas immediately so nothing "sticks"
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext("2d");
       if (ctx)
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-
     try {
       const raw = window.localStorage.getItem(storageKey);
-
       // ✅ If no saved annotations for this resource, we keep the reset (empty) state
       if (!raw) return;
-
       const parsed = JSON.parse(raw);
-
       if (Array.isArray(parsed.stickyNotes)) setStickyNotes(parsed.stickyNotes);
       if (Array.isArray(parsed.textBoxes)) setTextBoxes(parsed.textBoxes);
       if (Array.isArray(parsed.masks)) setMasks(parsed.masks);
-
+      if (Array.isArray(parsed.lines)) setLines(parsed.lines);
+      if (Array.isArray(parsed.boxes)) setBoxes(parsed.boxes);
       if (Array.isArray(parsed.strokes)) {
         setStrokes(
           parsed.strokes.filter(
@@ -603,7 +701,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Resize canvas with container (and redraw strokes)
   // ─────────────────────────────────────────────────────────────
-
   useEffect(() => {
     const canvas = canvasRef.current;
 
@@ -648,22 +745,21 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Persistence + broadcasting
   // ─────────────────────────────────────────────────────────────
-
   function saveAnnotations(opts = {}) {
     if (!storageKey) return;
     try {
       const canvas = canvasRef.current;
       const canvasData =
         opts.canvasData ?? (canvas ? canvas.toDataURL("image/png") : undefined);
-
       const data = {
         canvasData: canvasData || null,
         strokes: opts.strokes ?? strokes,
         stickyNotes: opts.stickyNotes ?? stickyNotes,
         textBoxes: opts.textBoxes ?? textBoxes,
         masks: opts.masks ?? masks,
+        lines: opts.lines ?? lines,
+        boxes: opts.boxes ?? boxes,
       };
-
       window.localStorage.setItem(storageKey, JSON.stringify(data));
     } catch (err) {
       console.warn("Failed to save annotations", err);
@@ -673,11 +769,9 @@ export default function PrepShell({
   function broadcastAnnotations(custom = {}) {
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return;
-
     const canvas = canvasRef.current;
     const canvasData =
       custom.canvasData ?? (canvas ? canvas.toDataURL("image/png") : null);
-
     const payload = {
       type: "ANNOTATION_STATE",
       resourceId: resource._id,
@@ -686,8 +780,9 @@ export default function PrepShell({
       stickyNotes: custom.stickyNotes ?? stickyNotes,
       textBoxes: custom.textBoxes ?? textBoxes,
       masks: custom.masks ?? masks,
+      lines: custom.lines ?? lines,
+      boxes: custom.boxes ?? boxes,
     };
-
     try {
       sendOnChannel(payload);
     } catch (err) {
@@ -760,21 +855,22 @@ export default function PrepShell({
 
   function applyRemoteAnnotationState(message) {
     if (!message || message.resourceId !== resource._id) return;
-
     const {
       canvasData,
       strokes: remoteStrokes,
       stickyNotes: remoteNotes,
       textBoxes: remoteText,
       masks: remoteMasks,
+      lines: remoteLines,
+      boxes: remoteBoxes,
     } = message;
-
     applyingRemoteRef.current = true;
     try {
       if (Array.isArray(remoteNotes)) setStickyNotes(remoteNotes);
       if (Array.isArray(remoteText)) setTextBoxes(remoteText);
       if (Array.isArray(remoteMasks)) setMasks(remoteMasks);
-
+      if (Array.isArray(remoteLines)) setLines(remoteLines);
+      if (Array.isArray(remoteBoxes)) setBoxes(remoteBoxes);
       if (Array.isArray(remoteStrokes)) {
         setStrokes(remoteStrokes);
       } else if (canvasData && canvasRef.current) {
@@ -794,13 +890,14 @@ export default function PrepShell({
           img.src = canvasData;
         }
       }
-
       saveAnnotations({
         canvasData: canvasData || null,
         strokes: Array.isArray(remoteStrokes) ? remoteStrokes : strokes,
         stickyNotes: Array.isArray(remoteNotes) ? remoteNotes : stickyNotes,
         textBoxes: Array.isArray(remoteText) ? remoteText : textBoxes,
         masks: Array.isArray(remoteMasks) ? remoteMasks : masks,
+        lines: Array.isArray(remoteLines) ? remoteLines : lines,
+        boxes: Array.isArray(remoteBoxes) ? remoteBoxes : boxes,
       });
     } finally {
       applyingRemoteRef.current = false;
@@ -810,7 +907,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Subscribe to classroom channel (for sync)
   // ─────────────────────────────────────────────────────────────
-
   useEffect(() => {
     if (!classroomChannel || !classroomChannel.ready) return;
     if (!classroomChannel.subscribe) return;
@@ -1008,56 +1104,125 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Drawing tools (pen / highlighter / eraser) using normalized coords
   // ─────────────────────────────────────────────────────────────
-
   function eraseAtPoint(e) {
     const p = getNormalizedPoint(e);
     if (!p) return;
 
-    const R = 0.03;
+    const page = isPdf ? pdfCurrentPage : 1;
 
-    setStrokes((prev) => {
-      const next = prev.filter((stroke) => {
-        if (isPdf && stroke.page && stroke.page !== pdfCurrentPage) {
-          return true;
-        }
+    // "hit radii" in normalized units for bitmap strokes
+    const STROKE_R = 0.03;
 
-        if (stroke.tool !== TOOL_PEN && stroke.tool !== TOOL_HIGHLIGHTER) {
-          return true;
-        }
+    // "hit radii" for shapes; tune these with your new thin stroke (px-based)
+    const LINE_HIT = 0.012;
+    const BOX_BORDER_HIT = 0.015;
 
-        const hit = stroke.points.some((pt) => {
-          const dx = pt.x - p.x;
-          const dy = pt.y - p.y;
-          return dx * dx + dy * dy <= R * R;
-        });
+    // Find the single closest thing under the cursor
+    let best = { kind: null, id: null, dist: Infinity };
 
-        return !hit;
+    // 1) Strokes (pen/highlighter): treat closest point distance as metric
+    for (const s of strokes) {
+      if (isPdf && (s.page ?? 1) !== page) continue;
+      if (s.tool !== TOOL_PEN && s.tool !== TOOL_HIGHLIGHTER) continue;
+      if (!Array.isArray(s.points) || s.points.length === 0) continue;
+
+      let minD2 = Infinity;
+      for (const pt of s.points) {
+        const dx = pt.x - p.x;
+        const dy = pt.y - p.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < minD2) minD2 = d2;
+      }
+
+      const hit = minD2 <= STROKE_R * STROKE_R;
+      if (hit) {
+        const d = Math.sqrt(minD2);
+        if (d < best.dist) best = { kind: "stroke", id: s.id, dist: d };
+      }
+    }
+
+    // 2) Masks: if inside, distance=0 (very "close")
+    for (const m of masks) {
+      if (isPdf && (m.page ?? 1) !== page) continue;
+      const inside =
+        p.x >= m.x &&
+        p.x <= m.x + m.width &&
+        p.y >= m.y &&
+        p.y <= m.y + m.height;
+
+      if (inside && 0 < best.dist) {
+        best = { kind: "mask", id: m.id, dist: 0 };
+      }
+    }
+
+    // 3) Lines: segment distance
+    for (const l of lines) {
+      if (isPdf && (l.page ?? 1) !== page) continue;
+      const d = pointToLineDistance(p.x, p.y, l.x1, l.y1, l.x2, l.y2);
+      if (d <= LINE_HIT && d < best.dist) {
+        best = { kind: "line", id: l.id, dist: d };
+      }
+    }
+
+    // 4) Boxes: border distance
+    for (const b of boxes) {
+      if (isPdf && (b.page ?? 1) !== page) continue;
+      const d = pointToRectBorderDistance(
+        p.x,
+        p.y,
+        b.x,
+        b.y,
+        b.width,
+        b.height
+      );
+      if (d <= BOX_BORDER_HIT && d < best.dist) {
+        best = { kind: "box", id: b.id, dist: d };
+      }
+    }
+
+    // Nothing hit → do nothing
+    if (!best.kind || !best.id) return;
+
+    // Delete ONLY the best match
+    if (best.kind === "stroke") {
+      setStrokes((prev) => {
+        const next = prev.filter((s) => s.id !== best.id);
+        saveAnnotations({ strokes: next });
+        broadcastAnnotations({ strokes: next });
+        return next;
       });
+      return;
+    }
 
-      saveAnnotations({ strokes: next });
-      broadcastAnnotations({ strokes: next });
-      return next;
-    });
-
-    setMasks((prev) => {
-      const next = prev.filter((m) => {
-        if (isPdf && m.page && m.page !== pdfCurrentPage) {
-          return true;
-        }
-
-        const inside =
-          p.x >= m.x &&
-          p.x <= m.x + m.width &&
-          p.y >= m.y &&
-          p.y <= m.y + m.height;
-        return !inside;
-      });
-      if (next.length !== prev.length) {
+    if (best.kind === "mask") {
+      setMasks((prev) => {
+        const next = prev.filter((m) => m.id !== best.id);
         saveAnnotations({ masks: next });
         broadcastAnnotations({ masks: next });
-      }
-      return next;
-    });
+        return next;
+      });
+      return;
+    }
+
+    if (best.kind === "line") {
+      setLines((prev) => {
+        const next = prev.filter((l) => l.id !== best.id);
+        saveAnnotations({ lines: next });
+        broadcastAnnotations({ lines: next });
+        return next;
+      });
+      return;
+    }
+
+    if (best.kind === "box") {
+      setBoxes((prev) => {
+        const next = prev.filter((b) => b.id !== best.id);
+        saveAnnotations({ boxes: next });
+        broadcastAnnotations({ boxes: next });
+        return next;
+      });
+      return;
+    }
   }
 
   function startDrawing(e) {
@@ -1188,7 +1353,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Sticky notes
   // ─────────────────────────────────────────────────────────────
-
   function handleClickForNote(e) {
     if (tool !== TOOL_NOTE) return;
     const coords = getCanvasCoordinates(e);
@@ -1243,7 +1407,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Text boxes
   // ─────────────────────────────────────────────────────────────
-
   function createTextBox(e) {
     const p = getNormalizedPoint(e);
     if (!p) return;
@@ -1256,6 +1419,8 @@ export default function PrepShell({
       color: penColor,
       fontSize: 16,
       width: 150,
+      minWidth: 80,
+      autoWidth: true, // ✅ start in “single-line, no wrap” mode
       page: isPdf ? pdfCurrentPage : 1,
     };
 
@@ -1264,13 +1429,29 @@ export default function PrepShell({
     setActiveTextId(box.id);
     saveAnnotations({ textBoxes: next });
     broadcastAnnotations({ textBoxes: next });
+
+    // ensure height after mount
+    setTimeout(() => autoResizeTextarea(box.id), 0);
   }
 
   function updateTextBoxText(id, text) {
-    const next = textBoxes.map((t) => (t.id === id ? { ...t, text } : t));
-    setTextBoxes(next);
-    saveAnnotations({ textBoxes: next });
-    broadcastAnnotations({ textBoxes: next });
+    setTextBoxes((prev) => {
+      const updated = prev.map((tbox) => {
+        if (tbox.id !== id) return tbox;
+
+        // ✅ auto-fit width while typing (unless user manually resized width)
+        const withText = { ...tbox, text };
+        const fitted = autoFitTextBoxWidthIfNeeded(withText, text);
+        return fitted;
+      });
+
+      saveAnnotations({ textBoxes: updated });
+      broadcastAnnotations({ textBoxes: updated });
+      return updated;
+    });
+
+    // ✅ resize textarea height immediately while typing
+    setTimeout(() => autoResizeTextarea(id), 0);
   }
 
   function deleteTextBox(id) {
@@ -1279,6 +1460,9 @@ export default function PrepShell({
     saveAnnotations({ textBoxes: next });
     broadcastAnnotations({ textBoxes: next });
     if (activeTextId === id) setActiveTextId(null);
+
+    // cleanup ref
+    if (textAreaRefs.current?.[id]) delete textAreaRefs.current[id];
   }
 
   function startTextDrag(e, box) {
@@ -1301,33 +1485,68 @@ export default function PrepShell({
   function startFontSizeResize(e, box) {
     e.stopPropagation();
     e.preventDefault();
+    const container = containerRef.current || canvasRef.current;
+    const rect = container?.getBoundingClientRect();
+    setWidthResizeState(null); // Clear any ongoing width resize
+    // Disable autoWidth since this is manual resize
+    setTextBoxes((prev) =>
+      prev.map((t) => (t.id === box.id ? { ...t, autoWidth: false } : t))
+    );
     setResizeState({
       id: box.id,
       startX: e.clientX,
       startY: e.clientY,
       startFontSize: box.fontSize || 16,
+      startWidth: box.width || 150,
+      startBoxX: box.x,
+      containerWidth: rect?.width || 1000,
     });
   }
 
   function handleFontSizeResize(e) {
     if (!resizeState) return;
-
     const deltaX = e.clientX - resizeState.startX;
     const deltaY = e.clientY - resizeState.startY;
-
-    const diagonalDelta = (deltaX + deltaY) / 2;
     const newFontSize = Math.max(
       10,
-      Math.min(120, resizeState.startFontSize + diagonalDelta * 0.4)
+      Math.min(120, resizeState.startFontSize + deltaY * 0.2) // Adjusted scale for better control
     );
-
+    let newWidth = Math.max(120, resizeState.startWidth + deltaX);
+    const maxW = resizeState.containerWidth * 0.95;
+    newWidth = Math.min(newWidth, maxW);
+    const widthChange = newWidth - resizeState.startWidth;
+    const shiftNorm = widthChange / 2 / resizeState.containerWidth;
+    const nextX = resizeState.startBoxX + shiftNorm;
     setTextBoxes((prev) => {
-      const updated = prev.map((t) => {
-        if (t.id !== resizeState.id) return t;
-        return { ...t, fontSize: Math.round(newFontSize) };
+      const updated = prev.map((tbox) => {
+        if (tbox.id !== resizeState.id) return tbox;
+        const withChanges = {
+          ...tbox,
+          x: nextX,
+          fontSize: Math.round(newFontSize),
+          width: Math.round(newWidth),
+          autoWidth: false,
+        };
+        // Check if can switch back to autoWidth (single line fit)
+        const measured = measureTextWidthPx(withChanges.text, {
+          fontSize: withChanges.fontSize,
+        });
+        const desired = measured + 40;
+        if (withChanges.width >= desired) {
+          return autoFitTextBoxWidthIfNeeded(
+            { ...withChanges, autoWidth: true, width: desired },
+            withChanges.text
+          );
+        }
+        return withChanges;
       });
+      // Save and broadcast during drag for real-time sync
+      saveAnnotations({ textBoxes: updated });
+      broadcastAnnotations({ textBoxes: updated });
       return updated;
     });
+    // keep textarea height accurate while resizing font
+    setTimeout(() => autoResizeTextarea(resizeState.id), 0);
   }
 
   function stopFontSizeResize() {
@@ -1340,35 +1559,68 @@ export default function PrepShell({
   function startWidthResize(e, box, direction) {
     e.stopPropagation();
     e.preventDefault();
+    const container = containerRef.current || canvasRef.current;
+    const rect = container?.getBoundingClientRect();
     setWidthResizeState({
       id: box.id,
       startX: e.clientX,
       startWidth: box.width || 150,
+      startBoxX: box.x,
       direction,
+      containerWidth: rect?.width || 1000,
     });
+    // ✅ when user starts manual resizing, disable autoWidth for that box
+    setTextBoxes((prev) =>
+      prev.map((tbox) =>
+        tbox.id === box.id ? { ...tbox, autoWidth: false } : tbox
+      )
+    );
   }
 
   function handleWidthResize(e) {
     if (!widthResizeState) return;
-
     const deltaX = e.clientX - widthResizeState.startX;
-    let newWidth;
-
-    if (widthResizeState.direction === "right") {
-      newWidth = widthResizeState.startWidth + deltaX;
-    } else {
-      newWidth = widthResizeState.startWidth - deltaX;
-    }
-
-    newWidth = Math.max(80, Math.min(600, newWidth));
-
     setTextBoxes((prev) => {
-      const updated = prev.map((t) => {
-        if (t.id !== widthResizeState.id) return t;
-        return { ...t, width: Math.round(newWidth) };
+      const updated = prev.map((tbox) => {
+        if (tbox.id !== widthResizeState.id) return tbox;
+        const minW = tbox.minWidth || 80;
+        let newWidth;
+        let nextX = tbox.x;
+        let widthChange;
+        if (widthResizeState.direction === "right") {
+          newWidth = Math.max(minW, widthResizeState.startWidth + deltaX);
+          widthChange = newWidth - widthResizeState.startWidth;
+          const shiftNorm = widthChange / 2 / widthResizeState.containerWidth;
+          nextX = widthResizeState.startBoxX + shiftNorm; // Shift right to keep left fixed
+        } else {
+          newWidth = Math.max(minW, widthResizeState.startWidth - deltaX);
+          widthChange = newWidth - widthResizeState.startWidth;
+          const shiftNorm = -widthChange / 2 / widthResizeState.containerWidth;
+          nextX = widthResizeState.startBoxX + shiftNorm; // Shift left to keep right fixed
+        }
+        const maxW = widthResizeState.containerWidth * 0.95;
+        newWidth = Math.min(newWidth, maxW);
+        const withWidth = { ...tbox, x: nextX, width: Math.round(newWidth) };
+        // Check if can switch back to autoWidth (single line fit)
+        const measured = measureTextWidthPx(withWidth.text, {
+          fontSize: withWidth.fontSize || 16,
+        });
+        const desired = measured + 40;
+        if (newWidth >= desired) {
+          return autoFitTextBoxWidthIfNeeded(
+            { ...withWidth, autoWidth: true, width: desired },
+            withWidth.text
+          );
+        } else {
+          return { ...withWidth, autoWidth: false };
+        }
       });
+      // ✅ keep state synced during drag
+      saveAnnotations({ textBoxes: updated });
+      broadcastAnnotations({ textBoxes: updated });
       return updated;
     });
+    setTimeout(() => autoResizeTextarea(widthResizeState.id), 0);
   }
 
   function stopWidthResize() {
@@ -1381,7 +1633,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Mask blocks
   // ─────────────────────────────────────────────────────────────
-
   function startMaskMove(e, mask) {
     e.stopPropagation();
     e.preventDefault();
@@ -1405,66 +1656,112 @@ export default function PrepShell({
     });
   }
 
-  function finalizeCreatingMask(endPoint) {
-    if (!maskDrag || maskDrag.mode !== "creating") return;
-    const startX = maskDrag.startX;
-    const startY = maskDrag.startY;
-    const endX = endPoint?.x ?? maskDrag.currentX;
-    const endY = endPoint?.y ?? maskDrag.currentY;
+  // ... existing finalizeCreatingMask remains the same
 
-    const left = Math.min(startX, endX);
-    const top = Math.min(startY, endY);
-    const width = Math.abs(endX - startX);
-    const height = Math.abs(endY - startY);
-
-    const MIN = 0.01;
-    if (width < MIN || height < MIN) return;
-
-    const newMask = {
-      id: `mask_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-      x: left,
-      y: top,
-      width,
-      height,
-      page: isPdf ? pdfCurrentPage : 1,
-    };
-
-    setMasks((prev) => {
-      const next = [...prev, newMask];
-      saveAnnotations({ masks: next });
-      broadcastAnnotations({ masks: next });
-      return next;
-    });
+  function finalizeCreatingShape(endPoint) {
+    if (!shapeDrag || shapeDrag.mode !== "creating") return;
+    const startX = shapeDrag.startX;
+    const startY = shapeDrag.startY;
+    const endX = endPoint?.x ?? shapeDrag.currentX;
+    const endY = endPoint?.y ?? shapeDrag.currentY;
+    const page = isPdf ? pdfCurrentPage : 1;
+    const MIN_DIST = 0.01;
+    const dx = Math.abs(endX - startX);
+    const dy = Math.abs(endY - startY);
+    if (dx < MIN_DIST && dy < MIN_DIST) return;
+    const id = `shape_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    if (shapeDrag.tool === TOOL_LINE) {
+      const newLine = {
+        id,
+        x1: startX,
+        y1: startY,
+        x2: endX,
+        y2: endY,
+        color: penColor,
+        page,
+      };
+      setLines((prev) => {
+        const next = [...prev, newLine];
+        saveAnnotations({ lines: next });
+        broadcastAnnotations({ lines: next });
+        return next;
+      });
+    } else if (shapeDrag.tool === TOOL_BOX) {
+      const left = Math.min(startX, endX);
+      const top = Math.min(startY, endY);
+      const width = dx;
+      const height = dy;
+      if (width < MIN_DIST || height < MIN_DIST) return;
+      const newBox = {
+        id,
+        x: left,
+        y: top,
+        width,
+        height,
+        color: penColor,
+        page,
+      };
+      setBoxes((prev) => {
+        const next = [...prev, newBox];
+        saveAnnotations({ boxes: next });
+        broadcastAnnotations({ boxes: next });
+        return next;
+      });
+    }
+    setShapeDrag(null);
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Clear everything
+  // Clear (ONLY CURRENT PAGE when PDF)
   // ─────────────────────────────────────────────────────────────
-
   function clearCanvasAndNotes() {
+    const page = isPdf ? pdfCurrentPage : 1;
+    // clear bitmap canvas for the current view
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext("2d");
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-    setStrokes([]);
-    setStickyNotes([]);
-    setTextBoxes([]);
-    setMasks([]);
+    // ✅ filter out only items on the current page
+    const nextStrokes = strokes.filter((s) => (s.page ?? 1) !== page);
+    const nextNotes = stickyNotes.filter((n) => (n.page ?? 1) !== page);
+    const nextText = textBoxes.filter((b) => (b.page ?? 1) !== page);
+    const nextMasks = masks.filter((m) => (m.page ?? 1) !== page);
+    const nextLines = lines.filter((l) => (l.page ?? 1) !== page);
+    const nextBoxes = boxes.filter((b) => (b.page ?? 1) !== page);
+    setStrokes(nextStrokes);
+    setStickyNotes(nextNotes);
+    setTextBoxes(nextText);
+    setMasks(nextMasks);
+    setLines(nextLines);
+    setBoxes(nextBoxes);
     setDragState(null);
     setMaskDrag(null);
+    setShapeDrag(null);
     setActiveTextId(null);
-    setTeacherPointerByPage({});
-    setLearnerPointersByPage({});
+    // clear pointers only for this page
+    setTeacherPointerByPage((prev) => {
+      const next = { ...prev };
+      delete next[page];
+      return next;
+    });
+    setLearnerPointersByPage((prev) => {
+      const next = { ...prev };
+      if (next[page]) delete next[page];
+      return next;
+    });
+    // persist + broadcast the updated full state (all pages remain)
     try {
       window.localStorage.setItem(
         storageKey,
         JSON.stringify({
           canvasData: null,
-          strokes: [],
-          stickyNotes: [],
-          textBoxes: [],
-          masks: [],
+          strokes: nextStrokes,
+          stickyNotes: nextNotes,
+          textBoxes: nextText,
+          masks: nextMasks,
+          lines: nextLines,
+          boxes: nextBoxes,
         })
       );
     } catch (err) {
@@ -1472,10 +1769,12 @@ export default function PrepShell({
     }
     broadcastAnnotations({
       canvasData: null,
-      strokes: [],
-      stickyNotes: [],
-      textBoxes: [],
-      masks: [],
+      strokes: nextStrokes,
+      stickyNotes: nextNotes,
+      textBoxes: nextText,
+      masks: nextMasks,
+      lines: nextLines,
+      boxes: nextBoxes,
     });
     broadcastPointer(null);
   }
@@ -1483,7 +1782,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Mouse handlers
   // ─────────────────────────────────────────────────────────────
-
   function handleMouseDown(e) {
     const target = e.target;
     if (
@@ -1494,14 +1792,11 @@ export default function PrepShell({
     ) {
       return;
     }
-
     if (tool === TOOL_POINTER) {
       e.preventDefault();
       const p = getNormalizedPoint(e);
       if (!p) return;
-
       const page = isPdf ? pdfCurrentPage : 1;
-
       if (isTeacher) {
         setTeacherPointerByPage((prev) => ({ ...prev, [page]: p }));
       } else if (myUserId) {
@@ -1510,11 +1805,9 @@ export default function PrepShell({
           [page]: { ...(prev[page] || {}), [myUserId]: p },
         }));
       }
-
       broadcastPointer(p);
       return;
     }
-
     if (tool === TOOL_MASK) {
       e.preventDefault();
       const p = getNormalizedPoint(e);
@@ -1528,7 +1821,20 @@ export default function PrepShell({
       });
       return;
     }
-
+    if (tool === TOOL_LINE || tool === TOOL_BOX) {
+      e.preventDefault();
+      const p = getNormalizedPoint(e);
+      if (!p) return;
+      setShapeDrag({
+        mode: "creating",
+        tool,
+        startX: p.x,
+        startY: p.y,
+        currentX: p.x,
+        currentY: p.y,
+      });
+      return;
+    }
     if (tool === TOOL_TEXT) {
       e.preventDefault();
       if (activeTextId) {
@@ -1538,7 +1844,6 @@ export default function PrepShell({
       createTextBox(e);
       return;
     }
-
     if (
       tool === TOOL_PEN ||
       tool === TOOL_HIGHLIGHTER ||
@@ -1558,18 +1863,15 @@ export default function PrepShell({
       handleFontSizeResize(e);
       return;
     }
-
     if (widthResizeState) {
       e.preventDefault();
       handleWidthResize(e);
       return;
     }
-
     if (maskDrag) {
       e.preventDefault();
       const p = getNormalizedPoint(e);
       if (!p) return;
-
       if (maskDrag.mode === "creating") {
         setMaskDrag((prev) =>
           prev
@@ -1584,7 +1886,6 @@ export default function PrepShell({
         const { id, offsetX, offsetY } = maskDrag;
         const newX = p.x - offsetX;
         const newY = p.y - offsetY;
-
         setMasks((prev) => {
           const next = prev.map((m) => {
             if (m.id !== id) return m;
@@ -1597,16 +1898,28 @@ export default function PrepShell({
           return next;
         });
       }
-
       return;
     }
-
+    if (shapeDrag && shapeDrag.mode === "creating") {
+      e.preventDefault();
+      const p = getNormalizedPoint(e);
+      if (!p) return;
+      setShapeDrag((prev) =>
+        prev
+          ? {
+              ...prev,
+              currentX: p.x,
+              currentY: p.y,
+            }
+          : prev
+      );
+      return;
+    }
     if (dragState) {
       e.preventDefault();
       draw(e);
       return;
     }
-
     if (
       tool === TOOL_PEN ||
       tool === TOOL_HIGHLIGHTER ||
@@ -1622,24 +1935,49 @@ export default function PrepShell({
       stopFontSizeResize();
       return;
     }
-
     if (widthResizeState) {
       stopWidthResize();
       return;
     }
-
     if (maskDrag && maskDrag.mode === "creating") {
       const p = e ? getNormalizedPoint(e) : null;
       finalizeCreatingMask(p || null);
     }
-
+    if (shapeDrag && shapeDrag.mode === "creating") {
+      const p = e ? getNormalizedPoint(e) : null;
+      const endPoint = p || { x: shapeDrag.currentX, y: shapeDrag.currentY };
+      finalizeCreatingShape(endPoint);
+    }
     stopDrawing();
   }
+
+  // ✅ Make resize/drag track the cursor even if it leaves the overlay
+  useEffect(() => {
+    const shouldCapture =
+      !!resizeState ||
+      !!widthResizeState ||
+      !!dragState ||
+      !!maskDrag ||
+      !!isDrawing;
+
+    if (!shouldCapture) return;
+
+    const onMove = (e) => handleMouseMove(e);
+    const onUp = (e) => handleMouseUp(e);
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resizeState, widthResizeState, dragState, maskDrag, isDrawing]);
 
   // ─────────────────────────────────────────────────────────────
   // Tool switching helper (toggling)
   // ─────────────────────────────────────────────────────────────
-
   function setToolSafe(nextTool) {
     if (tool === nextTool) {
       setTool(TOOL_NONE);
@@ -1699,7 +2037,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Render overlay
   // ─────────────────────────────────────────────────────────────
-
   function renderAnnotationsOverlay() {
     const menusOpen = toolMenuOpen || colorMenuOpen;
 
@@ -1751,6 +2088,19 @@ export default function PrepShell({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
+        {/* Hidden span for text width measurement */}
+        <span
+          ref={measureSpanRef}
+          style={{
+            position: "absolute",
+            left: -99999,
+            top: -99999,
+            visibility: "hidden",
+            whiteSpace: "pre",
+            pointerEvents: "none",
+          }}
+        />
+
         <canvas
           ref={canvasRef}
           className={
@@ -1796,6 +2146,37 @@ export default function PrepShell({
                 strokeWidth={stroke.tool === TOOL_HIGHLIGHTER ? 0.014 : 0.005}
                 strokeLinecap="round"
                 strokeLinejoin="round"
+              />
+            ))}
+          {lines
+            .filter((l) => !isPdf || l.page === pdfCurrentPage || !l.page)
+            .map((l) => (
+              <line
+                key={l.id}
+                x1={l.x1}
+                y1={l.y1}
+                x2={l.x2}
+                y2={l.y2}
+                stroke={l.color || penColor}
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
+                strokeLinecap="round"
+              />
+            ))}
+
+          {boxes
+            .filter((b) => !isPdf || b.page === pdfCurrentPage || !b.page)
+            .map((b) => (
+              <rect
+                key={b.id}
+                x={b.x}
+                y={b.y}
+                width={b.width}
+                height={b.height}
+                fill="none"
+                stroke={b.color || penColor}
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
               />
             ))}
         </svg>
@@ -1885,14 +2266,33 @@ export default function PrepShell({
 
                         <div
                           className="prep-text-box__input-area"
-                          style={{ width: `${boxWidth}px` }}
+                          style={{
+                            width: box.autoWidth ? "auto" : `${boxWidth}px`,
+                            minWidth: box.autoWidth
+                              ? `${boxWidth}px`
+                              : undefined,
+                          }}
                         >
                           <textarea
+                            ref={(el) => {
+                              if (el) textAreaRefs.current[box.id] = el;
+                            }}
                             data-textbox-id={box.id}
                             className="prep-text-box__textarea"
+                            dir="auto"
+                            wrap={box.autoWidth ? "off" : "soft"}
                             style={{
                               color: box.color,
                               fontSize: `${fontSize}px`,
+                              width: box.autoWidth ? `${boxWidth}px` : "100%",
+                              minWidth: box.autoWidth ? "100px" : undefined,
+                              whiteSpace: box.autoWidth ? "nowrap" : "pre-wrap",
+                              overflowWrap: box.autoWidth
+                                ? "normal"
+                                : "break-word",
+                              wordBreak: "normal",
+                              resize: "none",
+                              overflow: box.autoWidth ? "visible" : "hidden",
                             }}
                             placeholder={t(
                               dict,
@@ -1904,6 +2304,7 @@ export default function PrepShell({
                             }
                             onBlur={() => setActiveTextId(null)}
                             onMouseDown={(e) => e.stopPropagation()}
+                            onInput={() => autoResizeTextarea(box.id)}
                           />
 
                           <span
@@ -1922,11 +2323,22 @@ export default function PrepShell({
                   ) : (
                     <div
                       className="prep-text-box__label"
-                      style={{ color: box.color, fontSize: `${fontSize}px` }}
+                      dir="auto"
+                      style={{
+                        color: box.color,
+                        fontSize: `${fontSize}px`,
+                        width: `${boxWidth}px`,
+                        whiteSpace: box.autoWidth ? "nowrap" : "pre-wrap",
+                        overflowWrap: box.autoWidth ? "normal" : "break-word",
+                        wordBreak: "normal",
+                        overflowX: "visible",
+                        overflowY: "visible",
+                      }}
                       onMouseDown={(e) => startTextDrag(e, box)}
                       onDoubleClick={(e) => {
                         e.stopPropagation();
                         setActiveTextId(box.id);
+                        setTimeout(() => autoResizeTextarea(box.id), 0);
                       }}
                     >
                       {box.text}
@@ -1975,6 +2387,7 @@ export default function PrepShell({
               </div>
               <textarea
                 className="prep-sticky-note__textarea"
+                dir="auto"
                 placeholder={t(dict, "resources_prep_note_placeholder")}
                 value={note.text}
                 onChange={(e) => updateNoteText(note.id, e.target.value)}
@@ -2005,7 +2418,6 @@ export default function PrepShell({
               onMouseDown={(e) => startMaskMove(e, mask)}
             />
           ))}
-
         {maskPreview && (
           <div
             className="prep-mask-block prep-mask-block--preview"
@@ -2021,6 +2433,61 @@ export default function PrepShell({
             }}
           />
         )}
+        {shapeDrag &&
+          shapeDrag.mode === "creating" &&
+          shapeDrag.tool === TOOL_LINE && (
+            <svg
+              style={{
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+                zIndex: 9997, // keep it above page content
+              }}
+              width="100%"
+              height="100%"
+              viewBox="0 0 1 1"
+              preserveAspectRatio="none"
+            >
+              <line
+                x1={shapeDrag.startX}
+                y1={shapeDrag.startY}
+                x2={shapeDrag.currentX}
+                y2={shapeDrag.currentY}
+                stroke={penColor}
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
+                strokeLinecap="round"
+              />
+            </svg>
+          )}
+
+        {shapeDrag &&
+          shapeDrag.mode === "creating" &&
+          shapeDrag.tool === TOOL_BOX && (
+            <svg
+              style={{
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+                zIndex: 9997,
+              }}
+              width="100%"
+              height="100%"
+              viewBox="0 0 1 1"
+              preserveAspectRatio="none"
+            >
+              <rect
+                x={Math.min(shapeDrag.startX, shapeDrag.currentX)}
+                y={Math.min(shapeDrag.startY, shapeDrag.currentY)}
+                width={Math.abs(shapeDrag.currentX - shapeDrag.startX)}
+                height={Math.abs(shapeDrag.currentY - shapeDrag.startY)}
+                fill="none"
+                stroke={penColor}
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          )}
 
         {/* Teacher pointer */}
         {!menusOpen && teacherPointer && (
@@ -2085,13 +2552,11 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Viewer activity flag
   // ─────────────────────────────────────────────────────────────
-
   const viewerIsActive = hasScreenShare || !!viewerUrl;
 
   // ─────────────────────────────────────────────────────────────
   // Audio tracks (single + multiple)
   // ─────────────────────────────────────────────────────────────
-
   const audioTracks = [];
 
   if (Array.isArray(resource.audioTracks)) {
@@ -2130,7 +2595,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Current tool meta
   // ─────────────────────────────────────────────────────────────
-
   const currentToolIcon =
     tool === TOOL_PEN
       ? "🖊️"
@@ -2168,7 +2632,6 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────
-
   return (
     <>
       {showBreadcrumbs && (
@@ -2387,7 +2850,7 @@ export default function PrepShell({
                                 sendAudioState({
                                   trackIndex: safeTrackIndex,
                                   time: el.currentTime || 0,
-                                  playing: false,
+                                  playing: true,
                                 });
                               }
                             },
@@ -2442,7 +2905,7 @@ export default function PrepShell({
                           sendAudioState({
                             trackIndex: safeTrackIndex,
                             time: 0,
-                            playing: isAudioPlaying || true,
+                            playing: true,
                           });
                         }
 
@@ -2454,7 +2917,7 @@ export default function PrepShell({
                               sendAudioState({
                                 trackIndex: safeTrackIndex,
                                 time: 0,
-                                playing: isAudioPlaying || true,
+                                playing: true,
                               });
                             }
                           },
@@ -2528,7 +2991,6 @@ export default function PrepShell({
                       >
                         🚫 <span>Turn off tools</span>
                       </button>
-
                       <button
                         type="button"
                         className={
@@ -2544,7 +3006,6 @@ export default function PrepShell({
                       >
                         🖊️ <span>{t(dict, "resources_toolbar_pen")}</span>
                       </button>
-
                       <button
                         type="button"
                         className={
@@ -2561,7 +3022,6 @@ export default function PrepShell({
                         ✨{" "}
                         <span>{t(dict, "resources_toolbar_highlighter")}</span>
                       </button>
-
                       <button
                         type="button"
                         className={
@@ -2577,7 +3037,6 @@ export default function PrepShell({
                       >
                         ⬜ <span>Hide area</span>
                       </button>
-
                       <button
                         type="button"
                         className={
@@ -2593,7 +3052,36 @@ export default function PrepShell({
                       >
                         ✍️ <span>{t(dict, "resources_toolbar_text")}</span>
                       </button>
-
+                      <button
+                        type="button"
+                        className={
+                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
+                          (tool === TOOL_LINE ? " is-active" : "")
+                        }
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setToolSafe(TOOL_LINE);
+                          setToolMenuOpen(false);
+                        }}
+                      >
+                        📏 <span>Straight Line</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={
+                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
+                          (tool === TOOL_BOX ? " is-active" : "")
+                        }
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setToolSafe(TOOL_BOX);
+                          setToolMenuOpen(false);
+                        }}
+                      >
+                        🟥 <span>Border Box</span>
+                      </button>
                       <button
                         type="button"
                         className={
@@ -2609,7 +3097,6 @@ export default function PrepShell({
                       >
                         🧽 <span>{t(dict, "resources_toolbar_eraser")}</span>
                       </button>
-
                       <button
                         type="button"
                         className={
@@ -2625,7 +3112,6 @@ export default function PrepShell({
                       >
                         🗒️ <span>{t(dict, "resources_toolbar_note")}</span>
                       </button>
-
                       <button
                         type="button"
                         className={

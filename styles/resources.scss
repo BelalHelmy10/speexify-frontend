@@ -1920,6 +1920,8 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     background: transparent;
     border: 2px dashed rgba($cr-accent-primary, 0.5);
     border-radius: 4px;
+    display: inline-block;
+    max-width: 98vw; // Prevent going off-screen
   }
 
   &__textarea {
@@ -1936,8 +1938,7 @@ $cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
     border: none;
     resize: none;
     outline: none;
-    white-space: nowrap;
-    overflow: hidden;
+    overflow: visible;
     field-sizing: content; /* Modern browsers: auto-size to content */
     text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.9),
       1px -1px 0 rgba(255, 255, 255, 0.9), -1px 1px 0 rgba(255, 255, 255, 0.9),
