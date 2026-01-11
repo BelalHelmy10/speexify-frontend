@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Speexify – Session 1: Baseline Assessment & Pattern Diagnosis</title>
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bg: #0a0a0f;
+        --page: linear-gradient(135deg, #0c1220 0%, #0b1b2e 42%, #071827 100%);
+        --text: #eaf2ff;
+        --muted: rgba(234, 242, 255, 0.72);
+        --muted2: rgba(234, 242, 255, 0.86);
+        --brandA: #0284c7;
+        --brandB: #0369a1;
+        --brandC: #10b981;
+        --line: rgba(2, 132, 199, 0.22);
+        --glass: rgba(255, 255, 255, 0.04);
+        --glass-strong: rgba(10, 16, 26, 0.85);
+        --shadow: 0 0 40px rgba(0, 0, 0, 0.55);
+        --danger: #fb7185;
+        --warn: #fbbf24;
+        --ok: #22c55e;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        padding: 40px 20px 120px;
+      }
+
+      /* ---------- SLIDE STRUCTURE (HARDENED) ---------- */
+      .slide-container {
+        display: flex;
+        flex-direction: column;
+        gap: 60px;
+        align-items: center;
+      }
+
+      section.slide {
+        width: 100%;
+        max-width: 1200px;
+        background: var(--page);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 60px 80px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      section.slide.fixed {
+        aspect-ratio: 16 / 9;
+      }
+
+      /* unbreakable inner wrapper (prevents nesting/glitch cascades) */
+      .slide-inner {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+      }
+
+      section.slide::before {
+        content: "";
+        position: absolute;
+        top: -40%;
+        right: -20%;
+        width: 820px;
+        height: 820px;
+        background: radial-gradient(
+          circle,
+          rgba(2, 132, 199, 0.14) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        filter: blur(1px);
+      }
+      section.slide::after {
+        content: "";
+        position: absolute;
+        left: -10%;
+        bottom: -30%;
+        width: 720px;
+        height: 720px;
+        background: radial-gradient(
+          circle,
+          rgba(16, 185, 129, 0.07) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+
+      .brand-top {
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        background: linear-gradient(
+          135deg,
+          var(--brandA) 0%,
+          var(--brandC) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 40px;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        font-size: 56px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin-bottom: 24px;
+        background: linear-gradient(180deg, #fff 0%, #cce0ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      h2 {
+        font-size: 42px;
+        font-weight: 800;
+        margin-bottom: 24px;
+        color: #fff;
+      }
+
+      h3 {
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--brandA);
+        margin-bottom: 16px;
+        font-weight: 800;
+      }
+
+      p.subtitle {
+        font-size: 24px;
+        color: var(--muted);
+        font-weight: 300;
+        max-width: 980px;
+      }
+
+      .content-area {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 0;
+        overflow: visible;
+        margin-bottom: 2rem;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        width: 100%;
+      }
+
+      .box {
+        background: var(--glass);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 28px;
+        backdrop-filter: blur(10px);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .box.highlight {
+        background: linear-gradient(
+          135deg,
+          rgba(2, 132, 199, 0.11) 0%,
+          rgba(3, 105, 161, 0.06) 100%
+        );
+        border: 1px solid rgba(2, 132, 199, 0.32);
+        border-left: 4px solid var(--brandA);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-weight: 700;
+        color: rgba(234, 242, 255, 0.92);
+        font-size: 14px;
+        letter-spacing: 0.02em;
+      }
+
+      .pill .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 99px;
+        background: var(--brandC);
+        box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);
+      }
+
+      ul {
+        list-style: none;
+      }
+      li {
+        margin-bottom: 12px;
+        font-size: 18px;
+        color: var(--muted2);
+        padding-left: 26px;
+        position: relative;
+        line-height: 1.5;
+      }
+      li::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: var(--brandC);
+        font-size: 24px;
+        line-height: 24px;
+      }
+
+      .coach-notes {
+        margin-top: auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 18px;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.45);
+        font-style: italic;
+      }
+      .coach-notes strong {
+        color: var(--brandC);
+        font-style: normal;
+      }
+
+      .micro {
+        font-size: 14px;
+        color: rgba(234, 242, 255, 0.58);
+        line-height: 1.55;
+      }
+
+      .callout {
+        border-radius: 16px;
+        padding: 22px 24px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.09) 0%,
+          rgba(2, 132, 199, 0.06) 100%
+        );
+      }
+
+      .callout.strong {
+        border: 1px solid rgba(16, 185, 129, 0.28);
+        box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.06),
+          0 18px 40px rgba(0, 0, 0, 0.35);
+      }
+
+      .divider {
+        height: 1px;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        margin: 16px 0;
+      }
+
+      .badge-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+
+      .tag {
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: rgba(234, 242, 255, 0.9);
+        font-weight: 800;
+        font-size: 14px;
+      }
+
+      .tag .ico {
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(2, 132, 199, 0.16);
+        border: 1px solid rgba(2, 132, 199, 0.18);
+      }
+
+      /* Editable inputs */
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .input,
+      textarea,
+      select {
+        font-family: "Inter", sans-serif;
+        background: rgba(10, 16, 26, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: rgba(234, 242, 255, 0.92);
+        border-radius: 12px;
+        padding: 12px 14px;
+        outline: none;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        transition: box-shadow 160ms ease, border-color 160ms ease;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+        line-height: 1.5;
+      }
+
+      .input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: rgba(16, 185, 129, 0.35);
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.14);
+      }
+
+      .hint {
+        font-size: 13px;
+        color: rgba(234, 242, 255, 0.55);
+      }
+
+      /* Ratings */
+      .rating-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .rating-item {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 14px;
+        align-items: center;
+        padding: 16px 16px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+      }
+
+      .rating-label {
+        font-size: 16px;
+        color: var(--muted2);
+        font-weight: 700;
+        line-height: 1.25;
+      }
+
+      .rating-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-end;
+      }
+
+      .rating-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: flex-end;
+        width: 100%;
+      }
+
+      .rating-row input[type="range"] {
+        width: 160px;
+        accent-color: var(--brandC);
+      }
+
+      .rating-value {
+        width: 44px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        font-size: 14px;
+        color: rgba(234, 242, 255, 0.92);
+        font-weight: 900;
+      }
+
+      details {
+        margin-top: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 12px;
+        padding: 12px 14px;
+      }
+
+      details summary {
+        cursor: pointer;
+        user-select: none;
+        color: rgba(234, 242, 255, 0.85);
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        font-size: 13px;
+        text-transform: uppercase;
+      }
+
+      .anchors {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .anchor {
+        display: grid;
+        grid-template-columns: 52px 1fr;
+        gap: 12px;
+        align-items: start;
+        padding: 10px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 16, 26, 0.35);
+      }
+
+      .anchor .score {
+        width: 52px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .anchor p {
+        color: rgba(234, 242, 255, 0.82);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      /* Pattern visual */
+      .flow {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+
+      .flow .node {
+        padding: 10px 12px;
+        border-radius: 14px;
+        font-weight: 900;
+        font-size: 13px;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(234, 242, 255, 0.9);
+      }
+
+      .flow .node.tech {
+        border-color: rgba(2, 132, 199, 0.25);
+        background: rgba(2, 132, 199, 0.11);
+      }
+
+      .flow .node.value {
+        border-color: rgba(16, 185, 129, 0.25);
+        background: rgba(16, 185, 129, 0.11);
+      }
+
+      .flow .arrow {
+        color: rgba(234, 242, 255, 0.55);
+        font-weight: 900;
+        letter-spacing: 0.02em;
+      }
+
+      /* Floating UI */
+      .print-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, var(--brandA), var(--brandC));
+        color: white;
+        padding: 12px 18px;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 900;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+        z-index: 100;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        cursor: pointer;
+        letter-spacing: 0.02em;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .statusbar {
+        position: fixed;
+        left: 20px;
+        bottom: 20px;
+        z-index: 100;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 999px;
+        background: rgba(10, 16, 26, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        color: rgba(234, 242, 255, 0.85);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 99px;
+        background: var(--ok);
+        box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
+      }
+
+      .status-muted {
+        color: rgba(234, 242, 255, 0.6);
+        font-weight: 700;
+      }
+
+      /* Responsive */
+      @media (max-width: 980px) {
+        section.slide {
+          padding: 44px 22px;
+        }
+        h1 {
+          font-size: 44px;
+        }
+        h2 {
+          font-size: 34px;
+        }
+        p.subtitle {
+          font-size: 20px;
+        }
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+        .rating-item {
+          grid-template-columns: 1fr;
+        }
+        .rating-controls {
+          align-items: flex-start;
+        }
+        .rating-row {
+          justify-content: flex-start;
+        }
+      }
+
+      /* Print */
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+        section.slide {
+          page-break-after: always;
+          box-shadow: none;
+          border: none;
+          border-radius: 0;
+          width: 100vw;
+          max-width: none;
+        }
+        section.slide.fixed {
+          height: 100vh;
+        }
+        .print-btn,
+        .statusbar {
+          display: none !important;
+        }
+        .coach-notes {
+          display: none !important;
+          margin-top: 2rem;
+        }
+        textarea,
+        .input,
+        select {
+          background: transparent !important;
+          color: #111 !important;
+          border: 1px solid #bbb !important;
+          box-shadow: none !important;
+        }
+        .brand-top,
+        h1,
+        h2 {
+          -webkit-text-fill-color: initial !important;
+          color: #111 !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <button
+      class="print-btn"
+      onclick="window.print()"
+      title="Print or Save to PDF"
+    >
+      🖨️ Print / Save PDF
+    </button>
+
+    <div class="statusbar" id="statusbar" aria-live="polite">
+      <span class="status-dot"></span>
+      <span>Session 1 Workspace</span>
+      <span class="status-muted" id="saveState">Autosave: off</span>
+    </div>
+
+    <div class="slide-container">
+      <!-- SLIDE 1 — TITLE -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Speexify</div>
+
+          <div class="content-area" style="text-align: center">
+            <div
+              style="
+                font-size: 18px;
+                text-transform: uppercase;
+                color: var(--brandC);
+                letter-spacing: 3px;
+                margin-bottom: 20px;
+                font-weight: 900;
+              "
+            >
+              Executive Communication Coaching
+            </div>
+
+            <h1>Session 1<br />Baseline Assessment &<br />Pattern Diagnosis</h1>
+
+            <p class="subtitle" style="margin: 0 auto">
+              Understand your communication patterns in real-time when
+              explaining AI and finance ideas.
+            </p>
+
+            <div
+              style="
+                margin-top: 30px;
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                flex-wrap: wrap;
+              "
+            >
+              <span class="pill"
+                ><span class="dot"></span> Baseline Assessment</span
+              >
+              <span class="pill"
+                ><span class="dot"></span> Pattern Recognition</span
+              >
+              <span class="pill"><span class="dot"></span> Core Tools</span>
+            </div>
+
+            <div
+              class="callout strong"
+              style="max-width: 900px; margin: 26px auto 0; text-align: left"
+            >
+              <h3 style="color: #fff; font-size: 18px; margin-bottom: 10px">
+                The Diagnostic Lens (How I’m Coaching This)
+              </h3>
+              <p
+                style="
+                  font-size: 17px;
+                  color: var(--muted2);
+                  margin-bottom: 0;
+                  line-height: 1.65;
+                "
+              >
+                As we work together, I’m mostly looking at three things:
+                <strong style="color: #fff">where value appears</strong>,
+                <strong style="color: #fff"
+                  >how structure holds under pressure</strong
+                >, and
+                <strong style="color: #fff">how thoughts land</strong> (clean
+                ending, clear next step).
+              </p>
+
+              <div class="badge-row">
+                <span class="tag"
+                  ><span class="ico">💡</span> Value placement</span
+                >
+                <span class="tag"
+                  ><span class="ico">🏗️</span> Structure under pressure</span
+                >
+                <span class="tag"
+                  ><span class="ico">🎯</span> Landing & next step</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "Today is about understanding where you are
+            now — your baseline. We'll identify your natural communication
+            patterns and introduce the first tools you'll use in real
+            situations."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 1 -->
+
+      <!-- SLIDE 2 — BASELINE SELF-RATINGS -->
+      <section class="slide" id="baseline">
+        <div class="slide-inner">
+          <div class="brand-top">Baseline Measurement</div>
+
+          <div class="content-area">
+            <h2>Where Are You Today?</h2>
+
+            <p class="subtitle" style="margin-bottom: 18px">
+              Before we begin, capture your current self-assessment. We’ll use
+              these numbers to track progress.
+            </p>
+
+            <div class="grid-2" style="align-items: start">
+              <div class="box highlight">
+                <h3>Rate Yourself Today (0–10)</h3>
+
+                <div class="rating-grid">
+                  <div class="rating-item">
+                    <div>
+                      <div class="rating-label">
+                        Clarity when explaining AI/finance concepts
+                      </div>
+                      <div class="hint">
+                        How quickly does your “point” land for a smart
+                        non-technical listener?
+                      </div>
+                    </div>
+                    <div class="rating-controls">
+                      <div class="rating-row">
+                        <input
+                          type="range"
+                          min="0"
+                          max="10"
+                          value="5"
+                          id="r_clarity"
+                          data-label="Clarity"
+                        />
+                        <div class="rating-value" id="v_clarity">5</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="rating-item">
+                    <div>
+                      <div class="rating-label">
+                        Confidence in presentations
+                      </div>
+                      <div class="hint">
+                        How steady do you feel when attention is on you?
+                      </div>
+                    </div>
+                    <div class="rating-controls">
+                      <div class="rating-row">
+                        <input
+                          type="range"
+                          min="0"
+                          max="10"
+                          value="5"
+                          id="r_confidence"
+                          data-label="Confidence"
+                        />
+                        <div class="rating-value" id="v_confidence">5</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="rating-item">
+                    <div>
+                      <div class="rating-label">Concision under pressure</div>
+                      <div class="hint">
+                        Can you give the “bottom line” without over-explaining?
+                      </div>
+                    </div>
+                    <div class="rating-controls">
+                      <div class="rating-row">
+                        <input
+                          type="range"
+                          min="0"
+                          max="10"
+                          value="5"
+                          id="r_concision"
+                          data-label="Concision"
+                        />
+                        <div class="rating-value" id="v_concision">5</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="rating-item">
+                    <div>
+                      <div class="rating-label">
+                        Handling interruptions / Q&amp;A
+                      </div>
+                      <div class="hint">
+                        Do you stay structured when challenged mid-thought?
+                      </div>
+                    </div>
+                    <div class="rating-controls">
+                      <div class="rating-row">
+                        <input
+                          type="range"
+                          min="0"
+                          max="10"
+                          value="5"
+                          id="r_qa"
+                          data-label="Q&A"
+                        />
+                        <div class="rating-value" id="v_qa">5</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="rating-item">
+                    <div>
+                      <div class="rating-label">Executive presence</div>
+                      <div class="hint">
+                        Signals of calm authority: pace, pause, brevity,
+                        directness.
+                      </div>
+                    </div>
+                    <div class="rating-controls">
+                      <div class="rating-row">
+                        <input
+                          type="range"
+                          min="0"
+                          max="10"
+                          value="5"
+                          id="r_presence"
+                          data-label="Presence"
+                        />
+                        <div class="rating-value" id="v_presence">5</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <details>
+                  <summary>
+                    Behavioral anchors (what 0 / 5 / 10 look like)
+                  </summary>
+                  <div class="anchors">
+                    <div class="anchor">
+                      <div class="score">0</div>
+                      <p>
+                        The message doesn’t land; you lose the thread, the
+                        listener looks confused, or you can’t connect AI details
+                        to business value.
+                      </p>
+                    </div>
+                    <div class="anchor">
+                      <div class="score">5</div>
+                      <p>
+                        Usually clear, but you sometimes over-explain, hedge, or
+                        drift into technical accuracy instead of strategic
+                        relevance— especially under time pressure.
+                      </p>
+                    </div>
+                    <div class="anchor">
+                      <div class="score">10</div>
+                      <p>
+                        Consistently crisp and confident: you lead with value,
+                        explain only what’s needed, handle Q&amp;A cleanly, and
+                        end with a clear takeaway/next step.
+                      </p>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 22px">
+                <div class="callout">
+                  <h3 style="color: #fff; font-size: 18px; margin-bottom: 10px">
+                    Why We Measure
+                  </h3>
+                  <p
+                    style="
+                      font-size: 17px;
+                      line-height: 1.6;
+                      color: var(--muted2);
+                      margin-bottom: 0;
+                    "
+                  >
+                    These numbers give us a quantitative starting point. Later,
+                    we’ll compare ratings to measure concrete progress.
+                  </p>
+                </div>
+
+                <div class="box">
+                  <h3>Be Honest, Not Harsh</h3>
+                  <ul>
+                    <li>Rate yourself realistically</li>
+                    <li>There are no wrong numbers</li>
+                    <li>This is data, not judgment</li>
+                  </ul>
+                </div>
+
+                <div class="callout strong">
+                  <h3 style="color: #fff; font-size: 18px; margin-bottom: 10px">
+                    Global + Human Note
+                  </h3>
+                  <p
+                    style="
+                      font-size: 17px;
+                      line-height: 1.6;
+                      color: var(--muted2);
+                      margin-bottom: 10px;
+                    "
+                  >
+                    If you feel nervous, that’s useful data too—we’ll work with
+                    it, not against it.
+                  </p>
+                  <p class="micro" style="margin: 0">
+                    Optional lens (especially for global teams): notice if you
+                    hesitate due to accent awareness, cultural norms (direct vs.
+                    indirect), or “translation lag.” That’s not a weakness—just
+                    a pattern to design around.
+                  </p>
+                </div>
+
+                <div class="box">
+                  <h3>Notes (Coachee)</h3>
+                  <div class="field">
+                    <label class="hint" for="notes_baseline"
+                      >Any context (role, upcoming meetings, investor calls,
+                      team dynamics)?</label
+                    >
+                    <textarea
+                      id="notes_baseline"
+                      placeholder="Write anything you want the coach to know going into the baseline..."
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "Let’s establish where you are today. Rate
+            yourself 0–10. Be honest—this isn’t about being perfect, it’s about
+            having a clear starting point."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 2 -->
+
+      <!-- SLIDE 3 — OPENING & FRAME -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Opening &amp; Frame</div>
+
+          <div class="content-area">
+            <h2>Set Frame &amp; Expectations</h2>
+            <p class="subtitle" style="margin-bottom: 20px">
+              This is a baseline, not a performance. We’re here to observe and
+              understand.
+            </p>
+
+            <div class="grid-2" style="align-items: start">
+              <div class="box highlight">
+                <h3>Purpose</h3>
+                <p
+                  style="
+                    font-size: 18px;
+                    line-height: 1.6;
+                    color: var(--muted2);
+                    margin-bottom: 0;
+                  "
+                >
+                  Understand how you communicate in real time when explaining AI
+                  and finance ideas. This is a baseline, not a performance.
+                </p>
+                <div class="divider"></div>
+                <p class="micro" style="margin: 0">
+                  <strong style="color: var(--brandC)">Coach lens:</strong>
+                  value placement, structure under pressure, and how your
+                  thoughts land.
+                </p>
+              </div>
+
+              <div class="box">
+                <h3>What We’re Observing</h3>
+                <ul>
+                  <li>How ideas are structured while thinking</li>
+                  <li>Clarity under light time pressure</li>
+                  <li>How explanations start and finish</li>
+                </ul>
+              </div>
+
+              <div class="box">
+                <h3>What This Is Not</h3>
+                <ul>
+                  <li>Not about perfect wording or grammar</li>
+                  <li>Not about sounding polished</li>
+                  <li>Not about fixing everything today</li>
+                </ul>
+              </div>
+
+              <div class="box">
+                <h3>How to Approach Today</h3>
+                <ul>
+                  <li>Speak naturally — no preparation needed</li>
+                  <li>Pauses and rethinking are expected</li>
+                  <li>Discomfort = useful data</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="callout" style="margin-top: 24px">
+              <h3 style="color: #fff; font-size: 18px; margin-bottom: 8px">
+                Outcome of This Session
+              </h3>
+              <div
+                style="
+                  display: flex;
+                  gap: 20px;
+                  align-items: center;
+                  flex-wrap: wrap;
+                "
+              >
+                <div style="font-size: 16px; color: var(--muted2)">
+                  ✔ 2–3 priority communication patterns identified
+                </div>
+                <div style="font-size: 16px; color: var(--muted2)">
+                  ✔ Clear focus for upcoming sessions
+                </div>
+              </div>
+              <div
+                style="
+                  margin-top: 14px;
+                  padding-top: 14px;
+                  border-top: 1px solid rgba(255, 255, 255, 0.1);
+                  text-align: center;
+                  font-size: 18px;
+                  font-weight: 900;
+                  color: #fff;
+                "
+              >
+                Goal: Awareness first → improvement next
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "Remember: we’re measuring to understand,
+            not to judge. Your natural patterns are exactly what we need to see
+            today."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 3 -->
+
+      <!-- SLIDE 4 — BASELINE TASK 1 -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Baseline Task 1</div>
+
+          <div class="content-area">
+            <h2>Exercise 1 — Unscripted Explanation</h2>
+            <p class="subtitle" style="margin-bottom: 22px">
+              Baseline speaking task no. 1 — your natural communication under
+              observation.
+            </p>
+
+            <div class="grid-2" style="align-items: start">
+              <div class="box highlight">
+                <h3>Scenario</h3>
+                <p
+                  style="
+                    font-size: 18px;
+                    line-height: 1.6;
+                    color: var(--muted2);
+                    margin-bottom: 18px;
+                  "
+                >
+                  Imagine I’m a smart, non-technical stakeholder who understands
+                  business but not AI implementation details.
+                </p>
+
+                <h3>Task</h3>
+                <p
+                  style="
+                    font-size: 18px;
+                    line-height: 1.6;
+                    color: var(--muted2);
+                    margin-bottom: 12px;
+                  "
+                >
+                  Please explain:
+                </p>
+                <ul style="margin-bottom: 18px">
+                  <li>What your AI product does</li>
+                  <li>The financial value it creates</li>
+                  <li>Why it matters to the business</li>
+                </ul>
+
+                <div
+                  style="
+                    display: flex;
+                    gap: 16px;
+                    align-items: center;
+                    margin-top: 10px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <span style="font-size: 20px">⏱</span>
+                    <span style="font-size: 16px; color: var(--muted2)"
+                      ><strong>Time:</strong> ~90 seconds</span
+                    >
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <span style="font-size: 20px">📝</span>
+                    <span style="font-size: 16px; color: var(--muted2)"
+                      ><strong>Preparation:</strong> none — just start</span
+                    >
+                  </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="callout">
+                  <h3 style="color: #fff; font-size: 18px; margin-bottom: 10px">
+                    Important
+                  </h3>
+                  <p
+                    style="
+                      font-size: 17px;
+                      line-height: 1.6;
+                      color: var(--muted2);
+                      margin-bottom: 12px;
+                    "
+                  >
+                    This is not about being perfect. It’s about seeing how ideas
+                    come out in real time—especially when AI uncertainty meets
+                    ROI questions.
+                  </p>
+                  <p class="micro" style="margin: 0">
+                    <strong style="color: var(--brandC)"
+                      >Coach will observe:</strong
+                    >
+                    patterns, not language accuracy.
+                  </p>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 22px">
+                <div class="box">
+                  <h3>How to Approach It</h3>
+                  <ul>
+                    <li>Speak naturally</li>
+                    <li>Don’t worry about wording</li>
+                    <li>It’s okay to pause or restart</li>
+                  </ul>
+                </div>
+
+                <div class="box">
+                  <h3>Notes (Coach / Coachee)</h3>
+                  <div class="field">
+                    <label class="hint" for="notes_ex1"
+                      >What did you notice during this exercise?</label
+                    >
+                    <textarea
+                      id="notes_ex1"
+                      placeholder="Examples: where you sped up, where you hedged, where value appeared, where you got stuck..."
+                    ></textarea>
+                  </div>
+                </div>
+
+                <div class="callout">
+                  <h3 style="color: #fff; font-size: 18px; margin-bottom: 10px">
+                    Why you (Speexify angle)
+                  </h3>
+                  <p
+                    style="
+                      font-size: 17px;
+                      color: var(--muted2);
+                      margin: 0;
+                      line-height: 1.6;
+                    "
+                  >
+                    Most of my clients are already strong communicators—this
+                    work is about making you
+                    <strong style="color: #fff">reliable under pressure</strong
+                    >.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "Take a breath. When you’re ready, just
+            start speaking. I’m here to listen and observe — there’s no wrong
+            answer."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 4 -->
+
+      <!-- SLIDE 5 — BASELINE TASK 2 -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Baseline Task 2</div>
+
+          <div class="content-area">
+            <h2>Exercise 2 — Same Message, Different Audience</h2>
+            <p class="subtitle" style="margin-bottom: 22px">
+              Baseline speaking task no. 2 — adapting communication under
+              constraint.
+            </p>
+
+            <div class="grid-2" style="align-items: start">
+              <div class="box highlight">
+                <h3>Scenario</h3>
+                <p
+                  style="
+                    font-size: 18px;
+                    line-height: 1.6;
+                    color: var(--muted2);
+                    margin-bottom: 12px;
+                  "
+                >
+                  Imagine I’m a potential investor who has 60 seconds before the
+                  next meeting.
+                </p>
+                <p
+                  style="
+                    font-size: 18px;
+                    line-height: 1.6;
+                    color: var(--muted2);
+                    margin-bottom: 18px;
+                  "
+                >
+                  They need: what this does, why they should care, and the
+                  opportunity—fast.
+                </p>
+
+                <h3>Task</h3>
+                <p
+                  style="
+                    font-size: 18px;
+                    line-height: 1.6;
+                    color: var(--muted2);
+                    margin-bottom: 12px;
+                  "
+                >
+                  Explain the same product/value again, but investor-style:
+                </p>
+
+                <div
+                  style="
+                    display: flex;
+                    gap: 16px;
+                    align-items: center;
+                    margin-top: 10px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <span style="font-size: 20px">⏱</span>
+                    <span style="font-size: 16px; color: var(--muted2)"
+                      ><strong>Time:</strong> ~60 seconds</span
+                    >
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <span style="font-size: 20px">🎯</span>
+                    <span style="font-size: 16px; color: var(--muted2)"
+                      ><strong>Audience:</strong> decision-focused
+                      investor</span
+                    >
+                  </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="callout">
+                  <h3 style="color: #fff; font-size: 18px; margin-bottom: 10px">
+                    Reminder
+                  </h3>
+                  <p
+                    style="
+                      font-size: 17px;
+                      line-height: 1.6;
+                      color: var(--muted2);
+                      margin-bottom: 12px;
+                    "
+                  >
+                    This is still exploration, not performance. We’re observing
+                    how your message changes under time pressure.
+                  </p>
+                  <p class="micro" style="margin: 0">
+                    <strong style="color: var(--brandC)"
+                      >Coach is observing:</strong
+                    >
+                    patterns, not judging content.
+                  </p>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 22px">
+                <div class="box">
+                  <h3>How to Approach It</h3>
+                  <ul>
+                    <li>Focus on what matters most</li>
+                    <li>
+                      Assume they know what AI is — focus on
+                      <strong style="color: #fff">your</strong> value
+                    </li>
+                    <li>It’s okay to simplify aggressively</li>
+                  </ul>
+                </div>
+
+                <div class="box">
+                  <h3>Notes (Coach / Coachee)</h3>
+                  <div class="field">
+                    <label class="hint" for="notes_ex2"
+                      >What changed from Exercise 1?</label
+                    >
+                    <textarea
+                      id="notes_ex2"
+                      placeholder="Examples: you led with value, you compressed, you hedged more/less, you handled ROI better/worse..."
+                    ></textarea>
+                  </div>
+                </div>
+
+                <div class="callout strong">
+                  <h3 style="color: #fff; font-size: 18px; margin-bottom: 10px">
+                    Coach prompt (optional)
+                  </h3>
+                  <p
+                    style="
+                      font-size: 17px;
+                      color: var(--muted2);
+                      margin: 0;
+                      line-height: 1.6;
+                    "
+                  >
+                    If the investor asked, “So what’s the ROI timeline?”—notice
+                    whether you default to model detail, or you stay strategic.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "Now let’s see how you adapt. Same core
+            message, tighter timeframe, and an investor who needs the bottom
+            line quickly."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 5 -->
+
+      <!-- SLIDE 6 — REFLECTION -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Reflection</div>
+
+          <div class="content-area">
+            <h2>Take a Moment</h2>
+            <p class="subtitle" style="margin-bottom: 22px">
+              Before we discuss anything, reflect on what just happened.
+            </p>
+
+            <div class="grid-2" style="align-items: start">
+              <div class="box highlight">
+                <h3>Questions</h3>
+                <ul style="margin-bottom: 18px">
+                  <li>How did that feel?</li>
+                  <li>Where did you feel most stuck or uncomfortable?</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <h3>Guidance</h3>
+                <ul>
+                  <li>There are no right or wrong answers</li>
+                  <li>You don’t need to analyze or explain</li>
+                  <li>Just notice what stood out</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <h3>Notice, Don’t Fix</h3>
+                <ul>
+                  <li>This is awareness, not correction</li>
+                  <li>Discomfort is information</li>
+                  <li>Patterns ≠ problems</li>
+                </ul>
+              </div>
+
+              <div class="box">
+                <h3>Reflection Notes</h3>
+                <div class="field">
+                  <label class="hint" for="notes_reflection"
+                    >Write freely. Short bullets are perfect.</label
+                  >
+                  <textarea
+                    id="notes_reflection"
+                    placeholder="What stood out? What felt easy? What felt hard? Any moments you ‘lost the room’ or ‘found the room’?"
+                  ></textarea>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="callout">
+                  <p style="font-size: 16px; color: var(--muted2); margin: 0">
+                    If anxiety shows up: note
+                    <strong style="color: #fff">where</strong> it spikes
+                    (openings, financials, Q&amp;A). That’s often the fastest
+                    win area.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "Before I share observations, I want to
+            hear what stood out to you. What did you notice in your own
+            experience?"
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 6 -->
+
+      <!-- SLIDE 7 — COMMON PATTERNS -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Pattern Diagnosis</div>
+
+          <div class="content-area">
+            <h2>
+              Common Communication Patterns<br />in AI &amp; Finance Leaders
+            </h2>
+            <p class="subtitle" style="margin-bottom: 18px">
+              These are not flaws — they’re common, understandable habits under
+              pressure.
+            </p>
+
+            <div class="grid-2">
+              <div class="box highlight">
+                <h3>Frequently Observed Patterns</h3>
+                <ul>
+                  <li>
+                    🔧 Leading with technical detail before business value
+                  </li>
+                  <li>📦 Burying the core value proposition inside features</li>
+                  <li>⚡ Speed-talking when explaining financials</li>
+                  <li>🧠 Over-qualifying statements when uncertain</li>
+                  <li>🫥 Hedging language (“kind of,” “maybe,” “it depends”)</li>
+                  <li>🚪 Delayed or unclear openings</li>
+                  <li>🧾 Explaining process instead of outcome</li>
+                  <li>
+                    🛡️ Answering imagined objections instead of stated ones
+                  </li>
+                  <li>
+                    🧪 Defaulting to technical accuracy over strategic relevance
+                    (AI)
+                  </li>
+                  <li>
+                    📈 Over-indexing on model details when the question is
+                    business impact (AI)
+                  </li>
+                  <li>
+                    ⏳ Hedging ROI timelines due to AI uncertainty (finance +
+                    AI)
+                  </li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <h3 style="margin-bottom: 10px">
+                  Mini-Visual (Common Mis-ordering)
+                </h3>
+                <div
+                  class="flow"
+                  aria-label="Common flow: technical detail then value"
+                >
+                  <div class="node tech">Tech Detail</div>
+                  <div class="arrow">→</div>
+                  <div class="node tech">Features</div>
+                  <div class="arrow">→</div>
+                  <div class="node value">Business Value</div>
+                </div>
+                <p class="micro" style="margin-top: 10px">
+                  We usually flip this for executives:
+                  <strong style="color: #fff"
+                    >Value → Proof → Detail (only if needed)</strong
+                  >.
+                </p>
+              </div>
+
+              <div class="box">
+                <h3>How We Use This List</h3>
+                <ul>
+                  <li>To name patterns quickly during sessions</li>
+                  <li>To normalize what you’re experiencing</li>
+                  <li>To choose what to work on first</li>
+                </ul>
+
+                <div class="callout" style="margin-top: 20px">
+                  <p
+                    style="
+                      font-size: 16px;
+                      color: var(--muted2);
+                      margin-bottom: 10px;
+                    "
+                  >
+                    You don’t need to fix everything — we’ll identify the
+                    <strong>2–3 that matter most</strong> for your real-world
+                    contexts.
+                  </p>
+                  <p class="micro" style="margin: 0">
+                    <strong style="color: var(--brandC)">Coach note:</strong>
+                    patterns are “defaults.” Our job is to build a better
+                    default.
+                  </p>
+                </div>
+
+                <div class="divider"></div>
+
+                <h3>Notes</h3>
+                <textarea
+                  id="notes_patterns"
+                  placeholder="Which patterns feel familiar? Which ones show up only under pressure?"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "As I share observations, I’ll reference
+            these patterns so we’re speaking the same language."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 7 -->
+
+      <!-- SLIDE 8 — COACH OBSERVATIONS -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Coach Observations</div>
+
+          <div class="content-area">
+            <h2>What I Noticed</h2>
+            <p class="subtitle" style="margin-bottom: 18px">
+              These are observations, not judgments.
+            </p>
+
+            <div class="grid-2">
+              <div class="box highlight">
+                <h3>Observed Patterns (fill live)</h3>
+                <ul>
+                  <li>
+                    <strong style="color: #fff">[Pattern name]</strong> — when
+                    it showed up
+                  </li>
+                  <li>
+                    <strong style="color: #fff">[Pattern name]</strong> — where
+                    it helped / where it limited clarity
+                  </li>
+                  <li>
+                    <strong style="color: #fff">[Pattern name]</strong> — how it
+                    changed under time pressure
+                  </li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <div class="field">
+                  <label class="hint" for="notes_observations"
+                    >Coach notes (quick bullets)</label
+                  >
+                  <textarea
+                    id="notes_observations"
+                    placeholder="Capture 2–3 priority patterns + the exact moment they appeared..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="box">
+                <h3>Why These Matter</h3>
+                <ul>
+                  <li>They affect first impressions</li>
+                  <li>They shape how confidence is perceived</li>
+                  <li>They determine whether value lands quickly</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <div class="callout">
+                  <p style="font-size: 16px; color: var(--muted2); margin: 0">
+                    We’re selecting patterns based on
+                    <strong style="color: #fff">impact</strong>: fewer
+                    follow-ups, faster decisions, stronger presence.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "I’m going to name a few patterns I
+            noticed. Tell me what resonates — or doesn’t."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 8 -->
+
+      <!-- SLIDE 9 — MICRO-EXPERIMENT MENU -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Micro-Experiment Menu</div>
+
+          <div class="content-area">
+            <h2>Choose One Lever (No Improvising Required)</h2>
+            <p class="subtitle" style="margin-bottom: 18px">
+              Pick one micro-adjustment based on the pattern diagnosis.
+              Everything else stays the same.
+            </p>
+
+            <div class="grid-2" style="align-items: start">
+              <div class="box highlight">
+                <h3>Fast-Win Adjustments</h3>
+
+                <div class="callout strong">
+                  <p style="font-size: 16px; color: var(--muted2); margin: 0">
+                    Keep this as your “menu.” Select one option and run the
+                    experiment immediately.
+                  </p>
+                </div>
+
+                <div class="divider"></div>
+
+                <ul>
+                  <li>
+                    <strong style="color: #fff">Option A — BLUF start</strong>:
+                    lead with the value in one sentence, then expand.
+                  </li>
+                  <li>
+                    <strong style="color: #fff"
+                      >Option B — 3-second pause</strong
+                    >: pause before answering Q&amp;A; then give a structured
+                    reply.
+                  </li>
+                  <li>
+                    <strong style="color: #fff"
+                      >Option C — Remove the context preamble</strong
+                    >: skip “background,” go straight to the point.
+                  </li>
+                  <li>
+                    <strong style="color: #fff"
+                      >Option D — “So what?” sentence</strong
+                    >: add one explicit business implication.
+                  </li>
+                  <li>
+                    <strong style="color: #fff"
+                      >Option E — Cut the last 30%</strong
+                    >: stop earlier; land the takeaway + next step.
+                  </li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <div class="field">
+                  <label class="hint" for="pick_adjustment"
+                    >Chosen option for today</label
+                  >
+                  <select id="pick_adjustment">
+                    <option value="A">A — BLUF start</option>
+                    <option value="B">B — 3-second pause</option>
+                    <option value="C">C — Remove context preamble</option>
+                    <option value="D">D — “So what?” sentence</option>
+                    <option value="E">E — Cut the last 30%</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="box">
+                <h3>Match Option → Pattern</h3>
+                <ul>
+                  <li>
+                    Too technical early →
+                    <strong style="color: #fff">A (BLUF)</strong> or
+                    <strong style="color: #fff">D (“So what?”)</strong>
+                  </li>
+                  <li>
+                    Rambles / long runway →
+                    <strong style="color: #fff">C</strong> or
+                    <strong style="color: #fff">E</strong>
+                  </li>
+                  <li>
+                    Q&amp;A pressure / interruptions →
+                    <strong style="color: #fff">B</strong>
+                  </li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <div class="callout">
+                  <h3 style="color: #fff; font-size: 18px; margin-bottom: 10px">
+                    Quick BLUF template
+                  </h3>
+                  <p class="micro" style="margin: 0">
+                    <strong style="color: var(--brandC)">“Bottom line:”</strong>
+                    We do <em>X</em> for <em>Y</em>, creating
+                    <em>Z financial outcome</em>. The business impact is
+                    <em>____</em>. Next step: <em>____</em>.
+                  </p>
+                </div>
+
+                <div class="divider"></div>
+
+                <h3>Notes</h3>
+                <textarea
+                  id="notes_menu"
+                  placeholder="Why this option? What pattern is it addressing?"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "We’ll choose one lever based on what we
+            saw. No rebuilding—just one variable to prove change is possible
+            immediately."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 9 -->
+
+      <!-- SLIDE 10 — RUN THE EXPERIMENT -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Micro-Experiment</div>
+
+          <div class="content-area">
+            <h2>Run the Experiment</h2>
+            <p class="subtitle" style="margin-bottom: 18px">
+              Test one variable and observe the business impact—immediately.
+            </p>
+
+            <div class="grid-2">
+              <div class="box highlight">
+                <h3>The Adjustment</h3>
+                <ul>
+                  <li>Change only one thing</li>
+                  <li>Everything else stays the same</li>
+                  <li>No pressure to be perfect</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <div class="callout">
+                  <p style="font-size: 16px; color: var(--muted2); margin: 0">
+                    <strong style="color: #fff">Selected lever:</strong>
+                    <span
+                      id="selectedLever"
+                      style="color: #fff; font-weight: 900"
+                      >A — BLUF start</span
+                    >
+                  </p>
+                </div>
+              </div>
+
+              <div class="box">
+                <h3>What We’re Testing</h3>
+                <ul>
+                  <li>Does clarity improve?</li>
+                  <li>Does confidence feel different?</li>
+                  <li>Does it feel more controlled?</li>
+                  <li>
+                    <strong style="color: #fff"
+                      >If this were a real meeting, would this reduce follow-up
+                      questions?</strong
+                    >
+                  </li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <h3>Notes</h3>
+                <textarea
+                  id="notes_experiment"
+                  placeholder="What changed? What got easier/harder? Did the value land earlier? Any fewer clarifying questions?"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="callout strong" style="margin-top: 22px">
+              <p
+                style="
+                  font-size: 18px;
+                  font-weight: 900;
+                  color: #fff;
+                  margin: 0;
+                "
+              >
+                This is proof that communication is a skill — not a personality
+                trait.
+              </p>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "We’re not rebuilding anything—just nudging
+            one lever and noticing the effect. The key question is: would this
+            reduce follow-up questions in a real meeting?"
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 10 -->
+
+      <!-- SLIDE 11 — SUCCESS CRITERIA -->
+      <section class="slide" id="success">
+        <div class="slide-inner">
+          <div class="brand-top">Success Criteria</div>
+
+          <div class="content-area">
+            <h2>What Does “Better” Look Like?</h2>
+            <p class="subtitle" style="margin-bottom: 18px">
+              Define success in concrete terms—and tie it back to the baseline.
+            </p>
+
+            <div class="grid-2">
+              <div class="box highlight">
+                <h3>Guiding Questions</h3>
+                <ul>
+                  <li>What happens now when meetings don’t go well?</li>
+                  <li>What would be different if communication felt easier?</li>
+                  <li>What do you want others to walk away understanding?</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <div class="callout strong">
+                  <h3 style="color: #fff; font-size: 18px; margin-bottom: 10px">
+                    Link to Baseline (quick targets)
+                  </h3>
+                  <p
+                    style="
+                      font-size: 16px;
+                      color: var(--muted2);
+                      margin-bottom: 10px;
+                      line-height: 1.6;
+                    "
+                  >
+                    Our goal is to move your baseline scores in the first phase
+                    of work (Sessions 2–6).
+                  </p>
+
+                  <div style="display: grid; gap: 10px">
+                    <div
+                      class="tag"
+                      style="justify-content: space-between; width: 100%"
+                    >
+                      <span><span class="ico">📈</span> Confidence</span>
+                      <span>
+                        <span style="color: rgba(234, 242, 255, 0.7)"
+                          >from</span
+                        >
+                        <strong style="color: #fff" id="t_from_conf">5</strong>
+                        <span style="color: rgba(234, 242, 255, 0.7)">to</span>
+                        <input
+                          class="input"
+                          style="
+                            width: 90px;
+                            display: inline-block;
+                            padding: 8px 10px;
+                            border-radius: 10px;
+                          "
+                          id="t_to_conf"
+                          type="number"
+                          min="0"
+                          max="10"
+                          placeholder="e.g., 7"
+                        />
+                        <span class="hint" style="margin-left: 8px"
+                          >(by Session 4)</span
+                        >
+                      </span>
+                    </div>
+
+                    <div
+                      class="tag"
+                      style="justify-content: space-between; width: 100%"
+                    >
+                      <span><span class="ico">🎯</span> Clarity</span>
+                      <span>
+                        <span style="color: rgba(234, 242, 255, 0.7)"
+                          >from</span
+                        >
+                        <strong style="color: #fff" id="t_from_clarity"
+                          >5</strong
+                        >
+                        <span style="color: rgba(234, 242, 255, 0.7)">to</span>
+                        <input
+                          class="input"
+                          style="
+                            width: 90px;
+                            display: inline-block;
+                            padding: 8px 10px;
+                            border-radius: 10px;
+                          "
+                          id="t_to_clarity"
+                          type="number"
+                          min="0"
+                          max="10"
+                          placeholder="e.g., 8"
+                        />
+                        <span class="hint" style="margin-left: 8px"
+                          >(by Session 6)</span
+                        >
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="box">
+                <h3>Day-to-Day Impact</h3>
+                <ul>
+                  <li>Clearer investor conversations</li>
+                  <li>More confidence under pressure</li>
+                  <li>Less mental load while speaking</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <div class="callout">
+                  <h3 style="color: #fff; font-size: 18px; margin-bottom: 10px">
+                    What changes by Session 6 (example)
+                  </h3>
+                  <p
+                    style="
+                      font-size: 16px;
+                      color: var(--muted2);
+                      margin: 0;
+                      line-height: 1.6;
+                    "
+                  >
+                    By Session 6, many clients report feeling
+                    <strong style="color: #fff"
+                      >materially more confident</strong
+                    >
+                    in impromptu explanations and can deliver their core value
+                    proposition in
+                    <strong style="color: #fff">under 60 seconds</strong>
+                    without second-guessing.
+                  </p>
+                </div>
+
+                <div class="divider"></div>
+
+                <h3>Notes</h3>
+                <textarea
+                  id="notes_success"
+                  placeholder="Write your personal definition of 'better' in lived terms..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "We’re not chasing polish—we’re defining
+            what actually changes in your workday. Let’s set a couple of simple
+            targets tied to your baseline."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 11 -->
+
+      <!-- SLIDE 12 — PHASE 1 PREVIEW -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Phase 1 Preview</div>
+
+          <div class="content-area">
+            <h2>What Happens Next (Sessions 2–6)</h2>
+            <p class="subtitle" style="margin-bottom: 18px">
+              Session 1 sets the baseline. The next five sessions build the
+              foundation fast.
+            </p>
+
+            <div class="grid-2">
+              <div class="box highlight">
+                <h3>Phase 1 Arc</h3>
+                <ul>
+                  <li>
+                    <strong style="color: #fff">Session 2:</strong> Install your
+                    default structure (value → proof → detail)
+                  </li>
+                  <li>
+                    <strong style="color: #fff">Session 3:</strong> Tighten
+                    openings + endings (clean “landing”)
+                  </li>
+                  <li>
+                    <strong style="color: #fff">Session 4:</strong> Pressure
+                    handling (Q&amp;A, interruption control)
+                  </li>
+                  <li>
+                    <strong style="color: #fff">Session 5:</strong> AI/finance
+                    clarity (ROI, uncertainty, tradeoffs)
+                  </li>
+                  <li>
+                    <strong style="color: #fff">Session 6:</strong> Consolidate
+                    into a reliable 60-second message
+                  </li>
+                </ul>
+              </div>
+
+              <div class="box">
+                <h3>Authority Close (Coach)</h3>
+                <div class="callout strong">
+                  <p
+                    style="
+                      font-size: 16px;
+                      color: var(--muted2);
+                      margin-bottom: 8px;
+                      line-height: 1.6;
+                    "
+                  >
+                    Based on today, I already know where we’ll get the fastest
+                    wins.
+                  </p>
+                  <p class="micro" style="margin: 0">
+                    We’ll focus on the 2–3 patterns with the highest payoff:
+                    fewer follow-ups, faster decisions, stronger presence.
+                  </p>
+                </div>
+
+                <div class="divider"></div>
+
+                <h3>Notes</h3>
+                <textarea
+                  id="notes_arc"
+                  placeholder="What scenarios will matter most in the next 30–60 days (investor updates, board, exec reviews, team meetings)?"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "Over the next five sessions, we’ll
+            systematically address the 2–3 patterns we identified today and
+            build a reliable baseline under pressure."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 12 -->
+
+      <!-- SLIDE 13 — BETWEEN SESSIONS -->
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="brand-top">Between Sessions</div>
+
+          <div class="content-area">
+            <h2>Between-Session Practice</h2>
+            <p class="subtitle" style="margin-bottom: 18px">
+              Light, practical, and directly relevant.
+            </p>
+
+            <div class="grid-2">
+              <div class="box highlight">
+                <h3>Practice Task</h3>
+                <ul>
+                  <li>Record yourself explaining your work (2–3 min)</li>
+                  <li>No scripting or retries</li>
+                  <li>Note what you notice — nothing to fix yet</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <h3>Submission (reduce friction)</h3>
+                <div class="field">
+                  <label class="hint" for="submission_channel"
+                    >Where to send/upload</label
+                  >
+                  <input
+                    id="submission_channel"
+                    class="input"
+                    placeholder="e.g., Upload to Speexify Dashboard • or • WhatsApp • or • Slack DM"
+                  />
+                </div>
+
+                <div class="field" style="margin-top: 12px">
+                  <label class="hint" for="submission_deadline"
+                    >When it’s due (optional)</label
+                  >
+                  <input
+                    id="submission_deadline"
+                    class="input"
+                    placeholder="e.g., Thursday 5pm local time"
+                  />
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="callout">
+                  <p class="micro" style="margin: 0">
+                    <strong style="color: var(--brandC)">Loop-closure:</strong>
+                    We’ll open next session by reviewing your recording for 2
+                    patterns + 1 micro-adjustment.
+                  </p>
+                </div>
+              </div>
+
+              <div class="box">
+                <h3>Tools Setup (optional but useful)</h3>
+                <ul>
+                  <li>
+                    If using feedback tools (e.g., Poised / Yoodli), set them up
+                    before recording
+                  </li>
+                  <li>
+                    Use the same mic/environment each time to compare apples to
+                    apples
+                  </li>
+                  <li>Keep recordings “real”—no rehearsals</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <h3>Additional Reflection</h3>
+                <ul>
+                  <li>List 3 real communication scenarios this month</li>
+                  <li>Meetings, pitches, presentations, Q&amp;A</li>
+                  <li>Bring them to the next session</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <h3>Notes</h3>
+                <textarea
+                  id="notes_homework"
+                  placeholder="What will you record? What scenario will you pick?"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-notes">
+            <strong>Script:</strong> "This isn’t homework—it’s preparation for
+            making our work highly specific to your reality. Next session, we’ll
+            review your recording and lock in the fastest wins."
+          </div>
+        </div>
+      </section>
+      <!-- /SLIDE 13 -->
+    </div>
+
+    <script>
+      // ---------- UX: live rating values ----------
+      const ratingPairs = [
+        ["r_clarity", "v_clarity"],
+        ["r_confidence", "v_confidence"],
+        ["r_concision", "v_concision"],
+        ["r_qa", "v_qa"],
+        ["r_presence", "v_presence"],
+      ];
+
+      function setText(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      }
+
+      function syncTargetsFromBaseline() {
+        const c = document.getElementById("r_clarity");
+        const conf = document.getElementById("r_confidence");
+        if (c) setText("t_from_clarity", c.value);
+        if (conf) setText("t_from_conf", conf.value);
+      }
+
+      ratingPairs.forEach(([rid, vid]) => {
+        const r = document.getElementById(rid);
+        const v = document.getElementById(vid);
+        if (!r || !v) return;
+
+        v.textContent = r.value;
+
+        r.addEventListener("input", () => {
+          v.textContent = r.value;
+          syncTargetsFromBaseline();
+          autosaveIfEnabled();
+        });
+      });
+
+      // ---------- Micro-experiment menu -> selected lever display ----------
+      const pick = document.getElementById("pick_adjustment");
+      const selected = document.getElementById("selectedLever");
+
+      function labelForPick(val) {
+        const map = {
+          A: "A — BLUF start",
+          B: "B — 3-second pause",
+          C: "C — Remove context preamble",
+          D: "D — “So what?” sentence",
+          E: "E — Cut the last 30%",
+        };
+        return map[val] || "A — BLUF start";
+      }
+
+      if (pick && selected) {
+        selected.textContent = labelForPick(pick.value);
+        pick.addEventListener("change", () => {
+          selected.textContent = labelForPick(pick.value);
+          autosaveIfEnabled();
+        });
+      }
+
+      // ---------- Optional: local autosave ----------
+      const AUTOSAVE = true; // set to false if you don't want localStorage usage
+      const saveState = document.getElementById("saveState");
+
+      function autosaveIfEnabled() {
+        if (!AUTOSAVE) return;
+        const data = collectState();
+        try {
+          localStorage.setItem("speexify_session1", JSON.stringify(data));
+          if (saveState) saveState.textContent = "Autosave: on";
+        } catch (e) {
+          if (saveState) saveState.textContent = "Autosave: unavailable";
+        }
+      }
+
+      function collectState() {
+        const ids = [
+          ...ratingPairs.flat(),
+          "notes_baseline",
+          "notes_ex1",
+          "notes_ex2",
+          "notes_reflection",
+          "notes_patterns",
+          "notes_observations",
+          "notes_menu",
+          "notes_experiment",
+          "t_to_conf",
+          "t_to_clarity",
+          "notes_success",
+          "notes_arc",
+          "submission_channel",
+          "submission_deadline",
+          "notes_homework",
+          "pick_adjustment",
+        ];
+
+        const out = {};
+        ids.forEach((id) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+
+          if (
+            el.tagName === "TEXTAREA" ||
+            el.tagName === "INPUT" ||
+            el.tagName === "SELECT"
+          ) {
+            out[id] = el.value;
+          } else {
+            out[id] = el.textContent;
+          }
+        });
+        return out;
+      }
+
+      function restoreState() {
+        if (!AUTOSAVE) {
+          if (saveState) saveState.textContent = "Autosave: off";
+          return;
+        }
+
+        let raw = null;
+        try {
+          raw = localStorage.getItem("speexify_session1");
+        } catch (e) {
+          if (saveState) saveState.textContent = "Autosave: unavailable";
+          return;
+        }
+
+        if (!raw) {
+          if (saveState) saveState.textContent = "Autosave: on";
+          return;
+        }
+
+        let data = null;
+        try {
+          data = JSON.parse(raw);
+        } catch (e) {
+          return;
+        }
+
+        Object.entries(data).forEach(([id, val]) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+
+          if (
+            el.tagName === "TEXTAREA" ||
+            el.tagName === "INPUT" ||
+            el.tagName === "SELECT"
+          ) {
+            el.value = val;
+          } else {
+            el.textContent = val;
+          }
+        });
+
+        // re-sync displayed rating value boxes + targets
+        ratingPairs.forEach(([rid, vid]) => {
+          const r = document.getElementById(rid);
+          const v = document.getElementById(vid);
+          if (r && v) v.textContent = r.value;
+        });
+
+        if (pick && selected) selected.textContent = labelForPick(pick.value);
+
+        syncTargetsFromBaseline();
+
+        if (saveState) saveState.textContent = "Autosave: on";
+      }
+
+      // save on typing
+      document.querySelectorAll("textarea, input, select").forEach((el) => {
+        el.addEventListener("input", autosaveIfEnabled);
+      });
+
+      // init
+      restoreState();
+      syncTargetsFromBaseline();
+    </script>
+  </body>
+</html>
