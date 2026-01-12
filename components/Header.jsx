@@ -166,6 +166,15 @@ export default function Header() {
     { to: "/dashboard", label: t(navDict, "dashboard") },
     { to: "/calendar", label: t(navDict, "calendar") },
     { to: "/dashboard/progress", label: t(navDict, "progress") },
+    // ❌ learners should NOT see Resources in the header
+    { to: "/settings", label: t(navDict, "settings") },
+  ];
+
+  const teacher = [
+    { to: "/dashboard", label: t(navDict, "dashboard") },
+    { to: "/calendar", label: t(navDict, "calendar") },
+    { to: "/dashboard/progress", label: t(navDict, "progress") },
+    // ✅ teachers DO see Resources
     { to: "/resources", label: t(navDict, "resources") },
     { to: "/settings", label: t(navDict, "settings") },
   ];
@@ -176,7 +185,9 @@ export default function Header() {
     checking || !user
       ? loggedOut
       : user.role === "admin"
-      ? [...learner.slice(0, 2), ...adminExtra, ...learner.slice(2)]
+      ? [...teacher.slice(0, 2), ...adminExtra, ...teacher.slice(2)]
+      : user.role === "teacher"
+      ? teacher
       : learner;
 
   const RightCTA = () =>
