@@ -60,6 +60,7 @@ function Packages() {
   // Regional pricing
   const [currency, setCurrency] = useState("EGP");
   const [countryCode, setCountryCode] = useState(null);
+  const [pricingReady, setPricingReady] = useState(false);
 
   // Seats estimator for corporate
   const [seats, setSeats] = useState(15);
@@ -79,6 +80,8 @@ function Packages() {
 
       const region = getPricingRegion(detectedCountry);
       setCurrency(region.currency);
+
+      setPricingReady(true);
 
       console.log(
         "🌍 Using pricing for country:",
@@ -284,6 +287,7 @@ function Packages() {
                 locale={locale}
                 currency={currency}
                 countryCode={countryCode}
+                pricingReady={pricingReady}
               />
             ))}
           </div>
@@ -550,7 +554,15 @@ function Packages() {
 }
 
 /* Components */
-function PricingCard({ plan, audience, dict, locale, currency, countryCode }) {
+function PricingCard({
+  plan,
+  audience,
+  dict,
+  locale,
+  currency,
+  countryCode,
+  pricingReady,
+}) {
   const {
     title,
     description,
@@ -571,6 +583,8 @@ function PricingCard({ plan, audience, dict, locale, currency, countryCode }) {
 
   // Format total price label
   const totalLabel = (() => {
+    if (!pricingReady) return "—";
+
     if (priceType === "CUSTOM" || regionalPrice.isCustomPricing) {
       return t(dict, "price_custom", "Custom Pricing");
     }
@@ -583,9 +597,12 @@ function PricingCard({ plan, audience, dict, locale, currency, countryCode }) {
   })();
 
   // Format per-session price label
-  const perSessionLabel = perSessionPrice
-    ? formatRegionalPrice(perSessionPrice, locale)
-    : null;
+  const perSessionLabel = (() => {
+    if (!pricingReady) return "—";
+    return perSessionPrice
+      ? formatRegionalPrice(perSessionPrice, locale)
+      : null;
+  })();
 
   // inside function PricingCard({ plan, ... })
   const target = `${localePrefix}/${
