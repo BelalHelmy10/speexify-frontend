@@ -158,6 +158,11 @@ export default function ClassroomShell({
   const lastLayoutSentAtRef = useRef(0);
   const layoutRafPendingRef = useRef(false);
 
+  // ✅ Content scroll sync (teacher -> learners)
+  const contentScrollRef = useRef(null);
+  const lastContentScrollSentAtRef = useRef(0);
+  const contentScrollRafPendingRef = useRef(false);
+
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
@@ -297,11 +302,67 @@ export default function ClassroomShell({
     });
   }, [ready, isTeacher, send, focusMode, customSplit]);
 
+  // ✅ Teacher: broadcast content scroll (works for PDF + any resource)
+  useEffect(() => {
+    if (!ready) return;
+    if (!isTeacher) return;
+
+    const el = contentScrollRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const now = Date.now();
+      if (now - lastContentScrollSentAtRef.current < 50) return; // ~20/sec
+      if (contentScrollRafPendingRef.current) return;
+
+      contentScrollRafPendingRef.current = true;
+
+      requestAnimationFrame(() => {
+        contentScrollRafPendingRef.current = false;
+
+        const target = contentScrollRef.current;
+        if (!target) return;
+
+        const maxScroll = Math.max(
+          1,
+          target.scrollHeight - target.clientHeight
+        );
+        const scrollNorm = target.scrollTop / maxScroll;
+
+        lastContentScrollSentAtRef.current = Date.now();
+
+        send({
+          type: "CONTENT_SCROLL",
+          scrollNorm,
+        });
+      });
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [ready, isTeacher, send]);
+
   useEffect(() => {
     if (!ready) return;
 
     const unsub = subscribe((msg) => {
       if (!msg) return;
+
+      // ✅ Learner: follow teacher content scroll (PDF + any resource)
+      if (msg.type === "CONTENT_SCROLL" && !isTeacher) {
+        const norm = Math.min(1, Math.max(0, Number(msg.scrollNorm) || 0));
+
+        // apply after layout/render tick
+        setTimeout(() => {
+          const el = contentScrollRef.current;
+          if (!el) return;
+
+          const maxScroll = Math.max(1, el.scrollHeight - el.clientHeight);
+          el.scrollTop = norm * maxScroll;
+        }, 0);
+
+        return;
+      }
 
       // ✅ Learner: follow teacher layout ONLY if toggle is ON
       if (msg.type === "LAYOUT_STATE" && !isTeacher && followTeacherLayout) {
@@ -573,7 +634,7 @@ export default function ClassroomShell({
           className="cr-panel cr-panel--right"
           style={{ width: `${100 - leftPanelWidth}%` }}
         >
-          <div className="cr-content-viewer">
+          <div className="cr-content-viewer" ref={contentScrollRef}>
             {resource ? (
               <PrepShell
                 resource={resource}
