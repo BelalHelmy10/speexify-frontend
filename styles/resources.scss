@@ -3600,3 +3600,59 @@ body.classroom-active {
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
   z-index: 50;
 }
+
+.cr-controls__toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cr-controls__toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.cr-controls__toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  background-color: #ccc;
+  border-radius: 13px;
+  transition: background-color 0.3s;
+
+  &::before {
+    content: "";
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    left: 2px;
+    top: 2px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.cr-controls__toggle-input:checked + .cr-controls__toggle-slider {
+  background-color: #34c759; // iOS green
+}
+
+.cr-controls__toggle-input:checked + .cr-controls__toggle-slider::before {
+  transform: translateX(18px);
+}
+
+.cr-controls__toggle-input:disabled + .cr-controls__toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cr-controls__toggle-label {
+  font-size: 0.875rem;
+  color: var(--text-primary, #333);
+}

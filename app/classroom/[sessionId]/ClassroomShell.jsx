@@ -166,10 +166,12 @@ export default function ClassroomShell({
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
-  // ✅ Learner-only: follow teacher layout toggle (persisted per session)
+  // ✅ Teacher: control whether learners follow (global for all learners)
+  const [teacherAllowsFollowing, setTeacherAllowsFollowing] = useState(true);
+
+  // ✅ Learner: follow teacher layout toggle (controlled by teacher override)
   const followLayoutStorageKey = `classroom_follow_layout_${sessionId}`;
-  const [followTeacherLayout, setFollowTeacherLayout] = useState(() => {
-    // Teachers always lead
+  const [learnerWantsToFollow, setLearnerWantsToFollow] = useState(() => {
     if (typeof window === "undefined") return true;
     if (session?.isTeacher === true) return true;
 
@@ -181,15 +183,21 @@ export default function ClassroomShell({
     return true; // default: follow
   });
 
+  // ✅ Actual follow state: teacher can override learner preference
+  const followTeacherLayout = isTeacher
+    ? true
+    : teacherAllowsFollowing && learnerWantsToFollow;
+
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (isTeacher) return; // Teachers don't persist this
     try {
       window.localStorage.setItem(
         followLayoutStorageKey,
-        followTeacherLayout ? "1" : "0"
+        learnerWantsToFollow ? "1" : "0"
       );
     } catch (_) {}
-  }, [followLayoutStorageKey, followTeacherLayout]);
+  }, [followLayoutStorageKey, learnerWantsToFollow, isTeacher]);
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -279,7 +287,7 @@ export default function ClassroomShell({
   const send = classroomChannel?.send ?? (() => {});
   const subscribe = classroomChannel?.subscribe ?? (() => () => {});
 
-  // ✅ Teacher: broadcast layout (focusMode + customSplit)
+  // ✅ Teacher: broadcast layout (focusMode + customSplit + follow control)
   useEffect(() => {
     if (!ready) return;
     if (!isTeacher) return;
@@ -297,10 +305,11 @@ export default function ClassroomShell({
       send({
         type: "LAYOUT_STATE",
         focusMode,
-        customSplit, // number | null
+        customSplit,
+        teacherAllowsFollowing, // ✅ NEW: broadcast teacher's follow control
       });
     });
-  }, [ready, isTeacher, send, focusMode, customSplit]);
+  }, [ready, isTeacher, send, focusMode, customSplit, teacherAllowsFollowing]);
 
   // ✅ Teacher: broadcast content scroll (works for PDF + any resource)
   useEffect(() => {
@@ -364,26 +373,38 @@ export default function ClassroomShell({
         return;
       }
 
-      // ✅ Learner: follow teacher layout ONLY if toggle is ON
-      if (msg.type === "LAYOUT_STATE" && !isTeacher && followTeacherLayout) {
-        if (
-          msg.focusMode &&
-          Object.values(FOCUS_MODES).includes(msg.focusMode)
-        ) {
-          setFocusMode(msg.focusMode);
+      // ✅ Learner: receive teacher's follow control + layout updates
+      if (msg.type === "LAYOUT_STATE" && !isTeacher) {
+        // ✅ Teacher controls whether learners can follow
+        if (msg.teacherAllowsFollowing !== undefined) {
+          setTeacherAllowsFollowing(!!msg.teacherAllowsFollowing);
+          // ✅ Sync learner preference to match teacher's control
+          setLearnerWantsToFollow(!!msg.teacherAllowsFollowing);
         }
 
-        // customSplit can be null (meaning "use preset focusMode")
-        const nextSplit =
-          msg.customSplit === null || msg.customSplit === undefined
-            ? null
-            : Number(msg.customSplit);
+        // Only apply layout if following is enabled (teacher allows AND learner wants)
+        const shouldFollow =
+          (msg.teacherAllowsFollowing ?? teacherAllowsFollowing) &&
+          learnerWantsToFollow;
 
-        if (nextSplit === null) {
-          setCustomSplit(null);
-        } else if (Number.isFinite(nextSplit)) {
-          // clamp to safe range
-          setCustomSplit(Math.min(Math.max(nextSplit, 15), 85));
+        if (shouldFollow) {
+          if (
+            msg.focusMode &&
+            Object.values(FOCUS_MODES).includes(msg.focusMode)
+          ) {
+            setFocusMode(msg.focusMode);
+          }
+
+          const nextSplit =
+            msg.customSplit === null || msg.customSplit === undefined
+              ? null
+              : Number(msg.customSplit);
+
+          if (nextSplit === null) {
+            setCustomSplit(null);
+          } else if (Number.isFinite(nextSplit)) {
+            setCustomSplit(Math.min(Math.max(nextSplit, 15), 85));
+          }
         }
         return;
       }
@@ -394,7 +415,15 @@ export default function ClassroomShell({
           type: "LAYOUT_STATE",
           focusMode,
           customSplit,
+          teacherAllowsFollowing,
         });
+        return;
+      }
+
+      // ✅ Teacher: receive and sync learner follow preference
+      if (msg.type === "LEARNER_FOLLOW_PREFERENCE" && isTeacher) {
+        const newState = !!msg.wantsToFollow;
+        setTeacherAllowsFollowing(newState);
         return;
       }
 
@@ -440,14 +469,21 @@ export default function ClassroomShell({
     }
   }, [ready, isTeacher, send, followTeacherLayout]);
 
-  // ✅ Learner: when turning follow back ON, immediately sync to teacher layout
+  // ✅ Learner: broadcast preference changes to teacher
   useEffect(() => {
     if (!ready) return;
     if (isTeacher) return;
-    if (!followTeacherLayout) return;
 
-    send({ type: "REQUEST_LAYOUT" });
-  }, [ready, isTeacher, followTeacherLayout, send]);
+    send({
+      type: "LEARNER_FOLLOW_PREFERENCE",
+      wantsToFollow: learnerWantsToFollow,
+    });
+
+    // Request layout when turning follow ON
+    if (learnerWantsToFollow && teacherAllowsFollowing) {
+      send({ type: "REQUEST_LAYOUT" });
+    }
+  }, [ready, isTeacher, learnerWantsToFollow, teacherAllowsFollowing, send]);
 
   useEffect(() => {
     if (!isTeacher || selectedResourceId) return;
@@ -877,24 +913,41 @@ export default function ClassroomShell({
         </div>
 
         <div className="cr-controls__right">
-          {/* ✅ Learner-only: Follow teacher layout toggle */}
+          {/* ✅ Teacher: Control whether learners follow */}
+          {isTeacher && (
+            <label className="cr-controls__toggle-wrapper">
+              <input
+                type="checkbox"
+                className="cr-controls__toggle-input"
+                checked={teacherAllowsFollowing}
+                onChange={(e) => setTeacherAllowsFollowing(e.target.checked)}
+              />
+              <span className="cr-controls__toggle-slider"></span>
+              <span className="cr-controls__toggle-label">
+                Learners follow layout
+              </span>
+            </label>
+          )}
+
+          {/* ✅ Learner: Follow teacher layout toggle (overridden by teacher) */}
           {!isTeacher && (
-            <button
-              className="cr-controls__btn cr-controls__btn--ghost"
-              onClick={() => setFollowTeacherLayout((v) => !v)}
-              title={
-                followTeacherLayout
-                  ? "Following teacher layout (click to unlock)"
-                  : "Layout unlocked (click to follow teacher)"
-              }
-            >
-              <span className="cr-controls__btn-icon">
-                {followTeacherLayout ? "🔒" : "🔓"}
+            <label className="cr-controls__toggle-wrapper">
+              <input
+                type="checkbox"
+                className="cr-controls__toggle-input"
+                checked={learnerWantsToFollow}
+                onChange={(e) => setLearnerWantsToFollow(e.target.checked)}
+                disabled={!teacherAllowsFollowing}
+              />
+              <span className="cr-controls__toggle-slider"></span>
+              <span className="cr-controls__toggle-label">
+                {!teacherAllowsFollowing
+                  ? "Following disabled by teacher"
+                  : learnerWantsToFollow
+                  ? "Following layout"
+                  : "Free layout"}
               </span>
-              <span className="cr-controls__btn-label">
-                {followTeacherLayout ? "Follow layout" : "Free layout"}
-              </span>
-            </button>
+            </label>
           )}
 
           <button
