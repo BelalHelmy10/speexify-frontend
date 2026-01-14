@@ -143,7 +143,16 @@ export default function ClassroomShell({
     [tracks]
   );
 
-  const [selectedResourceId, setSelectedResourceId] = useState(null);
+  const [selectedResourceId, setSelectedResourceId] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const key = `classroom_resource_${sessionId}`;
+      const saved = sessionStorage.getItem(key);
+      return saved || null;
+    } catch {
+      return null;
+    }
+  });
   const [isScreenShareActive, setIsScreenShareActive] = useState(false);
 
   /* -----------------------------------------------------------
@@ -506,6 +515,18 @@ export default function ClassroomShell({
   const handleChangeResourceId = async (newId) => {
     setSelectedResourceId(newId);
     setIsPickerOpen(false);
+
+    // Persist selection
+    if (typeof window !== "undefined") {
+      try {
+        const key = `classroom_resource_${sessionId}`;
+        if (newId) {
+          sessionStorage.setItem(key, newId);
+        } else {
+          sessionSession.removeItem(key);
+        }
+      } catch {}
+    }
 
     // Track resource usage (teacher only)
     if (isTeacher && newId && sessionId) {
