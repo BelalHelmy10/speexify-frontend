@@ -29,6 +29,9 @@ export default function CheckoutPage() {
   const [loadingPkg, setLoadingPkg] = useState(true);
   const [loadingUser, setLoadingUser] = useState(true);
   const [countryCode, setCountryCode] = useState(null);
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountLoading, setDiscountLoading] = useState(false);
 
   const planTitle = searchParams.get("plan");
 
@@ -98,6 +101,27 @@ export default function CheckoutPage() {
     })();
   }, [planTitle]);
 
+  // Apply discount code
+  async function applyDiscount() {
+    if (!discountCode) return;
+
+    try {
+      setDiscountLoading(true);
+
+      const res = await api.post("/discounts/validate", {
+        code: discountCode,
+      });
+
+      setDiscountPercent(res.data.percentage);
+      toast.success(`-${res.data.percentage}% applied`);
+    } catch (e) {
+      setDiscountPercent(0);
+      toast.error("Invalid discount code");
+    } finally {
+      setDiscountLoading(false);
+    }
+  }
+
   async function startPayment() {
     if (!pkg) return;
 
@@ -116,9 +140,14 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Always use EGP amount for Paymob (base price)
-      const baseEGP = pkg.priceEGP || pkg.priceUSD || 0;
-      const amountCents = Math.round(baseEGP * 100);
+      // Always use EGP amount for Paymob (discounted price if any)
+      const rawEGP = pkg.priceEGP || pkg.priceUSD || 0;
+      const finalEGP =
+        discountPercent > 0
+          ? Math.round(rawEGP * (1 - discountPercent / 100))
+          : rawEGP;
+
+      const amountCents = Math.round(finalEGP * 100);
 
       const nameParts = (user.name || "User").split(" ");
       const firstName = nameParts[0] || "User";
@@ -129,6 +158,7 @@ export default function CheckoutPage() {
         orderId: `order_${Date.now()}_${pkg.id}_user${user.id}`,
         packageId: Number(pkg.id),
         currency: "EGP",
+        discountCode: discountCode || null,
         customer: {
           firstName,
           lastName,
@@ -198,8 +228,17 @@ export default function CheckoutPage() {
   }
 
   // Calculate regional pricing
-  const regionalPrice = calculatePackagePrice(pkg, countryCode);
-  const baseEGP = pkg.priceEGP || pkg.priceUSD || 0;
+  const regionalPrice = calculatePackagePrice(
+    pkg,
+    countryCode,
+    discountPercent
+  );
+
+  const rawEGP = pkg.priceEGP || pkg.priceUSD || 0;
+  const finalEGP =
+    discountPercent > 0
+      ? Math.round(rawEGP * (1 - discountPercent / 100))
+      : rawEGP;
 
   // Format prices for display
   const displayPrice = formatRegionalPrice(regionalPrice, locale);
@@ -208,7 +247,7 @@ export default function CheckoutPage() {
     currency: "EGP",
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  }).format(baseEGP);
+  }).format(finalEGP);
 
   // Check if user is seeing a different currency than EGP
   const isDifferentCurrency = regionalPrice.displayCurrency !== "EGP";
@@ -274,6 +313,24 @@ export default function CheckoutPage() {
                 <span className="checkout__details-value">
                   {pkg.durationMin} {t(dict, "details_duration_unit")}
                 </span>
+              </div>
+            )}
+          </div>
+
+          {/* Discount Code */}
+          <div className="checkout__discount">
+            <input
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value)}
+              placeholder="Discount code"
+            />
+            <button onClick={applyDiscount} disabled={discountLoading}>
+              Apply
+            </button>
+
+            {discountPercent > 0 && (
+              <div className="checkout__discount-applied">
+                Discount applied: {discountPercent}%
               </div>
             )}
           </div>

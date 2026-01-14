@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import api from "@/lib/api";
 import { oneOnOnePlans, groupPlans } from "@/lib/plans";
 import {
   calculatePackagePrice,
@@ -78,6 +79,9 @@ export default function ManualPaymentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
 
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountLoading, setDiscountLoading] = useState(false);
+
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,9 +92,89 @@ export default function ManualPaymentPage() {
   const planTitle = searchParams.get("plan");
   const plan = useMemo(() => findPlanByTitle(planTitle), [planTitle]);
 
-  // ✅ these are passed from /packages in the "next" target
+  // passed from /packages in the "next" target
   const cc = searchParams.get("cc"); // countryCode
   const cur = searchParams.get("cur"); // viewer currency (for formatting)
+
+  // discount kept in URL query (?discount=CODE)
+  const initialDiscount = useMemo(
+    () => (searchParams.get("discount") || "").trim(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [searchParams]
+  );
+
+  const [discountInput, setDiscountInput] = useState(initialDiscount);
+
+  // Keep input in sync if user navigates back/forward and URL changes
+  useEffect(() => {
+    setDiscountInput(initialDiscount);
+  }, [initialDiscount]);
+
+  const setQueryParam = useCallback(
+    (key, value) => {
+      const sp = new URLSearchParams(searchParams.toString());
+
+      if (!value) sp.delete(key);
+      else sp.set(key, value);
+
+      const qs = sp.toString();
+      router.push(`${pathname}${qs ? `?${qs}` : ""}`);
+    },
+    [pathname, router, searchParams]
+  );
+
+  async function onApplyDiscount(e) {
+    e?.preventDefault?.();
+
+    const clean = (discountInput || "").trim();
+    setQueryParam("discount", clean || "");
+
+    if (!clean) {
+      setDiscountPercent(0);
+      setErr("");
+      return;
+    }
+
+    try {
+      setDiscountLoading(true);
+      const res = await api.post("/api/discounts/validate", { code: clean });
+      setDiscountPercent(res.data.percentage || 0);
+      setErr("");
+    } catch {
+      setDiscountPercent(0);
+      setErr("Invalid discount code");
+    } finally {
+      setDiscountLoading(false);
+    }
+  }
+
+  function onClearDiscount() {
+    setDiscountInput("");
+    setDiscountPercent(0);
+    setErr("");
+    setQueryParam("discount", "");
+  }
+
+  // Auto-apply if discount exists in URL
+  useEffect(() => {
+    if (!initialDiscount) return;
+
+    (async () => {
+      try {
+        setDiscountLoading(true);
+        const res = await api.post("/api/discounts/validate", {
+          code: initialDiscount,
+        });
+        setDiscountPercent(res.data.percentage || 0);
+        setErr("");
+      } catch {
+        setDiscountPercent(0);
+        setErr("Invalid discount code");
+      } finally {
+        setDiscountLoading(false);
+      }
+    })();
+  }, [initialDiscount]);
 
   if (!plan) {
     return (
@@ -106,13 +190,13 @@ export default function ManualPaymentPage() {
     );
   }
 
-  // ✅ IMPORTANT: use the SAME pricing engine as /packages (NOT priceEGP)
-  const regional = calculatePackagePrice(plan, cc || null);
+  // apply discount percent to pricing
+  const regional = useMemo(() => {
+    return calculatePackagePrice(plan, cc || null, discountPercent);
+  }, [plan, cc, discountPercent]);
 
-  // ✅ This is the actual display currency from your pricing engine
   const pricingCurrency = regional?.displayCurrency || "USD";
 
-  // ✅ Make Wise header follow your detected region currency (no USD hard-lock)
   const wise = {
     currency: pricingCurrency,
     name: process.env.NEXT_PUBLIC_WISE_NAME || "",
@@ -140,8 +224,6 @@ export default function ManualPaymentPage() {
       : formatRegionalPrice(
           {
             ...regional,
-            // FIX: regional-pricing uses displayCurrency, not "currency"
-            // If packages passed "cur", allow it to override formatting (optional)
             displayCurrency: cur || pricingCurrency,
           },
           locale
@@ -160,7 +242,73 @@ export default function ManualPaymentPage() {
         }}
       >
         <h3 style={{ marginTop: 0 }}>{plan.title}</h3>
-        <p style={{ margin: "8px 0" }}>
+
+        <form
+          onSubmit={onApplyDiscount}
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "center",
+            marginTop: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>
+              Discount code (optional)
+            </div>
+            <input
+              value={discountInput}
+              onChange={(e) => setDiscountInput(e.target.value)}
+              placeholder="Enter code"
+              autoCapitalize="characters"
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                border: "1px solid #ddd",
+                borderRadius: 10,
+                outline: "none",
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting || discountLoading}
+            style={{
+              padding: "10px 14px",
+              borderRadius: 10,
+              border: "1px solid #ddd",
+              background: "#fff",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              marginTop: 18,
+            }}
+          >
+            {discountLoading ? "Applying..." : "Apply"}
+          </button>
+
+          {initialDiscount ? (
+            <button
+              type="button"
+              onClick={onClearDiscount}
+              disabled={submitting || discountLoading}
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                border: "1px solid #ddd",
+                background: "#fff",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                marginTop: 18,
+              }}
+            >
+              Clear
+            </button>
+          ) : null}
+        </form>
+
+        <p style={{ margin: "12px 0 0" }}>
           Amount: <b>{amount}</b>
         </p>
 
@@ -215,7 +363,11 @@ export default function ManualPaymentPage() {
       {err ? <p style={{ marginTop: 12, color: "crimson" }}>{err}</p> : null}
 
       <div style={{ marginTop: 16 }}>
-        <button onClick={onConfirmTransferred} style={{ padding: "10px 14px" }}>
+        <button
+          onClick={onConfirmTransferred}
+          style={{ padding: "10px 14px" }}
+          disabled={submitting}
+        >
           I’ve transferred the amount
         </button>
 
