@@ -38,6 +38,8 @@ export default function SettingsPage() {
   const [pwStatus, setPwStatus] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [pwSuccess, setPwSuccess] = useState(false);
+  const [calStatus, setCalStatus] = useState("");
+  const [calendarUrls, setCalendarUrls] = useState(null);
 
   useEffect(() => {
     if (checking || !user) return;
@@ -82,6 +84,19 @@ export default function SettingsPage() {
     } catch (err) {
       setPwStatus(err.response?.data?.error || "Failed to change password");
       setPwSuccess(false);
+    }
+  };
+
+  const loadCalendarExportLink = async () => {
+    setCalStatus("");
+    try {
+      const res = await api.get("/calendar/export-link", {
+        params: { t: Date.now() },
+        headers: { "Cache-Control": "no-store" },
+      });
+      setCalendarUrls(res.data);
+    } catch (e) {
+      setCalStatus(e.response?.data?.error || "Failed to generate link");
     }
   };
 
@@ -316,6 +331,73 @@ export default function SettingsPage() {
               )}
             </div>
           </form>
+        </div>
+
+        {/* Calendar Sync Card */}
+        <div className="settings-card">
+          <div className="settings-card__header">
+            <div className="settings-card__icon settings-card__icon--primary">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M8 7V3M16 7V3M3 11H21M5 5H19C20.1046 5 21 5.89543 21 7V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V7C3 5.89543 3.89543 5 5 5Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div>
+              <h2 className="settings-card__title">Calendar sync</h2>
+              <p className="settings-card__description">
+                Export your sessions as an iCal feed (webcal/ICS) to subscribe
+                in Google/Apple/Outlook.
+              </p>
+            </div>
+          </div>
+
+          <div className="settings-form">
+            <div className="form-group">
+              <button
+                type="button"
+                className="settings-button settings-button--primary"
+                onClick={loadCalendarExportLink}
+              >
+                Generate export link
+              </button>
+              {calStatus ? <p className="form-status">{calStatus}</p> : null}
+            </div>
+
+            {calendarUrls ? (
+              <>
+                <div className="form-group">
+                  <label className="form-label">webcal link</label>
+                  <div className="form-input-wrapper">
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={calendarUrls.webcalUrl || ""}
+                      readOnly
+                      onFocus={(e) => e.target.select()}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">ICS link</label>
+                  <div className="form-input-wrapper">
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={calendarUrls.httpsUrl || ""}
+                      readOnly
+                      onFocus={(e) => e.target.select()}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
         </div>
 
         {/* Security Card */}
