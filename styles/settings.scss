@@ -488,3 +488,20 @@
     font-size: 1.25rem;
   }
 }
+
+/* Calendar sync helpers */
+.form-input--plain {
+  padding-left: 1rem; // no icon in these inputs
+}
+
+.form-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  background: rgba($yellow-400, 0.12);
+  border: 1px solid rgba($yellow-400, 0.25);
+  border-radius: 999px;
+  color: var(--settings-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+}

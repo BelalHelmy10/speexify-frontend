@@ -357,25 +357,42 @@ export default function SettingsPage() {
           </div>
 
           <div className="settings-form">
-            <div className="form-group">
+            <div className="form-actions">
               <button
                 type="button"
-                className="settings-button settings-button--primary"
+                className="btn-primary"
                 onClick={loadCalendarExportLink}
               >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M8 2V10M8 10L5 7M8 10L11 7M3 14H13"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
                 Generate export link
               </button>
-              {calStatus ? <p className="form-status">{calStatus}</p> : null}
+
+              {calStatus ? (
+                <div className="form-status">{calStatus}</div>
+              ) : null}
             </div>
 
             {calendarUrls ? (
               <>
                 <div className="form-group">
-                  <label className="form-label">webcal link</label>
+                  <label className="form-label">
+                    webcal link
+                    <span className="form-hint">
+                      Best option for subscribing (auto-sync)
+                    </span>
+                  </label>
                   <div className="form-input-wrapper">
                     <input
                       type="text"
-                      className="form-input"
+                      className="form-input form-input--plain"
                       value={calendarUrls.webcalUrl || ""}
                       readOnly
                       onFocus={(e) => e.target.select()}
@@ -384,11 +401,16 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">ICS link</label>
+                  <label className="form-label">
+                    ICS link
+                    <span className="form-hint">
+                      Direct ICS URL (same feed)
+                    </span>
+                  </label>
                   <div className="form-input-wrapper">
                     <input
                       type="text"
-                      className="form-input"
+                      className="form-input form-input--plain"
                       value={calendarUrls.httpsUrl || ""}
                       readOnly
                       onFocus={(e) => e.target.select()}
