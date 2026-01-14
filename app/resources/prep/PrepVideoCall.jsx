@@ -17,6 +17,97 @@ export default function PrepVideoCall({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ─────────────────────────────────────────────
+  // Teacher-only page recording (local download)
+  // ─────────────────────────────────────────────
+  const [isPageRecording, setIsPageRecording] = useState(false);
+  const [pageRecError, setPageRecError] = useState(null);
+
+  const pageRecorderRef = useRef(null);
+  const pageStreamRef = useRef(null);
+  const pageChunksRef = useRef([]);
+
+  function pickSupportedMime() {
+    const types = [
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm",
+    ];
+    for (const t of types) {
+      if (window.MediaRecorder?.isTypeSupported(t)) return t;
+    }
+    return "video/webm";
+  }
+
+  async function startPageRecording() {
+    try {
+      setPageRecError(null);
+
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 30 },
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          sampleRate: 44100,
+        },
+        preferCurrentTab: true,
+      });
+
+      pageStreamRef.current = stream;
+      pageChunksRef.current = [];
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: pickSupportedMime(),
+      });
+
+      pageRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) pageChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(pageChunksRef.current, {
+          type: recorder.mimeType,
+        });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `classroom-${roomId}-${new Date().toISOString()}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        URL.revokeObjectURL(url);
+      };
+
+      // If teacher clicks "Stop sharing" in browser UI
+      stream.getVideoTracks()[0]?.addEventListener("ended", stopPageRecording);
+
+      recorder.start(1000);
+      setIsPageRecording(true);
+    } catch (e) {
+      console.error(e);
+      setPageRecError(e?.message || "Failed to start page recording");
+    }
+  }
+
+  function stopPageRecording() {
+    try {
+      if (pageRecorderRef.current?.state !== "inactive") {
+        pageRecorderRef.current.stop();
+      }
+      pageStreamRef.current?.getTracks().forEach((t) => t.stop());
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsPageRecording(false);
+      pageRecorderRef.current = null;
+      pageStreamRef.current = null;
+    }
+  }
+
   const dict = getDictionary(locale, "classroom");
 
   // keep callback stable

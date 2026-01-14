@@ -494,6 +494,131 @@ export default function ClassroomShell({
   }, []);
 
   /* -----------------------------------------------------------
+   Page Recording (local download, teacher only)
+----------------------------------------------------------- */
+  const [isPageRecording, setIsPageRecording] = useState(false);
+  const [pageRecError, setPageRecError] = useState(null);
+
+  const pageRecorderRef = useRef(null);
+  const pageStreamRef = useRef(null);
+  const pageChunksRef = useRef([]);
+
+  function pickSupportedMime() {
+    const types = [
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm",
+    ];
+    for (const t of types) {
+      if (window.MediaRecorder?.isTypeSupported(t)) return t;
+    }
+    return "video/webm";
+  }
+
+  async function startPageRecording() {
+    try {
+      setPageRecError(null);
+
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 30 },
+        audio: true, // tab/system audio
+        preferCurrentTab: true,
+      });
+
+      const micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      // ✅ SOLUTION: Use Web Audio API to properly mix audio sources
+      const audioContext = new AudioContext();
+      const destination = audioContext.createMediaStreamDestination();
+
+      // Add display audio if available
+      if (displayStream.getAudioTracks().length > 0) {
+        const displaySource =
+          audioContext.createMediaStreamSource(displayStream);
+        displaySource.connect(destination);
+      }
+
+      // Add microphone audio
+      const micSource = audioContext.createMediaStreamSource(micStream);
+      micSource.connect(destination);
+
+      // Create final stream with video + mixed audio
+      const mixedStream = new MediaStream([
+        ...displayStream.getVideoTracks(),
+        ...destination.stream.getAudioTracks(), // ✅ Single mixed track!
+      ]);
+
+      // ✅ Store all resources for cleanup
+      pageStreamRef.current = { mixedStream, audioContext, micStream };
+      pageChunksRef.current = [];
+
+      const recorder = new MediaRecorder(mixedStream, {
+        mimeType: pickSupportedMime(),
+      });
+
+      pageRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size) {
+          pageChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(pageChunksRef.current, {
+          type: recorder.mimeType,
+        });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `classroom-${sessionId}-${new Date().toISOString()}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      };
+
+      displayStream
+        .getVideoTracks()[0]
+        ?.addEventListener("ended", stopPageRecording);
+
+      recorder.start(1000);
+      setIsPageRecording(true);
+    } catch (err) {
+      console.error("Page recording failed:", err);
+      setPageRecError("Failed to start recording");
+    }
+  }
+
+  function stopPageRecording() {
+    try {
+      if (pageRecorderRef.current?.state !== "inactive") {
+        pageRecorderRef.current.stop();
+      }
+
+      // ✅ Clean up all streams and audio context
+      if (pageStreamRef.current) {
+        const { mixedStream, audioContext, micStream } = pageStreamRef.current;
+
+        mixedStream?.getTracks().forEach((t) => t.stop());
+        micStream?.getTracks().forEach((t) => t.stop());
+        audioContext?.close(); // ✅ Important: close AudioContext
+      }
+    } finally {
+      setIsPageRecording(false);
+      pageRecorderRef.current = null;
+      pageStreamRef.current = null;
+    }
+  }
+
+  /* -----------------------------------------------------------
      Header (FIXED: match SCSS classnames)
   ----------------------------------------------------------- */
   const headerTitle = session?.title || "Classroom";
@@ -688,6 +813,20 @@ export default function ClassroomShell({
             >
               <span className="cr-controls__btn-icon">📚</span>
               <span className="cr-controls__btn-label">Resources</span>
+            </button>
+          )}
+
+          {isTeacher && (
+            <button
+              className="cr-controls__btn cr-controls__btn--secondary"
+              onClick={isPageRecording ? stopPageRecording : startPageRecording}
+            >
+              <span className="cr-controls__btn-icon">
+                {isPageRecording ? "⏹️" : "⏺️"}
+              </span>
+              <span className="cr-controls__btn-label">
+                {isPageRecording ? "Stop recording" : "Record class"}
+              </span>
             </button>
           )}
 
