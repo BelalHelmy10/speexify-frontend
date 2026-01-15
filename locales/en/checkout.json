@@ -42,5 +42,10 @@
   "pricing_label_package_price": "Package Price",
   "pricing_label_egp_equivalent": "EGP Equivalent (for payment)",
   "exchange_note_regional": "Price shown in {displayCurrency} for {region}. Payment processed in EGP.",
-  "pay_button_label": "Pay"
+  "pay_button_label": "Pay",
+  "discount_placeholder": "Discount code",
+  "discount_apply": "Apply",
+  "discount_applied": "Discount applied: {percent}%",
+  "discount_toast_applied": "-{percent}% applied",
+  "discount_toast_invalid": "Invalid discount code"
 }

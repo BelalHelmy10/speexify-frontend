@@ -41,5 +41,6 @@
   "error_add": "Failed to add availability",
   "error_remove": "Failed to remove availability",
   "error_clear": "Failed to clear availability",
-  "legend_available": "Available"
+  "legend_available": "Available",
+  "session_group": "Group"
 }

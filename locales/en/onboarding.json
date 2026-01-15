@@ -126,5 +126,17 @@
   "button_submit": "Complete Onboarding",
   "button_back_dashboard": "Back to Dashboard",
   "save_success": "Successfully saved!",
-  "error_save_failed": "Failed to save"
+  "error_save_failed": "Failed to save",
+
+  {
+  "loading": "Loading…",
+  "trusted_by": "Trusted by teams at",
+  "stat1_label": "Client satisfaction",
+  "stat2_label": "Coaching hours",
+  "stat3_label": "Faster outcomes",
+  "float_live": "Live coaching",
+  "float_feedback": "Instant feedback",
+  "newsletter_aria": "Email"
+}
+
 }

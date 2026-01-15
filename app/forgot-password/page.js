@@ -1,7 +1,7 @@
 // app/forgot-password/page.js
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import api from "@/lib/api";
@@ -20,8 +20,14 @@ function ForgotPasswordInner({ dict }) {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const cooldownIvRef = useRef(null);
 
-  // 1) Ask backend to send a verification code
+  useEffect(() => {
+    return () => {
+      if (cooldownIvRef.current) clearInterval(cooldownIvRef.current);
+    };
+  }, []);
+
   const start = async (e) => {
     e.preventDefault();
     setMsg("");
@@ -30,20 +36,22 @@ function ForgotPasswordInner({ dict }) {
       await api.post("/api/auth/password/reset/start", { email });
       setStep(2);
 
-      // 60s re-send cooldown
+      // clear any previous timer before starting a new one
+      if (cooldownIvRef.current) clearInterval(cooldownIvRef.current);
+
       setCooldown(60);
-      const iv = setInterval(() => {
+      cooldownIvRef.current = setInterval(() => {
         setCooldown((s) => {
           if (s <= 1) {
-            clearInterval(iv);
+            clearInterval(cooldownIvRef.current);
+            cooldownIvRef.current = null;
             return 0;
           }
           return s - 1;
         });
       }, 1000);
     } catch (err) {
-      // Avoid user enumeration: generic message (or backend message if present)
-      setMsg(err?.response?.data?.error || t(dict, "msg_start_generic"));
+      setMsg(t(dict, "msg_start_generic"));
     } finally {
       setBusy(false);
     }
@@ -172,7 +180,10 @@ function ForgotPasswordInner({ dict }) {
                   ? t(dict, "btn_resend_with_cooldown", { cooldown })
                   : t(dict, "btn_resend")}
               </button>
-              <Link className="btn-link" href="/login">
+              <Link
+                className="btn-link"
+                href={isArabic ? "/ar/login" : "/login"}
+              >
                 {t(dict, "back_to_login")}
               </Link>
             </div>

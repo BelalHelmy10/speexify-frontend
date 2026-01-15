@@ -78,5 +78,7 @@
   "session_leave_title": "هل تريد مغادرة هذه الجلسة الجماعية؟",
   "session_scheduled": "مجدولة",
   "session_starts_in": "تبدأ خلال",
-  "session_canceled_success": "تم إلغاء الجلسة بنجاح."
+  "session_canceled_success": "تم إلغاء الجلسة بنجاح.",
+  "success_saved": "تم.",
+  "session_left_success": "تمت مغادرة الجلسة."
 }

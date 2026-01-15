@@ -41,5 +41,6 @@
   "error_add": "فشل في إضافة التوفر",
   "error_remove": "فشل في إزالة التوفر",
   "error_clear": "فشل في مسح التوفر",
-  "legend_available": "متاح"
+  "legend_available": "متاح",
+  "session_group": "جماعية"
 }

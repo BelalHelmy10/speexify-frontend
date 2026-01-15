@@ -97,36 +97,3 @@
   "map_iframe_title": "الخريطة — القاهرة الجديدة، التجمع الخامس، مصر",
   "map_iframe_aria": "خريطة تفاعلية تتمركز حول التجمع الخامس، القاهرة الجديدة، مصر"
 }
-
-
-/* ---------------------------------------
-   CONTACT FORM HEADER IMPROVEMENTS
-----------------------------------------*/
-.contact-form .card__header {
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: $space-lg;
-}
-
-.contact-form .card__title {
-  font-size: 1.5rem;
-  font-weight: 800;
-}
-
-.contact-form .card__subtitle {
-  margin-top: $space-2xs;
-  font-size: 0.875rem;
-  color: $color-muted;
-}
-
-.contact-form .contact-alt {
-  font-size: 0.875rem;
-  color: $color-muted;
-  white-space: nowrap;
-}
-
-.contact-form .contact-alt a {
-  color: $color-primary;
-  font-weight: 600;
-  text-decoration: underline;
-}
