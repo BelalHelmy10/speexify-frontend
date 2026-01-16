@@ -148,13 +148,13 @@ export default function PrepShell({
     const prevPage = prevPointerPageRef.current;
 
     if (prevPage !== null && prevPage !== page) {
-      // Clear my local pointer on the old page
       if (isTeacher) {
         setTeacherPointerByPage((prev) => {
           const next = { ...prev };
           delete next[prevPage];
           return next;
         });
+        broadcastPointer(null);
       } else if (myUserId) {
         setLearnerPointersByPage((prev) => {
           const next = { ...prev };
@@ -165,14 +165,12 @@ export default function PrepShell({
           else next[prevPage] = perPage;
           return next;
         });
+        broadcastPointer(null);
       }
-
-      // Also broadcast hide for old page
-      broadcastPointer(null);
     }
 
     prevPointerPageRef.current = page;
-  }, [isPdf, pdfCurrentPage, isTeacher, myUserId]); // broadcastPointer uses current page automatically
+  }, [isPdf, pdfCurrentPage, isTeacher, myUserId]);
 
   // stroke: { id, tool, color, points: [{ x,y } in [0,1]] }
   const [strokes, setStrokes] = useState([]);
@@ -453,7 +451,7 @@ export default function PrepShell({
 
     const onScroll = () => {
       const now = Date.now();
-      if (now - lastScrollSentAtRef.current < 50) return; // ~20/sec
+      if (now - lastScrollSentAtRef.current < 16) return; // ~60fps
       if (rafPendingRef.current) return;
 
       rafPendingRef.current = true;
@@ -745,14 +743,23 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Persistence + broadcasting
   // ─────────────────────────────────────────────────────────────
-  function saveAnnotations(opts = {}) {
+  const saveDebounceRef = useRef(null);
+  const pendingSaveRef = useRef({});
+
+  function saveAnnotations(opts = {}, saveOpts = { includeCanvas: false }) {
     if (!storageKey) return;
+
     try {
-      const canvas = canvasRef.current;
-      const canvasData =
-        opts.canvasData ?? (canvas ? canvas.toDataURL("image/png") : undefined);
+      let canvasData;
+      if (saveOpts?.includeCanvas) {
+        const canvas = canvasRef.current;
+        canvasData =
+          opts.canvasData ??
+          (canvas ? canvas.toDataURL("image/png") : undefined);
+      }
+
       const data = {
-        canvasData: canvasData || null,
+        canvasData: (saveOpts?.includeCanvas ? canvasData : undefined) || null,
         strokes: opts.strokes ?? strokes,
         stickyNotes: opts.stickyNotes ?? stickyNotes,
         textBoxes: opts.textBoxes ?? textBoxes,
@@ -760,18 +767,52 @@ export default function PrepShell({
         lines: opts.lines ?? lines,
         boxes: opts.boxes ?? boxes,
       };
+
       window.localStorage.setItem(storageKey, JSON.stringify(data));
     } catch (err) {
       console.warn("Failed to save annotations", err);
     }
   }
 
-  function broadcastAnnotations(custom = {}) {
+  const pendingBroadcastRef = useRef({});
+  const broadcastRafRef = useRef(false);
+
+  function scheduleBroadcastAnnotations(partial = {}) {
+    Object.assign(pendingBroadcastRef.current, partial);
+    if (broadcastRafRef.current) return;
+
+    broadcastRafRef.current = true;
+    requestAnimationFrame(() => {
+      broadcastRafRef.current = false;
+      broadcastAnnotations(pendingBroadcastRef.current, {
+        includeCanvas: false,
+      });
+      pendingBroadcastRef.current = {};
+    });
+  }
+
+  function scheduleSaveAnnotations(partial = {}) {
+    pendingSaveRef.current = { ...pendingSaveRef.current, ...partial };
+
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    saveDebounceRef.current = setTimeout(() => {
+      const payload = pendingSaveRef.current;
+      pendingSaveRef.current = {};
+      saveAnnotations(payload, { includeCanvas: false });
+    }, 300);
+  }
+
+  function broadcastAnnotations(custom = {}, opts = { includeCanvas: false }) {
     if (!channelReady || !sendOnChannel) return;
     if (applyingRemoteRef.current) return;
-    const canvas = canvasRef.current;
-    const canvasData =
-      custom.canvasData ?? (canvas ? canvas.toDataURL("image/png") : null);
+
+    let canvasData = null;
+    if (opts?.includeCanvas) {
+      const canvas = canvasRef.current;
+      canvasData =
+        custom.canvasData ?? (canvas ? canvas.toDataURL("image/png") : null);
+    }
+
     const payload = {
       type: "ANNOTATION_STATE",
       resourceId: resource._id,
@@ -783,6 +824,7 @@ export default function PrepShell({
       lines: custom.lines ?? lines,
       boxes: custom.boxes ?? boxes,
     };
+
     try {
       sendOnChannel(payload);
     } catch (err) {
@@ -890,7 +932,7 @@ export default function PrepShell({
           img.src = canvasData;
         }
       }
-      saveAnnotations({
+      scheduleSaveAnnotations({
         canvasData: canvasData || null,
         strokes: Array.isArray(remoteStrokes) ? remoteStrokes : strokes,
         stickyNotes: Array.isArray(remoteNotes) ? remoteNotes : stickyNotes,
@@ -1187,18 +1229,19 @@ export default function PrepShell({
     if (best.kind === "stroke") {
       setStrokes((prev) => {
         const next = prev.filter((s) => s.id !== best.id);
-        saveAnnotations({ strokes: next });
-        broadcastAnnotations({ strokes: next });
+        scheduleSaveAnnotations({ strokes: next });
+        scheduleBroadcastAnnotations({ strokes: next });
         return next;
       });
+
       return;
     }
 
     if (best.kind === "mask") {
       setMasks((prev) => {
         const next = prev.filter((m) => m.id !== best.id);
-        saveAnnotations({ masks: next });
-        broadcastAnnotations({ masks: next });
+        scheduleSaveAnnotations({ masks: next });
+        scheduleBroadcastAnnotations({ masks: next });
         return next;
       });
       return;
@@ -1207,8 +1250,8 @@ export default function PrepShell({
     if (best.kind === "line") {
       setLines((prev) => {
         const next = prev.filter((l) => l.id !== best.id);
-        saveAnnotations({ lines: next });
-        broadcastAnnotations({ lines: next });
+        scheduleSaveAnnotations({ lines: next });
+        scheduleBroadcastAnnotations({ lines: next });
         return next;
       });
       return;
@@ -1217,10 +1260,11 @@ export default function PrepShell({
     if (best.kind === "box") {
       setBoxes((prev) => {
         const next = prev.filter((b) => b.id !== best.id);
-        saveAnnotations({ boxes: next });
-        broadcastAnnotations({ boxes: next });
+        scheduleSaveAnnotations({ boxes: next });
+        scheduleBroadcastAnnotations({ boxes: next });
         return next;
       });
+
       return;
     }
   }
@@ -1271,8 +1315,9 @@ export default function PrepShell({
               y: Math.min(0.98, Math.max(0.02, ny)),
             };
           });
-          saveAnnotations({ stickyNotes: updated });
-          broadcastAnnotations({ stickyNotes: updated });
+          scheduleSaveAnnotations({ stickyNotes: updated });
+          scheduleBroadcastAnnotations({ stickyNotes: updated });
+
           return updated;
         });
       } else if (dragState.kind === "text") {
@@ -1287,8 +1332,9 @@ export default function PrepShell({
               y: Math.min(0.98, Math.max(0.02, ny)),
             };
           });
-          saveAnnotations({ textBoxes: updated });
-          broadcastAnnotations({ textBoxes: updated });
+          // ✅ keep state synced during drag (throttled + debounced)
+          scheduleSaveAnnotations({ textBoxes: updated });
+          scheduleBroadcastAnnotations({ textBoxes: updated });
           return updated;
         });
       }
@@ -1331,23 +1377,16 @@ export default function PrepShell({
 
   function stopDrawing() {
     if (!isDrawing && !dragState && !maskDrag) return;
+
     setIsDrawing(false);
     setCurrentStrokeId(null);
 
-    saveAnnotations();
-    broadcastAnnotations();
+    if (dragState) setDragState(null);
+    if (maskDrag) setMaskDrag(null);
 
-    if (dragState) {
-      setDragState(null);
-      saveAnnotations();
-      broadcastAnnotations();
-    }
-
-    if (maskDrag) {
-      setMaskDrag(null);
-      saveAnnotations();
-      broadcastAnnotations();
-    }
+    // single flush at the end
+    saveAnnotations({}, { includeCanvas: true });
+    broadcastAnnotations({}, { includeCanvas: true });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -1369,15 +1408,15 @@ export default function PrepShell({
 
     const nextNotes = [...stickyNotes, note];
     setStickyNotes(nextNotes);
-    saveAnnotations({ stickyNotes: nextNotes });
-    broadcastAnnotations({ stickyNotes: nextNotes });
+    scheduleSaveAnnotations({ stickyNotes: nextNotes });
+    scheduleBroadcastAnnotations({ stickyNotes: nextNotes });
   }
 
   function updateNoteText(id, text) {
     const next = stickyNotes.map((n) => (n.id === id ? { ...n, text } : n));
     setStickyNotes(next);
-    saveAnnotations({ stickyNotes: next });
-    broadcastAnnotations({ stickyNotes: next });
+    scheduleSaveAnnotations({ stickyNotes: next });
+    scheduleBroadcastAnnotations({ stickyNotes: next });
   }
 
   function deleteNote(id) {
@@ -1427,8 +1466,8 @@ export default function PrepShell({
     const next = [...textBoxes, box];
     setTextBoxes(next);
     setActiveTextId(box.id);
-    saveAnnotations({ textBoxes: next });
-    broadcastAnnotations({ textBoxes: next });
+    scheduleSaveAnnotations({ textBoxes: next });
+    scheduleBroadcastAnnotations({ textBoxes: next });
 
     // ensure height after mount
     setTimeout(() => autoResizeTextarea(box.id), 0);
@@ -1444,9 +1483,9 @@ export default function PrepShell({
         const fitted = autoFitTextBoxWidthIfNeeded(withText, text);
         return fitted;
       });
+      scheduleSaveAnnotations({ textBoxes: updated });
+      scheduleBroadcastAnnotations({ textBoxes: updated });
 
-      saveAnnotations({ textBoxes: updated });
-      broadcastAnnotations({ textBoxes: updated });
       return updated;
     });
 
@@ -1457,8 +1496,9 @@ export default function PrepShell({
   function deleteTextBox(id) {
     const next = textBoxes.filter((t) => t.id !== id);
     setTextBoxes(next);
-    saveAnnotations({ textBoxes: next });
-    broadcastAnnotations({ textBoxes: next });
+    scheduleSaveAnnotations({ textBoxes: next });
+    scheduleBroadcastAnnotations({ textBoxes: next });
+
     if (activeTextId === id) setActiveTextId(null);
 
     // cleanup ref
@@ -1540,9 +1580,9 @@ export default function PrepShell({
         }
         return withChanges;
       });
-      // Save and broadcast during drag for real-time sync
-      saveAnnotations({ textBoxes: updated });
-      broadcastAnnotations({ textBoxes: updated });
+      // Save and broadcast during drag for real-time sync (throttled + debounced)
+      scheduleSaveAnnotations({ textBoxes: updated });
+      scheduleBroadcastAnnotations({ textBoxes: updated });
       return updated;
     });
     // keep textarea height accurate while resizing font
@@ -1552,8 +1592,10 @@ export default function PrepShell({
   function stopFontSizeResize() {
     if (!resizeState) return;
     setResizeState(null);
-    saveAnnotations();
-    broadcastAnnotations();
+
+    // flush snapshot once at the end (optional canvas snapshot)
+    saveAnnotations({}, { includeCanvas: true });
+    broadcastAnnotations({}, { includeCanvas: true });
   }
 
   function startWidthResize(e, box, direction) {
@@ -1615,19 +1657,20 @@ export default function PrepShell({
           return { ...withWidth, autoWidth: false };
         }
       });
-      // ✅ keep state synced during drag
-      saveAnnotations({ textBoxes: updated });
-      broadcastAnnotations({ textBoxes: updated });
+      // ✅ keep state synced during drag (throttled + debounced)
+      scheduleSaveAnnotations({ textBoxes: updated });
+      scheduleBroadcastAnnotations({ textBoxes: updated });
       return updated;
     });
     setTimeout(() => autoResizeTextarea(widthResizeState.id), 0);
   }
-
   function stopWidthResize() {
     if (!widthResizeState) return;
     setWidthResizeState(null);
-    saveAnnotations();
-    broadcastAnnotations();
+
+    // flush snapshot once at the end (optional canvas snapshot)
+    saveAnnotations({}, { includeCanvas: true });
+    broadcastAnnotations({}, { includeCanvas: true });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -1650,8 +1693,9 @@ export default function PrepShell({
   function deleteMask(id) {
     setMasks((prev) => {
       const next = prev.filter((m) => m.id !== id);
-      saveAnnotations({ masks: next });
-      broadcastAnnotations({ masks: next });
+      scheduleSaveAnnotations({ masks: next });
+      scheduleBroadcastAnnotations({ masks: next });
+
       return next;
     });
   }
@@ -1682,8 +1726,8 @@ export default function PrepShell({
       };
       setLines((prev) => {
         const next = [...prev, newLine];
-        saveAnnotations({ lines: next });
-        broadcastAnnotations({ lines: next });
+        scheduleSaveAnnotations({ lines: next });
+        scheduleBroadcastAnnotations({ lines: next });
         return next;
       });
     } else if (shapeDrag.tool === TOOL_BOX) {
@@ -1703,8 +1747,8 @@ export default function PrepShell({
       };
       setBoxes((prev) => {
         const next = [...prev, newBox];
-        saveAnnotations({ boxes: next });
-        broadcastAnnotations({ boxes: next });
+        scheduleSaveAnnotations({ boxes: next });
+        scheduleBroadcastAnnotations({ boxes: next });
         return next;
       });
     }
@@ -1893,8 +1937,8 @@ export default function PrepShell({
             const clampedY = Math.min(1 - m.height, Math.max(0, newY));
             return { ...m, x: clampedX, y: clampedY };
           });
-          saveAnnotations({ masks: next });
-          broadcastAnnotations({ masks: next });
+          scheduleSaveAnnotations({ masks: next });
+          scheduleBroadcastAnnotations({ masks: next });
           return next;
         });
       }
@@ -2833,26 +2877,12 @@ export default function PrepShell({
                         if (isAudioPlaying) {
                           el.pause();
                           setIsAudioPlaying(false);
-
-                          if (isTeacher && channelReady && sendOnChannel) {
-                            sendAudioState({
-                              trackIndex: safeTrackIndex,
-                              time: el.currentTime || 0,
-                              playing: false,
-                            });
-                          }
+                          if (isTeacher) sendAudioState({ playing: false });
                         } else {
                           el.play().then(
                             () => {
                               setIsAudioPlaying(true);
-
-                              if (isTeacher && channelReady && sendOnChannel) {
-                                sendAudioState({
-                                  trackIndex: safeTrackIndex,
-                                  time: el.currentTime || 0,
-                                  playing: true,
-                                });
-                              }
+                              if (isTeacher) sendAudioState({ playing: true });
                             },
                             () => setIsAudioPlaying(false)
                           );
