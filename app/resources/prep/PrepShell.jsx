@@ -19,6 +19,52 @@ const TOOL_MASK = "mask"; // white block to hide parts of the page
 const TOOL_LINE = "line"; // straight line connector
 const TOOL_BOX = "box"; // border rectangle around areas
 
+// ─────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────
+const HIT_RADIUS_STROKE = 0.015; // hit radius for pen/highlighter strokes
+const HIT_RADIUS_LINE = 0.006; // hit radius for straight lines
+const HIT_RADIUS_BOX_BORDER = 0.008; // hit radius for box borders
+
+// ─────────────────────────────────────────────────────────────
+// UTILITY FUNCTIONS (Fix #15: clamp at top level)
+// ─────────────────────────────────────────────────────────────
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+// Fix #12: Touch event converter for touch support
+function getTouchPoint(touchEvent) {
+  if (!touchEvent.touches || touchEvent.touches.length === 0) return null;
+  const touch = touchEvent.touches[0];
+  return {
+    clientX: touch.clientX,
+    clientY: touch.clientY,
+    target: touchEvent.target,
+  };
+}
+
+// Get z-index from element ID (IDs contain timestamp like "text_1234567890_xyz")
+// Newer elements get higher z-index so they appear on top
+// Z-index range: 1-49 (toolbar uses 50, menus use higher values)
+function getZIndexFromId(id) {
+  if (!id) return 10;
+  const match = id.match(/_(\d+)_/);
+  if (!match) return 10;
+  // Extract timestamp and use modulo to keep z-index reasonable
+  // But use a larger range (1000) and then clamp to 10-49
+  const timestamp = parseInt(match[1], 10);
+  const orderValue = timestamp % 10000;
+  // Scale to 10-49 range
+  return 10 + Math.floor((orderValue / 10000) * 39);
+}
+
+// Get timestamp from ID for sorting (larger = newer = should be on top)
+function getTimestampFromId(id) {
+  if (!id) return 0;
+  const match = id.match(/_(\d+)_/);
+  if (!match) return 0;
+  return parseInt(match[1], 10);
+}
+
 const PEN_COLORS = [
   "#000000",
   "#f9fafb",
@@ -26,6 +72,12 @@ const PEN_COLORS = [
   "#60a5fa",
   "#f97316",
   "#22c55e",
+  "#ef4444", // vibrant red
+  "#a855f7", // purple
+  "#ec4899", // pink
+  "#14b8a6", // teal
+  "#64748b", // slate gray
+  "#f59e0b", // amber
 ];
 
 const POINTER_COLORS = [
@@ -54,10 +106,13 @@ export default function PrepShell({
   isScreenShareActive = false,
   isTeacher = false,
   locale = "en",
-  unitIdFromQuery,
 }) {
   const dict = getDictionary(locale, "resources");
   const prefix = locale === "ar" ? "/ar" : "";
+
+  // ✅ Auth hook must be called before any early returns (React Rules of Hooks)
+  const { user } = useAuth();
+  const myUserId = user?._id || user?.id || null;
 
   // ─────────────────────────────────────────────────────────────
   // SAFETY GUARD
@@ -84,10 +139,6 @@ export default function PrepShell({
   const isPdf = viewer?.type === "pdf";
   const pdfViewerUrl = isPdf ? viewerUrl : null;
 
-  // ✅ then auth
-  const { user } = useAuth();
-  const myUserId = user?._id || user?.id || null;
-
   const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -111,7 +162,6 @@ export default function PrepShell({
   const [maskDrag, setMaskDrag] = useState(null); // { mode: "creating"|"moving", ... }
   const [shapeDrag, setShapeDrag] = useState(null); // { mode: "creating", tool: "line"|"box", startX, startY, currentX, currentY }
   const [activeTextId, setActiveTextId] = useState(null);
-  const [pdfFallback, setPdfFallback] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [toolMenuOpen, setToolMenuOpen] = useState(false);
@@ -175,6 +225,34 @@ export default function PrepShell({
   // stroke: { id, tool, color, points: [{ x,y } in [0,1]] }
   const [strokes, setStrokes] = useState([]);
   const [currentStrokeId, setCurrentStrokeId] = useState(null);
+
+  // ✅ Refs to hold latest state values (avoids stale closures in async callbacks)
+  const strokesRef = useRef(strokes);
+  const stickyNotesRef = useRef(stickyNotes);
+  const textBoxesRef = useRef(textBoxes);
+  const masksRef = useRef(masks);
+  const linesRef = useRef(lines);
+  const boxesRef = useRef(boxes);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    strokesRef.current = strokes;
+  }, [strokes]);
+  useEffect(() => {
+    stickyNotesRef.current = stickyNotes;
+  }, [stickyNotes]);
+  useEffect(() => {
+    textBoxesRef.current = textBoxes;
+  }, [textBoxes]);
+  useEffect(() => {
+    masksRef.current = masks;
+  }, [masks]);
+  useEffect(() => {
+    linesRef.current = lines;
+  }, [lines]);
+  useEffect(() => {
+    boxesRef.current = boxes;
+  }, [boxes]);
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null); // element that matches the page (for normalized coords)
@@ -317,8 +395,6 @@ export default function PrepShell({
   // - Auto-resize textarea height in realtime (especially after width changes)
   // ─────────────────────────────────────────────────────────────
 
-  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-
   // Utility: distance from point to line segment
   function pointToLineDistance(px, py, x1, y1, x2, y2) {
     const len2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
@@ -330,24 +406,19 @@ export default function PrepShell({
     return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
   }
 
-  // Utility: distance from point to rect border (check edges)
+  // Utility: distance from point to rect border (check all four edges)
   function pointToRectBorderDistance(px, py, rx, ry, rw, rh) {
     const right = rx + rw;
     const bottom = ry + rh;
-    // Check distance to each side
-    const distLeft = Math.abs(px - rx);
-    const distRight = Math.abs(px - right);
-    const distTop = Math.abs(py - ry);
-    const distBottom = Math.abs(py - bottom);
-    // If inside rect, min distance to borders
-    if (px >= rx && px <= right && py >= ry && py <= bottom) {
-      return Math.min(distLeft, distRight, distTop, distBottom);
-    }
-    // Outside: distance to nearest edge
-    return Math.min(
-      px < rx ? distLeft : px > right ? distRight : 0,
-      py < ry ? distTop : py > bottom ? distBottom : 0
-    );
+
+    // Calculate distance to each of the four edges (line segments)
+    const distTop = pointToLineDistance(px, py, rx, ry, right, ry);
+    const distBottom = pointToLineDistance(px, py, rx, bottom, right, bottom);
+    const distLeft = pointToLineDistance(px, py, rx, ry, rx, bottom);
+    const distRight = pointToLineDistance(px, py, right, ry, right, bottom);
+
+    // Return minimum distance to any edge
+    return Math.min(distTop, distBottom, distLeft, distRight);
   }
 
   const measureTextWidthPx = useCallback((text, style = {}) => {
@@ -500,14 +571,25 @@ export default function PrepShell({
     const audioEl = audioRef.current;
     if (!audioEl) return;
 
-    const handleEnded = () => setIsAudioPlaying(false);
+    // Fix #21: Separate handlers for ended and pause
+    const handleEnded = () => {
+      setIsAudioPlaying(false);
+      // Audio track finished completely
+    };
+
+    const handlePause = () => {
+      // Only update state if not seeking (paused explicitly)
+      if (!audioEl.seeking) {
+        setIsAudioPlaying(false);
+      }
+    };
 
     audioEl.addEventListener("ended", handleEnded);
-    audioEl.addEventListener("pause", handleEnded);
+    audioEl.addEventListener("pause", handlePause);
 
     return () => {
       audioEl.removeEventListener("ended", handleEnded);
-      audioEl.removeEventListener("pause", handleEnded);
+      audioEl.removeEventListener("pause", handlePause);
     };
   }, [resource._id]);
 
@@ -545,7 +627,7 @@ export default function PrepShell({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [toolMenuRef, colorMenuRef]);
+  }, []); // Refs are stable, no need to include in deps
 
   // ─────────────────────────────────────────────────────────────
   // Utility: normalized point relative to containerRef
@@ -613,7 +695,7 @@ export default function PrepShell({
         ctx.globalCompositeOperation = "source-over";
       } else if (stroke.tool === TOOL_HIGHLIGHTER) {
         ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
-        ctx.lineWidth = 18;
+        ctx.lineWidth = 12;
         ctx.globalAlpha = 0.3;
         ctx.globalCompositeOperation = "source-over";
       } else if (stroke.tool === TOOL_ERASER) {
@@ -760,12 +842,12 @@ export default function PrepShell({
 
       const data = {
         canvasData: (saveOpts?.includeCanvas ? canvasData : undefined) || null,
-        strokes: opts.strokes ?? strokes,
-        stickyNotes: opts.stickyNotes ?? stickyNotes,
-        textBoxes: opts.textBoxes ?? textBoxes,
-        masks: opts.masks ?? masks,
-        lines: opts.lines ?? lines,
-        boxes: opts.boxes ?? boxes,
+        strokes: opts.strokes ?? strokesRef.current,
+        stickyNotes: opts.stickyNotes ?? stickyNotesRef.current,
+        textBoxes: opts.textBoxes ?? textBoxesRef.current,
+        masks: opts.masks ?? masksRef.current,
+        lines: opts.lines ?? linesRef.current,
+        boxes: opts.boxes ?? boxesRef.current,
       };
 
       window.localStorage.setItem(storageKey, JSON.stringify(data));
@@ -817,12 +899,12 @@ export default function PrepShell({
       type: "ANNOTATION_STATE",
       resourceId: resource._id,
       canvasData: canvasData || null,
-      strokes: custom.strokes ?? strokes,
-      stickyNotes: custom.stickyNotes ?? stickyNotes,
-      textBoxes: custom.textBoxes ?? textBoxes,
-      masks: custom.masks ?? masks,
-      lines: custom.lines ?? lines,
-      boxes: custom.boxes ?? boxes,
+      strokes: custom.strokes ?? strokesRef.current,
+      stickyNotes: custom.stickyNotes ?? stickyNotesRef.current,
+      textBoxes: custom.textBoxes ?? textBoxesRef.current,
+      masks: custom.masks ?? masksRef.current,
+      lines: custom.lines ?? linesRef.current,
+      boxes: custom.boxes ?? boxesRef.current,
     };
 
     try {
@@ -934,12 +1016,18 @@ export default function PrepShell({
       }
       scheduleSaveAnnotations({
         canvasData: canvasData || null,
-        strokes: Array.isArray(remoteStrokes) ? remoteStrokes : strokes,
-        stickyNotes: Array.isArray(remoteNotes) ? remoteNotes : stickyNotes,
-        textBoxes: Array.isArray(remoteText) ? remoteText : textBoxes,
-        masks: Array.isArray(remoteMasks) ? remoteMasks : masks,
-        lines: Array.isArray(remoteLines) ? remoteLines : lines,
-        boxes: Array.isArray(remoteBoxes) ? remoteBoxes : boxes,
+        strokes: Array.isArray(remoteStrokes)
+          ? remoteStrokes
+          : strokesRef.current,
+        stickyNotes: Array.isArray(remoteNotes)
+          ? remoteNotes
+          : stickyNotesRef.current,
+        textBoxes: Array.isArray(remoteText)
+          ? remoteText
+          : textBoxesRef.current,
+        masks: Array.isArray(remoteMasks) ? remoteMasks : masksRef.current,
+        lines: Array.isArray(remoteLines) ? remoteLines : linesRef.current,
+        boxes: Array.isArray(remoteBoxes) ? remoteBoxes : boxesRef.current,
       });
     } finally {
       applyingRemoteRef.current = false;
@@ -1152,13 +1240,6 @@ export default function PrepShell({
 
     const page = isPdf ? pdfCurrentPage : 1;
 
-    // "hit radii" in normalized units for bitmap strokes
-    const STROKE_R = 0.03;
-
-    // "hit radii" for shapes; tune these with your new thin stroke (px-based)
-    const LINE_HIT = 0.012;
-    const BOX_BORDER_HIT = 0.015;
-
     // Find the single closest thing under the cursor
     let best = { kind: null, id: null, dist: Infinity };
 
@@ -1176,7 +1257,7 @@ export default function PrepShell({
         if (d2 < minD2) minD2 = d2;
       }
 
-      const hit = minD2 <= STROKE_R * STROKE_R;
+      const hit = minD2 <= HIT_RADIUS_STROKE * HIT_RADIUS_STROKE;
       if (hit) {
         const d = Math.sqrt(minD2);
         if (d < best.dist) best = { kind: "stroke", id: s.id, dist: d };
@@ -1201,7 +1282,7 @@ export default function PrepShell({
     for (const l of lines) {
       if (isPdf && (l.page ?? 1) !== page) continue;
       const d = pointToLineDistance(p.x, p.y, l.x1, l.y1, l.x2, l.y2);
-      if (d <= LINE_HIT && d < best.dist) {
+      if (d <= HIT_RADIUS_LINE && d < best.dist) {
         best = { kind: "line", id: l.id, dist: d };
       }
     }
@@ -1217,8 +1298,43 @@ export default function PrepShell({
         b.width,
         b.height
       );
-      if (d <= BOX_BORDER_HIT && d < best.dist) {
+      if (d <= HIT_RADIUS_BOX_BORDER && d < best.dist) {
         best = { kind: "box", id: b.id, dist: d };
+      }
+    }
+
+    // 5) Text boxes: check if point is inside (Fix #7)
+    for (const t of textBoxes) {
+      if (isPdf && (t.page ?? 1) !== page) continue;
+      // Approximate hit area based on position and width
+      // Text boxes are centered, so we estimate bounds
+      const container = containerRef.current;
+      const rect = container?.getBoundingClientRect();
+      const normWidth = t.width / (rect?.width || 1000);
+      const halfW = normWidth / 2;
+      const halfH = 0.03; // approximate height in normalized coords
+      const inside =
+        p.x >= t.x - halfW &&
+        p.x <= t.x + halfW &&
+        p.y >= t.y - halfH &&
+        p.y <= t.y + halfH;
+
+      if (inside && 0 < best.dist) {
+        best = { kind: "text", id: t.id, dist: 0 };
+      }
+    }
+
+    // 6) Sticky notes: check if point is inside (Fix #7)
+    for (const n of stickyNotes) {
+      if (isPdf && (n.page ?? 1) !== page) continue;
+      // Sticky notes are positioned at top-left, approximate size ~0.15 x 0.12
+      const noteW = 0.15;
+      const noteH = 0.12;
+      const inside =
+        p.x >= n.x && p.x <= n.x + noteW && p.y >= n.y && p.y <= n.y + noteH;
+
+      if (inside && 0 < best.dist) {
+        best = { kind: "note", id: n.id, dist: 0 };
       }
     }
 
@@ -1264,7 +1380,30 @@ export default function PrepShell({
         scheduleBroadcastAnnotations({ boxes: next });
         return next;
       });
+      return;
+    }
 
+    // Fix #7: Eraser can now delete text boxes
+    if (best.kind === "text") {
+      setTextBoxes((prev) => {
+        const next = prev.filter((t) => t.id !== best.id);
+        scheduleSaveAnnotations({ textBoxes: next });
+        scheduleBroadcastAnnotations({ textBoxes: next });
+        return next;
+      });
+      if (activeTextId === best.id) setActiveTextId(null);
+      if (textAreaRefs.current?.[best.id]) delete textAreaRefs.current[best.id];
+      return;
+    }
+
+    // Fix #7: Eraser can now delete sticky notes
+    if (best.kind === "note") {
+      setStickyNotes((prev) => {
+        const next = prev.filter((n) => n.id !== best.id);
+        scheduleSaveAnnotations({ stickyNotes: next });
+        scheduleBroadcastAnnotations({ stickyNotes: next });
+        return next;
+      });
       return;
     }
   }
@@ -1384,9 +1523,10 @@ export default function PrepShell({
     if (dragState) setDragState(null);
     if (maskDrag) setMaskDrag(null);
 
-    // single flush at the end
-    saveAnnotations({}, { includeCanvas: true });
-    broadcastAnnotations({}, { includeCanvas: true });
+    // Fix #9: Use scheduleSave/Broadcast which read from current state
+    // This avoids stale closure issues with the immediate save/broadcast
+    scheduleSaveAnnotations({});
+    scheduleBroadcastAnnotations({});
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -1700,7 +1840,48 @@ export default function PrepShell({
     });
   }
 
-  // ... existing finalizeCreatingMask remains the same
+  function finalizeCreatingMask(endPoint) {
+    if (!maskDrag || maskDrag.mode !== "creating") return;
+
+    const startX = maskDrag.startX;
+    const startY = maskDrag.startY;
+    const endX = endPoint?.x ?? maskDrag.currentX;
+    const endY = endPoint?.y ?? maskDrag.currentY;
+
+    // Calculate dimensions
+    const left = Math.min(startX, endX);
+    const top = Math.min(startY, endY);
+    const width = Math.abs(endX - startX);
+    const height = Math.abs(endY - startY);
+
+    // Minimum size check - skip creating tiny accidental masks
+    const MIN_SIZE = 0.01;
+    if (width < MIN_SIZE || height < MIN_SIZE) {
+      setMaskDrag(null);
+      return;
+    }
+
+    const page = isPdf ? pdfCurrentPage : 1;
+    const id = `mask_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+    const newMask = {
+      id,
+      x: left,
+      y: top,
+      width,
+      height,
+      page,
+    };
+
+    setMasks((prev) => {
+      const next = [...prev, newMask];
+      scheduleSaveAnnotations({ masks: next });
+      scheduleBroadcastAnnotations({ masks: next });
+      return next;
+    });
+
+    setMaskDrag(null);
+  }
 
   function finalizeCreatingShape(endPoint) {
     if (!shapeDrag || shapeDrag.mode !== "creating") return;
@@ -1712,7 +1893,14 @@ export default function PrepShell({
     const MIN_DIST = 0.01;
     const dx = Math.abs(endX - startX);
     const dy = Math.abs(endY - startY);
-    if (dx < MIN_DIST && dy < MIN_DIST) return;
+
+    // Always clear shapeDrag at the end, even if shape is too small
+    // This prevents the "sticky" behavior where a preview follows the cursor
+    if (dx < MIN_DIST && dy < MIN_DIST) {
+      setShapeDrag(null);
+      return;
+    }
+
     const id = `shape_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     if (shapeDrag.tool === TOOL_LINE) {
       const newLine = {
@@ -1735,7 +1923,10 @@ export default function PrepShell({
       const top = Math.min(startY, endY);
       const width = dx;
       const height = dy;
-      if (width < MIN_DIST || height < MIN_DIST) return;
+      if (width < MIN_DIST || height < MIN_DIST) {
+        setShapeDrag(null);
+        return;
+      }
       const newBox = {
         id,
         x: left,
@@ -1986,11 +2177,21 @@ export default function PrepShell({
     if (maskDrag && maskDrag.mode === "creating") {
       const p = e ? getNormalizedPoint(e) : null;
       finalizeCreatingMask(p || null);
+      // Return early since finalizeCreatingMask already clears maskDrag
+      // and we don't want stopDrawing to run unnecessary logic
+      return;
+    }
+    if (maskDrag && maskDrag.mode === "moving") {
+      setMaskDrag(null);
+      saveAnnotations({}, { includeCanvas: true });
+      broadcastAnnotations({}, { includeCanvas: true });
+      return;
     }
     if (shapeDrag && shapeDrag.mode === "creating") {
       const p = e ? getNormalizedPoint(e) : null;
       const endPoint = p || { x: shapeDrag.currentX, y: shapeDrag.currentY };
       finalizeCreatingShape(endPoint);
+      return;
     }
     stopDrawing();
   }
@@ -2002,6 +2203,7 @@ export default function PrepShell({
       !!widthResizeState ||
       !!dragState ||
       !!maskDrag ||
+      !!shapeDrag ||
       !!isDrawing;
 
     if (!shouldCapture) return;
@@ -2017,7 +2219,14 @@ export default function PrepShell({
       window.removeEventListener("mouseup", onUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resizeState, widthResizeState, dragState, maskDrag, isDrawing]);
+  }, [
+    resizeState,
+    widthResizeState,
+    dragState,
+    maskDrag,
+    shapeDrag,
+    isDrawing,
+  ]);
 
   // ─────────────────────────────────────────────────────────────
   // Tool switching helper (toggling)
@@ -2131,6 +2340,14 @@ export default function PrepShell({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchMove={(e) => {
+          const pt = getTouchPoint(e);
+          if (pt) handleMouseMove(pt);
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          handleMouseUp(null);
+        }}
       >
         {/* Hidden span for text width measurement */}
         <span
@@ -2158,6 +2375,11 @@ export default function PrepShell({
             touchAction: needsInteraction ? "none" : "auto",
           }}
           onMouseDown={handleMouseDown}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            const pt = getTouchPoint(e);
+            if (pt) handleMouseDown(pt);
+          }}
         />
 
         <svg
@@ -2187,7 +2409,7 @@ export default function PrepShell({
                     ? "rgba(255,255,0,0.5)"
                     : stroke.color || "#111"
                 }
-                strokeWidth={stroke.tool === TOOL_HIGHLIGHTER ? 0.014 : 0.005}
+                strokeWidth={stroke.tool === TOOL_HIGHLIGHTER ? 0.009 : 0.005}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -2225,180 +2447,177 @@ export default function PrepShell({
             ))}
         </svg>
 
-        {/* Text boxes */}
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-          {textBoxes
-            .filter((box) => !isPdf || box.page === pdfCurrentPage || !box.page)
-            .map((box) => {
-              const isEditing = activeTextId === box.id;
-              const isResizing = resizeState?.id === box.id;
-              const isWidthResizing = widthResizeState?.id === box.id;
-              const fontSize = box.fontSize || 16;
-              const boxWidth = box.width || 150;
+        {/* Text boxes - rendered as siblings (no wrapper) for proper z-index stacking */}
+        {textBoxes
+          .filter((box) => !isPdf || box.page === pdfCurrentPage || !box.page)
+          .map((box) => {
+            const isEditing = activeTextId === box.id;
+            const isResizing = resizeState?.id === box.id;
+            const isWidthResizing = widthResizeState?.id === box.id;
+            const fontSize = box.fontSize || 16;
+            const boxWidth = box.width || 150;
 
-              return (
-                <div
-                  key={box.id}
-                  className={
-                    "prep-text-box" +
-                    (isEditing ? " prep-text-box--editing" : "") +
-                    (isResizing ? " prep-text-box--resizing" : "") +
-                    (isWidthResizing ? " prep-text-box--width-resizing" : "")
-                  }
-                  style={{
-                    position: "absolute",
-                    left: `${box.x * 100}%`,
-                    top: `${box.y * 100}%`,
-                    transform: "translate(-50%, -50%)",
-                    pointerEvents: "auto",
-                  }}
-                >
-                  {isEditing ? (
-                    <>
-                      <div className="prep-text-box__toolbar">
-                        <button
-                          type="button"
-                          className="prep-text-box__toolbar-btn prep-text-box__toolbar-btn--delete"
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            deleteTextBox(box.id);
-                          }}
-                          title="Delete"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          className="prep-text-box__toolbar-btn prep-text-box__toolbar-btn--move"
-                          onMouseDown={(e) => startTextDrag(e, box)}
-                          title="Move"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polyline points="5 9 2 12 5 15" />
-                            <polyline points="9 5 12 2 15 5" />
-                            <polyline points="15 19 12 22 9 19" />
-                            <polyline points="19 9 22 12 19 15" />
-                            <line x1="2" y1="12" x2="22" y2="12" />
-                            <line x1="12" y1="2" x2="12" y2="22" />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <div className="prep-text-box__container">
-                        <span
-                          className="prep-text-box__side-handle prep-text-box__side-handle--left"
-                          onMouseDown={(e) => startWidthResize(e, box, "left")}
-                        />
-
-                        <div
-                          className="prep-text-box__input-area"
-                          style={{
-                            width: box.autoWidth ? "auto" : `${boxWidth}px`,
-                            minWidth: box.autoWidth
-                              ? `${boxWidth}px`
-                              : undefined,
-                          }}
-                        >
-                          <textarea
-                            ref={(el) => {
-                              if (el) textAreaRefs.current[box.id] = el;
-                            }}
-                            data-textbox-id={box.id}
-                            className="prep-text-box__textarea"
-                            dir="auto"
-                            wrap={box.autoWidth ? "off" : "soft"}
-                            style={{
-                              color: box.color,
-                              fontSize: `${fontSize}px`,
-                              width: box.autoWidth ? `${boxWidth}px` : "100%",
-                              minWidth: box.autoWidth ? "100px" : undefined,
-                              whiteSpace: box.autoWidth ? "nowrap" : "pre-wrap",
-                              overflowWrap: box.autoWidth
-                                ? "normal"
-                                : "break-word",
-                              wordBreak: "normal",
-                              resize: "none",
-                              overflow: box.autoWidth ? "visible" : "hidden",
-                            }}
-                            placeholder={t(
-                              dict,
-                              "resources_prep_text_placeholder"
-                            )}
-                            value={box.text}
-                            onChange={(e) =>
-                              updateTextBoxText(box.id, e.target.value)
-                            }
-                            onBlur={() => setActiveTextId(null)}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onInput={() => autoResizeTextarea(box.id)}
-                          />
-
-                          <span
-                            className="prep-text-box__fontsize-handle"
-                            onMouseDown={(e) => startFontSizeResize(e, box)}
-                            title="Resize font"
-                          />
-                        </div>
-
-                        <span
-                          className="prep-text-box__side-handle prep-text-box__side-handle--right"
-                          onMouseDown={(e) => startWidthResize(e, box, "right")}
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <div
-                      className="prep-text-box__label"
-                      dir="auto"
-                      style={{
-                        color: box.color,
-                        fontSize: `${fontSize}px`,
-                        width: `${boxWidth}px`,
-                        whiteSpace: box.autoWidth ? "nowrap" : "pre-wrap",
-                        overflowWrap: box.autoWidth ? "normal" : "break-word",
-                        wordBreak: "normal",
-                        overflowX: "visible",
-                        overflowY: "visible",
-                      }}
-                      onMouseDown={(e) => startTextDrag(e, box)}
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        setActiveTextId(box.id);
-                        setTimeout(() => autoResizeTextarea(box.id), 0);
-                      }}
-                    >
-                      {box.text}
-                      <span
-                        className="prep-text-box__resize-handle"
+            return (
+              <div
+                key={box.id}
+                className={
+                  "prep-text-box" +
+                  (isEditing ? " prep-text-box--editing" : "") +
+                  (isResizing ? " prep-text-box--resizing" : "") +
+                  (isWidthResizing ? " prep-text-box--width-resizing" : "")
+                }
+                style={{
+                  position: "absolute",
+                  left: `${box.x * 100}%`,
+                  top: `${box.y * 100}%`,
+                  transform: "translate(-50%, -50%)",
+                  pointerEvents: "auto",
+                  zIndex: getZIndexFromId(box.id),
+                }}
+              >
+                {isEditing ? (
+                  <>
+                    <div className="prep-text-box__toolbar">
+                      <button
+                        type="button"
+                        className="prep-text-box__toolbar-btn prep-text-box__toolbar-btn--delete"
                         onMouseDown={(e) => {
                           e.stopPropagation();
-                          startFontSizeResize(e, box);
+                          e.preventDefault();
+                          deleteTextBox(box.id);
                         }}
+                        title="Delete"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        className="prep-text-box__toolbar-btn prep-text-box__toolbar-btn--move"
+                        onMouseDown={(e) => startTextDrag(e, box)}
+                        title="Move"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="5 9 2 12 5 15" />
+                          <polyline points="9 5 12 2 15 5" />
+                          <polyline points="15 19 12 22 9 19" />
+                          <polyline points="19 9 22 12 19 15" />
+                          <line x1="2" y1="12" x2="22" y2="12" />
+                          <line x1="12" y1="2" x2="12" y2="22" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="prep-text-box__container">
+                      <span
+                        className="prep-text-box__side-handle prep-text-box__side-handle--left"
+                        onMouseDown={(e) => startWidthResize(e, box, "left")}
+                      />
+
+                      <div
+                        className="prep-text-box__input-area"
+                        style={{
+                          width: box.autoWidth ? "auto" : `${boxWidth}px`,
+                          minWidth: box.autoWidth ? `${boxWidth}px` : undefined,
+                        }}
+                      >
+                        <textarea
+                          ref={(el) => {
+                            if (el) textAreaRefs.current[box.id] = el;
+                          }}
+                          data-textbox-id={box.id}
+                          className="prep-text-box__textarea"
+                          dir="auto"
+                          wrap={box.autoWidth ? "off" : "soft"}
+                          style={{
+                            color: box.color,
+                            fontSize: `${fontSize}px`,
+                            width: box.autoWidth ? `${boxWidth}px` : "100%",
+                            minWidth: box.autoWidth ? "100px" : undefined,
+                            whiteSpace: box.autoWidth ? "nowrap" : "pre-wrap",
+                            overflowWrap: box.autoWidth
+                              ? "normal"
+                              : "break-word",
+                            wordBreak: "normal",
+                            resize: "none",
+                            overflow: box.autoWidth ? "visible" : "hidden",
+                          }}
+                          placeholder={t(
+                            dict,
+                            "resources_prep_text_placeholder"
+                          )}
+                          value={box.text}
+                          onChange={(e) =>
+                            updateTextBoxText(box.id, e.target.value)
+                          }
+                          onBlur={() => setActiveTextId(null)}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onInput={() => autoResizeTextarea(box.id)}
+                        />
+
+                        <span
+                          className="prep-text-box__fontsize-handle"
+                          onMouseDown={(e) => startFontSizeResize(e, box)}
+                          title="Resize font"
+                        />
+                      </div>
+
+                      <span
+                        className="prep-text-box__side-handle prep-text-box__side-handle--right"
+                        onMouseDown={(e) => startWidthResize(e, box, "right")}
                       />
                     </div>
-                  )}
-                </div>
-              );
-            })}
-        </div>
+                  </>
+                ) : (
+                  <div
+                    className="prep-text-box__label"
+                    dir="auto"
+                    style={{
+                      color: box.color,
+                      fontSize: `${fontSize}px`,
+                      width: `${boxWidth}px`,
+                      whiteSpace: box.autoWidth ? "nowrap" : "pre-wrap",
+                      overflowWrap: box.autoWidth ? "normal" : "break-word",
+                      wordBreak: "normal",
+                      overflowX: "visible",
+                      overflowY: "visible",
+                    }}
+                    onMouseDown={(e) => startTextDrag(e, box)}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      setActiveTextId(box.id);
+                      setTimeout(() => autoResizeTextarea(box.id), 0);
+                    }}
+                  >
+                    {box.text}
+                    <span
+                      className="prep-text-box__resize-handle"
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        startFontSizeResize(e, box);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
         {/* Sticky notes */}
         {stickyNotes
@@ -2412,6 +2631,7 @@ export default function PrepShell({
               style={{
                 left: `${note.x * 100}%`,
                 top: `${note.y * 100}%`,
+                zIndex: getZIndexFromId(note.id),
               }}
             >
               <div
@@ -2458,6 +2678,7 @@ export default function PrepShell({
                 backgroundColor: "#ffffff",
                 boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
                 pointerEvents: "auto",
+                zIndex: getZIndexFromId(mask.id),
               }}
               onMouseDown={(e) => startMaskMove(e, mask)}
             />
@@ -2648,6 +2869,10 @@ export default function PrepShell({
       ? "⬜"
       : tool === TOOL_TEXT
       ? "✍️"
+      : tool === TOOL_LINE
+      ? "📏"
+      : tool === TOOL_BOX
+      ? "🟥"
       : tool === TOOL_ERASER
       ? "🧽"
       : tool === TOOL_NOTE
@@ -2665,6 +2890,10 @@ export default function PrepShell({
       ? "Hide area"
       : tool === TOOL_TEXT
       ? t(dict, "resources_toolbar_text")
+      : tool === TOOL_LINE
+      ? "Straight Line"
+      : tool === TOOL_BOX
+      ? "Border Box"
       : tool === TOOL_ERASER
       ? t(dict, "resources_toolbar_eraser")
       : tool === TOOL_NOTE
