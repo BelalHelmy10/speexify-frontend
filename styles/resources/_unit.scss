@@ -1,0 +1,257 @@
+
+
+// SECTION 6: UNIT PAGE STYLES
+// ═══════════════════════════════════════════════════════════════════════════
+.unit-not-found {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px solid $cr-border-subtle;
+  max-width: 500px;
+  margin: 2rem auto;
+}
+.unit-not-found__title {
+  font-family: $cr-font-display;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0 0 0.75rem;
+}
+.unit-not-found__text {
+  font-size: 0.9375rem;
+  color: $cr-text-secondary;
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+}
+
+// ─── Unit Breadcrumbs ───────────────────────────────────────────────────────
+.unit-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+.unit-breadcrumbs__link {
+  color: $cr-accent-primary;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color $cr-transition-fast;
+  &:hover {
+    color: $cr-accent-primary-lighter;
+    text-decoration: underline;
+  }
+}
+.unit-breadcrumbs__separator {
+  color: $cr-text-muted;
+  font-size: 0.75rem;
+}
+.unit-breadcrumbs__crumb {
+  color: $cr-text-secondary;
+}
+
+// ─── Unit Header Card ───────────────────────────────────────────────────────
+.unit-header-card {
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px solid $cr-border-subtle;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: $cr-shadow-md;
+  position: relative;
+  overflow: hidden;
+  @media (min-width: 768px) {
+    padding: 2rem 2.5rem;
+  }
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+      90deg,
+      $cr-accent-primary,
+      $cr-accent-purple,
+      $cr-accent-pink
+    );
+  }
+}
+.unit-header-card__top-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.unit-header-card__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $cr-text-muted;
+}
+.unit-header-card__order {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $cr-accent-primary;
+  background: rgba($cr-accent-primary, 0.12);
+  border: 1px solid rgba($cr-accent-primary, 0.25);
+  padding: 0.375rem 0.875rem;
+  border-radius: $cr-radius-full;
+}
+.unit-header-card__title {
+  font-family: $cr-font-display;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  color: $cr-text-primary;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.unit-header-card__summary {
+  font-size: 1rem;
+  color: $cr-text-secondary;
+  margin: 0 0 1.25rem;
+  line-height: 1.7;
+  max-width: 700px;
+}
+.unit-header-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: $cr-text-muted;
+}
+.unit-header-card__dot {
+  font-size: 0.5rem;
+  opacity: 0.5;
+}
+
+// ─── Unit Resources Section ─────────────────────────────────────────────────
+.unit-resources {
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px solid $cr-border-subtle;
+  padding: 1.5rem;
+  box-shadow: $cr-shadow-md;
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
+}
+.unit-resources__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid $cr-border-subtle;
+}
+.unit-resources__title {
+  font-family: $cr-font-display;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0 0 0.25rem;
+}
+.unit-resources__subtitle {
+  font-size: 0.875rem;
+  color: $cr-text-muted;
+  margin: 0;
+}
+.unit-resources__back {
+  flex-shrink: 0;
+}
+.unit-resources__empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: $cr-text-muted;
+  font-size: 0.9375rem;
+}
+
+// ─── Unit Resource Cards List ───────────────────────────────────────────────
+.unit-resources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.unit-resource-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: $cr-bg-tertiary;
+  border: 1px solid $cr-border-subtle;
+  border-radius: $cr-radius-lg;
+  transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1.5rem;
+  }
+  &:hover {
+    border-color: $cr-border-default;
+    box-shadow: $cr-shadow-sm;
+  }
+}
+.unit-resource-card__main {
+  flex: 1;
+  min-width: 0;
+}
+.unit-resource-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.unit-resource-card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $cr-text-primary;
+  margin: 0;
+  line-height: 1.4;
+}
+.unit-resource-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.unit-resource-card__description {
+  font-size: 0.875rem;
+  color: $cr-text-secondary;
+  margin: 0 0 0.75rem;
+  line-height: 1.6;
+}
+.unit-resource-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.5rem;
+}
+.unit-resource-card__filename {
+  font-size: 0.75rem;
+  font-family: $cr-font-mono;
+  color: $cr-text-muted;
+  margin: 0;
+}
+.unit-resource-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  @media (min-width: 768px) {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════

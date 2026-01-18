@@ -1,0 +1,700 @@
+
+
+// SECTION 8: PDF VIEWER STYLES (MERGED - combines prep-pdf-* and cpv-*)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── PDF Layout (SCROLL FIX APPLIED) ────────────────────────────────────────
+.prep-pdf-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+}
+.prep-pdf-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: $cr-bg-primary;
+  position: relative;
+  overflow: auto; // Changed from hidden to auto (key fix: allow outer scroll if inner overflows)
+}
+.prep-pdf-main-inner {
+  flex: 1;
+  min-height: 0;
+  overflow: auto; // Inner scroll for PDF pages
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  @include custom-scrollbar(
+    10px,
+    rgba(148, 163, 184, 0.1),
+    rgba(148, 163, 184, 0.3)
+  );
+}
+.prep-pdf-canvas {
+  max-width: 100%;
+  height: auto;
+  box-shadow: $cr-shadow-lg;
+  border-radius: $cr-radius-sm;
+}
+
+// ─── PDF Sidebar (Page Numbers) ─────────────────────────────────────────────
+.prep-pdf-sidebar {
+  flex-shrink: 0;
+  width: 100%;
+  max-height: 120px;
+  background: $cr-bg-secondary;
+  border-top: 1px solid $cr-border-subtle;
+  overflow-y: auto;
+  @include custom-scrollbar;
+  @media (min-width: 768px) {
+    width: 80px;
+    max-height: none;
+    border-top: none;
+    border-left: 1px solid $cr-border-subtle;
+  }
+  &__empty {
+    padding: 1rem;
+    text-align: center;
+    color: $cr-text-muted;
+    font-size: 0.8125rem;
+  }
+  &__pages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    @media (min-width: 768px) {
+      flex-direction: column;
+      flex-wrap: nowrap;
+    }
+  }
+  &__page-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    font-family: $cr-font-sans;
+    color: $cr-text-secondary;
+    background: $cr-bg-tertiary;
+    border: 1px solid $cr-border-subtle;
+    border-radius: $cr-radius-sm;
+    cursor: pointer;
+    transition: all $cr-transition-fast;
+    &:hover {
+      background: $cr-bg-elevated;
+      border-color: $cr-border-default;
+      color: $cr-text-primary;
+    }
+    &.is-active {
+      background: $cr-accent-primary;
+      border-color: $cr-accent-primary;
+      color: white;
+      box-shadow: 0 2px 8px rgba($cr-accent-primary, 0.3);
+    }
+  }
+}
+
+// ─── PDF Error ──────────────────────────────────────────────────────────────
+.prep-pdf-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  padding: 2rem;
+  text-align: center;
+  color: $cr-text-secondary;
+  &__icon {
+    font-size: 2.5rem;
+  }
+  &__text {
+    font-size: 0.9375rem;
+    max-width: 400px;
+    line-height: 1.6;
+  }
+  &__retry {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $cr-text-primary;
+    background: $cr-accent-primary;
+    border: none;
+    border-radius: $cr-radius-full;
+    cursor: pointer;
+    transition: background $cr-transition-fast;
+    &:hover {
+      background: $cr-accent-primary-lighter;
+    }
+  }
+}
+
+// ─── PDF Navigation (Bottom bar) ────────────────────────────────────────────
+.prep-pdf-nav {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba($cr-bg-secondary, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid $cr-border-default;
+  border-radius: $cr-radius-full;
+  box-shadow: $cr-shadow-lg;
+  z-index: 10;
+  &__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+    color: $cr-text-secondary;
+    background: $cr-bg-tertiary;
+    border: 1px solid $cr-border-subtle;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all $cr-transition-fast;
+    &:hover:not(:disabled) {
+      background: $cr-bg-elevated;
+      color: $cr-text-primary;
+      border-color: $cr-border-default;
+    }
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+  &__indicator {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: $cr-text-primary;
+    font-family: $cr-font-mono;
+    min-width: 60px;
+    text-align: center;
+  }
+}
+
+// ─── PDF Overlay ────────────────────────────────────────────────────────────
+.prep-pdf-overlay {
+  .prep-annotate-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+// ─── CPV (Classroom PDF Viewer) Styles - MERGED ─────────────────────────────
+// These are aliases/extensions of the prep-pdf-* classes for the classroom
+.cpv {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: $cr-bg-primary;
+  font-family: $cr-font-sans;
+  color: $cr-text-primary;
+  overflow: auto; // Changed from hidden to auto (key fix for classroom PDF scroll)
+}
+.cpv-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: 1rem;
+  color: $cr-text-secondary;
+  font-size: 0.9375rem;
+  &__spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid $cr-border-default;
+    border-top-color: $cr-accent-primary;
+    border-radius: 50%;
+    animation: cr-spin 0.8s linear infinite;
+  }
+}
+.cpv-error {
+  @extend .prep-pdf-error;
+}
+.cpv-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: $cr-bg-secondary;
+  border-bottom: 1px solid $cr-border-subtle;
+  flex-shrink: 0;
+  z-index: 10;
+  &__tools {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  &__btn {
+    @extend .prep-annotate-toolbar__btn;
+  }
+  &__colors {
+    @extend .prep-annotate-colors;
+  }
+  &__color {
+    @extend .prep-annotate-color;
+  }
+}
+.cpv-viewport {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto; // Enable scrolling
+  padding: 1.5rem;
+  background: $cr-bg-primary;
+  min-height: 0; // Critical for flex scroll
+  @include custom-scrollbar(10px, $cr-bg-secondary, $cr-border-default);
+}
+.cpv-page-wrapper {
+  position: relative;
+  display: inline-block;
+  box-shadow: $cr-shadow-lg;
+  border-radius: $cr-radius-sm;
+  overflow: visible; // Changed from hidden to visible (prevent clipping of tall pages)
+  background: white;
+}
+.cpv-page-canvas {
+  display: block;
+}
+.cpv-annotation-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+.cpv-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: $cr-bg-secondary;
+  border-top: 1px solid $cr-border-subtle;
+  flex-shrink: 0;
+  z-index: 10;
+  &__left,
+  &__center,
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  &__center {
+    flex: 1;
+    justify-content: center;
+  }
+  &__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    font-family: $cr-font-sans;
+    color: $cr-text-secondary;
+    background: $cr-bg-tertiary;
+    border: 1px solid $cr-border-subtle;
+    border-radius: $cr-radius-md;
+    cursor: pointer;
+    transition: all $cr-transition-fast;
+    &:hover:not(:disabled) {
+      color: $cr-text-primary;
+      background: $cr-bg-elevated;
+      border-color: $cr-border-default;
+    }
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    &--text {
+      font-size: 0.8125rem;
+      padding: 0 1rem;
+    }
+  }
+  &__zoom {
+    font-size: 0.8125rem;
+    font-family: $cr-font-mono;
+    color: $cr-text-secondary;
+    min-width: 50px;
+    text-align: center;
+  }
+  &__pages {
+    font-size: 0.875rem;
+    color: $cr-text-primary;
+    padding: 0 0.75rem;
+  }
+}
+
+// ─── Annotation Elements ────────────────────────────────────────────────────
+.prep-annotate-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  &--drawing {
+    pointer-events: auto;
+    cursor: crosshair;
+  }
+}
+.prep-annotations-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+// ─── Sticky Note ────────────────────────────────────────────────────────────
+.prep-sticky-note {
+  position: absolute;
+  z-index: 20;
+  min-width: 150px;
+  max-width: 250px;
+  background: #fef08a;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px 4px 0 0;
+    cursor: move;
+  }
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    font-size: 16px;
+    color: #666;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all $cr-transition-fast;
+    &:hover {
+      color: $cr-accent-danger;
+      background: rgba($cr-accent-danger, 0.1);
+    }
+  }
+  &__textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #333;
+    background: transparent;
+    border: none;
+    resize: vertical;
+    outline: none;
+    &::placeholder {
+      color: #999;
+    }
+  }
+}
+
+// ─── Text Box ───────────────────────────────────────────────────────────────
+.prep-text-box {
+  position: absolute;
+  z-index: 20;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+
+  // ─── Toolbar (Delete & Move buttons) ───────────────────────────
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    opacity: 0.7;
+    transition: opacity $cr-transition-fast;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  &__toolbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all $cr-transition-fast;
+    color: #999;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      border-color: #999;
+      color: #666;
+    }
+
+    &--delete:hover {
+      border-color: $cr-accent-danger;
+      color: $cr-accent-danger;
+      background: rgba($cr-accent-danger, 0.1);
+    }
+
+    &--move {
+      cursor: move;
+
+      &:hover {
+        border-color: $cr-accent-primary;
+        color: $cr-accent-primary;
+        background: rgba($cr-accent-primary, 0.1);
+      }
+    }
+  }
+
+  // ─── Main Container ────────────────────────────────────────────
+  &__container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  // ─── Side Resize Handles (Left & Right) ────────────────────────
+  &__side-handle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid $cr-accent-primary;
+    border-radius: 2px;
+    cursor: ew-resize;
+    z-index: 5;
+    transition: all $cr-transition-fast;
+
+    &:hover {
+      background: $cr-accent-primary;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    &--left {
+      left: -6px;
+    }
+
+    &--right {
+      right: -6px;
+    }
+  }
+
+  // ─── Input Area ────────────────────────────────────────────────
+  // ─── Input Area ────────────────────────────────────────────────
+  &__input-area {
+    position: relative;
+    min-width: 100px;
+    padding: 4px 12px;
+    background: transparent;
+    border: 2px dashed rgba($cr-accent-primary, 0.5);
+    border-radius: 4px;
+    display: inline-block;
+    max-width: 98vw; // Prevent going off-screen
+  }
+
+  &__textarea {
+    width: 100%;
+    min-width: 60px;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+    line-height: 1.2;
+    background: transparent;
+    border: none;
+    resize: none;
+    outline: none;
+    overflow: visible;
+    field-sizing: content; /* Modern browsers: auto-size to content */
+    text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.9),
+      1px -1px 0 rgba(255, 255, 255, 0.9), -1px 1px 0 rgba(255, 255, 255, 0.9),
+      1px 1px 0 rgba(255, 255, 255, 0.9), 0 0 10px rgba(255, 255, 255, 0.6);
+
+    &::placeholder {
+      color: rgba(100, 100, 100, 0.7);
+      font-weight: 400;
+      text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.7),
+        1px -1px 0 rgba(255, 255, 255, 0.7), -1px 1px 0 rgba(255, 255, 255, 0.7),
+        1px 1px 0 rgba(255, 255, 255, 0.7);
+    }
+  }
+
+  // ─── Font Size Handle (Bottom Right Circle) ────────────────────
+  // ─── Font Size Handle (Bottom Right Circle) ────────────────────
+  &__fontsize-handle {
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    width: 18px;
+    height: 18px;
+    background: $cr-accent-primary;
+    border: 3px solid white;
+    border-radius: 50%;
+    cursor: nwse-resize;
+    z-index: 5;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    transition: all $cr-transition-fast;
+
+    &:hover {
+      transform: scale(1.15);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  // ─── Displayed Label (non-editing mode) ────────────────────────
+  &__label {
+    padding: 4px 8px;
+    font-size: 16px;
+    font-weight: 600;
+    background: transparent;
+    border-radius: 4px;
+    box-shadow: none;
+    cursor: pointer;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-width: 500px;
+    position: relative;
+    text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.8),
+      1px -1px 0 rgba(255, 255, 255, 0.8), -1px 1px 0 rgba(255, 255, 255, 0.8),
+      1px 1px 0 rgba(255, 255, 255, 0.8), 0 0 8px rgba(255, 255, 255, 0.5);
+
+    &:hover {
+      outline: 2px dashed rgba($cr-accent-primary, 0.4);
+      outline-offset: 4px;
+    }
+  }
+
+  &__resize-handle {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    width: 14px;
+    height: 14px;
+    background: $cr-accent-primary;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: nwse-resize;
+    opacity: 0;
+    transition: opacity $cr-transition-fast;
+    z-index: 5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+    .prep-text-box:hover & {
+      opacity: 1;
+    }
+  }
+
+  // ─── States ────────────────────────────────────────────────────
+  &--editing {
+    // Editing mode specific styles
+  }
+
+  &--resizing &__input-area {
+    border-color: darken($cr-accent-primary, 10%);
+  }
+
+  &--width-resizing &__input-area {
+    border-style: dashed;
+  }
+}
+
+// ─── Pointer ────────────────────────────────────────────────────────────────
+.prep-pointer {
+  position: absolute;
+  z-index: 30;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background: $cr-accent-teacher;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba($cr-accent-teacher, 0.5);
+  animation: cr-pointer-pulse 1.5s ease-out infinite;
+}
+
+// CPV aliases
+.cpv-textbox {
+  @extend .prep-text-box;
+  &--editing {
+    @extend .prep-text-box--editing;
+  }
+}
+.cpv-pointer {
+  @extend .prep-pointer;
+  &__dot {
+    width: 16px;
+    height: 16px;
+    background: $cr-accent-teacher;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba($cr-accent-teacher, 0.5);
+  }
+  &__ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    border: 2px solid $cr-accent-teacher;
+    border-radius: 50%;
+    animation: cr-pointer-pulse 1.5s ease-out infinite;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════

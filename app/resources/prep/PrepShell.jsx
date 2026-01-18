@@ -284,8 +284,8 @@ export default function PrepShell({
         typeof time === "number"
           ? time
           : el && typeof el.currentTime === "number"
-          ? el.currentTime
-          : 0;
+            ? el.currentTime
+            : 0;
       const nextPlaying =
         typeof playing === "boolean" ? playing : el ? !el.paused : false;
 
@@ -349,7 +349,7 @@ export default function PrepShell({
     runAfterLoad(() => {
       try {
         el.currentTime = targetTime;
-      } catch {}
+      } catch { }
 
       if (playing) {
         el.play().then(
@@ -366,7 +366,7 @@ export default function PrepShell({
       } else {
         try {
           el.pause();
-        } catch {}
+        } catch { }
         setIsAudioPlaying(false);
       }
     });
@@ -1169,7 +1169,7 @@ export default function PrepShell({
         if (typeof time !== "number") return;
         try {
           el.currentTime = Math.max(0, time);
-        } catch (_) {}
+        } catch (_) { }
       };
 
       const runAfterLoad = (fn) => {
@@ -1246,8 +1246,16 @@ export default function PrepShell({
 
     const page = isPdf ? pdfCurrentPage : 1;
 
-    // Find the single closest thing under the cursor
-    let best = { kind: null, id: null, dist: Infinity };
+    // ═══════════════════════════════════════════════════════════════════════
+    // PRIORITY-BASED ERASING
+    // 1. First check "thin" elements (strokes, lines, box borders) - these need
+    //    a hit radius because they're hard to click precisely
+    // 2. Only if no thin element is hit, check "large area" elements (text,
+    //    notes, masks) - these are easy to target so require exact clicks
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // ─── PASS 1: Check thin elements (with hit radius) ────────────────────
+    let thinHit = { kind: null, id: null, dist: Infinity };
 
     // 1) Strokes (pen/highlighter): treat closest point distance as metric
     for (const s of strokes) {
@@ -1266,34 +1274,20 @@ export default function PrepShell({
       const hit = minD2 <= HIT_RADIUS_STROKE * HIT_RADIUS_STROKE;
       if (hit) {
         const d = Math.sqrt(minD2);
-        if (d < best.dist) best = { kind: "stroke", id: s.id, dist: d };
+        if (d < thinHit.dist) thinHit = { kind: "stroke", id: s.id, dist: d };
       }
     }
 
-    // 2) Masks: if inside, distance=0 (very "close")
-    for (const m of masks) {
-      if (isPdf && (m.page ?? 1) !== page) continue;
-      const inside =
-        p.x >= m.x &&
-        p.x <= m.x + m.width &&
-        p.y >= m.y &&
-        p.y <= m.y + m.height;
-
-      if (inside && 0 < best.dist) {
-        best = { kind: "mask", id: m.id, dist: 0 };
-      }
-    }
-
-    // 3) Lines: segment distance
+    // 2) Lines: segment distance
     for (const l of lines) {
       if (isPdf && (l.page ?? 1) !== page) continue;
       const d = pointToLineDistance(p.x, p.y, l.x1, l.y1, l.x2, l.y2);
-      if (d <= HIT_RADIUS_LINE && d < best.dist) {
-        best = { kind: "line", id: l.id, dist: d };
+      if (d <= HIT_RADIUS_LINE && d < thinHit.dist) {
+        thinHit = { kind: "line", id: l.id, dist: d };
       }
     }
 
-    // 4) Boxes: border distance
+    // 3) Boxes: border distance (not fill, just the border)
     for (const b of boxes) {
       if (isPdf && (b.page ?? 1) !== page) continue;
       const d = pointToRectBorderDistance(
@@ -1304,16 +1298,49 @@ export default function PrepShell({
         b.width,
         b.height
       );
-      if (d <= HIT_RADIUS_BOX_BORDER && d < best.dist) {
-        best = { kind: "box", id: b.id, dist: d };
+      if (d <= HIT_RADIUS_BOX_BORDER && d < thinHit.dist) {
+        thinHit = { kind: "box", id: b.id, dist: d };
       }
     }
 
-    // 5) Text boxes: check if point is inside (Fix #7)
+    // If we hit a thin element, delete it and return (priority over large areas)
+    if (thinHit.kind && thinHit.id) {
+      if (thinHit.kind === "stroke") {
+        setStrokes((prev) => {
+          const next = prev.filter((s) => s.id !== thinHit.id);
+          scheduleSaveAnnotations({ strokes: next });
+          scheduleBroadcastAnnotations({ strokes: next });
+          return next;
+        });
+        return;
+      }
+      if (thinHit.kind === "line") {
+        setLines((prev) => {
+          const next = prev.filter((l) => l.id !== thinHit.id);
+          scheduleSaveAnnotations({ lines: next });
+          scheduleBroadcastAnnotations({ lines: next });
+          return next;
+        });
+        return;
+      }
+      if (thinHit.kind === "box") {
+        setBoxes((prev) => {
+          const next = prev.filter((b) => b.id !== thinHit.id);
+          scheduleSaveAnnotations({ boxes: next });
+          scheduleBroadcastAnnotations({ boxes: next });
+          return next;
+        });
+        return;
+      }
+    }
+
+    // ─── PASS 2: Check large area elements (exact click required) ─────────
+    // Only reached if no thin element was hit
+    let areaHit = { kind: null, id: null };
+
+    // 4) Text boxes: check if point is inside
     for (const t of textBoxes) {
       if (isPdf && (t.page ?? 1) !== page) continue;
-      // Approximate hit area based on position and width
-      // Text boxes are centered, so we estimate bounds
       const container = containerRef.current;
       const rect = container?.getBoundingClientRect();
       const normWidth = t.width / (rect?.width || 1000);
@@ -1325,89 +1352,76 @@ export default function PrepShell({
         p.y >= t.y - halfH &&
         p.y <= t.y + halfH;
 
-      if (inside && 0 < best.dist) {
-        best = { kind: "text", id: t.id, dist: 0 };
+      if (inside) {
+        areaHit = { kind: "text", id: t.id };
+        break; // First hit wins for area elements
       }
     }
 
-    // 6) Sticky notes: check if point is inside (Fix #7)
-    for (const n of stickyNotes) {
-      if (isPdf && (n.page ?? 1) !== page) continue;
-      // Sticky notes are positioned at top-left, approximate size ~0.15 x 0.12
-      const noteW = 0.15;
-      const noteH = 0.12;
-      const inside =
-        p.x >= n.x && p.x <= n.x + noteW && p.y >= n.y && p.y <= n.y + noteH;
+    // 5) Sticky notes: check if point is inside
+    if (!areaHit.kind) {
+      for (const n of stickyNotes) {
+        if (isPdf && (n.page ?? 1) !== page) continue;
+        const noteW = 0.15;
+        const noteH = 0.12;
+        const inside =
+          p.x >= n.x && p.x <= n.x + noteW && p.y >= n.y && p.y <= n.y + noteH;
 
-      if (inside && 0 < best.dist) {
-        best = { kind: "note", id: n.id, dist: 0 };
+        if (inside) {
+          areaHit = { kind: "note", id: n.id };
+          break;
+        }
+      }
+    }
+
+    // 6) Masks: check if point is inside
+    if (!areaHit.kind) {
+      for (const m of masks) {
+        if (isPdf && (m.page ?? 1) !== page) continue;
+        const inside =
+          p.x >= m.x &&
+          p.x <= m.x + m.width &&
+          p.y >= m.y &&
+          p.y <= m.y + m.height;
+
+        if (inside) {
+          areaHit = { kind: "mask", id: m.id };
+          break;
+        }
       }
     }
 
     // Nothing hit → do nothing
-    if (!best.kind || !best.id) return;
+    if (!areaHit.kind || !areaHit.id) return;
 
-    // Delete ONLY the best match
-    if (best.kind === "stroke") {
-      setStrokes((prev) => {
-        const next = prev.filter((s) => s.id !== best.id);
-        scheduleSaveAnnotations({ strokes: next });
-        scheduleBroadcastAnnotations({ strokes: next });
-        return next;
-      });
-
-      return;
-    }
-
-    if (best.kind === "mask") {
-      setMasks((prev) => {
-        const next = prev.filter((m) => m.id !== best.id);
-        scheduleSaveAnnotations({ masks: next });
-        scheduleBroadcastAnnotations({ masks: next });
-        return next;
-      });
-      return;
-    }
-
-    if (best.kind === "line") {
-      setLines((prev) => {
-        const next = prev.filter((l) => l.id !== best.id);
-        scheduleSaveAnnotations({ lines: next });
-        scheduleBroadcastAnnotations({ lines: next });
-        return next;
-      });
-      return;
-    }
-
-    if (best.kind === "box") {
-      setBoxes((prev) => {
-        const next = prev.filter((b) => b.id !== best.id);
-        scheduleSaveAnnotations({ boxes: next });
-        scheduleBroadcastAnnotations({ boxes: next });
-        return next;
-      });
-      return;
-    }
-
-    // Fix #7: Eraser can now delete text boxes
-    if (best.kind === "text") {
+    // Delete the area element
+    if (areaHit.kind === "text") {
       setTextBoxes((prev) => {
-        const next = prev.filter((t) => t.id !== best.id);
+        const next = prev.filter((t) => t.id !== areaHit.id);
         scheduleSaveAnnotations({ textBoxes: next });
         scheduleBroadcastAnnotations({ textBoxes: next });
         return next;
       });
-      if (activeTextId === best.id) setActiveTextId(null);
-      if (textAreaRefs.current?.[best.id]) delete textAreaRefs.current[best.id];
+      if (activeTextId === areaHit.id) setActiveTextId(null);
+      if (textAreaRefs.current?.[areaHit.id]) delete textAreaRefs.current[areaHit.id];
       return;
     }
 
-    // Fix #7: Eraser can now delete sticky notes
-    if (best.kind === "note") {
+    if (areaHit.kind === "note") {
       setStickyNotes((prev) => {
-        const next = prev.filter((n) => n.id !== best.id);
+        const next = prev.filter((n) => n.id !== areaHit.id);
         scheduleSaveAnnotations({ stickyNotes: next });
         scheduleBroadcastAnnotations({ stickyNotes: next });
+        return next;
+      });
+      return;
+    }
+
+    if (areaHit.kind === "mask") {
+      setMasks((prev) => {
+        const next = prev.filter((m) => m.id !== areaHit.id);
+        scheduleSaveAnnotations({ masks: next });
+        scheduleBroadcastAnnotations({ masks: next });
         return next;
       });
       return;
@@ -2025,12 +2039,15 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   function handleMouseDown(e) {
     const target = e.target;
-    if (
-      target.closest &&
+
+    // Allow eraser to work on masks, notes, and text boxes
+    // For other tools, let these elements handle their own events
+    const isOnInteractiveElement = target.closest &&
       (target.closest(".prep-sticky-note") ||
         target.closest(".prep-text-box") ||
-        target.closest(".prep-mask-block"))
-    ) {
+        target.closest(".prep-mask-block"));
+
+    if (isOnInteractiveElement && tool !== TOOL_ERASER) {
       return;
     }
     if (tool === TOOL_POINTER) {
@@ -2117,10 +2134,10 @@ export default function PrepShell({
         setMaskDrag((prev) =>
           prev
             ? {
-                ...prev,
-                currentX: p.x,
-                currentY: p.y,
-              }
+              ...prev,
+              currentX: p.x,
+              currentY: p.y,
+            }
             : prev
         );
       } else if (maskDrag.mode === "moving") {
@@ -2148,10 +2165,10 @@ export default function PrepShell({
       setShapeDrag((prev) =>
         prev
           ? {
-              ...prev,
-              currentX: p.x,
-              currentY: p.y,
-            }
+            ...prev,
+            currentX: p.x,
+            currentY: p.y,
+          }
           : prev
       );
       return;
@@ -2683,8 +2700,9 @@ export default function PrepShell({
                 height: `${mask.height * 100}%`,
                 backgroundColor: "#ffffff",
                 boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
-                pointerEvents: "auto",
-                zIndex: getZIndexFromId(mask.id),
+                pointerEvents: tool === TOOL_ERASER ? "none" : "auto",
+                // Masks always render above text/notes (base 100) for consistent hiding
+                zIndex: 100 + getZIndexFromId(mask.id),
               }}
               onMouseDown={(e) => startMaskMove(e, mask)}
             />
@@ -2870,43 +2888,43 @@ export default function PrepShell({
     tool === TOOL_PEN
       ? "🖊️"
       : tool === TOOL_HIGHLIGHTER
-      ? "✨"
-      : tool === TOOL_MASK
-      ? "⬜"
-      : tool === TOOL_TEXT
-      ? "✍️"
-      : tool === TOOL_LINE
-      ? "📏"
-      : tool === TOOL_BOX
-      ? "🟥"
-      : tool === TOOL_ERASER
-      ? "🧽"
-      : tool === TOOL_NOTE
-      ? "🗒️"
-      : tool === TOOL_POINTER
-      ? "➤"
-      : "🛠️";
+        ? "✨"
+        : tool === TOOL_MASK
+          ? "⬜"
+          : tool === TOOL_TEXT
+            ? "✍️"
+            : tool === TOOL_LINE
+              ? "📏"
+              : tool === TOOL_BOX
+                ? "🟥"
+                : tool === TOOL_ERASER
+                  ? "🧽"
+                  : tool === TOOL_NOTE
+                    ? "🗒️"
+                    : tool === TOOL_POINTER
+                      ? "➤"
+                      : "🛠️";
 
   const currentToolLabel =
     tool === TOOL_PEN
       ? t(dict, "resources_toolbar_pen")
       : tool === TOOL_HIGHLIGHTER
-      ? t(dict, "resources_toolbar_highlighter")
-      : tool === TOOL_MASK
-      ? "Hide area"
-      : tool === TOOL_TEXT
-      ? t(dict, "resources_toolbar_text")
-      : tool === TOOL_LINE
-      ? "Straight Line"
-      : tool === TOOL_BOX
-      ? "Border Box"
-      : tool === TOOL_ERASER
-      ? t(dict, "resources_toolbar_eraser")
-      : tool === TOOL_NOTE
-      ? t(dict, "resources_toolbar_note")
-      : tool === TOOL_POINTER
-      ? t(dict, "resources_toolbar_pointer")
-      : t(dict, "resources_toolbar_pen");
+        ? t(dict, "resources_toolbar_highlighter")
+        : tool === TOOL_MASK
+          ? "Hide area"
+          : tool === TOOL_TEXT
+            ? t(dict, "resources_toolbar_text")
+            : tool === TOOL_LINE
+              ? "Straight Line"
+              : tool === TOOL_BOX
+                ? "Border Box"
+                : tool === TOOL_ERASER
+                  ? t(dict, "resources_toolbar_eraser")
+                  : tool === TOOL_NOTE
+                    ? t(dict, "resources_toolbar_note")
+                    : tool === TOOL_POINTER
+                      ? t(dict, "resources_toolbar_pointer")
+                      : t(dict, "resources_toolbar_pen");
 
   // ─────────────────────────────────────────────────────────────
   // RENDER
@@ -3149,7 +3167,7 @@ export default function PrepShell({
                                 });
                               }
                             },
-                            () => {}
+                            () => { }
                           );
                         }}
                         aria-label="Enable audio"

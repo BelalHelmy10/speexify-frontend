@@ -1,0 +1,137 @@
+
+
+// SECTION 4: BASE PAGE STYLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Main Resources Page Container ──────────────────────────────────────────
+.spx-resources-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    180deg,
+    $cr-bg-primary 0%,
+    $cr-bg-primary-dark 100%
+  );
+  color: $cr-text-primary;
+  font-family: $cr-font-sans;
+  padding: 2rem 1rem 4rem;
+  @media (min-width: 768px) {
+    padding: 3rem 2rem 5rem;
+  }
+  // ─── PREP PAGE VARIANT (Scroll Fix) ───────────────────────────────────────
+  &--prep {
+    height: 100vh;
+    padding: 0;
+    overflow: hidden; // Prevent whole page scroll
+    .spx-resources-page__inner {
+      height: 100%;
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0;
+    }
+  }
+}
+.spx-resources-page__inner {
+  max-width: $cr-max-width;
+  margin: 0 auto;
+}
+
+// ─── Alias for backward compatibility ───────────────────────────────────────
+.resources-page {
+  @extend .spx-resources-page;
+  &--unit {
+    // Unit page specific adjustments
+  }
+}
+.resources-page__inner {
+  @extend .spx-resources-page__inner;
+  &.unit-page {
+    max-width: $cr-content-max-width;
+  }
+}
+
+// ─── Hero Section ───────────────────────────────────────────────────────────
+.spx-resources-hero {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem 1rem;
+  position: relative;
+  @media (min-width: 768px) {
+    margin-bottom: 4rem;
+    padding: 3rem 2rem;
+  }
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(
+      circle,
+      rgba($cr-accent-primary, 0.08) 0%,
+      transparent 70%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+.spx-resources-hero__eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: $cr-accent-primary;
+  background: rgba($cr-accent-primary, 0.12);
+  border: 1px solid rgba($cr-accent-primary, 0.25);
+  padding: 0.5rem 1rem;
+  border-radius: $cr-radius-full;
+  margin-bottom: 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+.spx-resources-hero__title {
+  font-family: $cr-font-display;
+  font-size: clamp(1.75rem, 5vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: $cr-text-primary;
+  margin: 0 0 1rem;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(
+    135deg,
+    $cr-text-primary 0%,
+    $cr-text-secondary 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.spx-resources-hero__subtitle {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: $cr-text-secondary;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  @media (min-width: 768px) {
+    font-size: 1.0625rem;
+  }
+}
+.spx-resources-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: $cr-text-muted;
+  font-size: 1rem;
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-xl;
+  border: 1px dashed $cr-border-default;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════

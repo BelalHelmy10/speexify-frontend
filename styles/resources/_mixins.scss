@@ -1,0 +1,47 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// MIXINS (Reusable styles)
+// ═══════════════════════════════════════════════════════════════════════════
+
+
+// ─── Scrollbar Mixin ────────────────────────────────────────────────────────
+@mixin custom-scrollbar($width: 8px,
+    $track: $cr-bg-primary,
+    $thumb: $cr-border-default) {
+    &::-webkit-scrollbar {
+        width: $width;
+        height: $width;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: $track;
+        border-radius: $cr-radius-full;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: $thumb;
+        border-radius: $cr-radius-full;
+
+        &:hover {
+            background: $cr-border-strong;
+        }
+    }
+
+    scrollbar-width: thin;
+    scrollbar-color: $thumb $track;
+}
+
+// ─── Flex Container for Scroll ──────────────────────────────────────────────
+@mixin flex-scroll-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+
+// ─── Focus Visible ──────────────────────────────────────────────────────────
+@mixin focus-visible-ring {
+    &:focus-visible {
+        outline: 2px solid $cr-accent-primary;
+        outline-offset: 2px;
+    }
+}

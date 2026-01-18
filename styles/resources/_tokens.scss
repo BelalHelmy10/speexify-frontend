@@ -1,0 +1,71 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// DESIGN TOKENS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Color Palette ──────────────────────────────────────────────────────────
+
+$cr-bg-primary: #0a0f1a;
+$cr-bg-primary-dark: #060a12;
+$cr-bg-secondary: #111827;
+$cr-bg-tertiary: #1e293b;
+$cr-bg-elevated: #1f2937;
+$cr-bg-surface: #151d2e;
+
+$cr-accent-teacher: #f59e0b;
+$cr-accent-learner: #3b82f6;
+$cr-accent-primary: #0ea5e9;
+$cr-accent-primary-light: #2db4ed;
+$cr-accent-primary-lighter: #3db9ef;
+$cr-accent-success: #22c55e;
+$cr-accent-danger: #ef4444;
+$cr-accent-danger-light: #f26262;
+$cr-accent-purple: #a855f7;
+$cr-accent-pink: #ec4899;
+
+$cr-text-primary: #f8fafc;
+$cr-text-secondary: #94a3b8;
+$cr-text-muted: #64748b;
+$cr-text-faint: #475569;
+
+$cr-border-subtle: rgba(148, 163, 184, 0.12);
+$cr-border-default: rgba(148, 163, 184, 0.2);
+$cr-border-strong: rgba(148, 163, 184, 0.35);
+
+// ─── Shadows ────────────────────────────────────────────────────────────────
+
+$cr-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+$cr-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+$cr-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+$cr-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+$cr-shadow-glow: 0 0 40px rgba($cr-accent-primary, 0.15);
+
+// ─── Border Radius ──────────────────────────────────────────────────────────
+
+$cr-radius-sm: 8px;
+$cr-radius-md: 12px;
+$cr-radius-lg: 16px;
+$cr-radius-xl: 20px;
+$cr-radius-2xl: 24px;
+$cr-radius-full: 999px;
+
+// ─── Transitions ────────────────────────────────────────────────────────────
+
+$cr-transition-fast: 0.12s ease;
+$cr-transition-normal: 0.2s ease;
+$cr-transition-slow: 0.3s ease;
+$cr-transition-spring: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+// ─── Layout ─────────────────────────────────────────────────────────────────
+
+$cr-header-height: 56px;
+$cr-controls-height: 60px;
+$cr-max-width: 1400px;
+$cr-content-max-width: 1200px;
+
+// ─── Typography ─────────────────────────────────────────────────────────────
+
+$cr-font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+  sans-serif;
+$cr-font-display: "Plus Jakarta Sans", "DM Sans", -apple-system,
+  BlinkMacSystemFont, sans-serif;
+$cr-font-mono: "JetBrains Mono", "Fira Code", monospace;

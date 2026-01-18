@@ -1,0 +1,301 @@
+
+
+// SECTION 12: ACCESSIBILITY & UTILITIES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Reduced Motion ─────────────────────────────────────────────────────────
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// ─── Focus Visible ──────────────────────────────────────────────────────────
+
+.cr-shell,
+.spx-resources-page,
+.resources-page {
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    @include focus-visible-ring;
+  }
+}
+
+// ─── Scrollbar Styling (Global) ─────────────────────────────────────────────
+
+.spx-resources-page,
+.resources-page,
+.cr-shell {
+  @include custom-scrollbar;
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: $cr-border-default $cr-bg-primary;
+  }
+}
+
+// ─── Selection Color ────────────────────────────────────────────────────────
+
+.spx-resources-page,
+.resources-page,
+.cr-shell {
+  ::selection {
+    background: rgba($cr-accent-primary, 0.3);
+    color: $cr-text-primary;
+  }
+}
+
+// ─── Screen Reader Only ─────────────────────────────────────────────────────
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// ─── Responsive Utilities ───────────────────────────────────────────────────
+
+.hide-mobile {
+  @media (max-width: 640px) {
+    display: none !important;
+  }
+}
+
+.hide-tablet {
+  @media (max-width: 900px) {
+    display: none !important;
+  }
+}
+
+.show-mobile-only {
+  @media (min-width: 641px) {
+    display: none !important;
+  }
+}
+/* AUDIO TRACK SELECT – Match toolbar buttons exactly */
+.prep-annotate-toolbar__audio-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-color: #1e293b; /* same dark shade as buttons */
+  color: #f1f5f9; /* light text */
+  border: 1px solid #334155; /* subtle border like buttons */
+  border-radius: 0.75rem; /* same rounded square as buttons */
+  height: 38px; /* EXACT size of your toolbar buttons */
+  padding: 0 2.2rem 0 0.75rem; /* leave room for arrow icon */
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+
+  margin-right: 0.35rem;
+}
+
+/* Add the ▼ icon manually for consistent styling */
+.prep-annotate-toolbar__audio-select {
+  position: relative;
+  background-image: url("data:image/svg+xml,%3Csvg fill='%23f1f5f9' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 16px;
+  background-position: right 10px center;
+}
+
+/* Hover + focus effects */
+.prep-annotate-toolbar__audio-select:hover {
+  background-color: #273449;
+  border-color: #3b4a60;
+}
+
+.prep-annotate-toolbar__audio-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+}
+
+/* ─── Compact tool & color dropdowns ─────────────────────────────────────── */
+
+.prep-annotate-toolbar__dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.prep-annotate-toolbar__btn--primary {
+  background: $cr-bg-tertiary;
+  border-color: $cr-border-default;
+}
+
+.prep-annotate-toolbar__dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prep-annotate-toolbar__dropdown-caret {
+  font-size: 0.6rem;
+  color: $cr-text-muted;
+}
+
+.prep-annotate-toolbar__dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  min-width: 190px;
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-lg;
+  border: 1px solid $cr-border-default;
+  box-shadow: $cr-shadow-md;
+  z-index: 40;
+}
+
+.prep-annotate-toolbar__btn--dropdown {
+  width: 100%;
+  justify-content: flex-start;
+  background: transparent;
+  border-radius: $cr-radius-md;
+  border-color: transparent;
+
+  &:hover {
+    background: $cr-bg-tertiary;
+    border-color: $cr-border-default;
+  }
+}
+
+/* Color dropdown */
+
+.prep-annotate-colors {
+  position: relative;
+  margin-left: auto;
+  padding-left: 0.5rem;
+  border-left: 1px solid $cr-border-subtle;
+  display: flex;
+  align-items: center;
+}
+
+.prep-annotate-colors__dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.prep-annotate-color--picker {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 2px solid $cr-border-default;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  position: relative;
+}
+
+/* stacked illusion */
+.prep-annotate-color--picker::before,
+.prep-annotate-color--picker::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.prep-annotate-color--picker::before {
+  transform: translate(-4px, -3px);
+  opacity: 0.45;
+}
+
+.prep-annotate-color--picker::after {
+  transform: translate(-2px, -2px);
+  opacity: 0.7;
+}
+
+.prep-annotate-colors__menu {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 10px); /* OPEN TO THE LEFT */
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: -6px; /* subtle stacking overlap */
+  padding: 0.45rem 0.6rem;
+  background: $cr-bg-secondary;
+  border-radius: $cr-radius-lg;
+  border: 1px solid $cr-border-default;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  z-index: 50;
+}
+
+.cr-controls__toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cr-controls__toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.cr-controls__toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  background-color: #ccc;
+  border-radius: 13px;
+  transition: background-color 0.3s;
+
+  &::before {
+    content: "";
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    left: 2px;
+    top: 2px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.cr-controls__toggle-input:checked + .cr-controls__toggle-slider {
+  background-color: #34c759; // iOS green
+}
+
+.cr-controls__toggle-input:checked + .cr-controls__toggle-slider::before {
+  transform: translateX(18px);
+}
+
+.cr-controls__toggle-input:disabled + .cr-controls__toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cr-controls__toggle-label {
+  font-size: 0.875rem;
+  color: var(--text-primary, #333);
+}

@@ -1,0 +1,48 @@
+
+
+// SECTION 11: GENERIC BUTTONS
+// ═══════════════════════════════════════════════════════════════════════════
+.cr-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: $cr-font-sans;
+  border-radius: $cr-radius-full;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all $cr-transition-fast;
+  text-decoration: none;
+  white-space: nowrap;
+  &--ghost {
+    background: transparent;
+    color: $cr-text-secondary;
+    border-color: $cr-border-default;
+    &:hover {
+      background: $cr-bg-tertiary;
+      color: $cr-text-primary;
+      border-color: $cr-border-strong;
+      text-decoration: none;
+    }
+  }
+  &--danger {
+    background: $cr-accent-danger;
+    color: $cr-text-primary;
+    border-color: rgba($cr-accent-danger, 0.8);
+    box-shadow: 0 4px 16px rgba($cr-accent-danger, 0.35);
+    &:hover {
+      background: $cr-accent-danger-light;
+      box-shadow: 0 6px 20px rgba($cr-accent-danger, 0.45);
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba($cr-accent-danger, 0.35);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
