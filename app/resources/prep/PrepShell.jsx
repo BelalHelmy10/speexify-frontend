@@ -1154,6 +1154,12 @@ export default function PrepShell({
         return;
       }
 
+      // ✅ Handle unified AUDIO_STATE messages from teacher
+      if (msg.type === "AUDIO_STATE" && !isTeacher) {
+        applyAudioState(msg);
+        return;
+      }
+
       if (isTeacher) return;
 
       const el = audioRef.current;
@@ -1229,7 +1235,7 @@ export default function PrepShell({
     });
 
     return unsubscribe;
-  }, [classroomChannel, resource._id, isTeacher, isPdf, pdfCurrentPage]);
+  }, [classroomChannel, resource._id, isTeacher, isPdf, pdfCurrentPage, applyAudioState]);
 
   // ─────────────────────────────────────────────────────────────
   // Drawing tools (pen / highlighter / eraser) using normalized coords
@@ -3104,14 +3110,16 @@ export default function PrepShell({
                         if (!el) return;
 
                         if (isAudioPlaying) {
+                          // ✅ Broadcast pause BEFORE local pause for instant learner sync
+                          if (isTeacher) sendAudioState({ playing: false });
                           el.pause();
                           setIsAudioPlaying(false);
-                          if (isTeacher) sendAudioState({ playing: false });
                         } else {
+                          // ✅ Broadcast play BEFORE local play for instant learner sync
+                          if (isTeacher) sendAudioState({ playing: true });
                           el.play().then(
                             () => {
                               setIsAudioPlaying(true);
-                              if (isTeacher) sendAudioState({ playing: true });
                             },
                             () => setIsAudioPlaying(false)
                           );
