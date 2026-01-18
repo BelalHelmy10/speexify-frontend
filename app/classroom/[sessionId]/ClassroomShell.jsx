@@ -268,7 +268,16 @@ export default function ClassroomShell({
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  }, []);
+    // ✅ Immediately broadcast final position on drag end for snappier sync
+    if (isTeacher && ready) {
+      send({
+        type: "LAYOUT_STATE",
+        focusMode,
+        customSplit,
+        teacherAllowsFollowing,
+      });
+    }
+  }, [isTeacher, ready, send, focusMode, customSplit, teacherAllowsFollowing]);
 
   useEffect(() => {
     if (isDragging) {
@@ -325,7 +334,7 @@ export default function ClassroomShell({
     if (!isTeacher) return;
 
     const now = Date.now();
-    if (now - lastLayoutSentAtRef.current < 50) return; // ~20/sec
+    if (now - lastLayoutSentAtRef.current < 16) return; // ~60fps for smoother sync
     if (layoutRafPendingRef.current) return;
 
     layoutRafPendingRef.current = true;
@@ -353,7 +362,7 @@ export default function ClassroomShell({
 
     const onScroll = () => {
       const now = Date.now();
-      if (now - lastContentScrollSentAtRef.current < 50) return; // ~20/sec
+      if (now - lastContentScrollSentAtRef.current < 16) return; // ~60fps for smoother scroll sync
       if (contentScrollRafPendingRef.current) return;
 
       contentScrollRafPendingRef.current = true;
@@ -393,14 +402,12 @@ export default function ClassroomShell({
       if (msg.type === "CONTENT_SCROLL" && !isTeacher) {
         const norm = Math.min(1, Math.max(0, Number(msg.scrollNorm) || 0));
 
-        // apply after layout/render tick
-        setTimeout(() => {
-          const el = contentScrollRef.current;
-          if (!el) return;
-
+        // ✅ Apply immediately for snappier sync (removed setTimeout)
+        const el = contentScrollRef.current;
+        if (el) {
           const maxScroll = Math.max(1, el.scrollHeight - el.clientHeight);
           el.scrollTop = norm * maxScroll;
-        }, 0);
+        }
 
         return;
       }
