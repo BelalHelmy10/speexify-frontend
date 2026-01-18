@@ -69,7 +69,7 @@ export const metadata = {
     title: "Speexify — Personalized Language & Communication Coaching",
     description:
       "Personalized language and communication coaching for teams and professionals.",
-    creator: "@YOUR_HANDLE_HERE",
+    creator: "@speexify",
     images: ["/twitter-image.png"],
   },
 
