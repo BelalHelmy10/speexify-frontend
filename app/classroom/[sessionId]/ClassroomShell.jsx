@@ -6,6 +6,7 @@ import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
 import PrepShell from "@/app/resources/prep/PrepShell";
 import ClassroomResourcePicker from "./ClassroomResourcePicker";
 import ClassroomChat from "./ClassroomChat";
+import MobileClassroomLayout from "./MobileClassroomLayout";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import api from "@/lib/api";
@@ -175,6 +176,28 @@ export default function ClassroomShell({
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
+  // ✅ Mobile responsive: detect screen width and manage tab state
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileActiveTab, setMobileActiveTab] = useState('video'); // 'video' | 'content' | 'chat'
+
+  // Detect mobile breakpoint (< 900px)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 900;
+      setIsMobile(mobile);
+      // Reset to video tab when switching to mobile
+      if (mobile && !isMobile) {
+        setMobileActiveTab('video');
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [isMobile]);
+
   // ✅ Teacher: control whether learners follow (global for all learners)
   const [teacherAllowsFollowing, setTeacherAllowsFollowing] = useState(true);
 
@@ -188,7 +211,7 @@ export default function ClassroomShell({
       const raw = window.localStorage.getItem(followLayoutStorageKey);
       if (raw === "0") return false;
       if (raw === "1") return true;
-    } catch (_) {}
+    } catch (_) { }
     return true; // default: follow
   });
 
@@ -205,7 +228,7 @@ export default function ClassroomShell({
         followLayoutStorageKey,
         learnerWantsToFollow ? "1" : "0"
       );
-    } catch (_) {}
+    } catch (_) { }
   }, [followLayoutStorageKey, learnerWantsToFollow, isTeacher]);
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -293,8 +316,8 @@ export default function ClassroomShell({
   ----------------------------------------------------------- */
   const classroomChannel = useClassroomChannel(String(sessionId));
   const ready = classroomChannel?.ready ?? false;
-  const send = classroomChannel?.send ?? (() => {});
-  const subscribe = classroomChannel?.subscribe ?? (() => () => {});
+  const send = classroomChannel?.send ?? (() => { });
+  const subscribe = classroomChannel?.subscribe ?? (() => () => { });
 
   // ✅ Teacher: broadcast layout (focusMode + customSplit + follow control)
   useEffect(() => {
@@ -525,7 +548,7 @@ export default function ClassroomShell({
         } else {
           sessionSession.removeItem(key);
         }
-      } catch {}
+      } catch { }
     }
 
     // Track resource usage (teacher only)
@@ -751,9 +774,8 @@ export default function ClassroomShell({
           </div>
 
           <div
-            className={`cr-chat-container ${
-              !isChatOpen ? "cr-chat-container--collapsed" : ""
-            }`}
+            className={`cr-chat-container ${!isChatOpen ? "cr-chat-container--collapsed" : ""
+              }`}
           >
             <button
               className="cr-chat-toggle"
@@ -769,9 +791,8 @@ export default function ClassroomShell({
                 )}
               </span>
               <span
-                className={`cr-chat-toggle__icon ${
-                  isChatOpen ? "cr-chat-toggle__icon--open" : ""
-                }`}
+                className={`cr-chat-toggle__icon ${isChatOpen ? "cr-chat-toggle__icon--open" : ""
+                  }`}
               >
                 ▼
               </span>
@@ -843,8 +864,8 @@ export default function ClassroomShell({
                   {isScreenShareActive
                     ? "The teacher is sharing their screen in the video call."
                     : isTeacher
-                    ? "Click the resource picker below to choose content."
-                    : "Waiting for the teacher to select a resource."}
+                      ? "Click the resource picker below to choose content."
+                      : "Waiting for the teacher to select a resource."}
                 </p>
                 {isTeacher && !isScreenShareActive && (
                   <button
@@ -965,8 +986,8 @@ export default function ClassroomShell({
                 {!teacherAllowsFollowing
                   ? "Following disabled by teacher"
                   : learnerWantsToFollow
-                  ? "Following layout"
-                  : "Free layout"}
+                    ? "Following layout"
+                    : "Free layout"}
               </span>
             </label>
           )}
@@ -980,12 +1001,77 @@ export default function ClassroomShell({
               {isChatOpen
                 ? "Hide Chat"
                 : chatUnreadCount > 0
-                ? `Show Chat (${chatUnreadCount})`
-                : "Show Chat"}
+                  ? `Show Chat (${chatUnreadCount})`
+                  : "Show Chat"}
             </span>
           </button>
         </div>
       </footer>
+
+      {/* Mobile Layout (shown only on screens < 900px) */}
+      {isMobile && (
+        <MobileClassroomLayout
+          activeTab={mobileActiveTab}
+          onTabChange={setMobileActiveTab}
+          isTeacher={isTeacher}
+          onOpenPicker={() => setIsPickerOpen(true)}
+          chatUnreadCount={chatUnreadCount}
+          hasResource={!!resource}
+          videoComponent={
+            <PrepVideoCall
+              roomId={sessionId}
+              userName={userName}
+              isTeacher={isTeacher}
+              onScreenShareStreamChange={handleScreenShareStreamChange}
+            />
+          }
+          contentComponent={
+            resource ? (
+              <PrepShell
+                resource={resource}
+                viewer={viewer}
+                hideSidebar={true}
+                hideBreadcrumbs={true}
+                classroomChannel={classroomChannel}
+                isTeacher={isTeacher}
+                isScreenShareActive={isScreenShareActive}
+                locale={locale}
+              />
+            ) : (
+              <div className="cr-placeholder">
+                <div className="cr-placeholder__icon">
+                  {isScreenShareActive ? "🖥️" : "📚"}
+                </div>
+                <h2 className="cr-placeholder__title">
+                  {isScreenShareActive
+                    ? "Screen sharing active"
+                    : "No resource selected"}
+                </h2>
+                <p className="cr-placeholder__text">
+                  {isScreenShareActive
+                    ? "The teacher is sharing their screen."
+                    : isTeacher
+                      ? "Tap the 📚 button to choose content."
+                      : "Waiting for the teacher to select a resource."}
+                </p>
+              </div>
+            )
+          }
+          chatComponent={
+            <ClassroomChat
+              classroomChannel={classroomChannel}
+              sessionId={sessionId}
+              isTeacher={isTeacher}
+              teacherName={teacherName}
+              learnerName={learnerName}
+              isOpen={true}
+              onUnreadCountChange={setChatUnreadCount}
+              allLearnerNames={allLearnerNames}
+              isGroup={isGroup}
+            />
+          }
+        />
+      )}
 
       {/* Resource Picker Modal */}
       {isPickerOpen && isTeacher && (
@@ -1060,11 +1146,10 @@ export default function ClassroomShell({
                   learners.map((learner, idx) => (
                     <div
                       key={learner.id || idx}
-                      className={`cr-participant ${
-                        learner.status === "canceled"
-                          ? "cr-participant--canceled"
-                          : ""
-                      }`}
+                      className={`cr-participant ${learner.status === "canceled"
+                        ? "cr-participant--canceled"
+                        : ""
+                        }`}
                     >
                       <span className="cr-participant__avatar">👨‍🎓</span>
                       <span className="cr-participant__name">
