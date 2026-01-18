@@ -308,10 +308,7 @@ body.classroom-active {
 
     @media (max-width: 640px) {
       padding: 0.375rem 0.625rem;
-
-      span {
-        display: none;
-      }
+      // Label span is now visible on mobile
     }
   }
 }

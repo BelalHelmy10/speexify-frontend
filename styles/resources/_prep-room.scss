@@ -1,5 +1,3 @@
-
-
 // SECTION 7: PREP ROOM STYLES (MERGED - includes scroll fix)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -12,6 +10,7 @@
   border: 1px solid $cr-border-subtle;
   max-width: 500px;
   margin: 2rem auto;
+
   h1,
   h2,
   &__title {
@@ -21,6 +20,7 @@
     color: $cr-text-primary;
     margin: 0 0 0.75rem;
   }
+
   p,
   &__text {
     font-size: 0.9375rem;
@@ -40,6 +40,7 @@
   flex-shrink: 0; // Don't shrink - stays visible
   padding: 0.75rem 1.5rem;
   margin: 0;
+
   &__current {
     color: $cr-text-primary;
     font-weight: 500;
@@ -56,9 +57,11 @@
   background: $cr-bg-primary;
   border-radius: $cr-radius-xl;
   border: 1px solid $cr-border-subtle;
+
   @media (min-width: 1024px) {
     flex-direction: row;
   }
+
   &--focus {
     .prep-info-card {
       display: none;
@@ -79,15 +82,18 @@
   flex-direction: column;
   gap: 1rem;
   @include custom-scrollbar;
+
   @media (min-width: 1024px) {
     width: 360px;
     min-width: 320px;
     max-width: 400px;
   }
+
   &__header {
     padding-bottom: 1rem;
     border-bottom: 1px solid $cr-border-subtle;
   }
+
   &__title {
     font-family: $cr-font-display;
     font-size: 1.25rem;
@@ -96,6 +102,7 @@
     margin: 0 0 0.5rem;
     line-height: 1.3;
   }
+
   &__filename {
     font-size: 0.8125rem;
     font-family: $cr-font-mono;
@@ -103,22 +110,26 @@
     margin: 0;
     word-break: break-all;
   }
+
   &__description {
     font-size: 0.9375rem;
     color: $cr-text-secondary;
     margin: 0;
     line-height: 1.6;
   }
+
   &__meta {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
   }
+
   &__tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.375rem;
   }
+
   &__actions {
     display: flex;
     flex-wrap: wrap;
@@ -137,9 +148,11 @@
   min-width: 0;
   overflow: auto; // Changed from hidden to auto (key fix for outer viewer scroll)
   background: $cr-bg-secondary;
+
   @media (min-width: 1024px) {
     border-radius: 0;
   }
+
   &__header {
     display: flex;
     align-items: center;
@@ -149,6 +162,7 @@
     border-bottom: 1px solid $cr-border-subtle;
     flex-shrink: 0;
   }
+
   &__title {
     font-size: 0.9375rem;
     font-weight: 600;
@@ -158,10 +172,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   &__actions {
     display: flex;
     gap: 0.5rem;
   }
+
   &__btn {
     display: inline-flex;
     align-items: center;
@@ -177,6 +193,7 @@
     cursor: pointer;
     transition: all $cr-transition-fast;
     text-decoration: none;
+
     &:hover {
       color: $cr-text-primary;
       background: $cr-bg-tertiary;
@@ -184,6 +201,7 @@
       text-decoration: none;
     }
   }
+
   &__frame-wrapper {
     flex: 1;
     display: flex;
@@ -191,18 +209,21 @@
     min-height: 0;
     overflow: auto; // Added auto (allow scroll here if needed)
   }
+
   &__canvas-container {
     flex: 1;
     position: relative;
     min-height: 0;
     overflow: auto; // THIS is where scroll happens for non-PDF
   }
+
   &__frame {
     width: 100%;
     height: 100%;
     border: none;
     background: $cr-bg-primary;
   }
+
   &__error {
     flex: 1;
     display: flex;
@@ -213,23 +234,27 @@
     text-align: center;
     color: $cr-text-secondary;
   }
+
   &__error-icon {
     font-size: 2.5rem;
     margin-bottom: 1rem;
     opacity: 0.6;
   }
+
   &__error-title {
     font-size: 1.125rem;
     font-weight: 600;
     color: $cr-text-primary;
     margin: 0 0 0.5rem;
   }
+
   &__error-text {
     font-size: 0.875rem;
     color: $cr-text-muted;
     margin: 0;
     max-width: 300px;
   }
+
   &__placeholder {
     flex: 1;
     display: flex;
@@ -238,6 +263,7 @@
     justify-content: center;
     padding: 2rem;
     text-align: center;
+
     h2 {
       font-family: $cr-font-display;
       font-size: 1.25rem;
@@ -245,6 +271,7 @@
       color: $cr-text-secondary;
       margin: 0 0 0.5rem;
     }
+
     p {
       font-size: 0.9375rem;
       color: $cr-text-muted;
@@ -252,6 +279,7 @@
       max-width: 400px;
     }
   }
+
   &__badge {
     display: inline-flex;
     align-items: center;
@@ -264,6 +292,7 @@
     font-size: 0.8125rem;
     color: $cr-accent-success;
   }
+
   &__badge-dot {
     width: 8px;
     height: 8px;
@@ -271,9 +300,11 @@
     border-radius: 50%;
     animation: cr-badge-pulse 2s ease-in-out infinite;
   }
+
   &__badge-text {
     font-weight: 500;
   }
+
   &__focus-toggle {
     position: absolute;
     top: 0.75rem;
@@ -290,6 +321,7 @@
     border-radius: $cr-radius-full;
     cursor: pointer;
     transition: all $cr-transition-fast;
+
     &:hover {
       color: $cr-text-primary;
       background: $cr-bg-elevated;
@@ -305,11 +337,13 @@
   flex-direction: column;
   background: $cr-bg-secondary;
   border-top: 1px solid $cr-border-subtle;
+
   @media (min-width: 1024px) {
     width: 380px;
     border-top: none;
     border-left: 1px solid $cr-border-subtle;
   }
+
   &__header {
     display: flex;
     align-items: center;
@@ -319,12 +353,14 @@
     border-bottom: 1px solid $cr-border-subtle;
     flex-shrink: 0;
   }
+
   &__title {
     font-size: 0.9375rem;
     font-weight: 600;
     color: $cr-text-primary;
     margin: 0;
   }
+
   &__content {
     flex: 1;
     overflow-y: auto;
@@ -337,9 +373,11 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+
   &__header {
     margin-bottom: 0.75rem;
   }
+
   &__label {
     display: block;
     font-size: 0.8125rem;
@@ -347,12 +385,14 @@
     color: $cr-text-primary;
     margin-bottom: 0.25rem;
   }
+
   &__hint {
     display: block;
     font-size: 0.75rem;
     color: $cr-text-muted;
     line-height: 1.4;
   }
+
   &__textarea {
     flex: 1;
     min-height: 200px;
@@ -367,9 +407,11 @@
     outline: none;
     transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
     line-height: 1.6;
+
     &::placeholder {
       color: $cr-text-muted;
     }
+
     &:focus {
       border-color: $cr-accent-primary;
       box-shadow: 0 0 0 3px rgba($cr-accent-primary, 0.15);
@@ -388,6 +430,7 @@
   flex-wrap: wrap;
   flex-shrink: 0; // Never shrink - stays visible
   z-index: 10;
+
   &__btn {
     display: inline-flex;
     align-items: center;
@@ -403,40 +446,44 @@
     cursor: pointer;
     transition: all $cr-transition-fast;
     white-space: nowrap;
-    span {
-      @media (max-width: 768px) {
-        display: none;
-      }
-    }
+
+    // Labels are now visible on all screen sizes including mobile
     &:hover {
       color: $cr-text-primary;
       background: $cr-bg-elevated;
       border-color: $cr-border-default;
     }
+
     &.is-active {
       color: $cr-accent-primary;
       background: rgba($cr-accent-primary, 0.12);
       border-color: rgba($cr-accent-primary, 0.4);
     }
+
     &--danger {
       color: $cr-accent-danger;
+
       &:hover {
         background: rgba($cr-accent-danger, 0.12);
         border-color: rgba($cr-accent-danger, 0.3);
       }
     }
+
     &--sidebar {
       background: $cr-bg-elevated;
       border-color: $cr-border-default;
+
       &:hover {
         background: $cr-accent-primary;
         border-color: $cr-accent-primary;
         color: white;
       }
+
       &.is-collapsed {
         background: rgba($cr-accent-primary, 0.15);
         border-color: rgba($cr-accent-primary, 0.3);
         color: $cr-accent-primary;
+
         &:hover {
           background: $cr-accent-primary;
           color: white;
@@ -444,6 +491,7 @@
       }
     }
   }
+
   &__separator {
     width: 1px;
     height: 28px;
@@ -451,6 +499,7 @@
     margin: 0 0.25rem;
   }
 }
+
 .prep-annotate-colors {
   display: flex;
   align-items: center;
@@ -459,6 +508,7 @@
   margin-left: auto;
   border-left: 1px solid $cr-border-subtle;
 }
+
 .prep-annotate-color {
   width: 28px;
   height: 28px;
