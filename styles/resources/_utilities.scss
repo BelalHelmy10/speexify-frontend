@@ -1,11 +1,10 @@
-
-
 // SECTION 12: ACCESSIBILITY & UTILITIES
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── Reduced Motion ─────────────────────────────────────────────────────────
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -20,6 +19,7 @@
 .cr-shell,
 .spx-resources-page,
 .resources-page {
+
   button,
   a,
   input,
@@ -35,6 +35,7 @@
 .resources-page,
 .cr-shell {
   @include custom-scrollbar;
+
   * {
     scrollbar-width: thin;
     scrollbar-color: $cr-border-default $cr-bg-primary;
@@ -85,18 +86,25 @@
     display: none !important;
   }
 }
+
 /* AUDIO TRACK SELECT – Match toolbar buttons exactly */
 .prep-annotate-toolbar__audio-select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
 
-  background-color: #1e293b; /* same dark shade as buttons */
-  color: #f1f5f9; /* light text */
-  border: 1px solid #334155; /* subtle border like buttons */
-  border-radius: 0.75rem; /* same rounded square as buttons */
-  height: 38px; /* EXACT size of your toolbar buttons */
-  padding: 0 2.2rem 0 0.75rem; /* leave room for arrow icon */
+  background-color: #1e293b;
+  /* same dark shade as buttons */
+  color: #f1f5f9;
+  /* light text */
+  border: 1px solid #334155;
+  /* subtle border like buttons */
+  border-radius: 0.75rem;
+  /* same rounded square as buttons */
+  height: 38px;
+  /* EXACT size of your toolbar buttons */
+  padding: 0 2.2rem 0 0.75rem;
+  /* leave room for arrow icon */
   font-size: 0.85rem;
   cursor: pointer;
 
@@ -163,7 +171,7 @@
   border-radius: $cr-radius-lg;
   border: 1px solid $cr-border-default;
   box-shadow: $cr-shadow-md;
-  z-index: 40;
+  z-index: 200;
 }
 
 .prep-annotate-toolbar__btn--dropdown {
@@ -231,11 +239,13 @@
 .prep-annotate-colors__menu {
   position: absolute;
   top: 50%;
-  right: calc(100% + 10px); /* OPEN TO THE LEFT */
+  right: calc(100% + 10px);
+  /* OPEN TO THE LEFT */
   transform: translateY(-50%);
   display: flex;
   align-items: center;
-  gap: -6px; /* subtle stacking overlap */
+  gap: -6px;
+  /* subtle stacking overlap */
   padding: 0.45rem 0.6rem;
   background: $cr-bg-secondary;
   border-radius: $cr-radius-lg;
@@ -282,15 +292,15 @@
   }
 }
 
-.cr-controls__toggle-input:checked + .cr-controls__toggle-slider {
+.cr-controls__toggle-input:checked+.cr-controls__toggle-slider {
   background-color: #34c759; // iOS green
 }
 
-.cr-controls__toggle-input:checked + .cr-controls__toggle-slider::before {
+.cr-controls__toggle-input:checked+.cr-controls__toggle-slider::before {
   transform: translateX(18px);
 }
 
-.cr-controls__toggle-input:disabled + .cr-controls__toggle-slider {
+.cr-controls__toggle-input:disabled+.cr-controls__toggle-slider {
   opacity: 0.5;
   cursor: not-allowed;
 }
