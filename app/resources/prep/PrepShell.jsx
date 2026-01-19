@@ -167,6 +167,12 @@ export default function PrepShell({
   const [toolMenuOpen, setToolMenuOpen] = useState(false);
   const [colorMenuOpen, setColorMenuOpen] = useState(false);
 
+  // ✅ Track container width for proportional scaling of annotations
+  // Reference width is 800px (typical desktop PDF viewer width)
+  const [containerWidth, setContainerWidth] = useState(800);
+  const REFERENCE_WIDTH = 800; // Font sizes are designed for this width
+  const annotationScale = containerWidth / REFERENCE_WIDTH;
+
   // PDF page tracking for per-page annotations
   const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
 
@@ -873,6 +879,9 @@ export default function PrepShell({
     function resizeCanvas() {
       const rect = container.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
+
+      // ✅ Track container width for proportional annotation scaling
+      setContainerWidth(rect.width);
 
       canvas.width = rect.width;
       canvas.height = rect.height;
@@ -2554,8 +2563,11 @@ export default function PrepShell({
             const isEditing = activeTextId === box.id;
             const isResizing = resizeState?.id === box.id;
             const isWidthResizing = widthResizeState?.id === box.id;
-            const fontSize = box.fontSize || 16;
-            const boxWidth = box.width || 150;
+            // ✅ Scale font size and width proportionally to container width
+            const baseFontSize = box.fontSize || 16;
+            const baseWidth = box.width || 150;
+            const fontSize = Math.round(baseFontSize * annotationScale);
+            const boxWidth = Math.round(baseWidth * annotationScale);
 
             return (
               <div
