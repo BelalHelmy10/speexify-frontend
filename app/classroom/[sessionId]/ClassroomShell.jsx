@@ -236,6 +236,15 @@ export default function ClassroomShell({
   const [showParticipantList, setShowParticipantList] = useState(false);
 
   /* -----------------------------------------------------------
+     Realtime sync (classroom channel) - MUST be before handleMouseUp
+     which uses ready and send
+  ----------------------------------------------------------- */
+  const classroomChannel = useClassroomChannel(String(sessionId));
+  const ready = classroomChannel?.ready ?? false;
+  const send = classroomChannel?.send ?? (() => { });
+  const subscribe = classroomChannel?.subscribe ?? (() => () => { });
+
+  /* -----------------------------------------------------------
      Drag-to-resize logic
   ----------------------------------------------------------- */
   const handleMouseDown = useCallback(
@@ -320,13 +329,6 @@ export default function ClassroomShell({
     setCustomSplit(null);
   };
 
-  /* -----------------------------------------------------------
-     Realtime sync (classroom channel)
-  ----------------------------------------------------------- */
-  const classroomChannel = useClassroomChannel(String(sessionId));
-  const ready = classroomChannel?.ready ?? false;
-  const send = classroomChannel?.send ?? (() => { });
-  const subscribe = classroomChannel?.subscribe ?? (() => () => { });
 
   // ✅ Teacher: broadcast layout (focusMode + customSplit + follow control)
   useEffect(() => {
