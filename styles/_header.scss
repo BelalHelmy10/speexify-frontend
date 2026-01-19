@@ -1,5 +1,6 @@
 /* src/styles/_header.scss - ULTRA PREMIUM EDITION - PERFORMANCE TRIM */
 @use "variables" as *;
+@use "performance" as *;
 
 /* ────────────────────────────────────────────────────────────────────────────
    HEADER WRAPPER
@@ -10,21 +11,22 @@
   top: 0;
   z-index: 9999;
   background: rgba($color-white, 0.95);
-  /* removed backdrop-filter */
   padding: 16px 0;
-  transition: background-color 0.3s ease;
   width: 100%;
+
+  // Smooth spring transitions
+  transition:
+    background-color $duration-normal $expo-out,
+    padding $duration-normal $expo-out;
 
   &::before {
     content: "";
     position: absolute;
     inset: 0;
     /* removed animated/strong gradients; keep a light tint */
-    background: linear-gradient(
-      180deg,
-      rgba($brand, 0.02) 0%,
-      transparent 100%
-    );
+    background: linear-gradient(180deg,
+        rgba($brand, 0.02) 0%,
+        transparent 100%);
     pointer-events: none;
   }
 
@@ -46,7 +48,8 @@
   width: 0;
   height: 0;
   pointer-events: none;
-  opacity: 0; /* keep class, no visual work */
+  opacity: 0;
+  /* keep class, no visual work */
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -54,6 +57,7 @@
    ──────────────────────────────────────────────────────────────────────────── */
 
 .spx-header-container {
+  @extend %gpu-accelerated;
   position: relative;
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -61,17 +65,20 @@
   gap: 32px;
   background: $bg;
   border-radius: 20px;
-  /* simplified single shadow */
   box-shadow: 0 6px 18px rgba($ink, 0.08);
   padding: 16px 28px;
-  transition: padding 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   min-height: 64px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
 
+  // Elite spring transitions
+  transition:
+    padding $duration-normal $expo-out,
+    box-shadow $duration-slow $expo-out,
+    transform $duration-normal $spring-smooth;
+
   &::before {
-    /* removed mask/gradient border for performance */
     content: none;
   }
 
@@ -104,12 +111,14 @@
   .spx-brand-text {
     position: relative;
     z-index: 1;
-    color: $ink; /* removed background-clip gradient text */
+    color: $ink;
+    /* removed background-clip gradient text */
   }
 
   &:hover {
     text-decoration: none;
     transform: translateY(-1px);
+
     .spx-brand-text {
       color: $brand;
     }
@@ -172,7 +181,8 @@
     background: rgba($ink, 0.04);
     opacity: 0;
     transition: opacity 0.2s ease;
-    transform: none; /* removed scale transforms */
+    transform: none;
+    /* removed scale transforms */
   }
 
   .spx-link-text {
@@ -183,7 +193,8 @@
 
   &:hover {
     text-decoration: none;
-    transform: translateY(-1px); /* smaller, cheaper */
+    transform: translateY(-1px);
+    /* smaller, cheaper */
     color: $brand;
 
     .spx-link-bg {
@@ -225,7 +236,8 @@
   overflow: hidden;
   transition: background-color 0.2s ease, transform 0.15s ease,
     box-shadow 0.2s ease;
-  box-shadow: 0 8px 18px rgba($brand, 0.28); /* single shadow */
+  box-shadow: 0 8px 18px rgba($brand, 0.28);
+  /* single shadow */
   flex-shrink: 0;
   background: transparent;
 
@@ -234,9 +246,12 @@
     inset: 0;
     background: linear-gradient(135deg, $brand 0%, $brand-ink 100%);
     transition: background-color 0.2s ease;
+
     &::before {
       content: none;
-    } /* removed sweeping shine animation */
+    }
+
+    /* removed sweeping shine animation */
   }
 
   .spx-cta-content {
@@ -256,9 +271,11 @@
     text-decoration: none;
     transform: translateY(-2px);
     box-shadow: 0 10px 22px rgba($brand, 0.32);
+
     .spx-cta-bg {
       background: linear-gradient(135deg, $brand-ink 0%, $brand 100%);
     }
+
     .spx-cta-arrow,
     .spx-cta-icon {
       transform: translateX(2px);
@@ -271,17 +288,18 @@
 
   &.spx-logout-btn {
     box-shadow: 0 8px 16px rgba($muted, 0.25);
+
     .spx-cta-bg {
       background: linear-gradient(135deg, $muted 0%, ($muted, 10%) 100%);
     }
+
     &:hover {
       box-shadow: 0 10px 20px rgba($muted, 0.32);
+
       .spx-cta-bg {
-        background: linear-gradient(
-          135deg,
-          ($muted, 10%) 0%,
-          ($muted, 20%) 100%
-        );
+        background: linear-gradient(135deg,
+            ($muted, 10%) 0%,
+            ($muted, 20%) 100%);
       }
     }
   }
@@ -307,6 +325,7 @@
     border-radius: 50%;
     background: $brand;
     position: relative;
+
     /* removed keyframe pulse/ping; single static ring for contrast */
     &::before {
       content: "";
@@ -382,10 +401,12 @@
     .spx-toggle-line:nth-child(1) {
       transform: translateY(7.75px) rotate(45deg);
     }
+
     .spx-toggle-line:nth-child(2) {
       opacity: 0;
       transform: scaleX(0.9);
     }
+
     .spx-toggle-line:nth-child(3) {
       transform: translateY(-7.75px) rotate(-45deg);
     }
@@ -403,8 +424,10 @@
   margin: 0 auto 0;
   transition: max-height 0.25s ease, opacity 0.2s ease, transform 0.2s ease;
 }
+
 .spx-mobile-drawer.spx-is-open {
-  max-height: 80vh; /* or a value that fits your content */
+  max-height: 80vh;
+  /* or a value that fits your content */
   margin: 16px auto 0;
   opacity: 1;
   transform: translateY(0);
@@ -493,6 +516,7 @@
     .spx-mobile-link-text {
       color: $brand;
     }
+
     .spx-mobile-link-arrow {
       opacity: 1;
       transform: translateX(0);
@@ -505,9 +529,11 @@
       opacity: 1;
       background: rgba($brand, 0.12);
     }
+
     .spx-mobile-link-text {
       color: $brand;
     }
+
     .spx-mobile-link-arrow {
       opacity: 1;
       transform: translateX(0);
@@ -543,9 +569,12 @@
     inset: 0;
     background: linear-gradient(135deg, $brand 0%, $brand-ink 100%);
     transition: background-color 0.2s ease;
+
     &::before {
       content: none;
-    } /* removed sweeping shine */
+    }
+
+    /* removed sweeping shine */
   }
 
   .spx-mobile-cta-content {
@@ -568,6 +597,7 @@
     .spx-mobile-cta-bg {
       background: linear-gradient(135deg, $brand-ink 0%, $brand 100%);
     }
+
     .spx-mobile-cta-content svg {
       transform: translateX(2px);
     }
@@ -579,17 +609,18 @@
 
   &.spx-logout-btn {
     box-shadow: 0 8px 16px rgba($muted, 0.25);
+
     .spx-mobile-cta-bg {
       background: linear-gradient(135deg, $muted 0%, ($muted, 10%) 100%);
     }
+
     &:hover {
       box-shadow: 0 10px 20px rgba($muted, 0.32);
+
       .spx-mobile-cta-bg {
-        background: linear-gradient(
-          135deg,
-          ($muted, 10%) 0%,
-          ($muted, 20%) 100%
-        );
+        background: linear-gradient(135deg,
+            ($muted, 10%) 0%,
+            ($muted, 20%) 100%);
       }
     }
   }
@@ -604,9 +635,11 @@
     gap: 40px;
     padding: 20px 36px;
   }
+
   .spx-brand {
     font-size: 28px !important;
   }
+
   .spx-nav-link {
     padding: 11px 18px;
     font-size: 16px;
@@ -618,13 +651,16 @@
     gap: 28px;
     padding: 18px 30px;
   }
+
   .spx-brand {
     font-size: 26px !important;
   }
+
   .spx-nav-link {
     padding: 10px 16px;
     font-size: 15px;
   }
+
   .spx-nav-cta {
     padding: 10px 20px;
     font-size: 14px;
@@ -636,16 +672,20 @@
     gap: 24px;
     padding: 16px 28px;
   }
+
   .spx-brand {
     font-size: 24px !important;
   }
+
   .spx-nav-link {
     padding: 9px 14px;
     font-size: 14px;
   }
+
   .spx-nav-list {
     gap: 2px;
   }
+
   .spx-nav-cta {
     padding: 9px 18px;
     font-size: 14px;
@@ -653,6 +693,7 @@
 }
 
 @media (max-width: 980px) {
+
   .spx-nav,
   .spx-nav-cta,
   .spx-nav-status {
@@ -679,6 +720,7 @@
   .spx-header-container {
     padding: 14px 24px;
   }
+
   .spx-brand {
     font-size: 24px !important;
   }
@@ -687,6 +729,7 @@
 @media (max-width: 768px) {
   .spx-header-wrapper {
     padding: 14px 0;
+
     &.spx-is-scrolled {
       padding: 10px 0;
     }
@@ -705,15 +748,19 @@
   .spx-brand {
     font-size: 22px !important;
   }
+
   .spx-mobile-drawer-inner {
     padding: 18px;
   }
+
   .spx-mobile-link-content {
     padding: 14px 16px;
   }
+
   .spx-mobile-link-text {
     font-size: 15px;
   }
+
   .spx-mobile-cta {
     padding: 14px 18px;
     font-size: 15px;
@@ -723,6 +770,7 @@
 @media (max-width: 639px) {
   .spx-header-wrapper {
     padding: 12px 0;
+
     &.spx-is-scrolled {
       padding: 10px 0;
     }
@@ -742,24 +790,30 @@
     font-size: 20px !important;
     letter-spacing: -0.5px;
   }
+
   .spx-nav-toggle .spx-toggle-box {
     width: 44px;
     height: 44px;
   }
+
   .spx-mobile-drawer {
     margin: 12px auto 0;
     width: calc(100% - 24px);
   }
+
   .spx-mobile-drawer-inner {
     padding: 16px;
     border-radius: 18px;
   }
+
   .spx-mobile-link-content {
     padding: 14px;
   }
+
   .spx-mobile-link-text {
     font-size: 15px;
   }
+
   .spx-mobile-cta {
     padding: 14px 16px;
     font-size: 15px;
@@ -769,6 +823,7 @@
 @media (max-width: 479px) {
   .spx-header-container {
     padding: 10px 14px;
+
     .spx-is-scrolled & {
       padding: 8px 12px;
     }
@@ -777,22 +832,28 @@
   .spx-brand {
     font-size: 19px !important;
   }
+
   .spx-nav-toggle .spx-toggle-box {
     width: 42px;
     height: 42px;
   }
+
   .spx-mobile-drawer {
     width: calc(100% - 20px);
   }
+
   .spx-mobile-drawer-inner {
     padding: 14px;
   }
+
   .spx-mobile-link-content {
     padding: 12px 14px;
   }
+
   .spx-mobile-link-text {
     font-size: 14px;
   }
+
   .spx-mobile-cta {
     padding: 13px 14px;
     font-size: 14px;
@@ -803,17 +864,21 @@
   .spx-brand {
     font-size: 18px !important;
   }
+
   .spx-header-container {
     padding: 10px 12px;
     gap: 10px;
   }
+
   .spx-nav-toggle .spx-toggle-box {
     width: 40px;
     height: 40px;
   }
+
   .spx-mobile-drawer {
     width: calc(100% - 16px);
   }
+
   .spx-mobile-drawer-inner {
     padding: 12px;
   }
@@ -824,6 +889,7 @@
 @media (max-width: 980px) and (orientation: landscape) and (max-height: 500px) {
   .spx-header-wrapper {
     padding: 8px 0;
+
     &.spx-is-scrolled {
       padding: 6px 0;
     }
@@ -842,10 +908,12 @@
   .spx-brand {
     font-size: 18px !important;
   }
+
   .spx-nav-toggle .spx-toggle-box {
     width: 40px;
     height: 40px;
   }
+
   .spx-mobile-drawer-inner {
     max-height: calc(100vh - 120px);
     overflow-y: auto;
@@ -855,6 +923,7 @@
 /* ACCESSIBILITY */
 
 @media (prefers-reduced-motion: reduce) {
+
   .spx-header-wrapper,
   .spx-header-container,
   .spx-nav-link,
@@ -888,14 +957,17 @@
   .spx-header-container {
     border: 2px solid currentColor;
   }
+
   .spx-nav-link,
   .spx-mobile-link {
     border: 1px solid transparent;
+
     &:hover,
     &.spx-is-active {
       border-color: $brand;
     }
   }
+
   .spx-nav-cta,
   .spx-mobile-cta {
     border: 2px solid currentColor;
@@ -952,10 +1024,12 @@
   justify-content: flex-start;
   padding-top: 0.5rem;
 }
+
 .spx-lang-toggle {
   position: relative;
   display: inline-flex;
-  direction: ltr; /* IMPORTANT: prevents RTL flipping */
+  direction: ltr;
+  /* IMPORTANT: prevents RTL flipping */
   background: rgba($ink, 0.06);
   border-radius: 10px;
   padding: 4px;

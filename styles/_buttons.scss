@@ -1,4 +1,5 @@
 @use "variables" as *;
+@use "performance" as *;
 
 .btn {
   display: inline-flex;
@@ -11,12 +12,31 @@
   text-decoration: none;
   cursor: pointer;
   border: none;
-  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease,
-    transform 0.2s ease;
+  position: relative;
+  overflow: hidden;
 
+  // GPU acceleration for smooth animations
+  @extend %gpu-accelerated;
+
+  // Elite spring transitions
+  transition:
+    background $duration-fast $spring-smooth,
+    color $duration-fast $spring-smooth,
+    box-shadow $duration-normal $expo-out,
+    transform $duration-fast $spring-bounce,
+    border-color $duration-fast $spring-smooth;
+
+  // Smart will-change on hover
+  @include animate-ready((transform, box-shadow));
+
+  // Instant press feedback
   &:active {
-    transform: translateY(1px);
+    transform: translateY(2px) scale(0.98);
+    transition-duration: $duration-instant;
   }
+
+  // Respect reduced motion preference
+  @include reduced-motion;
 
   /* --------------------------------
      PRIMARY
@@ -28,7 +48,12 @@
 
     &:hover {
       background: $color-primary-dark;
-      box-shadow: 0 6px 20px rgba($color-primary, 0.35);
+      box-shadow: 0 8px 24px rgba($color-primary, 0.35);
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      box-shadow: 0 2px 8px rgba($color-primary, 0.3);
     }
   }
 
@@ -45,6 +70,7 @@
       background: rgba($color-primary, 0.1);
       border-color: $color-primary-dark;
       color: $color-primary-dark;
+      transform: translateY(-2px);
     }
   }
 
@@ -70,7 +96,7 @@
     display: inline-flex;
     align-items: center;
     font-size: 1.1em;
-    transition: transform 0.2s ease;
+    transition: transform $duration-fast $spring-bounce;
   }
 
   &:hover &__icon--arrow {

@@ -1,0 +1,73 @@
+// ===========================================
+// PERFORMANCE UTILITIES
+// GPU acceleration & animation optimization
+// ===========================================
+
+// GPU Acceleration Base
+// Use sparingly - only on elements that actually animate
+%gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+// Full compositor layer promotion
+// For complex animations needing maximum smoothness
+%compositor-layer {
+    @extend %gpu-accelerated;
+    perspective: 1000px;
+    transform-style: preserve-3d;
+}
+
+// Smart will-change mixin
+// Only activates on hover-capable devices to save battery
+@mixin animate-ready($properties: transform) {
+    @media (hover: hover) and (pointer: fine) {
+
+        &:hover,
+        &:focus-visible {
+            will-change: #{$properties};
+        }
+    }
+}
+
+// Smooth animation wrapper
+// Apply to containers with frequently animated children
+@mixin smooth-container {
+    @extend %gpu-accelerated;
+    contain: layout style paint;
+}
+
+// High performance animation mixin
+// Use for elements that animate on scroll or continuously
+@mixin high-perf-animate {
+    @extend %compositor-layer;
+    will-change: transform, opacity;
+}
+
+// Reduce motion preference
+// Respects user accessibility settings
+@mixin reduced-motion {
+    @media (prefers-reduced-motion: reduce) {
+        animation: none !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+// Touch-friendly hover states
+// Prevents sticky hover on touch devices
+@mixin hover-only {
+    @media (hover: hover) and (pointer: fine) {
+        &:hover {
+            @content;
+        }
+    }
+}
+
+// Active press state
+// Instant feedback for tactile feel
+@mixin press-feedback {
+    &:active {
+        transform: translateY(2px) scale(0.98);
+        transition-duration: 50ms;
+    }
+}

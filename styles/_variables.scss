@@ -267,6 +267,39 @@ $transition-fast: 0.2s ease;
 $transition-med: 0.3s ease;
 $transition-slow: 0.6s ease;
 
+/* ---------------------------------------
+   ELITE SPRING PHYSICS TIMING FUNCTIONS
+   These create that "120hz" buttery feel
+----------------------------------------*/
+// Bouncy spring - for playful interactions (buttons, toggles)
+$spring-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+// Smooth spring - natural feeling, slight overshoot
+$spring-smooth: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+// Snappy spring - quick with subtle bounce
+$spring-snappy: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+// Expo curves - silky smooth without overshoot
+$expo-out: cubic-bezier(0.16, 1, 0.3, 1);
+$expo-in-out: cubic-bezier(0.87, 0, 0.13, 1);
+
+// Circ curve - sharp start, smooth end
+$circ-out: cubic-bezier(0, 0.55, 0.45, 1);
+
+// Power curves - for dramatic emphasis
+$power4-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+/* ---------------------------------------
+   ANIMATION DURATION SCALE (120hz optimized)
+   Shorter durations feel snappier on high refresh displays
+----------------------------------------*/
+$duration-instant: 80ms; // Micro-feedback (press states)
+$duration-fast: 150ms; // Quick interactions (hovers)
+$duration-normal: 250ms; // Standard transitions
+$duration-slow: 400ms; // Emphasis animations
+$duration-dramatic: 600ms; // Page transitions, reveals
+
 // ============================================================================
 // Speexify Checkout Styles
 // ============================================================================
