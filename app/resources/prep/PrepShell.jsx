@@ -65,6 +65,18 @@ function getTimestampFromId(id) {
   return parseInt(match[1], 10);
 }
 
+// Detect if text starts with RTL characters (Arabic, Hebrew, Farsi, etc.)
+// Used to determine text expansion direction in text boxes
+function isTextRTL(text) {
+  if (!text || text.length === 0) return false;
+  // Find first non-whitespace character
+  const trimmed = text.trimStart();
+  if (!trimmed) return false;
+  // RTL Unicode ranges: Arabic, Hebrew, Syriac, Thaana, etc.
+  const rtlPattern = /^[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB00-\uFDFF\uFE70-\uFEFF\u0700-\u074F]/;
+  return rtlPattern.test(trimmed);
+}
+
 const PEN_COLORS = [
   "#000000",
   "#f9fafb",
@@ -532,7 +544,7 @@ export default function PrepShell({
     (box, nextText) => {
       // Only auto-fit while editing AND the box is in autoWidth mode
       if (!box?.autoWidth) return box;
-      const fontSize = box.fontSize || 16;
+      const fontSize = box.fontSize || 13;
       const text = nextText ?? box.text ?? "";
       // Measure the actual text content width
       const measured = measureTextWidthPx(text, { fontSize });
@@ -541,19 +553,42 @@ export default function PrepShell({
       // CHANGED: Increase max width significantly
       const container = containerRef.current || canvasRef.current;
       const rect = container?.getBoundingClientRect();
-      const maxW = rect?.width ? Math.floor(rect.width * 0.95) : 8000; // Changed to 0.95 and higher fallback
-      let newWidth = clamp(Math.round(desired), 120, maxW);
+      const maxW = rect?.width ? Math.floor(rect.width * 0.95) : 8000;
+      const oldWidth = box.width || 120;
+      let newWidth = clamp(Math.round(desired), 100, maxW);
       let newX = box.x;
-      if (rect) {
+
+      // ✅ Directional expansion based on text direction
+      // LTR: anchor left edge, expand right (x stays fixed relative to left edge)
+      // RTL: anchor right edge, expand left (x stays fixed relative to right edge)
+      const isRTL = box.dir === "rtl";
+
+      if (rect && newWidth !== oldWidth) {
+        const widthDelta = newWidth - oldWidth;
+        const normDelta = widthDelta / rect.width;
+
+        if (isRTL) {
+          // RTL: Anchor right edge - shift x LEFT as width increases
+          // The right edge position = x + width/2 (in normalized coords)
+          // To keep right edge fixed, new x = x - widthDelta/2
+          newX = box.x - normDelta / 2;
+        } else {
+          // LTR: Anchor left edge - shift x RIGHT as width increases  
+          // The left edge position = x - width/2 (in normalized coords)
+          // To keep left edge fixed, new x = x + widthDelta/2
+          newX = box.x + normDelta / 2;
+        }
+
+        // Clamp to container bounds
         const normW = newWidth / rect.width;
         const half = normW / 2;
         const projectedLeft = newX - half;
         const projectedRight = newX + half;
         if (projectedLeft < 0) {
-          newX -= projectedLeft; // Shift right to clamp left at 0 (expand right only)
+          newX = half; // Clamp left at 0
         }
         if (projectedRight > 1) {
-          newX -= projectedRight - 1; // Shift left to clamp right at 1 (expand left only)
+          newX = 1 - half; // Clamp right at 1
         }
       }
       return { ...box, x: newX, width: newWidth };
@@ -1702,10 +1737,11 @@ export default function PrepShell({
       y: p.y,
       text: "",
       color: penColor,
-      fontSize: 16,
-      width: 150,
-      minWidth: 80,
+      fontSize: 13, // ✅ 20% smaller than previous 16px
+      width: 120, // Adjusted for smaller font
+      minWidth: 60,
       autoWidth: true, // ✅ start in “single-line, no wrap” mode
+      dir: "ltr", // ✅ Default to LTR, auto-detects on first character typed
       page: isPdf ? pdfCurrentPage : 1,
     };
 
@@ -1724,8 +1760,15 @@ export default function PrepShell({
       const updated = prev.map((tbox) => {
         if (tbox.id !== id) return tbox;
 
+        // ✅ Auto-detect text direction on first character typed
+        let detectedDir = tbox.dir || "ltr";
+        if (text && text.length > 0 && (!tbox.text || tbox.text.length === 0)) {
+          // First character being typed - detect direction
+          detectedDir = isTextRTL(text) ? "rtl" : "ltr";
+        }
+
         // ✅ auto-fit width while typing (unless user manually resized width)
-        const withText = { ...tbox, text };
+        const withText = { ...tbox, text, dir: detectedDir };
         const fitted = autoFitTextBoxWidthIfNeeded(withText, text);
         return fitted;
       });
