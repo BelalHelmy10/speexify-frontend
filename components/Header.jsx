@@ -266,12 +266,7 @@ export default function Header() {
           aria-label="Speexify"
           onClick={() => setOpen(false)}
         >
-          <img
-            src="/images/speexify-logo.png"
-            alt="Speexify"
-            className="spx-brand-logo"
-            style={{ height: '32px', width: 'auto' }}
-          />
+          <span className="spx-brand-text">Speexify</span>
         </Link>
 
         <nav className="spx-nav">
