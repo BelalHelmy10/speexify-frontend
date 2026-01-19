@@ -39,7 +39,12 @@ function Footer() {
                   : "Go to homepage"
               }
             >
-              <span className="brand-text">Speexify</span>
+              <img
+                src="/images/speexify-logo.png"
+                alt="Speexify"
+                className="brand-logo"
+                style={{ height: '28px', width: 'auto' }}
+              />
               <span className="brand-shimmer" />
             </Link>
             <p className="brand-tagline">{$t("tagline")}</p>

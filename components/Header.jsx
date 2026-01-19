@@ -60,9 +60,8 @@ function LanguageSwitcher({ locale, pathname }) {
     <div className="spx-lang-toggle">
       <button
         type="button"
-        className={`spx-lang-toggle__btn${
-          !isArabic ? " spx-lang-toggle__btn--active" : ""
-        }`}
+        className={`spx-lang-toggle__btn${!isArabic ? " spx-lang-toggle__btn--active" : ""
+          }`}
         onClick={() => handleSwitch("en")}
         aria-label="Switch to English"
       >
@@ -70,9 +69,8 @@ function LanguageSwitcher({ locale, pathname }) {
       </button>
       <button
         type="button"
-        className={`spx-lang-toggle__btn${
-          isArabic ? " spx-lang-toggle__btn--active" : ""
-        }`}
+        className={`spx-lang-toggle__btn${isArabic ? " spx-lang-toggle__btn--active" : ""
+          }`}
         onClick={() => handleSwitch("ar")}
         aria-label="Switch to Arabic"
       >
@@ -147,7 +145,7 @@ export default function Header() {
   const logout = async () => {
     try {
       await apiLogout();
-    } catch {}
+    } catch { }
     setUser(null);
     setOpen(false);
     router.push(localizeHref("/login", locale));
@@ -185,10 +183,10 @@ export default function Header() {
     checking || !user
       ? loggedOut
       : user.role === "admin"
-      ? [...teacher.slice(0, 2), ...adminExtra, ...teacher.slice(2)]
-      : user.role === "teacher"
-      ? teacher
-      : learner;
+        ? [...teacher.slice(0, 2), ...adminExtra, ...teacher.slice(2)]
+        : user.role === "teacher"
+          ? teacher
+          : learner;
 
   const RightCTA = () =>
     checking ? (
@@ -268,7 +266,12 @@ export default function Header() {
           aria-label="Speexify"
           onClick={() => setOpen(false)}
         >
-          <span className="spx-brand-text">Speexify</span>
+          <img
+            src="/images/speexify-logo.png"
+            alt="Speexify"
+            className="spx-brand-logo"
+            style={{ height: '32px', width: 'auto' }}
+          />
         </Link>
 
         <nav className="spx-nav">
