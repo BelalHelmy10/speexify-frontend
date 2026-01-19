@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 10000; // Must be very high to appear above pointers and annotations
   padding: 1rem;
   animation: cr-fade-in 0.2s ease;
 }

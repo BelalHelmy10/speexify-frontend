@@ -268,10 +268,87 @@ export default function PrepShell({
   const lastAppliedAudioSeqRef = useRef(-1); // last seq applied (learner)
   const lastAudioStateRef = useRef(null); // last received AUDIO_STATE for drift correction
   const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
+  const audioUnlockedRef = useRef(false); // track if audio has been pre-unlocked on this device
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+
+  // ✅ PRE-UNLOCK AUDIO ON FIRST USER INTERACTION (fixes mobile autoplay)
+  // Mobile browsers require user interaction before audio can play.
+  // This effect listens for the first touch/click and "warms up" the audio.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isTeacher) return; // Only needed for learners
+    if (audioUnlockedRef.current) return; // Already unlocked
+
+    const unlockAudio = () => {
+      if (audioUnlockedRef.current) return;
+
+      const el = audioRef.current;
+      if (!el) return;
+
+      // Create a very short silent audio context to unlock audio
+      try {
+        // Method 1: Use AudioContext (works on most browsers)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          const ctx = new AudioContext();
+          const buffer = ctx.createBuffer(1, 1, 22050);
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(ctx.destination);
+          source.start(0);
+          // Also resume context if suspended
+          if (ctx.state === "suspended") {
+            ctx.resume();
+          }
+        }
+      } catch (e) {
+        // Ignore AudioContext errors
+      }
+
+      // Method 2: Try to play the actual audio element briefly (muted)
+      try {
+        const wasMuted = el.muted;
+        const wasVolume = el.volume;
+        el.muted = true;
+        el.volume = 0;
+
+        const playPromise = el.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            el.pause();
+            el.currentTime = 0;
+            el.muted = wasMuted;
+            el.volume = wasVolume;
+            audioUnlockedRef.current = true;
+            setNeedsAudioUnlock(false);
+          }).catch(() => {
+            el.muted = wasMuted;
+            el.volume = wasVolume;
+            // If this fails, the unlock button will still show
+          });
+        }
+      } catch (e) {
+        // Ignore play errors
+      }
+
+      audioUnlockedRef.current = true;
+    };
+
+    // Listen for first interaction
+    const events = ["touchstart", "touchend", "click", "keydown"];
+    events.forEach((evt) => {
+      document.addEventListener(evt, unlockAudio, { once: true, passive: true });
+    });
+
+    return () => {
+      events.forEach((evt) => {
+        document.removeEventListener(evt, unlockAudio);
+      });
+    };
+  }, [isTeacher]);
 
   const sendAudioState = useCallback(
     ({ trackIndex, time, playing } = {}) => {
