@@ -22,9 +22,9 @@ const TOOL_BOX = "box"; // border rectangle around areas
 // ─────────────────────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────
-const HIT_RADIUS_STROKE = 0.015; // hit radius for pen/highlighter strokes
-const HIT_RADIUS_LINE = 0.006; // hit radius for straight lines
-const HIT_RADIUS_BOX_BORDER = 0.008; // hit radius for box borders
+const HIT_RADIUS_STROKE = 0.004; // hit radius for pen/highlighter strokes
+const HIT_RADIUS_LINE = 0.002; // hit radius for straight lines
+const HIT_RADIUS_BOX_BORDER = 0.002; // hit radius for box borders
 
 // ─────────────────────────────────────────────────────────────
 // UTILITY FUNCTIONS (Fix #15: clamp at top level)
@@ -2834,7 +2834,7 @@ export default function PrepShell({
                 boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
                 pointerEvents: tool === TOOL_ERASER ? "none" : "auto",
                 // Masks always render above text/notes (base 100) for consistent hiding
-                zIndex: 100 + getZIndexFromId(mask.id),
+                zIndex: 49, // Above annotations (10-48) but below toolbar (50)
               }}
               onMouseDown={(e) => startMaskMove(e, mask)}
             />
