@@ -10,6 +10,7 @@ import MobileClassroomLayout from "./MobileClassroomLayout";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import api from "@/lib/api";
+import { Video, Scale, FileText, UserRound, Users, MessageSquare, BookOpen, Monitor, Circle, Square, GraduationCap } from "lucide-react";
 
 /* -----------------------------------------------------------
    Utility: Safely generate a display name
@@ -97,9 +98,9 @@ const focusModeLabel = {
 };
 
 const focusModeIcon = {
-  [FOCUS_MODES.BALANCED]: "⚖️",
-  [FOCUS_MODES.VIDEO]: "🎥",
-  [FOCUS_MODES.CONTENT]: "📄",
+  [FOCUS_MODES.BALANCED]: <Scale size={20} />,
+  [FOCUS_MODES.VIDEO]: <Video size={20} />,
+  [FOCUS_MODES.CONTENT]: <FileText size={20} />,
 };
 
 const FOCUS_MODE_ORDER = [
@@ -747,7 +748,7 @@ export default function ClassroomShell({
             className="cr-header__role-badge"
             data-role={isTeacher ? "teacher" : "learner"}
           >
-            {isTeacher ? "👨‍🏫" : "👨‍🎓"} {isTeacher ? teacherName : learnerName}
+            {isTeacher ? <UserRound size={16} /> : <GraduationCap size={16} />} {isTeacher ? teacherName : learnerName}
           </span>
 
           {isGroup && (
@@ -757,7 +758,7 @@ export default function ClassroomShell({
               onClick={() => setShowParticipantList(true)}
               title="View participants"
             >
-              👥 <span>{countLabel}</span>
+              <Users size={16} /> <span>{countLabel}</span>
             </button>
           )}
         </div>
@@ -793,7 +794,7 @@ export default function ClassroomShell({
                 aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
               >
                 <span className="cr-chat-toggle__label">
-                  💬 Chat
+                  <MessageSquare size={14} /> Chat
                   {chatUnreadCount > 0 && !isChatOpen && (
                     <span className="cr-chat-toggle__unread">
                       {chatUnreadCount}
@@ -863,7 +864,7 @@ export default function ClassroomShell({
               ) : (
                 <div className="cr-placeholder">
                   <div className="cr-placeholder__icon">
-                    {isScreenShareActive ? "🖥️" : "📚"}
+                    {isScreenShareActive ? <Monitor size={32} /> : <BookOpen size={32} />}
                   </div>
                   <h2 className="cr-placeholder__title">
                     {isScreenShareActive
@@ -882,7 +883,7 @@ export default function ClassroomShell({
                       className="cr-placeholder__action"
                       onClick={() => setIsPickerOpen(true)}
                     >
-                      📚 Choose Resource
+                      <BookOpen size={16} /> Choose Resource
                     </button>
                   )}
                 </div>
@@ -901,7 +902,7 @@ export default function ClassroomShell({
                 className="cr-controls__btn cr-controls__btn--primary"
                 onClick={() => setIsPickerOpen(true)}
               >
-                <span className="cr-controls__btn-icon">📚</span>
+                <span className="cr-controls__btn-icon"><BookOpen size={16} /></span>
                 <span className="cr-controls__btn-label">Resources</span>
               </button>
             )}
@@ -912,7 +913,7 @@ export default function ClassroomShell({
                 onClick={isPageRecording ? stopPageRecording : startPageRecording}
               >
                 <span className="cr-controls__btn-icon">
-                  {isPageRecording ? "⏹️" : "⏺️"}
+                  {isPageRecording ? <Square size={16} fill="currentColor" /> : <Circle size={16} fill="#ef4444" />}
                 </span>
                 <span className="cr-controls__btn-label">
                   {isPageRecording ? "Stop recording" : "Record class"}
@@ -925,7 +926,7 @@ export default function ClassroomShell({
                 className="cr-controls__btn cr-controls__btn--secondary"
                 onClick={() => setShowParticipantList(true)}
               >
-                <span className="cr-controls__btn-icon">👥</span>
+                <span className="cr-controls__btn-icon"><Users size={16} /></span>
                 <span className="cr-controls__btn-label">
                   Participants ({participantCount})
                 </span>
@@ -1008,7 +1009,7 @@ export default function ClassroomShell({
               className="cr-controls__btn cr-controls__btn--ghost"
               onClick={() => setIsChatOpen(!isChatOpen)}
             >
-              <span className="cr-controls__btn-icon">💬</span>
+              <span className="cr-controls__btn-icon"><MessageSquare size={16} /></span>
               <span className="cr-controls__btn-label">
                 {isChatOpen
                   ? "Hide Chat"
@@ -1053,7 +1054,7 @@ export default function ClassroomShell({
             ) : (
               <div className="cr-placeholder">
                 <div className="cr-placeholder__icon">
-                  {isScreenShareActive ? "🖥️" : "📚"}
+                  {isScreenShareActive ? <Monitor size={32} /> : <BookOpen size={32} />}
                 </div>
                 <h2 className="cr-placeholder__title">
                   {isScreenShareActive
@@ -1064,7 +1065,7 @@ export default function ClassroomShell({
                   {isScreenShareActive
                     ? "The teacher is sharing their screen."
                     : isTeacher
-                      ? "Tap the 📚 button to choose content."
+                      ? "Tap the Resources button to choose content."
                       : "Waiting for the teacher to select a resource."}
                 </p>
               </div>
@@ -1128,7 +1129,7 @@ export default function ClassroomShell({
           >
             <div className="cr-modal__header">
               <h2 className="cr-modal__title">
-                👥 Participants ({participantCount}
+                <Users size={18} /> Participants ({participantCount}
                 {capacity && `/${capacity}`})
               </h2>
               <button
@@ -1142,7 +1143,7 @@ export default function ClassroomShell({
             <div className="cr-modal__body">
               <div className="cr-participant-list">
                 <div className="cr-participant cr-participant--teacher">
-                  <span className="cr-participant__avatar">👨‍🏫</span>
+                  <span className="cr-participant__avatar"><UserRound size={20} /></span>
                   <span className="cr-participant__name">{teacherName}</span>
                   <span className="cr-participant__role">Teacher</span>
                 </div>
@@ -1164,7 +1165,7 @@ export default function ClassroomShell({
                         : ""
                         }`}
                     >
-                      <span className="cr-participant__avatar">👨‍🎓</span>
+                      <span className="cr-participant__avatar"><GraduationCap size={20} /></span>
                       <span className="cr-participant__name">
                         {buildDisplayName(learner) ||
                           learner.email?.split("@")[0] ||

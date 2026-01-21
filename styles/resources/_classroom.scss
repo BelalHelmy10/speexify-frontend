@@ -1053,45 +1053,92 @@ body.classroom-active {
   }
 }
 
-// ─── Focus Mode Switcher ────────────────────────────────────────────────────
+// ─── Focus Mode Switcher (Premium Redesign) ─────────────────────────────────
 .cr-focus-switcher {
   display: flex;
   align-items: center;
   padding: 4px;
-  background: $cr-bg-tertiary;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
   border-radius: $cr-radius-full;
-  border: 1px solid $cr-border-subtle;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .cr-focus-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  font-size: 1rem;
+  width: 40px;
+  height: 40px;
   background: transparent;
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  transition: all $cr-transition-fast;
-  opacity: 0.6;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: $cr-text-muted;
+  position: relative;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    transition: all 0.25s ease;
+  }
 
   &:hover {
-    opacity: 0.9;
-    background: $cr-bg-elevated;
+    color: $cr-text-primary;
+    background: rgba(100, 116, 139, 0.15);
+
+    svg {
+      transform: scale(1.1);
+    }
   }
 
   &--active {
-    opacity: 1;
-    background: $cr-accent-primary;
-    box-shadow: 0 2px 8px rgba($cr-accent-primary, 0.4);
+    color: white;
+    background: linear-gradient(135deg, $cr-accent-primary, rgba($cr-accent-primary, 0.8));
+    box-shadow:
+      0 4px 12px rgba($cr-accent-primary, 0.4),
+      0 0 20px rgba($cr-accent-primary, 0.2);
+
+    svg {
+      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, $cr-accent-primary, transparent);
+      opacity: 0.3;
+      z-index: -1;
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
   }
 
   @media (max-width: 640px) {
-    width: 32px;
-    height: 32px;
-    font-size: 0.875rem;
+    width: 36px;
+    height: 36px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
   }
 }
 
