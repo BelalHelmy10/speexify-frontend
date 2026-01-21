@@ -3,6 +3,12 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
+import {
+  PenTool, Highlighter, Eraser, Type, StickyNote, MousePointer2, Zap, Trash2, Undo2, Redo2,
+  Square, Minus, PanelLeftClose, PanelLeftOpen, X, Check, MousePointerClick,
+  Play, Pause, Volume2, RotateCcw, MonitorPlay, Grid3x3, Download, WifiOff,
+  ChevronDown, MoreHorizontal, Sparkles
+} from 'lucide-react';
 import PrepNotes from "./PrepNotes";
 import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
 import { getDictionary, t } from "@/app/i18n";
@@ -18,6 +24,7 @@ const TOOL_TEXT = "text";
 const TOOL_MASK = "mask"; // white block to hide parts of the page
 const TOOL_LINE = "line"; // straight line connector
 const TOOL_BOX = "box"; // border rectangle around areas
+const TOOL_SELECT = "select"; // P1-6: Selection tool for multi-select
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -26,10 +33,104 @@ const HIT_RADIUS_STROKE = 0.004; // hit radius for pen/highlighter strokes
 const HIT_RADIUS_LINE = 0.002; // hit radius for straight lines
 const HIT_RADIUS_BOX_BORDER = 0.002; // hit radius for box borders
 
+// P1-7: Larger hit radii for touch input (2.5x normal for easier targeting)
+const HIT_RADIUS_STROKE_TOUCH = 0.01;
+const HIT_RADIUS_LINE_TOUCH = 0.005;
+const HIT_RADIUS_BOX_BORDER_TOUCH = 0.005;
+
+// P1-10: Pointer persistence timeout (ms)
+const POINTER_PERSIST_TIMEOUT = 3000;
+
+// P1-11: Stroke width options
+const STROKE_WIDTH_OPTIONS = [1, 2, 3, 5, 8, 12];
+
 // ─────────────────────────────────────────────────────────────
 // UTILITY FUNCTIONS (Fix #15: clamp at top level)
 // ─────────────────────────────────────────────────────────────
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+// ─────────────────────────────────────────────────────────────
+// INK SMOOTHING: Catmull-Rom spline interpolation
+// Converts raw mouse/touch points into smooth curves
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Generate a smooth SVG path string from an array of points using Catmull-Rom splines.
+ * @param {Array<{x: number, y: number}>} points - Raw input points (normalized 0-1)
+ * @param {number} tension - Curve tension (0 = sharp, 1 = very smooth). Default 0.5
+ * @returns {string} SVG path "d" attribute string
+ */
+function smoothPathCatmullRom(points, tension = 0.5) {
+  if (!points || points.length < 2) return "";
+  if (points.length === 2) {
+    // Just a straight line for 2 points
+    return `M ${points[0].x},${points[0].y} L ${points[1].x},${points[1].y}`;
+  }
+
+  const pts = points;
+  const n = pts.length;
+  let path = `M ${pts[0].x},${pts[0].y}`;
+
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[Math.min(n - 1, i + 1)];
+    const p3 = pts[Math.min(n - 1, i + 2)];
+
+    // Calculate control points for cubic bezier
+    const cp1x = p1.x + (p2.x - p0.x) * tension / 6;
+    const cp1y = p1.y + (p2.y - p0.y) * tension / 6;
+    const cp2x = p2.x - (p3.x - p1.x) * tension / 6;
+    const cp2y = p2.y - (p3.y - p1.y) * tension / 6;
+
+    path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+  }
+
+  return path;
+}
+
+/**
+ * Simplify points array using Ramer-Douglas-Peucker algorithm
+ * Reduces point count while preserving shape, improving rendering performance
+ */
+function simplifyPoints(points, epsilon = 0.001) {
+  if (points.length < 3) return points;
+
+  // Find the point with the maximum distance
+  let maxDist = 0;
+  let maxIndex = 0;
+  const start = points[0];
+  const end = points[points.length - 1];
+
+  for (let i = 1; i < points.length - 1; i++) {
+    const dist = perpendicularDistance(points[i], start, end);
+    if (dist > maxDist) {
+      maxDist = dist;
+      maxIndex = i;
+    }
+  }
+
+  // If max distance exceeds epsilon, recursively simplify
+  if (maxDist > epsilon) {
+    const left = simplifyPoints(points.slice(0, maxIndex + 1), epsilon);
+    const right = simplifyPoints(points.slice(maxIndex), epsilon);
+    return left.slice(0, -1).concat(right);
+  }
+
+  return [start, end];
+}
+
+function perpendicularDistance(point, lineStart, lineEnd) {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  const mag = Math.sqrt(dx * dx + dy * dy);
+  if (mag === 0) return Math.sqrt((point.x - lineStart.x) ** 2 + (point.y - lineStart.y) ** 2);
+
+  const u = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / (mag * mag);
+  const closestX = lineStart.x + u * dx;
+  const closestY = lineStart.y + u * dy;
+  return Math.sqrt((point.x - closestX) ** 2 + (point.y - closestY) ** 2);
+}
 
 // Fix #12: Touch event converter for touch support
 function getTouchPoint(touchEvent) {
@@ -179,6 +280,55 @@ export default function PrepShell({
   const [toolMenuOpen, setToolMenuOpen] = useState(false);
   const [colorMenuOpen, setColorMenuOpen] = useState(false);
 
+  // ─────────────────────────────────────────────────────────────
+  // P0-4: Text Box Focus Fix - Debounce blur to prevent accidental deactivation
+  // P0-5: Clear All Confirmation Modal
+  // ─────────────────────────────────────────────────────────────
+  const blurDebounceRef = useRef(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  // ─────────────────────────────────────────────────────────────
+  // P1 FEATURE STATE
+  // ─────────────────────────────────────────────────────────────
+  // P1-7: Track if last input was touch for larger hit areas
+  const [lastInputWasTouch, setLastInputWasTouch] = useState(false);
+
+  // P1-10: Pointer persistence timeout ref
+  const pointerTimeoutRef = useRef(null);
+
+  // P1-11: Stroke width for pen tool
+  const [penStrokeWidth, setPenStrokeWidth] = useState(3);
+  const [showWidthPicker, setShowWidthPicker] = useState(false);
+  const widthPickerRef = useRef(null);
+
+  // Smart Toolbar: Dropdown menu state
+  const [drawMenuOpen, setDrawMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const drawMenuRef = useRef(null);
+  const moreMenuRef = useRef(null);
+
+  // P1-6: Selection tool state
+  const [selectedItems, setSelectedItems] = useState([]); // [{type: 'stroke'|'note'|'text'|'mask'|'line'|'box', id: string}]
+  const [selectionBox, setSelectionBox] = useState(null); // {startX, startY, currentX, currentY} for box selection
+  const [groupDrag, setGroupDrag] = useState(null); // {startX, startY, initialItems: Map<id, item>}
+  const [showGrid, setShowGrid] = useState(false); // P2-14: Grid Toggle
+
+  // P2-17: Zoom/Pan Viewport
+  const [viewport, setViewport] = useState({ x: 0, y: 0, scale: 1 });
+  const gestureRef = useRef({
+    startDist: 0,
+    startScale: 1,
+    startX: 0,
+    startY: 0,
+    initialViewport: { x: 0, y: 0 },
+    active: false
+  });
+
+
+  // P1-8: Palm rejection - track active stylus to ignore palm touches
+  const activeStylusRef = useRef(false);
+  const palmRejectionTimeoutRef = useRef(null);
+
   // ✅ Track container width for proportional scaling of annotations
   // Reference width is 800px (typical desktop PDF viewer width)
   const [containerWidth, setContainerWidth] = useState(800);
@@ -243,6 +393,23 @@ export default function PrepShell({
   // stroke: { id, tool, color, points: [{ x,y } in [0,1]] }
   const [strokes, setStrokes] = useState([]);
   const [currentStrokeId, setCurrentStrokeId] = useState(null);
+
+  // ─────────────────────────────────────────────────────────────
+  // UNDO/REDO HISTORY SYSTEM
+  // ─────────────────────────────────────────────────────────────
+  const MAX_HISTORY_SIZE = 50;
+  const [historyStack, setHistoryStack] = useState([]); // past states
+  const [redoStack, setRedoStack] = useState([]); // future states for redo
+  const historyRef = useRef(historyStack);
+  const redoRef = useRef(redoStack);
+
+  // Keep refs in sync
+  useEffect(() => {
+    historyRef.current = historyStack;
+  }, [historyStack]);
+  useEffect(() => {
+    redoRef.current = redoStack;
+  }, [redoStack]);
 
   // ✅ Refs to hold latest state values (avoids stale closures in async callbacks)
   const strokesRef = useRef(strokes);
@@ -596,6 +763,143 @@ export default function PrepShell({
     [measureTextWidthPx]
   );
 
+  // ─────────────────────────────────────────────────────────────
+  // P0-4: DEBOUNCED TEXT BOX BLUR HANDLER
+  // Prevents accidental deactivation during resize/drag and auto-saves
+  // ─────────────────────────────────────────────────────────────
+  const handleTextBoxBlur = useCallback(
+    (boxId) => {
+      // Clear any pending blur timeout
+      if (blurDebounceRef.current) {
+        clearTimeout(blurDebounceRef.current);
+      }
+
+      // Debounce the blur - 300ms delay allows for click-and-continue interactions
+      blurDebounceRef.current = setTimeout(() => {
+        // Don't blur if resize/drag is in progress - prevents accidental focus loss
+        if (resizeState?.id === boxId || widthResizeState?.id === boxId || dragState?.id === boxId) {
+          return;
+        }
+
+        // Auto-save content before deactivating
+        const currentBox = textBoxesRef.current.find((b) => b.id === boxId);
+        if (currentBox) {
+          // Persist and broadcast current state
+          scheduleSaveAnnotations({ textBoxes: textBoxesRef.current });
+          scheduleBroadcastAnnotations({ textBoxes: textBoxesRef.current });
+        }
+
+        // Now safe to deactivate
+        setActiveTextId((currentId) => (currentId === boxId ? null : currentId));
+      }, 300);
+    },
+    [resizeState, widthResizeState, dragState]
+  );
+
+  // Cleanup blur timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (blurDebounceRef.current) {
+        clearTimeout(blurDebounceRef.current);
+      }
+    };
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────
+  // UNDO/REDO FUNCTIONS
+  // ─────────────────────────────────────────────────────────────
+
+  // Capture current annotation state as a snapshot
+  const getAnnotationSnapshot = useCallback(() => {
+    return {
+      strokes: strokesRef.current,
+      stickyNotes: stickyNotesRef.current,
+      textBoxes: textBoxesRef.current,
+      masks: masksRef.current,
+      lines: linesRef.current,
+      boxes: boxesRef.current,
+    };
+  }, []);
+
+  // Push current state to history before making changes
+  const pushHistory = useCallback(() => {
+    const snapshot = getAnnotationSnapshot();
+    setHistoryStack((prev) => {
+      const next = [...prev, snapshot];
+      // Limit history size to prevent memory bloat
+      if (next.length > MAX_HISTORY_SIZE) {
+        return next.slice(next.length - MAX_HISTORY_SIZE);
+      }
+      return next;
+    });
+    // Clear redo stack when new action is performed
+    setRedoStack([]);
+  }, [getAnnotationSnapshot]);
+
+  // Undo: restore previous state
+  const undo = useCallback(() => {
+    if (historyRef.current.length === 0) return;
+
+    // Save current state to redo stack
+    const currentSnapshot = getAnnotationSnapshot();
+    setRedoStack((prev) => [...prev, currentSnapshot]);
+
+    // Pop last state from history and restore
+    setHistoryStack((prev) => {
+      if (prev.length === 0) return prev;
+      const newHistory = [...prev];
+      const lastState = newHistory.pop();
+
+      if (lastState) {
+        // Restore all annotation state
+        setStrokes(lastState.strokes || []);
+        setStickyNotes(lastState.stickyNotes || []);
+        setTextBoxes(lastState.textBoxes || []);
+        setMasks(lastState.masks || []);
+        setLines(lastState.lines || []);
+        setBoxes(lastState.boxes || []);
+
+        // Persist and broadcast
+        scheduleSaveAnnotations(lastState);
+        scheduleBroadcastAnnotations(lastState);
+      }
+
+      return newHistory;
+    });
+  }, [getAnnotationSnapshot]);
+
+  // Redo: restore forward state
+  const redo = useCallback(() => {
+    if (redoRef.current.length === 0) return;
+
+    // Save current state to history stack
+    const currentSnapshot = getAnnotationSnapshot();
+    setHistoryStack((prev) => [...prev, currentSnapshot]);
+
+    // Pop from redo stack and restore
+    setRedoStack((prev) => {
+      if (prev.length === 0) return prev;
+      const newRedo = [...prev];
+      const nextState = newRedo.pop();
+
+      if (nextState) {
+        // Restore all annotation state
+        setStrokes(nextState.strokes || []);
+        setStickyNotes(nextState.stickyNotes || []);
+        setTextBoxes(nextState.textBoxes || []);
+        setMasks(nextState.masks || []);
+        setLines(nextState.lines || []);
+        setBoxes(nextState.boxes || []);
+
+        // Persist and broadcast
+        scheduleSaveAnnotations(nextState);
+        scheduleBroadcastAnnotations(nextState);
+      }
+
+      return newRedo;
+    });
+  }, [getAnnotationSnapshot]);
+
   // When active textbox changes or textBoxes update, resize the active textarea height
   useEffect(() => {
     if (!activeTextId) return;
@@ -739,6 +1043,19 @@ export default function PrepShell({
       if (colorMenuRef.current && !colorMenuRef.current.contains(e.target)) {
         setColorMenuOpen(false);
       }
+
+      // P1-11: Close width picker on click outside
+      if (widthPickerRef.current && !widthPickerRef.current.contains(e.target)) {
+        setShowWidthPicker(false);
+      }
+
+      // Close smart toolbar menus on click outside
+      if (drawMenuRef.current && !drawMenuRef.current.contains(e.target)) {
+        setDrawMenuOpen(false);
+      }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target)) {
+        setMoreMenuOpen(false);
+      }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -746,6 +1063,187 @@ export default function PrepShell({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []); // Refs are stable, no need to include in deps
+
+  // ─────────────────────────────────────────────────────────────
+  // KEYBOARD SHORTCUTS (P0-3: Undo/Redo + Tool switching)
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    function handleKeyDown(e) {
+      // Skip if user is typing in an input/textarea
+      const tag = e.target?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+
+      const isMac = navigator.platform?.toUpperCase().includes("MAC");
+      const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+      // Undo: Cmd+Z / Ctrl+Z
+      if (cmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Cmd+Shift+Z / Ctrl+Shift+Z or Ctrl+Y
+      if (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        redo();
+        return;
+      }
+      if (cmdOrCtrl && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Tool shortcuts (only when not holding modifiers)
+      if (cmdOrCtrl || e.altKey) return;
+
+      switch (e.key.toLowerCase()) {
+        case "p":
+          e.preventDefault();
+          setToolSafe(TOOL_PEN);
+          break;
+        case "h":
+          e.preventDefault();
+          setToolSafe(TOOL_HIGHLIGHTER);
+          break;
+        case "e":
+          e.preventDefault();
+          setToolSafe(TOOL_ERASER);
+          break;
+        case "t":
+          e.preventDefault();
+          setToolSafe(TOOL_TEXT);
+          break;
+        case "n":
+          e.preventDefault();
+          setToolSafe(TOOL_NOTE);
+          break;
+        case "l":
+          e.preventDefault();
+          setToolSafe(TOOL_POINTER);
+          break;
+        case "m":
+          e.preventDefault();
+          setToolSafe(TOOL_MASK);
+          break;
+        case "1":
+          e.preventDefault();
+          setToolSafe(TOOL_LINE);
+          break;
+        case "2":
+          e.preventDefault();
+          setToolSafe(TOOL_BOX);
+          break;
+        // P1-6: Selection tool shortcuts
+        case "v":
+        case "s":
+          e.preventDefault();
+          setToolSafe(TOOL_SELECT);
+          break;
+        case "escape":
+          e.preventDefault();
+          setToolSafe(TOOL_NONE);
+          setActiveTextId(null);
+          // P1-6: Clear selection on Escape
+          setSelectedItems([]);
+          setSelectionBox(null);
+          break;
+        case "delete":
+        case "backspace":
+          // P1-6: Delete selected items
+          if (selectedItems.length > 0) {
+            e.preventDefault();
+            deleteSelectedItems();
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
+
+  // ─────────────────────────────────────────────────────────────
+  // P2-13: Shape Recognition Helpers
+  // ─────────────────────────────────────────────────────────────
+  function getDetectedShape(points) {
+    if (!points || points.length < 10) return null; // Ignore short strokes
+
+    // 1. Check if closed
+    const start = points[0];
+    const end = points[points.length - 1];
+    const dist = Math.hypot(start.x - end.x, start.y - end.y);
+
+    // Calculate bounding box
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    points.forEach(p => {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    });
+    const width = maxX - minX;
+    const height = maxY - minY;
+    if (width === 0 || height === 0) return null;
+    const diag = Math.hypot(width, height);
+
+    // Check closure threshold (25% of diagonal)
+    if (dist > diag * 0.25) return null;
+
+    // 2. Rect vs Ellipse
+    // Rect heuristic: Points are close to bounds edges
+    let totalDistToEdge = 0;
+    points.forEach(p => {
+      const dx = Math.min(Math.abs(p.x - minX), Math.abs(p.x - maxX));
+      const dy = Math.min(Math.abs(p.y - minY), Math.abs(p.y - maxY));
+      totalDistToEdge += Math.min(dx, dy);
+    });
+    const avgDistToEdge = totalDistToEdge / points.length;
+
+    // Rect threshold
+    if (avgDistToEdge < (width + height) / 2 * 0.08) {
+      // Detected Rectangle
+      return [
+        { x: minX, y: minY },
+        { x: maxX, y: minY },
+        { x: maxX, y: maxY },
+        { x: minX, y: maxY },
+        { x: minX, y: minY } // Close loop
+      ];
+    }
+
+    // Ellipse heuristic
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const rx = width / 2;
+    const ry = height / 2;
+
+    let errorSum = 0;
+    points.forEach(p => {
+      const val = Math.pow((p.x - cx) / rx, 2) + Math.pow((p.y - cy) / ry, 2);
+      errorSum += Math.abs(val - 1);
+    });
+    const avgError = errorSum / points.length;
+
+    if (avgError < 0.2) {
+      // Detected Ellipse
+      const newPoints = [];
+      const steps = 40;
+      for (let i = 0; i <= steps; i++) {
+        const theta = (i / steps) * 2 * Math.PI;
+        newPoints.push({
+          x: cx + rx * Math.cos(theta),
+          y: cy + ry * Math.sin(theta)
+        });
+      }
+      return newPoints;
+    }
+
+    return null;
+  }
 
   // ─────────────────────────────────────────────────────────────
   // Utility: normalized point relative to containerRef
@@ -759,9 +1257,20 @@ export default function PrepShell({
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
 
+    // P2-14: Grid Snapping (20px cells)
+    let nx = x;
+    let ny = y;
+    if (showGrid) {
+      const cell = 20;
+      const px = x * rect.width;
+      const py = y * rect.height;
+      nx = Math.round(px / cell) * cell / rect.width;
+      ny = Math.round(py / cell) * cell / rect.height;
+    }
+
     return {
-      x: Math.min(0.999, Math.max(0.001, x)),
-      y: Math.min(0.999, Math.max(0.001, y)),
+      x: Math.min(0.999, Math.max(0.001, nx)),
+      y: Math.min(0.999, Math.max(0.001, ny)),
     };
   }
 
@@ -787,18 +1296,8 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // REDRAW: render all strokes (normalized) onto canvas (legacy bitmap)
   // ─────────────────────────────────────────────────────────────
-  function redrawCanvasFromStrokes(strokesToDraw) {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const width = canvas.width;
-    const height = canvas.height;
-
+  // P2-15: Helper to draw strokes to any context
+  function drawStrokesOnContext(ctx, strokesToDraw, width, height) {
     strokesToDraw.forEach((stroke) => {
       if (!stroke.points || stroke.points.length < 2) return;
 
@@ -834,6 +1333,75 @@ export default function PrepShell({
       ctx.stroke();
       ctx.restore();
     });
+  }
+
+  // P2-15: Helper to draw extras (lines, boxes, text) on context
+  function drawExtrasOnContext(ctx, width, height) {
+    const visibleLines = isPdf ? lines.filter(l => (l.page ?? 1) === pdfCurrentPage) : lines;
+    visibleLines.forEach(l => {
+      ctx.beginPath();
+      ctx.moveTo(l.x1 * width, l.y1 * height);
+      ctx.lineTo(l.x2 * width, l.y2 * height);
+      ctx.strokeStyle = l.color || penColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+
+    const visibleBoxes = isPdf ? boxes.filter(b => (b.page ?? 1) === pdfCurrentPage) : boxes;
+    visibleBoxes.forEach(b => {
+      ctx.strokeStyle = b.color || penColor;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(b.x * width, b.y * height, b.width * width, b.height * height);
+    });
+
+    const visibleText = isPdf ? textBoxes.filter(t => (t.page ?? 1) === pdfCurrentPage) : textBoxes;
+    visibleText.forEach(tb => {
+      ctx.fillStyle = tb.color || 'black';
+      ctx.font = `${(tb.fontSize || 16)}px sans-serif`;
+      ctx.textBaseline = 'top';
+      const lines = (tb.text || "").split('\n');
+      lines.forEach((line, i) => {
+        ctx.fillText(line, (tb.x * width) - (tb.width * width / 2), (tb.y * height) - (tb.height * height / 2) + (i * (tb.fontSize || 16) * 1.2));
+        // Centering logic approx: tb.x is center. logic above assumes center.
+        // PrepShell renders text with transform translate(-50%, -50%). So tb.x/y is CENTER.
+      });
+    });
+  }
+
+  // P2-15: Handle Export
+  function handleExport() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Create offscreen canvas matched to display size
+    const off = document.createElement('canvas');
+    off.width = canvas.width;
+    off.height = canvas.height;
+    const ctx = off.getContext('2d');
+
+    // 1. Strokes
+    const visibleStrokes = isPdf ? strokes.filter(s => (s.page ?? 1) === pdfCurrentPage) : strokes;
+    drawStrokesOnContext(ctx, visibleStrokes, off.width, off.height);
+
+    // 2. Extras
+    drawExtrasOnContext(ctx, off.width, off.height);
+
+    const data = off.toDataURL("image/png");
+    const link = document.createElement('a');
+    link.download = `speexify-export-${Date.now()}.png`;
+    link.href = data;
+    link.click();
+    link.remove();
+  }
+
+  // REDRAW: render all strokes (normalized) onto canvas (legacy bitmap)
+  function redrawCanvasFromStrokes(strokesToDraw) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawStrokesOnContext(ctx, strokesToDraw, canvas.width, canvas.height);
   }
 
   useEffect(() => {
@@ -1079,6 +1647,8 @@ export default function PrepShell({
       resourceId: resource._id,
       page,
       userId: myUserId,
+      // P1-12: Include display name for named cursors
+      displayName: user?.firstName || user?.name || user?.email?.split("@")[0] || "User",
       xNorm: normalizedPosOrNull.x,
       yNorm: normalizedPosOrNull.y,
     });
@@ -1193,12 +1763,14 @@ export default function PrepShell({
         if (!uid) return;
 
         const page = Number(msg.page) || 1;
+        // P1-12: Store displayName with pointer for named cursors
+        const displayName = msg.displayName || "User";
 
         setLearnerPointersByPage((prev) => ({
           ...prev,
           [page]: {
             ...(prev[page] || {}),
-            [uid]: { x: msg.xNorm, y: msg.yNorm },
+            [uid]: { x: msg.xNorm, y: msg.yNorm, displayName },
           },
         }));
         return;
@@ -1361,9 +1933,108 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Drawing tools (pen / highlighter / eraser) using normalized coords
   // ─────────────────────────────────────────────────────────────
+  // Helper to find top-most item at a normalized point (P1-6)
+  function findItemAtPoint(p) {
+    const page = isPdf ? pdfCurrentPage : 1;
+    // P1-7: Use larger hit radii for touch input
+    const hitRadiusStroke = lastInputWasTouch ? HIT_RADIUS_STROKE_TOUCH : HIT_RADIUS_STROKE;
+    const hitRadiusLine = lastInputWasTouch ? HIT_RADIUS_LINE_TOUCH : HIT_RADIUS_LINE;
+    const hitRadiusBox = lastInputWasTouch ? HIT_RADIUS_BOX_BORDER_TOUCH : HIT_RADIUS_BOX_BORDER;
+
+    let thinHit = { kind: null, id: null, dist: Infinity };
+
+    // 1) Strokes
+    for (const s of strokes) {
+      if (isPdf && (s.page ?? 1) !== page) continue;
+      if (!Array.isArray(s.points) || s.points.length === 0) continue;
+
+      let minD2 = Infinity;
+      if (s.points.length > 1) {
+        for (const pt of s.points) {
+          const dx = pt.x - p.x;
+          const dy = pt.y - p.y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < minD2) minD2 = d2;
+        }
+      } else {
+        const dx = s.points[0].x - p.x;
+        const dy = s.points[0].y - p.y;
+        minD2 = dx * dx + dy * dy;
+      }
+
+      if (minD2 <= hitRadiusStroke * hitRadiusStroke) {
+        const d = Math.sqrt(minD2);
+        if (d < thinHit.dist) thinHit = { kind: "stroke", id: s.id, dist: d };
+      }
+    }
+
+    // 2) Lines
+    for (const l of lines) {
+      if (isPdf && (l.page ?? 1) !== page) continue;
+      const d = pointToLineDistance(p.x, p.y, l.x1, l.y1, l.x2, l.y2);
+      if (d <= hitRadiusLine && d < thinHit.dist) {
+        thinHit = { kind: "line", id: l.id, dist: d };
+      }
+    }
+
+    // 3) Boxes
+    for (const b of boxes) {
+      if (isPdf && (b.page ?? 1) !== page) continue;
+      const d = pointToRectBorderDistance(p.x, p.y, b.x, b.y, b.width, b.height);
+      if (d <= hitRadiusBox && d < thinHit.dist) {
+        thinHit = { kind: "box", id: b.id, dist: d };
+      }
+    }
+
+    if (thinHit.kind) {
+      return { type: thinHit.kind, id: thinHit.id };
+    }
+
+    // 4) Area items (Text, Notes, Masks)
+    // Check text boxes
+    for (const t of textBoxes) {
+      if (isPdf && (t.page ?? 1) !== page) continue;
+      const container = containerRef.current;
+      const rect = container?.getBoundingClientRect();
+      const normWidth = t.width / (rect?.width || 1000);
+      const halfW = normWidth / 2;
+      const halfH = 0.03;
+
+      if (
+        p.x >= t.x - halfW && p.x <= t.x + halfW &&
+        p.y >= t.y - halfH && p.y <= t.y + halfH
+      ) {
+        return { type: "text", id: t.id };
+      }
+    }
+
+    // Check sticky notes
+    for (const n of stickyNotes) {
+      if (isPdf && (n.page ?? 1) !== page) continue;
+      const noteW = 0.15;
+      const noteH = 0.12;
+      if (p.x >= n.x && p.x <= n.x + noteW && p.y >= n.y && p.y <= n.y + noteH) {
+        return { type: "note", id: n.id };
+      }
+    }
+
+    // Check masks
+    for (const m of masks) {
+      if (isPdf && (m.page ?? 1) !== page) continue;
+      if (p.x >= m.x && p.x <= m.x + m.width && p.y >= m.y && p.y <= m.y + m.height) {
+        return { type: "mask", id: m.id };
+      }
+    }
+
+    return null;
+  }
+
   function eraseAtPoint(e) {
     const p = getNormalizedPoint(e);
     if (!p) return;
+
+    // Push history before erasing for undo support
+    pushHistory();
 
     const page = isPdf ? pdfCurrentPage : 1;
 
@@ -1376,6 +2047,11 @@ export default function PrepShell({
     // ═══════════════════════════════════════════════════════════════════════
 
     // ─── PASS 1: Check thin elements (with hit radius) ────────────────────
+    // P1-7: Use larger hit radii for touch input
+    const hitRadiusStroke = lastInputWasTouch ? HIT_RADIUS_STROKE_TOUCH : HIT_RADIUS_STROKE;
+    const hitRadiusLine = lastInputWasTouch ? HIT_RADIUS_LINE_TOUCH : HIT_RADIUS_LINE;
+    const hitRadiusBox = lastInputWasTouch ? HIT_RADIUS_BOX_BORDER_TOUCH : HIT_RADIUS_BOX_BORDER;
+
     let thinHit = { kind: null, id: null, dist: Infinity };
 
     // 1) Strokes (pen/highlighter): treat closest point distance as metric
@@ -1392,7 +2068,7 @@ export default function PrepShell({
         if (d2 < minD2) minD2 = d2;
       }
 
-      const hit = minD2 <= HIT_RADIUS_STROKE * HIT_RADIUS_STROKE;
+      const hit = minD2 <= hitRadiusStroke * hitRadiusStroke;
       if (hit) {
         const d = Math.sqrt(minD2);
         if (d < thinHit.dist) thinHit = { kind: "stroke", id: s.id, dist: d };
@@ -1403,7 +2079,7 @@ export default function PrepShell({
     for (const l of lines) {
       if (isPdf && (l.page ?? 1) !== page) continue;
       const d = pointToLineDistance(p.x, p.y, l.x1, l.y1, l.x2, l.y2);
-      if (d <= HIT_RADIUS_LINE && d < thinHit.dist) {
+      if (d <= hitRadiusLine && d < thinHit.dist) {
         thinHit = { kind: "line", id: l.id, dist: d };
       }
     }
@@ -1419,7 +2095,7 @@ export default function PrepShell({
         b.width,
         b.height
       );
-      if (d <= HIT_RADIUS_BOX_BORDER && d < thinHit.dist) {
+      if (d <= hitRadiusBox && d < thinHit.dist) {
         thinHit = { kind: "box", id: b.id, dist: d };
       }
     }
@@ -1564,12 +2240,17 @@ export default function PrepShell({
 
     const id = `stroke_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
+    // Push history before adding new stroke for undo support
+    pushHistory();
+
     const stroke = {
       id,
       tool,
       color: penColor,
       points: [p],
       page: isPdf ? pdfCurrentPage : 1,
+      // P1-11: Store stroke width per stroke (highlighter uses fixed larger width)
+      strokeWidth: tool === TOOL_HIGHLIGHTER ? 12 : penStrokeWidth,
     };
 
     setStrokes((prev) => [...prev, stroke]);
@@ -1658,6 +2339,33 @@ export default function PrepShell({
   function stopDrawing() {
     if (!isDrawing && !dragState && !maskDrag) return;
 
+    // P2-13: Shape Recognition
+    if (isDrawing && currentStrokeId && (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER)) {
+      const sIndex = strokes.findIndex(s => s.id === currentStrokeId);
+      if (sIndex !== -1) {
+        const rawStroke = strokes[sIndex];
+        const correctedPoints = getDetectedShape(rawStroke.points);
+
+        if (correctedPoints) {
+          // Determine new strokes array
+          const nextStrokes = [...strokes];
+          nextStrokes[sIndex] = { ...rawStroke, points: correctedPoints };
+          setStrokes(nextStrokes);
+
+          // Save and Broadcast immediately
+          scheduleSaveAnnotations({ strokes: nextStrokes });
+          scheduleBroadcastAnnotations({ strokes: nextStrokes });
+
+          setIsDrawing(false);
+          setCurrentStrokeId(null);
+
+          // Add Haptic feedback for "Snap"
+          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+          return;
+        }
+      }
+    }
+
     setIsDrawing(false);
     setCurrentStrokeId(null);
 
@@ -1687,6 +2395,9 @@ export default function PrepShell({
       page: isPdf ? pdfCurrentPage : 1,
     };
 
+    // Push history before adding note for undo support
+    pushHistory();
+
     const nextNotes = [...stickyNotes, note];
     setStickyNotes(nextNotes);
     scheduleSaveAnnotations({ stickyNotes: nextNotes });
@@ -1708,6 +2419,9 @@ export default function PrepShell({
   }
 
   function startNoteDrag(e, note) {
+    // P1-6: If Selection Tool, let event bubble to canvas for selection/group drag
+    if (tool === TOOL_SELECT) return;
+
     e.stopPropagation();
     e.preventDefault();
     const coords = getCanvasCoordinates(e);
@@ -1744,6 +2458,9 @@ export default function PrepShell({
       dir: "ltr", // ✅ Default to LTR, auto-detects on first character typed
       page: isPdf ? pdfCurrentPage : 1,
     };
+
+    // Push history before adding text box for undo support
+    pushHistory();
 
     const next = [...textBoxes, box];
     setTextBoxes(next);
@@ -1795,8 +2512,11 @@ export default function PrepShell({
   }
 
   function startTextDrag(e, box) {
-    e.stopPropagation();
-    e.preventDefault();
+    // P1-6: If Selection Tool, let event bubble to canvas for selection/group drag
+    if (tool === TOOL_SELECT) return;
+
+    e.stopPropagation(); // Stop bubbling to prevent canvas drag
+    e.preventDefault();  // Prevent default interaction
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
     const { x, y, width, height } = coords;
@@ -2022,6 +2742,9 @@ export default function PrepShell({
       page,
     };
 
+    // Push history before adding mask for undo support
+    pushHistory();
+
     setMasks((prev) => {
       const next = [...prev, newMask];
       scheduleSaveAnnotations({ masks: next });
@@ -2049,6 +2772,9 @@ export default function PrepShell({
       setShapeDrag(null);
       return;
     }
+
+    // Push history before adding shape for undo support
+    pushHistory();
 
     const id = `shape_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     if (shapeDrag.tool === TOOL_LINE) {
@@ -2096,9 +2822,138 @@ export default function PrepShell({
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Clear (ONLY CURRENT PAGE when PDF)
+  // P0-5: Clear All with Confirmation Modal
   // ─────────────────────────────────────────────────────────────
-  function clearCanvasAndNotes() {
+
+  // Request clear - shows confirmation modal
+  // P1-6: Delete selected items
+  function deleteSelectedItems() {
+    if (selectedItems.length === 0) return;
+
+    pushHistory();
+
+    const selectedIds = new Set(selectedItems.map((i) => i.id));
+    let hasChanges = false;
+    let strokesChanged = false;
+    let notesChanged = false;
+    let textChanged = false;
+    let masksChanged = false;
+    let linesChanged = false;
+    let boxesChanged = false;
+
+    // Filter strokes
+    const newStrokes = strokes.filter((s) => {
+      if (selectedIds.has(s.id)) {
+        strokesChanged = true;
+        hasChanges = true;
+        return false;
+      }
+      return true;
+    });
+
+    // Filter notes
+    const newNotes = stickyNotes.filter((n) => {
+      if (selectedIds.has(n.id)) {
+        notesChanged = true;
+        hasChanges = true;
+        return false;
+      }
+      return true;
+    });
+
+    // Filter text boxes
+    const newtexts = textBoxes.filter((t) => {
+      if (selectedIds.has(t.id)) {
+        textChanged = true;
+        hasChanges = true;
+        return false;
+      }
+      return true;
+    });
+
+    // Filter masks
+    const newMasks = masks.filter((m) => {
+      if (selectedIds.has(m.id)) {
+        masksChanged = true;
+        hasChanges = true;
+        return false;
+      }
+      return true;
+    });
+
+    // Filter lines
+    const newLines = lines.filter((l) => {
+      if (selectedIds.has(l.id)) {
+        linesChanged = true;
+        hasChanges = true;
+        return false;
+      }
+      return true;
+    });
+
+    // Filter boxes
+    const newBoxes = boxes.filter((b) => {
+      if (selectedIds.has(b.id)) {
+        boxesChanged = true;
+        hasChanges = true;
+        return false;
+      }
+      return true;
+    });
+
+    if (hasChanges) {
+      if (strokesChanged) {
+        setStrokes(newStrokes);
+        scheduleSaveAnnotations({ strokes: newStrokes });
+        scheduleBroadcastAnnotations({ strokes: newStrokes });
+      }
+      if (notesChanged) {
+        setStickyNotes(newNotes);
+        scheduleSaveAnnotations({ stickyNotes: newNotes });
+        scheduleBroadcastAnnotations({ stickyNotes: newNotes });
+      }
+      if (textChanged) {
+        setTextBoxes(newtexts);
+        scheduleSaveAnnotations({ textBoxes: newtexts });
+        scheduleBroadcastAnnotations({ textBoxes: newtexts });
+      }
+      if (masksChanged) {
+        setMasks(newMasks);
+        scheduleSaveAnnotations({ masks: newMasks });
+        scheduleBroadcastAnnotations({ masks: newMasks });
+      }
+      if (linesChanged) {
+        setLines(newLines);
+        scheduleSaveAnnotations({ lines: newLines });
+        scheduleBroadcastAnnotations({ lines: newLines });
+      }
+      if (boxesChanged) {
+        setBoxes(newBoxes);
+        scheduleSaveAnnotations({ boxes: newBoxes });
+        scheduleBroadcastAnnotations({ boxes: newBoxes });
+      }
+
+      setSelectedItems([]);
+      setSelectionBox(null);
+    }
+  }
+
+  function requestClearAll() {
+    setShowClearConfirm(true);
+  }
+
+  // Cancel clear - hides confirmation modal
+  function cancelClearAll() {
+    setShowClearConfirm(false);
+  }
+
+  // Confirmed clear - actually performs the clear (ONLY CURRENT PAGE when PDF)
+  function confirmClearAll() {
+    setShowClearConfirm(false);
+
+    // Push current state to history for undo support
+    pushHistory();
+
     const page = isPdf ? pdfCurrentPage : 1;
     // clear bitmap canvas for the current view
     const canvas = canvasRef.current;
@@ -2166,8 +3021,80 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Mouse handlers
   // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // P2-17: Touch Gesture Handlers (Zoom/Pan)
+  // ─────────────────────────────────────────────────────────────
+  function handleTouchStartGesture(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const cx = (t1.clientX + t2.clientX) / 2;
+      const cy = (t1.clientY + t2.clientY) / 2;
+
+      gestureRef.current = {
+        startDist: dist,
+        startScale: viewport.scale,
+        startX: cx,
+        startY: cy,
+        initialViewport: { ...viewport },
+        active: true
+      };
+      return true; // Signal handled
+    }
+    return false;
+  }
+
+  function handleGestureMove(e) {
+    if (!gestureRef.current.active || e.touches.length !== 2) return;
+
+    e.preventDefault();
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    const cx = (t1.clientX + t2.clientX) / 2;
+    const cy = (t1.clientY + t2.clientY) / 2;
+
+    // Zoom
+    const scaleFactor = dist / (gestureRef.current.startDist || 1);
+    const newScale = clamp(gestureRef.current.startScale * scaleFactor, 0.5, 5);
+
+    // Pan
+    const dx = cx - gestureRef.current.startX;
+    const dy = cy - gestureRef.current.startY;
+
+    setViewport({
+      x: gestureRef.current.initialViewport.x + dx,
+      y: gestureRef.current.initialViewport.y + dy,
+      scale: newScale
+    });
+  }
+
   function handleMouseDown(e) {
     const target = e.target;
+
+    // P1-7: Track input type for touch-aware hit radii
+    const isTouch = e.pointerType === "touch" || e.type?.includes("touch");
+    const isPen = e.pointerType === "pen";
+    setLastInputWasTouch(isTouch);
+
+    // P1-8: Palm rejection - ignore touch events when stylus is active
+    if (isPen) {
+      // Stylus detected - mark as active and set timeout to reset
+      activeStylusRef.current = true;
+      if (palmRejectionTimeoutRef.current) {
+        clearTimeout(palmRejectionTimeoutRef.current);
+      }
+      // Keep stylus "active" for 500ms after last pen event to catch palm touches
+      palmRejectionTimeoutRef.current = setTimeout(() => {
+        activeStylusRef.current = false;
+      }, 500);
+    } else if (isTouch && activeStylusRef.current) {
+      // Touch event while stylus is active - reject as palm touch
+      e.preventDefault();
+      return;
+    }
 
     // Allow eraser to work on masks, notes, and text boxes
     // For other tools, let these elements handle their own events
@@ -2183,14 +3110,91 @@ export default function PrepShell({
       e.preventDefault();
       const p = getNormalizedPoint(e);
       if (!p) return;
+
+      // P1-6: Selection Tool - Start Box Selection or Group Drag
+      if (tool === TOOL_SELECT) {
+        const hitItem = findItemAtPoint(p);
+        let itemsToDrag = selectedItems;
+
+        // Auto-select if clicking unselected item
+        if (hitItem) {
+          const isAlreadySelected = selectedItems.some(i => i.type === hitItem.type && i.id === hitItem.id);
+          if (!isAlreadySelected) {
+            itemsToDrag = [hitItem];
+            setSelectedItems([hitItem]);
+          }
+
+          // Start Group Drag
+          const initialItems = new Map();
+          itemsToDrag.forEach(item => {
+            let data;
+            if (item.type === 'stroke') data = strokes.find(i => i.id === item.id);
+            else if (item.type === 'note') data = stickyNotes.find(i => i.id === item.id);
+            else if (item.type === 'text') data = textBoxes.find(i => i.id === item.id);
+            else if (item.type === 'mask') data = masks.find(i => i.id === item.id);
+            else if (item.type === 'line') data = lines.find(i => i.id === item.id);
+            else if (item.type === 'box') data = boxes.find(i => i.id === item.id);
+
+            if (data) initialItems.set(item.id, { type: item.type, data: JSON.parse(JSON.stringify(data)) });
+          });
+
+          setGroupDrag({ startX: p.x, startY: p.y, initialItems });
+          return;
+        }
+
+        // Empty space -> Box Selection
+        setSelectedItems([]);
+        setSelectionBox({
+          startX: p.x,
+          startY: p.y,
+          currentX: p.x,
+          currentY: p.y,
+        });
+        return;
+      }
+
       const page = isPdf ? pdfCurrentPage : 1;
+
+      // P1-10: Clear any existing timeout
+      if (pointerTimeoutRef.current) {
+        clearTimeout(pointerTimeoutRef.current);
+      }
+
       if (isTeacher) {
         setTeacherPointerByPage((prev) => ({ ...prev, [page]: p }));
+
+        // P1-10: Auto-hide pointer after timeout
+        pointerTimeoutRef.current = setTimeout(() => {
+          setTeacherPointerByPage((prev) => {
+            const next = { ...prev };
+            delete next[page];
+            return next;
+          });
+          broadcastPointer(null);
+        }, POINTER_PERSIST_TIMEOUT);
       } else if (myUserId) {
         setLearnerPointersByPage((prev) => ({
           ...prev,
           [page]: { ...(prev[page] || {}), [myUserId]: p },
         }));
+
+        // P1-10: Auto-hide pointer after timeout
+        pointerTimeoutRef.current = setTimeout(() => {
+          setLearnerPointersByPage((prev) => {
+            const next = { ...prev };
+            if (next[page]) {
+              const perPage = { ...next[page] };
+              delete perPage[myUserId];
+              if (Object.keys(perPage).length === 0) {
+                delete next[page];
+              } else {
+                next[page] = perPage;
+              }
+            }
+            return next;
+          });
+          broadcastPointer(null);
+        }, POINTER_PERSIST_TIMEOUT);
       }
       broadcastPointer(p);
       return;
@@ -2245,6 +3249,13 @@ export default function PrepShell({
   }
 
   function handleMouseMove(e) {
+    // P1-8: Palm rejection - ignore touch motion while stylus is active
+    const isTouch = e.pointerType === "touch" || e.type?.includes("touch");
+    if (isTouch && activeStylusRef.current) {
+      e.preventDefault();
+      return;
+    }
+
     if (resizeState) {
       e.preventDefault();
       handleFontSizeResize(e);
@@ -2255,6 +3266,95 @@ export default function PrepShell({
       handleWidthResize(e);
       return;
     }
+
+    // P1-6: Group Drag (move selected items)
+    if (groupDrag) {
+      e.preventDefault();
+      const p = getNormalizedPoint(e);
+      if (p) {
+        const dx = p.x - groupDrag.startX;
+        const dy = p.y - groupDrag.startY;
+
+        const nextStrokes = [...strokes];
+        let strokesChanged = false;
+        const nextNotes = [...stickyNotes];
+        let notesChanged = false;
+        const nextTexts = [...textBoxes];
+        let textsChanged = false;
+        const nextMasks = [...masks];
+        let masksChanged = false;
+        const nextLines = [...lines];
+        let linesChanged = false;
+        const nextBoxes = [...boxes];
+        let boxesChanged = false;
+
+        groupDrag.initialItems.forEach((info, id) => {
+          const { type, data } = info;
+          if (type === 'stroke') {
+            const sIndex = nextStrokes.findIndex(s => s.id === id);
+            if (sIndex !== -1) {
+              // Translate points
+              const newPoints = data.points.map(pt => ({ x: pt.x + dx, y: pt.y + dy }));
+              nextStrokes[sIndex] = { ...nextStrokes[sIndex], points: newPoints };
+              strokesChanged = true;
+            }
+          } else if (type === 'note') {
+            const nIndex = nextNotes.findIndex(n => n.id === id);
+            if (nIndex !== -1) {
+              nextNotes[nIndex] = { ...nextNotes[nIndex], x: data.x + dx, y: data.y + dy };
+              notesChanged = true;
+            }
+          } else if (type === 'text') {
+            const tIndex = nextTexts.findIndex(t => t.id === id);
+            if (tIndex !== -1) {
+              nextTexts[tIndex] = { ...nextTexts[tIndex], x: data.x + dx, y: data.y + dy };
+              textsChanged = true;
+            }
+          } else if (type === 'mask') {
+            const mIndex = nextMasks.findIndex(m => m.id === id);
+            if (mIndex !== -1) {
+              nextMasks[mIndex] = { ...nextMasks[mIndex], x: data.x + dx, y: data.y + dy };
+              masksChanged = true;
+            }
+          } else if (type === 'line') {
+            const lIndex = nextLines.findIndex(l => l.id === id);
+            if (lIndex !== -1) {
+              nextLines[lIndex] = { ...nextLines[lIndex], x1: data.x1 + dx, y1: data.y1 + dy, x2: data.x2 + dx, y2: data.y2 + dy };
+              linesChanged = true;
+            }
+          } else if (type === 'box') {
+            const bIndex = nextBoxes.findIndex(b => b.id === id);
+            if (bIndex !== -1) {
+              nextBoxes[bIndex] = { ...nextBoxes[bIndex], x: data.x + dx, y: data.y + dy };
+              boxesChanged = true;
+            }
+          }
+        });
+
+        if (strokesChanged) setStrokes(nextStrokes);
+        if (notesChanged) setStickyNotes(nextNotes);
+        if (textsChanged) setTextBoxes(nextTexts);
+        if (masksChanged) setMasks(nextMasks);
+        if (linesChanged) setLines(nextLines);
+        if (boxesChanged) setBoxes(nextBoxes);
+      }
+      return;
+    }
+
+    // P1-6: Update selection box
+    if (selectionBox) {
+      e.preventDefault();
+      const p = getNormalizedPoint(e);
+      if (p) {
+        setSelectionBox((prev) => ({
+          ...prev,
+          currentX: p.x,
+          currentY: p.y,
+        }));
+      }
+      return;
+    }
+
     if (maskDrag) {
       e.preventDefault();
       const p = getNormalizedPoint(e);
@@ -2318,6 +3418,116 @@ export default function PrepShell({
   }
 
   function handleMouseUp(e) {
+    // P1-6: Finalize Group Drag
+    if (groupDrag) {
+      setGroupDrag(null);
+
+      const updates = {};
+      let hasUpdates = false;
+
+      groupDrag.initialItems.forEach((info, id) => {
+        if (info.type === 'stroke') { updates.strokes = strokes; hasUpdates = true; }
+        else if (info.type === 'note') { updates.stickyNotes = stickyNotes; hasUpdates = true; }
+        else if (info.type === 'text') { updates.textBoxes = textBoxes; hasUpdates = true; }
+        else if (info.type === 'mask') { updates.masks = masks; hasUpdates = true; }
+        else if (info.type === 'line') { updates.lines = lines; hasUpdates = true; }
+        else if (info.type === 'box') { updates.boxes = boxes; hasUpdates = true; }
+      });
+
+      if (hasUpdates) {
+        scheduleSaveAnnotations(updates);
+        scheduleBroadcastAnnotations(updates);
+      }
+      return;
+    }
+
+    // P1-6: Finalize selection box
+    if (selectionBox) {
+      if (e) e.preventDefault();
+
+      const sb = selectionBox;
+      const x1 = Math.min(sb.startX, sb.currentX);
+      const y1 = Math.min(sb.startY, sb.currentY);
+      const x2 = Math.max(sb.startX, sb.currentX);
+      const y2 = Math.max(sb.startY, sb.currentY);
+
+      const selected = [];
+      const page = isPdf ? pdfCurrentPage : 1;
+
+      // 1. Strokes
+      strokes.forEach(s => {
+        if (isPdf && (s.page ?? 1) !== page) return;
+        let minX = 1, minY = 1, maxX = 0, maxY = 0;
+        if (!s.points || s.points.length === 0) return;
+        s.points.forEach(p => {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        });
+
+        if (minX <= x2 && maxX >= x1 && minY <= y2 && maxY >= y1) {
+          selected.push({ type: 'stroke', id: s.id });
+        }
+      });
+
+      // 2. Sticky Notes (approx size 0.15 x 0.12)
+      stickyNotes.forEach(n => {
+        if (isPdf && (n.page ?? 1) !== page) return;
+        const nw = 0.15;
+        const nh = 0.12;
+        if (n.x <= x2 && n.x + nw >= x1 && n.y <= y2 && n.y + nh >= y1) {
+          selected.push({ type: 'note', id: n.id });
+        }
+      });
+
+      // 3. Text Boxes
+      textBoxes.forEach(t => {
+        if (isPdf && (t.page ?? 1) !== page) return;
+        const nw = t.width / containerWidth;
+        const nh = 0.05; // Approx height
+        if (t.x <= x2 && t.x + nw >= x1 && t.y <= y2 && t.y + nh >= y1) {
+          selected.push({ type: 'text', id: t.id });
+        }
+      });
+
+      // 4. Masks
+      masks.forEach(m => {
+        if (isPdf && (m.page ?? 1) !== page) return;
+        if (m.x <= x2 && m.x + m.width >= x1 && m.y <= y2 && m.y + m.height >= y1) {
+          selected.push({ type: 'mask', id: m.id });
+        }
+      });
+
+      // 5. Lines
+      lines.forEach(l => {
+        if (isPdf && (l.page ?? 1) !== page) return;
+        const lx1 = Math.min(l.x1, l.x2);
+        const ly1 = Math.min(l.y1, l.y2);
+        const lx2 = Math.max(l.x1, l.x2);
+        const ly2 = Math.max(l.y1, l.y2);
+        if (lx1 <= x2 && lx2 >= x1 && ly1 <= y2 && ly2 >= y1) {
+          selected.push({ type: 'line', id: l.id });
+        }
+      });
+
+      // 6. Boxes
+      boxes.forEach(b => {
+        if (isPdf && (b.page ?? 1) !== page) return;
+        const bx1 = Math.min(b.x, b.x + b.width);
+        const by1 = Math.min(b.y, b.y + b.height);
+        const bx2 = Math.max(b.x, b.x + b.width);
+        const by2 = Math.max(b.y, b.y + b.height);
+        if (bx1 <= x2 && bx2 >= x1 && by1 <= y2 && by2 >= y1) {
+          selected.push({ type: 'box', id: b.id });
+        }
+      });
+
+      setSelectedItems(selected);
+      setSelectionBox(null);
+      return;
+    }
+
     if (resizeState) {
       stopFontSizeResize();
       return;
@@ -2384,6 +3594,9 @@ export default function PrepShell({
   // Tool switching helper (toggling)
   // ─────────────────────────────────────────────────────────────
   function setToolSafe(nextTool) {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(5);
+    }
     if (tool === nextTool) {
       setTool(TOOL_NONE);
 
@@ -2482,7 +3695,7 @@ export default function PrepShell({
 
     return (
       <div
-        className="prep-annotate-layer"
+        className={`prep-annotate-layer tool-${tool}`}
         style={{
           position: "absolute",
           inset: 0,
@@ -2493,14 +3706,31 @@ export default function PrepShell({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onTouchMove={(e) => {
+          handleGestureMove(e);
           const pt = getTouchPoint(e);
           if (pt) handleMouseMove(pt);
         }}
         onTouchEnd={(e) => {
+          if (e.touches.length < 2) {
+            gestureRef.current.active = false;
+          }
           e.preventDefault();
           handleMouseUp(null);
         }}
       >
+        {/* P2-14: Grid Overlay */}
+        {showGrid && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: "none",
+              backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.2) 1px, transparent 1px)",
+              backgroundSize: "20px 20px",
+            }}
+          />
+        )}
         {/* Hidden span for text width measurement */}
         <span
           ref={measureSpanRef}
@@ -2528,6 +3758,7 @@ export default function PrepShell({
           }}
           onMouseDown={handleMouseDown}
           onTouchStart={(e) => {
+            if (handleTouchStartGesture(e)) return;
             e.preventDefault();
             const pt = getTouchPoint(e);
             if (pt) handleMouseDown(pt);
@@ -2551,21 +3782,51 @@ export default function PrepShell({
               (stroke) =>
                 !isPdf || stroke.page === pdfCurrentPage || !stroke.page
             )
-            .map((stroke) => (
-              <polyline
-                key={stroke.id}
-                points={stroke.points.map((p) => `${p.x},${p.y}`).join(" ")}
-                fill="none"
-                stroke={
-                  stroke.tool === TOOL_HIGHLIGHTER
-                    ? "rgba(255,255,0,0.5)"
-                    : stroke.color || "#111"
-                }
-                strokeWidth={stroke.tool === TOOL_HIGHLIGHTER ? 0.009 : 0.005}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            ))}
+            .map((stroke) => {
+              // Use smooth Catmull-Rom curves for pen strokes
+              // Highlighter stays as polyline since it's meant to be flat/horizontal
+              if (stroke.tool === TOOL_PEN && stroke.points.length > 2) {
+                const smoothedPath = smoothPathCatmullRom(stroke.points, 0.5);
+                return (
+                  <path
+                    key={stroke.id}
+                    d={smoothedPath}
+                    fill="none"
+                    stroke={stroke.color || "#111"}
+                    strokeWidth={(stroke.strokeWidth || 3) / 1000}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                );
+              }
+              // Fallback to polyline for highlighter and short strokes
+              // P1-11: Use stored stroke width, converted to normalized units
+              const strokeWidthNorm = stroke.tool === TOOL_HIGHLIGHTER
+                ? (stroke.strokeWidth || 12) / 1000  // Highlighter uses larger fixed width
+                : (stroke.strokeWidth || 3) / 1000;   // Default pen width
+
+              // P1-9: Highlighter uses multiply blend mode for natural highlighting
+              const isHighlighter = stroke.tool === TOOL_HIGHLIGHTER;
+              return (
+                <polyline
+                  key={stroke.id}
+                  points={stroke.points.map((p) => `${p.x},${p.y}`).join(" ")}
+                  fill="none"
+                  stroke={
+                    isHighlighter
+                      ? "#FFEB3B" // Bright yellow for better visibility with blend mode
+                      : stroke.color || "#111"
+                  }
+                  strokeWidth={strokeWidthNorm}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={isHighlighter ? {
+                    mixBlendMode: "multiply",
+                    opacity: 0.7,
+                  } : undefined}
+                />
+              );
+            })}
           {lines
             .filter((l) => !isPdf || l.page === pdfCurrentPage || !l.page)
             .map((l) => (
@@ -2597,6 +3858,84 @@ export default function PrepShell({
                 vectorEffect="non-scaling-stroke"
               />
             ))}
+          {/* P1-6: Render Selection Box */}
+          {selectionBox && (
+            <rect
+              x={Math.min(selectionBox.startX, selectionBox.currentX)}
+              y={Math.min(selectionBox.startY, selectionBox.currentY)}
+              width={Math.abs(selectionBox.currentX - selectionBox.startX)}
+              height={Math.abs(selectionBox.currentY - selectionBox.startY)}
+              fill="rgba(33, 150, 243, 0.1)"
+              stroke="#2196f3"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+              strokeDasharray="4 4"
+            />
+          )}
+
+          {/* P1-6: Render Selection Highlights for SVG items */}
+          {selectedItems.map((item) => {
+            if (item.type === 'stroke') {
+              const s = strokes.find((s) => s.id === item.id);
+              if (!s || (isPdf && (s.page ?? 1) !== pdfCurrentPage)) return null;
+              const isSmooth = s.tool === TOOL_PEN && s.points.length > 2;
+              return isSmooth ? (
+                <path
+                  key={`sel-${s.id}`}
+                  d={smoothPathCatmullRom(s.points, 0.5)}
+                  fill="none"
+                  stroke="#2196f3"
+                  strokeWidth={((s.strokeWidth || 3) / 1000) + 0.003}
+                  strokeOpacity={0.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ pointerEvents: 'none' }}
+                />
+              ) : (
+                <polyline
+                  key={`sel-${s.id}`}
+                  points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
+                  fill="none"
+                  stroke="#2196f3"
+                  strokeWidth={((s.strokeWidth || 3) / 1000) + 0.003}
+                  strokeOpacity={0.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ pointerEvents: 'none' }}
+                />
+              );
+            } else if (item.type === 'line') {
+              const l = lines.find((l) => l.id === item.id);
+              if (!l || (isPdf && (l.page ?? 1) !== pdfCurrentPage)) return null;
+              return (
+                <line
+                  key={`sel-${l.id}`}
+                  x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+                  stroke="#2196f3"
+                  strokeWidth={3}
+                  strokeOpacity={0.5}
+                  vectorEffect="non-scaling-stroke"
+                  style={{ pointerEvents: 'none' }}
+                />
+              );
+            } else if (item.type === 'box') {
+              const b = boxes.find((b) => b.id === item.id);
+              if (!b || (isPdf && (b.page ?? 1) !== pdfCurrentPage)) return null;
+              return (
+                <rect
+                  key={`sel-${b.id}`}
+                  x={b.x} y={b.y} width={b.width} height={b.height}
+                  fill="none"
+                  stroke="#2196f3"
+                  strokeWidth={3}
+                  strokeOpacity={0.5}
+                  vectorEffect="non-scaling-stroke"
+                  style={{ pointerEvents: 'none' }}
+                />
+              );
+            }
+            return null;
+          })}
         </svg>
 
         {/* Text boxes - rendered as siblings (no wrapper) for proper z-index stacking */}
@@ -2606,6 +3945,9 @@ export default function PrepShell({
             const isEditing = activeTextId === box.id;
             const isResizing = resizeState?.id === box.id;
             const isWidthResizing = widthResizeState?.id === box.id;
+            // P1-6: Check selection
+            const isSelected = selectedItems.some(i => i.type === 'text' && i.id === box.id);
+
             // ✅ Scale font size and width proportionally to container width
             const baseFontSize = box.fontSize || 16;
             const baseWidth = box.width || 150;
@@ -2619,7 +3961,8 @@ export default function PrepShell({
                   "prep-text-box" +
                   (isEditing ? " prep-text-box--editing" : "") +
                   (isResizing ? " prep-text-box--resizing" : "") +
-                  (isWidthResizing ? " prep-text-box--width-resizing" : "")
+                  (isWidthResizing ? " prep-text-box--width-resizing" : "") +
+                  (isSelected ? " is-selected" : "")
                 }
                 style={{
                   position: "absolute",
@@ -2682,7 +4025,13 @@ export default function PrepShell({
                     <div className="prep-text-box__container">
                       <span
                         className="prep-text-box__side-handle prep-text-box__side-handle--left"
-                        onMouseDown={(e) => startWidthResize(e, box, "left")}
+                        onMouseDown={(e) => {
+                          // Cancel blur when resizing
+                          if (blurDebounceRef.current) {
+                            clearTimeout(blurDebounceRef.current);
+                          }
+                          startWidthResize(e, box, "left");
+                        }}
                       />
 
                       <div
@@ -2721,21 +4070,45 @@ export default function PrepShell({
                           onChange={(e) =>
                             updateTextBoxText(box.id, e.target.value)
                           }
-                          onBlur={() => setActiveTextId(null)}
-                          onMouseDown={(e) => e.stopPropagation()}
+                          onBlur={() => handleTextBoxBlur(box.id)}
+                          onFocus={() => {
+                            // Cancel any pending blur when refocusing
+                            if (blurDebounceRef.current) {
+                              clearTimeout(blurDebounceRef.current);
+                            }
+                          }}
+                          onMouseDown={(e) => {
+                            if (tool !== TOOL_SELECT) e.stopPropagation();
+                            // Cancel blur if user is clicking within the text area
+                            if (blurDebounceRef.current) {
+                              clearTimeout(blurDebounceRef.current);
+                            }
+                          }}
                           onInput={() => autoResizeTextarea(box.id)}
                         />
 
                         <span
                           className="prep-text-box__fontsize-handle"
-                          onMouseDown={(e) => startFontSizeResize(e, box)}
+                          onMouseDown={(e) => {
+                            // Cancel blur when resizing
+                            if (blurDebounceRef.current) {
+                              clearTimeout(blurDebounceRef.current);
+                            }
+                            startFontSizeResize(e, box);
+                          }}
                           title="Resize font"
                         />
                       </div>
 
                       <span
                         className="prep-text-box__side-handle prep-text-box__side-handle--right"
-                        onMouseDown={(e) => startWidthResize(e, box, "right")}
+                        onMouseDown={(e) => {
+                          // Cancel blur when resizing
+                          if (blurDebounceRef.current) {
+                            clearTimeout(blurDebounceRef.current);
+                          }
+                          startWidthResize(e, box, "right");
+                        }}
                       />
                     </div>
                   </>
@@ -2779,41 +4152,44 @@ export default function PrepShell({
           .filter(
             (note) => !isPdf || note.page === pdfCurrentPage || !note.page
           )
-          .map((note) => (
-            <div
-              key={note.id}
-              className="prep-sticky-note"
-              style={{
-                left: `${note.x * 100}%`,
-                top: `${note.y * 100}%`,
-                zIndex: getZIndexFromId(note.id),
-              }}
-            >
+          .map((note) => {
+            const isSelected = selectedItems.some(i => i.type === 'note' && i.id === note.id);
+            return (
               <div
-                className="prep-sticky-note__header"
-                onMouseDown={(e) => startNoteDrag(e, note)}
+                key={note.id}
+                className={`prep-sticky-note${isSelected ? " is-selected" : ""}`}
+                style={{
+                  left: `${note.x * 100}%`,
+                  top: `${note.y * 100}%`,
+                  zIndex: getZIndexFromId(note.id),
+                }}
               >
-                <button
-                  type="button"
-                  className="prep-sticky-note__close"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteNote(note.id);
-                  }}
+                <div
+                  className="prep-sticky-note__header"
+                  onMouseDown={(e) => startNoteDrag(e, note)}
                 >
-                  ×
-                </button>
+                  <button
+                    type="button"
+                    className="prep-sticky-note__close"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteNote(note.id);
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <textarea
+                  className="prep-sticky-note__textarea"
+                  dir="auto"
+                  placeholder={t(dict, "resources_prep_note_placeholder")}
+                  value={note.text}
+                  onChange={(e) => updateNoteText(note.id, e.target.value)}
+                  onMouseDown={(e) => tool !== TOOL_SELECT && e.stopPropagation()}
+                />
               </div>
-              <textarea
-                className="prep-sticky-note__textarea"
-                dir="auto"
-                placeholder={t(dict, "resources_prep_note_placeholder")}
-                value={note.text}
-                onChange={(e) => updateNoteText(note.id, e.target.value)}
-                onMouseDown={(e) => e.stopPropagation()}
-              />
-            </div>
-          ))}
+            );
+          })}
 
         {/* Masks */}
         {masks
@@ -2938,34 +4314,63 @@ export default function PrepShell({
           </svg>
         )}
 
-        {/* Learner pointers */}
+        {/* Learner pointers - P1-12: Now with name labels */}
         {!menusOpen &&
-          Object.entries(learnerPointers).map(([uid, pos]) => (
-            <svg
-              key={uid}
-              style={{
-                position: "absolute",
-                left: `${pos.x * 100}%`,
-                top: `${pos.y * 100}%`,
-                transform: "translate(-100%, -50%)",
-                pointerEvents: "none",
-                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.35))",
-                zIndex: 9998,
-              }}
-              width="36"
-              height="36"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <path
-                d="M4 12H17M17 12L12 7M17 12L12 17"
-                stroke={colorForId(uid)}
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          ))}
+          Object.entries(learnerPointers).map(([uid, pos]) => {
+            const pointerColor = colorForId(uid);
+            return (
+              <div
+                key={uid}
+                style={{
+                  position: "absolute",
+                  left: `${pos.x * 100}%`,
+                  top: `${pos.y * 100}%`,
+                  transform: "translate(-100%, -50%)",
+                  pointerEvents: "none",
+                  zIndex: 9998,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <svg
+                  style={{
+                    filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.35))",
+                  }}
+                  width="36"
+                  height="36"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <path
+                    d="M4 12H17M17 12L12 7M17 12L12 17"
+                    stroke={pointerColor}
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {/* P1-12: Name label pill */}
+                {pos.displayName && (
+                  <span
+                    className="prep-cursor-label"
+                    style={{
+                      background: pointerColor,
+                      color: "white",
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      padding: "2px 6px",
+                      borderRadius: "8px",
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    {pos.displayName}
+                  </span>
+                )}
+              </div>
+            );
+          })}
       </div>
     );
   }
@@ -3206,7 +4611,7 @@ export default function PrepShell({
                         : t(dict, "resources_toolbar_sidebar_hide")
                     }
                   >
-                    {"📋"}
+                    {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
                     <span>
                       {sidebarCollapsed
                         ? t(dict, "resources_toolbar_sidebar_show")
@@ -3214,6 +4619,37 @@ export default function PrepShell({
                     </span>
                   </button>
                 )}
+
+                <div className="prep-annotate-toolbar__separator" />
+
+                {/* P2-20: Offline Warning */}
+                {classroomChannel && !channelReady && (
+                  <div style={{ marginRight: 8, color: '#f87171', display: 'flex', alignItems: 'center' }} title="Offline / Reconnecting">
+                    <WifiOff size={18} />
+                  </div>
+                )}
+
+                {/* Undo/Redo buttons */}
+                <button
+                  type="button"
+                  className="prep-annotate-toolbar__btn"
+                  onClick={undo}
+                  disabled={historyStack.length === 0}
+                  aria-label="Undo (Ctrl+Z)"
+                  title="Undo (Ctrl+Z)"
+                >
+                  <Undo2 size={18} /> <span>Undo</span>
+                </button>
+                <button
+                  type="button"
+                  className="prep-annotate-toolbar__btn"
+                  onClick={redo}
+                  disabled={redoStack.length === 0}
+                  aria-label="Redo (Ctrl+Shift+Z)"
+                  title="Redo (Ctrl+Shift+Z)"
+                >
+                  <Redo2 size={18} /> <span>Redo</span>
+                </button>
 
                 <div className="prep-annotate-toolbar__separator" />
 
@@ -3277,7 +4713,7 @@ export default function PrepShell({
                       }}
                       aria-label={isAudioPlaying ? "Pause audio" : "Play audio"}
                     >
-                      {isAudioPlaying ? "⏸" : "▶️"}
+                      {isAudioPlaying ? <Pause size={18} /> : <Play size={18} />}
                     </button>
 
                     {needsAudioUnlock && (
@@ -3305,7 +4741,7 @@ export default function PrepShell({
                         aria-label="Enable audio"
                         title="Enable audio"
                       >
-                        🔊
+                        <Volume2 size={18} />
                       </button>
                     )}
 
@@ -3343,7 +4779,7 @@ export default function PrepShell({
                       }}
                       aria-label="Play from beginning"
                     >
-                      ⏮
+                      <RotateCcw size={18} />
                     </button>
 
                     <audio
@@ -3354,207 +4790,260 @@ export default function PrepShell({
                   </>
                 )}
 
-                {/* TOOL DROPDOWN */}
-                <div
-                  className="prep-annotate-toolbar__dropdown"
-                  ref={toolMenuRef}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                >
+                {/* ═══════════════════════════════════════════════════════════════════
+                    SMART COLLAPSIBLE TOOLBAR - Premium Grouped Layout
+                    ═══════════════════════════════════════════════════════════════════ */}
+
+                {/* DRAW MENU - Primary drawing tools */}
+                <div className="prep-toolbar-dropdown" ref={drawMenuRef}>
                   <button
                     type="button"
                     className={
-                      "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--primary" +
-                      (tool !== TOOL_NONE ? " is-active" : "")
+                      "prep-toolbar-dropdown__trigger" +
+                      ([TOOL_SELECT, TOOL_PEN, TOOL_HIGHLIGHTER, TOOL_ERASER, TOOL_POINTER].includes(tool) ? " is-active" : "")
                     }
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setToolMenuOpen((v) => !v);
+                    onClick={() => {
+                      setDrawMenuOpen((v) => !v);
+                      setMoreMenuOpen(false);
+                      setShowWidthPicker(false);
                       setColorMenuOpen(false);
                     }}
+                    aria-expanded={drawMenuOpen}
+                    aria-haspopup="true"
                   >
-                    <span className="prep-annotate-toolbar__dropdown-icon">
-                      {currentToolIcon}
-                    </span>
-                    <span>{currentToolLabel}</span>
-                    <span className="prep-annotate-toolbar__dropdown-caret">
-                      ▾
-                    </span>
+                    {tool === TOOL_SELECT && <MousePointer2 size={18} />}
+                    {tool === TOOL_PEN && <PenTool size={18} />}
+                    {tool === TOOL_HIGHLIGHTER && <Highlighter size={18} />}
+                    {tool === TOOL_ERASER && <Eraser size={18} />}
+                    {tool === TOOL_POINTER && <Zap size={18} />}
+                    {![TOOL_SELECT, TOOL_PEN, TOOL_HIGHLIGHTER, TOOL_ERASER, TOOL_POINTER].includes(tool) && <PenTool size={18} />}
+                    <ChevronDown size={14} className={drawMenuOpen ? "rotated" : ""} />
                   </button>
 
-                  {toolMenuOpen && (
-                    <div
-                      className="prep-annotate-toolbar__dropdown-menu"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                    >
+                  {drawMenuOpen && (
+                    <div className="prep-toolbar-dropdown__menu prep-toolbar-dropdown__menu--draw">
                       <button
                         type="button"
-                        className={
-                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
-                          (tool === TOOL_NONE ? " is-active" : "")
-                        }
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setToolSafe(TOOL_NONE);
-                          setToolMenuOpen(false);
-                        }}
+                        className={"prep-toolbar-dropdown__item" + (tool === TOOL_SELECT ? " is-active" : "")}
+                        onClick={() => { setToolSafe(TOOL_SELECT); setDrawMenuOpen(false); }}
                       >
-                        🚫 <span>Turn off tools</span>
+                        <MousePointer2 size={16} />
+                        <span>Select</span>
+                        <kbd>V</kbd>
                       </button>
                       <button
                         type="button"
-                        className={
-                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
-                          (tool === TOOL_PEN ? " is-active" : "")
-                        }
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setToolSafe(TOOL_PEN);
-                          setToolMenuOpen(false);
-                        }}
+                        className={"prep-toolbar-dropdown__item" + (tool === TOOL_PEN ? " is-active" : "")}
+                        onClick={() => { setToolSafe(TOOL_PEN); setDrawMenuOpen(false); }}
                       >
-                        🖊️ <span>{t(dict, "resources_toolbar_pen")}</span>
+                        <PenTool size={16} />
+                        <span>Pen</span>
+                        <kbd>P</kbd>
                       </button>
                       <button
                         type="button"
-                        className={
-                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
-                          (tool === TOOL_HIGHLIGHTER ? " is-active" : "")
-                        }
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setToolSafe(TOOL_HIGHLIGHTER);
-                          setToolMenuOpen(false);
-                        }}
+                        className={"prep-toolbar-dropdown__item" + (tool === TOOL_HIGHLIGHTER ? " is-active" : "")}
+                        onClick={() => { setToolSafe(TOOL_HIGHLIGHTER); setDrawMenuOpen(false); }}
                       >
-                        ✨{" "}
-                        <span>{t(dict, "resources_toolbar_highlighter")}</span>
+                        <Highlighter size={16} />
+                        <span>Highlighter</span>
+                        <kbd>H</kbd>
                       </button>
                       <button
                         type="button"
-                        className={
-                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
-                          (tool === TOOL_MASK ? " is-active" : "")
-                        }
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setToolSafe(TOOL_MASK);
-                          setToolMenuOpen(false);
-                        }}
+                        className={"prep-toolbar-dropdown__item" + (tool === TOOL_ERASER ? " is-active" : "")}
+                        onClick={() => { setToolSafe(TOOL_ERASER); setDrawMenuOpen(false); }}
                       >
-                        ⬜ <span>Hide area</span>
+                        <Eraser size={16} />
+                        <span>Eraser</span>
+                        <kbd>E</kbd>
                       </button>
                       <button
                         type="button"
-                        className={
-                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
-                          (tool === TOOL_TEXT ? " is-active" : "")
-                        }
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setToolSafe(TOOL_TEXT);
-                          setToolMenuOpen(false);
-                        }}
+                        className={"prep-toolbar-dropdown__item" + (tool === TOOL_POINTER ? " is-active" : "")}
+                        onClick={() => { setToolSafe(TOOL_POINTER); setDrawMenuOpen(false); }}
                       >
-                        ✍️ <span>{t(dict, "resources_toolbar_text")}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={
-                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
-                          (tool === TOOL_LINE ? " is-active" : "")
-                        }
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setToolSafe(TOOL_LINE);
-                          setToolMenuOpen(false);
-                        }}
-                      >
-                        📏 <span>Straight Line</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={
-                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
-                          (tool === TOOL_BOX ? " is-active" : "")
-                        }
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setToolSafe(TOOL_BOX);
-                          setToolMenuOpen(false);
-                        }}
-                      >
-                        🟥 <span>Border Box</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={
-                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
-                          (tool === TOOL_ERASER ? " is-active" : "")
-                        }
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setToolSafe(TOOL_ERASER);
-                          setToolMenuOpen(false);
-                        }}
-                      >
-                        🧽 <span>{t(dict, "resources_toolbar_eraser")}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={
-                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
-                          (tool === TOOL_NOTE ? " is-active" : "")
-                        }
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setToolSafe(TOOL_NOTE);
-                          setToolMenuOpen(false);
-                        }}
-                      >
-                        🗒️ <span>{t(dict, "resources_toolbar_note")}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={
-                          "prep-annotate-toolbar__btn prep-annotate-toolbar__btn--dropdown" +
-                          (tool === TOOL_POINTER ? " is-active" : "")
-                        }
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setToolSafe(TOOL_POINTER);
-                          setToolMenuOpen(false);
-                        }}
-                      >
-                        ➤ <span>{t(dict, "resources_toolbar_pointer")}</span>
+                        <Zap size={16} />
+                        <span>Pointer</span>
+                        <kbd>L</kbd>
                       </button>
                     </div>
                   )}
                 </div>
 
+                {/* MORE MENU - Secondary tools (Text, Notes, Shapes, Grid, Export) */}
+                <div className="prep-toolbar-dropdown" ref={moreMenuRef}>
+                  <button
+                    type="button"
+                    className={
+                      "prep-toolbar-dropdown__trigger prep-toolbar-dropdown__trigger--more" +
+                      ([TOOL_TEXT, TOOL_NOTE, TOOL_LINE, TOOL_BOX, TOOL_MASK].includes(tool) || showGrid ? " is-active" : "")
+                    }
+                    onClick={() => {
+                      setMoreMenuOpen((v) => !v);
+                      setDrawMenuOpen(false);
+                      setShowWidthPicker(false);
+                      setColorMenuOpen(false);
+                    }}
+                    aria-expanded={moreMenuOpen}
+                    aria-haspopup="true"
+                  >
+                    {[TOOL_TEXT, TOOL_NOTE, TOOL_LINE, TOOL_BOX, TOOL_MASK].includes(tool) ? (
+                      <>
+                        {tool === TOOL_TEXT && <Type size={18} />}
+                        {tool === TOOL_NOTE && <StickyNote size={18} />}
+                        {tool === TOOL_LINE && <Minus size={18} style={{ transform: "rotate(45deg)" }} />}
+                        {tool === TOOL_BOX && <Square size={18} />}
+                        {tool === TOOL_MASK && <Square size={18} fill="currentColor" fillOpacity={0.3} />}
+                      </>
+                    ) : (
+                      <MoreHorizontal size={18} />
+                    )}
+                    <ChevronDown size={14} className={moreMenuOpen ? "rotated" : ""} />
+                  </button>
+
+                  {moreMenuOpen && (
+                    <div className="prep-toolbar-dropdown__menu prep-toolbar-dropdown__menu--more">
+                      <div className="prep-toolbar-dropdown__section-title">Annotate</div>
+                      <button
+                        type="button"
+                        className={"prep-toolbar-dropdown__item" + (tool === TOOL_TEXT ? " is-active" : "")}
+                        onClick={() => { setToolSafe(TOOL_TEXT); setMoreMenuOpen(false); }}
+                      >
+                        <Type size={16} />
+                        <span>Text</span>
+                        <kbd>T</kbd>
+                      </button>
+                      <button
+                        type="button"
+                        className={"prep-toolbar-dropdown__item" + (tool === TOOL_NOTE ? " is-active" : "")}
+                        onClick={() => { setToolSafe(TOOL_NOTE); setMoreMenuOpen(false); }}
+                      >
+                        <StickyNote size={16} />
+                        <span>Sticky Note</span>
+                        <kbd>N</kbd>
+                      </button>
+
+                      <div className="prep-toolbar-dropdown__divider" />
+                      <div className="prep-toolbar-dropdown__section-title">Shapes</div>
+                      <button
+                        type="button"
+                        className={"prep-toolbar-dropdown__item" + (tool === TOOL_LINE ? " is-active" : "")}
+                        onClick={() => { setToolSafe(TOOL_LINE); setMoreMenuOpen(false); }}
+                      >
+                        <Minus size={16} style={{ transform: "rotate(45deg)" }} />
+                        <span>Line</span>
+                        <kbd>1</kbd>
+                      </button>
+                      <button
+                        type="button"
+                        className={"prep-toolbar-dropdown__item" + (tool === TOOL_BOX ? " is-active" : "")}
+                        onClick={() => { setToolSafe(TOOL_BOX); setMoreMenuOpen(false); }}
+                      >
+                        <Square size={16} />
+                        <span>Rectangle</span>
+                        <kbd>2</kbd>
+                      </button>
+                      <button
+                        type="button"
+                        className={"prep-toolbar-dropdown__item" + (tool === TOOL_MASK ? " is-active" : "")}
+                        onClick={() => { setToolSafe(TOOL_MASK); setMoreMenuOpen(false); }}
+                      >
+                        <Square size={16} fill="currentColor" fillOpacity={0.3} />
+                        <span>Hide Mask</span>
+                        <kbd>M</kbd>
+                      </button>
+
+                      <div className="prep-toolbar-dropdown__divider" />
+                      <div className="prep-toolbar-dropdown__section-title">View</div>
+                      <button
+                        type="button"
+                        className={"prep-toolbar-dropdown__item" + (showGrid ? " is-active" : "")}
+                        onClick={() => { setShowGrid((v) => !v); setMoreMenuOpen(false); }}
+                      >
+                        <Grid3x3 size={16} />
+                        <span>Grid</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="prep-toolbar-dropdown__item"
+                        onClick={() => { handleExport(); setMoreMenuOpen(false); }}
+                      >
+                        <Download size={16} />
+                        <span>Export</span>
+                      </button>
+                      {(viewport.scale !== 1 || viewport.x !== 0 || viewport.y !== 0) && (
+                        <button
+                          type="button"
+                          className="prep-toolbar-dropdown__item"
+                          onClick={() => { setViewport({ x: 0, y: 0, scale: 1 }); setMoreMenuOpen(false); }}
+                        >
+                          <RotateCcw size={16} />
+                          <span>Reset Zoom</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="prep-annotate-toolbar__separator" />
+
+                {/* CLEAR ALL - Always visible */}
                 <button
                   type="button"
                   className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--danger"
-                  onClick={clearCanvasAndNotes}
+                  onClick={requestClearAll}
+                  title="Clear All"
                 >
-                  🗑️ <span>{t(dict, "resources_toolbar_clear_all")}</span>
+                  <Trash2 size={18} />
                 </button>
+
+                {/* P1-11: STROKE WIDTH PICKER */}
+                <div className="prep-width-picker" ref={widthPickerRef}>
+                  <button
+                    type="button"
+                    className="prep-width-picker__trigger"
+                    onClick={() => {
+                      setShowWidthPicker((v) => !v);
+                      setColorMenuOpen(false);
+                      setToolMenuOpen(false);
+                    }}
+                    title={t(dict, "resources_toolbar_width") || "Stroke Width"}
+                  >
+                    <span
+                      className="prep-width-picker__preview"
+                      style={{
+                        width: `${penStrokeWidth + 4}px`,
+                        height: `${penStrokeWidth + 4}px`
+                      }}
+                    />
+                    <span className="prep-width-picker__label">{penStrokeWidth}px</span>
+                  </button>
+                  {showWidthPicker && (
+                    <div className="prep-width-picker__menu">
+                      {STROKE_WIDTH_OPTIONS.map((w) => (
+                        <button
+                          key={w}
+                          type="button"
+                          className={`prep-width-picker__option${penStrokeWidth === w ? " is-active" : ""}`}
+                          onClick={() => {
+                            setPenStrokeWidth(w);
+                            setShowWidthPicker(false);
+                          }}
+                        >
+                          <span
+                            className="prep-width-picker__dot"
+                            style={{
+                              width: `${w + 4}px`,
+                              height: `${w + 4}px`
+                            }}
+                          />
+                          <span>{w}px</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* COLOR PICKER DROPDOWN */}
                 <div className="prep-annotate-colors">
@@ -3616,6 +5105,10 @@ export default function PrepShell({
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
+                    style={{
+                      transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
+                      transformOrigin: "0 0"
+                    }}
                   >
                     <video
                       ref={screenVideoRef}
@@ -3626,7 +5119,13 @@ export default function PrepShell({
                     {renderAnnotationsOverlay()}
                   </div>
                 ) : isPdf ? (
-                  <div className="prep-viewer__canvas-container">
+                  <div
+                    className="prep-viewer__canvas-container"
+                    style={{
+                      transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
+                      transformOrigin: "0 0"
+                    }}
+                  >
                     <PdfViewerWithSidebar
                       fileUrl={pdfViewerUrl}
                       onFatalError={(err) => {
@@ -3654,6 +5153,10 @@ export default function PrepShell({
                   <div
                     className="prep-viewer__canvas-container"
                     ref={containerRef}
+                    style={{
+                      transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
+                      transformOrigin: "0 0"
+                    }}
                   >
                     <iframe
                       src={viewerUrl}
@@ -3679,6 +5182,51 @@ export default function PrepShell({
           )}
         </section>
       </div>
+
+      {/* P0-5: Clear All Confirmation Modal */}
+      {showClearConfirm && (
+        <div
+          className="prep-confirm-modal-backdrop"
+          onClick={cancelClearAll}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") cancelClearAll();
+            if (e.key === "Enter") confirmClearAll();
+          }}
+        >
+          <div
+            className="prep-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="prep-confirm-modal__icon">⚠️</div>
+            <h3 className="prep-confirm-modal__title">
+              {t(dict, "resources_clear_confirm_title") || "Clear All Annotations?"}
+            </h3>
+            <p className="prep-confirm-modal__message">
+              {isPdf
+                ? (t(dict, "resources_clear_confirm_message_page") || `This will remove all annotations from page ${pdfCurrentPage}. This action can be undone with Ctrl+Z.`)
+                : (t(dict, "resources_clear_confirm_message") || "This will remove all annotations. This action can be undone with Ctrl+Z.")
+              }
+            </p>
+            <div className="prep-confirm-modal__actions">
+              <button
+                type="button"
+                className="prep-confirm-modal__btn prep-confirm-modal__btn--cancel"
+                onClick={cancelClearAll}
+              >
+                {t(dict, "resources_clear_confirm_cancel") || "Cancel"}
+              </button>
+              <button
+                type="button"
+                className="prep-confirm-modal__btn prep-confirm-modal__btn--confirm"
+                onClick={confirmClearAll}
+                autoFocus
+              >
+                {t(dict, "resources_clear_confirm_yes") || "Yes, Clear All"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

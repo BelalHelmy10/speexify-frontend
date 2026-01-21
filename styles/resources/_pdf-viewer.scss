@@ -1,5 +1,3 @@
-
-
 // SECTION 8: PDF VIEWER STYLES (MERGED - combines prep-pdf-* and cpv-*)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -10,10 +8,12 @@
   width: 100%;
   height: 100%;
   min-height: 0;
+
   @media (min-width: 768px) {
     flex-direction: row;
   }
 }
+
 .prep-pdf-main {
   flex: 1;
   display: flex;
@@ -23,6 +23,7 @@
   position: relative;
   overflow: auto; // Changed from hidden to auto (key fix: allow outer scroll if inner overflows)
 }
+
 .prep-pdf-main-inner {
   flex: 1;
   min-height: 0;
@@ -31,12 +32,11 @@
   flex-direction: column;
   align-items: center;
   padding: 1rem;
-  @include custom-scrollbar(
-    10px,
+  @include custom-scrollbar(10px,
     rgba(148, 163, 184, 0.1),
-    rgba(148, 163, 184, 0.3)
-  );
+    rgba(148, 163, 184, 0.3));
 }
+
 .prep-pdf-canvas {
   max-width: 100%;
   height: auto;
@@ -53,28 +53,33 @@
   border-top: 1px solid $cr-border-subtle;
   overflow-y: auto;
   @include custom-scrollbar;
+
   @media (min-width: 768px) {
     width: 80px;
     max-height: none;
     border-top: none;
     border-left: 1px solid $cr-border-subtle;
   }
+
   &__empty {
     padding: 1rem;
     text-align: center;
     color: $cr-text-muted;
     font-size: 0.8125rem;
   }
+
   &__pages {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     padding: 0.75rem;
+
     @media (min-width: 768px) {
       flex-direction: column;
       flex-wrap: nowrap;
     }
   }
+
   &__page-button {
     display: flex;
     align-items: center;
@@ -90,11 +95,13 @@
     border-radius: $cr-radius-sm;
     cursor: pointer;
     transition: all $cr-transition-fast;
+
     &:hover {
       background: $cr-bg-elevated;
       border-color: $cr-border-default;
       color: $cr-text-primary;
     }
+
     &.is-active {
       background: $cr-accent-primary;
       border-color: $cr-accent-primary;
@@ -117,14 +124,17 @@
   padding: 2rem;
   text-align: center;
   color: $cr-text-secondary;
+
   &__icon {
     font-size: 2.5rem;
   }
+
   &__text {
     font-size: 0.9375rem;
     max-width: 400px;
     line-height: 1.6;
   }
+
   &__retry {
     margin-top: 0.5rem;
     padding: 0.5rem 1.25rem;
@@ -136,6 +146,7 @@
     border-radius: $cr-radius-full;
     cursor: pointer;
     transition: background $cr-transition-fast;
+
     &:hover {
       background: $cr-accent-primary-lighter;
     }
@@ -158,6 +169,7 @@
   border-radius: $cr-radius-full;
   box-shadow: $cr-shadow-lg;
   z-index: 10;
+
   &__btn {
     display: flex;
     align-items: center;
@@ -171,16 +183,19 @@
     border-radius: 50%;
     cursor: pointer;
     transition: all $cr-transition-fast;
+
     &:hover:not(:disabled) {
       background: $cr-bg-elevated;
       color: $cr-text-primary;
       border-color: $cr-border-default;
     }
+
     &:disabled {
       opacity: 0.4;
       cursor: not-allowed;
     }
   }
+
   &__indicator {
     font-size: 0.8125rem;
     font-weight: 500;
@@ -214,6 +229,7 @@
   color: $cr-text-primary;
   overflow: auto; // Changed from hidden to auto (key fix for classroom PDF scroll)
 }
+
 .cpv-loading {
   display: flex;
   flex-direction: column;
@@ -224,6 +240,7 @@
   gap: 1rem;
   color: $cr-text-secondary;
   font-size: 0.9375rem;
+
   &__spinner {
     width: 40px;
     height: 40px;
@@ -233,9 +250,11 @@
     animation: cr-spin 0.8s linear infinite;
   }
 }
+
 .cpv-error {
   @extend .prep-pdf-error;
 }
+
 .cpv-toolbar {
   display: flex;
   align-items: center;
@@ -246,21 +265,26 @@
   border-bottom: 1px solid $cr-border-subtle;
   flex-shrink: 0;
   z-index: 10;
+
   &__tools {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
+
   &__btn {
     @extend .prep-annotate-toolbar__btn;
   }
+
   &__colors {
     @extend .prep-annotate-colors;
   }
+
   &__color {
     @extend .prep-annotate-color;
   }
 }
+
 .cpv-viewport {
   flex: 1;
   display: flex;
@@ -272,6 +296,7 @@
   min-height: 0; // Critical for flex scroll
   @include custom-scrollbar(10px, $cr-bg-secondary, $cr-border-default);
 }
+
 .cpv-page-wrapper {
   position: relative;
   display: inline-block;
@@ -280,9 +305,11 @@
   overflow: visible; // Changed from hidden to visible (prevent clipping of tall pages)
   background: white;
 }
+
 .cpv-page-canvas {
   display: block;
 }
+
 .cpv-annotation-canvas {
   position: absolute;
   top: 0;
@@ -291,6 +318,7 @@
   height: 100%;
   pointer-events: auto;
 }
+
 .cpv-nav {
   display: flex;
   align-items: center;
@@ -300,6 +328,7 @@
   border-top: 1px solid $cr-border-subtle;
   flex-shrink: 0;
   z-index: 10;
+
   &__left,
   &__center,
   &__right {
@@ -307,10 +336,12 @@
     align-items: center;
     gap: 0.5rem;
   }
+
   &__center {
     flex: 1;
     justify-content: center;
   }
+
   &__btn {
     display: flex;
     align-items: center;
@@ -327,20 +358,24 @@
     border-radius: $cr-radius-md;
     cursor: pointer;
     transition: all $cr-transition-fast;
+
     &:hover:not(:disabled) {
       color: $cr-text-primary;
       background: $cr-bg-elevated;
       border-color: $cr-border-default;
     }
+
     &:disabled {
       opacity: 0.4;
       cursor: not-allowed;
     }
+
     &--text {
       font-size: 0.8125rem;
       padding: 0 1rem;
     }
   }
+
   &__zoom {
     font-size: 0.8125rem;
     font-family: $cr-font-mono;
@@ -348,6 +383,7 @@
     min-width: 50px;
     text-align: center;
   }
+
   &__pages {
     font-size: 0.875rem;
     color: $cr-text-primary;
@@ -364,11 +400,13 @@
   height: 100%;
   pointer-events: none;
   z-index: 10;
+
   &--drawing {
     pointer-events: auto;
     cursor: crosshair;
   }
 }
+
 .prep-annotations-svg {
   position: absolute;
   top: 0;
@@ -390,6 +428,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   pointer-events: auto;
   transform: translate(-50%, -50%);
+
   &__header {
     display: flex;
     align-items: center;
@@ -399,6 +438,7 @@
     border-radius: 4px 4px 0 0;
     cursor: move;
   }
+
   &__close {
     display: flex;
     align-items: center;
@@ -412,11 +452,13 @@
     border-radius: 50%;
     cursor: pointer;
     transition: all $cr-transition-fast;
+
     &:hover {
       color: $cr-accent-danger;
       background: rgba($cr-accent-danger, 0.1);
     }
   }
+
   &__textarea {
     width: 100%;
     min-height: 80px;
@@ -428,9 +470,15 @@
     border: none;
     resize: vertical;
     outline: none;
+
     &::placeholder {
       color: #999;
     }
+  }
+
+  &.is-selected {
+    box-shadow: 0 0 0 2px $cr-accent-primary, 0 8px 20px rgba(0, 0, 0, 0.25);
+    z-index: 25;
   }
 }
 
@@ -559,7 +607,8 @@
     resize: none;
     outline: none;
     overflow: visible;
-    field-sizing: content; /* Modern browsers: auto-size to content */
+    field-sizing: content;
+    /* Modern browsers: auto-size to content */
     text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.9),
       1px -1px 0 rgba(255, 255, 255, 0.9), -1px 1px 0 rgba(255, 255, 255, 0.9),
       1px 1px 0 rgba(255, 255, 255, 0.9), 0 0 10px rgba(255, 255, 255, 0.6);
@@ -650,6 +699,12 @@
   &--width-resizing &__input-area {
     border-style: dashed;
   }
+
+  &.is-selected {
+    outline: 2px solid $cr-accent-primary;
+    outline-offset: 6px;
+    z-index: 25;
+  }
 }
 
 // ─── Pointer ────────────────────────────────────────────────────────────────
@@ -671,12 +726,15 @@
 // CPV aliases
 .cpv-textbox {
   @extend .prep-text-box;
+
   &--editing {
     @extend .prep-text-box--editing;
   }
 }
+
 .cpv-pointer {
   @extend .prep-pointer;
+
   &__dot {
     width: 16px;
     height: 16px;
@@ -684,6 +742,7 @@
     border-radius: 50%;
     box-shadow: 0 2px 8px rgba($cr-accent-teacher, 0.5);
   }
+
   &__ring {
     position: absolute;
     top: 50%;
