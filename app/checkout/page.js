@@ -12,6 +12,7 @@ import {
   calculatePackagePrice,
   formatRegionalPrice,
 } from "@/lib/regional-pricing";
+import { getRateFromTo } from "@/lib/currency";
 
 export default function CheckoutPage() {
   const { toast, confirmModal } = useToast();
@@ -32,6 +33,9 @@ export default function CheckoutPage() {
   const [discountCode, setDiscountCode] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
   const [discountLoading, setDiscountLoading] = useState(false);
+
+  // New state for realtime EGP equivalent
+  const [realtimeEGP, setRealtimeEGP] = useState(null);
 
   const planTitle = searchParams.get("plan");
 
@@ -74,20 +78,20 @@ export default function CheckoutPage() {
         console.log("🔍 Looking for package:", planTitle);
         console.log(
           "📦 Available packages:",
-          packages.map((p) => p.title)
+          packages.map((p) => p.title),
         );
 
         const decodedTitle = decodeURIComponent(planTitle).trim();
 
         let selected = packages.find(
-          (p) => p.title.toLowerCase() === decodedTitle.toLowerCase()
+          (p) => p.title.toLowerCase() === decodedTitle.toLowerCase(),
         );
 
         if (!selected) {
           selected = packages.find(
             (p) =>
               p.title.toLowerCase().includes(decodedTitle.toLowerCase()) ||
-              decodedTitle.toLowerCase().includes(p.title.toLowerCase())
+              decodedTitle.toLowerCase().includes(p.title.toLowerCase()),
           );
         }
 
@@ -122,6 +126,30 @@ export default function CheckoutPage() {
     }
   }
 
+  // Calculate regional pricing
+  const regionalPrice = useMemo(() => {
+    if (!pkg) return null;
+    return calculatePackagePrice(pkg, countryCode, discountPercent);
+  }, [pkg, countryCode, discountPercent]);
+
+  // Effect to calculate Realtime EGP if currency is not EGP
+  useEffect(() => {
+    if (!regionalPrice || regionalPrice.displayCurrency === "EGP") {
+      setRealtimeEGP(null);
+      return;
+    }
+
+    (async () => {
+      const rate = await getRateFromTo(regionalPrice.displayCurrency, "EGP");
+      // Calculate EGP based on the DISPLAY PRICE (which is what user sees)
+      const converted = Math.round(regionalPrice.displayAmount * rate);
+      console.log(
+        `💱 Realtime FX: ${regionalPrice.displayAmount} ${regionalPrice.displayCurrency} * ${rate} = ${converted} EGP`,
+      );
+      setRealtimeEGP(converted);
+    })();
+  }, [regionalPrice]);
+
   async function startPayment() {
     if (!pkg) return;
 
@@ -130,7 +158,7 @@ export default function CheckoutPage() {
 
       if (!user) {
         const shouldLogin = await confirmModal(
-          t(dict, "confirm_login_message")
+          t(dict, "confirm_login_message"),
         );
         if (shouldLogin) {
           const currentUrl = encodeURIComponent(window.location.href);
@@ -140,21 +168,27 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Always use EGP amount for Paymob (discounted price if any)
-      const rawEGP = pkg.priceEGP || pkg.priceUSD || 0;
-      const finalEGP =
-        discountPercent > 0
-          ? Math.round(rawEGP * (1 - discountPercent / 100))
-          : rawEGP;
+      // Determine final EGP amount for payment
+      // If we have a realtime conversion, use it. Otherwise use the base/discounted EGP.
+      let finalAmountCents;
 
-      const amountCents = Math.round(finalEGP * 100);
+      if (realtimeEGP) {
+        finalAmountCents = Math.round(realtimeEGP * 100);
+      } else {
+        const rawEGP = pkg.priceEGP || pkg.priceUSD || 0;
+        const discountedEGP =
+          discountPercent > 0
+            ? Math.round(rawEGP * (1 - discountPercent / 100))
+            : rawEGP;
+        finalAmountCents = Math.round(discountedEGP * 100);
+      }
 
       const nameParts = (user.name || "User").split(" ");
       const firstName = nameParts[0] || "User";
       const lastName = nameParts.slice(1).join(" ") || "";
 
       const body = {
-        amountCents,
+        amountCents: finalAmountCents,
         orderId: `order_${Date.now()}_${pkg.id}_user${user.id}`,
         packageId: Number(pkg.id),
         currency: "EGP",
@@ -227,27 +261,32 @@ export default function CheckoutPage() {
     );
   }
 
-  // Calculate regional pricing
-  const regionalPrice = calculatePackagePrice(
-    pkg,
-    countryCode,
-    discountPercent
-  );
-
-  const rawEGP = pkg.priceEGP || pkg.priceUSD || 0;
-  const finalEGP =
-    discountPercent > 0
-      ? Math.round(rawEGP * (1 - discountPercent / 100))
-      : rawEGP;
-
   // Format prices for display
+  // Use regionalPrice calculated in memo above
+  if (!regionalPrice) return null; // Logic check
+
   const displayPrice = formatRegionalPrice(regionalPrice, locale);
+
+  // EGP Price for display (what we will charge)
+  // If realtimeEGP is available, use it. Else use standard calc.
+  let displayEGPAmount = 0;
+  if (realtimeEGP) {
+    displayEGPAmount = realtimeEGP;
+  } else {
+    // Fallback logic
+    const base = pkg.priceEGP || pkg.priceUSD || 0;
+    displayEGPAmount =
+      discountPercent > 0
+        ? Math.round(base * (1 - discountPercent / 100))
+        : base;
+  }
+
   const egpPrice = new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "EGP",
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  }).format(finalEGP);
+  }).format(displayEGPAmount);
 
   // Check if user is seeing a different currency than EGP
   const isDifferentCurrency = regionalPrice.displayCurrency !== "EGP";
