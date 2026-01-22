@@ -169,7 +169,6 @@ export default function CheckoutPage() {
       }
 
       // Determine final EGP amount for payment
-      // If we have a realtime conversion, use it. Otherwise use the base/discounted EGP.
       let finalAmountCents;
 
       if (realtimeEGP) {
@@ -191,7 +190,7 @@ export default function CheckoutPage() {
         amountCents: finalAmountCents,
         orderId: `order_${Date.now()}_${pkg.id}_user${user.id}`,
         packageId: Number(pkg.id),
-        currency: "EGP",
+        currency: "EGP", // Intention API usually expects EGP
         discountCode: discountCode || null,
         customer: {
           firstName,
@@ -201,14 +200,21 @@ export default function CheckoutPage() {
         },
       };
 
+      // Call our new Intention API endpoint
       const { data } = await api.post("/payments/create-intent", body);
 
       if (!data?.ok) {
         throw new Error(data?.message || "Failed to init payment");
       }
 
-      window.location.href = data.iframeUrl;
+      // REDIRECT to Paymob Unified Checkout
+      if (data.iframeUrl) {
+        window.location.href = data.iframeUrl;
+      } else {
+        throw new Error("No checkout URL received");
+      }
     } catch (e) {
+      console.error("startPayment error:", e);
       const resp = e?.response?.data;
 
       if (resp?.code === "ALREADY_SUBSCRIBED") {
@@ -218,8 +224,6 @@ export default function CheckoutPage() {
       } else {
         toast.error(t(dict, "toast_payment_failed"));
       }
-
-      console.error("startPayment error:", e);
     } finally {
       setLoading(false);
     }
