@@ -174,12 +174,8 @@ export default function CheckoutPage() {
       if (realtimeEGP) {
         finalAmountCents = Math.round(realtimeEGP * 100);
       } else {
-        const rawEGP = pkg.priceEGP || pkg.priceUSD || 0;
-        const discountedEGP =
-          discountPercent > 0
-            ? Math.round(rawEGP * (1 - discountPercent / 100))
-            : rawEGP;
-        finalAmountCents = Math.round(discountedEGP * 100);
+        // Use the calculated regional amount (which handles overrides and discounts)
+        finalAmountCents = Math.round(regionalPrice.egpAmount * 100);
       }
 
       const nameParts = (user.name || "User").split(" ");
