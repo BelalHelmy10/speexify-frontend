@@ -32,7 +32,7 @@ export default function PaymentSuccessPage() {
     async function poll() {
       try {
         const { data } = await api.get(
-          `/api/orders/${encodeURIComponent(orderId)}`
+          `/api/payments/orders/${encodeURIComponent(orderId)}`
         );
 
         if (data?.status === "paid") {

@@ -12,7 +12,6 @@ import {
   calculatePackagePrice,
   formatRegionalPrice,
 } from "@/lib/regional-pricing";
-import { getRateFromTo } from "@/lib/currency";
 
 export default function CheckoutPage() {
   const { toast, confirmModal } = useToast();
@@ -33,9 +32,6 @@ export default function CheckoutPage() {
   const [discountCode, setDiscountCode] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
   const [discountLoading, setDiscountLoading] = useState(false);
-
-  // New state for realtime EGP equivalent
-  const [realtimeEGP, setRealtimeEGP] = useState(null);
 
   const planTitle = searchParams.get("plan");
 
@@ -132,24 +128,6 @@ export default function CheckoutPage() {
     return calculatePackagePrice(pkg, countryCode, discountPercent);
   }, [pkg, countryCode, discountPercent]);
 
-  // Effect to calculate Realtime EGP if currency is not EGP
-  useEffect(() => {
-    if (!regionalPrice || regionalPrice.displayCurrency === "EGP") {
-      setRealtimeEGP(null);
-      return;
-    }
-
-    (async () => {
-      const rate = await getRateFromTo(regionalPrice.displayCurrency, "EGP");
-      // Calculate EGP based on the DISPLAY PRICE (which is what user sees)
-      const converted = Math.round(regionalPrice.displayAmount * rate);
-      console.log(
-        `💱 Realtime FX: ${regionalPrice.displayAmount} ${regionalPrice.displayCurrency} * ${rate} = ${converted} EGP`,
-      );
-      setRealtimeEGP(converted);
-    })();
-  }, [regionalPrice]);
-
   async function startPayment() {
     if (!pkg) return;
 
@@ -168,25 +146,19 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Determine final EGP amount for payment
-      let finalAmountCents;
-
-      if (realtimeEGP) {
-        finalAmountCents = Math.round(realtimeEGP * 100);
-      } else {
-        // Use the calculated regional amount (which handles overrides and discounts)
-        finalAmountCents = Math.round(regionalPrice.egpAmount * 100);
-      }
+      // Use the display amount (backend will handle conversion to EGP if needed)
+      const amountCents = Math.round(regionalPrice.displayAmount * 100);
+      const currency = regionalPrice.displayCurrency;
 
       const nameParts = (user.name || "User").split(" ");
       const firstName = nameParts[0] || "User";
       const lastName = nameParts.slice(1).join(" ") || "";
 
       const body = {
-        amountCents: finalAmountCents,
+        amountCents,
         orderId: `order_${Date.now()}_${pkg.id}_user${user.id}`,
         packageId: Number(pkg.id),
-        currency: "EGP", // Intention API usually expects EGP
+        currency,
         discountCode: discountCode || null,
         customer: {
           firstName,
@@ -266,30 +238,6 @@ export default function CheckoutPage() {
   if (!regionalPrice) return null; // Logic check
 
   const displayPrice = formatRegionalPrice(regionalPrice, locale);
-
-  // EGP Price for display (what we will charge)
-  // If realtimeEGP is available, use it. Else use standard calc.
-  let displayEGPAmount = 0;
-  if (realtimeEGP) {
-    displayEGPAmount = realtimeEGP;
-  } else {
-    // Fallback logic
-    const base = pkg.priceEGP || pkg.priceUSD || 0;
-    displayEGPAmount =
-      discountPercent > 0
-        ? Math.round(base * (1 - discountPercent / 100))
-        : base;
-  }
-
-  const egpPrice = new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: "EGP",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(displayEGPAmount);
-
-  // Check if user is seeing a different currency than EGP
-  const isDifferentCurrency = regionalPrice.displayCurrency !== "EGP";
 
   return (
     <div className="checkout">
@@ -383,16 +331,6 @@ export default function CheckoutPage() {
               <span className="checkout__pricing-value">{displayPrice}</span>
             </div>
 
-            {/* Show EGP equivalent if different currency */}
-            {isDifferentCurrency && (
-              <div className="checkout__pricing-row">
-                <span className="checkout__pricing-label">
-                  {t(dict, "pricing_label_egp_equivalent")}
-                </span>
-                <span className="checkout__pricing-value">{egpPrice}</span>
-              </div>
-            )}
-
             <div className="checkout__pricing-row checkout__pricing-row--total">
               <span className="checkout__pricing-label checkout__pricing-label--total">
                 {t(dict, "pricing_label_total")}
@@ -402,16 +340,6 @@ export default function CheckoutPage() {
               </span>
             </div>
           </div>
-
-          {/* Exchange Rate Note - only show if different currency */}
-          {isDifferentCurrency && (
-            <div className="checkout__exchange-note">
-              {t(dict, "exchange_note_regional", {
-                displayCurrency: regionalPrice.displayCurrency,
-                region: regionalPrice.regionName,
-              })}
-            </div>
-          )}
         </div>
 
         {/* Customer Information Preview (if logged in) */}
