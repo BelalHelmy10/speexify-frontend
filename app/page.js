@@ -113,7 +113,7 @@ function Home({ locale = "en" }) {
             <div className="home-media-card">
               <div className="home-media-card__glow"></div>
               <img
-                src="/images/Hero First.avif"
+                src="/images/Hero First.png"
                 alt="Live English coaching product preview"
                 className="home-media-card__img"
               />

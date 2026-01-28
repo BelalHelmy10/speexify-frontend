@@ -1,38 +1,32 @@
 {
-  "tagline": "Language & communication coaching for teams that need results.",
-  "newsletterTitle": "Stay in the loop",
+  "tagline": "Real coaches. Real conversations. Real results.",
+  "newsletterTitle": "Get weekly speaking tips",
   "newsletterPlaceholder": "Enter your email",
   "newsletterButton": "Subscribe",
-
-  "productTitle": "Product",
-  "individualTraining": "Individual Training",
-  "corporateTraining": "Corporate Training",
+  "productTitle": "Learn",
+  "individualTraining": "For Individuals",
+  "corporateTraining": "For Teams",
   "packages": "Packages",
-
+  "whySpeexify": "Why Speexify",
   "companyTitle": "Company",
   "about": "About",
   "contact": "Contact",
   "careers": "Careers",
-
   "resourcesTitle": "Resources",
   "blog": "Blog",
   "guides": "Guides",
   "helpCenter": "Help Center",
-
   "legalTitle": "Legal",
   "privacyPolicy": "Privacy Policy",
   "termsOfService": "Terms of Service",
   "cookiePolicy": "Cookie Policy",
-
   "rights": "All rights reserved.",
-
   "ariaBlog": "Blog (coming soon)",
   "ariaGuides": "Guides (coming soon)",
   "ariaHelp": "Help Center (coming soon)",
   "ariaPrivacy": "Privacy Policy",
   "ariaTerms": "Terms of Service",
   "ariaCookies": "Cookie Policy",
-
   "ariaLinkedIn": "LinkedIn (opens in a new tab)",
   "ariaTwitter": "Twitter (opens in a new tab)",
   "ariaYouTube": "YouTube (opens in a new tab)",

@@ -1,129 +1,93 @@
 {
-  "badge": "Language & communication coaching",
-
-  "title_main": "Empower your team to",
-  "title_accent": " speak with confidence",
-
-  "subtitle": "Speexify delivers personalized English coaching and applied learning programs that drive measurable performance at work.",
-  "ctaPrimary": "Get started",
-  "ctaSecondary": "Explore packages",
-
-  "features_title": "Why Speexify",
-  "features_subtitle": "Everything you need to master professional communication",
-
-  "feature1_title": "Personalized coaching",
-  "feature1_text": "A tailored plan built around your role, goals, and level. Learn what actually helps you succeed at work.",
-
-  "feature2_title": "Top-tier coaches",
-  "feature2_text": "Hand-picked, experienced trainers with business expertise — not just grammar.",
-
+  "badge": "Live English coaching",
+  "title_main": "Stop learning.",
+  "title_accent": " Start speaking.",
+  "subtitle": "Live 1-on-1 coaching that builds real fluency — for your career, your travels, your life. Real coaches. Real conversations. Real results.",
+  "ctaPrimary": "Start your transformation",
+  "ctaSecondary": "View packages",
+  "features_title": "Why Speexify?",
+  "features_subtitle": "What makes us different from everything else you've tried",
+  "feature1_title": "Real conversations",
+  "feature1_text": "Learn by speaking with expert coaches who adapt to you in real-time — not by tapping on a screen.",
+  "feature2_title": "Outcome-obsessed",
+  "feature2_text": "We don't sell courses. We help you achieve goals — nail interviews, lead meetings, travel confidently.",
   "feature3_title": "Flexible & measurable",
-  "feature3_text": "Book sessions around your schedule and track progress with clear milestones and reports.",
-
-  "feature4_title": "For individuals & teams",
-  "feature4_text": "From solo learners to company programs — Speexify scales with your needs.",
-
+  "feature3_text": "Book sessions on your schedule. Track your progress with clear milestones you can actually feel.",
+  "feature4_title": "For you, on your terms",
+  "feature4_text": "Whether you're prepping for a big moment or building long-term fluency — we scale with your needs.",
   "how_title": "How it works",
-  "how_subtitle": "Three simple steps to transformation",
-
-  "how_step1_title": "Assess",
-  "how_step1_text": "Complete a quick skills & goals survey to personalize your plan.",
-
-  "how_step2_title": "Coach",
-  "how_step2_text": "Meet 1:1 with a coach matched to your role & industry.",
-
-  "how_step3_title": "Apply",
-  "how_step3_text": "Practice with real work scenarios and measure improvement.",
-
-  "how_cta_primary": "Start your assessment",
+  "how_subtitle": "Three steps to becoming the speaker you want to be",
+  "how_step1_title": "Tell us your goal",
+  "how_step1_text": "A quick consultation to understand where you are and where you want to go.",
+  "how_step2_title": "Meet your coach",
+  "how_step2_text": "We match you with an expert who gets you — and adapts every session to your needs.",
+  "how_step3_title": "See real progress",
+  "how_step3_text": "Practice what matters. Track your growth. Feel the difference within weeks.",
+  "how_cta_primary": "Book a free consultation",
   "how_cta_secondary": "Ask a question",
-
-  "curr_title": "What you'll learn",
-  "curr_subtitle": "Practical, job-ready modules you can apply the same day",
-
-  "curr1_title": "Client communication",
-  "curr1_desc": "Run structured calls, handle objections, and summarize clearly.",
-
-  "curr2_title": "Presentations",
-  "curr2_desc": "Build confident narratives with visuals and engaging delivery.",
-
-  "curr3_title": "Email & async",
-  "curr3_desc": "Write crisp, professional messages that get quick responses.",
-
-  "curr4_title": "Leadership",
-  "curr4_desc": "Drive decisions, give feedback, and influence across teams.",
-
-  "curr_more": "See full track list",
-
-  "coaches_title": "Meet a few of our coaches",
-  "coaches_subtitle": "Expert trainers with real-world business experience",
+  "curr_title": "What you'll master",
+  "curr_subtitle": "Practical skills you can use the same day",
+  "curr1_title": "Confident conversations",
+  "curr1_desc": "Speak naturally in meetings, calls, and everyday life.",
+  "curr2_title": "Powerful presentations",
+  "curr2_desc": "Own the room with clear narratives and confident delivery.",
+  "curr3_title": "Professional writing",
+  "curr3_desc": "Craft emails and messages that sound sharp and get responses.",
+  "curr4_title": "Interview mastery",
+  "curr4_desc": "Walk into any interview knowing exactly what to say.",
+  "curr_more": "See all skills",
+  "coaches_title": "Your coaches",
+  "coaches_subtitle": "Expert trainers who've been where you want to go",
   "coaches_note": "We'll match you with the perfect coach for your goals",
-
   "coach1_name": "Billy H.",
   "coach1_role": "Senior Communication Coach",
-  "coach1_bio": "Former enterprise trainer; specializes in client-facing roles.",
-
+  "coach1_bio": "Former enterprise trainer. Specializes in client-facing roles and confident speaking.",
   "coach2_name": "Zee A.",
   "coach2_role": "Presentation & Storytelling",
-  "coach2_bio": "Ex-consultant; helps craft persuasive narratives for execs.",
-
+  "coach2_bio": "Ex-consultant. Helps craft persuasive narratives for high-stakes moments.",
   "coach3_name": "Lina T.",
   "coach3_role": "Leadership Communication",
-  "coach3_bio": "Led global teams; mentors managers on clarity and influence.",
-
-  "cases_title": "Real outcomes",
-  "cases_subtitle": "See how teams are transforming their communication",
-
-  "case1_title": "Onboarding made faster",
-  "case1_text": "A support team reduced average handle time by 22% with clearer call structures.",
-  "case1_metric": "22%",
-  "case1_metric_label": "faster",
-
-  "case2_title": "Meetings that decide",
-  "case2_text": "A product trio cut weekly syncs by 30% using agenda-first updates.",
-  "case2_metric": "30%",
-  "case2_metric_label": "less time",
-
-  "case3_title": "Sales confidence",
-  "case3_text": "Reps improved objection handling and boosted close rates in Q2.",
-  "case3_metric": "2.1×",
-  "case3_metric_label": "close rate",
-
-  "testi1_quote": "My coach helped me nail tough client calls. I feel confident and clear.",
+  "coach3_bio": "Led global teams. Mentors on clarity, influence, and executive presence.",
+  "cases_title": "Real transformations",
+  "cases_subtitle": "See what's possible when you commit to speaking",
+  "case1_title": "From hesitant to confident",
+  "case1_text": "A software engineer went from avoiding calls to leading client meetings in 8 weeks.",
+  "case1_metric": "8 wks",
+  "case1_metric_label": "to confidence",
+  "case2_title": "Interview success",
+  "case2_text": "A graduate landed their dream job after targeted interview coaching.",
+  "case2_metric": "1st",
+  "case2_metric_label": "offer received",
+  "case3_title": "Presentation breakthrough",
+  "case3_text": "A manager transformed team presentations and earned a promotion.",
+  "case3_metric": "2×",
+  "case3_metric_label": "impact score",
+  "testi1_quote": "I finally feel like myself when I speak. My coach helped me find my voice.",
   "testi1_author": "Sara M.",
   "testi1_role": "Customer Success",
-
-  "testi2_quote": "Our team's communication improved in weeks — meetings are faster and decisions clearer.",
+  "testi2_quote": "Two months with Speexify changed more than years of studying ever did.",
   "testi2_author": "Ahmed K.",
   "testi2_role": "Team Lead",
-
-  "testi3_quote": "The sessions are practical and fun. I can see progress after every call.",
+  "testi3_quote": "Every session is practical. I can feel the progress after every call.",
   "testi3_author": "Javier R.",
   "testi3_role": "Product Manager",
-
-  "faq_title": "Frequently asked questions",
+  "faq_title": "Questions?",
   "faq_subtitle": "Everything you need to know to get started",
-
   "faq1_q": "How do you match me with a coach?",
-  "faq1_a": "We consider your goals, current level, industry, and schedule to suggest the best coach profiles for you or your team.",
-
-  "faq2_q": "Can I switch coaches later?",
-  "faq2_a": "Absolutely. If the fit isn't right, you can switch anytime without losing progress.",
-
-  "faq3_q": "Do you offer corporate packages?",
-  "faq3_a": "Yes — we support budget controls, reporting, and manager dashboards for teams.",
-
-  "faq4_q": "What's the time commitment?",
-  "faq4_a": "Most learners do 1–2 sessions per week plus short, role-based practice.",
-
-  "newsletter_title": "Get actionable communication tips",
-  "newsletter_sub": "Monthly insights from coaches — no spam, just value.",
+  "faq1_a": "We consider your goals, level, industry, and schedule to suggest the perfect coach for you.",
+  "faq2_q": "Can I switch coaches?",
+  "faq2_a": "Absolutely. If the fit isn't right, switch anytime without losing progress.",
+  "faq3_q": "What if I'm a complete beginner?",
+  "faq3_a": "We work with all levels. Your coach adapts to meet you where you are.",
+  "faq4_q": "How much time does it take?",
+  "faq4_a": "Most learners do 1–2 sessions per week. Even that makes a real difference.",
+  "newsletter_title": "Get weekly speaking tips",
+  "newsletter_sub": "Practical insights from our coaches — no spam, just value.",
   "newsletter_placeholder": "Enter your email",
   "newsletter_button": "Subscribe",
-
-  "cta_title": "Ready to accelerate your English?",
-  "cta_sub": "Join Speexify today — start with a personalized plan in minutes.",
-  "cta_primary": "Create your account",
+  "cta_title": "This is your moment",
+  "cta_sub": "Join thousands who stopped waiting and started speaking. Your transformation begins today.",
+  "cta_primary": "Start now",
   "cta_secondary": "Talk to us",
   "ariaFacebook": "Facebook (opens in a new tab)",
   "ariaTikTok": "TikTok (opens in a new tab)"

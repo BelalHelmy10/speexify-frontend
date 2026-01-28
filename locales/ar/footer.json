@@ -1,38 +1,32 @@
 {
-  "tagline": "تدريب على اللغة والتواصل للفرق التي تحتاج إلى نتائج حقيقية.",
-  "newsletterTitle": "ابق على اطلاع",
+  "tagline": "مدرّبون حقيقيون. محادثات حقيقية. نتائج حقيقية.",
+  "newsletterTitle": "احصل على نصائح أسبوعية للتحدّث",
   "newsletterPlaceholder": "أدخل بريدك الإلكتروني",
   "newsletterButton": "اشترك",
-
-  "productTitle": "المنتج",
-  "individualTraining": "تدريب فردي",
-  "corporateTraining": "تدريب للشركات",
+  "productTitle": "تعلّم",
+  "individualTraining": "للأفراد",
+  "corporateTraining": "للفرق",
   "packages": "الباقات",
-
+  "whySpeexify": "لماذا Speexify",
   "companyTitle": "الشركة",
   "about": "من نحن",
   "contact": "تواصل معنا",
   "careers": "الوظائف",
-
   "resourcesTitle": "المصادر",
   "blog": "المدونة",
   "guides": "الأدلة",
   "helpCenter": "مركز المساعدة",
-
   "legalTitle": "قانوني",
   "privacyPolicy": "سياسة الخصوصية",
   "termsOfService": "شروط الاستخدام",
   "cookiePolicy": "سياسة ملفات تعريف الارتباط",
-
   "rights": "جميع الحقوق محفوظة.",
-
-  "ariaBlog": "المدونة (قريباً)",
-  "ariaGuides": "الأدلة (قريباً)",
-  "ariaHelp": "مركز المساعدة (قريباً)",
+  "ariaBlog": "المدونة (قريبًا)",
+  "ariaGuides": "الأدلة (قريبًا)",
+  "ariaHelp": "مركز المساعدة (قريبًا)",
   "ariaPrivacy": "سياسة الخصوصية",
   "ariaTerms": "شروط الاستخدام",
   "ariaCookies": "سياسة ملفات تعريف الارتباط",
-
   "ariaLinkedIn": "لينكدإن (تفتح في تبويب جديد)",
   "ariaTwitter": "تويتر (تفتح في تبويب جديد)",
   "ariaYouTube": "يوتيوب (تفتح في تبويب جديد)",

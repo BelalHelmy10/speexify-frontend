@@ -49,11 +49,9 @@ function CorporateTraining({ dict, locale }) {
         role: "Corporate",
         topic: "Corporate RFP",
         budget: "",
-        message: `Company: ${form.company}\nTeam size: ${
-          form.size
-        }\nTimeframe: ${form.timeframe}\nGoals: ${form.goals}\n\n${
-          form.message || ""
-        }`,
+        message: `Company: ${form.company}\nTeam size: ${form.size
+          }\nTimeframe: ${form.timeframe}\nGoals: ${form.goals}\n\n${form.message || ""
+          }`,
       });
 
       setStatus(t(dict, "status_sent"));
@@ -225,7 +223,7 @@ function CorporateTraining({ dict, locale }) {
 
           <div className="spx-corp-grid--3">
             <Plan
-              img="/images/pilot.avif"
+              img="/images/corporate_pilot.png"
               title={t(dict, "plan1_title")}
               desc={t(dict, "plan1_desc")}
               bullets={[
@@ -237,7 +235,7 @@ function CorporateTraining({ dict, locale }) {
               prefix={prefix}
             />
             <Plan
-              img="/images/team.avif"
+              img="/images/corporate_team.png"
               title={t(dict, "plan2_title")}
               desc={t(dict, "plan2_desc")}
               bullets={[
@@ -251,7 +249,7 @@ function CorporateTraining({ dict, locale }) {
               prefix={prefix}
             />
             <Plan
-              img="/images/company.avif"
+              img="/images/corporate_company.png"
               title={t(dict, "plan3_title")}
               desc={t(dict, "plan3_desc")}
               bullets={[
