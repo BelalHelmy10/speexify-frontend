@@ -289,25 +289,25 @@ function Home({ locale = "en" }) {
             <CurriculumCard
               title={t(dict, "curr1_title")}
               desc={t(dict, "curr1_desc")}
-              img="/images/client-communication.avif"
+              img="/images/curr-conversations.png"
               color="blue"
             />
             <CurriculumCard
               title={t(dict, "curr2_title")}
               desc={t(dict, "curr2_desc")}
-              img="/images/presentations.avif"
+              img="/images/curr-presentations.png"
               color="purple"
             />
             <CurriculumCard
               title={t(dict, "curr3_title")}
               desc={t(dict, "curr3_desc")}
-              img="/images/email-and-async.avif"
+              img="/images/curr-writing.png"
               color="green"
             />
             <CurriculumCard
               title={t(dict, "curr4_title")}
               desc={t(dict, "curr4_desc")}
-              img="/images/leadership.avif"
+              img="/images/curr-leadership.png"
               color="orange"
             />
           </div>

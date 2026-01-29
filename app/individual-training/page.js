@@ -58,9 +58,8 @@ function IndividualInner({ dict, locale }) {
         role: "Individual",
         topic: "Trial / Consult",
         budget: "",
-        message: `Level: ${form.level}\nGoal: ${form.goal}\nTimezone: ${
-          form.timezone
-        }\nAvailability: ${form.availability}\n\n${form.message || ""}`,
+        message: `Level: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone
+          }\nAvailability: ${form.availability}\n\n${form.message || ""}`,
       });
       setStatus(t(dict, "status_sent"));
       formRef.current?.reset();
@@ -146,7 +145,7 @@ function IndividualInner({ dict, locale }) {
           <figure className="ind-hero__media">
             <div className="ind-hero__media-glow"></div>
             <img
-              src="/images/learner-practicing-with-a-coach.avif"
+              src="/images/individual-hero-speaker.png"
               alt="Learner practicing with a coach"
               loading="eager"
             />
@@ -190,17 +189,17 @@ function IndividualInner({ dict, locale }) {
           <Goal
             title={t(dict, "goal_1_title")}
             p={t(dict, "goal_1_p")}
-            img="/images/interviews.avif"
+            img="/images/goal-career.png"
           />
           <Goal
             title={t(dict, "goal_2_title")}
             p={t(dict, "goal_2_p")}
-            img="/images/speaking.avif"
+            img="/images/goal-fluency.png"
           />
           <Goal
             title={t(dict, "goal_3_title")}
             p={t(dict, "goal_3_p")}
-            img="/images/exams.avif"
+            img="/images/goal-exams.png"
           />
         </div>
 

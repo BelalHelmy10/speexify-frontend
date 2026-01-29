@@ -8,6 +8,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -15,10 +16,12 @@
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-15px);
   }
@@ -28,26 +31,31 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(200%);
   }
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
 }
 
 @keyframes gradient-shift {
+
   0%,
   100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -62,7 +70,7 @@
   max-width: 1200px;
 }
 
-.ind > section {
+.ind>section {
   padding-block: $space-10;
 
   @media (max-width: $bp-md) {
@@ -166,12 +174,10 @@
       left: -100%;
       width: 50%;
       height: 100%;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.3),
-        transparent
-      );
+      background: linear-gradient(90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent);
       animation: shine 3s infinite;
     }
   }
@@ -306,11 +312,9 @@
   &__gradient {
     position: absolute;
     inset: 0;
-    background: radial-gradient(
-        ellipse 80% 50% at 50% -20%,
+    background: radial-gradient(ellipse 80% 50% at 50% -20%,
         rgba($brand, 0.12),
-        transparent 50%
-      ),
+        transparent 50%),
       linear-gradient(180deg, $bg-soft 0%, $bg-primary 100%);
   }
 
@@ -342,11 +346,9 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background: linear-gradient(
-      135deg,
-      rgba($brand, 0.1),
-      rgba($brand-light, 0.1)
-    );
+    background: linear-gradient(135deg,
+        rgba($brand, 0.1),
+        rgba($brand-light, 0.1));
     border: 1px solid rgba($brand, 0.2);
     border-radius: 999px;
     font-size: 13px;
@@ -575,8 +577,8 @@
   &__overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, $brand, $brand-light);
-    opacity: 0.15;
+    background: transparent;
+    opacity: 0;
     transition: opacity 0.4s ease;
   }
 
@@ -619,12 +621,10 @@
       left: 16.666%;
       right: 16.666%;
       height: 2px;
-      background: linear-gradient(
-        90deg,
-        $brand 0%,
-        $brand-light 50%,
-        $brand 100%
-      );
+      background: linear-gradient(90deg,
+          $brand 0%,
+          $brand-light 50%,
+          $brand 100%);
       z-index: 0;
 
       @media (max-width: $bp-md) {
@@ -886,12 +886,10 @@
   &__gradient {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      135deg,
-      $brand 0%,
-      $brand-ink 50%,
-      #0c4a6e 100%
-    );
+    background: linear-gradient(135deg,
+        $brand 0%,
+        $brand-ink 50%,
+        #0c4a6e 100%);
     background-size: 200% 200%;
     animation: gradient-shift 15s ease infinite;
   }
@@ -905,11 +903,9 @@
   &__shape {
     position: absolute;
     border-radius: 50%;
-    background: radial-gradient(
-      circle,
-      rgba($color-white, 0.1),
-      transparent 70%
-    );
+    background: radial-gradient(circle,
+        rgba($color-white, 0.1),
+        transparent 70%);
 
     &--1 {
       width: 600px;

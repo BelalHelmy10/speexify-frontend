@@ -736,19 +736,19 @@
     }
 
     &--blue .home-spx-curriculum__overlay {
-      background: linear-gradient(135deg, $brand, $brand-light);
+      background: transparent;
     }
 
     &--purple .home-spx-curriculum__overlay {
-      background: linear-gradient(135deg, #a855f7, #ec4899);
+      background: transparent;
     }
 
     &--green .home-spx-curriculum__overlay {
-      background: linear-gradient(135deg, #10b981, #06b6d4);
+      background: transparent;
     }
 
     &--orange .home-spx-curriculum__overlay {
-      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      background: transparent;
     }
   }
 
@@ -769,7 +769,7 @@
   &__overlay {
     position: absolute;
     inset: 0;
-    opacity: 0.15;
+    opacity: 0;
     transition: opacity 0.4s ease;
   }
 
