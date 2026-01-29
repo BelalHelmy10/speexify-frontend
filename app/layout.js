@@ -14,6 +14,7 @@ import Footer from "@/components/Footer";
 import SupportWidget from "@/components/SupportWidget";
 import ClientProviders from "./ClientProviders";
 import LocaleShell from "./LocaleShell";
+import SmoothScroll from "@/components/SmoothScroll";
 
 // Force dynamic rendering so the first paint always reflects the live auth state
 export const dynamic = "force-dynamic";
@@ -117,6 +118,7 @@ export default async function RootLayout({ children }) {
         <meta name="theme-color" content="#0284c7" />
       </head>
       <body>
+        <SmoothScroll />
         <LocaleShell>
           <ClientProviders>
             <Providers initialUser={user}>

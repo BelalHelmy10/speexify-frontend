@@ -8,13 +8,16 @@
 
 /* Import your global.scss (the main one that ties things together) */
 @use "../styles/global.scss";
+@use "../styles/lenis";
 
 :root {
   --brand: #6c5ce7;
 }
+
 * {
   box-sizing: border-box;
 }
+
 html,
 body {
   margin: 0;
