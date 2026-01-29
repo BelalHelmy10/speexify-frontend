@@ -21,6 +21,7 @@ export default function SessionCard({
   onCancel,
   onJoin,
   locale = "en",
+  timezone,
   compact = false,
 }) {
   const prefix = locale === "ar" ? "/ar" : "";
@@ -67,6 +68,7 @@ export default function SessionCard({
       const dateStr = start.toLocaleDateString(
         locale === "ar" ? "ar-EG" : "en-US",
         {
+          timeZone: timezone,
           weekday: "short",
           month: "short",
           day: "numeric",
@@ -76,6 +78,7 @@ export default function SessionCard({
       const timeStr = start.toLocaleTimeString(
         locale === "ar" ? "ar-EG" : "en-US",
         {
+          timeZone: timezone,
           hour: "2-digit",
           minute: "2-digit",
         }
@@ -83,9 +86,10 @@ export default function SessionCard({
 
       const endTimeStr = end
         ? end.toLocaleTimeString(locale === "ar" ? "ar-EG" : "en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          timeZone: timezone,
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : null;
 
       const todayStart = new Date(now);
@@ -166,9 +170,8 @@ export default function SessionCard({
   if (compact) {
     return (
       <div
-        className={`session-card session-card--compact ${
-          status === "canceled" ? "session-card--canceled" : ""
-        }`}
+        className={`session-card session-card--compact ${status === "canceled" ? "session-card--canceled" : ""
+          }`}
       >
         <div className="session-card__compact-main">
           <div className="session-card__compact-time">
@@ -204,9 +207,8 @@ export default function SessionCard({
   // Full card render
   return (
     <div
-      className={`session-card ${
-        status === "canceled" ? "session-card--canceled" : ""
-      } ${canJoin ? "session-card--live" : ""}`}
+      className={`session-card ${status === "canceled" ? "session-card--canceled" : ""
+        } ${canJoin ? "session-card--live" : ""}`}
     >
       {/* Header */}
       <div className="session-card__header">

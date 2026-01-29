@@ -8,6 +8,7 @@ import useAuth from "@/hooks/useAuth";
 import { logout as apiLogout } from "@/lib/auth";
 import { getDictionary, t } from "@/app/i18n";
 import NotificationsBell from "@/components/NotificationsBell";
+import DigitalClock from "@/components/DigitalClock";
 
 /* ------------------------------------------------------------------
    Locale helpers
@@ -322,6 +323,16 @@ export default function Header() {
             >
               <LanguageSwitcher locale={locale} pathname={pathname} />
             </li>
+
+            {/* Digital Clock (only when logged in) */}
+            {!checking && user && (
+              <li
+                className="spx-nav-item spx-nav-item-clock"
+                style={{ "--item-index": links.length + 0.75 }}
+              >
+                <DigitalClock />
+              </li>
+            )}
 
             {/* Desktop notifications bell (only when logged in) */}
             {!checking && user && (

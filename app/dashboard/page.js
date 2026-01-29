@@ -130,7 +130,7 @@ function SessionRow({
                 <polyline points="12 6 12 12 16 14" />
               </svg>
               {fmtInTz(s.startAt, timezone)}
-              {s.endAt ? ` — ${fmt(s.endAt)}` : ""}
+              {s.endAt ? ` — ${fmtInTz(s.endAt, timezone)}` : ""}
             </span>
 
             {isGroup && (
@@ -474,8 +474,8 @@ function DashboardInner({ dict, prefix }) {
       const list = Array.isArray(data)
         ? data
         : Array.isArray(data?.items)
-        ? data.items
-        : [];
+          ? data.items
+          : [];
       setPacks(list);
     } catch (e) {
       console.warn(
@@ -491,7 +491,7 @@ function DashboardInner({ dict, prefix }) {
         params: { t: Date.now() },
       });
       setOnboarding(data || null);
-    } catch {}
+    } catch { }
   }, []);
 
   const fetchAssessment = useCallback(async () => {
@@ -500,7 +500,7 @@ function DashboardInner({ dict, prefix }) {
         params: { t: Date.now() },
       });
       setAssessment(data || null);
-    } catch {}
+    } catch { }
   }, []);
 
   const refreshAll = useCallback(async () => {
@@ -671,7 +671,8 @@ function DashboardInner({ dict, prefix }) {
 
   const visibleNext =
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
-  const { upcomingCount, completedCount, timezone } = summary;
+  const { upcomingCount, completedCount } = summary;
+  const timezone = user?.timezone || summary?.timezone;
 
   const joinableTeach =
     teachSummary.nextTeach &&
@@ -980,9 +981,8 @@ function DashboardInner({ dict, prefix }) {
                 >
                   <Link
                     href={`${prefix}/onboarding`}
-                    className={`btn ${
-                      onbComplete ? "btn--ghost" : "btn--primary btn--pulse"
-                    }`}
+                    className={`btn ${onbComplete ? "btn--ghost" : "btn--primary btn--pulse"
+                      }`}
                   >
                     {!onbComplete && (
                       <svg
@@ -1004,9 +1004,8 @@ function DashboardInner({ dict, prefix }) {
 
                   <Link
                     href={`${prefix}/assessment`}
-                    className={`btn ${
-                      assComplete ? "btn--ghost" : "btn--primary btn--pulse"
-                    }`}
+                    className={`btn ${assComplete ? "btn--ghost" : "btn--primary btn--pulse"
+                      }`}
                   >
                     {!assComplete && (
                       <svg
@@ -1077,7 +1076,7 @@ function DashboardInner({ dict, prefix }) {
                     </svg>
                     {fmtInTz(teachSummary.nextTeach.startAt, timezone)}
                     {teachSummary.nextTeach.endAt
-                      ? ` — ${fmt(teachSummary.nextTeach.endAt)}`
+                      ? ` — ${fmtInTz(teachSummary.nextTeach.endAt, timezone)}`
                       : ""}
                   </div>
                   <div className="next-session__learner">
@@ -1258,8 +1257,8 @@ function DashboardInner({ dict, prefix }) {
                     s={s}
                     timezone={timezone}
                     isUpcoming={false}
-                    onCancel={() => {}}
-                    onRescheduleClick={() => {}}
+                    onCancel={() => { }}
+                    onRescheduleClick={() => { }}
                     isTeacher={isTeacher}
                     isImpersonating={isImpersonating}
                     dict={dict}

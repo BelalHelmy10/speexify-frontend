@@ -8,6 +8,7 @@ import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 import "@/styles/individual.scss";
 import { getDictionary, t } from "@/app/i18n";
+import { getSupportedTimezones } from "../../lib/timezones";
 
 function IndividualInner({ dict, locale }) {
   const { user } = useAuth();
@@ -323,72 +324,12 @@ function IndividualInner({ dict, locale }) {
                   <option value="" disabled>
                     Select your timezone...
                   </option>
-                  {/* 🔽 Auto-generate ALL supported timezones */}
-                  {(typeof Intl.supportedValuesOf === "function"
-                    ? Intl.supportedValuesOf("timeZone")
-                    : [
-                      "UTC",
-                      "Europe/London",
-                      "Europe/Paris",
-                      "Europe/Berlin",
-                      "Africa/Cairo",
-                      "Africa/Johannesburg",
-                      "Asia/Dubai",
-                      "Asia/Riyadh",
-                      "Asia/Jerusalem",
-                      "Asia/Istanbul",
-                      "Asia/Singapore",
-                      "Asia/Bangkok",
-                      "Asia/Shanghai",
-                      "Asia/Tokyo",
-                      "Asia/Seoul",
-                      "Australia/Sydney",
-                      "Australia/Melbourne",
-                      "Pacific/Auckland",
-                      "Pacific/Fiji",
-                      "America/Anchorage",
-                      "America/Los_Angeles",
-                      "America/Denver",
-                      "America/Chicago",
-                      "America/New_York",
-                      "America/Toronto",
-                      "America/Sao_Paulo",
-                      "Atlantic/Azores",
-                      "Atlantic/Reykjavik",
-                    ]
-                  ).map((tz) => (
-                    <option key={tz} value={tz}>
-                      {tz.replace(/_/g, " ")}
+                  {/* 🔽 Auto-generate ALL supported timezones with offsets */}
+                  {getSupportedTimezones().map(({ value, label }) => (
+                    <option key={value} value={value}>
+                      {label}
                     </option>
                   ))}
-                  {/* If user's detected TZ isn't in our short list, add it dynamically */}
-                  {![
-                    "Pacific/Midway",
-                    "Pacific/Honolulu",
-                    "America/Anchorage",
-                    "America/Los_Angeles",
-                    "America/Denver",
-                    "America/Chicago",
-                    "America/New_York",
-                    "America/Sao_Paulo",
-                    "Atlantic/Azores",
-                    "Europe/London",
-                    "Europe/Berlin",
-                    "Europe/Athens",
-                    "Europe/Moscow",
-                    "Africa/Cairo",
-                    "Africa/Johannesburg",
-                    "Asia/Dubai",
-                    "Asia/Karachi",
-                    "Asia/Kolkata",
-                    "Asia/Bangkok",
-                    "Asia/Shanghai",
-                    "Asia/Tokyo",
-                    "Australia/Sydney",
-                    "Pacific/Auckland",
-                  ].includes(form.timezone) && form.timezone && (
-                      <option value={form.timezone}>{form.timezone}</option>
-                    )}
                 </select>
               </Field>
               <Field label={t(dict, "field_level")} name="level">

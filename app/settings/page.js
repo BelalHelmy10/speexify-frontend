@@ -7,11 +7,12 @@ import api from "@/lib/api";
 import "@/styles/settings.scss";
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "@/app/i18n";
+import { getSupportedTimezones } from "../../lib/timezones";
 
-// ✅ Dynamic timezone list now handled inline with Intl API
+// ✅ Dynamic timezone list now handled via helper
 
 export default function SettingsPage() {
-  const { user, checking } = useAuth();
+  const { user, checking, refresh } = useAuth();
   const pathname = usePathname();
 
   // ✅ locale detection for /settings vs /ar/settings
@@ -48,6 +49,8 @@ export default function SettingsPage() {
       const payload = { name: me.name || "", timezone: me.timezone || "" };
       const res = await api.patch("/me", payload);
       setMe(res.data);
+      // ✅ Refresh global auth context so header/clock update immediately
+      await refresh();
       setStatus("");
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -273,41 +276,9 @@ export default function SettingsPage() {
                   }
                 >
                   <option value="">{t(dict, "timezone_default_option")}</option>
-                  {(typeof Intl.supportedValuesOf === "function"
-                    ? Intl.supportedValuesOf("timeZone")
-                    : [
-                      "UTC",
-                      "Europe/London",
-                      "Europe/Paris",
-                      "Europe/Berlin",
-                      "Africa/Cairo",
-                      "Africa/Johannesburg",
-                      "Asia/Dubai",
-                      "Asia/Riyadh",
-                      "Asia/Jerusalem",
-                      "Asia/Istanbul",
-                      "Asia/Singapore",
-                      "Asia/Bangkok",
-                      "Asia/Shanghai",
-                      "Asia/Tokyo",
-                      "Asia/Seoul",
-                      "Australia/Sydney",
-                      "Australia/Melbourne",
-                      "Pacific/Auckland",
-                      "Pacific/Fiji",
-                      "America/Anchorage",
-                      "America/Los_Angeles",
-                      "America/Denver",
-                      "America/Chicago",
-                      "America/New_York",
-                      "America/Toronto",
-                      "America/Sao_Paulo",
-                      "Atlantic/Azores",
-                      "Atlantic/Reykjavik",
-                    ]
-                  ).map((tz) => (
-                    <option key={tz} value={tz}>
-                      {tz.replace(/_/g, " ")}
+                  {getSupportedTimezones().map(({ value, label }) => (
+                    <option key={value} value={value}>
+                      {label}
                     </option>
                   ))}
                 </select>

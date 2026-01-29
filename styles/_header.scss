@@ -343,6 +343,45 @@
   }
 }
 
+/* DIGITAL CLOCK */
+.spx-digital-clock {
+  grid-column: 2;
+  /* Sits in the nav area or between nav and CTA? */
+  /* Actually layout depends on where I put it in Header.jsx. 
+     If it's in the list, it's an li or similar.
+     If it's a sibling to CTA, it needs column handling.
+  */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background: rgba($ink, 0.03);
+  border: 1px solid rgba($ink, 0.06);
+  border-radius: 12px;
+  font-family: "JetBrains Mono", "Roboto Mono", monospace;
+  /* Tech feel */
+  font-size: 14px;
+  font-weight: 600;
+  color: $text-secondary;
+  letter-spacing: -0.5px;
+  transition: all 0.2s ease;
+  cursor: default;
+  margin-left: 8px;
+  /* Spacing if needed */
+
+  &:hover {
+    background: rgba($brand, 0.05);
+    color: $brand;
+    border-color: rgba($brand, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($brand, 0.1);
+  }
+
+  .spx-clock-time {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 /* removed @keyframes spx-pulse-status / spx-ping-status */
 
 /* ────────────────────────────────────────────────────────────────────────────

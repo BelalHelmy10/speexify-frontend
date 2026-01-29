@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import api from "@/lib/api";
 import SessionCard from "./SessionCard";
 import { useToast } from "@/components/ToastProvider";
+import useAuth from "@/hooks/useAuth";
 
 /**
  * SessionList - Displays a list of sessions with filtering and pagination
@@ -24,6 +25,7 @@ export default function SessionList({
   locale = "en",
   compact = false,
 }) {
+  const { user } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -70,9 +72,14 @@ export default function SessionList({
   const groupedSessions = filteredSessions.reduce((groups, session) => {
     const date = session.startAt
       ? new Date(session.startAt).toLocaleDateString(
-          locale === "ar" ? "ar-EG" : "en-US",
-          { weekday: "long", month: "long", day: "numeric" }
-        )
+        locale === "ar" ? "ar-EG" : "en-US",
+        {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          timeZone: user?.timezone,
+        }
+      )
       : "Unscheduled";
 
     if (!groups[date]) {
@@ -138,18 +145,16 @@ export default function SessionList({
           <div className="session-list__filter-group">
             <button
               type="button"
-              className={`session-list__filter-btn ${
-                range === "upcoming" ? "session-list__filter-btn--active" : ""
-              }`}
+              className={`session-list__filter-btn ${range === "upcoming" ? "session-list__filter-btn--active" : ""
+                }`}
               onClick={() => setRange("upcoming")}
             >
               Upcoming
             </button>
             <button
               type="button"
-              className={`session-list__filter-btn ${
-                range === "past" ? "session-list__filter-btn--active" : ""
-              }`}
+              className={`session-list__filter-btn ${range === "past" ? "session-list__filter-btn--active" : ""
+                }`}
               onClick={() => setRange("past")}
             >
               Past
@@ -160,29 +165,26 @@ export default function SessionList({
           <div className="session-list__filter-group">
             <button
               type="button"
-              className={`session-list__filter-btn ${
-                typeFilter === "all" ? "session-list__filter-btn--active" : ""
-              }`}
+              className={`session-list__filter-btn ${typeFilter === "all" ? "session-list__filter-btn--active" : ""
+                }`}
               onClick={() => setTypeFilter("all")}
             >
               All ({counts.all})
             </button>
             <button
               type="button"
-              className={`session-list__filter-btn ${
-                typeFilter === "ONE_ON_ONE"
+              className={`session-list__filter-btn ${typeFilter === "ONE_ON_ONE"
                   ? "session-list__filter-btn--active"
                   : ""
-              }`}
+                }`}
               onClick={() => setTypeFilter("ONE_ON_ONE")}
             >
               👤 1:1 ({counts.ONE_ON_ONE})
             </button>
             <button
               type="button"
-              className={`session-list__filter-btn ${
-                typeFilter === "GROUP" ? "session-list__filter-btn--active" : ""
-              }`}
+              className={`session-list__filter-btn ${typeFilter === "GROUP" ? "session-list__filter-btn--active" : ""
+                }`}
               onClick={() => setTypeFilter("GROUP")}
             >
               👥 Group ({counts.GROUP})
@@ -218,6 +220,7 @@ export default function SessionList({
                 userRole={userRole}
                 onCancel={handleCancel}
                 locale={locale}
+                timezone={user?.timezone}
                 compact={compact}
               />
             ))}

@@ -26,6 +26,7 @@ import {
   format,
   addDays,
 } from "date-fns";
+import { shiftDateToTimezone } from "@/utils/date";
 
 import { useRouter, usePathname } from "next/navigation";
 import { getDictionary, t } from "@/app/i18n";
@@ -42,7 +43,7 @@ const localizer = dateFnsLocalizer({
 });
 
 // Map backend sessions → RBC events
-const toRbcEvents = (arr = []) =>
+const toRbcEvents = (arr = [], timezone) =>
   arr.map((s) => {
     const type = String(s.type || "").toUpperCase();
     const isGroup = type === "GROUP";
@@ -50,11 +51,16 @@ const toRbcEvents = (arr = []) =>
     const count =
       typeof s.participantCount === "number" ? s.participantCount : null;
 
+    // Shift dates if timezone is provided
+    const start = shiftDateToTimezone(s.startAt, timezone);
+    const endRaw = s.endAt ? s.endAt : s.startAt;
+    const end = shiftDateToTimezone(endRaw, timezone);
+
     return {
       id: String(s.id),
       title: s.title || "",
-      start: new Date(s.startAt),
-      end: s.endAt ? new Date(s.endAt) : new Date(s.startAt),
+      start,
+      end,
       status: s.status,
       meetingUrl: s.meetingUrl || "",
       joinUrl: s.joinUrl || "",
@@ -260,16 +266,16 @@ function AvailabilityModeToggle({
       <button
         onClick={() => onModeChange("availability")}
         className={`availability-mode-toggle__btn availability-mode-toggle__btn--availability ${mode === "availability"
-            ? "availability-mode-toggle__btn--active-green"
-            : ""
+          ? "availability-mode-toggle__btn--active-green"
+          : ""
           }`}
       >
         🕐 {t(dict, "mode_availability")}
         {availabilityCount > 0 && (
           <span
             className={`availability-mode-toggle__count ${mode === "availability"
-                ? "availability-mode-toggle__count--active"
-                : ""
+              ? "availability-mode-toggle__count--active"
+              : ""
               }`}
           >
             {availabilityCount}
@@ -546,7 +552,8 @@ export default function CalendarPage() {
           start.toISOString(),
           end.toISOString()
         );
-        setEvents(toRbcEvents(sessions));
+        // Pass user timezone to shift logic
+        setEvents(toRbcEvents(sessions, user?.timezone));
       } catch (e) {
         setError(e?.response?.data?.error || t(dict, "error_failed"));
       }
@@ -574,7 +581,8 @@ export default function CalendarPage() {
           start.toISOString(),
           end.toISOString()
         );
-        setEvents(toRbcEvents(sessions));
+        // Pass user timezone to shift logic
+        setEvents(toRbcEvents(sessions, user?.timezone));
       } catch (e) {
         setError(e?.response?.data?.error || t(dict, "error_failed"));
       }
@@ -604,8 +612,8 @@ export default function CalendarPage() {
       if (event.isAvailability) {
         return {
           className: `ev--availability ${calendarMode === "availability"
-              ? "ev--availability-active"
-              : "ev--availability-faded"
+            ? "ev--availability-active"
+            : "ev--availability-faded"
             }`,
         };
       }
@@ -744,7 +752,7 @@ export default function CalendarPage() {
               <div className="calendar-timezone-badge">
                 <span className="calendar-timezone-badge__icon">🌍</span>
                 <span className="calendar-timezone-badge__text">
-                  Times shown in your local time ({Intl.DateTimeFormat().resolvedOptions().timeZone})
+                  Times shown in {user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}
                 </span>
               </div>
             </div>
@@ -876,8 +884,8 @@ export default function CalendarPage() {
             {/* Right: Main Calendar */}
             <div
               className={`calendar-two-pane__right ${calendarMode === "availability"
-                  ? "calendar-two-pane__right--availability-mode"
-                  : ""
+                ? "calendar-two-pane__right--availability-mode"
+                : ""
                 }`}
             >
               <BigCalendar
