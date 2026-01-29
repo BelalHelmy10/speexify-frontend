@@ -8,6 +8,7 @@ import useAuth from "@/hooks/useAuth";
 import "@/styles/home.scss";
 
 import { getDictionary, t } from "./i18n"; // ✅ i18n
+import FadeIn from "@/components/FadeIn";
 
 export default function Page({ locale = "en" }) {
   const { user, checking } = useAuth();
@@ -48,21 +49,23 @@ function Home({ locale = "en" }) {
 
         <div className="home-hero__grid home-container">
           <div className="home-hero__copy">
-            <div className="home-hero__badge">
+            <FadeIn as="div" className="home-hero__badge" delay={0.1}>
               <span className="home-hero__badge-icon">✦</span>
               <span>{t(dict, "badge")}</span>
-            </div>
+            </FadeIn>
 
-            <h1 className="home-hero__title">
+            <FadeIn as="h1" className="home-hero__title" delay={0.2}>
               {t(dict, "title_main")}
               <span className="home-hero__title-accent">
                 {t(dict, "title_accent")}
               </span>
-            </h1>
+            </FadeIn>
 
-            <p className="home-hero__sub">{t(dict, "subtitle")}</p>
+            <FadeIn as="p" className="home-hero__sub" delay={0.3}>
+              {t(dict, "subtitle")}
+            </FadeIn>
 
-            <div className="home-hero__cta">
+            <FadeIn as="div" className="home-hero__cta" delay={0.4}>
               <Link
                 className="home-btn home-btn--primary home-btn--shine"
                 href={`${prefix}/register`}
@@ -91,9 +94,9 @@ function Home({ locale = "en" }) {
               >
                 {t(dict, "ctaSecondary")}
               </Link>
-            </div>
+            </FadeIn>
 
-            <div className="home-hero__stats">
+            <FadeIn as="div" className="home-hero__stats" delay={0.6}>
               <div className="home-hero__stat">
                 <div className="home-hero__stat-num">98%</div>
                 <div className="home-hero__stat-label">Client satisfaction</div>
@@ -106,7 +109,7 @@ function Home({ locale = "en" }) {
                 <div className="home-hero__stat-num">2.7×</div>
                 <div className="home-hero__stat-label">Faster outcomes</div>
               </div>
-            </div>
+            </FadeIn>
           </div>
 
           <div className="home-hero__media">
@@ -139,7 +142,7 @@ function Home({ locale = "en" }) {
       {/* ===== SOCIAL PROOF ===== */}
       <section className="home-proof">
         <div className="home-container">
-          <p className="home-proof__title">Trusted by teams at</p>
+          <FadeIn as="p" className="home-proof__title">Trusted by teams at</FadeIn>
           <div className="home-proof__logos">
             <div className="home-proof__logo-wrap">
               <img
@@ -184,10 +187,10 @@ function Home({ locale = "en" }) {
       <section className="home-features">
         <div className="home-container">
           <div className="home-section-header">
-            <h2 className="home-section-title">{t(dict, "features_title")}</h2>
-            <p className="home-section-subtitle">
+            <FadeIn as="h2" className="home-section-title">{t(dict, "features_title")}</FadeIn>
+            <FadeIn as="p" className="home-section-subtitle" delay={0.1}>
               {t(dict, "features_subtitle")}
-            </p>
+            </FadeIn>
           </div>
 
           <div className="home-features__grid">
@@ -219,8 +222,8 @@ function Home({ locale = "en" }) {
       <section className="home-spx-how">
         <div className="home-container">
           <div className="home-section-header">
-            <h2 className="home-section-title">{t(dict, "how_title")}</h2>
-            <p className="home-section-subtitle">{t(dict, "how_subtitle")}</p>
+            <FadeIn as="h2" className="home-section-title">{t(dict, "how_title")}</FadeIn>
+            <FadeIn as="p" className="home-section-subtitle" delay={0.1}>{t(dict, "how_subtitle")}</FadeIn>
           </div>
 
           <div className="home-spx-how__grid">
@@ -281,8 +284,8 @@ function Home({ locale = "en" }) {
       <section className="home-spx-curriculum">
         <div className="home-container">
           <div className="home-section-header">
-            <h2 className="home-section-title">{t(dict, "curr_title")}</h2>
-            <p className="home-section-subtitle">{t(dict, "curr_subtitle")}</p>
+            <FadeIn as="h2" className="home-section-title">{t(dict, "curr_title")}</FadeIn>
+            <FadeIn as="p" className="home-section-subtitle" delay={0.1}>{t(dict, "curr_subtitle")}</FadeIn>
           </div>
 
           <div className="home-spx-curriculum__grid">
