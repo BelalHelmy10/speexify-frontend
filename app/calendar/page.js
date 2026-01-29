@@ -251,29 +251,26 @@ function AvailabilityModeToggle({
     <div className="availability-mode-toggle">
       <button
         onClick={() => onModeChange("sessions")}
-        className={`availability-mode-toggle__btn ${
-          mode === "sessions" ? "availability-mode-toggle__btn--active" : ""
-        }`}
+        className={`availability-mode-toggle__btn ${mode === "sessions" ? "availability-mode-toggle__btn--active" : ""
+          }`}
       >
         📅 {t(dict, "mode_sessions")}
       </button>
 
       <button
         onClick={() => onModeChange("availability")}
-        className={`availability-mode-toggle__btn availability-mode-toggle__btn--availability ${
-          mode === "availability"
+        className={`availability-mode-toggle__btn availability-mode-toggle__btn--availability ${mode === "availability"
             ? "availability-mode-toggle__btn--active-green"
             : ""
-        }`}
+          }`}
       >
         🕐 {t(dict, "mode_availability")}
         {availabilityCount > 0 && (
           <span
-            className={`availability-mode-toggle__count ${
-              mode === "availability"
+            className={`availability-mode-toggle__count ${mode === "availability"
                 ? "availability-mode-toggle__count--active"
                 : ""
-            }`}
+              }`}
           >
             {availabilityCount}
           </span>
@@ -323,14 +320,14 @@ function AvailabilityQuickActions({
   const dayNames = isRTL
     ? ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
     : [
-        "Sunday",
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-      ];
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
 
   return (
     <div className="availability-quick-actions">
@@ -606,19 +603,17 @@ export default function CalendarPage() {
     (event) => {
       if (event.isAvailability) {
         return {
-          className: `ev--availability ${
-            calendarMode === "availability"
+          className: `ev--availability ${calendarMode === "availability"
               ? "ev--availability-active"
               : "ev--availability-faded"
-          }`,
+            }`,
         };
       }
 
       const isCanceled = event.status === "canceled";
       return {
-        className: `${isCanceled ? "ev--canceled" : "ev--scheduled"} ${
-          calendarMode === "availability" ? "ev--dimmed" : ""
-        }`,
+        className: `${isCanceled ? "ev--canceled" : "ev--scheduled"} ${calendarMode === "availability" ? "ev--dimmed" : ""
+          }`,
       };
     },
     [calendarMode]
@@ -746,6 +741,12 @@ export default function CalendarPage() {
                   </span>
                 )}
               </p>
+              <div className="calendar-timezone-badge">
+                <span className="calendar-timezone-badge__icon">🌍</span>
+                <span className="calendar-timezone-badge__text">
+                  Times shown in your local time ({Intl.DateTimeFormat().resolvedOptions().timeZone})
+                </span>
+              </div>
             </div>
 
             <AvailabilityModeToggle
@@ -874,11 +875,10 @@ export default function CalendarPage() {
 
             {/* Right: Main Calendar */}
             <div
-              className={`calendar-two-pane__right ${
-                calendarMode === "availability"
+              className={`calendar-two-pane__right ${calendarMode === "availability"
                   ? "calendar-two-pane__right--availability-mode"
                   : ""
-              }`}
+                }`}
             >
               <BigCalendar
                 ref={calRef}

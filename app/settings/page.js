@@ -8,20 +8,7 @@ import "@/styles/settings.scss";
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "@/app/i18n";
 
-const timezones = [
-  "UTC",
-  "Europe/London",
-  "Europe/Paris",
-  "Africa/Cairo",
-  "Asia/Dubai",
-  "Asia/Singapore",
-  "Asia/Tokyo",
-  "America/New_York",
-  "America/Los_Angeles",
-  "America/Chicago",
-  "America/Denver",
-  "Australia/Sydney",
-];
+// ✅ Dynamic timezone list now handled inline with Intl API
 
 export default function SettingsPage() {
   const { user, checking } = useAuth();
@@ -286,9 +273,41 @@ export default function SettingsPage() {
                   }
                 >
                   <option value="">{t(dict, "timezone_default_option")}</option>
-                  {timezones.map((tz) => (
+                  {(typeof Intl.supportedValuesOf === "function"
+                    ? Intl.supportedValuesOf("timeZone")
+                    : [
+                      "UTC",
+                      "Europe/London",
+                      "Europe/Paris",
+                      "Europe/Berlin",
+                      "Africa/Cairo",
+                      "Africa/Johannesburg",
+                      "Asia/Dubai",
+                      "Asia/Riyadh",
+                      "Asia/Jerusalem",
+                      "Asia/Istanbul",
+                      "Asia/Singapore",
+                      "Asia/Bangkok",
+                      "Asia/Shanghai",
+                      "Asia/Tokyo",
+                      "Asia/Seoul",
+                      "Australia/Sydney",
+                      "Australia/Melbourne",
+                      "Pacific/Auckland",
+                      "Pacific/Fiji",
+                      "America/Anchorage",
+                      "America/Los_Angeles",
+                      "America/Denver",
+                      "America/Chicago",
+                      "America/New_York",
+                      "America/Toronto",
+                      "America/Sao_Paulo",
+                      "Atlantic/Azores",
+                      "Atlantic/Reykjavik",
+                    ]
+                  ).map((tz) => (
                     <option key={tz} value={tz}>
-                      {tz}
+                      {tz.replace(/_/g, " ")}
                     </option>
                   ))}
                 </select>

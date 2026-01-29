@@ -19,12 +19,10 @@
   left: 0;
   right: 0;
   height: 60vh;
-  background: linear-gradient(
-    135deg,
-    rgba($calendar-primary, 0.08) 0%,
-    rgba($calendar-secondary, 0.05) 50%,
-    rgba($bg-secondary, 0.6) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba($calendar-primary, 0.08) 0%,
+      rgba($calendar-secondary, 0.05) 50%,
+      rgba($bg-secondary, 0.6) 100%);
   z-index: 0;
   pointer-events: none;
 
@@ -35,11 +33,9 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(
-      circle,
-      rgba($calendar-primary, 0.06) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(circle,
+        rgba($calendar-primary, 0.06) 0%,
+        transparent 70%);
   }
 }
 
@@ -47,6 +43,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -73,11 +70,9 @@
 .calendar-title {
   font-size: 2.5rem;
   font-weight: 800;
-  background: linear-gradient(
-    135deg,
-    $calendar-primary 0%,
-    $calendar-secondary 100%
-  );
+  background: linear-gradient(135deg,
+      $calendar-primary 0%,
+      $calendar-secondary 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -95,10 +90,12 @@
 }
 
 @keyframes pulse-icon {
+
   0%,
   100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
@@ -111,6 +108,37 @@
   font-weight: 500;
 }
 
+.calendar-timezone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba($calendar-primary, 0.08);
+  border: 1px solid rgba($calendar-primary, 0.15);
+  border-radius: 99px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $calendar-primary;
+  animation: fade-in 0.8s ease-out;
+
+  &__icon {
+    font-size: 1.1rem;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 // ─── ERROR BANNER ──────────────────────────────────────────────────────────
 .calendar-error-banner {
   position: relative;
@@ -118,11 +146,9 @@
   max-width: 1400px;
   margin: 0 auto 1.5rem;
   padding: 1rem 1.5rem;
-  background: linear-gradient(
-    135deg,
-    $calendar-error 0%,
-    $calendar-error-alt 100%
-  );
+  background: linear-gradient(135deg,
+      $calendar-error 0%,
+      $calendar-error-alt 100%);
   color: $color-white;
   border-radius: 16px;
   display: flex;
@@ -142,6 +168,7 @@
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -190,6 +217,7 @@
       grid-template-columns: 1fr;
       gap: 1.5rem;
     }
+
     .calendar-two-pane__left {
       position: relative;
       top: auto;
@@ -219,11 +247,9 @@
     font-size: 0.875rem;
     font-weight: 600;
     color: $calendar-primary;
-    background: linear-gradient(
-      135deg,
-      rgba($calendar-primary, 0.1),
-      rgba($calendar-secondary, 0.1)
-    );
+    background: linear-gradient(135deg,
+        rgba($calendar-primary, 0.1),
+        rgba($calendar-secondary, 0.1));
     padding: 0.375rem 1rem;
     border-radius: 12px;
     display: inline-block;
@@ -256,11 +282,9 @@
       cursor: pointer;
 
       &:hover:not(:disabled) {
-        background: linear-gradient(
-          135deg,
-          $calendar-primary 0%,
-          $calendar-secondary 100%
-        );
+        background: linear-gradient(135deg,
+            $calendar-primary 0%,
+            $calendar-secondary 100%);
         color: $color-white;
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba($calendar-primary, 0.3);
@@ -300,11 +324,9 @@
     position: relative;
 
     &:hover:not(:disabled) {
-      background: linear-gradient(
-        135deg,
-        rgba($calendar-primary, 0.1),
-        rgba($calendar-secondary, 0.1)
-      );
+      background: linear-gradient(135deg,
+          rgba($calendar-primary, 0.1),
+          rgba($calendar-secondary, 0.1));
       transform: scale(1.05);
     }
 
@@ -314,11 +336,9 @@
   }
 
   .react-calendar__tile--now {
-    background: linear-gradient(
-      135deg,
-      rgba($calendar-primary, 0.15),
-      rgba($calendar-secondary, 0.1)
-    );
+    background: linear-gradient(135deg,
+        rgba($calendar-primary, 0.15),
+        rgba($calendar-secondary, 0.1));
     font-weight: 700;
 
     &::after {
@@ -335,11 +355,9 @@
   }
 
   .react-calendar__tile--active {
-    background: linear-gradient(
-      135deg,
-      $calendar-primary 0%,
-      $calendar-secondary 100%
-    ) !important;
+    background: linear-gradient(135deg,
+        $calendar-primary 0%,
+        $calendar-secondary 100%) !important;
     color: $color-white !important;
     box-shadow: 0 4px 12px rgba($calendar-primary, 0.4);
     transform: scale(1.05);
@@ -356,11 +374,9 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem;
-  background: linear-gradient(
-    135deg,
-    rgba($bg-secondary, 0.8),
-    rgba($bg-soft, 0.8)
-  );
+  background: linear-gradient(135deg,
+      rgba($bg-secondary, 0.8),
+      rgba($bg-soft, 0.8));
   border-radius: 16px;
   border: 1px solid rgba($calendar-primary, 0.1);
 
@@ -382,18 +398,15 @@
   }
 
   .legend-dot--scheduled {
-    background: linear-gradient(
-      135deg,
-      $calendar-primary 0%,
-      $calendar-secondary 100%
-    );
+    background: linear-gradient(135deg,
+        $calendar-primary 0%,
+        $calendar-secondary 100%);
   }
+
   .legend-dot--canceled {
-    background: linear-gradient(
-      135deg,
-      $calendar-error 0%,
-      $calendar-error-alt 100%
-    );
+    background: linear-gradient(135deg,
+        $calendar-error 0%,
+        $calendar-error-alt 100%);
   }
 
   .legend-text {
@@ -407,11 +420,9 @@
   align-items: center;
   justify-content: space-around;
   padding: 1.25rem;
-  background: linear-gradient(
-    135deg,
-    rgba($calendar-primary, 0.08),
-    rgba($calendar-secondary, 0.06)
-  );
+  background: linear-gradient(135deg,
+      rgba($calendar-primary, 0.08),
+      rgba($calendar-secondary, 0.06));
   border-radius: 16px;
   border: 1px solid rgba($calendar-primary, 0.15);
 
@@ -426,11 +437,9 @@
   .stat-value {
     font-size: 2rem;
     font-weight: 800;
-    background: linear-gradient(
-      135deg,
-      $calendar-primary 0%,
-      $calendar-secondary 100%
-    );
+    background: linear-gradient(135deg,
+        $calendar-primary 0%,
+        $calendar-secondary 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -448,12 +457,10 @@
   .stat-divider {
     width: 1px;
     height: 40px;
-    background: linear-gradient(
-      to bottom,
-      transparent,
-      rgba($calendar-primary, 0.3),
-      transparent
-    );
+    background: linear-gradient(to bottom,
+        transparent,
+        rgba($calendar-primary, 0.3),
+        transparent);
   }
 }
 
@@ -470,11 +477,9 @@
   margin-bottom: 1.5rem;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(
-    135deg,
-    rgba($bg-secondary, 0.8),
-    rgba($bg-soft, 0.8)
-  );
+  background: linear-gradient(135deg,
+      rgba($bg-secondary, 0.8),
+      rgba($bg-soft, 0.8));
   border-radius: 16px;
   border: 1px solid rgba($calendar-primary, 0.1);
 
@@ -501,22 +506,18 @@
       cursor: pointer;
 
       &:hover {
-        background: linear-gradient(
-          135deg,
-          rgba($calendar-primary, 0.1),
-          rgba($calendar-secondary, 0.1)
-        );
+        background: linear-gradient(135deg,
+            rgba($calendar-primary, 0.1),
+            rgba($calendar-secondary, 0.1));
         border-color: rgba($calendar-primary, 0.3);
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba($calendar-primary, 0.2);
       }
 
       &.rbc-active {
-        background: linear-gradient(
-          135deg,
-          $calendar-primary 0%,
-          $calendar-secondary 100%
-        );
+        background: linear-gradient(135deg,
+            $calendar-primary 0%,
+            $calendar-secondary 100%);
         color: $color-white;
         border-color: transparent;
         box-shadow: 0 4px 12px rgba($calendar-primary, 0.4);
@@ -553,7 +554,7 @@
     padding: 0.5rem;
     text-align: right;
 
-    > button {
+    >button {
       background: transparent;
       border: 0;
       padding: 0.375rem 0.625rem;
@@ -564,11 +565,9 @@
       transition: all 0.2s ease;
 
       &:hover {
-        background: linear-gradient(
-          135deg,
-          rgba($calendar-primary, 0.1),
-          rgba($calendar-secondary, 0.1)
-        );
+        background: linear-gradient(135deg,
+            rgba($calendar-primary, 0.1),
+            rgba($calendar-secondary, 0.1));
         transform: scale(1.1);
       }
     }
@@ -584,11 +583,9 @@
   }
 
   .rbc-today {
-    background: linear-gradient(
-      135deg,
-      rgba($calendar-primary, 0.05),
-      rgba($calendar-secondary, 0.03)
-    );
+    background: linear-gradient(135deg,
+        rgba($calendar-primary, 0.05),
+        rgba($calendar-secondary, 0.03));
   }
 
   .rbc-off-range-bg {
@@ -623,8 +620,8 @@
         border-left: none;
       }
 
-      > span,
-      > div {
+      >span,
+      >div {
         font-weight: 800;
         font-size: 0.875rem;
         color: $text-primary;
@@ -633,14 +630,12 @@
     }
 
     .rbc-today {
-      background: linear-gradient(
-        135deg,
-        rgba($calendar-primary, 0.08),
-        rgba($calendar-secondary, 0.05)
-      );
+      background: linear-gradient(135deg,
+          rgba($calendar-primary, 0.08),
+          rgba($calendar-secondary, 0.05));
 
-      .rbc-header > span,
-      .rbc-header > div {
+      .rbc-header>span,
+      .rbc-header>div {
         color: $calendar-primary;
       }
     }
@@ -659,11 +654,9 @@
     }
 
     .rbc-today {
-      background: linear-gradient(
-        135deg,
-        rgba($calendar-primary, 0.02),
-        rgba($calendar-secondary, 0.01)
-      );
+      background: linear-gradient(135deg,
+          rgba($calendar-primary, 0.02),
+          rgba($calendar-secondary, 0.01));
     }
   }
 
@@ -680,6 +673,7 @@
     .rbc-time-slot {
       border-left: none;
     }
+
     .rbc-label {
       font-size: 0.75rem;
       font-weight: 600;
@@ -741,7 +735,7 @@
     font-size: 0.95rem;
   }
 
-  tbody > tr {
+  tbody>tr {
     background: $card-bg;
     border-radius: 12px;
     box-shadow: $shadow-sm;
@@ -835,11 +829,13 @@
 }
 
 @keyframes pulse-dot {
+
   0%,
   100% {
     opacity: 0.9;
     transform: scale(1);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.2);
@@ -874,11 +870,9 @@
 
 // ─── SHOW MORE LINK ────────────────────────────────────────────────────────
 .rbc-show-more {
-  background: linear-gradient(
-    135deg,
-    rgba($calendar-primary, 0.1),
-    rgba($calendar-secondary, 0.1)
-  );
+  background: linear-gradient(135deg,
+      rgba($calendar-primary, 0.1),
+      rgba($calendar-secondary, 0.1));
   color: $calendar-primary;
   font-weight: 700;
   padding: 0.25rem 0.5rem;
@@ -887,11 +881,9 @@
   transition: all 0.2s ease;
 
   &:hover {
-    background: linear-gradient(
-      135deg,
-      $calendar-primary 0%,
-      $calendar-secondary 100%
-    );
+    background: linear-gradient(135deg,
+        $calendar-primary 0%,
+        $calendar-secondary 100%);
     color: $color-white;
     transform: translateY(-1px);
   }
@@ -1219,21 +1211,17 @@ $availability-text-dark: #065f46;
     }
 
     &--active {
-      background: linear-gradient(
-        135deg,
-        $calendar-primary 0%,
-        $calendar-secondary 100%
-      );
+      background: linear-gradient(135deg,
+          $calendar-primary 0%,
+          $calendar-secondary 100%);
       color: #fff;
       box-shadow: 0 4px 12px rgba($calendar-primary, 0.4);
     }
 
     &--active-green {
-      background: linear-gradient(
-        135deg,
-        $availability-primary 0%,
-        $availability-secondary 100%
-      );
+      background: linear-gradient(135deg,
+          $availability-primary 0%,
+          $availability-secondary 100%);
       color: #fff;
       box-shadow: 0 4px 12px rgba($availability-primary, 0.4);
     }
@@ -1391,11 +1379,9 @@ $availability-text-dark: #065f46;
 }
 
 .stat-value--green {
-  background: linear-gradient(
-    135deg,
-    $availability-primary 0%,
-    $availability-secondary 100%
-  );
+  background: linear-gradient(135deg,
+      $availability-primary 0%,
+      $availability-secondary 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1406,21 +1392,17 @@ $availability-text-dark: #065f46;
 }
 
 .stat-divider--green {
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    $availability-border,
-    transparent
-  );
+  background: linear-gradient(to bottom,
+      transparent,
+      $availability-border,
+      transparent);
 }
 
 // ─── LEGEND - AVAILABLE DOT ────────────────────────────────────────────────
 .legend-dot--available {
-  background: linear-gradient(
-    135deg,
-    $availability-primary 0%,
-    $availability-secondary 100%
-  );
+  background: linear-gradient(135deg,
+      $availability-primary 0%,
+      $availability-secondary 100%);
 }
 
 // ─── IMPERSONATION INFO CARD ───────────────────────────────────────────────
@@ -1452,11 +1434,9 @@ $availability-text-dark: #065f46;
 
 // ─── AVAILABILITY EVENT STYLING ────────────────────────────────────────────
 .ev--availability {
-  background: linear-gradient(
-    135deg,
-    $availability-primary 0%,
-    $availability-secondary 100%
-  ) !important;
+  background: linear-gradient(135deg,
+      $availability-primary 0%,
+      $availability-secondary 100%) !important;
   border: none !important;
   color: #fff !important;
   border-radius: 8px !important;
@@ -1556,6 +1536,7 @@ $availability-text-dark: #065f46;
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
