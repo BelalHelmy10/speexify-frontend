@@ -9,6 +9,7 @@ import api from "@/lib/api";
 import "@/styles/individual.scss";
 import { getDictionary, t } from "@/app/i18n";
 import { getSupportedTimezones } from "../../lib/timezones";
+import FadeIn from "@/components/FadeIn";
 
 function IndividualInner({ dict, locale }) {
   const { user } = useAuth();
@@ -88,21 +89,21 @@ function IndividualInner({ dict, locale }) {
 
         <div className="container ind-hero__inner">
           <div className="ind-hero__copy">
-            <div className="ind-hero__badge">
+            <FadeIn as="div" className="ind-hero__badge" delay={0.1}>
               <span className="ind-hero__badge-icon">✨</span>
               <span>{t(dict, "hero_badge")}</span>
-            </div>
+            </FadeIn>
 
-            <h1 className="ind-hero__title">
+            <FadeIn as="h1" className="ind-hero__title" delay={0.2}>
               {t(dict, "hero_title_main")}
               <span className="ind-hero__title-accent">
                 {t(dict, "hero_title_accent")}
               </span>
-            </h1>
+            </FadeIn>
 
-            <p className="ind-hero__subtitle">{t(dict, "hero_subtitle")}</p>
+            <FadeIn as="p" className="ind-hero__subtitle" delay={0.3}>{t(dict, "hero_subtitle")}</FadeIn>
 
-            <div className="ind-hero__actions">
+            <FadeIn as="div" className="ind-hero__actions" delay={0.4}>
               <a href="#trial" className="btn btn--primary btn--shine">
                 <span>{t(dict, "hero_cta_primary")}</span>
                 <svg
@@ -125,9 +126,9 @@ function IndividualInner({ dict, locale }) {
               <Link href={`${prefix}/packages`} className="btn btn--ghost">
                 {t(dict, "hero_cta_secondary")}
               </Link>
-            </div>
+            </FadeIn>
 
-            <div className="ind-hero__features">
+            <FadeIn as="div" className="ind-hero__features" delay={0.6}>
               <div className="ind-hero__feature">
                 <CheckIcon />
                 <span>{t(dict, "hero_feature_1")}</span>
@@ -140,7 +141,7 @@ function IndividualInner({ dict, locale }) {
                 <CheckIcon />
                 <span>{t(dict, "hero_feature_3")}</span>
               </div>
-            </div>
+            </FadeIn>
           </div>
 
           <figure className="ind-hero__media">
@@ -182,8 +183,8 @@ function IndividualInner({ dict, locale }) {
       {/* WHO IT'S FOR */}
       <section className="container ind-goals">
         <div className="section-header">
-          <h2 className="section-title">{t(dict, "goals_title")}</h2>
-          <p className="section-subtitle">{t(dict, "goals_subtitle")}</p>
+          <FadeIn as="h2" className="section-title">{t(dict, "goals_title")}</FadeIn>
+          <FadeIn as="p" className="section-subtitle" delay={0.1}>{t(dict, "goals_subtitle")}</FadeIn>
         </div>
 
         <div className="ind-goals__grid">
@@ -214,8 +215,8 @@ function IndividualInner({ dict, locale }) {
       {/* HOW IT WORKS */}
       <section className="container ind-how">
         <div className="section-header">
-          <h2 className="section-title">{t(dict, "how_title")}</h2>
-          <p className="section-subtitle">{t(dict, "how_subtitle")}</p>
+          <FadeIn as="h2" className="section-title">{t(dict, "how_title")}</FadeIn>
+          <FadeIn as="p" className="section-subtitle" delay={0.1}>{t(dict, "how_subtitle")}</FadeIn>
         </div>
 
         <div className="ind-steps">
@@ -234,8 +235,8 @@ function IndividualInner({ dict, locale }) {
       {/* WHAT YOU'LL LEARN */}
       <section className="container ind-learn">
         <div className="section-header">
-          <h2 className="section-title">{t(dict, "learn_title")}</h2>
-          <p className="section-subtitle">{t(dict, "learn_subtitle")}</p>
+          <FadeIn as="h2" className="section-title">{t(dict, "learn_title")}</FadeIn>
+          <FadeIn as="p" className="section-subtitle" delay={0.1}>{t(dict, "learn_subtitle")}</FadeIn>
         </div>
 
         <ul className="chips">
@@ -253,8 +254,8 @@ function IndividualInner({ dict, locale }) {
       {/* TESTIMONIALS */}
       <section className="container ind-testimonials">
         <div className="section-header">
-          <h2 className="section-title">{t(dict, "testi_title")}</h2>
-          <p className="section-subtitle">{t(dict, "testi_subtitle")}</p>
+          <FadeIn as="h2" className="section-title">{t(dict, "testi_title")}</FadeIn>
+          <FadeIn as="p" className="section-subtitle" delay={0.1}>{t(dict, "testi_subtitle")}</FadeIn>
         </div>
 
         <div className="grid-3">
@@ -286,8 +287,8 @@ function IndividualInner({ dict, locale }) {
       <section id="trial" className="container ind-trial">
         <div className="ind-trial__card">
           <div className="section-header">
-            <h2 className="section-title">{t(dict, "trial_title")}</h2>
-            <p className="section-subtitle">{t(dict, "trial_subtitle")}</p>
+            <FadeIn as="h2" className="section-title">{t(dict, "trial_title")}</FadeIn>
+            <FadeIn as="p" className="section-subtitle" delay={0.1}>{t(dict, "trial_subtitle")}</FadeIn>
           </div>
 
           <form ref={formRef} onSubmit={submit} className="rfp">

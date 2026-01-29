@@ -7,6 +7,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import "@/styles/corporate.scss";
 import { getDictionary, t } from "@/app/i18n";
+import FadeIn from "@/components/FadeIn";
 
 function CorporateTraining({ dict, locale }) {
   const formRef = useRef(null);
@@ -80,23 +81,23 @@ function CorporateTraining({ dict, locale }) {
 
         <div className="spx-corp__container spx-corp-hero__inner">
           <div className="spx-corp-hero__copy">
-            <div className="spx-corp-hero__badge">
+            <FadeIn as="div" className="spx-corp-hero__badge" delay={0.1}>
               <span className="spx-corp-hero__badge-icon">🏢</span>
               <span>{t(dict, "hero_badge")}</span>
-            </div>
+            </FadeIn>
 
-            <h1 className="spx-corp-hero__title">
+            <FadeIn as="h1" className="spx-corp-hero__title" delay={0.2}>
               {t(dict, "hero_title_main")}
               <span className="spx-corp-hero__title-accent">
                 {t(dict, "hero_title_accent")}
               </span>
-            </h1>
+            </FadeIn>
 
-            <p className="spx-corp-hero__subtitle">
+            <FadeIn as="p" className="spx-corp-hero__subtitle" delay={0.3}>
               {t(dict, "hero_subtitle")}
-            </p>
+            </FadeIn>
 
-            <div className="spx-corp-hero__actions">
+            <FadeIn as="div" className="spx-corp-hero__actions" delay={0.4}>
               <a
                 href="#rfp"
                 className="spx-corp-btn spx-corp-btn--primary spx-corp-btn--shine"
@@ -126,13 +127,13 @@ function CorporateTraining({ dict, locale }) {
               >
                 {t(dict, "hero_cta_secondary")}
               </Link>
-            </div>
+            </FadeIn>
 
-            <div className="spx-corp-hero__features" aria-label="Key features">
+            <FadeIn as="div" className="spx-corp-hero__features" aria-label="Key features" delay={0.6}>
               <HeroFeature>{t(dict, "hero_feature_coach")}</HeroFeature>
               <HeroFeature>{t(dict, "hero_feature_flex")}</HeroFeature>
               <HeroFeature>{t(dict, "hero_feature_reporting")}</HeroFeature>
-            </div>
+            </FadeIn>
           </div>
 
           <figure className="spx-corp-media spx-corp-hero__media">
@@ -153,7 +154,7 @@ function CorporateTraining({ dict, locale }) {
       {/* LOGOS */}
       <section className="spx-corp__section spx-corp-logos">
         <div className="spx-corp__container">
-          <p className="spx-corp-logos__title">{t(dict, "logos_title")}</p>
+          <FadeIn as="p" className="spx-corp-logos__title">{t(dict, "logos_title")}</FadeIn>
           <div className="spx-corp-logos__row">
             <Logo src="/logos/slack.svg" alt="Slack" />
             <Logo src="/logos/notion.svg" alt="Notion" />
@@ -530,8 +531,8 @@ function Logo({ src, alt }) {
 function SectionHead({ title, subtitle }) {
   return (
     <div className="spx-corp-section-head">
-      <h2 className="spx-corp-section-title">{title}</h2>
-      <p className="spx-corp-section-sub">{subtitle}</p>
+      <FadeIn as="h2" className="spx-corp-section-title">{title}</FadeIn>
+      <FadeIn as="p" className="spx-corp-section-sub" delay={0.1}>{subtitle}</FadeIn>
     </div>
   );
 }

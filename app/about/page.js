@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import "@/styles/about.scss";
 import { getDictionary, t } from "@/app/i18n";
+import FadeIn from "@/components/FadeIn";
 
 const heroImg = "/images/about_hero.avif";
 const historyImg = "/images/about_history.avif";
@@ -93,21 +94,21 @@ export default function AboutPage() {
 
         <div className="about__hero-content">
           <div className="about__hero-left">
-            <div className="about__badge">
+            <FadeIn as="div" className="about__badge" delay={0.1}>
               <span className="about__badge-icon">✨</span>
               <span>{t(dict, "hero_badge")}</span>
-            </div>
+            </FadeIn>
 
-            <h1 className="about__headline">
+            <FadeIn as="h1" className="about__headline" delay={0.2}>
               {t(dict, "hero_title_main")}
               <span className="about__headline-accent">
                 {t(dict, "hero_title_accent")}
               </span>
-            </h1>
+            </FadeIn>
 
-            <p className="about__sub">{t(dict, "hero_sub")}</p>
+            <FadeIn as="p" className="about__sub" delay={0.3}>{t(dict, "hero_sub")}</FadeIn>
 
-            <div className="about-cta-row">
+            <FadeIn as="div" className="about-cta-row" delay={0.4}>
               <Link
                 href={`${prefix}/demo`}
                 className="about-btn about-btn--primary about-btn--lg"
@@ -136,7 +137,7 @@ export default function AboutPage() {
               >
                 {t(dict, "hero_cta_secondary")}
               </Link>
-            </div>
+            </FadeIn>
           </div>
 
           <div className="about__hero-right">
@@ -170,10 +171,10 @@ export default function AboutPage() {
       <section className="about__values">
         <div className="container">
           <div className="about__section-header">
-            <h2 className="about__section-title">{t(dict, "offer_title")}</h2>
-            <p className="about__section-subtitle">
+            <FadeIn as="h2" className="about__section-title">{t(dict, "offer_title")}</FadeIn>
+            <FadeIn as="p" className="about__section-subtitle" delay={0.1}>
               {t(dict, "offer_subtitle")}
-            </p>
+            </FadeIn>
           </div>
 
           <div className="about__values-grid">
@@ -228,9 +229,9 @@ export default function AboutPage() {
             <div className="about__history-overlay"></div>
           </div>
           <div className="about__history-copy">
-            <h2>{t(dict, "history_title")}</h2>
-            <p>{t(dict, "history_p1")}</p>
-            <p>{t(dict, "history_p2")}</p>
+            <FadeIn as="h2">{t(dict, "history_title")}</FadeIn>
+            <FadeIn as="p" delay={0.1}>{t(dict, "history_p1")}</FadeIn>
+            <FadeIn as="p" delay={0.2}>{t(dict, "history_p2")}</FadeIn>
           </div>
         </div>
       </section>
@@ -239,10 +240,10 @@ export default function AboutPage() {
       <section className="about__values">
         <div className="container">
           <div className="about__section-header">
-            <h2 className="about__section-title">{t(dict, "values_title")}</h2>
-            <p className="about__section-subtitle">
+            <FadeIn as="h2" className="about__section-title">{t(dict, "values_title")}</FadeIn>
+            <FadeIn as="p" className="about__section-subtitle" delay={0.1}>
               {t(dict, "values_subtitle")}
-            </p>
+            </FadeIn>
           </div>
 
           <div className="about__values-grid">
@@ -268,9 +269,9 @@ export default function AboutPage() {
       <section className="about__life">
         <div className="container about__life-grid">
           <div className="about__life-copy">
-            <h2>{t(dict, "life_title")}</h2>
-            <p>{t(dict, "life_p1")}</p>
-            <p>{t(dict, "life_p2")}</p>
+            <FadeIn as="h2">{t(dict, "life_title")}</FadeIn>
+            <FadeIn as="p" delay={0.1}>{t(dict, "life_p1")}</FadeIn>
+            <FadeIn as="p" delay={0.2}>{t(dict, "life_p2")}</FadeIn>
           </div>
           <div className="about__life-media">
             <img
@@ -291,12 +292,12 @@ export default function AboutPage() {
       <section className="about__timeline">
         <div className="container">
           <div className="about__section-header">
-            <h2 className="about__section-title">
+            <FadeIn as="h2" className="about__section-title">
               {t(dict, "timeline_title")}
-            </h2>
-            <p className="about__section-subtitle">
+            </FadeIn>
+            <FadeIn as="p" className="about__section-subtitle" delay={0.1}>
               {t(dict, "timeline_subtitle")}
-            </p>
+            </FadeIn>
           </div>
 
           <div className="about__timeline-grid">
@@ -317,10 +318,10 @@ export default function AboutPage() {
       <section className="about__leaders">
         <div className="container">
           <div className="about__section-header">
-            <h2 className="about__section-title">{t(dict, "leaders_title")}</h2>
-            <p className="about__section-subtitle">
+            <FadeIn as="h2" className="about__section-title">{t(dict, "leaders_title")}</FadeIn>
+            <FadeIn as="p" className="about__section-subtitle" delay={0.1}>
               {t(dict, "leaders_subtitle")}
-            </p>
+            </FadeIn>
           </div>
 
           <div className="about__leader-grid">
@@ -344,12 +345,12 @@ export default function AboutPage() {
       <section className="about__testimonials">
         <div className="container">
           <div className="about__section-header">
-            <h2 className="about__section-title">
+            <FadeIn as="h2" className="about__section-title">
               {t(dict, "testimonials_title")}
-            </h2>
-            <p className="about__section-subtitle">
+            </FadeIn>
+            <FadeIn as="p" className="about__section-subtitle" delay={0.1}>
               {t(dict, "testimonials_subtitle")}
-            </p>
+            </FadeIn>
           </div>
 
           <div className="about__quote-grid">

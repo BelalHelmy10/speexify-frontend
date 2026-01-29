@@ -7,6 +7,7 @@ import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "../i18n";
 import "@/styles/contact.scss";
+import FadeIn from "@/components/FadeIn";
 
 const DEFAULT_ROLE = "INDIVIDUAL";
 const DEFAULT_TOPIC = "GENERAL";
@@ -124,20 +125,20 @@ function Contact() {
         </div>
 
         <div className="contact-hero__content container stack-lg">
-          <div className="contact-hero__badge">
+          <FadeIn as="div" className="contact-hero__badge" delay={0.1}>
             <span className="contact-hero__badge-icon">💬</span>
             <span>{t(dict, "hero_badge")}</span>
-          </div>
+          </FadeIn>
 
-          <h1 className="contact-hero__title">
+          <FadeIn as="h1" className="contact-hero__title" delay={0.2}>
             {t(dict, "hero_title_prefix")}
             <span className="contact-hero__title-accent">
               {t(dict, "hero_title_accent")}
             </span>
-          </h1>
+          </FadeIn>
 
-          <p className="contact-hero__subtitle">{t(dict, "hero_subtitle")}</p>
-          <div className="contact-hero__actions">
+          <FadeIn as="p" className="contact-hero__subtitle" delay={0.3}>{t(dict, "hero_subtitle")}</FadeIn>
+          <FadeIn as="div" className="contact-hero__actions" delay={0.4}>
             <Link
               href={`${prefix}/register`}
               className="btn btn--primary btn--shine"
@@ -163,7 +164,7 @@ function Contact() {
             <a href="mailto:support@speexify.com" className="btn btn--ghost">
               {t(dict, "hero_cta_secondary")}
             </a>
-          </div>
+          </FadeIn>
         </div>
       </section>
 
@@ -174,10 +175,10 @@ function Contact() {
           <div className="card contact-form stack-md">
             <div className="card__header contact-form__header">
               <div className="contact-form__header-left">
-                <h2 className="card__title">{t(dict, "form_card_title")}</h2>
-                <p className="card__subtitle">
+                <FadeIn as="h2" className="card__title">{t(dict, "form_card_title")}</FadeIn>
+                <FadeIn as="p" className="card__subtitle" delay={0.1}>
                   {t(dict, "form_card_subtitle")}
-                </p>
+                </FadeIn>
               </div>
 
               <div className="contact-form__header-right">
@@ -671,7 +672,7 @@ function Contact() {
       {/* FAQ */}
       <section className="section">
         <div className="container faq">
-          <h2 className="faq__title">{t(dict, "faq_title")}</h2>
+          <FadeIn as="h2" className="faq__title">{t(dict, "faq_title")}</FadeIn>
           <Accordion
             items={[
               { q: t(dict, "faq_1_q"), a: t(dict, "faq_1_a") },

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import "@/styles/packages.scss";
 import { getDictionary, t } from "@/app/i18n";
+import FadeIn from "@/components/FadeIn";
 // import { guessCurrencyFromNavigator } from "@/lib/currency"; // no longer needed
 import { detectUserCountry } from "@/lib/geo";
 import {
@@ -117,15 +118,15 @@ function Packages() {
 
   const pricingSubtitle = isIndividual
     ? t(
-        dict,
-        "pricing_subtitle_individual",
-        "Choose the package that fits your learning goals and schedule"
-      )
+      dict,
+      "pricing_subtitle_individual",
+      "Choose the package that fits your learning goals and schedule"
+    )
     : t(
-        dict,
-        "pricing_subtitle_corporate",
-        "Scalable language training for teams of all sizes"
-      );
+      dict,
+      "pricing_subtitle_corporate",
+      "Scalable language training for teams of all sizes"
+    );
 
   return (
     <div className="ecp">
@@ -133,24 +134,23 @@ function Packages() {
       <section className="ecp__section ecp-hero">
         <div className="ecp__container ecp-hero__inner">
           <div className="ecp-hero__copy">
-            <h1 className="ecp-hero__title">
+            <FadeIn as="h1" className="ecp-hero__title">
               {t(dict, "hero_title", "Professional English Coaching")}
-            </h1>
-            <p className="ecp-hero__subtitle">
+            </FadeIn>
+            <FadeIn as="p" className="ecp-hero__subtitle" delay={0.1}>
               {t(
                 dict,
                 "hero_subtitle",
                 "Choose the format that works for you—private one-on-one sessions or collaborative group learning. Flexible plans, real results."
               )}
-            </p>
+            </FadeIn>
 
             <div className="ecp-tabs" role="tablist" aria-label="Audience">
               <button
                 role="tab"
                 aria-selected={tab === AUD.INDIVIDUAL}
-                className={`ecp-tab ${
-                  tab === AUD.INDIVIDUAL ? "is-active" : ""
-                }`}
+                className={`ecp-tab ${tab === AUD.INDIVIDUAL ? "is-active" : ""
+                  }`}
                 onClick={() => setTab(AUD.INDIVIDUAL)}
               >
                 {t(dict, "tab_individual", "Individuals")}
@@ -158,9 +158,8 @@ function Packages() {
               <button
                 role="tab"
                 aria-selected={tab === AUD.CORPORATE}
-                className={`ecp-tab ${
-                  tab === AUD.CORPORATE ? "is-active" : ""
-                }`}
+                className={`ecp-tab ${tab === AUD.CORPORATE ? "is-active" : ""
+                  }`}
                 onClick={() => setTab(AUD.CORPORATE)}
               >
                 {t(dict, "tab_corporate", "Teams & Companies")}
@@ -170,9 +169,8 @@ function Packages() {
             {tab === AUD.INDIVIDUAL && (
               <div className="ecp-lesson-toggle">
                 <button
-                  className={`ecp-lesson-btn ${
-                    lessonType === LESSON_TYPE.ONE_ON_ONE ? "is-active" : ""
-                  }`}
+                  className={`ecp-lesson-btn ${lessonType === LESSON_TYPE.ONE_ON_ONE ? "is-active" : ""
+                    }`}
                   onClick={() => setLessonType(LESSON_TYPE.ONE_ON_ONE)}
                 >
                   <span className="ecp-lesson-icon">👤</span>
@@ -186,9 +184,8 @@ function Packages() {
                   </span>
                 </button>
                 <button
-                  className={`ecp-lesson-btn ${
-                    lessonType === LESSON_TYPE.GROUP ? "is-active" : ""
-                  }`}
+                  className={`ecp-lesson-btn ${lessonType === LESSON_TYPE.GROUP ? "is-active" : ""
+                    }`}
                   onClick={() => setLessonType(LESSON_TYPE.GROUP)}
                 >
                   <span className="ecp-lesson-icon">👥</span>
@@ -273,8 +270,8 @@ function Packages() {
       <section className="ecp__section ecp-pricing-section">
         <div className="ecp__container">
           <div className="ecp-section-header">
-            <h2 className="ecp-section-title">{pricingTitle}</h2>
-            <p className="ecp-section-subtitle">{pricingSubtitle}</p>
+            <FadeIn as="h2" className="ecp-section-title">{pricingTitle}</FadeIn>
+            <FadeIn as="p" className="ecp-section-subtitle" delay={0.1}>{pricingSubtitle}</FadeIn>
           </div>
 
           <div className="ecp-grid ecp-grid--fade-in">
@@ -299,16 +296,16 @@ function Packages() {
         <section className="ecp__section ecp-estimator">
           <div className="ecp__container ecp-card ecp-estimator__row">
             <div className="ecp-estimator__copy">
-              <h3 className="ecp-estimator__title">
+              <FadeIn as="h3" className="ecp-estimator__title">
                 {t(dict, "estimator_title", "Budget Estimator")}
-              </h3>
-              <p className="ecp-estimator__p">
+              </FadeIn>
+              <FadeIn as="p" className="ecp-estimator__p" delay={0.1}>
                 {t(
                   dict,
                   "estimator_text",
                   "Get a rough estimate for your team size. Final pricing depends on program format, duration, and custom requirements."
                 )}
-              </p>
+              </FadeIn>
             </div>
             <div className="ecp-estimator__control">
               <label className="ecp-label" htmlFor="seats">
@@ -354,12 +351,12 @@ function Packages() {
       <section className="ecp__section ecp-how">
         <div className="ecp__container">
           <div className="ecp-section-header">
-            <h2 className="ecp-section-title">
+            <FadeIn as="h2" className="ecp-section-title">
               {t(dict, "how_title", "How It Works")}
-            </h2>
-            <p className="ecp-section-subtitle">
+            </FadeIn>
+            <FadeIn as="p" className="ecp-section-subtitle" delay={0.1}>
               {t(dict, "how_subtitle", "Get started in three simple steps")}
-            </p>
+            </FadeIn>
           </div>
           <div className="ecp-grid-steps">
             <Step
@@ -397,16 +394,16 @@ function Packages() {
       <section className="ecp__section">
         <div className="ecp__container ecp-compare ecp-card">
           <div className="ecp-compare__header">
-            <h2 className="ecp-compare__title">
+            <FadeIn as="h2" className="ecp-compare__title">
               {t(dict, "compare_title", "What's Included")}
-            </h2>
-            <p className="ecp-compare__subtitle">
+            </FadeIn>
+            <FadeIn as="p" className="ecp-compare__subtitle" delay={0.1}>
               {t(
                 dict,
                 "compare_subtitle",
                 "Compare features across all packages"
               )}
-            </p>
+            </FadeIn>
           </div>
           <div className="ecp-compare__tablewrap">
             <table className="ecp-compare__table">
@@ -450,9 +447,9 @@ function Packages() {
       {/* FAQ */}
       <section className="ecp__section ecp-faq">
         <div className="ecp__container ecp-card">
-          <h2 className="ecp-faq__title">
+          <FadeIn as="h2" className="ecp-faq__title">
             {t(dict, "faq_title", "Frequently Asked Questions")}
-          </h2>
+          </FadeIn>
           <div className="ecp-faq__list">
             <Faq
               q={t(
@@ -605,11 +602,10 @@ function PricingCard({
   })();
 
   // inside function PricingCard({ plan, ... })
-  const target = `${localePrefix}/${
-    PAYMENT_MODE === "paymob" ? "checkout" : "manual-payment"
-  }?plan=${encodeURIComponent(plan.title)}&cc=${encodeURIComponent(
-    countryCode || ""
-  )}&cur=${encodeURIComponent(currency || "")}`;
+  const target = `${localePrefix}/${PAYMENT_MODE === "paymob" ? "checkout" : "manual-payment"
+    }?plan=${encodeURIComponent(plan.title)}&cc=${encodeURIComponent(
+      countryCode || ""
+    )}&cur=${encodeURIComponent(currency || "")}`;
 
   return (
     <div className={`ecp-card ecp-card--plan ${isPopular ? "is-popular" : ""}`}>
