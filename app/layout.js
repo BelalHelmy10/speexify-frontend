@@ -12,6 +12,7 @@ import Providers from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SupportWidget from "@/components/SupportWidget";
+import ScrollToTop from "@/components/ScrollToTop";
 import ClientProviders from "./ClientProviders";
 import LocaleShell from "./LocaleShell";
 import SmoothScroll from "@/components/SmoothScroll";
@@ -128,6 +129,7 @@ export default async function RootLayout({ children }) {
               </Suspense>
               <Footer />
               <SupportWidget />
+              <ScrollToTop />
             </Providers>
           </ClientProviders>
         </LocaleShell>
