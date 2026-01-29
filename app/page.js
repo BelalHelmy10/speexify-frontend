@@ -228,19 +228,19 @@ function Home({ locale = "en" }) {
               step="01"
               title={t(dict, "how_step1_title")}
               text={t(dict, "how_step1_text")}
-              img="/images/assess.avif"
+              img="/images/how-step1.png"
             />
             <HowStep
               step="02"
               title={t(dict, "how_step2_title")}
               text={t(dict, "how_step2_text")}
-              img="/images/coach.avif"
+              img="/images/how-step2.png"
             />
             <HowStep
               step="03"
               title={t(dict, "how_step3_title")}
               text={t(dict, "how_step3_text")}
-              img="/images/apply.avif"
+              img="/images/how-step3.png"
             />
           </div>
 
