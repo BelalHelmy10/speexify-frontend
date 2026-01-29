@@ -143,41 +143,30 @@ function Home({ locale = "en" }) {
       <section className="home-proof">
         <div className="home-container">
           <FadeIn as="p" className="home-proof__title">Trusted by teams at</FadeIn>
-          <div className="home-proof__logos">
-            <div className="home-proof__logo-wrap">
-              <img
-                src="/images/logo-amazon.svg"
-                alt="Amazon"
-                className="home-logo"
-              />
-            </div>
-            <div className="home-proof__logo-wrap">
-              <img
-                src="/images/logo-cocacola.svg"
-                alt="Coca Cola"
-                className="home-logo"
-              />
-            </div>
-            <div className="home-proof__logo-wrap">
-              <img
-                src="/images/logo-tesla.svg"
-                alt="Tesla"
-                className="home-logo"
-              />
-            </div>
-            <div className="home-proof__logo-wrap">
-              <img
-                src="/images/logo-allianz.svg"
-                alt="Allianz"
-                className="home-logo"
-              />
-            </div>
-            <div className="home-proof__logo-wrap">
-              <img
-                src="/images/logo-indeed.svg"
-                alt="Indeed"
-                className="home-logo"
-              />
+          <div className="home-proof__scroller">
+            <div className="home-proof__logos">
+              {/* Set 1 */}
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={`set1-${i}`} className="home-proof__logo-wrap">
+                  <img
+                    src={`/images/logo-${["amazon", "cocacola", "tesla", "allianz", "indeed"][i - 1]
+                      }.svg`}
+                    alt="Client Logo"
+                    className="home-logo"
+                  />
+                </div>
+              ))}
+              {/* Set 2 (Duplicate for loop) */}
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={`set2-${i}`} className="home-proof__logo-wrap">
+                  <img
+                    src={`/images/logo-${["amazon", "cocacola", "tesla", "allianz", "indeed"][i - 1]
+                      }.svg`}
+                    alt="Client Logo"
+                    className="home-logo"
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>
