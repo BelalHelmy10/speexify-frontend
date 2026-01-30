@@ -262,18 +262,25 @@
   }
 
   &__title {
-    font-size: clamp(36px, 6vw, 64px);
-    line-height: 1.1;
+    font-size: clamp(36px, 6vw, 64px); // Back to original size
+    line-height: 1.1; // Back to original line-height
+    letter-spacing: -0.02em; // Standard spacing
     margin: 0 0 24px;
-    font-weight: 900;
+    font-weight: 900; // Back to 900
+    color: #000; // Keeping the Elite Black
     animation: fadeInUp 0.8s ease 0.1s backwards;
+    max-width: 1400px;
   }
 
   &__title-accent {
-    background: linear-gradient(135deg, $brand 0%, $brand-light 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: $brand; // Just the color
+    display: inline-block;
+    background: none;
+    -webkit-text-fill-color: $brand;
+    position: relative;
+
+    // Optional: Add a subtle "period" style if we change text structure later
+    // For now, it makes the accented word purely Electric Blue.
   }
 
   &__sub {
