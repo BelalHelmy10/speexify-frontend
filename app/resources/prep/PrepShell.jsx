@@ -3933,7 +3933,7 @@ export default function PrepShell({
                   left: `${box.x * 100}%`,
                   top: `${box.y * 100}%`,
                   transform: "translate(-50%, -50%)",
-                  pointerEvents: "auto",
+                  pointerEvents: tool === TOOL_TEXT || tool === TOOL_SELECT ? "auto" : "none",
                   zIndex: getZIndexFromId(box.id),
                 }}
               >
