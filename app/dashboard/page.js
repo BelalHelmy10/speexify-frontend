@@ -1180,7 +1180,7 @@ function DashboardInner({ dict, prefix }) {
             </div>
           ) : (
             <>
-              <div className="session-list session-list--scrollable">
+              <div className="session-list session-list--scrollable" data-lenis-prevent>
                 {upcoming.map((s) => (
                   <SessionRow
                     key={s.id}
@@ -1250,7 +1250,7 @@ function DashboardInner({ dict, prefix }) {
             </div>
           ) : (
             <>
-              <div className="session-list session-list--scrollable">
+              <div className="session-list session-list--scrollable" data-lenis-prevent>
                 {past.map((s) => (
                   <SessionRow
                     key={s.id}
