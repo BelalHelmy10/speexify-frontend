@@ -38,9 +38,6 @@ const HIT_RADIUS_STROKE_TOUCH = 0.01;
 const HIT_RADIUS_LINE_TOUCH = 0.005;
 const HIT_RADIUS_BOX_BORDER_TOUCH = 0.005;
 
-// P1-10: Pointer persistence timeout (ms)
-const POINTER_PERSIST_TIMEOUT = 3000;
-
 // P1-11: Stroke width options
 const STROKE_WIDTH_OPTIONS = [1, 2, 3, 5, 8, 12];
 
@@ -294,7 +291,7 @@ export default function PrepShell({
   const [lastInputWasTouch, setLastInputWasTouch] = useState(false);
 
   // P1-10: Pointer persistence timeout ref
-  const pointerTimeoutRef = useRef(null);
+
 
   // P1-11: Stroke width for pen tool
   const [penStrokeWidth, setPenStrokeWidth] = useState(3);
@@ -3155,46 +3152,13 @@ export default function PrepShell({
 
       const page = isPdf ? pdfCurrentPage : 1;
 
-      // P1-10: Clear any existing timeout
-      if (pointerTimeoutRef.current) {
-        clearTimeout(pointerTimeoutRef.current);
-      }
-
       if (isTeacher) {
         setTeacherPointerByPage((prev) => ({ ...prev, [page]: p }));
-
-        // P1-10: Auto-hide pointer after timeout
-        pointerTimeoutRef.current = setTimeout(() => {
-          setTeacherPointerByPage((prev) => {
-            const next = { ...prev };
-            delete next[page];
-            return next;
-          });
-          broadcastPointer(null);
-        }, POINTER_PERSIST_TIMEOUT);
       } else if (myUserId) {
         setLearnerPointersByPage((prev) => ({
           ...prev,
           [page]: { ...(prev[page] || {}), [myUserId]: p },
         }));
-
-        // P1-10: Auto-hide pointer after timeout
-        pointerTimeoutRef.current = setTimeout(() => {
-          setLearnerPointersByPage((prev) => {
-            const next = { ...prev };
-            if (next[page]) {
-              const perPage = { ...next[page] };
-              delete perPage[myUserId];
-              if (Object.keys(perPage).length === 0) {
-                delete next[page];
-              } else {
-                next[page] = perPage;
-              }
-            }
-            return next;
-          });
-          broadcastPointer(null);
-        }, POINTER_PERSIST_TIMEOUT);
       }
       broadcastPointer(p);
       return;
