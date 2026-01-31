@@ -1,20 +1,15 @@
 {
   "loading": "Loading…",
   "not_auth": "Not authenticated",
-
   "title": "My Schedule",
   "subtitle": "Manage your upcoming sessions and meetings",
-
   "empty": "No sessions in this date range yet. Once you book a session, it will appear here on the calendar.",
   "error_failed": "Failed to load sessions",
-
   "quick_nav": "Quick Navigation",
   "legend_scheduled": "Scheduled",
   "legend_canceled": "Canceled",
-
   "stats_upcoming": "Upcoming",
   "stats_canceled": "Canceled",
-
   "session_default_title": "Session",
   "countdown_starts_in": "Starts in",
   "countdown_live": "Live",
@@ -42,5 +37,6 @@
   "error_remove": "Failed to remove availability",
   "error_clear": "Failed to clear availability",
   "legend_available": "Available",
-  "session_group": "Group"
+  "session_group": "Group",
+  "go_to_session": "Go to Session"
 }

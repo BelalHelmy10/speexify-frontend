@@ -7,6 +7,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import api, { clearCsrfToken } from "@/lib/api";
 import MiniCalendar from "react-calendar";
@@ -417,6 +418,10 @@ export default function CalendarPage() {
   const [view, setView] = useState("week");
   const calRef = useRef(null);
 
+  // Popover State
+  const [activeEvent, setActiveEvent] = useState(null);
+  const [popoverPos, setPopoverPos] = useState(null);
+
   // Availability state
   const [calendarMode, setCalendarMode] = useState("sessions");
   const [availabilitySlots, setAvailabilitySlots] = useState([]);
@@ -675,7 +680,8 @@ export default function CalendarPage() {
 
   // Click handler for events
   const onSelectEvent = useCallback(
-    (event) => {
+    (event, e) => {
+      // Logic for availability slots (deletion)
       if (event.isAvailability) {
         if (calendarMode === "availability" && event.slotId) {
           if (confirm(t(dict, "confirm_delete_slot"))) {
@@ -686,10 +692,96 @@ export default function CalendarPage() {
       }
 
       if (!event?.id) return;
-      router.push(`${prefix}/dashboard/sessions/${event.id}`);
+
+      // ELITE POPOVER LOGIC
+      // If we have a click event (e), prevent navigation and show popover
+      if (e && e.preventDefault) {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = e.currentTarget || e.target;
+        const rect = target.getBoundingClientRect();
+
+        // --- 1. Vertical Logic ---
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const popoverHeight = 280; // Estimated max height
+        const placeOnTop = spaceBelow < popoverHeight && rect.top > popoverHeight;
+
+        // --- 2. Horizontal Logic ---
+        // Determine zone: left (0-33%), center (33-66%), right (66-100%)
+        const centerX = rect.left + rect.width / 2;
+        const screenW = window.innerWidth;
+        const popoverWidth = 340;
+
+        let horizontal = "center";
+        if (centerX < screenW / 3) horizontal = "left";
+        else if (centerX > (screenW * 2) / 3) horizontal = "right";
+
+        // --- 3. Calculate Exact Coordinates (No transforms for position) ---
+        let style = {
+          position: "fixed",
+          zIndex: 99999999,
+          width: popoverWidth,
+          transform: null, // Will optionally add scale
+        };
+
+        // Vertical
+        if (placeOnTop) {
+          style.bottom = window.innerHeight - rect.top + 12; // 12px gap above event
+          style.top = "auto";
+        } else {
+          style.top = rect.bottom + 12; // 12px gap below event
+          style.bottom = "auto";
+        }
+
+        // Horizontal
+        let originX = "center";
+        if (horizontal === "left") {
+          style.left = rect.left; // Anchor left
+          style.right = "auto";
+          originX = "left";
+        } else if (horizontal === "right") {
+          style.left = "auto";
+          // Anchor right: distance from right edge of screen
+          style.right = screenW - rect.right;
+          originX = "right";
+        } else {
+          // Center
+          style.left = centerX - (popoverWidth / 2);
+          style.right = "auto";
+          // Clamp center
+          style.left = Math.max(12, Math.min(screenW - popoverWidth - 12, style.left));
+          originX = "center";
+        }
+
+        // Set Transform Origin for animation
+        style.transformOrigin = `${originX} ${placeOnTop ? 'bottom' : 'top'}`;
+
+        setPopoverPos(style);
+        setActiveEvent(event);
+      } else {
+        // Fallback for keyboard or other non-click selection
+        router.push(`${prefix}/dashboard/sessions/${event.id}`);
+      }
     },
     [router, prefix, calendarMode, dict]
   );
+
+  // Close Popover on Scroll (Windows or Calendar Grid) to prevent "sticking"
+  useEffect(() => {
+    if (!activeEvent) return;
+
+    const handleScroll = () => setActiveEvent(null);
+    const handleResize = () => setActiveEvent(null);
+
+    // Capture true is important to catch scroll on any element
+    window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll, { capture: true });
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [activeEvent]);
 
   // Mini calendar change
   const onMiniChange = (date) => {
@@ -947,6 +1039,57 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
+
+      {activeEvent && popoverPos && typeof document !== "undefined" && createPortal(
+        <>
+          <div
+            className="event-popover-backdrop"
+            onClick={() => setActiveEvent(null)}
+          />
+          <div
+            className="event-popover"
+            style={popoverPos}
+          >
+            <div className="event-popover__header">
+              <div className="event-popover__title">
+                {activeEvent.title || t(dict, "session_default_title")}
+              </div>
+              <button
+                className="event-popover__close"
+                onClick={() => setActiveEvent(null)}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="event-popover__time-badge">
+              <span>🕒</span>
+              {format(activeEvent.start, "h:mm a")} - {format(activeEvent.end, "h:mm a")}
+            </div>
+
+            {activeEvent.isGroup && (
+              <div className="event-popover__info-row">
+                <span>👥</span>
+                <span>
+                  {t(dict, "session_group") || "Group Session"}
+                  {activeEvent.seatsLabel ? ` (${activeEvent.seatsLabel})` : ""}
+                </span>
+              </div>
+            )}
+
+            <div className="event-popover__actions">
+              <Link
+                href={`${prefix}/dashboard/sessions/${activeEvent.id}`}
+                className="event-popover__btn event-popover__btn--primary"
+              >
+                {t(dict, "go_to_session") || "Go to Session"}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+              </Link>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
     </>
   );
 }

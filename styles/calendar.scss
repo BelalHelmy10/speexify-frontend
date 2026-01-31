@@ -1561,3 +1561,152 @@ $availability-text-dark: #065f46;
     margin-right: 0.5rem;
   }
 }
+
+// ─── EVENT POPOVER ─────────────────────────────────────────────────────────
+.event-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.15); // Subtle dim
+  backdrop-filter: blur(4px); // Focus effect
+  z-index: 99999;
+  animation: backdrop-in 0.2s ease-out;
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.event-popover {
+  position: fixed;
+  width: 340px;
+  background: rgba($card-bg, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba($calendar-primary, 0.15);
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.05);
+  z-index: 100000;
+  padding: 24px;
+  animation: popover-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center top;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  &__title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: $text-primary;
+    line-height: 1.3;
+    letter-spacing: -0.3px;
+    flex: 1;
+  }
+
+  &__close {
+    background: transparent;
+    border: none;
+    color: $muted;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background: rgba($ink, 0.05);
+      color: $text-primary;
+    }
+  }
+
+  &__info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: $text-secondary;
+    font-weight: 500;
+  }
+
+  &__time-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: $calendar-primary;
+    background: linear-gradient(135deg, rgba($calendar-primary, 0.1), rgba($calendar-secondary, 0.05));
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    margin-top: 4px;
+    border: 1px solid rgba($calendar-primary, 0.1);
+  }
+
+  &__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  &__btn {
+    padding: 12px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    &--primary {
+      background: linear-gradient(135deg, $calendar-primary 0%, $calendar-secondary 100%);
+      color: #fff;
+      box-shadow: 0 8px 16px rgba($calendar-primary, 0.25);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba($calendar-primary, 0.35);
+      }
+
+      &:active {
+        transform: translateY(-1px);
+      }
+    }
+  }
+}
+
+// 120Hz Ultra Smooth Animation (Scale & Opacity only)
+// Layout is handled by JS exact positioning
+@keyframes popover-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

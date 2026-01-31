@@ -1,20 +1,15 @@
 {
   "loading": "جارٍ التحميل…",
   "not_auth": "أنت غير مسجَّل الدخول",
-
   "title": "جدولي",
   "subtitle": "إدارة الجلسات والمواعيد القادمة",
-
   "empty": "لا توجد جلسات في هذا النطاق الزمني بعد. عند حجز جلسة ستظهر هنا في التقويم.",
   "error_failed": "فشل في تحميل الجلسات",
-
   "quick_nav": "انتقال سريع",
   "legend_scheduled": "مجدولة",
   "legend_canceled": "ملغاة",
-
   "stats_upcoming": "قادمة",
   "stats_canceled": "ملغاة",
-
   "session_default_title": "جلسة",
   "countdown_starts_in": "تبدأ بعد",
   "countdown_live": "مباشرة",
@@ -42,5 +37,6 @@
   "error_remove": "فشل في إزالة التوفر",
   "error_clear": "فشل في مسح التوفر",
   "legend_available": "متاح",
-  "session_group": "جماعية"
+  "session_group": "جماعية",
+  "go_to_session": "الذهاب إلى الجلسة"
 }
