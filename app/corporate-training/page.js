@@ -184,7 +184,7 @@ function CorporateTraining({ dict, locale }) {
 
           <div className="spx-corp-grid--3">
             <Program
-              img="/images/one-on-one-coaching.avif"
+              img="/images/elite-one-on-one.png"
               title={t(dict, "program1_title")}
               points={[
                 t(dict, "program1_p1"),
@@ -193,7 +193,7 @@ function CorporateTraining({ dict, locale }) {
               ]}
             />
             <Program
-              img="/images/small-group-practice.avif"
+              img="/images/elite-team-practice.png"
               title={t(dict, "program2_title")}
               points={[
                 t(dict, "program2_p1"),
@@ -202,7 +202,7 @@ function CorporateTraining({ dict, locale }) {
               ]}
             />
             <Program
-              img="/images/workshops.avif"
+              img="/images/elite-workshops.png"
               title={t(dict, "program3_title")}
               points={[
                 t(dict, "program3_p1"),
@@ -224,7 +224,7 @@ function CorporateTraining({ dict, locale }) {
 
           <div className="spx-corp-grid--3">
             <Plan
-              img="/images/corporate_pilot.png"
+              img="/images/elite-pilot.png"
               title={t(dict, "plan1_title")}
               desc={t(dict, "plan1_desc")}
               bullets={[
@@ -236,7 +236,7 @@ function CorporateTraining({ dict, locale }) {
               prefix={prefix}
             />
             <Plan
-              img="/images/corporate_team.png"
+              img="/images/elite-team-large.png"
               title={t(dict, "plan2_title")}
               desc={t(dict, "plan2_desc")}
               bullets={[
@@ -250,7 +250,7 @@ function CorporateTraining({ dict, locale }) {
               prefix={prefix}
             />
             <Plan
-              img="/images/corporate_company.png"
+              img="/images/elite-company.png"
               title={t(dict, "plan3_title")}
               desc={t(dict, "plan3_desc")}
               bullets={[
@@ -561,7 +561,6 @@ function Program({ img, title, points = [] }) {
     <div className="spx-corp-card spx-corp-program">
       <figure className="spx-corp-media spx-corp-program__media">
         <img src={img} alt="" loading="lazy" />
-        <div className="spx-corp-program__overlay"></div>
       </figure>
       <div className="spx-corp-program__body">
         <div className="spx-corp-program__title">{title}</div>

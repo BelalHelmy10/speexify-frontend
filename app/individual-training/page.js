@@ -145,7 +145,6 @@ function IndividualInner({ dict, locale }) {
           </div>
 
           <figure className="ind-hero__media">
-            <div className="ind-hero__media-glow"></div>
             <img
               src="/images/individual-hero-speaker.png"
               alt="Learner practicing with a coach"
