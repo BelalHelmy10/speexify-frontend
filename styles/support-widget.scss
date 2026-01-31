@@ -96,10 +96,12 @@ $sw-z-lightbox: 10000;
 }
 
 @keyframes sw-badge-pulse {
+
   0%,
   100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
@@ -117,9 +119,7 @@ $sw-z-lightbox: 10000;
 
   width: 380px;
   // FIXED: Dynamic height that respects navbar
-  max-height: calc(
-    100vh - 120px
-  ); // Leave space for navbar (typical ~60-80px) + FAB + padding
+  max-height: calc(100vh - 120px); // Leave space for navbar (typical ~60-80px) + FAB + padding
 
   background: $sw-surface;
   border-radius: $sw-radius-lg;
@@ -129,23 +129,70 @@ $sw-z-lightbox: 10000;
   flex-direction: column;
 
   overflow: hidden;
-  animation: sw-slide-up 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  animation: sw-spring-pop 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  transform-origin: bottom right;
 
   // GPU acceleration
   will-change: transform, opacity;
-  transform: translateZ(0);
+  transform: scale(1);
+
+  // FIXED: Mobile Fullscreen - Force strict 100% coverage
+  @media (max-width: 768px) {
+    position: fixed !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100dvh !important; // Use dynamic viewport height
+    border-radius: 0 !important;
+    z-index: 2147483647 !important;
+    margin: 0 !important;
+    transform: none !important;
+    animation: sw-fade-in-mobile 0.3s ease-out !important;
+  }
 }
 
 @keyframes sw-slide-up {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: translateY(20px);
   }
+
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
+
+// Spring Pop Animation (Scale 0 -> 1)
+@keyframes sw-spring-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0); // Start from 0 for true "pop"
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sw-fade-in-mobile {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
 
 // ============================================================================
 // Header - FIXED: Always visible with proper z-index
@@ -244,10 +291,12 @@ $sw-z-lightbox: 10000;
 }
 
 @keyframes sw-pulse {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -262,9 +311,11 @@ $sw-z-lightbox: 10000;
   overflow-x: hidden;
   padding: 20px;
 
-  // Smooth scrolling
-  scroll-behavior: smooth;
+  // SCROLL FIXES:
+  touch-action: pan-y;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -426,6 +477,7 @@ $sw-z-lightbox: 10000;
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -447,11 +499,13 @@ $sw-z-lightbox: 10000;
 }
 
 @keyframes sw-typing-dots {
+
   0%,
   60%,
   100% {
     opacity: 1;
   }
+
   30% {
     opacity: 0.3;
   }
@@ -558,6 +612,7 @@ $sw-z-lightbox: 10000;
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }

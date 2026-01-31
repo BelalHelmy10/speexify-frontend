@@ -3,6 +3,11 @@ html.lenis body {
     height: auto;
 }
 
+html {
+    overscroll-behavior: none;
+    background-color: #f9fafb; // Prevent white flash if it does overscroll
+}
+
 .lenis.lenis-smooth {
     scroll-behavior: auto !important;
 }

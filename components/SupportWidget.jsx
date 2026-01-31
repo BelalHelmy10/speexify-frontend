@@ -699,7 +699,7 @@ export default function SupportWidget() {
 
       {/* FIXED: Widget Panel with proper positioning */}
       {open && (
-        <div className="sw-panel">
+        <div className="sw-panel" data-lenis-prevent>
           {/* FIXED: Header always visible */}
           <header className="sw-header">
             <div className="sw-header__left">
@@ -734,7 +734,7 @@ export default function SupportWidget() {
           </header>
 
           {/* Body */}
-          <div className="sw-body">
+          <div className="sw-body" data-lenis-prevent>
             {loading && !activeTicket ? (
               <div className="sw-loading">
                 <Loader2 size={24} className="sw-spin" />
