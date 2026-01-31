@@ -666,81 +666,86 @@
     &-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: $space-6;
+      gap: 30px;
+      max-width: 1000px;
+      margin: 0 auto;
 
-      @media (max-width: $bp-lg) {
+      @media (max-width: $bp-md) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      @media (max-width: $bp-sm) {
         grid-template-columns: 1fr;
       }
     }
   }
 
   &__leader {
-    background: $color-white;
-    border-radius: 16px;
+    background: transparent; // Cleaner look
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    border: 1px solid $color-border;
+    // box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); // Remove heavy shadow for modern look
+    // border: 1px solid $color-border;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
+    flex-direction: column; // Stack vertically
     align-items: center;
-    gap: 20px;
-    padding: 20px;
-
-    @media (max-width: $bp-sm) {
-      flex-direction: column;
-      text-align: center;
-    }
+    text-align: center;
+    padding: 0; // Remove padding
+    position: relative; // Ensure z-index works
 
     &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 28px rgba($color-primary, 0.15);
+      transform: translateY(-8px);
+      z-index: 10; // Fix: Bring to front on hover so it doesn't get cut off or cover others weirdly
 
       .about__leader-media img {
         transform: scale(1.05);
-      }
-
-      .about__leader-overlay {
-        opacity: 0.3;
+        filter: grayscale(0); // Ensure full color on hover
       }
     }
 
     &-media {
       position: relative;
       overflow: hidden;
-      border-radius: 12px;
-      flex-shrink: 0;
+      border-radius: 20px;
+      width: 240px;
+      aspect-ratio: 1; // Square image
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 
       img {
-        width: 80px;
-        height: 80px;
+        width: 100%;
+        height: 100%;
         object-fit: cover;
-        object-position: 50% 30%;
+        object-position: center top;
         display: block;
         transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        filter: grayscale(0); // No filter by default based on request
       }
     }
 
+    // REMOVED OVERLAY as requested
     &-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, $color-primary, $color-primary-light);
-      opacity: 0.15;
-      transition: opacity 0.4s ease;
+      display: none;
     }
 
     &-card {
-      flex: 1;
+      width: 100%;
 
       h4 {
-        margin: 0 0 4px;
-        font-size: 18px;
-        font-weight: 700;
+        margin: 0 0 6px;
+        font-size: 22px;
+        font-weight: 800;
+        color: $color-black;
       }
 
       span {
-        color: $color-muted;
+        display: block;
+        color: $color-primary;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
     }
   }
