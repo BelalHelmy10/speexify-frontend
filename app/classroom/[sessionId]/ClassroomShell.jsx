@@ -787,6 +787,7 @@ export default function ClassroomShell({
             <div
               className={`cr-chat-container ${!isChatOpen ? "cr-chat-container--collapsed" : ""
                 }`}
+              data-lenis-prevent
             >
               <button
                 className="cr-chat-toggle"
@@ -848,7 +849,7 @@ export default function ClassroomShell({
             className="cr-panel cr-panel--right"
             style={{ width: `${100 - leftPanelWidth}%` }}
           >
-            <div className="cr-content-viewer" ref={contentScrollRef}>
+            <div className="cr-content-viewer" ref={contentScrollRef} data-lenis-prevent>
               {resource ? (
                 <PrepShell
                   resource={resource}
@@ -1104,7 +1105,7 @@ export default function ClassroomShell({
                 ✕
               </button>
             </div>
-            <div className="cr-modal__body">
+            <div className="cr-modal__body" data-lenis-prevent>
               <ClassroomResourcePicker
                 tracks={tracks}
                 selectedResourceId={selectedResourceId}
@@ -1140,7 +1141,7 @@ export default function ClassroomShell({
                 ✕
               </button>
             </div>
-            <div className="cr-modal__body">
+            <div className="cr-modal__body" data-lenis-prevent>
               <div className="cr-participant-list">
                 <div className="cr-participant cr-participant--teacher">
                   <span className="cr-participant__avatar"><UserRound size={20} /></span>

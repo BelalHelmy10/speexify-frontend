@@ -60,17 +60,67 @@
   /* --------------------------------
      GHOST
   -------------------------------- */
+  /* --------------------------------
+     GHOST (Elite Update)
+  -------------------------------- */
   &--ghost {
     background: transparent;
     color: $color-primary;
-    border: 2px solid $color-primary;
+    border: 2px solid rgba($color-primary, 0.3); // Subtle default border
     box-shadow: none;
 
     &:hover {
-      background: rgba($color-primary, 0.1);
-      border-color: $color-primary-dark;
-      color: $color-primary-dark;
+      background: $color-primary;
+      border-color: $color-primary;
+      color: $color-white;
+      box-shadow: 0 8px 24px rgba($color-primary, 0.25); // Soft glow
+      transform: translateY(-2px) scale(1.02); // Slight scale for "pop"
+    }
+
+    &:active {
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 2px 8px rgba($color-primary, 0.2);
+    }
+  }
+
+  /* --------------------------------
+     DANGER (Cancel Button)
+  -------------------------------- */
+  &--danger {
+    background: $error;
+    color: $color-white;
+    box-shadow: 0 4px 12px rgba($error, 0.25);
+
+    &:hover {
+      background: darken($error, 5%);
+      box-shadow: 0 8px 24px rgba($error, 0.35);
       transform: translateY(-2px);
+    }
+
+    &:active {
+      box-shadow: 0 2px 8px rgba($error, 0.3);
+    }
+
+    // Danger + Ghost variant (The "Cancel" button)
+    &.btn--ghost {
+      background: transparent;
+      color: $text-muted; // Muted initially for sleek look
+      border: 2px solid $border; // Very subtle border initially
+      box-shadow: none;
+
+      &:hover {
+        background: $error;
+        border-color: $error;
+        color: $color-white;
+        box-shadow: 0 8px 24px rgba($error, 0.3); // Red glow
+        transform: translateY(-2px) scale(1.02);
+      }
+
+      &:active {
+        background: darken($error, 5%);
+        transform: translateY(1px) scale(0.98);
+        box-shadow: 0 2px 8px rgba($error, 0.2);
+      }
     }
   }
 

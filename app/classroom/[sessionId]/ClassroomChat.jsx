@@ -35,8 +35,8 @@ export default function ClassroomChat({
     : learnerName || "Learner";
 
   const ready = classroomChannel?.ready ?? false;
-  const send = classroomChannel?.send ?? (() => {});
-  const subscribe = classroomChannel?.subscribe ?? (() => () => {});
+  const send = classroomChannel?.send ?? (() => { });
+  const subscribe = classroomChannel?.subscribe ?? (() => () => { });
 
   const storageKey = `${STORAGE_PREFIX}${sessionId}`;
 
@@ -126,9 +126,8 @@ export default function ClassroomChat({
         {
           id: `local_join_${sessionId}_${myRole}`,
           type: "system_local",
-          text: `You joined as ${myName} (${
-            myRole === "teacher" ? "teacher" : "learner"
-          })`,
+          text: `You joined as ${myName} (${myRole === "teacher" ? "teacher" : "learner"
+            })`,
           at: new Date().toISOString(),
         },
         { countAsUnread: false }
@@ -400,7 +399,7 @@ export default function ClassroomChat({
 
   return (
     <div className="cr-chat">
-      <div className="cr-chat__messages">
+      <div className="cr-chat__messages" data-lenis-prevent>
         {!hasMessages && (
           <div className="cr-chat__empty">
             <div className="cr-chat__empty-icon">💭</div>
@@ -437,8 +436,8 @@ export default function ClassroomChat({
               msg.role === "teacher"
                 ? "cr-chat__message--teacher"
                 : msg.role === "learner"
-                ? "cr-chat__message--learner"
-                : "";
+                  ? "cr-chat__message--learner"
+                  : "";
 
             const sideClass = isMine
               ? "cr-chat__message--self"

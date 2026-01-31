@@ -232,7 +232,7 @@ export default function PdfViewerWithSidebar({
         if (cancelled) {
           try {
             doc.destroy();
-          } catch (_) {}
+          } catch (_) { }
           return;
         }
 
@@ -284,7 +284,7 @@ export default function PdfViewerWithSidebar({
       if (renderTaskRef.current) {
         try {
           renderTaskRef.current.cancel();
-        } catch (_) {}
+        } catch (_) { }
         renderTaskRef.current = null;
       }
 
@@ -345,7 +345,7 @@ export default function PdfViewerWithSidebar({
       if (renderTaskRef.current) {
         try {
           renderTaskRef.current.cancel();
-        } catch (_) {}
+        } catch (_) { }
       }
     };
   }, [pdfDoc, currentPage, zoom, updateContainerRef, dict, requestAutoFit]);
@@ -372,7 +372,7 @@ export default function PdfViewerWithSidebar({
       if (pdfDoc) {
         try {
           pdfDoc.destroy();
-        } catch (_) {}
+        } catch (_) { }
       }
     };
   }, [pdfDoc]);
@@ -439,7 +439,7 @@ export default function PdfViewerWithSidebar({
     <div className="prep-pdf-layout">
       {/* MAIN AREA */}
       <div className="prep-pdf-main">
-        <div className="prep-pdf-main-inner" ref={mainRef}>
+        <div className="prep-pdf-main-inner" ref={mainRef} data-lenis-prevent>
           {loading && !pdfDoc && (
             <div className="cpv-loading">
               <div className="cpv-loading__spinner" />
@@ -597,7 +597,7 @@ export default function PdfViewerWithSidebar({
 
       {/* SIDEBAR */}
       {!hideSidebar && numPages > 1 && (
-        <aside className="prep-pdf-sidebar">
+        <aside className="prep-pdf-sidebar" data-lenis-prevent>
           {numPages === 0 ? (
             <div className="prep-pdf-sidebar__empty">
               {t(dict, "resources_pdf_sidebar_empty")}

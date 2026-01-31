@@ -19,7 +19,7 @@ export default function MobileClassroomLayout({
     return (
         <div className="cr-mobile-layout">
             {/* Content panels - only active one is visible */}
-            <div className="cr-mobile-content">
+            <div className="cr-mobile-content" data-lenis-prevent>
                 <div
                     className={`cr-mobile-content__panel ${activeTab === "video" ? "cr-mobile-content__panel--active" : ""
                         }`}
