@@ -99,8 +99,11 @@
     border: 2px solid $color-primary;
 
     &:hover {
-      background: rgba($color-primary, 0.08);
-      border-color: $color-primary-ink;
+      background: $color-primary;
+      color: #fff;
+      border-color: $color-primary;
+      box-shadow: 0 4px 12px rgba($color-primary, 0.2);
+      transform: translateY(-1px);
     }
   }
 
