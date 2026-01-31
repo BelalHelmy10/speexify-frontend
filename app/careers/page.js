@@ -222,8 +222,8 @@ Thanks!`
               {loading
                 ? t(dict, "roles_loading")
                 : filtered.length === 1
-                ? t(dict, "roles_count_single", { count: filtered.length })
-                : t(dict, "roles_count_multi", { count: filtered.length })}
+                  ? t(dict, "roles_count_single", { count: filtered.length })
+                  : t(dict, "roles_count_multi", { count: filtered.length })}
             </p>
           </div>
 
@@ -499,7 +499,7 @@ function JobModal({ job, onClose, onApply, dict }) {
           </h3>
         </header>
 
-        <div className="careers-modal__content">
+        <div className="careers-modal__content" data-lenis-prevent>
           {job.description && (
             <>
               <h4>{t(dict, "modal_do_title")}</h4>
