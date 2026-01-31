@@ -2,6 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Bell, X, CheckCheck, Trash2, RefreshCw } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
@@ -124,6 +125,7 @@ export default function NotificationsBell({ locale = "en" }) {
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
   const [csrfToken, setCsrfToken] = useState("");
+  const [panelStyle, setPanelStyle] = useState({});
 
   const panelRef = useRef(null);
   const btnRef = useRef(null);
@@ -234,11 +236,39 @@ export default function NotificationsBell({ locale = "en" }) {
     }
   }, [user]);
 
-  // Open -> load
+  // Open -> load and Position Tracking
   useEffect(() => {
     if (open) fetchNotifications();
     // lock body scroll on mobile sheet
     if (open && isMobile) document.body.style.overflow = "hidden";
+
+    // Desktop Positioning Logic
+    if (open && !isMobile) {
+      const updatePosition = () => {
+        if (btnRef.current) {
+          const rect = btnRef.current.getBoundingClientRect();
+          setPanelStyle({
+            position: "fixed",
+            top: rect.bottom + 24, // Increased gap to clear header visuals
+            left: "auto",
+            right: window.innerWidth - rect.right,
+            zIndex: 9999999, // Force high z-index inline
+            transform: "none",
+          });
+        }
+      };
+
+      updatePosition(); // Initial calculation
+      window.addEventListener("scroll", updatePosition, { passive: true });
+      window.addEventListener("resize", updatePosition, { passive: true });
+
+      return () => {
+        document.body.style.overflow = "";
+        window.removeEventListener("scroll", updatePosition);
+        window.removeEventListener("resize", updatePosition);
+      };
+    }
+
     return () => {
       document.body.style.overflow = "";
     };
@@ -409,153 +439,166 @@ export default function NotificationsBell({ locale = "en" }) {
         )}
       </button>
 
-      {open && (
-        <div className="spx-notif__backdrop" onClick={() => setOpen(false)} />
-      )}
 
-      {open && (
-        <div
-          ref={panelRef}
-          className={`spx-notif__panel${isMobile ? " is-sheet" : ""}`}
-          role="dialog"
-          aria-label="Notifications"
-        >
-          <div className="spx-notif__header">
-            <div className="spx-notif__title">
-              {locale === "ar" ? "الإشعارات" : "Notifications"}
-              {unreadCount > 0 && (
-                <span className="spx-notif__unreadBadge">{unreadCount}</span>
-              )}
-            </div>
 
-            <div className="spx-notif__actions">
-              <button
-                type="button"
-                className="spx-notif__iconBtn"
-                onClick={markAllRead}
-                disabled={unreadCount === 0 || actionLoading}
-                title={locale === "ar" ? "تحديد الكل كمقروء" : "Mark all read"}
-              >
-                <CheckCheck size={18} />
-              </button>
+      {
+        open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div className="spx-notif__backdrop" onClick={() => setOpen(false)} />
+            <div
+              ref={panelRef}
+              className={`spx-notif__panel${isMobile ? " is-sheet" : ""}`}
+              role="dialog"
+              aria-label="Notifications"
+              data-lenis-prevent
+              style={
+                !isMobile ? panelStyle : { zIndex: 9999999 }
+              }
+            >
+              <div className="spx-notif__header">
+                <div className="spx-notif__title">
+                  {locale === "ar" ? "الإشعارات" : "Notifications"}
+                  <span className="spx-notif__count-badge">{unreadCount}</span>
+                </div>
 
-              <button
-                type="button"
-                className="spx-notif__iconBtn"
-                onClick={() => setOpen(false)}
-                title={locale === "ar" ? "إغلاق" : "Close"}
-              >
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-
-          <div className="spx-notif__body">
-            {loading && (
-              <div className="spx-notif__state">
-                <RefreshCw size={20} className="spx-notif__spinner" />
-                {locale === "ar" ? "جار التحميل..." : "Loading..."}
-              </div>
-            )}
-
-            {!loading && error && (
-              <div className="spx-notif__state spx-notif__state--error">
-                {error}
-                <button
-                  type="button"
-                  className="spx-notif__retryBtn"
-                  onClick={fetchNotifications}
-                >
-                  {locale === "ar" ? "إعادة المحاولة" : "Retry"}
-                </button>
-              </div>
-            )}
-
-            {!loading && !error && items.length === 0 && (
-              <div className="spx-notif__state spx-notif__state--empty">
-                <span className="spx-notif__emptyIcon">🔔</span>
-                {locale === "ar" ? "لا توجد إشعارات" : "No notifications yet"}
-              </div>
-            )}
-
-            {!loading &&
-              !error &&
-              items.map((n) => {
-                const isUnread = !n.readAt;
-                const title = n.title || "";
-                const body = n.body || "";
-                const icon = getNotificationIcon(n.type);
-
-                return (
-                  <div
-                    key={n.id}
-                    className={`spx-notif__item${isUnread ? " is-unread" : ""}`}
-                    onClick={(e) => handleNotificationClick(n, e)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        handleNotificationClick(n, e);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`${isUnread ? "Unread: " : ""}${title}`}
+                <div className="spx-notif__actions">
+                  <button
+                    type="button"
+                    className="spx-notif__iconBtn"
+                    onClick={markAllRead}
+                    disabled={unreadCount === 0 || actionLoading}
+                    title={
+                      locale === "ar" ? "تحديد الكل كمقروء" : "Mark all read"
+                    }
                   >
-                    <div className="spx-notif__itemIcon">{icon}</div>
+                    <CheckCheck size={18} />
+                  </button>
 
-                    <div className="spx-notif__itemContent">
-                      <div className="spx-notif__itemTop">
-                        <div className="spx-notif__itemTitle">{title}</div>
-                        <div className="spx-notif__itemTime">
-                          {n.createdAt ? fmtTime(n.createdAt, locale) : ""}
-                        </div>
-                      </div>
+                  <button
+                    type="button"
+                    className="spx-notif__iconBtn"
+                    onClick={() => setOpen(false)}
+                    title={locale === "ar" ? "إغلاق" : "Close"}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
 
-                      {body && (
-                        <div className="spx-notif__itemBody">{body}</div>
-                      )}
-                    </div>
+              <div className="spx-notif__body" data-lenis-prevent>
+                {loading && (
+                  <div className="spx-notif__state">
+                    <RefreshCw size={20} className="spx-notif__spinner" />
+                    {locale === "ar" ? "جار التحميل..." : "Loading..."}
+                  </div>
+                )}
 
+                {!loading && error && (
+                  <div className="spx-notif__state spx-notif__state--error">
+                    {error}
                     <button
                       type="button"
-                      className="spx-notif__itemDelete"
-                      onClick={(e) => deleteNotification(n.id, e)}
-                      title={locale === "ar" ? "حذف" : "Delete"}
-                      aria-label="Delete notification"
+                      className="spx-notif__retryBtn"
+                      onClick={fetchNotifications}
                     >
-                      <Trash2 size={16} />
+                      {locale === "ar" ? "إعادة المحاولة" : "Retry"}
                     </button>
                   </div>
-                );
-              })}
-          </div>
+                )}
 
-          <div className="spx-notif__footer">
-            <button
-              type="button"
-              className="spx-notif__ghost"
-              onClick={fetchNotifications}
-              disabled={loading}
-            >
-              <RefreshCw
-                size={14}
-                className={loading ? "spx-notif__spinner" : ""}
-              />
-              {locale === "ar" ? "تحديث" : "Refresh"}
-            </button>
+                {!loading && !error && items.length === 0 && (
+                  <div className="spx-notif__state spx-notif__state--empty">
+                    <span className="spx-notif__emptyIcon">🔔</span>
+                    {locale === "ar"
+                      ? "لا توجد إشعارات"
+                      : "No notifications yet"}
+                  </div>
+                )}
 
-            <button
-              type="button"
-              className="spx-notif__ghost spx-notif__ghost--danger"
-              onClick={clearRead}
-              disabled={readCount === 0 || actionLoading}
-            >
-              <Trash2 size={14} />
-              {locale === "ar" ? "حذف المقروء" : "Clear read"}
-              {readCount > 0 && <span>({readCount})</span>}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+                {!loading &&
+                  !error &&
+                  items.map((n) => {
+                    const isUnread = !n.readAt;
+                    const title = n.title || "";
+                    const body = n.body || "";
+                    const icon = getNotificationIcon(n.type);
+
+                    return (
+                      <div
+                        key={n.id}
+                        className={`spx-notif__item${isUnread ? " is-unread" : ""
+                          }`}
+                        onClick={(e) => handleNotificationClick(n, e)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            handleNotificationClick(n, e);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`${isUnread ? "Unread: " : ""}${title}`}
+                      >
+                        <div className="spx-notif__itemIcon">{icon}</div>
+
+                        <div className="spx-notif__itemContent">
+                          <div className="spx-notif__itemTop">
+                            <div className="spx-notif__itemTitle">{title}</div>
+                            <div className="spx-notif__itemTime">
+                              {n.createdAt ? fmtTime(n.createdAt, locale) : ""}
+                            </div>
+                          </div>
+
+                          {body && (
+                            <div className="spx-notif__itemBody">{body}</div>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="spx-notif__itemDelete"
+                          onClick={(e) => deleteNotification(n.id, e)}
+                          title={locale === "ar" ? "حذف" : "Delete"}
+                          aria-label="Delete notification"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <div className="spx-notif__footer">
+                <button
+                  type="button"
+                  className="spx-notif__ghost"
+                  onClick={fetchNotifications}
+                  disabled={loading}
+                >
+                  <RefreshCw
+                    size={14}
+                    className={loading ? "spx-notif__spinner" : ""}
+                  />
+                  {locale === "ar" ? "تحديث" : "Refresh"}
+                </button>
+
+                <button
+                  type="button"
+                  className="spx-notif__ghost spx-notif__ghost--danger"
+                  onClick={clearRead}
+                  disabled={readCount === 0 || actionLoading}
+                >
+                  <Trash2 size={14} />
+                  {locale === "ar" ? "حذف المقروء" : "Clear read"}
+                  {readCount > 0 && <span>({readCount})</span>}
+                </button>
+              </div>
+            </div>
+          </>,
+          document.body
+        )
+      }
+    </div >
   );
 }

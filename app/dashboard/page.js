@@ -275,7 +275,7 @@ function Modal({ title, children, onClose }) {
             </svg>
           </button>
         </div>
-        <div className="modal__body">{children}</div>
+        <div className="modal__body" data-lenis-prevent>{children}</div>
       </div>
     </div>
   );

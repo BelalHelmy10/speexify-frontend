@@ -602,9 +602,24 @@ export default function CalendarPage() {
 
       setSelectedDayOfWeek(dayOfWeek);
       addAvailabilitySlot(dayOfWeek, startTime, endTime);
+
     },
     [calendarMode, savingAvailability]
   );
+
+  // Fix Lenis scrolling conflict: Apply prevention ONLY to the internal scrollable grid
+  // This allows the page to scroll smoothly when hovering headers/toolbar, but lets the grid scroll natively.
+  useEffect(() => {
+    const applyLenisPrevent = () => {
+      const timeContent = document.querySelector(".rbc-time-content");
+      if (timeContent) {
+        timeContent.setAttribute("data-lenis-prevent", "true");
+      }
+    };
+
+    const timer = setTimeout(applyLenisPrevent, 300);
+    return () => clearTimeout(timer);
+  }, [view, currentDate]);
 
   // Event styling
   const eventPropGetter = useCallback(

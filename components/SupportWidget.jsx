@@ -55,9 +55,8 @@ const Message = memo(({ message, isUser, API_BASE, onImageClick }) => {
 
   return (
     <div
-      className={`sw-message ${
-        isUser ? "sw-message--user" : "sw-message--staff"
-      }`}
+      className={`sw-message ${isUser ? "sw-message--user" : "sw-message--staff"
+        }`}
     >
       {message.body && <div className="sw-message__text">{message.body}</div>}
 
@@ -368,10 +367,10 @@ export default function SupportWidget() {
           const updated = prev.map((t) =>
             t.id === ticketId
               ? {
-                  ...t,
-                  lastMessage: message,
-                  updatedAt: new Date().toISOString(),
-                }
+                ...t,
+                lastMessage: message,
+                updatedAt: new Date().toISOString(),
+              }
               : t
           );
           return updated.sort(
@@ -459,8 +458,8 @@ export default function SupportWidget() {
     try {
       const audio = new Audio("/sounds/notification.mp3");
       audio.volume = 0.3;
-      audio.play().catch(() => {});
-    } catch (err) {}
+      audio.play().catch(() => { });
+    } catch (err) { }
   }, []);
 
   useEffect(() => {
@@ -553,7 +552,7 @@ export default function SupportWidget() {
       });
 
       setUnreadCount(unread.length);
-    } catch (err) {}
+    } catch (err) { }
   }, [getStoredSeen]);
 
   useEffect(() => {
@@ -754,7 +753,7 @@ export default function SupportWidget() {
                   </div>
                 </div>
 
-                <div className="sw-messages">
+                <div className="sw-messages" data-lenis-prevent>
                   {(activeTicket.messages || []).map((m) => (
                     <Message
                       key={m.id}
@@ -854,7 +853,7 @@ export default function SupportWidget() {
                     <p>No conversations yet</p>
                   </div>
                 ) : (
-                  <div className="sw-ticket-list">
+                  <div className="sw-ticket-list" data-lenis-prevent>
                     {tickets.map((t) => (
                       <button
                         key={t.id}

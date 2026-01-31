@@ -67,10 +67,12 @@
 }
 
 @keyframes notifBadgePulse {
+
   0%,
   100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
@@ -80,34 +82,49 @@
 .spx-notif__backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(2px);
-  z-index: 999;
+  background: rgba(0, 0, 0, 0.3); // Darker for elite focus
+  backdrop-filter: blur(8px); // Stronger blur
+  z-index: 99999; // Above everything including header
   cursor: pointer;
+  animation: notifBackdropIn 0.3s ease-out;
+}
+
+@keyframes notifBackdropIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Dropdown panel */
 .spx-notif__panel {
-  position: absolute;
-  top: calc(100% + 12px);
-  right: 0;
+  // Position is handled inline via JS for desktop Portal
+  // position: fixed; 
 
   width: min(420px, calc(100vw - 24px));
   border-radius: 16px;
 
   border: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    0 12px 40px rgba(0, 0, 0, 0.15); // Layered shadows
+
   overflow: hidden;
-  z-index: 1000;
+  z-index: 100000; // Above backdrop
 
-  max-height: 560px;
+  max-height: 80vh; // Taller max height since it's fixed
   display: flex;
   flex-direction: column;
 
-  animation: notifPanelIn 0.2s ease-out;
+  transform-origin: top right;
+  animation: notifPanelIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes notifPanelIn {
@@ -115,6 +132,7 @@
     opacity: 0;
     transform: translateY(-8px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -202,12 +220,14 @@
 .spx-notif__body::-webkit-scrollbar {
   width: 8px;
 }
+
 .spx-notif__body::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.12);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
+
 .spx-notif__body::-webkit-scrollbar-track {
   background: transparent;
 }
@@ -262,6 +282,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -446,6 +467,7 @@
       opacity: 0;
       transform: translateY(100%);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
