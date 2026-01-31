@@ -88,13 +88,12 @@
 }
 
 .section-title {
-  font-size: clamp(28px, 4vw, 40px);
-  font-weight: 800;
+  font-family: $font-heading;
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
   margin: 0 0 12px;
-  background: linear-gradient(135deg, $ink 0%, $brand-ink 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: $ink;
 }
 
 .section-subtitle {
@@ -363,10 +362,12 @@
   }
 
   &__title {
-    font-size: clamp(36px, 6vw, 56px);
-    line-height: 1.1;
+    font-family: $font-heading;
+    font-size: clamp(48px, 6vw, 80px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
     margin: 0 0 24px;
-    font-weight: 900;
+    font-weight: 800;
     color: $ink;
     animation: fadeInUp 0.8s ease 0.1s backwards;
   }

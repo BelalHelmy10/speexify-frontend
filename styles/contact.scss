@@ -3,19 +3,23 @@
 /* ---------------------------------------
    UTILITIES
 ----------------------------------------*/
-.stack-2xs > * + * {
+.stack-2xs>*+* {
   margin-top: $space-2xs;
 }
-.stack-xs > * + * {
+
+.stack-xs>*+* {
   margin-top: $space-xs;
 }
-.stack-sm > * + * {
+
+.stack-sm>*+* {
   margin-top: $space-sm;
 }
-.stack-md > * + * {
+
+.stack-md>*+* {
   margin-top: $space-md;
 }
-.stack-lg > * + * {
+
+.stack-lg>*+* {
   margin-top: $space-lg;
 }
 
@@ -77,11 +81,9 @@
   }
 
   &--primary {
-    background: linear-gradient(
-      135deg,
-      $color-primary 0%,
-      $color-primary-ink 100%
-    );
+    background: linear-gradient(135deg,
+        $color-primary 0%,
+        $color-primary-ink 100%);
     color: #fff;
     box-shadow: 0 4px 12px rgba($color-primary, 0.25);
 
@@ -112,12 +114,10 @@
     position: absolute;
     inset: 0;
     transform: translateX(-120%);
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.25),
-      transparent
-    );
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.25),
+        transparent);
     animation: shine 3s infinite;
   }
 
@@ -148,19 +148,15 @@
   }
 
   &__gradient {
-    background: radial-gradient(
-        ellipse 80% 50% at 50% -20%,
+    background: radial-gradient(ellipse 80% 50% at 50% -20%,
         rgba($color-primary, 0.12),
-        transparent 50%
-      ),
+        transparent 50%),
       linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
   }
 
   &__pattern {
-    background-image: linear-gradient(
-        rgba($color-primary, 0.02) 1px,
-        transparent 1px
-      ),
+    background-image: linear-gradient(rgba($color-primary, 0.02) 1px,
+        transparent 1px),
       linear-gradient(90deg, rgba($color-primary, 0.02) 1px, transparent 1px);
     background-size: 50px 50px;
     mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
@@ -177,11 +173,9 @@
     align-items: center;
     gap: $space-xs;
     padding: 0.5rem 0.875rem;
-    background: linear-gradient(
-      135deg,
-      rgba($color-primary, 0.1),
-      rgba($color-primary-light, 0.1)
-    );
+    background: linear-gradient(135deg,
+        rgba($color-primary, 0.1),
+        rgba($color-primary-light, 0.1));
     border: 1px solid rgba($color-primary, 0.2);
     border-radius: 999px;
     font-size: 0.8125rem;
@@ -191,22 +185,17 @@
   }
 
   &__title {
-    font-size: clamp(2.25rem, 6vw, 3.5rem);
+    font-family: $font-heading;
+    font-size: clamp(3rem, 6vw, 5rem);
     margin: 0;
-    font-weight: 900;
-    line-height: 1.1;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
     color: $color-black;
   }
 
   &__title-accent {
-    background: linear-gradient(
-      135deg,
-      $color-primary 0%,
-      $color-primary-light 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: $color-primary;
     margin-left: 0.25ch;
   }
 
@@ -264,11 +253,9 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: $radius-md;
-  background: linear-gradient(
-    135deg,
-    rgba($color-primary, 0.1),
-    rgba($color-primary-light, 0.1)
-  );
+  background: linear-gradient(135deg,
+      rgba($color-primary, 0.1),
+      rgba($color-primary-light, 0.1));
   display: grid;
   place-items: center;
   color: $color-primary;
@@ -289,7 +276,7 @@
   gap: $space-sm;
   margin-top: $space-sm;
 
-  > div {
+  >div {
     display: grid;
     grid-template-columns: 7rem 1fr;
     align-items: start;
@@ -317,7 +304,7 @@
   }
 
   @media (max-width: $bp-sm) {
-    > div {
+    >div {
       grid-template-columns: 1fr;
       gap: $space-2xs;
 
@@ -497,15 +484,11 @@
 
   &__title {
     margin-bottom: $space-lg;
-    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-family: $font-heading;
+    font-size: clamp(2rem, 4vw, 3rem);
     font-weight: 800;
-    background: linear-gradient(
-      135deg,
-      $color-black 0%,
-      $color-primary-ink 100%
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+    color: $color-black;
   }
 }
 
@@ -558,6 +541,7 @@
     opacity: 0;
     transform: translateY(24px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -568,10 +552,12 @@
   from {
     transform: translateX(-120%);
   }
+
   to {
     transform: translateX(120%);
   }
 }
+
 /* ---------------------------------------
    CONTACT FORM HEADER (SPLIT)
 ----------------------------------------*/
@@ -633,6 +619,7 @@
   font-size: 0.875rem;
   color: $color-muted;
 }
+
 .row-gap-sm {
   display: flex;
   gap: $space-sm;

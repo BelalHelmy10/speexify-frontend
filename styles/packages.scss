@@ -8,6 +8,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -18,16 +19,19 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-15px);
   }
@@ -37,16 +41,19 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(200%);
   }
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
@@ -200,12 +207,11 @@
 
 .ecp-section-title {
   margin: 0 0 12px;
-  font-size: clamp(28px, 4vw, 40px);
+  font-family: $font-heading;
+  font-size: clamp(32px, 4vw, 48px);
   font-weight: 800;
-  background: linear-gradient(135deg, $ink 0%, $accent-ink 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: -0.02em;
+  color: $ink;
 }
 
 .ecp-section-subtitle {
@@ -245,10 +251,12 @@
   }
 
   &__title {
-    font-size: clamp(36px, 6vw, 56px);
-    line-height: 1.1;
+    font-family: $font-heading;
+    font-size: clamp(48px, 6vw, 80px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
     margin: 0 0 24px;
-    font-weight: 900;
+    font-weight: 800;
     color: $ink;
     animation: fadeInUp 0.8s ease 0.1s backwards;
   }
@@ -362,11 +370,9 @@
 
   &.is-active {
     border-color: $accent;
-    background: linear-gradient(
-      135deg,
-      rgba($accent, 0.08),
-      rgba($accent-light, 0.08)
-    );
+    background: linear-gradient(135deg,
+        rgba($accent, 0.08),
+        rgba($accent-light, 0.08));
     box-shadow: 0 4px 16px rgba($accent, 0.2);
 
     .ecp-lesson-icon {
@@ -699,11 +705,9 @@
     gap: 16px;
     align-items: center;
     padding: $space-6;
-    background: linear-gradient(
-      135deg,
-      rgba($accent, 0.05),
-      rgba($accent-light, 0.05)
-    );
+    background: linear-gradient(135deg,
+        rgba($accent, 0.05),
+        rgba($accent-light, 0.05));
     border-radius: 16px;
     border: 2px solid rgba($accent, 0.2);
   }
@@ -749,12 +753,10 @@
     left: 16.666%;
     right: 16.666%;
     height: 2px;
-    background: linear-gradient(
-      90deg,
-      $accent 0%,
-      $accent-light 50%,
-      $accent 100%
-    );
+    background: linear-gradient(90deg,
+        $accent 0%,
+        $accent-light 50%,
+        $accent 100%);
     z-index: 0;
 
     @media (max-width: $bp-md) {
@@ -989,12 +991,10 @@
   overflow: hidden;
   color: $color-white;
   margin-top: $space-10;
-  background: linear-gradient(
-    135deg,
-    $accent 0%,
-    $accent-ink 50%,
-    $color-primary-dark 100%
-  );
+  background: linear-gradient(135deg,
+      $accent 0%,
+      $accent-ink 50%,
+      $color-primary-dark 100%);
   background-size: 200% 200%;
 
   &__inner {

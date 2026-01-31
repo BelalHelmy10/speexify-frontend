@@ -5,6 +5,11 @@
 // ===========================================
 
 // ===========================================
+// ===========================================
+// SPEEXIFY - REFINED COLOR SYSTEM
+// ===========================================
+
+// ===========================================
 // COLORS - Brand & Primary
 // REFINED: Unified to "Electric Blue" palette
 // ===========================================
@@ -104,7 +109,7 @@ $calendar-error: #ef4444;
 $calendar-error-alt: #dc2626;
 
 // ===========================================
-// SHADOWS
+// SHADOWS & GLASS
 // ===========================================
 $shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 $shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
@@ -115,6 +120,10 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
   0 10px 10px -5px rgba(0, 0, 0, 0.04);
 $shadow: 0 4px 16px rgba(14, 21, 47, 0.08), 0 8px 32px rgba(14, 21, 47, 0.06);
 
+// New Elite Shadows (Kept as they are neutral)
+$shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+$glass-border: 1px solid rgba(255, 255, 255, 0.18);
+
 // ===========================================
 // TRANSITIONS
 // ===========================================
@@ -122,9 +131,10 @@ $transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
 $transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
 // ===========================================
-// TYPOGRAPHY
+// TYPOGRAPHY (ELITE)
 // ===========================================
-$font-main: "Poppins", sans-serif;
+$font-main: var(--font-inter), system-ui, sans-serif;
+$font-heading: var(--font-outfit), sans-serif;
 $default-font-size: 1.6rem;
 $font-size-big: 2rem;
 

@@ -83,6 +83,12 @@ function Admin() {
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const attendanceModalRef = useRef(null);
   // ─────────────────────────────────────────────
+  // BULK SELECTION STATE
+  // ─────────────────────────────────────────────
+  const [selectedUserIds, setSelectedUserIds] = useState(new Set());
+  const [selectedSessionIds, setSelectedSessionIds] = useState(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  // ─────────────────────────────────────────────
   // HELPER FUNCTIONS
   // ─────────────────────────────────────────────
   const toDateInput = (iso) => {
@@ -140,12 +146,12 @@ function Admin() {
       const activeIds =
         learners.length > 0
           ? learners
-              .filter((l) => l.status !== "canceled")
-              .map((l) => String(l.id))
+            .filter((l) => l.status !== "canceled")
+            .map((l) => String(l.id))
           : list
-              .filter((p) => p.status !== "canceled")
-              .map((p) => String(p.userId || p.user?.id))
-              .filter(Boolean);
+            .filter((p) => p.status !== "canceled")
+            .map((p) => String(p.userId || p.user?.id))
+            .filter(Boolean);
       setEditForm((f) => ({
         ...f,
         type,
@@ -369,8 +375,7 @@ function Admin() {
         teacherId: payload.teacherId || null,
       });
       toast.success(
-        `${
-          type === "GROUP" ? "Group session" : "Session"
+        `${type === "GROUP" ? "Group session" : "Session"
         } created successfully!`
       );
       setStatus("");
@@ -420,12 +425,12 @@ function Admin() {
     const learnerIds =
       learners.length > 0
         ? learners
-            .filter((l) => l.status !== "canceled")
-            .map((l) => String(l.id))
+          .filter((l) => l.status !== "canceled")
+          .map((l) => String(l.id))
         : participants
-            .filter((p) => p.status !== "canceled")
-            .map((p) => String(p.userId || p.user?.id))
-            .filter(Boolean);
+          .filter((p) => p.status !== "canceled")
+          .map((p) => String(p.userId || p.user?.id))
+          .filter(Boolean);
     setEditingId(row.id);
     setEditForm({
       type,
@@ -630,6 +635,204 @@ function Admin() {
       toast.error(e?.response?.data?.error || "Failed to stop impersonation");
     }
   }
+  // ─────────────────────────────────────────────
+  // BULK SELECTION HANDLERS
+  // ─────────────────────────────────────────────
+  const toggleUserSelection = (userId) => {
+    setSelectedUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  };
+  const toggleAllUsers = () => {
+    if (selectedUserIds.size === usersAdmin.length) {
+      setSelectedUserIds(new Set());
+    } else {
+      setSelectedUserIds(new Set(usersAdmin.map((u) => u.id)));
+    }
+  };
+  const toggleSessionSelection = (sessionId) => {
+    setSelectedSessionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sessionId)) {
+        next.delete(sessionId);
+      } else {
+        next.add(sessionId);
+      }
+      return next;
+    });
+  };
+  const toggleAllSessions = () => {
+    if (selectedSessionIds.size === sessions.length) {
+      setSelectedSessionIds(new Set());
+    } else {
+      setSelectedSessionIds(new Set(sessions.map((s) => s.id)));
+    }
+  };
+  const clearAllSelections = () => {
+    setSelectedUserIds(new Set());
+    setSelectedSessionIds(new Set());
+  };
+  // ─────────────────────────────────────────────
+  // BULK ACTION HANDLERS
+  // ─────────────────────────────────────────────
+  async function bulkEnableUsers() {
+    if (selectedUserIds.size === 0) return;
+    const ok = await confirmModal(
+      `Enable ${selectedUserIds.size} selected user(s)?`
+    );
+    if (!ok) return;
+    setBulkActionLoading(true);
+    try {
+      const { data } = await api.post("/admin/users/bulk", {
+        ids: Array.from(selectedUserIds),
+        action: "enable",
+      });
+      toast.success(`${data.affected} user(s) enabled`);
+      setSelectedUserIds(new Set());
+      loadUsersAdmin();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to enable users");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }
+  async function bulkDisableUsers() {
+    if (selectedUserIds.size === 0) return;
+    const ok = await confirmModal(
+      `⚠️ Disable ${selectedUserIds.size} selected user(s)? They will not be able to log in.`
+    );
+    if (!ok) return;
+    setBulkActionLoading(true);
+    try {
+      const { data } = await api.post("/admin/users/bulk", {
+        ids: Array.from(selectedUserIds),
+        action: "disable",
+      });
+      toast.success(`${data.affected} user(s) disabled`);
+      setSelectedUserIds(new Set());
+      loadUsersAdmin();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to disable users");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }
+  async function bulkChangeUserRole(role) {
+    if (selectedUserIds.size === 0) return;
+    const roleLabel = { learner: "Learner", teacher: "Teacher", admin: "Admin" }[role];
+    const ok = await confirmModal(
+      `Change ${selectedUserIds.size} selected user(s) to ${roleLabel} role?`
+    );
+    if (!ok) return;
+    setBulkActionLoading(true);
+    try {
+      const { data } = await api.post("/admin/users/bulk", {
+        ids: Array.from(selectedUserIds),
+        action: "role",
+        role,
+      });
+      toast.success(`${data.affected} user(s) changed to ${roleLabel}`);
+      setSelectedUserIds(new Set());
+      loadUsersAdmin();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to change roles");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }
+  async function bulkResetPasswords() {
+    if (selectedUserIds.size === 0) return;
+    const ok = await confirmModal(
+      `Send password reset emails to ${selectedUserIds.size} selected user(s)?`
+    );
+    if (!ok) return;
+    setBulkActionLoading(true);
+    try {
+      const { data } = await api.post("/admin/users/bulk/reset-password", {
+        ids: Array.from(selectedUserIds),
+      });
+      toast.success(`Reset emails sent: ${data.sent} successful, ${data.failed} failed`);
+      setSelectedUserIds(new Set());
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to send reset emails");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }
+  async function bulkDeleteSessions() {
+    if (selectedSessionIds.size === 0) return;
+    const ok = await confirmModal(
+      `🗑️ Delete ${selectedSessionIds.size} selected session(s)? This cannot be undone.`
+    );
+    if (!ok) return;
+    setBulkActionLoading(true);
+    try {
+      const { data } = await api.post("/admin/sessions/bulk", {
+        ids: Array.from(selectedSessionIds),
+        action: "delete",
+      });
+      toast.success(`${data.affected} session(s) deleted`);
+      setSelectedSessionIds(new Set());
+      reloadSessions();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to delete sessions");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }
+  async function bulkCancelSessions() {
+    if (selectedSessionIds.size === 0) return;
+    const ok = await confirmModal(
+      `Cancel ${selectedSessionIds.size} selected session(s)? Credits will be refunded.`
+    );
+    if (!ok) return;
+    setBulkActionLoading(true);
+    try {
+      const { data } = await api.post("/admin/sessions/bulk", {
+        ids: Array.from(selectedSessionIds),
+        action: "cancel",
+      });
+      toast.success(
+        `${data.affected} session(s) canceled, ${data.refundedCredits} credit(s) refunded`
+      );
+      setSelectedSessionIds(new Set());
+      reloadSessions();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to cancel sessions");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }
+  async function bulkAssignTeacher(teacherId) {
+    if (selectedSessionIds.size === 0 || !teacherId) return;
+    const teacher = teachers.find((t) => t.id === Number(teacherId));
+    const teacherName = teacher?.name || teacher?.email || "selected teacher";
+    const ok = await confirmModal(
+      `Assign ${selectedSessionIds.size} selected session(s) to ${teacherName}?`
+    );
+    if (!ok) return;
+    setBulkActionLoading(true);
+    try {
+      const { data } = await api.post("/admin/sessions/bulk", {
+        ids: Array.from(selectedSessionIds),
+        action: "assign-teacher",
+        teacherId: Number(teacherId),
+      });
+      toast.success(`${data.affected} session(s) assigned to ${teacherName}`);
+      setSelectedSessionIds(new Set());
+      reloadSessions();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to assign teacher");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }
   // Close modal on click outside - Packages
   useEffect(() => {
     function handleClickOutside(event) {
@@ -728,9 +931,8 @@ function Admin() {
         learners.filter((l) => l.status !== "canceled").length;
       const cap = s.capacity;
       if (learners.length === 0) {
-        return `${count} participant${count !== 1 ? "s" : ""}${
-          cap ? ` / ${cap}` : ""
-        }`;
+        return `${count} participant${count !== 1 ? "s" : ""}${cap ? ` / ${cap}` : ""
+          }`;
       }
       const names = learners
         .filter((l) => l.status !== "canceled")
@@ -836,6 +1038,15 @@ function Admin() {
             <table>
               <thead>
                 <tr>
+                  <th style={{ width: '40px' }}>
+                    <input
+                      type="checkbox"
+                      className="adm-checkbox"
+                      checked={selectedUserIds.size === usersAdmin.length && usersAdmin.length > 0}
+                      onChange={toggleAllUsers}
+                      title="Select all users"
+                    />
+                  </th>
                   <th>User</th>
                   <th>Role</th>
                   <th>Hourly Rate ($)</th>
@@ -847,7 +1058,15 @@ function Admin() {
 
               <tbody>
                 {usersAdmin.map((u) => (
-                  <tr key={u.id}>
+                  <tr key={u.id} className={selectedUserIds.has(u.id) ? 'adm-row--selected' : ''}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        className="adm-checkbox"
+                        checked={selectedUserIds.has(u.id)}
+                        onChange={() => toggleUserSelection(u.id)}
+                      />
+                    </td>
                     <td>
                       <div className="adm-user-cell">
                         <div className="adm-user-avatar">
@@ -931,11 +1150,10 @@ function Admin() {
 
                     <td>
                       <span
-                        className={`adm-status-badge ${
-                          u.isDisabled
-                            ? "adm-status-badge--inactive"
-                            : "adm-status-badge--active"
-                        }`}
+                        className={`adm-status-badge ${u.isDisabled
+                          ? "adm-status-badge--inactive"
+                          : "adm-status-badge--active"
+                          }`}
                       >
                         <span className="adm-status-badge__dot" />
                         {u.isDisabled ? "Inactive" : "Active"}
@@ -995,9 +1213,8 @@ function Admin() {
                           </svg>
                         </button>
                         <button
-                          className={`adm-btn-action ${
-                            !u.isDisabled ? "adm-btn-action--danger" : ""
-                          }`}
+                          className={`adm-btn-action ${!u.isDisabled ? "adm-btn-action--danger" : ""
+                            }`}
                           onClick={() => toggleDisabled(u)}
                           title={u.isDisabled ? "Enable" : "Disable"}
                         >
@@ -1922,14 +2139,14 @@ function Admin() {
                               s.status === "completed"
                                 ? "rgba(16, 185, 129, 0.2)"
                                 : s.status === "canceled"
-                                ? "rgba(239, 68, 68, 0.2)"
-                                : "rgba(156, 163, 175, 0.2)",
+                                  ? "rgba(239, 68, 68, 0.2)"
+                                  : "rgba(156, 163, 175, 0.2)",
                             color:
                               s.status === "completed"
                                 ? "#10b981"
                                 : s.status === "canceled"
-                                ? "#ef4444"
-                                : "#9ca3af",
+                                  ? "#ef4444"
+                                  : "#9ca3af",
                           }}
                         >
                           {s.status.toUpperCase()}
@@ -2125,11 +2342,10 @@ function Admin() {
                       <td>{p.expiresAt ? toDateInput(p.expiresAt) : "None"}</td>
                       <td>
                         <span
-                          className={`adm-status-badge ${
-                            p.status === "active"
-                              ? "adm-status-badge--active"
-                              : "adm-status-badge--inactive"
-                          }`}
+                          className={`adm-status-badge ${p.status === "active"
+                            ? "adm-status-badge--active"
+                            : "adm-status-badge--inactive"
+                            }`}
                         >
                           {p.status?.toUpperCase() || "UNKNOWN"}
                         </span>
@@ -2387,6 +2603,111 @@ function Admin() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          FLOATING BULK ACTION BAR
+          ═══════════════════════════════════════════════════════════════════ */}
+      {(selectedUserIds.size > 0 || selectedSessionIds.size > 0) && (
+        <div className="adm-bulk-action-bar">
+          <div className="adm-bulk-action-bar__info">
+            <span className="adm-bulk-action-bar__count">
+              {selectedUserIds.size > 0
+                ? `${selectedUserIds.size} user${selectedUserIds.size !== 1 ? "s" : ""}`
+                : `${selectedSessionIds.size} session${selectedSessionIds.size !== 1 ? "s" : ""}`}{" "}
+              selected
+            </span>
+          </div>
+
+          <div className="adm-bulk-action-bar__actions">
+            {/* User bulk actions */}
+            {selectedUserIds.size > 0 && (
+              <>
+                <button
+                  className="adm-bulk-btn adm-bulk-btn--success"
+                  onClick={bulkEnableUsers}
+                  disabled={bulkActionLoading}
+                >
+                  ✓ Enable
+                </button>
+                <button
+                  className="adm-bulk-btn adm-bulk-btn--danger"
+                  onClick={bulkDisableUsers}
+                  disabled={bulkActionLoading}
+                >
+                  ✕ Disable
+                </button>
+                <select
+                  className="adm-bulk-select"
+                  onChange={(e) => {
+                    if (e.target.value) bulkChangeUserRole(e.target.value);
+                    e.target.value = "";
+                  }}
+                  disabled={bulkActionLoading}
+                >
+                  <option value="">Change Role...</option>
+                  <option value="learner">Learner</option>
+                  <option value="teacher">Teacher</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <button
+                  className="adm-bulk-btn"
+                  onClick={bulkResetPasswords}
+                  disabled={bulkActionLoading}
+                >
+                  📧 Reset Passwords
+                </button>
+              </>
+            )}
+
+            {/* Session bulk actions */}
+            {selectedSessionIds.size > 0 && (
+              <>
+                <button
+                  className="adm-bulk-btn adm-bulk-btn--danger"
+                  onClick={bulkDeleteSessions}
+                  disabled={bulkActionLoading}
+                >
+                  🗑️ Delete
+                </button>
+                <button
+                  className="adm-bulk-btn adm-bulk-btn--warning"
+                  onClick={bulkCancelSessions}
+                  disabled={bulkActionLoading}
+                >
+                  ✕ Cancel
+                </button>
+                <select
+                  className="adm-bulk-select"
+                  onChange={(e) => {
+                    if (e.target.value) bulkAssignTeacher(e.target.value);
+                    e.target.value = "";
+                  }}
+                  disabled={bulkActionLoading}
+                >
+                  <option value="">Assign Teacher...</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name || t.email}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+          </div>
+
+          <button
+            className="adm-bulk-action-bar__close"
+            onClick={clearAllSelections}
+            title="Clear selection"
+          >
+            ✕
+          </button>
+
+          {bulkActionLoading && (
+            <div className="adm-bulk-action-bar__loading">Processing...</div>
+          )}
         </div>
       )}
     </div>

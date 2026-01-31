@@ -13,13 +13,11 @@
 
   h2 {
     margin: 0 0 6px;
-    font-size: clamp(28px, 3.2vw, 36px);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    background: linear-gradient(135deg, $text-primary 0%, $muted 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-family: $font-heading;
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: $ink;
   }
 }
 
@@ -43,6 +41,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -71,12 +70,10 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(
-      90deg,
-      $brand 0%,
-      $calendar-secondary 50%,
-      $color-secondary-light 100%
-    );
+    background: linear-gradient(90deg,
+        $brand 0%,
+        $calendar-secondary 50%,
+        $color-secondary-light 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
   }
@@ -91,7 +88,7 @@
     }
   }
 
-  & + .panel {
+  &+.panel {
     margin-top: 20px;
   }
 
@@ -167,11 +164,9 @@
     right: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(
-      circle,
-      rgba($color-white, 0.8) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(circle,
+        rgba($color-white, 0.8) 0%,
+        transparent 70%);
     opacity: 0;
     transition: opacity 0.4s ease;
   }
@@ -242,6 +237,7 @@
       background: linear-gradient(135deg, $blue-50 0%, $gray-100 100%);
       color: $blue-800;
     }
+
     .card__value {
       background: linear-gradient(135deg, $blue-600 0%, $blue-800 100%);
       -webkit-background-clip: text;
@@ -255,6 +251,7 @@
       background: linear-gradient(135deg, $success-bg 0%, rgba($success, 0.18));
       color: $success;
     }
+
     .card__value {
       background: linear-gradient(135deg, $success 0%, $payment-green-600 100%);
       -webkit-background-clip: text;
@@ -265,19 +262,16 @@
 
   &.card--purple {
     .card__icon {
-      background: linear-gradient(
-        135deg,
-        rgba($calendar-primary, 0.12) 0%,
-        rgba($calendar-secondary, 0.18) 100%
-      );
+      background: linear-gradient(135deg,
+          rgba($calendar-primary, 0.12) 0%,
+          rgba($calendar-secondary, 0.18) 100%);
       color: $calendar-secondary;
     }
+
     .card__value {
-      background: linear-gradient(
-        135deg,
-        $calendar-secondary 0%,
-        $accent-light 100%
-      );
+      background: linear-gradient(135deg,
+          $calendar-secondary 0%,
+          $accent-light 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -410,11 +404,9 @@
     border-color: rgba($text-muted, 0.4);
 
     .session-item__indicator {
-      background: linear-gradient(
-        180deg,
-        $blue-600 0%,
-        $calendar-secondary 100%
-      );
+      background: linear-gradient(180deg,
+          $blue-600 0%,
+          $calendar-secondary 100%);
     }
   }
 
@@ -517,11 +509,9 @@
   }
 
   &--canceled {
-    background: linear-gradient(
-      135deg,
-      $payment-red-50 0%,
-      $payment-red-100 100%
-    );
+    background: linear-gradient(135deg,
+        $payment-red-50 0%,
+        $payment-red-100 100%);
     color: $error;
     border-color: rgba($error, 0.3);
   }
@@ -626,10 +616,12 @@
 }
 
 @keyframes btnPulse {
+
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba($error, 0.5);
   }
+
   50% {
     box-shadow: 0 0 0 8px rgba($error, 0);
   }
@@ -727,6 +719,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -736,6 +729,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -746,6 +740,7 @@
     opacity: 0;
     transform: translate(-50%, -48%) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
@@ -812,10 +807,12 @@
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -964,7 +961,7 @@
   gap: 16px;
   margin-bottom: 20px;
 
-  > div {
+  >div {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1003,10 +1000,12 @@
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }

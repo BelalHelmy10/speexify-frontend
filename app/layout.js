@@ -1,5 +1,6 @@
 // app/layout.js
 import "./globals.scss";
+import { Inter, Outfit } from "next/font/google";
 import "@/lib/sentry";
 import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -100,6 +101,9 @@ export const metadata = {
   // },
 };
 
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
+
 export default async function RootLayout({ children }) {
   // Seed client auth from SSR using the real backend (with cookies)
   const user = await getServerUser();
@@ -116,9 +120,9 @@ export default async function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
         {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#0284c7" />
+        <meta name="theme-color" content="#2563eb" />
       </head>
-      <body>
+      <body className={`${inter.variable} ${outfit.variable}`}>
         <SmoothScroll />
         <LocaleShell>
           <ClientProviders>
