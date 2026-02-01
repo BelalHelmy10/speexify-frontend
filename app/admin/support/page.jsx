@@ -239,10 +239,10 @@ export default function AdminSupportInboxPage() {
         const updated = prev.map((t) =>
           t.id === ticketId
             ? {
-                ...t,
-                lastMessage: message,
-                updatedAt: new Date().toISOString(),
-              }
+              ...t,
+              lastMessage: message,
+              updatedAt: new Date().toISOString(),
+            }
             : t
         );
         return updated.sort(
@@ -668,9 +668,8 @@ export default function AdminSupportInboxPage() {
                   <button
                     key={t.id}
                     onClick={() => setActiveId(t.id)}
-                    className={`asp-ticket-card ${
-                      isActive ? "asp-ticket-card--active" : ""
-                    }`}
+                    className={`asp-ticket-card ${isActive ? "asp-ticket-card--active" : ""
+                      }`}
                   >
                     <div className="asp-ticket-card__header">
                       <div className="asp-ticket-card__category">
@@ -859,9 +858,8 @@ export default function AdminSupportInboxPage() {
                       return (
                         <div
                           key={m.id}
-                          className={`asp-message ${
-                            isStaff ? "asp-message--staff" : "asp-message--user"
-                          }`}
+                          className={`asp-message ${isStaff ? "asp-message--staff" : "asp-message--user"
+                            }`}
                         >
                           <div className="asp-message__header">
                             <span className="asp-message__author">
