@@ -1024,7 +1024,7 @@ function Admin() {
             </button>
           </div>
         </div>
-        <div className="adm-data-table">
+        <div className="adm-data-table adm-data-table--scrollable" data-lenis-prevent>
           {usersBusy ? (
             <div className="adm-table-skeleton">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -1653,7 +1653,7 @@ function Admin() {
             </button>
           </div>
         </div>
-        <div className="adm-sessions-grid">
+        <div className="adm-sessions-grid adm-sessions-grid--scrollable" data-lenis-prevent>
           {loading ? (
             <div className="adm-sessions-skeleton">
               {Array.from({ length: 4 }).map((_, i) => (

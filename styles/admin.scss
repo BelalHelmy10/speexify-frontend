@@ -277,6 +277,44 @@
       }
     }
   }
+
+  /* Scrollable variant - limits table height with sticky header */
+  &--scrollable {
+    max-height: 620px;
+    /* ~10 rows at 60px height + header */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+
+    table {
+      thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--admin-bg-secondary, rgba(15, 15, 20, 0.95));
+        backdrop-filter: blur(8px);
+      }
+    }
+
+    /* Custom scrollbar */
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgba($text-muted, 0.05);
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba($text-muted, 0.2);
+      border-radius: 4px;
+
+      &:hover {
+        background: rgba($text-muted, 0.3);
+      }
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -751,6 +789,34 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 1.5rem;
+
+  /* Scrollable variant - limits grid height */
+  &--scrollable {
+    max-height: 700px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 0.5rem;
+
+    /* Custom scrollbar */
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgba($text-muted, 0.05);
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba($text-muted, 0.2);
+      border-radius: 4px;
+
+      &:hover {
+        background: rgba($text-muted, 0.3);
+      }
+    }
+  }
 }
 
 .adm-session-card-modern {
