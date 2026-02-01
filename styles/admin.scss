@@ -525,6 +525,105 @@
   }
 }
 
+/* Custom Time Picker Component */
+.time-picker {
+  position: relative;
+  width: 100%;
+}
+
+.time-picker__trigger {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: rgba($color-black, 0.6);
+  border: 1px solid rgba($text-muted, 0.2);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-text-primary);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    border-color: rgba($text-muted, 0.4);
+  }
+
+  &:focus,
+  &--open {
+    outline: none;
+    border-color: var(--admin-primary);
+    background: rgba($color-black, 0.8);
+    box-shadow: 0 0 0 3px rgba($brand, 0.1);
+  }
+}
+
+.time-picker__placeholder {
+  color: var(--admin-text-muted);
+}
+
+.time-picker__arrow {
+  transition: transform 0.2s ease;
+  color: var(--admin-text-secondary);
+
+  .time-picker__trigger--open & {
+    transform: rotate(180deg);
+  }
+}
+
+.time-picker__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: var(--admin-bg-primary);
+  border: 1px solid rgba($text-muted, 0.2);
+  border-radius: var(--admin-radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+
+  /* Scrollbar styling */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($text-muted, 0.3);
+    border-radius: 3px;
+  }
+}
+
+.time-picker__option {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--admin-text-primary);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba($brand, 0.1);
+  }
+
+  &--selected {
+    background: rgba($brand, 0.15);
+    color: var(--admin-primary);
+    font-weight: 600;
+  }
+}
+
 .adm-form-textarea {
   resize: vertical;
   min-height: 100px;

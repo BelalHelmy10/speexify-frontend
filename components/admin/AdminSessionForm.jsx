@@ -249,11 +249,10 @@ export default function AdminSessionForm({
         <div className="admin-session-form__type-toggle">
           <button
             type="button"
-            className={`admin-session-form__type-btn ${
-              type === "ONE_ON_ONE"
+            className={`admin-session-form__type-btn ${type === "ONE_ON_ONE"
                 ? "admin-session-form__type-btn--active"
                 : ""
-            }`}
+              }`}
             onClick={() => setType("ONE_ON_ONE")}
             disabled={isEdit}
           >
@@ -261,9 +260,8 @@ export default function AdminSessionForm({
           </button>
           <button
             type="button"
-            className={`admin-session-form__type-btn ${
-              type === "GROUP" ? "admin-session-form__type-btn--active" : ""
-            }`}
+            className={`admin-session-form__type-btn ${type === "GROUP" ? "admin-session-form__type-btn--active" : ""
+              }`}
             onClick={() => setType("GROUP")}
             disabled={isEdit}
           >
@@ -313,14 +311,29 @@ export default function AdminSessionForm({
           <label className="admin-session-form__label" htmlFor="startTime">
             Time
           </label>
-          <input
-            type="time"
+          <select
             id="startTime"
-            className="admin-session-form__input"
+            className="admin-session-form__select"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
             required
-          />
+          >
+            <option value="">Select time...</option>
+            {/* Generate time options from 6AM to 11PM in 15-min intervals */}
+            {Array.from({ length: 68 }, (_, i) => {
+              const hour = Math.floor(i / 4) + 6;
+              const minute = (i % 4) * 15;
+              const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+              const hour12 = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+              const ampm = hour >= 12 ? "PM" : "AM";
+              const label = `${hour12}:${String(minute).padStart(2, "0")} ${ampm}`;
+              return (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
         </div>
 
         <div className="admin-session-form__field">
@@ -446,11 +459,10 @@ export default function AdminSessionForm({
                 learners.map((l) => (
                   <label
                     key={l.id}
-                    className={`admin-session-form__learner-item ${
-                      learnerIds.includes(l.id)
+                    className={`admin-session-form__learner-item ${learnerIds.includes(l.id)
                         ? "admin-session-form__learner-item--selected"
                         : ""
-                    }`}
+                      }`}
                   >
                     <input
                       type="checkbox"

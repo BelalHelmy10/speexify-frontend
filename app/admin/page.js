@@ -8,6 +8,7 @@ import "@/styles/admin.scss";
 import useAuth from "@/hooks/useAuth";
 import { useToast, useConfirm } from "@/components/ToastProvider";
 import { trackEvent } from "@/lib/analytics";
+import TimePicker from "@/components/ui/TimePicker";
 function Admin() {
   const { toast } = useToast();
   const { confirmModal } = useConfirm();
@@ -1469,10 +1470,8 @@ function Admin() {
               <label className="adm-form-label">
                 Start Time<span className="adm-form-required">*</span>
               </label>
-              <input
-                type="time"
+              <TimePicker
                 name="startTime"
-                className="adm-form-input"
                 value={form.startTime}
                 onChange={onCreateChange}
                 required
@@ -1480,10 +1479,8 @@ function Admin() {
             </div>
             <div className="adm-form-field">
               <label className="adm-form-label">End Time</label>
-              <input
-                type="time"
+              <TimePicker
                 name="endTime"
-                className="adm-form-input"
                 value={form.endTime}
                 onChange={onCreateChange}
               />
@@ -1907,20 +1904,16 @@ function Admin() {
                     </div>
                     <div className="adm-form-field">
                       <label className="adm-form-label">Start Time</label>
-                      <input
-                        type="time"
+                      <TimePicker
                         name="startTime"
-                        className="adm-form-input"
                         value={editForm.startTime}
                         onChange={onEditChange}
                       />
                     </div>
                     <div className="adm-form-field">
                       <label className="adm-form-label">End Time</label>
-                      <input
-                        type="time"
+                      <TimePicker
                         name="endTime"
-                        className="adm-form-input"
                         value={editForm.endTime}
                         onChange={onEditChange}
                       />
