@@ -180,11 +180,20 @@ export default function Header() {
 
   const adminExtra = [{ to: "/admin", label: t(navDict, "admin") }];
 
+  // Admin nav: Dashboard, Calendar, Admin, Resources, Settings (no Progress)
+  const admin = [
+    { to: "/dashboard", label: t(navDict, "dashboard") },
+    { to: "/calendar", label: t(navDict, "calendar") },
+    ...adminExtra,
+    { to: "/resources", label: t(navDict, "resources") },
+    { to: "/settings", label: t(navDict, "settings") },
+  ];
+
   const links =
     checking || !user
       ? loggedOut
       : user.role === "admin"
-        ? [...teacher.slice(0, 2), ...adminExtra, ...teacher.slice(2)]
+        ? admin
         : user.role === "teacher"
           ? teacher
           : learner;

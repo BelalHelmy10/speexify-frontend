@@ -1,0 +1,424 @@
+// styles/bulk-session-scheduler.scss
+// Styling for the Bulk Session Scheduler modal
+@use "variables" as *;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Overlay
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bulk-scheduler-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999; // Higher than navbar to ensure modal appears on top
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Modal Container
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bulk-scheduler {
+    background: var(--admin-surface, #1a1a24);
+    border: 1px solid var(--admin-border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--admin-radius, 16px);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Header
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bulk-scheduler__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba($text-muted, 0.1);
+}
+
+.bulk-scheduler__title-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.bulk-scheduler__icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.bulk-scheduler__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--admin-text-primary, #fff);
+    margin: 0;
+}
+
+.bulk-scheduler__subtitle {
+    font-size: 0.875rem;
+    color: var(--admin-text-secondary, rgba(255, 255, 255, 0.6));
+    margin-top: 0.25rem;
+}
+
+.bulk-scheduler__close {
+    background: rgba($text-muted, 0.1);
+    border: none;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--admin-text-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s ease, color 0.2s ease;
+
+    &:hover {
+        background: rgba($text-muted, 0.2);
+        color: var(--admin-text-primary);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Error Message
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bulk-scheduler__error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 2rem 0;
+    padding: 1rem;
+    background: rgba($error, 0.1);
+    border: 1px solid rgba($error, 0.3);
+    border-radius: 8px;
+    color: var(--admin-danger, #ef4444);
+    font-size: 0.875rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Form
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bulk-scheduler__form {
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.bulk-scheduler__row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+
+    @media (max-width: 600px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bulk-scheduler__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    &--full {
+        grid-column: 1 / -1;
+    }
+
+    &--checkbox {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.75rem;
+    }
+}
+
+.bulk-scheduler__label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--admin-text-secondary, rgba(255, 255, 255, 0.7));
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bulk-scheduler__required {
+    color: var(--admin-danger, #ef4444);
+}
+
+.bulk-scheduler__count {
+    font-weight: 400;
+    color: var(--admin-primary, $brand);
+}
+
+.bulk-scheduler__hint {
+    font-size: 0.75rem;
+    color: var(--admin-text-muted, rgba(255, 255, 255, 0.4));
+    margin: 0 0 0.5rem;
+}
+
+.bulk-scheduler__search,
+.bulk-scheduler__select,
+.bulk-scheduler__input {
+    padding: 0.75rem 1rem;
+    background: rgba($color-black, 0.6);
+    border: 1px solid rgba($text-muted, 0.2);
+    border-radius: 8px;
+    color: var(--admin-text-primary, #fff);
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:focus {
+        outline: none;
+        border-color: var(--admin-primary, $brand);
+        box-shadow: 0 0 0 3px rgba($brand, 0.1);
+    }
+
+    &::placeholder {
+        color: var(--admin-text-muted);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    option {
+        background: var(--admin-bg-primary, #0f0f14);
+        color: var(--admin-text-primary);
+    }
+}
+
+.bulk-scheduler__search {
+    margin-bottom: 0.5rem;
+}
+
+.bulk-scheduler__credits {
+    font-size: 0.75rem;
+    color: var(--admin-text-secondary);
+    margin-top: 0.25rem;
+
+    &--warning {
+        color: var(--admin-warning, #f59e0b);
+        font-weight: 600;
+    }
+}
+
+.bulk-scheduler__checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--admin-text-secondary);
+    cursor: pointer;
+
+    input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--admin-primary, $brand);
+        cursor: pointer;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Row Layouts
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bulk-scheduler__row--half {
+    grid-template-columns: repeat(2, 1fr);
+
+    @media (max-width: 600px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Session Preview
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bulk-scheduler__preview {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: rgba($color-black, 0.4);
+    border-radius: 12px;
+    border: 1px solid rgba($text-muted, 0.1);
+
+    /* Custom scrollbar */
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba($text-muted, 0.2);
+        border-radius: 3px;
+    }
+}
+
+.bulk-scheduler__preview-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba($text-muted, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba($text-muted, 0.1);
+}
+
+.bulk-scheduler__preview-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--admin-primary, $brand), var(--admin-primary-dark, darken($brand, 10%)));
+    border-radius: 50%;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.bulk-scheduler__preview-date {
+    flex: 1;
+    font-size: 0.875rem;
+    color: var(--admin-text-primary);
+    font-weight: 500;
+}
+
+.bulk-scheduler__preview-time {
+    font-size: 0.75rem;
+    color: var(--admin-text-secondary);
+    background: rgba($text-muted, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+}
+
+.bulk-scheduler__preview-more {
+    text-align: center;
+    padding: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--admin-text-muted);
+    font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Actions Footer
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.bulk-scheduler__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid rgba($text-muted, 0.1);
+}
+
+.bulk-scheduler__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    &--secondary {
+        background: rgba($text-muted, 0.1);
+        border: 1px solid rgba($text-muted, 0.2);
+        color: var(--admin-text-primary);
+
+        &:hover:not(:disabled) {
+            background: rgba($text-muted, 0.2);
+        }
+    }
+
+    &--primary {
+        background: linear-gradient(135deg, var(--admin-primary, $brand), var(--admin-primary-dark, darken($brand, 10%)));
+        border: none;
+        color: #fff;
+        box-shadow: 0 4px 16px rgba($brand, 0.3);
+
+        &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba($brand, 0.4);
+        }
+
+        &:active:not(:disabled) {
+            transform: translateY(0);
+        }
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+    .bulk-scheduler-overlay {
+        padding: 1rem;
+    }
+
+    .bulk-scheduler {
+        max-height: 95vh;
+    }
+
+    .bulk-scheduler__header,
+    .bulk-scheduler__form,
+    .bulk-scheduler__actions {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .bulk-scheduler__slots-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .bulk-scheduler__actions {
+        flex-direction: column;
+
+        .bulk-scheduler__btn {
+            width: 100%;
+        }
+    }
+}

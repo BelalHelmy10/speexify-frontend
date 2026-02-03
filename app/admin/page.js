@@ -9,6 +9,7 @@ import useAuth from "@/hooks/useAuth";
 import { useToast, useConfirm } from "@/components/ToastProvider";
 import { trackEvent } from "@/lib/analytics";
 import TimePicker from "@/components/ui/TimePicker";
+import BulkSessionScheduler from "@/components/admin/BulkSessionScheduler";
 function Admin() {
   const { toast } = useToast();
   const { confirmModal } = useConfirm();
@@ -89,6 +90,10 @@ function Admin() {
   const [selectedUserIds, setSelectedUserIds] = useState(new Set());
   const [selectedSessionIds, setSelectedSessionIds] = useState(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  // ─────────────────────────────────────────────
+  // BULK SCHEDULER MODAL STATE
+  // ─────────────────────────────────────────────
+  const [showBulkScheduler, setShowBulkScheduler] = useState(false);
   // ─────────────────────────────────────────────
   // HELPER FUNCTIONS
   // ─────────────────────────────────────────────
@@ -1331,6 +1336,16 @@ function Admin() {
                   : "Schedule a 1:1 session for a learner"}
               </p>
             </div>
+          </div>
+          {/* Bulk Scheduler Button */}
+          <div className="adm-admin-card__actions">
+            <button
+              type="button"
+              className="adm-btn-primary"
+              onClick={() => setShowBulkScheduler(true)}
+            >
+              📅 Bulk Schedule
+            </button>
           </div>
         </div>
         <form onSubmit={createSession} className="adm-modern-form">
@@ -2703,6 +2718,15 @@ function Admin() {
           )}
         </div>
       )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          BULK SESSION SCHEDULER MODAL
+          ═══════════════════════════════════════════════════════════════════ */}
+      <BulkSessionScheduler
+        isOpen={showBulkScheduler}
+        onClose={() => setShowBulkScheduler(false)}
+        onSuccess={() => reloadSessions()}
+      />
     </div>
   );
 }
