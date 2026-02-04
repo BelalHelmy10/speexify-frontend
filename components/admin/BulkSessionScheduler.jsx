@@ -22,7 +22,14 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
     // Form state
     const [learnerId, setLearnerId] = useState("");
     const [teacherId, setTeacherId] = useState("");
-    const [dayOfWeek, setDayOfWeek] = useState(1); // 0=Sunday, 1=Monday, etc.
+    const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+    // dayOfWeek is derived from startDate
+    const dayOfWeek = useMemo(() => {
+        const [y, m, d] = startDate.split("-").map(Number);
+        const date = new Date(y, m - 1, d);
+        return date.getDay();
+    }, [startDate]);
+
     const [time, setTime] = useState("12:00");
     const [numberOfSessions, setNumberOfSessions] = useState(4);
     const [durationMin, setDurationMin] = useState(60);
@@ -44,7 +51,7 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
     // Search state
     const [learnerSearch, setLearnerSearch] = useState("");
 
-    // Days of week
+    // Days of week (for label display)
     const daysOfWeek = [
         { value: 0, label: "Sunday" },
         { value: 1, label: "Monday" },
@@ -150,15 +157,11 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
 
     // Calculate session dates
     const sessionDates = useMemo(() => {
-        const dates = [];
-        const today = new Date();
-        let currentDate = new Date(today);
+        if (!startDate) return [];
 
-        // Find the next occurrence of the selected day
-        const targetDay = Number(dayOfWeek);
-        while (currentDate.getDay() !== targetDay) {
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
+        const dates = [];
+        const [y, m, d] = startDate.split("-").map(Number);
+        let currentDate = new Date(y, m - 1, d); // Local time construction
 
         // Generate dates for each session
         for (let i = 0; i < numberOfSessions; i++) {
@@ -167,7 +170,7 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
         }
 
         return dates;
-    }, [dayOfWeek, numberOfSessions]);
+    }, [startDate, numberOfSessions]);
 
     // Custom titles state
     const [customTitles, setCustomTitles] = useState({});
@@ -206,12 +209,13 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
     const isValid = useMemo(() => {
         if (!learnerId) return false;
         if (!time) return false;
+        if (!startDate) return false;
         if (numberOfSessions < 1 || numberOfSessions > 52) return false;
         if (!allowNoCredit && learnerCredits !== null && learnerCredits < numberOfSessions) {
             return false;
         }
         return true;
-    }, [learnerId, time, numberOfSessions, allowNoCredit, learnerCredits]);
+    }, [learnerId, time, numberOfSessions, allowNoCredit, learnerCredits, startDate]);
 
     // Handle submit
     const handleSubmit = async () => {
@@ -219,7 +223,7 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
 
         setError("");
 
-        const dayName = daysOfWeek.find((d) => d.value === Number(dayOfWeek))?.label;
+        const dayName = daysOfWeek.find((d) => d.value === dayOfWeek)?.label;
         const timeLabel = timeOptions.find((t) => t.value === time)?.label || time;
 
         // Confirmation
@@ -237,7 +241,8 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
             const payload = {
                 learnerId: Number(learnerId),
                 teacherId: teacherId ? Number(teacherId) : null,
-                dayOfWeek: Number(dayOfWeek),
+                startDate, // Pass start date string directly
+                dayOfWeek, // Derived
                 time,
                 numberOfSessions: Number(numberOfSessions),
                 durationMin: Number(durationMin),
@@ -258,6 +263,8 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
             setLearnerCredits(null);
             setLearnerSearch("");
             setCustomTitles({});
+            // Keep startDate or reset? Keep it for convenience or reset to today
+            // setStartDate(new Date().toISOString().split("T")[0]); 
 
             onSuccess?.(data);
             onClose?.();
@@ -390,19 +397,14 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
                     <div className="bulk-scheduler__row">
                         <div className="bulk-scheduler__field">
                             <label className="bulk-scheduler__label">
-                                Day of Week <span className="bulk-scheduler__required">*</span>
+                                Start Date <span className="bulk-scheduler__required">*</span>
                             </label>
-                            <select
-                                className="bulk-scheduler__select"
-                                value={dayOfWeek}
-                                onChange={(e) => setDayOfWeek(Number(e.target.value))}
-                            >
-                                {daysOfWeek.map((day) => (
-                                    <option key={day.value} value={day.value}>
-                                        {day.label}
-                                    </option>
-                                ))}
-                            </select>
+                            <input
+                                type="date"
+                                className="bulk-scheduler__input"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                            />
                         </div>
                         <div className="bulk-scheduler__field">
                             <label className="bulk-scheduler__label">
