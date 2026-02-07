@@ -176,6 +176,12 @@ export default function ManualPaymentPage() {
     })();
   }, [initialDiscount]);
 
+  // apply discount percent to pricing
+  const regional = useMemo(() => {
+    if (!plan) return null;
+    return calculatePackagePrice(plan, cc || null, discountPercent);
+  }, [plan, cc, discountPercent]);
+
   if (!plan) {
     return (
       <div style={{ padding: 24 }}>
@@ -189,11 +195,6 @@ export default function ManualPaymentPage() {
       </div>
     );
   }
-
-  // apply discount percent to pricing
-  const regional = useMemo(() => {
-    return calculatePackagePrice(plan, cc || null, discountPercent);
-  }, [plan, cc, discountPercent]);
 
   const pricingCurrency = regional?.displayCurrency || "USD";
 

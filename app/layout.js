@@ -1,6 +1,7 @@
 // app/layout.js
 import "./globals.scss";
 import { Inter, Outfit } from "next/font/google";
+import Script from "next/script";
 import "@/lib/sentry";
 import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -112,7 +113,10 @@ export default async function RootLayout({ children }) {
     <html lang="en">
       <head>
         {/* Jitsi external API for embedded meetings */}
-        <script src="https://meet.speexify.com/external_api.js"></script>
+        <Script
+          src="https://meet.speexify.com/external_api.js"
+          strategy="beforeInteractive"
+        />
 
         {/* Favicons */}
         <link rel="icon" href="/favicon-32x32.png" sizes="32x32" />

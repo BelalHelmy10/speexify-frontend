@@ -408,7 +408,7 @@ function DashboardInner({ dict, prefix }) {
                   fontWeight: "500",
                 }}
               >
-                🔍 Admin preview mode - viewing {user?.role}'s dashboard
+                🔍 Admin preview mode - viewing {user?.role}&rsquo;s dashboard
               </p>
             )}
           </div>
@@ -518,7 +518,8 @@ function DashboardInner({ dict, prefix }) {
               ℹ️ This user has no remaining credits
             </h3>
             <p style={{ margin: "6px 0 12px", opacity: 0.9, color: "#1e40af" }}>
-              The learner would normally see an "out of credits" warning here.
+              The learner would normally see an &ldquo;out of credits&rdquo;
+              warning here.
               As an admin, you can see their full dashboard.
             </p>
           </div>

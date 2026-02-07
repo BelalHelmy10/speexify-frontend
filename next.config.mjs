@@ -13,7 +13,6 @@ const rawBase =
 const apiBase = rawBase.replace(/\/+$/, "").replace(/\/api$/, "");
 
 const nextConfig = {
-  eslint: { ignoreDuringBuilds: true },
   images: { domains: ["lh3.googleusercontent.com"] },
 
   async rewrites() {

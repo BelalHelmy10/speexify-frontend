@@ -538,7 +538,7 @@ function Testimonial({ quote, by, role, avatar, rating }) {
           ))}
         </div>
       </div>
-      <blockquote className="testi__quote">"{quote}"</blockquote>
+      <blockquote className="testi__quote">&ldquo;{quote}&rdquo;</blockquote>
       <div className="testi__author">
         <cite className="testi__by">{by}</cite>
         <span className="testi__role">{role}</span>

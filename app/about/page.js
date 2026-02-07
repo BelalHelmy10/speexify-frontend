@@ -363,7 +363,7 @@ export default function AboutPage() {
                     </span>
                   ))}
                 </div>
-                <p>"{t(dict, q.quoteKey)}"</p>
+                <p>&ldquo;{t(dict, q.quoteKey)}&rdquo;</p>
                 <footer>
                   <strong>{t(dict, q.nameKey)}</strong>
                   <span>{t(dict, q.companyKey)}</span>

@@ -424,7 +424,7 @@ export default function NeedsAnalysisPage() {
             </div>
           </div>
           <p className="naSimple__scoresPrompt">
-            Ask: "On a scale of 0-10, how confident are you that you can..."
+            Ask: &ldquo;On a scale of 0-10, how confident are you that you can...&rdquo;
           </p>
 
           <div className="naSimple__scoreGrid">
@@ -499,25 +499,25 @@ export default function NeedsAnalysisPage() {
         {/* Coach's synthesis section */}
         <section className="naSimple__section naSimple__section--coach">
           <div className="naSimple__sectionHead">
-            <h2>🎯 Coach's post-call synthesis</h2>
+            <h2>🎯 Coach&rsquo;s post-call synthesis</h2>
           </div>
 
           <div className="naSimple__qa">
             <div className="naSimple__item">
               <div className="naSimple__question">
-                What's the core pattern you're seeing?
+                What&rsquo;s the core pattern you&rsquo;re seeing?
               </div>
               <textarea
                 className="naSimple__answer"
                 value={coachNotes.corePattern}
                 onChange={(e) => setCoachNote("corePattern", e.target.value)}
-                placeholder="What keeps showing up? What's the thread connecting their struggles?"
+                placeholder="What keeps showing up? What&rsquo;s the thread connecting their struggles?"
                 rows={3}
               />
             </div>
 
             <div className="naSimple__item">
-              <div className="naSimple__question">What's the unlock?</div>
+              <div className="naSimple__question">What&rsquo;s the unlock?</div>
               <textarea
                 className="naSimple__answer"
                 value={coachNotes.unlock}

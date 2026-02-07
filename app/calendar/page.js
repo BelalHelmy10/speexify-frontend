@@ -852,7 +852,7 @@ export default function CalendarPage() {
                   : t(dict, "subtitle")}
                 {isImpersonating && (
                   <span className="calendar-subtitle__impersonating">
-                    • Viewing {user?.name || user?.email}'s calendar
+                    • Viewing {user?.name || user?.email}&rsquo;s calendar
                   </span>
                 )}
               </p>
@@ -981,7 +981,7 @@ export default function CalendarPage() {
                       👁️ Admin Preview
                     </div>
                     <div className="impersonation-info-card__text">
-                      Viewing {user?.role}'s calendar as admin
+                      Viewing {user?.role}&rsquo;s calendar as admin
                     </div>
                   </div>
                 )}

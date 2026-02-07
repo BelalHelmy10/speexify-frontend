@@ -29,7 +29,10 @@
     "dev": "./node_modules/.bin/next dev",
     "build": "./node_modules/.bin/next build",
     "start": "./node_modules/.bin/next start",
-    "lint": "./node_modules/.bin/next lint"
+    "lint": "./node_modules/.bin/eslint . --max-warnings=0",
+    "lint:fix": "./node_modules/.bin/eslint . --fix",
+    "typecheck": "./node_modules/.bin/next typegen .",
+    "ci:check": "npm run lint && npm run typecheck && npm run build"
   },
   "extends": [
     "next/core-web-vitals"

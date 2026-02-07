@@ -177,7 +177,7 @@ export default function WhySpeexifyPage() {
                     <div className="why__proof-grid">
                         {proofsConfig.map((p, idx) => (
                             <blockquote className="why__proof-card" key={idx}>
-                                <p>"{t(dict, p.quoteKey)}"</p>
+                                <p>&ldquo;{t(dict, p.quoteKey)}&rdquo;</p>
                                 <footer>
                                     <strong>{t(dict, p.nameKey)}</strong>
                                     <span>{t(dict, p.contextKey)}</span>

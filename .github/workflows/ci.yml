@@ -1,0 +1,62 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - "app/**"
+      - "components/**"
+      - "hooks/**"
+      - "lib/**"
+      - "styles/**"
+      - "utils/**"
+      - "public/**"
+      - "middleware.js"
+      - "next.config.mjs"
+      - ".eslintrc.json"
+      - ".eslintignore"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "app/**"
+      - "components/**"
+      - "hooks/**"
+      - "lib/**"
+      - "styles/**"
+      - "utils/**"
+      - "public/**"
+      - "middleware.js"
+      - "next.config.mjs"
+      - ".eslintrc.json"
+      - ".eslintignore"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ci.yml"
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (strict)
+        run: npm run lint
+
+      - name: Type generation
+        run: npm run typecheck
+
+      - name: Production build
+        run: npm run build

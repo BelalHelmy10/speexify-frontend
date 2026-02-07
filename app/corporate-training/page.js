@@ -637,7 +637,9 @@ function Testi({ quote, by, role, avatar, rating }) {
           ))}
         </div>
       </div>
-      <blockquote className="spx-corp-testi__quote">"{quote}"</blockquote>
+      <blockquote className="spx-corp-testi__quote">
+        &ldquo;{quote}&rdquo;
+      </blockquote>
       <div className="spx-corp-testi__author">
         <cite className="spx-corp-testi__by">{by}</cite>
         <span className="spx-corp-testi__role">{role}</span>

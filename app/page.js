@@ -539,7 +539,7 @@ function Quote({ quote, author, role, rating }) {
           </span>
         ))}
       </div>
-      <blockquote>"{quote}"</blockquote>
+      <blockquote>&ldquo;{quote}&rdquo;</blockquote>
       <figcaption>
         <strong>{author}</strong>
         <span>{role}</span>
