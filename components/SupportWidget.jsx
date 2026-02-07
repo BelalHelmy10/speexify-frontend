@@ -50,7 +50,7 @@ function formatFileSize(bytes) {
 }
 
 // Memoized message component - FIXED: Proper image and file handling
-const Message = memo(({ message, isUser, API_BASE, onImageClick }) => {
+const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick }) => {
   const hasAttachments = message.attachments?.length > 0;
 
   return (
@@ -64,7 +64,7 @@ const Message = memo(({ message, isUser, API_BASE, onImageClick }) => {
         <div className="sw-message__attachments">
           {message.attachments.map((a) => {
             const isImage = isImageFile(a.mimeType, a.fileName);
-            const fileUrl = `${API_BASE}/uploads/support/${a.filePath}`;
+            const fileUrl = getAttachmentUrl(a.id);
 
             if (isImage) {
               // FIXED: Display image inline with proper loading
@@ -212,8 +212,6 @@ export default function SupportWidget() {
   // Hide support widget in classroom
   const isClassroom = pathname?.startsWith("/classroom");
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -247,6 +245,12 @@ export default function SupportWidget() {
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const getAttachmentUrl = useCallback((attachmentId) => {
+    const id = Number(attachmentId);
+    if (!Number.isFinite(id)) return "#";
+    return `/api/support/attachments/${id}`;
+  }, []);
 
   // ============================================================================
   // LocalStorage helpers
@@ -776,7 +780,7 @@ export default function SupportWidget() {
                       key={m.id}
                       message={m}
                       isUser={m.authorId === activeTicket.userId}
-                      API_BASE={API_BASE}
+                      getAttachmentUrl={getAttachmentUrl}
                       onImageClick={(url, name) =>
                         setLightboxImage({ url, name })
                       }

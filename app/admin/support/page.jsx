@@ -75,7 +75,6 @@ function getInitials(name, email) {
 }
 
 export default function AdminSupportInboxPage() {
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
   const { user, checking } = useAuth();
   const isAdmin = user?.role === "admin";
   const router = useRouter();
@@ -113,6 +112,12 @@ export default function AdminSupportInboxPage() {
   const [wsConnected, setWsConnected] = useState(false);
   const reconnectTimeoutRef = useRef(null);
   const bottomRef = useRef(null);
+
+  const getAttachmentUrl = useCallback((attachmentId) => {
+    const id = Number(attachmentId);
+    if (!Number.isFinite(id)) return "#";
+    return `/api/support/attachments/${id}`;
+  }, []);
 
   // Debounce search
   useEffect(() => {
@@ -898,13 +903,13 @@ export default function AdminSupportInboxPage() {
                               {m.attachments.map((a) => (
                                 <a
                                   key={a.id}
-                                  href={`${API_BASE}/uploads/support/${a.filePath}`}
+                                  href={getAttachmentUrl(a.id)}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="asp-attachment"
                                 >
                                   <img
-                                    src={`${API_BASE}/uploads/support/${a.filePath}`}
+                                    src={getAttachmentUrl(a.id)}
                                     alt={a.fileName}
                                   />
                                 </a>
