@@ -132,12 +132,29 @@ export default function AdminSupportInboxPage() {
   // ============================================================================
   // WebSocket Connection
   // ============================================================================
+  const buildSupportWsUrl = useCallback(() => {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    if (apiBase) {
+      try {
+        const url = new URL(apiBase);
+        url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+        url.pathname = "/ws/support";
+        url.search = "";
+        return url.toString();
+      } catch {
+        // Fall through to same-origin fallback.
+      }
+    }
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${window.location.host}/ws/support`;
+  }, []);
+
   const connectWebSocket = useCallback(() => {
     if (!isAdmin) return;
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws/support`;
+    const wsUrl = buildSupportWsUrl();
 
     try {
       const ws = new WebSocket(wsUrl);
@@ -173,7 +190,7 @@ export default function AdminSupportInboxPage() {
     } catch (err) {
       console.error("[Admin Support WS] Connection failed:", err);
     }
-  }, [isAdmin]);
+  }, [isAdmin, buildSupportWsUrl]);
 
   const handleWebSocketMessage = useCallback(
     (data) => {
