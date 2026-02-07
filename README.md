@@ -154,6 +154,13 @@ Environment Variables
 
 Deployment
 
+🔐 Security Disclosure
+Public disclosure metadata is available at:
+
+/security.txt
+
+/.well-known/security.txt
+
 🪪 License
 This project is licensed under the MIT License.
 
