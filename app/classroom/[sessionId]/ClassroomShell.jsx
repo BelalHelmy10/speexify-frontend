@@ -4,13 +4,17 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
 import PrepShell from "@/app/resources/prep/PrepShell";
-import ClassroomResourcePicker from "./ClassroomResourcePicker";
 import ClassroomChat from "./ClassroomChat";
 import MobileClassroomLayout from "./MobileClassroomLayout";
+import ClassroomHeaderBar from "./ClassroomHeaderBar";
+import ClassroomControlBar from "./ClassroomControlBar";
+import ClassroomResourcePickerModal from "./ClassroomResourcePickerModal";
+import ClassroomParticipantsModal from "./ClassroomParticipantsModal";
+import ClassroomLeaveConfirmModal from "./ClassroomLeaveConfirmModal";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import api from "@/lib/api";
-import { Video, Scale, FileText, UserRound, Users, MessageSquare, BookOpen, Monitor, Circle, Square, GraduationCap } from "lucide-react";
+import { Video, Scale, FileText, MessageSquare, BookOpen, Monitor } from "lucide-react";
 
 /* -----------------------------------------------------------
    Utility: Safely generate a display name
@@ -720,49 +724,18 @@ export default function ClassroomShell({
   return (
     <div className="cr-shell">
       {/* Header */}
-      <header className="cr-header">
-        <div className="cr-header__left">
-          <a
-            href={`${prefix}/dashboard`}
-            className="cr-header__leave"
-            onClick={(e) => {
-              e.preventDefault();
-              setShowLeaveConfirm(true);
-            }}
-            title="Leave classroom"
-          >
-            <span aria-hidden="true">←</span>
-            <span>Leave</span>
-          </a>
-        </div>
-
-        <div className="cr-header__center">
-          <div className="cr-header__resource-name">
-            {headerTitle} • {typeLabel}
-            {isGroup ? ` • ${countLabel} participants` : ""}
-          </div>
-        </div>
-
-        <div className="cr-header__right">
-          <span
-            className="cr-header__role-badge"
-            data-role={isTeacher ? "teacher" : "learner"}
-          >
-            {isTeacher ? <UserRound size={16} /> : <GraduationCap size={16} />} {isTeacher ? teacherName : learnerName}
-          </span>
-
-          {isGroup && (
-            <button
-              type="button"
-              className="cr-header__leave"
-              onClick={() => setShowParticipantList(true)}
-              title="View participants"
-            >
-              <Users size={16} /> <span>{countLabel}</span>
-            </button>
-          )}
-        </div>
-      </header>
+      <ClassroomHeaderBar
+        prefix={prefix}
+        setShowLeaveConfirm={setShowLeaveConfirm}
+        headerTitle={headerTitle}
+        typeLabel={typeLabel}
+        isGroup={isGroup}
+        countLabel={countLabel}
+        isTeacher={isTeacher}
+        teacherName={teacherName}
+        learnerName={learnerName}
+        setShowParticipantList={setShowParticipantList}
+      />
 
       {/* Main Content - Desktop only (hidden on mobile where MobileClassroomLayout is used) */}
       {!isMobile && (
@@ -895,133 +868,31 @@ export default function ClassroomShell({
       )}
 
       {/* Bottom Control Bar - Desktop only */}
-      {!isMobile && (
-        <footer className="cr-controls">
-          <div className="cr-controls__left">
-            {isTeacher && (
-              <button
-                className="cr-controls__btn cr-controls__btn--primary"
-                onClick={() => setIsPickerOpen(true)}
-              >
-                <span className="cr-controls__btn-icon"><BookOpen size={16} /></span>
-                <span className="cr-controls__btn-label">Resources</span>
-              </button>
-            )}
-
-            {isTeacher && (
-              <button
-                className="cr-controls__btn cr-controls__btn--secondary"
-                onClick={isPageRecording ? stopPageRecording : startPageRecording}
-              >
-                <span className="cr-controls__btn-icon">
-                  {isPageRecording ? <Square size={16} fill="currentColor" /> : <Circle size={16} fill="#ef4444" />}
-                </span>
-                <span className="cr-controls__btn-label">
-                  {isPageRecording ? "Stop recording" : "Record class"}
-                </span>
-              </button>
-            )}
-
-            {isGroup && (
-              <button
-                className="cr-controls__btn cr-controls__btn--secondary"
-                onClick={() => setShowParticipantList(true)}
-              >
-                <span className="cr-controls__btn-icon"><Users size={16} /></span>
-                <span className="cr-controls__btn-label">
-                  Participants ({participantCount})
-                </span>
-              </button>
-            )}
-          </div>
-
-          <div className="cr-controls__center">
-            <div className="cr-focus-switcher">
-              {FOCUS_MODE_ORDER.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className={
-                    "cr-focus-btn" +
-                    (focusMode === mode ? " cr-focus-btn--active" : "")
-                  }
-                  onClick={() => resetToMode(mode)}
-                  aria-pressed={focusMode === mode}
-                  aria-label={focusModeLabel[mode]}
-                  title={focusModeLabel[mode]}
-                >
-                  <span className="cr-controls__btn-icon">
-                    {focusModeIcon[mode]}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {customSplit !== null && (
-              <button
-                className="cr-controls__reset"
-                onClick={() => setCustomSplit(null)}
-                title="Reset to preset layout"
-              >
-                Reset
-              </button>
-            )}
-          </div>
-
-          <div className="cr-controls__right">
-            {/* ✅ Teacher: Control whether learners follow */}
-            {isTeacher && (
-              <label className="cr-controls__toggle-wrapper">
-                <input
-                  type="checkbox"
-                  className="cr-controls__toggle-input"
-                  checked={teacherAllowsFollowing}
-                  onChange={(e) => setTeacherAllowsFollowing(e.target.checked)}
-                />
-                <span className="cr-controls__toggle-slider"></span>
-                <span className="cr-controls__toggle-label">
-                  Learners follow layout
-                </span>
-              </label>
-            )}
-
-            {/* ✅ Learner: Follow teacher layout toggle (overridden by teacher) */}
-            {!isTeacher && (
-              <label className="cr-controls__toggle-wrapper">
-                <input
-                  type="checkbox"
-                  className="cr-controls__toggle-input"
-                  checked={learnerWantsToFollow}
-                  onChange={(e) => setLearnerWantsToFollow(e.target.checked)}
-                  disabled={!teacherAllowsFollowing}
-                />
-                <span className="cr-controls__toggle-slider"></span>
-                <span className="cr-controls__toggle-label">
-                  {!teacherAllowsFollowing
-                    ? "Following disabled by teacher"
-                    : learnerWantsToFollow
-                      ? "Following layout"
-                      : "Free layout"}
-                </span>
-              </label>
-            )}
-
-            <button
-              className="cr-controls__btn cr-controls__btn--ghost"
-              onClick={() => setIsChatOpen(!isChatOpen)}
-            >
-              <span className="cr-controls__btn-icon"><MessageSquare size={16} /></span>
-              <span className="cr-controls__btn-label">
-                {isChatOpen
-                  ? "Hide Chat"
-                  : chatUnreadCount > 0
-                    ? `Show Chat (${chatUnreadCount})`
-                    : "Show Chat"}
-              </span>
-            </button>
-          </div>
-        </footer>
-      )}
+      <ClassroomControlBar
+        isMobile={isMobile}
+        isTeacher={isTeacher}
+        setIsPickerOpen={setIsPickerOpen}
+        isPageRecording={isPageRecording}
+        stopPageRecording={stopPageRecording}
+        startPageRecording={startPageRecording}
+        isGroup={isGroup}
+        setShowParticipantList={setShowParticipantList}
+        participantCount={participantCount}
+        focusMode={focusMode}
+        FOCUS_MODE_ORDER={FOCUS_MODE_ORDER}
+        focusModeLabel={focusModeLabel}
+        focusModeIcon={focusModeIcon}
+        resetToMode={resetToMode}
+        customSplit={customSplit}
+        setCustomSplit={setCustomSplit}
+        teacherAllowsFollowing={teacherAllowsFollowing}
+        setTeacherAllowsFollowing={setTeacherAllowsFollowing}
+        learnerWantsToFollow={learnerWantsToFollow}
+        setLearnerWantsToFollow={setLearnerWantsToFollow}
+        isChatOpen={isChatOpen}
+        setIsChatOpen={setIsChatOpen}
+        chatUnreadCount={chatUnreadCount}
+      />
 
       {/* Mobile Layout (shown only on screens < 900px) */}
       {isMobile && (
@@ -1088,143 +959,31 @@ export default function ClassroomShell({
         />
       )}
 
-      {/* Resource Picker Modal */}
-      {isPickerOpen && isTeacher && (
-        <div
-          className="cr-modal-overlay"
-          onClick={() => setIsPickerOpen(false)}
-        >
-          <div className="cr-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="cr-modal__header">
-              <h2 className="cr-modal__title">Choose a Resource</h2>
-              <button
-                className="cr-modal__close"
-                onClick={() => setIsPickerOpen(false)}
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="cr-modal__body" data-lenis-prevent>
-              <ClassroomResourcePicker
-                tracks={tracks}
-                selectedResourceId={selectedResourceId}
-                onChangeResourceId={handleChangeResourceId} // ✅ CORRECT NAME
-                isTeacher={isTeacher}
-                sessionId={sessionId}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <ClassroomResourcePickerModal
+        isOpen={isPickerOpen}
+        setIsPickerOpen={setIsPickerOpen}
+        isTeacher={isTeacher}
+        tracks={tracks}
+        selectedResourceId={selectedResourceId}
+        handleChangeResourceId={handleChangeResourceId}
+        sessionId={sessionId}
+      />
 
-      {/* Participant List Modal (GROUP) */}
-      {showParticipantList && (
-        <div
-          className="cr-modal-overlay"
-          onClick={() => setShowParticipantList(false)}
-        >
-          <div
-            className="cr-modal cr-modal--small"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="cr-modal__header">
-              <h2 className="cr-modal__title">
-                <Users size={18} /> Participants ({participantCount}
-                {capacity && `/${capacity}`})
-              </h2>
-              <button
-                className="cr-modal__close"
-                onClick={() => setShowParticipantList(false)}
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="cr-modal__body" data-lenis-prevent>
-              <div className="cr-participant-list">
-                <div className="cr-participant cr-participant--teacher">
-                  <span className="cr-participant__avatar"><UserRound size={20} /></span>
-                  <span className="cr-participant__name">{teacherName}</span>
-                  <span className="cr-participant__role">Teacher</span>
-                </div>
+      <ClassroomParticipantsModal
+        show={showParticipantList}
+        setShowParticipantList={setShowParticipantList}
+        participantCount={participantCount}
+        capacity={capacity}
+        teacherName={teacherName}
+        learners={learners}
+        buildDisplayName={buildDisplayName}
+      />
 
-                <div className="cr-participant-list__divider">
-                  Learners ({learners.length})
-                </div>
-
-                {learners.length === 0 ? (
-                  <p className="cr-participant-list__empty">
-                    No learners in this session
-                  </p>
-                ) : (
-                  learners.map((learner, idx) => (
-                    <div
-                      key={learner.id || idx}
-                      className={`cr-participant ${learner.status === "canceled"
-                        ? "cr-participant--canceled"
-                        : ""
-                        }`}
-                    >
-                      <span className="cr-participant__avatar"><GraduationCap size={20} /></span>
-                      <span className="cr-participant__name">
-                        {buildDisplayName(learner) ||
-                          learner.email?.split("@")[0] ||
-                          "Learner"}
-                      </span>
-                      {learner.status && learner.status !== "booked" && (
-                        <span
-                          className={`cr-participant__status cr-participant__status--${learner.status}`}
-                        >
-                          {learner.status}
-                        </span>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Leave Confirmation Modal */}
-      {showLeaveConfirm && (
-        <div
-          className="cr-modal-overlay"
-          onClick={() => setShowLeaveConfirm(false)}
-        >
-          <div
-            className="cr-modal cr-modal--small"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="cr-modal__header">
-              <h2 className="cr-modal__title">Leave classroom?</h2>
-            </div>
-            <div className="cr-modal__body">
-              <p>
-                Are you sure you want to leave this live session? Any ongoing
-                conversation and screen sharing will stop.
-              </p>
-            </div>
-            <div className="cr-modal__footer">
-              <button
-                type="button"
-                className="cr-button cr-button--ghost"
-                onClick={() => setShowLeaveConfirm(false)}
-              >
-                Cancel
-              </button>
-              <a
-                href={`${prefix}/dashboard`}
-                className="cr-button cr-button--danger"
-              >
-                Yes, leave
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
+      <ClassroomLeaveConfirmModal
+        show={showLeaveConfirm}
+        setShowLeaveConfirm={setShowLeaveConfirm}
+        prefix={prefix}
+      />
     </div>
   );
 }

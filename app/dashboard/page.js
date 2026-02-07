@@ -7,19 +7,12 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import api, { clearCsrfToken } from "@/lib/api";
 import { fmtInTz } from "@/utils/date";
-import { getSafeExternalUrl } from "@/utils/url";
 import { useToast } from "@/components/ToastProvider";
 import { getDictionary, t } from "@/app/i18n";
-
-const fmt = (d) =>
-  new Date(d).toLocaleString([], {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+import SessionRow from "./components/SessionRow";
+import DashboardModal from "./components/DashboardModal";
+import DashboardKpiCard from "./components/DashboardKpiCard";
+import ImpersonationBanner from "./components/ImpersonationBanner";
 
 const canJoin = (startAt, endAt, windowMins = 15) => {
   const now = new Date();
@@ -30,345 +23,6 @@ const canJoin = (startAt, endAt, windowMins = 15) => {
   const early = new Date(start.getTime() - windowMins * 60 * 1000);
   return now >= early && now <= end;
 };
-
-const useCountdown = (startAt, endAt, labels = {}) => {
-  const { startsIn = "Starts in", live = "Live", ended = "Ended" } = labels;
-
-  const [now, setNow] = useState(Date.now());
-  const timer = useRef(null);
-
-  useEffect(() => {
-    timer.current = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer.current);
-  }, []);
-
-  if (!startAt) return "";
-
-  const start = new Date(startAt).getTime();
-  const end = endAt ? new Date(endAt).getTime() : start + 60 * 60 * 1000;
-
-  if (now < start) {
-    let remaining = Math.max(0, Math.floor((start - now) / 1000));
-    const days = Math.floor(remaining / 86400);
-    remaining %= 86400;
-    const hours = Math.floor(remaining / 3600);
-    remaining %= 3600;
-    const mins = Math.floor(remaining / 60);
-    const secs = remaining % 60;
-
-    const parts = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0 || days > 0) parts.push(`${hours}h`);
-    if (mins > 0 || hours > 0 || days > 0) parts.push(`${mins}m`);
-    parts.push(`${String(secs).padStart(2, "0")}s`);
-
-    return `${startsIn} ${parts.join(" ")}`;
-  }
-
-  if (now >= start && now <= end) return live;
-
-  return ended;
-};
-
-function SessionRow({
-  s,
-  timezone,
-  onCancel,
-  onRescheduleClick,
-  isUpcoming = true,
-  isTeacher = false,
-  isAdmin = false,
-  isImpersonating = false,
-  dict,
-  prefix,
-}) {
-  const countdown = useCountdown(s.startAt, s.endAt, {
-    startsIn: t(dict, "countdown_starts_in"),
-    live: t(dict, "countdown_live"),
-    ended: t(dict, "countdown_ended"),
-  });
-
-  const joinable = canJoin(s.startAt, s.endAt);
-
-  const isGroup = String(s.type || "").toUpperCase() === "GROUP";
-  const participantCount =
-    typeof s.participantCount === "number" ? s.participantCount : null;
-
-  // When impersonating, admin can reschedule on behalf of user
-  const canReschedule = isTeacher || isAdmin || isImpersonating;
-
-  const cancelLabel =
-    isGroup && !isTeacher && !isAdmin && !isImpersonating
-      ? t(dict, "session_leave") || "Leave session"
-      : t(dict, "session_cancel") || "Cancel";
-
-  const cancelTitle =
-    isGroup && !isTeacher && !isAdmin && !isImpersonating
-      ? t(dict, "session_leave_title") || "Leave this group session"
-      : t(dict, "session_cancel_title") || "Cancel session";
-
-  return (
-    <div className="session-item">
-      <div className="session-item__indicator"></div>
-      <div className="session-item__content">
-        <div className="session-item__main">
-          <div className="session-item__title">
-            {s.title || t(dict, "session_title_default")}
-          </div>
-
-          <div className="session-item__meta">
-            <span className="session-item__time">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              {fmtInTz(s.startAt, timezone)}
-              {s.endAt ? ` — ${fmtInTz(s.endAt, timezone)}` : ""}
-            </span>
-
-            {isGroup && (
-              <span className="badge badge--info">
-                {t(dict, "session_group") || "Group"}
-              </span>
-            )}
-
-            {(participantCount !== null || (isGroup && s.capacity)) && (
-              <span className="badge badge--neutral">
-                {t(dict, "session_participants") || "Participants"}:{" "}
-                {participantCount !== null ? participantCount : 0}
-                {isGroup && typeof s.capacity === "number"
-                  ? ` / ${s.capacity}`
-                  : ""}
-              </span>
-            )}
-
-            {s.status && (
-              <span className={`badge badge--${s.status}`}>{s.status}</span>
-            )}
-          </div>
-        </div>
-
-        <div className="session-item__actions">
-          {isUpcoming ? (
-            <>
-              {/* Countdown should go to Session page (details hub) */}
-              <Link
-                href={`${prefix}/dashboard/sessions/${s.id}`}
-                className="btn btn--ghost"
-                title={
-                  t(dict, "session_view_details") || "View session details"
-                }
-              >
-                {countdown || t(dict, "session_view_details") || "View session"}
-              </Link>
-
-              {/* Join appears only when joinable */}
-              {joinable && (
-                <Link
-                  href={`/classroom/${s.id}`}
-                  className="btn btn--primary btn--glow"
-                  title={t(dict, "session_join_classroom") || "Join classroom"}
-                >
-                  {t(dict, "session_join_classroom") || "Join"}
-                </Link>
-              )}
-
-              {s.meetingUrl && (
-                <a
-                  href={getSafeExternalUrl(s.meetingUrl)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn--ghost"
-                  title={t(dict, "session_external_link")}
-                >
-                  {t(dict, "session_external_link")}
-                </a>
-              )}
-
-              {canReschedule && (
-                <button
-                  className="btn btn--ghost"
-                  onClick={() => onRescheduleClick(s)}
-                >
-                  {t(dict, "session_reschedule")}
-                </button>
-              )}
-
-              <button
-                className="btn btn--ghost btn--danger"
-                onClick={() => onCancel(s)}
-                title={cancelTitle}
-              >
-                {cancelLabel}
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                href={`${prefix}/dashboard/sessions/${s.id}`}
-                className="btn btn--ghost"
-              >
-                {t(dict, "session_view_details")}
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </Link>
-
-              {isTeacher && s.status === "completed" && (
-                <Link
-                  href={`${prefix}/dashboard/sessions/${s.id}/feedback`}
-                  className="btn btn--primary"
-                >
-                  {s.teacherFeedback
-                    ? t(dict, "session_edit_feedback")
-                    : t(dict, "session_give_feedback")}
-                </Link>
-              )}
-
-              {!isTeacher && s.teacherFeedback && (
-                <Link
-                  href={`${prefix}/dashboard/sessions/${s.id}/feedback`}
-                  className="btn btn--primary"
-                >
-                  {t(dict, "session_view_feedback")}
-                </Link>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Modal({ title, children, onClose }) {
-  return (
-    <div className="modal">
-      <div className="modal__backdrop" onClick={onClose} />
-      <div className="modal__dialog">
-        <div className="modal__head">
-          <h4>{title}</h4>
-          <button className="modal__close btn btn--ghost" onClick={onClose}>
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className="modal__body" data-lenis-prevent>{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function Card({ title, value, icon, gradient }) {
-  return (
-    <div className={`card card--kpi card--${gradient}`}>
-      <div className="card__icon">{icon}</div>
-      <div className="card__content">
-        <div className="card__title">{title}</div>
-        <div className="card__value">{value}</div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   IMPERSONATION BANNER COMPONENT
-   ═══════════════════════════════════════════════════════════════════════════ */
-function ImpersonationBanner({ user, onStop }) {
-  return (
-    <div
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 1000,
-        background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-        color: "#fff",
-        padding: "12px 24px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "16px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-          <path d="M12 14l-3-3m3 3l3-3" />
-        </svg>
-        <div>
-          <strong style={{ display: "block", fontSize: "14px" }}>
-            👁️ Viewing as: {user?.name || user?.email}
-          </strong>
-          <span style={{ fontSize: "12px", opacity: 0.9 }}>
-            Role: {user?.role} • You are impersonating this user
-          </span>
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: "12px" }}>
-        <Link
-          href="/calendar"
-          style={{
-            background: "rgba(255,255,255,0.2)",
-            color: "#fff",
-            padding: "8px 16px",
-            borderRadius: "8px",
-            textDecoration: "none",
-            fontSize: "14px",
-            fontWeight: "500",
-          }}
-        >
-          📅 View Calendar
-        </Link>
-        <button
-          onClick={onStop}
-          style={{
-            background: "#fff",
-            color: "#d97706",
-            border: "none",
-            padding: "8px 16px",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "600",
-            fontSize: "14px",
-          }}
-        >
-          ✕ Stop Impersonating
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function DashboardInner({ dict, prefix }) {
   const { toast, confirmModal } = useToast();
@@ -761,7 +415,7 @@ function DashboardInner({ dict, prefix }) {
         </div>
 
         <div className="grid-3">
-          <Card
+          <DashboardKpiCard
             title={t(dict, "kpi_upcoming")}
             value={upcomingCount}
             icon={
@@ -779,7 +433,7 @@ function DashboardInner({ dict, prefix }) {
             }
             gradient="blue"
           />
-          <Card
+          <DashboardKpiCard
             title={t(dict, "kpi_completed")}
             value={completedCount}
             icon={
@@ -795,7 +449,7 @@ function DashboardInner({ dict, prefix }) {
             }
             gradient="green"
           />
-          <Card
+          <DashboardKpiCard
             title={t(dict, "kpi_total")}
             value={upcomingCount + completedCount}
             icon={
@@ -1282,7 +936,7 @@ function DashboardInner({ dict, prefix }) {
         </div>
 
         {reschedOpen && (
-          <Modal
+          <DashboardModal
             title={t(dict, "modal_reschedule_title")}
             onClose={() => setReschedOpen(false)}
           >
@@ -1315,7 +969,7 @@ function DashboardInner({ dict, prefix }) {
                 {t(dict, "modal_save_changes")}
               </button>
             </div>
-          </Modal>
+          </DashboardModal>
         )}
       </div>
     </>
