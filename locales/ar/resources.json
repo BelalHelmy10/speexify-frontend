@@ -164,5 +164,6 @@
   "resources_pdf_prev_page": "الصفحة السابقة",
   "resources_pdf_next_page": "الصفحة التالية",
   "resources_pdf_sidebar_empty": "لا توجد صفحات لعرضها.",
-  "resources_pdf_page_label": "الصفحة {{current}} من {{total}}"
+  "resources_pdf_page_label": "الصفحة {{current}} من {{total}}",
+  "resources_pdf_fit_to_page": "ملاءمة الصفحة"
 }

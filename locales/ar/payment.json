@@ -1,0 +1,18 @@
+{
+  "loading_text": "جارٍ التحقق من حالة الدفع...",
+  "title_success": "تم الدفع بنجاح!",
+  "message_success": "تم تأكيد دفعتك بنجاح.",
+  "label_order_id": "رقم الطلب:",
+  "btn_start_onboarding": "ابدأ التقييم",
+  "btn_go_dashboard": "اذهب إلى لوحة التحكم",
+  "note_after_success": "أصبحت رصيد الجلسات متاحًا الآن. إذا لم يظهر فورًا، انتظر قليلًا ثم حدّث الصفحة.",
+  "title_failed": "فشل الدفع",
+  "message_failed": "تعذر إتمام عملية الدفع. يمكنك المحاولة مرة أخرى.",
+  "btn_try_again": "حاول مرة أخرى",
+  "btn_retry_payment": "إعادة فتح صفحة الدفع",
+  "btn_check_status": "تحقق مرة أخرى",
+  "btn_back_packages": "العودة إلى الباقات",
+  "note_if_charged": "إذا تم الخصم منك وما زالت الحالة فاشلة، أرسل رقم الطلب إلى hello@speexify.com.",
+  "title_pending_review": "ما زال الدفع قيد التحقق",
+  "message_pending_review": "قد يكون الاتصال ضعيفًا أو لم يصل تأكيد الدفع بعد. تحقق مرة أخرى بعد لحظات."
+}

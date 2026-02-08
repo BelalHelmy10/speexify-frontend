@@ -1,11 +1,15 @@
 // app/payment/success/page.js
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import "@/styles/payment-result.scss";
 import api from "@/lib/api";
 import { getDictionary, t } from "@/app/i18n";
+import {
+  getNetworkProfile,
+  subscribeToNetworkProfileChanges,
+} from "@/lib/network-profile";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
@@ -14,51 +18,120 @@ export default function PaymentSuccessPage() {
 
   // Detect locale from URL prefix (/ar/...)
   const locale = pathname && pathname.startsWith("/ar") ? "ar" : "en";
-  const dict = useMemo(() => getDictionary(locale, "payment-result"), [locale]);
+  const dict = useMemo(() => getDictionary(locale, "payment"), [locale]);
 
   const [status, setStatus] = useState("loading");
+  const [pollSeed, setPollSeed] = useState(0);
+  const [actionError, setActionError] = useState("");
+  const [retrying, setRetrying] = useState(false);
+  const [networkProfile, setNetworkProfile] = useState(() => getNetworkProfile());
+
+  const orderId = searchParams.get("order"); // Paymob merchant_order_id
+  const successParam = searchParams.get("success");
+
+  useEffect(() => {
+    return subscribeToNetworkProfileChanges((nextProfile) => {
+      setNetworkProfile(nextProfile);
+    });
+  }, []);
 
   useEffect(() => {
     let timer = null;
-
-    const orderId = searchParams.get("order"); // Paymob merchant_order_id
-    const successParam = searchParams.get("success");
+    let isUnmounted = false;
 
     if (!orderId) {
       setStatus(successParam === "true" ? "success" : "failed");
-      return;
+      return () => {};
     }
 
+    const delayMs = networkProfile.isLowBandwidth ? 3000 : 1500;
+    const maxPollAttempts = networkProfile.isLowBandwidth ? 12 : 20;
+
+    let attempts = 0;
+
     async function poll() {
+      if (isUnmounted) return;
+      attempts += 1;
+
       try {
         const { data } = await api.get(
           `/api/payments/orders/${encodeURIComponent(orderId)}`
         );
 
+        if (isUnmounted) return;
+
         if (data?.status === "paid") {
           setStatus("success");
-          return; // stop polling
-        }
-        if (data?.status === "failed" || data?.status === "canceled") {
-          setStatus("failed");
-          return; // stop polling
+          return;
         }
 
-        // keep polling while pending
-        timer = setTimeout(poll, 1500);
+        if (data?.status === "failed" || data?.status === "canceled") {
+          setStatus("failed");
+          return;
+        }
+
+        if (attempts >= maxPollAttempts) {
+          setStatus("pending_review");
+          return;
+        }
+
+        timer = setTimeout(poll, delayMs);
       } catch (_e) {
-        // if API not reachable, fallback to URL param once
-        setStatus(successParam === "true" ? "success" : "failed");
+        if (isUnmounted) return;
+
+        if (successParam === "true") {
+          setStatus("success");
+          return;
+        }
+
+        if (attempts >= Math.max(3, Math.floor(maxPollAttempts / 3))) {
+          setStatus("pending_review");
+          return;
+        }
+
+        timer = setTimeout(poll, Math.round(delayMs * 1.5));
       }
     }
 
     setStatus("loading");
+    setActionError("");
     poll();
 
     return () => {
+      isUnmounted = true;
       if (timer) clearTimeout(timer);
     };
-  }, [searchParams]);
+  }, [orderId, successParam, pollSeed, networkProfile.isLowBandwidth]);
+
+  async function retrySamePayment() {
+    if (!orderId) return;
+
+    try {
+      setRetrying(true);
+      setActionError("");
+
+      const { data } = await api.post(
+        `/api/payments/orders/${encodeURIComponent(orderId)}/retry-intent`
+      );
+
+      if (!data?.ok || !data?.iframeUrl) {
+        throw new Error(data?.error || "Payment retry failed");
+      }
+
+      window.location.href = data.iframeUrl;
+    } catch (error) {
+      const message =
+        error?.response?.data?.error || error?.message || "Payment retry failed";
+      setActionError(String(message));
+    } finally {
+      setRetrying(false);
+    }
+  }
+
+  function checkStatusAgain() {
+    setActionError("");
+    setPollSeed((prev) => prev + 1);
+  }
 
   const isArabic = locale === "ar";
   const onboardingPath = isArabic ? "/ar/onboarding" : "/onboarding";
@@ -109,10 +182,9 @@ export default function PaymentSuccessPage() {
 
             <p className="payment-result__message">
               {t(dict, "message_success")}
-              {searchParams.get("order") && (
+              {orderId && (
                 <span className="payment-result__order">
-                  {" "}
-                  {t(dict, "label_order_id")} {searchParams.get("order")}
+                  {t(dict, "label_order_id")} {orderId}
                 </span>
               )}
             </p>
@@ -135,6 +207,57 @@ export default function PaymentSuccessPage() {
             <p className="payment-result__small">
               {t(dict, "note_after_success")}
             </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- Pending review ----------
+  if (status === "pending_review") {
+    return (
+      <div className="payment-result payment-result--loading">
+        <div className="payment-result__container">
+          <div className="payment-result__card">
+            <h1 className="payment-result__title">
+              {t(dict, "title_pending_review")}
+            </h1>
+
+            <p className="payment-result__message">
+              {t(dict, "message_pending_review")}
+              {orderId ? (
+                <span className="payment-result__order">
+                  {t(dict, "label_order_id")} {orderId}
+                </span>
+              ) : null}
+            </p>
+
+            <div className="payment-result__actions">
+              <button
+                onClick={checkStatusAgain}
+                className="payment-result__btn payment-result__btn--primary"
+              >
+                {t(dict, "btn_check_status")}
+              </button>
+
+              {orderId ? (
+                <button
+                  onClick={retrySamePayment}
+                  disabled={retrying}
+                  className="payment-result__btn payment-result__btn--ghost"
+                >
+                  {retrying
+                    ? t(dict, "loading_text")
+                    : t(dict, "btn_retry_payment")}
+                </button>
+              ) : null}
+            </div>
+
+            {actionError ? (
+              <p className="payment-result__small payment-result__small--error">
+                {actionError}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
@@ -164,14 +287,39 @@ export default function PaymentSuccessPage() {
 
           <h1 className="payment-result__title">{t(dict, "title_failed")}</h1>
 
-          <p className="payment-result__message">{t(dict, "message_failed")}</p>
+          <p className="payment-result__message">
+            {t(dict, "message_failed")}
+            {orderId ? (
+              <span className="payment-result__order">
+                {t(dict, "label_order_id")} {orderId}
+              </span>
+            ) : null}
+          </p>
 
-          <button
-            onClick={() => router.push(packagesPath)}
-            className="payment-result__btn payment-result__btn--primary"
-          >
-            {t(dict, "btn_try_again")}
-          </button>
+          <div className="payment-result__actions">
+            {orderId ? (
+              <button
+                onClick={retrySamePayment}
+                disabled={retrying}
+                className="payment-result__btn payment-result__btn--primary"
+              >
+                {retrying ? t(dict, "loading_text") : t(dict, "btn_retry_payment")}
+              </button>
+            ) : null}
+
+            <button
+              onClick={() => router.push(packagesPath)}
+              className="payment-result__btn payment-result__btn--ghost"
+            >
+              {t(dict, "btn_back_packages")}
+            </button>
+          </div>
+
+          {actionError ? (
+            <p className="payment-result__small payment-result__small--error">
+              {actionError}
+            </p>
+          ) : null}
 
           <p className="payment-result__small">{t(dict, "note_if_charged")}</p>
         </div>

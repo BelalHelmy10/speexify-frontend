@@ -13,7 +13,14 @@ const rawBase =
 const apiBase = rawBase.replace(/\/+$/, "").replace(/\/api$/, "");
 
 const nextConfig = {
-  images: { domains: ["lh3.googleusercontent.com"] },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+    ],
+  },
 
   async rewrites() {
     // /api/* (Next) → <backend>/api/* (Express)

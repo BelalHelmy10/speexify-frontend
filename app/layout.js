@@ -1,6 +1,5 @@
 // app/layout.js
 import "./globals.scss";
-import { Inter, Outfit } from "next/font/google";
 import Script from "next/script";
 import "@/lib/sentry";
 import "react-calendar/dist/Calendar.css";
@@ -102,9 +101,6 @@ export const metadata = {
   // },
 };
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
-
 export default async function RootLayout({ children }) {
   // Seed client auth from SSR using the real backend (with cookies)
   const user = await getServerUser();
@@ -126,7 +122,7 @@ export default async function RootLayout({ children }) {
         {/* Theme color for mobile browsers */}
         <meta name="theme-color" content="#2563eb" />
       </head>
-      <body className={`${inter.variable} ${outfit.variable}`}>
+      <body>
         <SmoothScroll />
         <LocaleShell>
           <ClientProviders>

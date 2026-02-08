@@ -9,5 +9,10 @@
   "title_failed": "Payment Failed",
   "message_failed": "Your payment could not be processed. Please try again.",
   "btn_try_again": "Try Again",
-  "note_if_charged": "If you were charged but still see this, email hello@speexify.com with your Order ID."
+  "btn_retry_payment": "Retry This Payment",
+  "btn_check_status": "Check Status Again",
+  "btn_back_packages": "Back to Packages",
+  "note_if_charged": "If you were charged but still see this, email hello@speexify.com with your Order ID.",
+  "title_pending_review": "Payment Still Being Verified",
+  "message_pending_review": "Connection may be unstable or webhook confirmation is still in progress. Please check again in a few seconds."
 }

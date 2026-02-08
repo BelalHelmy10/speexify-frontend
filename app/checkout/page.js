@@ -12,6 +12,10 @@ import {
   calculatePackagePrice,
   formatRegionalPrice,
 } from "@/lib/regional-pricing";
+import {
+  getNetworkProfile,
+  subscribeToNetworkProfileChanges,
+} from "@/lib/network-profile";
 
 export default function CheckoutPage() {
   const { toast, confirmModal } = useToast();
@@ -32,15 +36,25 @@ export default function CheckoutPage() {
   const [discountCode, setDiscountCode] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
   const [discountLoading, setDiscountLoading] = useState(false);
+  const [networkProfile, setNetworkProfile] = useState(() =>
+    getNetworkProfile(),
+  );
+  const [recoveryOrder, setRecoveryOrder] = useState(null);
+  const [recoveringOrderId, setRecoveringOrderId] = useState(null);
 
   const planTitle = searchParams.get("plan");
+
+  useEffect(() => {
+    return subscribeToNetworkProfileChanges((nextProfile) => {
+      setNetworkProfile(nextProfile);
+    });
+  }, []);
 
   // Detect country
   useEffect(() => {
     (async () => {
       const detected = await detectUserCountry();
       setCountryCode(detected);
-      console.log("🌍 Checkout - detected country:", detected || "DEFAULT");
     })();
   }, []);
 
@@ -113,12 +127,66 @@ export default function CheckoutPage() {
       });
 
       setDiscountPercent(res.data.percentage);
-      toast.success(`-${res.data.percentage}% applied`);
+      toast.success(
+        t(dict, "discount_toast_applied", { percent: res.data.percentage }),
+      );
     } catch (e) {
       setDiscountPercent(0);
-      toast.error("Invalid discount code");
+      toast.error(t(dict, "discount_toast_invalid"));
     } finally {
       setDiscountLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!user?.id || !pkg?.id) {
+      setRecoveryOrder(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { data } = await api.get("/api/payments/orders/recovery", {
+          params: { packageId: Number(pkg.id), limit: 1 },
+        });
+
+        if (!cancelled) {
+          setRecoveryOrder(data?.items?.[0] || null);
+        }
+      } catch {
+        if (!cancelled) {
+          setRecoveryOrder(null);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, pkg?.id]);
+
+  async function resumeRecoverableOrder(orderId) {
+    if (!orderId) return;
+
+    try {
+      setRecoveringOrderId(orderId);
+      const { data } = await api.post(
+        `/api/payments/orders/${encodeURIComponent(orderId)}/retry-intent`,
+      );
+
+      if (!data?.ok || !data?.iframeUrl) {
+        throw new Error(data?.error || t(dict, "toast_payment_failed"));
+      }
+
+      window.location.href = data.iframeUrl;
+    } catch (e) {
+      const message =
+        e?.response?.data?.error || e?.message || t(dict, "toast_payment_failed");
+      toast.error(message);
+    } finally {
+      setRecoveringOrderId(null);
     }
   }
 
@@ -252,6 +320,12 @@ export default function CheckoutPage() {
           )}
         </div>
 
+        {networkProfile.isLowBandwidth && (
+          <div className="checkout__exchange-note">
+            {t(dict, "low_bandwidth_note")}
+          </div>
+        )}
+
         {/* Login Warning (if not logged in) */}
         {!user && (
           <div className="checkout__warning">
@@ -270,6 +344,43 @@ export default function CheckoutPage() {
               <div className="checkout__warning-text">
                 <h3>{t(dict, "warning_title_login_required")}</h3>
                 <p>{t(dict, "warning_body_login_required")}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {user && recoveryOrder && (
+          <div className="checkout__warning">
+            <div className="checkout__warning-content">
+              <svg
+                className="checkout__warning-icon"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-12a.75.75 0 00-1.5 0v4.5a.75.75 0 001.5 0V6zm0 7a.75.75 0 10-1.5 0 .75.75 0 001.5 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="checkout__warning-text">
+                <h3>{t(dict, "recovery_title")}</h3>
+                <p>
+                  {t(dict, "recovery_message", {
+                    orderId: recoveryOrder.id,
+                  })}
+                </p>
+                <button
+                  type="button"
+                  className="checkout__error-button"
+                  onClick={() => resumeRecoverableOrder(recoveryOrder.id)}
+                  disabled={recoveringOrderId === recoveryOrder.id}
+                  style={{ marginTop: "0.75rem" }}
+                >
+                  {recoveringOrderId === recoveryOrder.id
+                    ? t(dict, "recovery_button_processing")
+                    : t(dict, "recovery_button")}
+                </button>
               </div>
             </div>
           </div>
@@ -309,15 +420,15 @@ export default function CheckoutPage() {
             <input
               value={discountCode}
               onChange={(e) => setDiscountCode(e.target.value)}
-              placeholder="Discount code"
+              placeholder={t(dict, "discount_placeholder")}
             />
             <button onClick={applyDiscount} disabled={discountLoading}>
-              Apply
+              {t(dict, "discount_apply")}
             </button>
 
             {discountPercent > 0 && (
               <div className="checkout__discount-applied">
-                Discount applied: {discountPercent}%
+                {t(dict, "discount_applied", { percent: discountPercent })}
               </div>
             )}
           </div>

@@ -71,6 +71,8 @@ import arRefundPolicy from "@/locales/ar/refund-policy.json";
 
 import enWhySpeexify from "@/locales/en/why-speexify.json";
 import arWhySpeexify from "@/locales/ar/why-speexify.json";
+import enPayment from "@/locales/en/payment.json";
+import arPayment from "@/locales/ar/payment.json";
 
 const dictionaries = {
   en: {
@@ -98,6 +100,8 @@ const dictionaries = {
     privacy: enPrivacy,
     refundPolicy: enRefundPolicy,
     "why-speexify": enWhySpeexify,
+    payment: enPayment,
+    "payment-result": enPayment,
   },
   ar: {
     home: arHome,
@@ -124,6 +128,8 @@ const dictionaries = {
     privacy: arPrivacy,
     refundPolicy: arRefundPolicy,
     "why-speexify": arWhySpeexify,
+    payment: arPayment,
+    "payment-result": arPayment,
   },
 };
 
