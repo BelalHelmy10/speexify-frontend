@@ -4,6 +4,7 @@ import PdfViewerWithSidebar from "./PdfViewerWithSidebar";
 
 export default function PrepViewerFrame({
   hasScreenShare,
+  isScreenShareActive = false,
   containerRef,
   viewport,
   screenVideoRef,
@@ -35,6 +36,15 @@ export default function PrepViewerFrame({
           autoPlay
         />
         {renderAnnotationsOverlay()}
+      </div>
+    );
+  }
+
+  if (isScreenShareActive) {
+    return (
+      <div className="prep-viewer__placeholder">
+        <h2>Screen sharing is active</h2>
+        <p>The shared screen is being initialized. Please wait a moment.</p>
       </div>
     );
   }

@@ -1971,7 +1971,7 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   // Viewer activity flag
   // ─────────────────────────────────────────────────────────────
-  const viewerIsActive = hasScreenShare || !!viewerUrl;
+  const viewerIsActive = !!isScreenShareActive || hasScreenShare || !!viewerUrl;
 
   // ─────────────────────────────────────────────────────────────
   // Audio tracks (single + multiple)
@@ -2100,6 +2100,7 @@ export default function PrepShell({
               <div className="prep-viewer__frame-wrapper">
                 <PrepViewerFrame
                   hasScreenShare={hasScreenShare}
+                  isScreenShareActive={!!isScreenShareActive}
                   containerRef={containerRef}
                   viewport={viewport}
                   screenVideoRef={screenVideoRef}

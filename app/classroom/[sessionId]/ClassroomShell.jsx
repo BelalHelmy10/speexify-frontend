@@ -405,6 +405,7 @@ export default function ClassroomShell({
 
     const unsub = subscribe((msg) => {
       if (!msg) return;
+      console.log("[Classroom] Subscribe callback received message:", msg.type, msg);
 
       // ✅ Learner: follow teacher content scroll (PDF + any resource)
       if (msg.type === "CONTENT_SCROLL" && !isTeacher) {
@@ -474,8 +475,14 @@ export default function ClassroomShell({
 
       if (msg.type === "SET_RESOURCE") {
         const { resourceId } = msg;
+        console.log("[Classroom] SET_RESOURCE received:", resourceId);
+        console.log("[Classroom] Available resource IDs:", Object.keys(resourcesById || {}));
+        console.log("[Classroom] Resource found:", !!resourcesById[resourceId]);
         if (resourceId && resourcesById[resourceId]) {
           setSelectedResourceId(resourceId);
+          console.log("[Classroom] ✅ Resource set successfully!");
+        } else {
+          console.warn("[Classroom] ⚠️ Resource NOT found in resourcesById!");
         }
       }
 
@@ -508,6 +515,7 @@ export default function ClassroomShell({
     if (!ready) return;
     if (isTeacher) return;
 
+    console.log("[Classroom] Learner: WebSocket ready, sending REQUEST_RESOURCE");
     send({ type: "REQUEST_RESOURCE" });
 
     // ✅ only request layout if learner is following

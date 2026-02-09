@@ -2,12 +2,15 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import api from "@/lib/api";
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 const MAX_RECONNECT_DELAY_MS = 30000;
 const WS_TOKEN_REFRESH_SKEW_MS = 30000;
+const WS_CONNECT_TIMEOUT_MS = 7000;
+const WS_CONFIG_ENDPOINTS = ["/ws-config", "/api/ws-config"];
 
-function resolveWsCandidates() {
+function resolveWsCandidates(configuredWsUrl = "") {
   const directBackend = process.env.NEXT_PUBLIC_DIRECT_BACKEND === "1";
   const apiBase = process.env.NEXT_PUBLIC_API_URL;
 
@@ -32,8 +35,8 @@ function resolveWsCandidates() {
   }
 
   const ordered = directBackend
-    ? [apiBaseUrl, sameOriginUrl]
-    : [sameOriginUrl, apiBaseUrl];
+    ? [configuredWsUrl, apiBaseUrl, sameOriginUrl]
+    : [configuredWsUrl, sameOriginUrl, apiBaseUrl];
 
   return [...new Set(ordered.filter(Boolean))];
 }
@@ -49,6 +52,27 @@ function appendWsToken(wsUrl, token) {
   }
 }
 
+function createWebSocket(wsUrl, token) {
+  const urlWithToken = appendWsToken(wsUrl, token);
+  if (!token) {
+    return new WebSocket(urlWithToken);
+  }
+
+  try {
+    return new WebSocket(urlWithToken, [token]);
+  } catch {
+    return new WebSocket(urlWithToken);
+  }
+}
+
+function isPromiseLike(value) {
+  return (
+    !!value &&
+    (typeof value === "object" || typeof value === "function") &&
+    typeof value.then === "function"
+  );
+}
+
 export function useClassroomChannel(roomId) {
   const [ready, setReady] = useState(false);
   const [status, setStatus] = useState("idle");
@@ -60,6 +84,11 @@ export function useClassroomChannel(roomId) {
   const heartbeatIntervalRef = useRef(null);
   const closingRef = useRef(false);
   const currentUrlIndexRef = useRef(0);
+  const wsEndpointStateRef = useRef({
+    url: "",
+    loaded: false,
+    inflight: null,
+  });
   const wsTokenStateRef = useRef({
     token: null,
     expiresAt: 0,
@@ -103,11 +132,71 @@ export function useClassroomChannel(roomId) {
     }, 25000);
   }, [stopHeartbeat]);
 
+  const getConfiguredWsUrl = useCallback(async () => {
+    if (typeof window === "undefined") return "";
+
+    const state = wsEndpointStateRef.current;
+    if (state.inflight && !isPromiseLike(state.inflight)) {
+      state.inflight = null;
+    }
+
+    if (state.loaded && !state.inflight) {
+      return state.url || "";
+    }
+
+    if (state.inflight) {
+      return state.inflight;
+    }
+
+    const inflight = (async () => {
+      try {
+        for (const endpoint of WS_CONFIG_ENDPOINTS) {
+          const res = await fetch(endpoint, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              Accept: "application/json",
+              "Cache-Control": "no-store",
+            },
+          });
+
+          if (!res.ok) {
+            continue;
+          }
+
+          const data = await res.json().catch(() => null);
+          const url =
+            typeof data?.classroomWsUrl === "string" ? data.classroomWsUrl : "";
+          if (!url) {
+            continue;
+          }
+
+          wsEndpointStateRef.current.url = url;
+          return url;
+        }
+
+        return state.url || "";
+      } catch {
+        return state.url || "";
+      } finally {
+        wsEndpointStateRef.current.loaded = true;
+        wsEndpointStateRef.current.inflight = null;
+      }
+    })();
+
+    wsEndpointStateRef.current.inflight = inflight;
+    return inflight;
+  }, []);
+
   const getWsAuthToken = useCallback(async () => {
     if (typeof window === "undefined") return null;
 
     const state = wsTokenStateRef.current;
     const now = Date.now();
+
+    if (state.inflight && !isPromiseLike(state.inflight)) {
+      state.inflight = null;
+    }
 
     if (
       state.token &&
@@ -123,24 +212,14 @@ export function useClassroomChannel(roomId) {
 
     const inflight = (async () => {
       try {
-        const res = await fetch("/api/auth/ws-token", {
-          method: "GET",
-          credentials: "include",
+        const { data } = await api.get("/auth/ws-token", {
           headers: {
-            Accept: "application/json",
             "Cache-Control": "no-store",
           },
         });
 
-        if (!res.ok) {
-          wsTokenStateRef.current.token = null;
-          wsTokenStateRef.current.expiresAt = 0;
-          return null;
-        }
-
-        const body = await res.json().catch(() => null);
-        const token = typeof body?.token === "string" ? body.token : "";
-        const expiresAt = Number(body?.expiresAt) || 0;
+        const token = typeof data?.token === "string" ? data.token : "";
+        const expiresAt = Number(data?.expiresAt) || 0;
 
         if (!token) {
           wsTokenStateRef.current.token = null;
@@ -152,33 +231,36 @@ export function useClassroomChannel(roomId) {
         wsTokenStateRef.current.expiresAt = expiresAt;
         return token;
       } catch {
-        return null;
-      } finally {
-        wsTokenStateRef.current.inflight = null;
+        const fallbackToken =
+          state.token &&
+          Number.isFinite(Number(state.expiresAt)) &&
+          Number(state.expiresAt) > now
+            ? state.token
+            : null;
+
+        wsTokenStateRef.current.token = fallbackToken;
+        wsTokenStateRef.current.expiresAt = fallbackToken ? Number(state.expiresAt) : 0;
+        return fallbackToken;
       }
     })();
 
-    wsTokenStateRef.current.inflight = inflight;
-    return inflight;
+    const inflightPromise = Promise.resolve(inflight);
+
+    const clearInflight = () => {
+      if (wsTokenStateRef.current.inflight === inflightPromise) {
+        wsTokenStateRef.current.inflight = null;
+      }
+    };
+    inflightPromise.then(clearInflight, clearInflight);
+
+    wsTokenStateRef.current.inflight = inflightPromise;
+    return inflightPromise;
   }, []);
 
   const connect = useCallback(
     (urlIndex = 0) => {
       if (!roomId) return;
       if (typeof window === "undefined") return;
-
-      const urls = resolveWsCandidates();
-      if (!urls.length) {
-        setStatus("error");
-        setReady(false);
-        return;
-      }
-
-      const normalizedIndex = Math.min(
-        Math.max(Number(urlIndex) || 0, 0),
-        urls.length - 1
-      );
-      const wsUrl = urls[normalizedIndex];
 
       clearReconnectTimeout();
 
@@ -202,20 +284,71 @@ export function useClassroomChannel(roomId) {
       setReady(false);
 
       const establishConnection = async () => {
-        const wsToken = await getWsAuthToken();
+        console.log("[Classroom WS] Starting connection for room:", roomId);
+        
+        const configuredWsUrl = await getConfiguredWsUrl();
+        console.log("[Classroom WS] Configured URL from ws-config:", configuredWsUrl || "(none)");
+        
         if (closingRef.current) return;
 
-        const ws = new WebSocket(appendWsToken(wsUrl, wsToken));
+        const urls = resolveWsCandidates(configuredWsUrl);
+        console.log("[Classroom WS] URL candidates:", urls);
+        
+        if (!urls.length) {
+          console.error("[Classroom WS] No WebSocket URLs available!");
+          setStatus("error");
+          setReady(false);
+          return;
+        }
+
+        const normalizedIndex = Math.min(
+          Math.max(Number(urlIndex) || 0, 0),
+          urls.length - 1
+        );
+        const wsUrl = urls[normalizedIndex];
+        console.log("[Classroom WS] Trying URL:", wsUrl, "(index:", normalizedIndex, ")");
+
+        const wsToken = await getWsAuthToken();
+        console.log("[Classroom WS] Auth token:", wsToken ? `obtained (${wsToken.substring(0, 20)}...)` : "MISSING!");
+        
+        if (closingRef.current) return;
+
+        const ws = createWebSocket(wsUrl, wsToken);
         wsRef.current = ws;
+        console.log("[Classroom WS] WebSocket created, waiting for connection...");
 
         if (typeof window !== "undefined") {
           window.__ws_classroom = ws;
         }
 
         let opened = false;
+        let connectTimeoutId = null;
+
+        const clearConnectTimeout = () => {
+          if (connectTimeoutId) {
+            clearTimeout(connectTimeoutId);
+            connectTimeoutId = null;
+          }
+        };
+
+        connectTimeoutId = setTimeout(() => {
+          if (closingRef.current || opened) return;
+          try {
+            if (
+              ws.readyState === WebSocket.CONNECTING ||
+              ws.readyState === WebSocket.OPEN
+            ) {
+              ws.close();
+            }
+          } catch {
+            // ignore
+          }
+        }, WS_CONNECT_TIMEOUT_MS);
 
         ws.onopen = () => {
+          console.log("[Classroom WS] ✅ Connection opened successfully!");
           if (closingRef.current) return;
+          clearConnectTimeout();
 
           opened = true;
           retryAttemptRef.current = 0;
@@ -223,6 +356,7 @@ export function useClassroomChannel(roomId) {
           setReady(true);
           setStatus("ready");
 
+          console.log("[Classroom WS] Joining room:", roomId);
           ws.send(
             JSON.stringify({
               type: "join",
@@ -263,18 +397,23 @@ export function useClassroomChannel(roomId) {
           }
         };
 
-        ws.onerror = () => {
+        ws.onerror = (err) => {
+          console.error("[Classroom WS] ❌ Connection error!", err);
           if (closingRef.current) return;
+          clearConnectTimeout();
           setReady(false);
           setStatus("error");
           stopHeartbeat();
         };
 
-        ws.onclose = () => {
+        ws.onclose = (e) => {
+          console.warn("[Classroom WS] Connection closed. Code:", e?.code, "Reason:", e?.reason || "(none)");
+          clearConnectTimeout();
           stopHeartbeat();
           setReady(false);
 
           if (closingRef.current) {
+            console.log("[Classroom WS] Closed intentionally.");
             setStatus("closed");
             return;
           }
@@ -312,7 +451,14 @@ export function useClassroomChannel(roomId) {
 
       void establishConnection();
     },
-    [roomId, clearReconnectTimeout, startHeartbeat, stopHeartbeat, getWsAuthToken]
+    [
+      roomId,
+      clearReconnectTimeout,
+      startHeartbeat,
+      stopHeartbeat,
+      getConfiguredWsUrl,
+      getWsAuthToken,
+    ]
   );
 
   useEffect(() => {

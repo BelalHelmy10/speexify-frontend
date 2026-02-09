@@ -116,6 +116,27 @@ export default function PrepVideoCall({
     screenShareCbRef.current = onScreenShareStreamChange;
   }, [onScreenShareStreamChange]);
 
+  const isMediaStreamLike = (value) =>
+    !!value &&
+    typeof value === "object" &&
+    typeof value.getTracks === "function" &&
+    typeof value.getVideoTracks === "function";
+
+  const findMediaStream = (value, visited = new WeakSet(), depth = 0) => {
+    if (!value || depth > 4) return null;
+    if (isMediaStreamLike(value)) return value;
+    if (typeof value !== "object") return null;
+    if (visited.has(value)) return null;
+    visited.add(value);
+
+    for (const entry of Object.values(value)) {
+      const found = findMediaStream(entry, visited, depth + 1);
+      if (found) return found;
+    }
+
+    return null;
+  };
+
   async function ensureJitsiScript() {
     if (typeof window === "undefined") return;
 
@@ -195,10 +216,7 @@ export default function PrepVideoCall({
         api.addListener("screenSharingStatusChanged", (status) => {
           const cb = screenShareCbRef.current;
           if (typeof cb === "function") {
-            const stream =
-              status?.stream && typeof status.stream.getTracks === "function"
-                ? status.stream
-                : null;
+            const stream = findMediaStream(status);
 
             cb({
               active: !!status?.on,
