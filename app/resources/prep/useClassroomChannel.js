@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 const MAX_RECONNECT_DELAY_MS = 30000;
+const WS_TOKEN_REFRESH_SKEW_MS = 30000;
 
 function resolveWsCandidates() {
   const directBackend = process.env.NEXT_PUBLIC_DIRECT_BACKEND === "1";
@@ -37,6 +38,17 @@ function resolveWsCandidates() {
   return [...new Set(ordered.filter(Boolean))];
 }
 
+function appendWsToken(wsUrl, token) {
+  if (!token) return wsUrl;
+  try {
+    const url = new URL(wsUrl);
+    url.searchParams.set("token", token);
+    return url.toString();
+  } catch {
+    return wsUrl;
+  }
+}
+
 export function useClassroomChannel(roomId) {
   const [ready, setReady] = useState(false);
   const [status, setStatus] = useState("idle");
@@ -48,6 +60,11 @@ export function useClassroomChannel(roomId) {
   const heartbeatIntervalRef = useRef(null);
   const closingRef = useRef(false);
   const currentUrlIndexRef = useRef(0);
+  const wsTokenStateRef = useRef({
+    token: null,
+    expiresAt: 0,
+    inflight: null,
+  });
 
   const clearReconnectTimeout = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -85,6 +102,65 @@ export function useClassroomChannel(roomId) {
       }
     }, 25000);
   }, [stopHeartbeat]);
+
+  const getWsAuthToken = useCallback(async () => {
+    if (typeof window === "undefined") return null;
+
+    const state = wsTokenStateRef.current;
+    const now = Date.now();
+
+    if (
+      state.token &&
+      Number.isFinite(Number(state.expiresAt)) &&
+      Number(state.expiresAt) - now > WS_TOKEN_REFRESH_SKEW_MS
+    ) {
+      return state.token;
+    }
+
+    if (state.inflight) {
+      return state.inflight;
+    }
+
+    const inflight = (async () => {
+      try {
+        const res = await fetch("/api/auth/ws-token", {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Accept: "application/json",
+            "Cache-Control": "no-store",
+          },
+        });
+
+        if (!res.ok) {
+          wsTokenStateRef.current.token = null;
+          wsTokenStateRef.current.expiresAt = 0;
+          return null;
+        }
+
+        const body = await res.json().catch(() => null);
+        const token = typeof body?.token === "string" ? body.token : "";
+        const expiresAt = Number(body?.expiresAt) || 0;
+
+        if (!token) {
+          wsTokenStateRef.current.token = null;
+          wsTokenStateRef.current.expiresAt = 0;
+          return null;
+        }
+
+        wsTokenStateRef.current.token = token;
+        wsTokenStateRef.current.expiresAt = expiresAt;
+        return token;
+      } catch {
+        return null;
+      } finally {
+        wsTokenStateRef.current.inflight = null;
+      }
+    })();
+
+    wsTokenStateRef.current.inflight = inflight;
+    return inflight;
+  }, []);
 
   const connect = useCallback(
     (urlIndex = 0) => {
@@ -125,111 +201,118 @@ export function useClassroomChannel(roomId) {
       setStatus(retryAttemptRef.current > 0 ? "reconnecting" : "connecting");
       setReady(false);
 
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      if (typeof window !== "undefined") {
-        window.__ws_classroom = ws;
-      }
-
-      let opened = false;
-
-      ws.onopen = () => {
+      const establishConnection = async () => {
+        const wsToken = await getWsAuthToken();
         if (closingRef.current) return;
 
-        opened = true;
-        retryAttemptRef.current = 0;
-        currentUrlIndexRef.current = normalizedIndex;
-        setReady(true);
-        setStatus("ready");
+        const ws = new WebSocket(appendWsToken(wsUrl, wsToken));
+        wsRef.current = ws;
 
-        ws.send(
-          JSON.stringify({
-            type: "join",
-            roomId: String(roomId),
-          })
-        );
+        if (typeof window !== "undefined") {
+          window.__ws_classroom = ws;
+        }
 
-        startHeartbeat();
+        let opened = false;
+
+        ws.onopen = () => {
+          if (closingRef.current) return;
+
+          opened = true;
+          retryAttemptRef.current = 0;
+          currentUrlIndexRef.current = normalizedIndex;
+          setReady(true);
+          setStatus("ready");
+
+          ws.send(
+            JSON.stringify({
+              type: "join",
+              roomId: String(roomId),
+            })
+          );
+
+          startHeartbeat();
+        };
+
+        ws.onmessage = (event) => {
+          let msg;
+          try {
+            msg = JSON.parse(event.data);
+          } catch {
+            return;
+          }
+
+          if (msg?.type === "ping" || msg?.type === "pong") return;
+
+          if (msg?.type === "error") {
+            console.warn("Classroom WS server error", msg?.message || "unknown");
+            return;
+          }
+
+          if (
+            msg.type === "signal" &&
+            msg.signalType === "classroom-event" &&
+            msg.data
+          ) {
+            handlersRef.current.forEach((fn) => {
+              try {
+                fn(msg.data);
+              } catch (err) {
+                console.warn("Classroom handler error", err);
+              }
+            });
+          }
+        };
+
+        ws.onerror = () => {
+          if (closingRef.current) return;
+          setReady(false);
+          setStatus("error");
+          stopHeartbeat();
+        };
+
+        ws.onclose = () => {
+          stopHeartbeat();
+          setReady(false);
+
+          if (closingRef.current) {
+            setStatus("closed");
+            return;
+          }
+
+          const nextCandidateIndex = opened
+            ? currentUrlIndexRef.current
+            : normalizedIndex + 1;
+
+          if (!opened && nextCandidateIndex < urls.length) {
+            currentUrlIndexRef.current = nextCandidateIndex;
+            connect(nextCandidateIndex);
+            return;
+          }
+
+          const attempt = retryAttemptRef.current + 1;
+          retryAttemptRef.current = attempt;
+
+          if (attempt > MAX_RECONNECT_ATTEMPTS) {
+            setStatus("closed");
+            return;
+          }
+
+          const delay = Math.min(
+            MAX_RECONNECT_DELAY_MS,
+            1000 * Math.pow(2, attempt - 1)
+          );
+
+          setStatus("reconnecting");
+
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connect(currentUrlIndexRef.current);
+          }, delay);
+        };
       };
 
-      ws.onmessage = (event) => {
-        let msg;
-        try {
-          msg = JSON.parse(event.data);
-        } catch {
-          return;
-        }
-
-        if (msg?.type === "ping" || msg?.type === "pong") return;
-
-        if (msg?.type === "error") {
-          console.warn("Classroom WS server error", msg?.message || "unknown");
-          return;
-        }
-
-        if (
-          msg.type === "signal" &&
-          msg.signalType === "classroom-event" &&
-          msg.data
-        ) {
-          handlersRef.current.forEach((fn) => {
-            try {
-              fn(msg.data);
-            } catch (err) {
-              console.warn("Classroom handler error", err);
-            }
-          });
-        }
-      };
-
-      ws.onerror = () => {
-        if (closingRef.current) return;
-        setReady(false);
-        setStatus("error");
-        stopHeartbeat();
-      };
-
-      ws.onclose = () => {
-        stopHeartbeat();
-        setReady(false);
-
-        if (closingRef.current) {
-          setStatus("closed");
-          return;
-        }
-
-        const nextCandidateIndex = opened
-          ? currentUrlIndexRef.current
-          : normalizedIndex + 1;
-
-        if (!opened && nextCandidateIndex < urls.length) {
-          currentUrlIndexRef.current = nextCandidateIndex;
-          connect(nextCandidateIndex);
-          return;
-        }
-
-        const attempt = retryAttemptRef.current + 1;
-        retryAttemptRef.current = attempt;
-
-        if (attempt > MAX_RECONNECT_ATTEMPTS) {
-          setStatus("closed");
-          return;
-        }
-
-        const delay = Math.min(
-          MAX_RECONNECT_DELAY_MS,
-          1000 * Math.pow(2, attempt - 1)
-        );
-
-        setStatus("reconnecting");
-
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connect(currentUrlIndexRef.current);
-        }, delay);
-      };
+      void establishConnection();
     },
-    [roomId, clearReconnectTimeout, startHeartbeat, stopHeartbeat]
+    [roomId, clearReconnectTimeout, startHeartbeat, stopHeartbeat, getWsAuthToken]
   );
 
   useEffect(() => {
