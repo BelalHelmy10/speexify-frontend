@@ -105,6 +105,7 @@ export default function PrepShell({
   hideBreadcrumbs = false,
   classroomChannel,
   isScreenShareActive = false,
+  screenShareStream = null,
   isTeacher = false,
   locale = "en",
 }) {
@@ -332,6 +333,27 @@ export default function PrepShell({
   const screenVideoRef = useRef(null);
   const audioRef = useRef(null);
 
+  useEffect(() => {
+    const el = screenVideoRef.current;
+    if (!el) return;
+
+    const stream =
+      screenShareStream && typeof screenShareStream.getTracks === "function"
+        ? screenShareStream
+        : null;
+
+    if (!stream) {
+      if (el.srcObject) {
+        el.srcObject = null;
+      }
+      return;
+    }
+
+    if (el.srcObject !== stream) {
+      el.srcObject = stream;
+    }
+  }, [screenShareStream]);
+
   // ✅ TEXTAREA REFS (for real-time autosize)
   const textAreaRefs = useRef({}); // { [textId]: HTMLTextAreaElement }
   const measureSpanRef = useRef(null); // shared measurer for auto width
@@ -529,7 +551,9 @@ export default function PrepShell({
   const level = subLevel?.level;
   const track = level?.track;
 
-  const hasScreenShare = !!isScreenShareActive;
+  const hasScreenShare =
+    !!isScreenShareActive &&
+    !!(screenShareStream && typeof screenShareStream.getTracks === "function");
 
   const showSidebar = !hideSidebar && !sidebarCollapsed;
   const showBreadcrumbs = !hideBreadcrumbs;
@@ -1155,8 +1179,8 @@ export default function PrepShell({
       const rect = container.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
 
-      // ✅ Track container width for proportional annotation scaling
-      setContainerWidth(rect.width);
+      // Avoid state churn when width has not changed.
+      setContainerWidth((prev) => (Math.abs(prev - rect.width) > 0.5 ? rect.width : prev));
 
       canvas.width = rect.width;
       canvas.height = rect.height;
@@ -1181,7 +1205,7 @@ export default function PrepShell({
       window.addEventListener("resize", resizeCanvas);
       return () => window.removeEventListener("resize", resizeCanvas);
     }
-  }, [hasScreenShare, strokes, isPdf, pdfCurrentPage]);
+  }, [hasScreenShare, isPdf, pdfCurrentPage]);
 
   // ─────────────────────────────────────────────────────────────
   // Persistence + broadcasting
@@ -1288,8 +1312,8 @@ export default function PrepShell({
   // Subscribe to classroom channel (for sync)
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!classroomChannel || !classroomChannel.ready) return;
-    if (!classroomChannel.subscribe) return;
+    if (!classroomChannel?.ready) return;
+    if (typeof classroomChannel?.subscribe !== "function") return;
 
     const unsubscribe = classroomChannel.subscribe((msg) => {
       handlePrepChannelMessage(msg, {
@@ -1310,7 +1334,15 @@ export default function PrepShell({
     });
 
     return unsubscribe;
-  }, [classroomChannel, resource._id, isTeacher, isPdf, pdfCurrentPage, applyAudioState]);
+  }, [
+    classroomChannel?.ready,
+    classroomChannel?.subscribe,
+    resource._id,
+    isTeacher,
+    isPdf,
+    pdfCurrentPage,
+    applyAudioState,
+  ]);
 
   // ─────────────────────────────────────────────────────────────
   // Drawing tools (pen / highlighter / eraser) using normalized coords

@@ -488,7 +488,7 @@ export default function ClassroomChat({
           value={inputValue}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
-          disabled={!ready || isSending}
+          disabled={isSending}
         />
         <button
           type="submit"

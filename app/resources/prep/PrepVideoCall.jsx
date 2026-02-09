@@ -195,7 +195,15 @@ export default function PrepVideoCall({
         api.addListener("screenSharingStatusChanged", (status) => {
           const cb = screenShareCbRef.current;
           if (typeof cb === "function") {
-            cb(status.on ? true : null);
+            const stream =
+              status?.stream && typeof status.stream.getTracks === "function"
+                ? status.stream
+                : null;
+
+            cb({
+              active: !!status?.on,
+              stream,
+            });
           }
         });
       } catch (err) {
@@ -212,6 +220,10 @@ export default function PrepVideoCall({
     return () => {
       cancelled = true;
       try {
+        const cb = screenShareCbRef.current;
+        if (typeof cb === "function") {
+          cb({ active: false, stream: null });
+        }
         apiRef.current?.dispose();
       } catch (e) {
         console.warn("Error disposing Jitsi API:", e);

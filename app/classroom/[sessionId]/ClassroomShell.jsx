@@ -160,6 +160,7 @@ export default function ClassroomShell({
     }
   });
   const [isScreenShareActive, setIsScreenShareActive] = useState(false);
+  const [screenShareStream, setScreenShareStream] = useState(null);
 
   /* -----------------------------------------------------------
      Focus Mode & Layout State
@@ -424,8 +425,6 @@ export default function ClassroomShell({
         // ✅ Teacher controls whether learners can follow
         if (msg.teacherAllowsFollowing !== undefined) {
           setTeacherAllowsFollowing(!!msg.teacherAllowsFollowing);
-          // ✅ Sync learner preference to match teacher's control
-          setLearnerWantsToFollow(!!msg.teacherAllowsFollowing);
         }
 
         // Only apply layout if following is enabled (teacher allows AND learner wants)
@@ -500,6 +499,8 @@ export default function ClassroomShell({
     subscribe,
     focusMode,
     customSplit,
+    teacherAllowsFollowing,
+    learnerWantsToFollow,
     followTeacherLayout,
   ]);
 
@@ -560,7 +561,7 @@ export default function ClassroomShell({
         if (newId) {
           sessionStorage.setItem(key, newId);
         } else {
-          sessionSession.removeItem(key);
+          sessionStorage.removeItem(key);
         }
       } catch { }
     }
@@ -583,8 +584,31 @@ export default function ClassroomShell({
     }
   };
 
-  const handleScreenShareStreamChange = useCallback((active) => {
-    setIsScreenShareActive(!!active);
+  const handleScreenShareStreamChange = useCallback((payload) => {
+    // Supports both old boolean callback and richer payload shape.
+    if (payload && typeof payload.getTracks === "function") {
+      setIsScreenShareActive(true);
+      setScreenShareStream(payload);
+      return;
+    }
+
+    if (payload && typeof payload === "object") {
+      const active = !!payload.active;
+      const stream =
+        payload.stream && typeof payload.stream.getTracks === "function"
+          ? payload.stream
+          : null;
+
+      setIsScreenShareActive(active);
+      setScreenShareStream(stream);
+      return;
+    }
+
+    const active = !!payload;
+    setIsScreenShareActive(active);
+    if (!active) {
+      setScreenShareStream(null);
+    }
   }, []);
 
   /* -----------------------------------------------------------
@@ -832,6 +856,7 @@ export default function ClassroomShell({
                   classroomChannel={classroomChannel}
                   isTeacher={isTeacher}
                   isScreenShareActive={isScreenShareActive}
+                  screenShareStream={screenShareStream}
                   locale={locale}
                   className="cr-prep-shell-fullsize"
                 />
@@ -921,6 +946,7 @@ export default function ClassroomShell({
                 classroomChannel={classroomChannel}
                 isTeacher={isTeacher}
                 isScreenShareActive={isScreenShareActive}
+                screenShareStream={screenShareStream}
                 locale={locale}
               />
             ) : (
