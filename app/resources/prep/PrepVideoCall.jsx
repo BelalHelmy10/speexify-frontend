@@ -122,6 +122,13 @@ export default function PrepVideoCall({
     typeof value.getTracks === "function" &&
     typeof value.getVideoTracks === "function";
 
+  const isMediaStreamTrackLike = (value) =>
+    !!value &&
+    typeof value === "object" &&
+    typeof value.kind === "string" &&
+    (value.kind === "video" || value.kind === "audio") &&
+    typeof value.id === "string";
+
   const findMediaStream = (value, visited = new WeakSet(), depth = 0) => {
     if (!value || depth > 4) return null;
     if (isMediaStreamLike(value)) return value;
@@ -135,6 +142,30 @@ export default function PrepVideoCall({
     }
 
     return null;
+  };
+
+  const collectMediaStreamTracks = (
+    value,
+    acc = [],
+    visited = new WeakSet(),
+    depth = 0
+  ) => {
+    if (!value || depth > 5) return acc;
+    if (isMediaStreamLike(value)) {
+      return [...acc, ...value.getTracks()];
+    }
+    if (isMediaStreamTrackLike(value)) {
+      acc.push(value);
+      return acc;
+    }
+    if (typeof value !== "object") return acc;
+    if (visited.has(value)) return acc;
+
+    visited.add(value);
+    for (const entry of Object.values(value)) {
+      collectMediaStreamTracks(entry, acc, visited, depth + 1);
+    }
+    return acc;
   };
 
   async function ensureJitsiScript() {
@@ -216,7 +247,16 @@ export default function PrepVideoCall({
         api.addListener("screenSharingStatusChanged", (status) => {
           const cb = screenShareCbRef.current;
           if (typeof cb === "function") {
-            const stream = findMediaStream(status);
+            let stream = findMediaStream(status);
+            if (!stream && status?.on) {
+              const tracks = collectMediaStreamTracks(status);
+              if (tracks.length > 0) {
+                const uniqueTracks = Array.from(
+                  new Map(tracks.map((track) => [track.id, track])).values()
+                );
+                stream = new MediaStream(uniqueTracks);
+              }
+            }
 
             cb({
               active: !!status?.on,

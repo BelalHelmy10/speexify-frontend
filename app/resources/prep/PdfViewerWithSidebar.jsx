@@ -33,6 +33,7 @@ export default function PdfViewerWithSidebar({
   const didAutoFitRef = useRef(false);
   const autoFitRafRef = useRef(null);
   const lastAutoFitAtRef = useRef(0);
+  const resizeAutoFitTimeoutRef = useRef(null);
 
   const [pdfjs, setPdfjs] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
@@ -44,11 +45,26 @@ export default function PdfViewerWithSidebar({
 
   const dict = getDictionary(locale, "resources");
   const renderTaskRef = useRef(null);
+  const onFatalErrorRef = useRef(onFatalError);
+  const onContainerReadyRef = useRef(onContainerReady);
+  const onScrollContainerReadyRef = useRef(onScrollContainerReady);
 
   // Updated (after change) - 10% steps, min 10%
   const MIN_ZOOM = 0.1; // 10%
   const MAX_ZOOM = 3.0; // Keep 300% max, or adjust if needed (e.g., to 5.0 for 500%)
   const ZOOM_STEP = 0.1; // 10% steps
+
+  useEffect(() => {
+    onFatalErrorRef.current = onFatalError;
+  }, [onFatalError]);
+
+  useEffect(() => {
+    onContainerReadyRef.current = onContainerReady;
+  }, [onContainerReady]);
+
+  useEffect(() => {
+    onScrollContainerReadyRef.current = onScrollContainerReady;
+  }, [onScrollContainerReady]);
 
   // UPDATED: Function to fit the PDF to the width (fits width to container)
   const fitToPage = useCallback(() => {
@@ -84,10 +100,11 @@ export default function PdfViewerWithSidebar({
 
   // Expose the page wrapper element to parent
   const updateContainerRef = useCallback(() => {
-    if (typeof onContainerReady === "function" && pageWrapperRef.current) {
-      onContainerReady(pageWrapperRef.current);
+    const handler = onContainerReadyRef.current;
+    if (typeof handler === "function" && pageWrapperRef.current) {
+      handler(pageWrapperRef.current);
     }
-  }, [onContainerReady]);
+  }, []);
 
   useEffect(() => {
     updateContainerRef();
@@ -95,10 +112,11 @@ export default function PdfViewerWithSidebar({
 
   // ✅ Expose the scroll container element to parent
   const updateScrollContainerRef = useCallback(() => {
-    if (typeof onScrollContainerReady === "function" && mainRef.current) {
-      onScrollContainerReady(mainRef.current);
+    const handler = onScrollContainerReadyRef.current;
+    if (typeof handler === "function" && mainRef.current) {
+      handler(mainRef.current);
     }
-  }, [onScrollContainerReady]);
+  }, []);
 
   useEffect(() => {
     updateScrollContainerRef();
@@ -154,7 +172,7 @@ export default function PdfViewerWithSidebar({
         if (!cancelled) {
           setError(t(dict, "resources_pdf_engine_error"));
           setLoading(false);
-          onFatalError?.(err);
+          onFatalErrorRef.current?.(err);
         }
       }
     }
@@ -164,7 +182,7 @@ export default function PdfViewerWithSidebar({
     return () => {
       cancelled = true;
     };
-  }, [fileUrl, onFatalError, dict]);
+  }, [fileUrl, dict]);
 
   // ✅ Auto-fit when a new PDF loads (or when the URL changes)
   useEffect(() => {
@@ -186,7 +204,17 @@ export default function PdfViewerWithSidebar({
     const el = mainRef.current;
     if (!el) return;
 
-    const handle = () => requestAutoFit();
+    const handle = () => {
+      if (resizeAutoFitTimeoutRef.current) {
+        clearTimeout(resizeAutoFitTimeoutRef.current);
+      }
+
+      // Debounce resize-driven fitting so divider dragging doesn't
+      // continuously rerender the PDF canvas.
+      resizeAutoFitTimeoutRef.current = setTimeout(() => {
+        requestAutoFit();
+      }, 180);
+    };
 
     // ResizeObserver catches sidebar toggles, container changes, etc.
     let ro = null;
@@ -204,6 +232,10 @@ export default function PdfViewerWithSidebar({
       if (ro) ro.disconnect();
       window.removeEventListener("resize", handle);
       window.removeEventListener("orientationchange", handle);
+      if (resizeAutoFitTimeoutRef.current) {
+        clearTimeout(resizeAutoFitTimeoutRef.current);
+        resizeAutoFitTimeoutRef.current = null;
+      }
     };
   }, [pdfDoc, requestAutoFit]);
 
@@ -259,7 +291,7 @@ export default function PdfViewerWithSidebar({
 
           setError(msg);
           setLoading(false);
-          onFatalError?.(err);
+          onFatalErrorRef.current?.(err);
         }
       }
     }
@@ -362,6 +394,10 @@ export default function PdfViewerWithSidebar({
       if (autoFitRafRef.current) {
         cancelAnimationFrame(autoFitRafRef.current);
         autoFitRafRef.current = null;
+      }
+      if (resizeAutoFitTimeoutRef.current) {
+        clearTimeout(resizeAutoFitTimeoutRef.current);
+        resizeAutoFitTimeoutRef.current = null;
       }
     };
   }, []);

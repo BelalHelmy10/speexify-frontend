@@ -556,6 +556,23 @@ export default function ClassroomShell({
     ? resourcesById[selectedResourceId]
     : null;
   const viewer = resource ? getViewerInfo(resource) : null;
+  const hasScreenShareStream =
+    !!(screenShareStream && typeof screenShareStream.getTracks === "function");
+
+  const sharedScreenVideoRef = useRef(null);
+
+  const assignSharedScreenVideoRef = useCallback(
+    (node) => {
+      sharedScreenVideoRef.current = node;
+      if (!node) return;
+
+      const stream = hasScreenShareStream ? screenShareStream : null;
+      if (node.srcObject !== stream) {
+        node.srcObject = stream;
+      }
+    },
+    [hasScreenShareStream, screenShareStream]
+  );
 
   // ✅ Track resource usage when teacher changes resource
   const handleChangeResourceId = async (newId) => {
@@ -855,7 +872,29 @@ export default function ClassroomShell({
             style={{ width: `${100 - leftPanelWidth}%` }}
           >
             <div className="cr-content-viewer" ref={contentScrollRef} data-lenis-prevent>
-              {resource ? (
+              {isScreenShareActive ? (
+                <div className="cr-screen-share">
+                  {hasScreenShareStream ? (
+                    <video
+                      ref={assignSharedScreenVideoRef}
+                      className="cr-screen-share__video"
+                      playsInline
+                      autoPlay
+                      muted
+                    />
+                  ) : (
+                    <div className="cr-placeholder">
+                      <div className="cr-placeholder__icon">
+                        <Monitor size={32} />
+                      </div>
+                      <h2 className="cr-placeholder__title">Screen sharing is active</h2>
+                      <p className="cr-placeholder__text">
+                        The shared screen is being initialized. Please wait a moment.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : resource ? (
                 <PrepShell
                   resource={resource}
                   viewer={viewer}
@@ -863,29 +902,21 @@ export default function ClassroomShell({
                   hideBreadcrumbs={true}
                   classroomChannel={classroomChannel}
                   isTeacher={isTeacher}
-                  isScreenShareActive={isScreenShareActive}
-                  screenShareStream={screenShareStream}
                   locale={locale}
                   className="cr-prep-shell-fullsize"
                 />
               ) : (
                 <div className="cr-placeholder">
                   <div className="cr-placeholder__icon">
-                    {isScreenShareActive ? <Monitor size={32} /> : <BookOpen size={32} />}
+                    <BookOpen size={32} />
                   </div>
-                  <h2 className="cr-placeholder__title">
-                    {isScreenShareActive
-                      ? "Screen sharing is active"
-                      : "No resource selected"}
-                  </h2>
+                  <h2 className="cr-placeholder__title">No resource selected</h2>
                   <p className="cr-placeholder__text">
-                    {isScreenShareActive
-                      ? "The teacher is sharing their screen in the video call."
-                      : isTeacher
-                        ? "Click the resource picker below to choose content."
-                        : "Waiting for the teacher to select a resource."}
+                    {isTeacher
+                      ? "Click the resource picker below to choose content."
+                      : "Waiting for the teacher to select a resource."}
                   </p>
-                  {isTeacher && !isScreenShareActive && (
+                  {isTeacher && (
                     <button
                       className="cr-placeholder__action"
                       onClick={() => setIsPickerOpen(true)}
@@ -945,7 +976,29 @@ export default function ClassroomShell({
             />
           }
           contentComponent={
-            resource ? (
+            isScreenShareActive ? (
+              <div className="cr-screen-share">
+                {hasScreenShareStream ? (
+                  <video
+                    ref={assignSharedScreenVideoRef}
+                    className="cr-screen-share__video"
+                    playsInline
+                    autoPlay
+                    muted
+                  />
+                ) : (
+                  <div className="cr-placeholder">
+                    <div className="cr-placeholder__icon">
+                      <Monitor size={32} />
+                    </div>
+                    <h2 className="cr-placeholder__title">Screen sharing is active</h2>
+                    <p className="cr-placeholder__text">
+                      The shared screen is being initialized. Please wait a moment.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : resource ? (
               <PrepShell
                 resource={resource}
                 viewer={viewer}
@@ -953,26 +1006,20 @@ export default function ClassroomShell({
                 hideBreadcrumbs={true}
                 classroomChannel={classroomChannel}
                 isTeacher={isTeacher}
-                isScreenShareActive={isScreenShareActive}
-                screenShareStream={screenShareStream}
                 locale={locale}
               />
             ) : (
               <div className="cr-placeholder">
                 <div className="cr-placeholder__icon">
-                  {isScreenShareActive ? <Monitor size={32} /> : <BookOpen size={32} />}
+                  <BookOpen size={32} />
                 </div>
                 <h2 className="cr-placeholder__title">
-                  {isScreenShareActive
-                    ? "Screen sharing active"
-                    : "No resource selected"}
+                  No resource selected
                 </h2>
                 <p className="cr-placeholder__text">
-                  {isScreenShareActive
-                    ? "The teacher is sharing their screen."
-                    : isTeacher
-                      ? "Tap the Resources button to choose content."
-                      : "Waiting for the teacher to select a resource."}
+                  {isTeacher
+                    ? "Tap the Resources button to choose content."
+                    : "Waiting for the teacher to select a resource."}
                 </p>
               </div>
             )
