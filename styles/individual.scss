@@ -328,11 +328,16 @@
 
   &__inner {
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 60px;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: clamp(44px, 5vw, 84px);
     align-items: center;
     position: relative;
     z-index: 1;
+
+    @media (max-width: $bp-lg) {
+      grid-template-columns: 1fr 1fr;
+      gap: 44px;
+    }
 
     @media (max-width: $bp-md) {
       grid-template-columns: 1fr;
@@ -417,25 +422,22 @@
   }
 
   &__media {
+    width: min(100%, 700px);
+    justify-self: end;
+    margin-right: clamp(-56px, -2.5vw, -20px);
     position: relative;
     border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba($brand, 0.2);
+    border: 2px solid rgba($brand, 0.5);
     animation: fadeInUp 0.8s ease 0.2s backwards;
 
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 24px;
-      padding: 2px;
-      background: linear-gradient(135deg, $brand, $brand-light);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      z-index: 2;
+    @media (max-width: $bp-lg) {
+      margin-right: 0;
+    }
+
+    @media (max-width: $bp-md) {
+      width: 100%;
+      justify-self: stretch;
     }
 
     img {
@@ -443,6 +445,9 @@
       display: block;
       aspect-ratio: 4/3;
       object-fit: cover;
+      object-position: center;
+      transform: scale(1.03);
+      transform-origin: center;
     }
   }
 
@@ -464,7 +469,7 @@
     background: rgba($color-white, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 999px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: none;
     font-size: 14px;
     font-weight: 600;
     color: $ink;
