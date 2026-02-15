@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // BACKEND_API_BASE is preferred (server-only on Vercel)
 // NEXT_PUBLIC_API_URL is a fallback (client-exposed; avoid if possible)
@@ -13,6 +17,9 @@ const rawBase =
 const apiBase = rawBase.replace(/\/+$/, "").replace(/\/api$/, "");
 
 const nextConfig = {
+  sassOptions: {
+    includePaths: [path.join(__dirname, "styles")],
+  },
   images: {
     remotePatterns: [
       {

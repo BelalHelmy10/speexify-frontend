@@ -4,7 +4,6 @@ import Script from "next/script";
 import "@/lib/sentry";
 import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import "../styles/calendar.scss";
 
 import { Suspense } from "react";
 
