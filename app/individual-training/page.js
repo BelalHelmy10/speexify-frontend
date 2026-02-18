@@ -90,7 +90,11 @@ function IndividualInner({ dict, locale }) {
         <div className="container ind-hero__inner">
           <div className="ind-hero__copy">
             <FadeIn as="div" className="ind-hero__badge" delay={0.1}>
-              <span className="ind-hero__badge-icon">✨</span>
+              <span className="ind-hero__badge-icon" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M7 1v2.5M7 10.5V13M1 7h2.5M10.5 7H13M3.05 3.05l1.77 1.77M9.18 9.18l1.77 1.77M10.95 3.05L9.18 4.82M4.82 9.18l-1.77 1.77" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </span>
               <span>{t(dict, "hero_badge")}</span>
             </FadeIn>
 
@@ -164,17 +168,36 @@ function IndividualInner({ dict, locale }) {
           <MetricCard
             metric={t(dict, "metric_1_value")}
             label={t(dict, "metric_1_label")}
-            icon="📈"
+            tone="coral"
+            icon={
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 17l5-5 4 4 7-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M15 9h4v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
           />
           <MetricCard
             metric={t(dict, "metric_2_value")}
             label={t(dict, "metric_2_label")}
-            icon="⭐"
+            tone="gold"
+            icon={
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2l2.6 5.26L21 8.27l-4.5 4.38 1.06 6.19L12 15.77l-5.56 2.92 1.06-6.19L3 8.27l6.4-.91L12 2Z" fill="currentColor" />
+              </svg>
+            }
           />
           <MetricCard
             metric={t(dict, "metric_3_value")}
             label={t(dict, "metric_3_label")}
-            icon="🎯"
+            tone="teal"
+            icon={
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                <path d="M12 3V1M12 23v-2M3 12H1M23 12h-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            }
           />
         </div>
       </section>
@@ -219,13 +242,13 @@ function IndividualInner({ dict, locale }) {
         </div>
 
         <div className="ind-steps">
-          <Step n="1" title={t(dict, "how_step1_title")}>
+          <Step n="1" tone="coral" title={t(dict, "how_step1_title")}>
             {t(dict, "how_step1_p")}
           </Step>
-          <Step n="2" title={t(dict, "how_step2_title")}>
+          <Step n="2" tone="gold" title={t(dict, "how_step2_title")}>
             {t(dict, "how_step2_p")}
           </Step>
-          <Step n="3" title={t(dict, "how_step3_title")}>
+          <Step n="3" tone="teal" title={t(dict, "how_step3_title")}>
             {t(dict, "how_step3_p")}
           </Step>
         </div>
@@ -486,9 +509,9 @@ function Field({ label, name, children }) {
   );
 }
 
-function MetricCard({ metric, label, icon }) {
+function MetricCard({ metric, label, icon, tone = "blue" }) {
   return (
-    <div className="card metric">
+    <div className={`card metric metric--${tone}`}>
       <div className="metric__icon">{icon}</div>
       <div className="metric__value">{metric}</div>
       <div className="metric__label">{label}</div>
@@ -511,9 +534,9 @@ function Goal({ title, p, img }) {
   );
 }
 
-function Step({ n, title, children }) {
+function Step({ n, tone = "blue", title, children }) {
   return (
-    <div className="step">
+    <div className={`step step--${tone}`}>
       <div className="step__badge">
         <div className="step__n">{n}</div>
       </div>
@@ -530,15 +553,15 @@ function Testimonial({ quote, by, role, avatar, rating }) {
     <div className="card testi">
       <div className="testi__header">
         <img className="testi__avatar" src={avatar} alt="" loading="lazy" />
-        <div className="testi__stars">
+        <div className="testi__stars" aria-label={`${rating} out of 5 stars`}>
           {[...Array(rating)].map((_, i) => (
-            <span key={i} className="testi__star">
-              ★
-            </span>
+            <svg key={i} className="testi__star" width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M7 1.5l1.545 3.13 3.455.503-2.5 2.436.59 3.44L7 9.25l-3.09 1.759.59-3.44L2 5.133l3.455-.503L7 1.5Z" fill="currentColor" />
+            </svg>
           ))}
         </div>
       </div>
-      <blockquote className="testi__quote">&ldquo;{quote}&rdquo;</blockquote>
+      <blockquote className="testi__quote">{quote}</blockquote>
       <div className="testi__author">
         <cite className="testi__by">{by}</cite>
         <span className="testi__role">{role}</span>

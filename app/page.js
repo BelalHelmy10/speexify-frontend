@@ -50,7 +50,11 @@ function Home({ locale = "en" }) {
         <div className="home-hero__grid home-container">
           <div className="home-hero__copy">
             <FadeIn as="div" className="home-hero__badge" delay={0.1}>
-              <span className="home-hero__badge-icon">✦</span>
+              <span className="home-hero__badge-icon" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M7 1v2.5M7 10.5V13M1 7h2.5M10.5 7H13M3.05 3.05l1.77 1.77M9.18 9.18l1.77 1.77M10.95 3.05L9.18 4.82M4.82 9.18l-1.77 1.77" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </span>
               <span>{t(dict, "badge")}</span>
             </FadeIn>
 
@@ -122,16 +126,23 @@ function Home({ locale = "en" }) {
               />
               <div className="home-media-card__float home-media-card__float--1">
                 <div className="home-float-badge">
-                  <span className="home-float-badge__icon">💬</span>
+                  <span className="home-float-badge__icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <path d="M2 3.5C2 2.67 2.67 2 3.5 2h9C13.33 2 14 2.67 14 3.5v6c0 .83-.67 1.5-1.5 1.5H8L4.5 13V11H3.5C2.67 11 2 10.33 2 9.5v-6Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M5 6h6M5 8.5h3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                  </span>
                   <span className="home-float-badge__text">Live coaching</span>
                 </div>
               </div>
               <div className="home-media-card__float home-media-card__float--2">
                 <div className="home-float-badge">
-                  <span className="home-float-badge__icon">⚡</span>
-                  <span className="home-float-badge__text">
-                    Instant feedback
+                  <span className="home-float-badge__icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <path d="M9.5 2L4 9h4.5L7.5 14l6-7H9l.5-5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   </span>
+                  <span className="home-float-badge__text">Instant feedback</span>
                 </div>
               </div>
             </div>
@@ -652,14 +663,19 @@ function FeatureIcon({ icon }) {
 function Quote({ quote, author, role, rating }) {
   return (
     <figure className="home-quote">
-      <div className="home-quote__stars" aria-hidden="true">
-        {Array.from({ length: rating }).map((_, i) => (
-          <span key={i} className="home-quote__star">
-            ★
-          </span>
-        ))}
+      <div className="home-quote__top">
+        <div className="home-quote__stars" aria-label={`${rating} out of 5 stars`}>
+          {Array.from({ length: rating }).map((_, i) => (
+            <svg key={i} className="home-quote__star" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M7 1.5l1.545 3.13 3.455.503-2.5 2.436.59 3.44L7 9.25l-3.09 1.759.59-3.44L2 5.133l3.455-.503L7 1.5Z" fill="currentColor" />
+            </svg>
+          ))}
+        </div>
+        <svg className="home-quote__mark" width="24" height="18" viewBox="0 0 24 18" fill="none" aria-hidden="true">
+          <path d="M0 18V10.8C0 4.68 3.36.72 10.08 0l1.44 2.16C8.16 3.12 6.24 5.28 5.76 8.4H10.08V18H0ZM13.92 18V10.8C13.92 4.68 17.28.72 24 0l1.44 2.16C22.08 3.12 20.16 5.28 19.68 8.4H24V18H13.92Z" fill="currentColor" opacity="0.12" />
+        </svg>
       </div>
-      <blockquote>&ldquo;{quote}&rdquo;</blockquote>
+      <blockquote>{quote}</blockquote>
       <figcaption>
         <strong>{author}</strong>
         <span>{role}</span>

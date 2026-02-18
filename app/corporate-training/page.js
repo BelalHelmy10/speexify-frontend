@@ -82,7 +82,13 @@ function CorporateTraining({ dict, locale }) {
         <div className="spx-corp__container spx-corp-hero__inner">
           <div className="spx-corp-hero__copy">
             <FadeIn as="div" className="spx-corp-hero__badge" delay={0.1}>
-              <span className="spx-corp-hero__badge-icon">🏢</span>
+              <span className="spx-corp-hero__badge-icon" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                  <rect x="1" y="5" width="13" height="9" rx="1" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M5 14V9h5v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M1 8V4a1 1 0 0 1 .553-.894l6-3a1 1 0 0 1 .894 0l6 3A1 1 0 0 1 15 4v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </span>
               <span>{t(dict, "hero_badge")}</span>
             </FadeIn>
 
@@ -144,7 +150,14 @@ function CorporateTraining({ dict, locale }) {
               loading="eager"
             />
             <div className="spx-corp-hero__media-badge">
-              <span className="spx-corp-hero__media-badge-icon">👥</span>
+              <span className="spx-corp-hero__media-badge-icon" aria-hidden="true">
+                <svg width="18" height="14" viewBox="0 0 18 14" fill="none" aria-hidden="true">
+                  <circle cx="6" cy="4" r="3" stroke="currentColor" strokeWidth="1.5" />
+                  <circle cx="12" cy="4" r="3" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M0 13c0-2.761 2.686-5 6-5s6 2.239 6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M12 8c2.209 0 4 1.567 4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </span>
               <span>{t(dict, "hero_media_badge")}</span>
             </div>
           </figure>
@@ -168,9 +181,27 @@ function CorporateTraining({ dict, locale }) {
       {/* OUTCOMES */}
       <section className="spx-corp__section spx-corp-outcomes">
         <div className="spx-corp__container spx-corp-grid--3">
-          <Metric value="92%" label={t(dict, "metric1_label")} icon="📊" />
-          <Metric value="4.9/5" label={t(dict, "metric2_label")} icon="⭐" />
-          <Metric value="6–8 wks" label={t(dict, "metric3_label")} icon="🎯" />
+          <Metric value="92%" label={t(dict, "metric1_label")} tone="coral" icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="2" y="12" width="4" height="10" rx="1" fill="currentColor" opacity="0.5" />
+              <rect x="8" y="7" width="4" height="15" rx="1" fill="currentColor" opacity="0.75" />
+              <rect x="14" y="3" width="4" height="19" rx="1" fill="currentColor" />
+              <path d="M20 6l-3-3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          } />
+          <Metric value="4.9/5" label={t(dict, "metric2_label")} tone="gold" icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 2l2.6 5.26L21 8.27l-4.5 4.38 1.06 6.19L12 15.77l-5.56 2.92 1.06-6.19L3 8.27l6.4-.91L12 2Z" fill="currentColor" />
+            </svg>
+          } />
+          <Metric value="6–8 wks" label={t(dict, "metric3_label")} tone="teal" icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+              <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.8" />
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+              <path d="M12 3V1M12 23v-2M3 12H1M23 12h-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          } />
         </div>
       </section>
 
@@ -546,9 +577,9 @@ function Field({ label, children }) {
   );
 }
 
-function Metric({ value, label, icon }) {
+function Metric({ value, label, icon, tone = "blue" }) {
   return (
-    <div className="spx-corp-card spx-corp-metric">
+    <div className={`spx-corp-card spx-corp-metric spx-corp-metric--${tone}`}>
       <div className="spx-corp-metric__icon">{icon}</div>
       <div className="spx-corp-metric__value">{value}</div>
       <div className="spx-corp-metric__label">{label}</div>
@@ -628,17 +659,17 @@ function Testi({ quote, by, role, avatar, rating }) {
         />
         <div
           className="spx-corp-testi__stars"
-          aria-label={`${rating} star rating`}
+          aria-label={`${rating} out of 5 stars`}
         >
           {[...Array(rating)].map((_, i) => (
-            <span key={i} className="spx-corp-testi__star" aria-hidden="true">
-              ★
-            </span>
+            <svg key={i} className="spx-corp-testi__star" width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M7 1.5l1.545 3.13 3.455.503-2.5 2.436.59 3.44L7 9.25l-3.09 1.759.59-3.44L2 5.133l3.455-.503L7 1.5Z" fill="currentColor" />
+            </svg>
           ))}
         </div>
       </div>
       <blockquote className="spx-corp-testi__quote">
-        &ldquo;{quote}&rdquo;
+        {quote}
       </blockquote>
       <div className="spx-corp-testi__author">
         <cite className="spx-corp-testi__by">{by}</cite>

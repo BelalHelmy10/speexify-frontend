@@ -185,6 +185,13 @@
     font-weight: 600;
     color: $color-primary-ink;
     animation: fadeInUp 0.6s ease both;
+
+    &-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #c09a49;
+    }
   }
 
   &__title {
@@ -405,15 +412,55 @@
 }
 
 .lane {
+  // Tone tokens
+  --tone-color: #5187cc;
+  --tone-bg: rgba(81, 135, 204, 0.10);
+  --tone-shadow: rgba(81, 135, 204, 0.14);
+
   background: $color-white;
   border: 1px solid $color-border;
   border-radius: $radius-lg;
   padding: $space-xl;
   transition: transform $transition-fast, box-shadow $transition-fast;
 
+  &--coral {
+    --tone-color: #d47569;
+    --tone-bg: rgba(212, 117, 105, 0.10);
+    --tone-shadow: rgba(212, 117, 105, 0.14);
+  }
+
+  &--blue {
+    --tone-color: #5187cc;
+    --tone-bg: rgba(81, 135, 204, 0.10);
+    --tone-shadow: rgba(81, 135, 204, 0.14);
+  }
+
+  &--teal {
+    --tone-color: #4f9d98;
+    --tone-bg: rgba(79, 157, 152, 0.10);
+    --tone-shadow: rgba(79, 157, 152, 0.14);
+  }
+
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba($color-primary, 0.14);
+    box-shadow: 0 10px 24px var(--tone-shadow);
+  }
+
+  &__icon {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    background: var(--tone-bg);
+    border: 1px solid color-mix(in srgb, var(--tone-color) 20%, transparent);
+    border-radius: 14px;
+    color: var(--tone-color);
+    margin-bottom: $space-sm;
+
+    svg {
+      width: 26px;
+      height: 26px;
+    }
   }
 }
 

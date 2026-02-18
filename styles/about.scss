@@ -307,21 +307,62 @@
   }
 
   &__stat {
+    // Tone tokens
+    --tone-color: #5187cc;
+    --tone-bg: rgba(81, 135, 204, 0.10);
+    --tone-shadow: rgba(81, 135, 204, 0.15);
+
     text-align: center;
     padding: $space-6;
     background: $color-white;
     border-radius: 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    &--coral {
+      --tone-color: #d47569;
+      --tone-bg: rgba(212, 117, 105, 0.10);
+      --tone-shadow: rgba(212, 117, 105, 0.15);
+    }
+
+    &--blue {
+      --tone-color: #5187cc;
+      --tone-bg: rgba(81, 135, 204, 0.10);
+      --tone-shadow: rgba(81, 135, 204, 0.15);
+    }
+
+    &--gold {
+      --tone-color: #c09a49;
+      --tone-bg: rgba(192, 154, 73, 0.10);
+      --tone-shadow: rgba(192, 154, 73, 0.15);
+    }
+
+    &--teal {
+      --tone-color: #4f9d98;
+      --tone-bg: rgba(79, 157, 152, 0.10);
+      --tone-shadow: rgba(79, 157, 152, 0.15);
+    }
 
     &:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 28px rgba($color-primary, 0.15);
+      transform: translateY(-6px);
+      box-shadow: 0 12px 28px var(--tone-shadow);
     }
 
     &-icon {
-      font-size: 32px;
-      margin-bottom: 12px;
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 14px;
+      display: grid;
+      place-items: center;
+      color: var(--tone-color);
+      background: var(--tone-bg);
+      border-radius: 14px;
+      border: 1px solid color-mix(in srgb, var(--tone-color) 20%, transparent);
+
+      svg {
+        width: 26px;
+        height: 26px;
+      }
     }
 
     &-value {
@@ -423,34 +464,64 @@
   }
 
   &__value {
+    // Tone tokens
+    --tone-color: #5187cc;
+    --tone-bg: rgba(81, 135, 204, 0.10);
+    --tone-shadow: rgba(81, 135, 204, 0.15);
+
     background: $color-white;
     border-radius: 20px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     padding: $space-8;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     border: 1px solid $color-border;
 
-    &:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba($color-primary, 0.15);
-      border-color: rgba($color-primary, 0.3);
+    &--coral {
+      --tone-color: #d47569;
+      --tone-bg: rgba(212, 117, 105, 0.10);
+      --tone-shadow: rgba(212, 117, 105, 0.15);
+    }
 
-      .about__value-icon {
-        transform: scale(1.1) rotate(5deg);
-      }
+    &--gold {
+      --tone-color: #c09a49;
+      --tone-bg: rgba(192, 154, 73, 0.10);
+      --tone-shadow: rgba(192, 154, 73, 0.15);
+    }
+
+    &--teal {
+      --tone-color: #4f9d98;
+      --tone-bg: rgba(79, 157, 152, 0.10);
+      --tone-shadow: rgba(79, 157, 152, 0.15);
+    }
+
+    &--blue {
+      --tone-color: #5187cc;
+      --tone-bg: rgba(81, 135, 204, 0.10);
+      --tone-shadow: rgba(81, 135, 204, 0.15);
+    }
+
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 36px var(--tone-shadow);
+      border-color: color-mix(in srgb, var(--tone-color) 25%, transparent);
     }
 
     &-icon-wrap {
-      width: 72px;
-      height: 72px;
+      width: 64px;
+      height: 64px;
       border-radius: 16px;
-      background: linear-gradient(135deg,
-          rgba($color-primary, 0.1),
-          rgba($color-primary-light, 0.1));
+      background: var(--tone-bg);
+      border: 1px solid color-mix(in srgb, var(--tone-color) 20%, transparent);
+      color: var(--tone-color);
       display: grid;
       place-items: center;
       margin-bottom: 20px;
-      transition: transform 0.4s ease;
+      transition: transform 0.3s ease;
+
+      svg {
+        width: 26px;
+        height: 26px;
+      }
     }
 
     &-icon {
@@ -781,18 +852,6 @@
     position: relative;
     margin: 0;
 
-    &::before {
-      content: '"';
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      font-size: 60px;
-      font-weight: 900;
-      color: rgba($color-primary, 0.1);
-      line-height: 1;
-      font-family: Georgia, serif;
-    }
-
     &:hover {
       transform: translateY(-8px);
       box-shadow: 0 20px 40px rgba($color-primary, 0.15);
@@ -803,13 +862,12 @@
       display: flex;
       gap: 4px;
       margin-bottom: 16px;
-      position: relative;
-      z-index: 1;
     }
 
     &-star {
-      color: #fbbf24;
-      font-size: 16px;
+      color: #c09a49;
+      display: block;
+      flex-shrink: 0;
     }
 
     p {

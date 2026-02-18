@@ -126,7 +126,12 @@ function Contact() {
 
         <div className="contact-hero__content container stack-lg">
           <FadeIn as="div" className="contact-hero__badge" delay={0.1}>
-            <span className="contact-hero__badge-icon">💬</span>
+            <span className="contact-hero__badge-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M2 2h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H8l-3 2v-2H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                <path d="M4 6h6M4 8.5h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.6" />
+              </svg>
+            </span>
             <span>{t(dict, "hero_badge")}</span>
           </FadeIn>
 
@@ -549,8 +554,13 @@ function Contact() {
       {/* Solutions lanes */}
       <section className="section">
         <div className="container lanes">
-          <div className="lane stack-xs">
-            <div className="lane__icon">👤</div>
+          <div className="lane lane--coral stack-xs">
+            <div className="lane__icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M3 21c0-5 4-9 9-9s9 4 9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </div>
             <h3>{t(dict, "lanes_individual_title")}</h3>
             <p>{t(dict, "lanes_individual_body")}</p>
             <Link className="btn btn--ghost" href={`${prefix}/individual`}>
@@ -558,8 +568,16 @@ function Contact() {
             </Link>
           </div>
 
-          <div className="lane stack-xs">
-            <div className="lane__icon">👥</div>
+          <div className="lane lane--blue stack-xs">
+            <div className="lane__icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="8" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="16" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M1 21c0-4 3-7 7-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M23 21c0-4-3-7-7-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M8 14c1.2-.6 2.5-1 4-1s2.8.4 4 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </div>
             <h3>{t(dict, "lanes_teams_title")}</h3>
             <p>{t(dict, "lanes_teams_body")}</p>
             <Link className="btn btn--ghost" href={`${prefix}/corporate`}>
@@ -567,8 +585,14 @@ function Contact() {
             </Link>
           </div>
 
-          <div className="lane stack-xs">
-            <div className="lane__icon">💎</div>
+          <div className="lane lane--teal stack-xs">
+            <div className="lane__icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2L4 7l8 5 8-5-8-5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M4 12l8 5 8-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 17l8 5 8-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+              </svg>
+            </div>
             <h3>{t(dict, "lanes_packages_title")}</h3>
             <p>{t(dict, "lanes_packages_body")}</p>
             <Link className="btn btn--ghost" href={`${prefix}/packages`}>

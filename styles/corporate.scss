@@ -433,7 +433,9 @@
   }
 
   &__media-badge-icon {
-    font-size: 18px;
+    display: flex;
+    align-items: center;
+    color: $accent;
   }
 }
 
@@ -495,6 +497,11 @@
 // ========================================
 .spx-corp-outcomes {
   .spx-corp-metric {
+    // Tone tokens
+    --tone-color: #5187cc;
+    --tone-bg: rgba(81, 135, 204, 0.10);
+    --tone-shadow: rgba(81, 135, 204, 0.18);
+
     text-align: center;
     padding: $space-7;
     position: relative;
@@ -504,7 +511,7 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, rgba($accent, 0.05), transparent);
+      background: linear-gradient(135deg, var(--tone-bg), transparent);
       opacity: 0;
       transition: opacity 0.4s ease;
     }
@@ -514,13 +521,43 @@
     }
 
     &:hover {
-      border-color: rgba($accent, 0.3);
+      border-color: color-mix(in srgb, var(--tone-color) 30%, transparent);
+    }
+
+    &--coral {
+      --tone-color: #d47569;
+      --tone-bg: rgba(212, 117, 105, 0.10);
+      --tone-shadow: rgba(212, 117, 105, 0.18);
+    }
+
+    &--gold {
+      --tone-color: #c09a49;
+      --tone-bg: rgba(192, 154, 73, 0.10);
+      --tone-shadow: rgba(192, 154, 73, 0.18);
+    }
+
+    &--teal {
+      --tone-color: #4f9d98;
+      --tone-bg: rgba(79, 157, 152, 0.10);
+      --tone-shadow: rgba(79, 157, 152, 0.18);
     }
   }
 
   .spx-corp-metric__icon {
-    font-size: 32px;
-    margin-bottom: 12px;
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 14px;
+    display: grid;
+    place-items: center;
+    color: var(--tone-color);
+    background: var(--tone-bg);
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--tone-color) 20%, transparent);
+
+    svg {
+      width: 26px;
+      height: 26px;
+    }
   }
 
   .spx-corp-metric__value {
@@ -719,19 +756,6 @@
     padding: $space-7;
     display: flex;
     flex-direction: column;
-    position: relative;
-
-    &::before {
-      content: '"';
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      font-size: 60px;
-      font-weight: 900;
-      color: rgba($accent, 0.1);
-      line-height: 1;
-      font-family: Georgia, serif;
-    }
   }
 
   .spx-corp-testi__header {
@@ -739,8 +763,6 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 20px;
-    position: relative;
-    z-index: 1;
   }
 
   .spx-corp-testi__avatar {
@@ -754,12 +776,14 @@
 
   .spx-corp-testi__stars {
     display: flex;
-    gap: 2px;
+    gap: 3px;
+    margin-left: auto;
   }
 
   .spx-corp-testi__star {
-    color: $color-secondary-light;
-    font-size: 16px;
+    color: #c09a49;
+    display: block;
+    flex-shrink: 0;
   }
 
   .spx-corp-testi__quote {
@@ -767,8 +791,6 @@
     font-size: 17px;
     line-height: 1.6;
     color: $ink;
-    position: relative;
-    z-index: 1;
   }
 
   .spx-corp-testi__author {

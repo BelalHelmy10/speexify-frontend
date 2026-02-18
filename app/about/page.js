@@ -22,10 +22,57 @@ const leadChris = "/images/leader_chris.avif";
 
 // config arrays – text comes from translations
 const statsConfig = [
-  { icon: "🌍", valueKey: "stat1_value", labelKey: "stat1_label" },
-  { icon: "🗺️", valueKey: "stat2_value", labelKey: "stat2_label" },
-  { icon: "📚", valueKey: "stat3_value", labelKey: "stat3_label" },
-  { icon: "⏰", valueKey: "stat4_value", labelKey: "stat4_label" },
+  {
+    tone: "coral",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+        <ellipse cx="12" cy="12" rx="4" ry="9" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M3 12h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M3.5 8h17M3.5 16h17" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.6" />
+      </svg>
+    ),
+    valueKey: "stat1_value",
+    labelKey: "stat1_label",
+  },
+  {
+    tone: "blue",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M7 9l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M2 8h20" stroke="currentColor" strokeWidth="1.4" opacity="0.5" />
+        <circle cx="17" cy="14" r="3" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M19.5 16.5L22 19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+    valueKey: "stat2_value",
+    labelKey: "stat2_label",
+  },
+  {
+    tone: "gold",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 19V7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M2 19h20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M9 19V11h6v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <rect x="10" y="4" width="4" height="3" rx="0.5" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+    valueKey: "stat3_value",
+    labelKey: "stat3_label",
+  },
+  {
+    tone: "teal",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+    valueKey: "stat4_value",
+    labelKey: "stat4_label",
+  },
 ];
 
 const valuesConfig = [
@@ -95,7 +142,11 @@ export default function AboutPage() {
         <div className="about__hero-content">
           <div className="about__hero-left">
             <FadeIn as="div" className="about__badge" delay={0.1}>
-              <span className="about__badge-icon">✨</span>
+              <span className="about__badge-icon" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M7 0v3M7 11v3M0 7h3M11 7h3M2.05 2.05l2.12 2.12M9.83 9.83l2.12 2.12M9.83 4.17l2.12-2.12M2.05 11.95l2.12-2.12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </span>
               <span>{t(dict, "hero_badge")}</span>
             </FadeIn>
 
@@ -157,7 +208,7 @@ export default function AboutPage() {
       <section className="about__stats">
         <div className="container about__stats-grid">
           {statsConfig.map((s) => (
-            <div className="about__stat" key={s.labelKey}>
+            <div className={`about__stat about__stat--${s.tone}`} key={s.labelKey}>
               <div className="about__stat-icon">{s.icon}</div>
               <div className="about__stat-value">{t(dict, s.valueKey)}</div>
               <div className="about__stat-label">{t(dict, s.labelKey)}</div>
@@ -178,41 +229,50 @@ export default function AboutPage() {
           </div>
 
           <div className="about__values-grid">
-            <article className="about__value">
+            <article className="about__value about__value--coral">
               <div className="about__value-icon-wrap">
-                <span aria-hidden="true" style={{ fontSize: 22 }}>
-                  👤
-                </span>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <circle cx="11" cy="7" r="4" stroke="currentColor" strokeWidth="1.7" />
+                  <path d="M2 19c0-4.418 4.03-8 9-8s9 3.582 9 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                </svg>
               </div>
               <h3>{t(dict, "offer_card1_title")}</h3>
               <p>{t(dict, "offer_card1_text")}</p>
             </article>
 
-            <article className="about__value">
+            <article className="about__value about__value--gold">
               <div className="about__value-icon-wrap">
-                <span aria-hidden="true" style={{ fontSize: 22 }}>
-                  🏢
-                </span>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <rect x="1" y="8" width="20" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.7" />
+                  <path d="M7 21V13h8v8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                  <path d="M1 12V6a1 1 0 0 1 .55-.89l9-4.5a1 1 0 0 1 .9 0l9 4.5A1 1 0 0 1 21 6v6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                </svg>
               </div>
               <h3>{t(dict, "offer_card2_title")}</h3>
               <p>{t(dict, "offer_card2_text")}</p>
             </article>
 
-            <article className="about__value">
+            <article className="about__value about__value--teal">
               <div className="about__value-icon-wrap">
-                <span aria-hidden="true" style={{ fontSize: 22 }}>
-                  🔄
-                </span>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <path d="M4 11a7 7 0 0 1 13.5-2.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                  <path d="M18 11a7 7 0 0 1-13.5 2.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                  <path d="M18 5l-.5 3.4-3.4-.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4 17l.5-3.4 3.4.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
               <h3>{t(dict, "offer_card3_title")}</h3>
               <p>{t(dict, "offer_card3_text")}</p>
             </article>
 
-            <article className="about__value">
+            <article className="about__value about__value--blue">
               <div className="about__value-icon-wrap">
-                <span aria-hidden="true" style={{ fontSize: 22 }}>
-                  📊
-                </span>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <rect x="2" y="14" width="4" height="6" rx="1" fill="currentColor" opacity="0.5" />
+                  <rect x="9" y="9" width="4" height="11" rx="1" fill="currentColor" opacity="0.75" />
+                  <rect x="16" y="4" width="4" height="16" rx="1" fill="currentColor" />
+                  <path d="M18 7l-3-3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
               <h3>{t(dict, "offer_card4_title")}</h3>
               <p>{t(dict, "offer_card4_text")}</p>
@@ -356,11 +416,11 @@ export default function AboutPage() {
           <div className="about__quote-grid">
             {testimonialsConfig.map((q, i) => (
               <blockquote className="about__quote" key={i}>
-                <div className="about__quote-stars" aria-hidden="true">
+                <div className="about__quote-stars" aria-label={`${q.rating} out of 5 stars`}>
                   {[...Array(q.rating)].map((_, idx) => (
-                    <span key={idx} className="about__quote-star">
-                      ★
-                    </span>
+                    <svg key={idx} className="about__quote-star" width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                      <path d="M7 1.5l1.545 3.13 3.455.503-2.5 2.436.59 3.44L7 9.25l-3.09 1.759.59-3.44L2 5.133l3.455-.503L7 1.5Z" fill="currentColor" />
+                    </svg>
                   ))}
                 </div>
                 <p>&ldquo;{t(dict, q.quoteKey)}&rdquo;</p>
