@@ -1,7 +1,7 @@
 // app/page.js
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useAuth from "@/hooks/useAuth";
@@ -173,39 +173,7 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== FEATURES ===== */}
-      <section className="home-features">
-        <div className="home-container">
-          <div className="home-section-header">
-            <FadeIn as="h2" className="home-section-title">{t(dict, "features_title")}</FadeIn>
-            <FadeIn as="p" className="home-section-subtitle" delay={0.1}>
-              {t(dict, "features_subtitle")}
-            </FadeIn>
-          </div>
-
-          <div className="home-features__grid">
-            <Feature
-              icon="🎯"
-              title={t(dict, "feature1_title")}
-              text={t(dict, "feature1_text")}
-            />
-            <Feature
-              icon="⭐"
-              title={t(dict, "feature2_title")}
-              text={t(dict, "feature2_text")}
-            />
-            <Feature
-              icon="📊"
-              title={t(dict, "feature3_title")}
-              text={t(dict, "feature3_text")}
-            />
-            <Feature
-              icon="🚀"
-              title={t(dict, "feature4_title")}
-              text={t(dict, "feature4_text")}
-            />
-          </div>
-        </div>
-      </section>
+      <FeaturesSection dict={dict} />
 
       {/* ===== HOW IT WORKS ===== */}
       <section className="home-spx-how">
@@ -517,17 +485,169 @@ function Home({ locale = "en" }) {
 }
 
 /* ========== Local UI bits ========== */
-function Feature({ icon, title, text }) {
+
+function FeaturesSection({ dict }) {
+  const gridRef = useRef(null);
+
+  useEffect(() => {
+    const cards = gridRef.current?.querySelectorAll(".home-feature");
+    if (!cards) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("home-feature--visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    cards.forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="home-feature">
-      <div className="home-feature__icon" aria-hidden="true">
-        <span>{icon}</span>
+    <section className="home-features">
+      <div className="home-container">
+        <div className="home-section-header home-features__header">
+          <span className="home-features__eyebrow" aria-hidden="true">
+            Why Speexify
+          </span>
+          <FadeIn as="h2" className="home-section-title home-features__title">
+            {t(dict, "features_title")}
+          </FadeIn>
+          <FadeIn
+            as="p"
+            className="home-section-subtitle home-features__subtitle"
+            delay={0.1}
+          >
+            {t(dict, "features_subtitle")}
+          </FadeIn>
+        </div>
+
+        <div className="home-features__grid" ref={gridRef}>
+          <Feature
+            index={0}
+            icon="chat"
+            tone="orange"
+            title={t(dict, "feature1_title")}
+            text={t(dict, "feature1_text")}
+          />
+          <Feature
+            index={1}
+            icon="trophy"
+            tone="blue"
+            title={t(dict, "feature2_title")}
+            text={t(dict, "feature2_text")}
+          />
+          <Feature
+            index={2}
+            icon="calendar"
+            tone="yellow"
+            title={t(dict, "feature3_title")}
+            text={t(dict, "feature3_text")}
+          />
+          <Feature
+            index={3}
+            icon="bolt"
+            tone="teal"
+            title={t(dict, "feature4_title")}
+            text={t(dict, "feature4_text")}
+          />
+        </div>
       </div>
-      <h3 className="home-feature__title">{title}</h3>
-      <p className="home-feature__text">{text}</p>
+    </section>
+  );
+}
+
+function Feature({ icon, title, text, tone, index }) {
+  return (
+    <div
+      className={`home-feature home-feature--${tone}`}
+      style={{ "--card-index": index }}
+    >
+      <div className="home-feature__accent-bar" aria-hidden="true" />
+
+      <div className="home-feature__top">
+        <div className="home-feature__icon" aria-hidden="true">
+          <FeatureIcon icon={icon} />
+        </div>
+        <span className="home-feature__num" aria-hidden="true">
+          0{index + 1}
+        </span>
+      </div>
+
+      <div className="home-feature__content">
+        <h3 className="home-feature__title">{title}</h3>
+        <p className="home-feature__text">{text}</p>
+      </div>
+
+      <div className="home-feature__footer">
+        <span className="home-feature__arrow" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </div>
     </div>
   );
 }
+
+function FeatureIcon({ icon }) {
+  const base = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    width: "26",
+    height: "26",
+    viewBox: "0 0 26 26",
+    "aria-hidden": "true",
+  };
+
+  // Chat bubble — "Real conversations"
+  if (icon === "chat") {
+    return (
+      <svg {...base} strokeWidth="1.7">
+        <path d="M4 5.5C4 4.4 4.9 3.5 6 3.5h14c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2h-7l-5 3.5V16.5H6c-1.1 0-2-.9-2-2v-9Z" />
+        <path d="M9 9.5h8M9 13h5" />
+      </svg>
+    );
+  }
+
+  // Trophy cup — "Outcome-obsessed"
+  if (icon === "trophy") {
+    return (
+      <svg {...base} strokeWidth="1.7">
+        <path d="M9 3.5h8v7a4 4 0 0 1-8 0v-7Z" />
+        <path d="M9 6.5H6a2.5 2.5 0 0 0 0 5h3M17 6.5h3a2.5 2.5 0 0 1 0 5h-3" />
+        <path d="M13 14.5v4M9.5 18.5h7" />
+      </svg>
+    );
+  }
+
+  // Calendar with checkmark — "Flexible & measurable"
+  if (icon === "calendar") {
+    return (
+      <svg {...base} strokeWidth="1.7">
+        <rect x="3.5" y="5" width="19" height="17" rx="2.5" />
+        <path d="M3.5 10h19M9 3.5v3M17 3.5v3" />
+        <path d="M9.5 15l2.5 2.5 5-5" />
+      </svg>
+    );
+  }
+
+  // Lightning bolt — "For you, on your terms"
+  return (
+    <svg {...base} strokeWidth="1.7">
+      <path d="M14.5 3.5L6 14.5h7L11.5 22.5l9-11h-7l1-8Z" />
+    </svg>
+  );
+}
+
 
 function Quote({ quote, author, role, rating }) {
   return (
