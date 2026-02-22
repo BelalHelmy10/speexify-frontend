@@ -541,30 +541,33 @@ function Admin() {
       setAttendanceLoading(false);
     }
   }
-  async function loadUsersAdmin() {
-    if (!isAdmin) {
-      setUsersAdmin([]);
-      setUsersBusy(false);
-      return;
-    }
+  async function loadUsersAdmin(searchQuery) {
+    const q = typeof searchQuery === "string" ? searchQuery : usersQ;
     setUsersBusy(true);
     try {
       const { data } = await api.get(
-        `/admin/users?q=${encodeURIComponent(usersQ)}`
+        `/admin/users?q=${encodeURIComponent(q)}`
       );
-      setUsersAdmin(data || []);
+      console.log("[AdminPage] loadUsersAdmin response:", data?.length ?? data);
+      setUsersAdmin(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("[AdminPage] loadUsersAdmin error:", err);
+      toast.error(err?.response?.data?.error || "Failed to load users");
+      setUsersAdmin([]);
     } finally {
       setUsersBusy(false);
     }
   }
-  useEffect(() => {
-    if (checking) return;
-    loadUsersAdmin();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checking, isAdmin]);
+  // Load users when auth resolves and user is admin
   useEffect(() => {
     if (checking || !isAdmin) return;
-    const t = setTimeout(loadUsersAdmin, 300);
+    loadUsersAdmin("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checking, isAdmin]);
+  // Debounced search
+  useEffect(() => {
+    if (checking || !isAdmin) return;
+    const t = setTimeout(() => loadUsersAdmin(usersQ), 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usersQ]);
