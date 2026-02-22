@@ -1,34 +1,36 @@
 // ===========================================
-// SPEEXIFY - REFINED COLOR SYSTEM
-// All original variable names preserved
-// Only color values updated for brand cohesion
+// SPEEXIFY — SIGNATURE BRAND SYSTEM
+// Identity: Deep Navy + Vibrant Coral
+// Voice: Confident · Warm · Human · Expressive
 // ===========================================
 
-// ===========================================
-// ===========================================
-// SPEEXIFY - REFINED COLOR SYSTEM
-// ===========================================
+// ── Coral (Primary CTA accent)
+$coral: #F25C2E;
+$coral-dark: #D94B1F;
+$coral-light: #FF7A52;
+$coral-pale: #FDF0EB;
+// ── Navy (Brand foundation)
+$navy: #0D1B2A;
+$navy-mid: #1A2E44;
+$navy-muted: #2C4A6A;
 
-// ===========================================
-// COLORS - Brand & Primary
-// REFINED: Unified to "Electric Blue" palette
-// ===========================================
-$primary: #2563eb;
+// ── Aliases (keep all existing variable names working)
+$primary: $coral;
 $secondary: #10b981;
-$color-primary: #2563eb;
-$color-primary-dark: #1d4ed8;
-$color-primary-light: #3b82f6;
+$color-primary: $coral;
+$color-primary-dark: $coral-dark;
+$color-primary-light: $coral-light;
 
-$brand: #2563eb;
-$brand-dark: #1d4ed8;
-$brand-light: #3b82f6;
-$brand-ink: #1e40af;
-$brand-700: color-mix(in srgb, $brand 85%, #000);
+$brand: $coral;
+$brand-dark: $coral-dark;
+$brand-light: $coral-light;
+$brand-ink: $coral-dark;
+$brand-700: color-mix(in srgb, $coral 85%, #000);
 
-$accent: #2563eb;
-$accent-ink: #1e40af;
-$accent-light: #3b82f6;
-$color-primary-ink: #1e40af;
+$accent: $coral;
+$accent-ink: $coral-dark;
+$accent-light: $coral-light;
+$color-primary-ink: $coral-dark;
 
 // ===========================================
 // COLORS - Secondary & Tertiary
@@ -37,14 +39,14 @@ $color-primary-ink: #1e40af;
 $color-secondary-light: #10b981;
 $color-secondary-dark: #059669;
 
-$color-tertiary-light: #3b82f6;
-$color-tertiary-dark: #1d4ed8;
+$color-tertiary-light: #FF7A52;
+$color-tertiary-dark: #D94B1F;
 
 // ===========================================
 // COLORS - Neutral & Grayscale
 // ===========================================
 $color-white: #ffffff;
-$color-black: #0f172a;
+$color-black: $navy;
 
 $color-grey-light: #f7f7f7;
 $color-grey-light-2: #eee;
@@ -53,34 +55,39 @@ $color-dark-grey: #777;
 $color-dark-grey-2: #999;
 $color-dark-grey-3: #333;
 
-$color-muted: #475569;
+$color-muted: #5A6A7A;
 
 // ===========================================
 // COLORS - Backgrounds
 // ===========================================
-$bg: #ffffff;
-$bg-primary: #ffffff;
-$bg-secondary: #f8fafc;
-$bg-light: #fafafa;
-$bg-soft: #f8fafc;
-$bg-subtle: #f8fafc;
+$bg: #FEFCFA;
+$bg-primary: #FEFCFA;
+$bg-secondary: #F5F0EA;
+$bg-light: #FAFAF7;
+$bg-soft: #F5F0EA;
+$bg-subtle: #F5F0EA;
 
-$card-bg: #ffffff;
-$surface: #f8fafc;
-$color-surface: #f8fafc;
+$card-bg: #FFFFFF;
+$surface: #F5F0EA;
+$color-surface: #F5F0EA;
+
+// Dark surface tokens
+$dark-surface: $navy;
+$dark-surface-mid: $navy-mid;
+$dark-card: $navy-muted;
 
 // ===========================================
 // COLORS - Text
 // ===========================================
-$text: #0b0b0f;
-$text-dark: #333;
-$text-light: #666;
-$text-primary: #0f172a;
-$text-secondary: #64748b;
-$text-muted: #94a3b8;
+$text: $navy;
+$text-dark: $navy;
+$text-light: #5A6A7A;
+$text-primary: $navy;
+$text-secondary: #5A6A7A;
+$text-muted: #8A9BAE;
 
-$ink: #0f172a;
-$muted: #64748b;
+$ink: $navy;
+$muted: #5A6A7A;
 
 // ===========================================
 // COLORS - UI States
@@ -93,17 +100,17 @@ $success-bg: #ecfdf5;
 // ===========================================
 // COLORS - Borders & Rings
 // ===========================================
-$border: #e2e8f0;
-$color-border: #e2e8f0;
-$border-focus: rgba(37, 99, 235, 0.4);
-$ring: #e5e7eb;
+$border: #E8E0D5;
+$color-border: #E8E0D5;
+$border-focus: rgba(242, 92, 46, 0.4);
+$ring: #EDE5D8;
 
 // ===========================================
 // THEME - Calendar
 // REFINED: Brand-based gradient (electric blue)
 // ===========================================
-$calendar-primary: #2563eb;
-$calendar-secondary: #1d4ed8;
+$calendar-primary: $coral;
+$calendar-secondary: $coral-dark;
 
 $calendar-error: #ef4444;
 $calendar-error-alt: #dc2626;
@@ -121,7 +128,8 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
 $shadow: 0 4px 16px rgba(14, 21, 47, 0.08), 0 8px 32px rgba(14, 21, 47, 0.06);
 
 // New Elite Shadows (Kept as they are neutral)
-$shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+$shadow-coral: 0 8px 32px rgba(242, 92, 46, 0.25);
+$shadow-glass: 0 8px 32px 0 rgba(13, 27, 42, 0.12);
 $glass-border: 1px solid rgba(255, 255, 255, 0.18);
 
 // ===========================================
@@ -184,13 +192,15 @@ $radius-card: 20px;
 // REFINED: Unified accent color
 // ===========================================
 :root {
-  --accent: #2563eb;
-  --accent-soft: rgba(37, 99, 235, 0.25);
-  --panel-bg: #fff;
-  --text: #111;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --ok: #2563eb;
+  --accent: #F25C2E;
+  --accent-soft: rgba(242, 92, 46, 0.15);
+  --accent-coral: #F25C2E;
+  --accent-navy: #0D1B2A;
+  --panel-bg: #FEFCFA;
+  --text: #0D1B2A;
+  --muted: #5A6A7A;
+  --border: #E8E0D5;
+  --ok: #F25C2E;
   --good: #10b981;
   --warn: #f59e0b;
   --bad: #ef4444;
@@ -200,20 +210,20 @@ $radius-card: 20px;
 // THEME - Admin (CSS Custom Properties)
 // ===========================================
 :root {
-  --admin-bg-primary: #1e293b;
-  --admin-bg-secondary: #0f172a;
-  --admin-surface: rgba(30, 41, 59, 0.8);
-  --admin-border: rgba(148, 163, 184, 0.1);
+  --admin-bg-primary: #0D1B2A;
+  --admin-bg-secondary: #060E17;
+  --admin-surface: rgba(13, 27, 42, 0.85);
+  --admin-border: rgba(232, 224, 213, 0.1);
   --admin-text-primary: #f8fafc;
   --admin-text-secondary: #94a3b8;
-  --admin-text-muted: #64748b;
+  --admin-text-muted: #5A6A7A;
 
-  --admin-primary: #2563eb;
-  --admin-primary-dark: #1d4ed8;
+  --admin-primary: #F25C2E;
+  --admin-primary-dark: #D94B1F;
   --admin-success: #10b981;
   --admin-success-dark: #059669;
-  --admin-accent: #3b82f6;
-  --admin-accent-dark: #2563eb;
+  --admin-accent: #FF7A52;
+  --admin-accent-dark: #F25C2E;
   --admin-warning: #f59e0b;
   --admin-warning-dark: #d97706;
   --admin-danger: #ef4444;
@@ -229,16 +239,16 @@ $radius-card: 20px;
 // REFINED: Brand-based gradient
 // ===========================================
 :root {
-  --settings-bg-start: #2563eb;
-  --settings-bg-end: #1d4ed8;
-  --settings-surface: rgba(255, 255, 255, 0.95);
-  --settings-border: rgba(148, 163, 184, 0.2);
-  --settings-text: #1e293b;
-  --settings-text-light: #64748b;
-  --settings-text-muted: #94a3b8;
+  --settings-bg-start: #F25C2E;
+  --settings-bg-end: #D94B1F;
+  --settings-surface: rgba(255, 255, 255, 0.97);
+  --settings-border: rgba(232, 224, 213, 0.25);
+  --settings-text: #0D1B2A;
+  --settings-text-light: #5A6A7A;
+  --settings-text-muted: #8A9BAE;
 
-  --settings-primary: #2563eb;
-  --settings-primary-dark: #1d4ed8;
+  --settings-primary: #F25C2E;
+  --settings-primary-dark: #D94B1F;
   --settings-success: #10b981;
   --settings-warning: #f59e0b;
   --settings-danger: #ef4444;
@@ -316,8 +326,8 @@ $duration-dramatic: 600ms; // Page transitions, reveals
 
 // Variables (adjust to match your design system)
 // Colors
-$primary-color: #2563eb;
-$primary-hover: #1d4ed8;
+$primary-color: $coral;
+$primary-hover: $coral-dark;
 $gray-50: #f9fafb;
 $gray-100: #f3f4f6;
 $gray-400: #9ca3af;
@@ -329,9 +339,9 @@ $yellow-200: #fef08a;
 $yellow-400: #facc15;
 $yellow-700: #a16207;
 $yellow-800: #854d0e;
-$blue-50: #eff6ff;
-$blue-600: #2563eb;
-$blue-800: #1e40af;
+$blue-50: #FDF0EB;
+$blue-600: $coral;
+$blue-800: $coral-dark;
 $white: #ffffff;
 $shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
@@ -342,11 +352,11 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 // ============================================================================
 
 // Colors
-$payment-primary: #2563eb;
-$payment-primary-hover: #1d4ed8;
+$payment-primary: $coral;
+$payment-primary-hover: $coral-dark;
 $payment-white: #ffffff;
-$payment-gray-600: #4b5563;
-$payment-gray-900: #111827;
+$payment-gray-600: #5A6A7A;
+$payment-gray-900: $navy;
 $payment-green-50: #f0fdf4;
 $payment-green-100: #dcfce7;
 $payment-green-600: #16a34a;

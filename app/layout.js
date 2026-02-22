@@ -16,6 +16,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import ClientProviders from "./ClientProviders";
 import LocaleShell from "./LocaleShell";
 import SmoothScroll from "@/components/SmoothScroll";
+import CustomCursor from "@/components/CustomCursor";
 
 // Force dynamic rendering so the first paint always reflects the live auth state
 export const dynamic = "force-dynamic";
@@ -115,7 +116,7 @@ export default async function RootLayout({ children }) {
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
 
@@ -131,10 +132,11 @@ export default async function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
         {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#2563eb" />
+        <meta name="theme-color" content="#F25C2E" />
       </head>
       <body>
         <SmoothScroll />
+        <CustomCursor />
         <LocaleShell>
           <ClientProviders>
             <Providers initialUser={user}>

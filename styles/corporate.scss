@@ -45,7 +45,7 @@
   }
 
   50% {
-    opacity: 0.5;
+    opacity: 0.4;
   }
 }
 
@@ -62,7 +62,7 @@
 }
 
 // ========================================
-// BASE
+// BASE WRAPPER
 // ========================================
 .spx-corp {
   box-sizing: border-box;
@@ -76,14 +76,12 @@
 
   img {
     display: block;
+    max-width: 100%;
   }
 
+  // ── sections — no blanket padding here; each section sets its own ──
   &__section {
-    padding: $space-10 0;
-
-    @media (max-width: $bp-md) {
-      padding: $space-8 0;
-    }
+    // removed the old padding: $space-10 0 which caused double-padding
   }
 
   &__container {
@@ -94,6 +92,32 @@
   }
 
   // ========================================
+  // SHARED SECTION HEADER (outside any section scope)
+  // ========================================
+  .spx-corp-section-head {
+    text-align: center;
+    margin-bottom: 52px;
+  }
+
+  .spx-corp-section-title {
+    margin: 0 0 14px;
+    font-family: $font-heading;
+    font-size: clamp(30px, 4vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: $ink;
+  }
+
+  .spx-corp-section-sub {
+    margin: 0 auto;
+    color: $muted;
+    font-size: 17px;
+    line-height: 1.65;
+    max-width: 580px;
+  }
+
+  // ========================================
   // COMMON UI
   // ========================================
   &-card {
@@ -101,14 +125,12 @@
     border: 1px solid $border;
     border-radius: 20px;
     padding: $space-7;
-    box-shadow: 0 4px 16px rgba(14, 21, 47, 0.08),
-      0 8px 32px rgba(14, 21, 47, 0.06);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(14, 21, 47, 0.06), 0 8px 32px rgba(14, 21, 47, 0.04);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 
     &:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(14, 21, 47, 0.12),
-        0 16px 48px rgba(14, 21, 47, 0.08);
+      box-shadow: 0 12px 32px rgba(14, 21, 47, 0.1), 0 24px 56px rgba(14, 21, 47, 0.07);
     }
   }
 
@@ -118,7 +140,7 @@
     gap: 8px;
     padding: 12px 24px;
     border-radius: 12px;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 15px;
     text-decoration: none;
     border: none;
@@ -132,12 +154,13 @@
     }
 
     &--primary {
-      background: linear-gradient(135deg, $accent 0%, $accent-ink 100%);
+      background: $accent;
       color: $color-white;
-      box-shadow: 0 4px 12px rgba($accent, 0.3);
+      box-shadow: 0 4px 18px rgba($accent, 0.32);
 
       &:hover {
-        box-shadow: 0 6px 20px rgba($accent, 0.4);
+        background: $accent-ink;
+        box-shadow: 0 8px 26px rgba($accent, 0.42);
         transform: translateY(-2px);
         text-decoration: none;
       }
@@ -146,17 +169,17 @@
     &--ghost {
       background: transparent;
       color: $accent;
-      border: 2px solid $accent;
+      border: 2px solid rgba($accent, 0.4);
 
       &:hover {
-        background: rgba($accent, 0.1);
-        border-color: $accent-ink;
+        background: rgba($accent, 0.07);
+        border-color: $accent;
         text-decoration: none;
       }
     }
 
     &--lg {
-      padding: 14px 28px;
+      padding: 15px 32px;
       font-size: 16px;
     }
 
@@ -168,10 +191,7 @@
         left: -100%;
         width: 50%;
         height: 100%;
-        background: linear-gradient(90deg,
-            transparent,
-            rgba(255, 255, 255, 0.3),
-            transparent);
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
         animation: shine 3s infinite;
       }
     }
@@ -200,41 +220,15 @@
     margin-top: $space-7;
   }
 
-  &-section-head {
-    text-align: center;
-    margin-bottom: $space-9;
-
-    @media (max-width: $bp-md) {
-      margin-bottom: $space-7;
-    }
-  }
-
-  &-section-title {
-    margin: 0 0 12px;
-    font-family: $font-heading;
-    font-size: clamp(32px, 4vw, 48px);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    color: $ink;
-  }
-
-  &-section-sub {
-    margin: 0;
-    color: $muted;
-    font-size: 18px;
-    max-width: 600px;
-    margin: 0 auto;
-  }
-
   &-bullets {
-    margin: 16px 0 0;
+    margin: 14px 0 0;
     padding-left: 20px;
     color: $ink;
 
     li {
       margin: 8px 0;
       line-height: 1.6;
+      font-size: 14px;
     }
   }
 
@@ -242,7 +236,6 @@
     margin: 0;
     border-radius: 16px;
     overflow: hidden;
-    aspect-ratio: 16 / 9;
     background: $bg-soft;
     position: relative;
 
@@ -259,9 +252,9 @@
 // HERO
 // ========================================
 .spx-corp-hero {
-  padding: 100px 0 80px;
+  padding: 80px 0 72px;
   position: relative;
-  min-height: 85vh;
+  min-height: 88vh;
   display: flex;
   align-items: center;
 
@@ -280,17 +273,17 @@
   &__gradient {
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse 80% 50% at 50% -20%,
-        rgba($accent, 0.12),
-        transparent 50%),
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba($accent, 0.1), transparent 55%),
       linear-gradient(180deg, $bg-soft 0%, $bg-primary 100%);
   }
 
   &__pattern {
     position: absolute;
     inset: 0;
-    background-image: linear-gradient(rgba($accent, 0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba($accent, 0.02) 1px, transparent 1px);
+    background-image:
+      linear-gradient(rgba($accent, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba($accent, 0.025) 1px, transparent 1px);
     background-size: 50px 50px;
     mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
   }
@@ -314,61 +307,47 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background: linear-gradient(135deg,
-        rgba($accent, 0.1),
-        rgba($accent-light, 0.1));
-    border: 1px solid rgba($accent, 0.2);
+    background: rgba($accent, 0.09);
+    border: 1px solid rgba($accent, 0.22);
     border-radius: 999px;
     font-size: 13px;
     font-weight: 600;
     color: $accent-ink;
     margin-bottom: 24px;
-    animation: fadeInUp 0.8s ease;
-  }
-
-  &__badge-icon {
-    font-size: 16px;
   }
 
   &__title {
     font-family: $font-heading;
-    font-size: clamp(48px, 6vw, 80px);
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    margin: 0 0 24px;
+    font-size: clamp(44px, 5.5vw, 76px);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    margin: 0 0 22px;
     font-weight: 800;
     color: $ink;
-    animation: fadeInUp 0.8s ease 0.1s backwards;
   }
 
   &__title-accent {
-    background: linear-gradient(135deg, $accent 0%, $accent-light 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: $accent;
   }
 
   &__subtitle {
-    font-size: 19px;
-    line-height: 1.6;
+    font-size: 18px;
+    line-height: 1.65;
     color: $muted;
     margin: 0 0 32px;
-    max-width: 540px;
-    animation: fadeInUp 0.8s ease 0.2s backwards;
+    max-width: 520px;
   }
 
   &__actions {
     display: flex;
     gap: 12px;
     margin-bottom: 32px;
-    animation: fadeInUp 0.8s ease 0.3s backwards;
     flex-wrap: wrap;
   }
 
   &__features {
     display: flex;
     gap: 24px;
-    animation: fadeInUp 0.8s ease 0.4s backwards;
     flex-wrap: wrap;
   }
 
@@ -377,7 +356,7 @@
     align-items: center;
     gap: 8px;
     color: $muted;
-    font-size: 15px;
+    font-size: 14px;
   }
 
   &__feature-icon {
@@ -388,8 +367,15 @@
   &__media {
     position: relative;
     border-radius: 24px;
-    box-shadow: 0 20px 60px rgba($accent, 0.2);
-    animation: fadeInUp 0.8s ease 0.2s backwards;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba($accent, 0.18), 0 0 0 1px rgba($accent, 0.12);
+
+    img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      display: block;
+    }
 
     &::before {
       content: "";
@@ -397,9 +383,8 @@
       inset: 0;
       border-radius: 24px;
       padding: 2px;
-      background: linear-gradient(135deg, $accent, $accent-light);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+      background: linear-gradient(135deg, $accent, rgba($accent, 0.3));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -409,25 +394,26 @@
 
   &__media-glow {
     position: absolute;
-    inset: -50%;
-    background: radial-gradient(circle, rgba($accent, 0.3), transparent 70%);
+    inset: -40%;
+    background: radial-gradient(circle, rgba($accent, 0.22), transparent 70%);
     z-index: 0;
+    pointer-events: none;
   }
 
   &__media-badge {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
+    bottom: 16px;
+    left: 16px;
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
     background: rgba($color-white, 0.95);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
     border-radius: 999px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     color: $ink;
     z-index: 3;
   }
@@ -440,54 +426,55 @@
 }
 
 // ========================================
-// LOGOS
+// LOGOS STRIP
 // ========================================
 .spx-corp-logos {
-  padding: 60px 0;
+  padding: 40px 0 48px;
   background: $bg;
+  border-top: 1px solid $border;
   border-bottom: 1px solid $border;
 
   &__title {
     text-align: center;
     color: $muted;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 32px;
+    letter-spacing: 0.1em;
+    margin-bottom: 28px;
   }
 
   &__row {
-    display: grid;
+    display: flex;
     gap: 48px;
-    grid-template-columns: repeat(5, 1fr);
     align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
 
     @media (max-width: $bp-md) {
-      grid-template-columns: repeat(3, 1fr);
       gap: 32px;
-    }
-
-    @media (max-width: $bp-sm) {
-      grid-template-columns: repeat(2, 1fr);
     }
   }
 
   &__item {
     filter: grayscale(1);
-    opacity: 0.6;
+    opacity: 0.55;
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
       filter: grayscale(0);
       opacity: 1;
-      transform: translateY(-4px);
+      transform: translateY(-3px);
     }
 
     img {
-      max-width: 120px;
-      width: 100%;
-      margin: 0 auto;
+      max-height: 32px;
+      max-width: 110px;
+      width: auto;
+      object-fit: contain;
     }
   }
 }
@@ -496,6 +483,8 @@
 // OUTCOMES / METRICS
 // ========================================
 .spx-corp-outcomes {
+  padding: 72px 0;
+
   .spx-corp-metric {
     // Tone tokens
     --tone-color: #5187cc;
@@ -514,6 +503,7 @@
       background: linear-gradient(135deg, var(--tone-bg), transparent);
       opacity: 0;
       transition: opacity 0.4s ease;
+      border-radius: inherit;
     }
 
     &:hover::before {
@@ -544,15 +534,15 @@
   }
 
   .spx-corp-metric__icon {
-    width: 52px;
-    height: 52px;
-    margin: 0 auto 14px;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
     display: grid;
     place-items: center;
     color: var(--tone-color);
     background: var(--tone-bg);
-    border-radius: 14px;
-    border: 1px solid color-mix(in srgb, var(--tone-color) 20%, transparent);
+    border-radius: 16px;
+    border: 1px solid color-mix(in srgb, var(--tone-color) 22%, transparent);
 
     svg {
       width: 26px;
@@ -561,37 +551,46 @@
   }
 
   .spx-corp-metric__value {
-    font-size: 36px;
-    font-weight: 800;
+    font-family: $font-heading;
+    font-size: 40px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
     color: $accent-ink;
     margin-bottom: 8px;
+    line-height: 1;
   }
 
   .spx-corp-metric__label {
     color: $muted;
     font-size: 15px;
-    line-height: 1.4;
+    line-height: 1.5;
   }
 }
 
 // ========================================
 // PROGRAMS
 // ========================================
+.spx-corp-programs {
+  padding: 80px 0;
+  background: $bg-soft;
+}
+
 .spx-corp-program {
   overflow: hidden;
   padding: 0;
 
   &:hover {
     .spx-corp-media img {
-      transform: scale(1.1);
+      transform: scale(1.06);
     }
 
     .spx-corp-program__overlay {
-      opacity: 0.4;
+      opacity: 0.35;
     }
   }
 
-  &__media {
+  .spx-corp-media {
+    aspect-ratio: 16 / 10;
     margin-bottom: 0;
     position: relative;
   }
@@ -599,8 +598,8 @@
   &__overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, $accent, $accent-light);
-    opacity: 0.15;
+    background: linear-gradient(135deg, $accent, darken($accent, 10%));
+    opacity: 0.12;
     transition: opacity 0.4s ease;
   }
 
@@ -609,15 +608,22 @@
   }
 
   &__title {
-    font-weight: 700;
-    font-size: 20px;
-    margin: 0 0 16px;
+    font-family: $font-heading;
+    font-weight: 800;
+    font-size: 19px;
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
+    color: $ink;
   }
 }
 
 // ========================================
 // PLANS
 // ========================================
+.spx-corp-plans {
+  padding: 80px 0;
+}
+
 .spx-corp-plan {
   overflow: hidden;
   padding: 0;
@@ -625,14 +631,8 @@
 
   &.is-popular {
     border: 2px solid $accent;
-    box-shadow: 0 8px 32px rgba($accent, 0.2);
-
-    .spx-corp-badge {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      z-index: 2;
-    }
+    box-shadow: 0 12px 40px rgba($accent, 0.18);
+    transform: translateY(-4px);
   }
 
   &:hover {
@@ -641,12 +641,10 @@
     }
   }
 
-  &__media {
-    margin-bottom: 0;
+  .spx-corp-media {
     aspect-ratio: 4 / 3;
-    background: $bg-soft;
+    margin-bottom: 0;
     position: relative;
-    overflow: hidden;
 
     img {
       width: 100%;
@@ -661,16 +659,20 @@
   }
 
   &__title {
-    font-weight: 700;
+    font-family: $font-heading;
+    font-weight: 800;
     font-size: 22px;
-    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+    color: $ink;
   }
 
   &__desc {
     color: $muted;
     padding: 0 24px;
-    margin: 0 0 16px;
+    margin: 0 0 14px;
     line-height: 1.6;
+    font-size: 14px;
   }
 
   .spx-corp-bullets {
@@ -680,38 +682,44 @@
   &__actions {
     display: flex;
     gap: 8px;
-    padding: 24px;
+    padding: 20px 24px;
     border-top: 1px solid $border;
     flex-wrap: wrap;
+    margin-top: 20px;
   }
 }
 
 .spx-corp-badge {
   display: inline-block;
   font-size: 12px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 999px;
-  background: linear-gradient(135deg,
-      rgba($accent, 0.15),
-      rgba($accent-light, 0.15));
+  background: rgba($accent, 0.12);
   color: $accent-ink;
   font-weight: 700;
-  border: 1px solid rgba($accent, 0.3);
+  border: 1px solid rgba($accent, 0.28);
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
 }
 
 // ========================================
 // REPORTING
 // ========================================
 .spx-corp-reporting {
+  padding: 80px 0;
+  background: $bg-soft;
+
   &__inner {
     display: grid;
-    gap: 60px;
+    gap: 64px;
     grid-template-columns: 1fr 1fr;
-    background: linear-gradient(135deg, $bg-soft 0%, $bg-primary 100%);
+    background: $bg;
     border: 1px solid $border;
     border-radius: 24px;
     padding: $space-10;
-    box-shadow: 0 4px 16px rgba(14, 21, 47, 0.08);
+    box-shadow: 0 4px 16px rgba(14, 21, 47, 0.07);
 
     @media (max-width: $bp-md) {
       grid-template-columns: 1fr;
@@ -724,10 +732,19 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+
+    .spx-corp-section-head {
+      text-align: left;
+      margin-bottom: 24px;
+    }
   }
 
   &__media {
     position: relative;
+
+    .spx-corp-media {
+      aspect-ratio: 4 / 3;
+    }
 
     &:hover img {
       transform: scale(1.02);
@@ -752,6 +769,8 @@
 // TESTIMONIALS
 // ========================================
 .spx-corp-testis {
+  padding: 80px 0;
+
   .spx-corp-testi {
     padding: $space-7;
     display: flex;
@@ -766,8 +785,8 @@
   }
 
   .spx-corp-testi__avatar {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid $color-white;
@@ -788,27 +807,29 @@
 
   .spx-corp-testi__quote {
     margin: 0 0 20px;
-    font-size: 17px;
-    line-height: 1.6;
+    font-size: 16px;
+    line-height: 1.65;
     color: $ink;
+    font-style: italic;
   }
 
   .spx-corp-testi__author {
     margin-top: auto;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
   }
 
   .spx-corp-testi__by {
     font-weight: 700;
     color: $ink;
     font-style: normal;
+    font-size: 14px;
   }
 
   .spx-corp-testi__role {
     color: $muted;
-    font-size: 14px;
+    font-size: 13px;
   }
 }
 
@@ -816,12 +837,14 @@
 // RFP FORM
 // ========================================
 .spx-corp-rfp {
+  padding: 80px 0;
+
   &__card {
     background: linear-gradient(135deg, $bg-soft 0%, $bg-primary 100%);
     border: 1px solid $border;
     border-radius: 24px;
     padding: $space-10;
-    box-shadow: 0 4px 16px rgba(14, 21, 47, 0.08);
+    box-shadow: 0 4px 16px rgba(14, 21, 47, 0.07);
 
     @media (max-width: $bp-md) {
       padding: $space-7;
@@ -834,8 +857,8 @@
 
   .spx-corp-form__row {
     display: grid;
-    gap: $space-6;
-    margin-bottom: $space-6;
+    gap: $space-5;
+    margin-bottom: $space-5;
 
     &--2 {
       grid-template-columns: 1fr 1fr;
@@ -870,8 +893,8 @@
 .spx-corp-input,
 .spx-corp-select {
   width: 100%;
-  border: 2px solid $border;
-  border-radius: 10px;
+  border: 1.5px solid $border;
+  border-radius: 12px;
   padding: 12px 16px;
   font: inherit;
   font-size: 15px;
@@ -882,7 +905,7 @@
 
   &:focus {
     border-color: $accent;
-    box-shadow: 0 0 0 3px rgba($accent, 0.15);
+    box-shadow: 0 0 0 3px rgba($accent, 0.14);
   }
 
   &::placeholder {
@@ -911,11 +934,13 @@
     height: 18px;
     cursor: pointer;
     accent-color: $accent;
+    flex-shrink: 0;
   }
 
   span {
     font-size: 14px;
     color: $muted;
+    line-height: 1.5;
   }
 }
 
@@ -947,11 +972,10 @@
 // CTA
 // ========================================
 .spx-corp-cta {
-  padding: 100px 0;
+  padding: 96px 0;
   position: relative;
   overflow: hidden;
   color: $color-white;
-  margin-top: $space-10;
 
   &__background {
     position: absolute;
@@ -962,10 +986,7 @@
   &__gradient {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg,
-        $accent 0%,
-        $accent-ink 50%,
-        #0c4a6e 100%);
+    background: linear-gradient(135deg, $accent 0%, $accent-ink 55%, #0c4a6e 100%);
     background-size: 200% 200%;
     animation: gradient-shift 15s ease infinite;
   }
@@ -979,9 +1000,7 @@
   &__shape {
     position: absolute;
     border-radius: 50%;
-    background: radial-gradient(circle,
-        rgba(255, 255, 255, 0.1),
-        transparent 70%);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent 70%);
 
     &--1 {
       width: 600px;
@@ -1020,20 +1039,25 @@
 
   &__title {
     margin: 0 0 12px;
-    font-size: 36px;
+    font-family: $font-heading;
+    font-size: clamp(28px, 3.5vw, 40px);
     font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
   }
 
   &__subtitle {
     margin: 0;
-    font-size: 18px;
-    opacity: 0.95;
+    font-size: 17px;
+    opacity: 0.88;
+    line-height: 1.6;
   }
 
   &__actions {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+    flex-shrink: 0;
 
     @media (max-width: $bp-md) {
       justify-content: center;
@@ -1043,10 +1067,12 @@
   .spx-corp-btn--primary {
     background: $bg-primary;
     color: $accent;
+    box-shadow: none;
 
     &:hover {
       background: $bg-soft;
-      box-shadow: 0 8px 24px rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 24px rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
     }
   }
 

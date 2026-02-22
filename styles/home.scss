@@ -7,12 +7,24 @@
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(28px);
   }
 
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes expandUnderline {
+  from {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  to {
+    transform: scaleX(1);
+    transform-origin: left;
   }
 }
 
@@ -50,8 +62,6 @@
   }
 }
 
-
-
 @keyframes marquee {
   from {
     transform: translateX(0);
@@ -61,6 +71,65 @@
     transform: translateX(-50%); // Move half the width (since we have 2 sets)
   }
 }
+
+// Scroll-triggered entrance keyframes
+@keyframes revealUp {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes revealLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes revealRight {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// ── Observe utility classes (toggled by IntersectionObserver)
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(36px);
+  transition: opacity 0.65s $expo-out, transform 0.65s $expo-out;
+  transition-delay: calc(var(--reveal-delay, 0) * 1ms);
+
+  &.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+[data-reveal="left"] {
+  transform: translateX(-28px);
+}
+
+[data-reveal="right"] {
+  transform: translateX(28px);
+}
+
 
 // ========================================
 // UTILITIES
@@ -86,19 +155,21 @@
 
 .home-section-title {
   font-family: $font-heading;
-  font-size: clamp(32px, 4vw, 48px);
-  font-weight: 700;
-  margin: 0 0 12px;
-  color: $ink;
-  letter-spacing: -0.02em;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 800;
+  margin: 0 0 14px;
+  color: $navy;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
 }
 
 .home-section-subtitle {
   font-size: 18px;
   color: $muted;
   margin: 0;
-  max-width: 600px;
+  max-width: 640px;
   margin: 0 auto;
+  line-height: 1.65;
 }
 
 // ========================================
@@ -124,25 +195,27 @@
   }
 
   &--primary {
-    background: linear-gradient(135deg, $brand 0%, $brand-ink 100%);
+    background: $coral;
     color: $color-white;
-    box-shadow: 0 4px 12px rgba($brand, 0.3);
+    box-shadow: 0 4px 12px rgba($coral, 0.3);
 
     &:hover {
-      box-shadow: 0 6px 20px rgba($brand, 0.4);
-      transform: translateY(-2px);
+      background: $coral-dark;
+      box-shadow: 0 8px 24px rgba($coral, 0.4);
+      transform: translateY(-3px);
       text-decoration: none;
     }
   }
 
   &--ghost {
     background: transparent;
-    border: 2px solid $brand;
-    color: $brand;
+    border: 2px solid $navy;
+    color: $navy;
 
     &:hover {
-      background: rgba($brand, 0.1);
-      border-color: $brand-ink;
+      background: rgba($navy, 0.06);
+      border-color: $navy-mid;
+      transform: translateY(-3px);
       text-decoration: none;
     }
   }
@@ -211,19 +284,19 @@
   &__gradient {
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse 80% 50% at 50% -20%,
-        rgba($brand, 0.15),
-        transparent 50%),
+    background:
+      radial-gradient(ellipse 80% 60% at 0% 40%, rgba($coral, 0.12) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 100% 20%, rgba($navy, 0.06) 0%, transparent 50%),
       linear-gradient(180deg, $bg-soft 0%, $bg-primary 100%);
   }
 
   &__grid-pattern {
     position: absolute;
     inset: 0;
-    background-image: linear-gradient(rgba($brand, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba($brand, 0.03) 1px, transparent 1px);
-    background-size: 50px 50px;
-    mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 49px, rgba($navy, 0.04) 49px, rgba($navy, 0.04) 50px),
+      repeating-linear-gradient(90deg, transparent, transparent 49px, rgba($navy, 0.04) 49px, rgba($navy, 0.04) 50px);
+    mask-image: linear-gradient(to bottom, black 0%, transparent 80%);
   }
 
   &__grid {
@@ -244,16 +317,15 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
-    background: linear-gradient(135deg,
-        rgba($brand, 0.1),
-        rgba($brand-light, 0.1));
-    border: 1px solid rgba($brand, 0.2);
+    padding: 7px 14px;
+    background: $coral-pale;
+    border: 1px solid rgba($coral, 0.25);
     border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
-    color: $brand-ink;
-    margin-bottom: 24px;
+    font-size: 12px;
+    font-weight: 700;
+    color: $coral-dark;
+    margin-bottom: 28px;
+    letter-spacing: 0.02em;
   }
 
   &__badge-icon {
@@ -261,26 +333,33 @@
   }
 
   &__title {
-    font-family: $font-heading; // Outift
-    font-size: clamp(48px, 6vw, 80px); // Bigger, bolder
-    line-height: 1.05;
-    letter-spacing: -0.03em; // Tighter tracking for "Pro" look
+    font-family: $font-heading;
+    font-size: clamp(52px, 6.5vw, 88px);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
     margin: 0 0 24px;
-    font-weight: 800;
-    color: $ink;
-    animation: fadeInUp 0.8s ease 0.1s backwards;
-    max-width: 1400px;
+    font-weight: 900;
+    color: $navy;
+    animation: fadeInUp 0.7s ease 0.2s backwards;
   }
 
   &__title-accent {
-    color: $brand; // Just the color
+    color: $coral;
     display: inline-block;
-    background: none;
-    -webkit-text-fill-color: $brand;
+    -webkit-text-fill-color: $coral;
     position: relative;
 
-    // Optional: Add a subtle "period" style if we change text structure later
-    // For now, it makes the accented word purely Electric Blue.
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -3px;
+      height: 4px;
+      background: linear-gradient(90deg, $coral, $coral-light);
+      border-radius: 4px;
+      animation: expandUnderline 0.6s 0.9s both;
+    }
   }
 
   &__sub {
@@ -320,14 +399,19 @@
 
   &__stat {
     &-num {
-      font-size: 32px;
+      font-family: $font-heading;
+      font-size: 30px;
       font-weight: 800;
-      color: $brand-ink;
+      color: $navy;
       margin-bottom: 4px;
+
+      span {
+        color: $coral;
+      }
     }
 
     &-label {
-      font-size: 14px;
+      font-size: 13px;
       color: $muted;
     }
   }
@@ -587,7 +671,223 @@
   }
 }
 
-// ── Card ────────────────────────────────────────────────────────────────────
+// ── Bento Grid —————————————————————————————————————————————————————————————
+.home-bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+
+  // Base card
+  &__card {
+    background: $color-white;
+    border: 1px solid #EDE5D8;
+    border-radius: 20px;
+    padding: 36px 32px;
+    position: relative;
+    overflow: hidden;
+    transition:
+      transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.3s ease;
+
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 48px rgba($navy, 0.10);
+    }
+
+    // Column spans
+    &--wide {
+      grid-column: span 7;
+
+      @media (max-width: 900px) {
+        grid-column: span 1;
+      }
+    }
+
+    &--narrow {
+      grid-column: span 5;
+
+      @media (max-width: 900px) {
+        grid-column: span 1;
+      }
+    }
+
+    &--third {
+      grid-column: span 4;
+
+      @media (max-width: 900px) {
+        grid-column: span 1;
+      }
+    }
+
+    // Tone top border
+    &--coral {
+      border-top: 3px solid $coral;
+    }
+
+    &--teal {
+      border-top: 3px solid #10b981;
+    }
+
+    &--amber {
+      border-top: 3px solid #f59e0b;
+    }
+
+    &--indigo {
+      border-top: 3px solid #6366f1;
+    }
+
+    &--navy {
+      border-top: 3px solid $navy;
+    }
+  }
+
+  // Wide card inner layout
+  &__wide-inner {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+
+    @media (max-width: 680px) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  &__wide-copy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  // Small label above card title
+  &__tag {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: $muted;
+    margin-bottom: 20px;
+  }
+
+  // Icon box
+  &__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+
+    &--coral {
+      background: rgba($coral, 0.10);
+      color: $coral;
+    }
+
+    &--teal {
+      background: rgba(16, 185, 129, 0.10);
+      color: #059669;
+    }
+
+    &--amber {
+      background: rgba(245, 158, 11, 0.10);
+      color: #d97706;
+    }
+
+    &--indigo {
+      background: rgba(99, 102, 241, 0.10);
+      color: #6366f1;
+    }
+
+    &--navy {
+      background: rgba($navy, 0.08);
+      color: $navy;
+    }
+  }
+
+  &__title {
+    font-family: $font-heading;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+    color: $navy;
+  }
+
+  &__text {
+    font-size: 15px;
+    color: $muted;
+    line-height: 1.65;
+  }
+
+  // Scenario chips panel (right side of wide card)
+  &__chips {
+    flex: 0 0 180px;
+    background: rgba($coral, 0.06);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    @media (max-width: 680px) {
+      flex: 1 1 auto;
+      width: 100%;
+    }
+  }
+
+  &__chip {
+    background: $color-white;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: $navy;
+    border-left: 3px solid $coral;
+    line-height: 1.4;
+  }
+
+  // Big stat number (narrow card)
+  &__stat {
+    font-family: $font-heading;
+    font-size: clamp(52px, 6vw, 72px);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: $coral;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  // Mini bar chart (narrow card)
+  &__minichart {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 48px;
+    margin-top: 24px;
+  }
+
+  &__bar {
+    flex: 1;
+    border-radius: 4px 4px 0 0;
+    background: darken($bg-soft, 4%);
+    transition: background 0.3s;
+
+    &--active {
+      background: $coral;
+    }
+
+    .home-bento__card:hover &:not(.home-bento__bar--active) {
+      background: rgba($coral, 0.15);
+    }
+  }
+}
+
+// ── Card ————————————————————————————————————————————————————————————————————
 .home-feature {
   // Tone tokens
   --tone-hue: 0;
@@ -785,66 +1085,118 @@
 }
 
 // ========================================
-// HOW IT WORKS
+// HOW IT WORKS — STICKY SCROLL TRACKER
 // ========================================
 .home-spx-how {
-  padding: 100px 0;
+  padding: 100px 0 60px;
   background: linear-gradient(180deg, $bg-primary 0%, $bg-soft 100%);
   position: relative;
 
-  &__grid {
+  // Two-col layout: [sticky rail] + [steps]
+  &__inner {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
-    position: relative;
+    grid-template-columns: 72px 1fr;
+    gap: 0 48px;
+    align-items: start;
+    margin-top: 64px;
 
     @media (max-width: 900px) {
       grid-template-columns: 1fr;
     }
+  }
 
-    &::before {
-      content: "";
-      position: absolute;
-      top: 90px;
-      left: 16.666%;
-      right: 16.666%;
-      height: 2px;
-      background: linear-gradient(90deg,
-          $brand 0%,
-          $brand-light 50%,
-          $brand 100%);
-      z-index: 0;
+  // ── Sticky side rail ───────────────────
+  &__rail {
+    position: sticky;
+    top: 40vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
 
-      @media (max-width: 900px) {
-        display: none;
-      }
+    @media (max-width: 900px) {
+      display: none;
+    }
+  }
+
+  &__rail-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid $ring;
+    background: $bg-primary;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 13px;
+    color: $muted;
+    flex-shrink: 0;
+    transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    z-index: 2;
+
+    &.is-active {
+      background: $coral;
+      border-color: $coral;
+      color: #fff;
+      transform: scale(1.2);
+      box-shadow: 0 0 0 6px rgba($coral, 0.18);
+    }
+
+    &.is-done {
+      background: rgba($coral, 0.12);
+      border-color: $coral;
+      color: $coral;
+    }
+  }
+
+  &__rail-line {
+    width: 2px;
+    height: 72px;
+    background: linear-gradient(180deg, $ring 0%, rgba($ring, 0.4) 100%);
+    flex-shrink: 0;
+    transition: background 0.4s ease;
+
+    &.is-active {
+      background: linear-gradient(180deg, $coral 0%, rgba($coral, 0.3) 100%);
+    }
+  }
+
+  // ── Step list ─────────────────────────
+  &__steps {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__step {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    padding: 60px 0;
+
+    @media (max-width: 900px) {
+      min-height: auto;
+      padding: 40px 0;
     }
   }
 
   &__card {
     background: $card-bg;
     border: 1px solid $ring;
-    border-radius: 20px;
+    border-radius: 24px;
     overflow: hidden;
     display: grid;
-    grid-template-rows: auto 1fr;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    z-index: 1;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    width: 100%;
+    transition: box-shadow 0.4s ease, border-color 0.4s ease;
 
-    &:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba($brand, 0.2);
-      border-color: rgba($brand, 0.4);
+    &.is-active {
+      box-shadow: 0 20px 60px rgba($coral, 0.14);
+      border-color: rgba($coral, 0.3);
+    }
 
-      .home-spx-how__media img {
-        transform: scale(1.05);
-      }
-
-      .home-spx-how__badge {
-        transform: scale(1.1);
-        background: linear-gradient(135deg, $brand, $brand-light);
-      }
+    @media (max-width: 700px) {
+      grid-template-columns: 1fr;
     }
   }
 
@@ -855,7 +1207,8 @@
     img {
       display: block;
       width: 100%;
-      height: 220px;
+      height: 100%;
+      min-height: 280px;
       object-fit: cover;
       transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -865,40 +1218,437 @@
     position: absolute;
     left: 20px;
     top: 20px;
-    background: rgba($ink, 0.9);
+    background: rgba($navy, 0.9);
     backdrop-filter: blur(10px);
     color: $color-white;
     font-weight: 800;
-    font-size: 16px;
-    padding: 8px 16px;
+    font-size: 15px;
+    padding: 8px 18px;
     border-radius: 999px;
-    transition: all 0.4s ease;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: background 0.3s ease;
+
+    .is-active & {
+      background: $coral;
+    }
   }
 
   &__body {
-    padding: 24px;
+    padding: 40px 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
 
     h3 {
-      margin: 0 0 12px;
-      font-size: 22px;
-      font-weight: 700;
+      margin: 0;
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: $navy;
+      line-height: 1.15;
     }
 
     p {
       margin: 0;
       color: $muted;
-      line-height: 1.6;
+      line-height: 1.65;
+      font-size: 16px;
     }
+  }
+
+  &__step-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $coral;
   }
 
   &__cta {
     text-align: center;
-    margin-top: 48px;
+    margin-top: 64px;
     display: flex;
     gap: 12px;
     justify-content: center;
     flex-wrap: wrap;
+  }
+}
+
+// ========================================
+// PRODUCT DEMO
+// ========================================
+.home-demo {
+  padding: 120px 0;
+  background: $bg-soft;
+  overflow: hidden;
+
+  &__inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+      gap: 48px;
+    }
+  }
+
+  // Left copy
+  &__copy {
+    h2 {
+      font-family: $font-heading;
+      font-size: clamp(32px, 4vw, 50px);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: $navy;
+      line-height: 1.1;
+      margin: 0 0 20px;
+    }
+
+    p {
+      color: $muted;
+      font-size: 17px;
+      line-height: 1.65;
+      margin: 0 0 36px;
+    }
+  }
+
+  &__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: $coral;
+    margin-bottom: 16px;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 2px;
+      background: $coral;
+      border-radius: 2px;
+    }
+  }
+
+  &__features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    font-size: 16px;
+    color: $ink;
+    line-height: 1.5;
+
+    &-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: $coral;
+      margin-top: 6px;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 4px rgba($coral, 0.15);
+    }
+  }
+
+  // Right phone mockup
+  &__phone-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+
+    // Soft glow behind phone
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -40px;
+      background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba($coral, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+  }
+
+  &__phone {
+    width: 280px;
+    height: 560px;
+    border: 8px solid $navy;
+    border-radius: 44px;
+    background: $navy;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 32px 80px rgba($navy, 0.35),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+    // Notch
+    &::before {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 20px;
+      background: $navy;
+      border-radius: 0 0 16px 16px;
+      z-index: 10;
+    }
+  }
+
+  &__screen {
+    width: 100%;
+    height: 100%;
+    background: darken($navy, 5%);
+    display: flex;
+    flex-direction: column;
+    padding: 48px 20px 20px;
+    gap: 16px;
+  }
+
+  // Coach card inside phone
+  &__coach-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__coach-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $coral 0%, $coral-dark 100%);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 16px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  &__coach-info {
+    flex: 1;
+
+    strong {
+      display: block;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    span {
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 12px;
+    }
+  }
+
+  &__live-badge {
+    background: $coral;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    padding: 4px 8px;
+    border-radius: 999px;
+    animation: pulse-ring 1.5s ease infinite;
+  }
+
+  // Waveform
+  &__waveform {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    flex: 1;
+  }
+
+  &__bar {
+    width: 5px;
+    border-radius: 4px;
+    background: $coral;
+    animation: waveBar 1.4s ease-in-out infinite;
+    opacity: 0.85;
+
+    @for $i from 1 through 12 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{($i - 1) * 0.11}s;
+        height: #{10 + random(40)}px;
+      }
+    }
+  }
+
+  // Floating badges on phone
+  &__float {
+    position: absolute;
+
+    &--1 {
+      top: 20%;
+      right: -30px;
+    }
+
+    &--2 {
+      bottom: 30%;
+      left: -30px;
+    }
+  }
+}
+
+@keyframes waveBar {
+
+  0%,
+  100% {
+    transform: scaleY(0.3);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+// ========================================
+// COMPARISON TABLE
+// ========================================
+.home-compare {
+  padding: 120px 0;
+  background: $navy;
+  position: relative;
+  overflow: hidden;
+
+  // Soft glow top
+  &::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -80px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba($coral, 0.07) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .home-section-title {
+    color: #fff;
+  }
+
+  .home-section-subtitle {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .home-features__eyebrow {
+    color: $coral;
+  }
+
+  .home-features__eyebrow::before {
+    background: $coral;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 56px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  &__head-row {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &__th {
+    padding: 20px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+    &--speexify {
+      color: $coral;
+      border-bottom-color: rgba($coral, 0.25);
+      background: rgba($coral, 0.07);
+      border-top-color: $coral;
+    }
+  }
+
+  &__row {
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.028);
+    }
+
+    &:not(:last-child) td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  &__td {
+    padding: 18px 28px;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 15px;
+    vertical-align: middle;
+
+    &--feature {
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 600;
+    }
+
+    &--speexify {
+      background: rgba($coral, 0.05);
+      border-left: 2px solid rgba($coral, 0.35);
+      border-right: 2px solid rgba($coral, 0.35);
+      color: #fff;
+    }
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 15px;
+    font-weight: 600;
+
+    &--yes {
+      color: #5dd97c;
+    }
+
+    &--no {
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    &--partial {
+      color: #f5c542;
+    }
   }
 }
 
@@ -1007,17 +1757,50 @@
 }
 
 // ========================================
-// COACHES
+// COACHES — DARK NAVY SECTION
 // ========================================
 .home-spx-coaches {
   padding: 100px 0;
-  background: $surface;
-  border-top: 1px solid $ring;
+  background: $navy;
+  border-top: none;
+  position: relative;
+  overflow: hidden;
+
+  // Subtle coral glow top-left
+  &::before {
+    content: '';
+    position: absolute;
+    top: -120px;
+    left: -80px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba($coral, 0.08) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  // Section header text on dark bg
+  .home-section-title {
+    color: #ffffff !important;
+  }
+
+  .home-section-subtitle {
+    color: rgba(255, 255, 255, 0.55) !important;
+  }
+
+  .home-features__eyebrow {
+    color: $coral !important;
+  }
+
+  .home-features__eyebrow::before {
+    background: $coral !important;
+  }
 
   &__grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
+    gap: 28px;
+    position: relative;
+    z-index: 1;
 
     @media (max-width: 900px) {
       grid-template-columns: 1fr;
@@ -1025,10 +1808,10 @@
   }
 
   &__card {
-    background: $card-bg;
-    border: 1px solid $ring;
+    background: $navy-mid;
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 20px;
-    padding: 32px;
+    padding: 36px 32px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1036,11 +1819,12 @@
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
     &:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba($brand, 0.15);
-      border-color: rgba($brand, 0.3);
+      transform: translateY(-6px);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba($coral, 0.15);
+      background: $navy-muted;
 
       .home-spx-coaches__avatar-ring {
+        opacity: 1;
         animation: pulse-ring 1.5s ease-out infinite;
       }
 
@@ -1060,48 +1844,55 @@
     height: 100px;
     border-radius: 50%;
     object-fit: cover;
-    border: 4px solid $color-white;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     transition: transform 0.4s ease;
     position: relative;
     z-index: 1;
+    background: $navy-muted;
   }
 
   &__avatar-ring {
     position: absolute;
-    inset: -4px;
+    inset: -5px;
     border-radius: 50%;
-    border: 3px solid $brand;
+    border: 2px solid $coral;
     opacity: 0;
+    transition: opacity 0.3s ease;
   }
 
   &__info {
     h3 {
-      margin: 0 0 8px;
+      margin: 0 0 6px;
       font-size: 20px;
       font-weight: 700;
+      color: #ffffff;
     }
   }
 
   &__role {
-    margin: 0 0 12px;
-    font-size: 15px;
-    color: $brand;
+    margin: 0 0 14px;
+    font-size: 14px;
+    color: $coral;
     font-weight: 600;
+    letter-spacing: 0.01em;
   }
 
   &__bio {
     margin: 0;
-    color: $muted;
-    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.65;
+    font-size: 15px;
   }
 
   &__note {
     text-align: center;
-    color: $muted;
+    color: rgba(255, 255, 255, 0.35);
     margin: 48px 0 0;
     font-size: 15px;
     font-style: italic;
+    position: relative;
+    z-index: 1;
   }
 }
 
@@ -1131,15 +1922,12 @@
 
     &:hover {
       transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba($brand, 0.15);
-      border-color: rgba($brand, 0.3);
+      box-shadow: 0 20px 40px rgba($coral, 0.15);
+      border-color: rgba($coral, 0.3);
       background: $bg-primary;
 
       .home-spx-cases__metric-num {
-        background: linear-gradient(135deg, $brand 0%, $brand-light 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: $coral;
       }
     }
   }
@@ -1204,19 +1992,117 @@
 }
 
 // ========================================
-// TESTIMONIALS
+// TESTIMONIALS — SCROLL SNAP CAROUSEL
 // ========================================
 .home-testimonials {
   padding: 100px 0;
   background: linear-gradient(180deg, $bg-primary 0%, $bg-soft 100%);
+  overflow: hidden;
 
-  &__grid {
+  // Header row: title left, arrows right
+  &__header-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 48px;
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+    }
+  }
+
+  &__header {
+    flex: 1;
+    text-align: left;
+    margin-bottom: 0;
+
+    .home-section-title {
+      text-align: left;
+    }
+
+    .home-section-subtitle {
+      text-align: left;
+      margin: 0;
+    }
+  }
+
+  // Arrow button pair
+  &__arrows {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  &__arrow {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid $navy;
+    background: transparent;
+    color: $navy;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
+    place-items: center;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
 
-    @media (max-width: 900px) {
-      grid-template-columns: 1fr;
+    svg {
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      background: $coral;
+      border-color: $coral;
+      color: #fff;
+      transform: scale(1.1);
+    }
+
+    &:active {
+      transform: scale(0.96);
+    }
+  }
+
+  // The scrollable track
+  &__track {
+    display: flex;
+    gap: 24px;
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px; // room for scrollbar on some OS
+
+    // Hide scrollbar cross-browser
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  // Dot indicators
+  &__dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 32px;
+  }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: $ring;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.25s ease, transform 0.2s ease;
+
+    &--active,
+    &:hover {
+      background: $coral;
+      transform: scale(1.3);
     }
   }
 }
@@ -1230,10 +2116,15 @@
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   position: relative;
 
+  // Carousel card sizing
+  min-width: min(380px, 85vw);
+  scroll-snap-align: start;
+  flex-shrink: 0;
+
   &:hover {
     transform: translateY(-6px);
-    box-shadow: 0 16px 36px rgba($brand, 0.10);
-    border-color: rgba($brand, 0.25);
+    box-shadow: 0 16px 36px rgba($coral, 0.12);
+    border-color: rgba($coral, 0.25);
   }
 
   &__top {
@@ -1257,7 +2148,7 @@
   }
 
   &__mark {
-    color: $brand;
+    color: $coral;
     flex-shrink: 0;
   }
 
@@ -1443,8 +2334,8 @@
     }
 
     &:focus {
-      border-color: $brand;
-      box-shadow: 0 0 0 3px rgba($brand, 0.15);
+      border-color: $coral;
+      box-shadow: 0 0 0 3px rgba($coral, 0.15);
     }
 
     &::placeholder {
@@ -1472,11 +2363,9 @@
     position: absolute;
     inset: 0;
     background: linear-gradient(135deg,
-        $brand 0%,
-        $brand-ink 50%,
-        #0c4a6e 100%);
-    background-size: 200% 200%;
-    animation: gradient-shift 15s ease infinite;
+        $coral 0%,
+        $coral-dark 60%,
+        darken($coral-dark, 10%) 100%);
   }
 
   &__shapes {
@@ -1510,59 +2399,64 @@
   }
 
   &__inner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 40px;
     position: relative;
     z-index: 1;
-
-    @media (max-width: 820px) {
-      flex-direction: column;
-      text-align: center;
-    }
+    max-width: 680px;
+    margin: 0 auto;
+    text-align: center;
   }
 
-  &__content {
-    max-width: 600px;
-  }
 
   &__title {
-    margin: 0 0 12px;
-    font-size: 36px;
+    font-family: $font-heading;
+    font-size: clamp(36px, 5vw, 56px);
     font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0 0 16px;
   }
 
   &__sub {
-    margin: 0;
-    opacity: 0.95;
-    font-size: 18px;
+    font-size: 19px;
+    opacity: 0.9;
+    margin: 0 0 36px;
     line-height: 1.6;
   }
 
   &__actions {
     display: flex;
-    gap: 12px;
+    gap: 14px;
     flex-wrap: wrap;
-
-    @media (max-width: 820px) {
-      justify-content: center;
-    }
+    justify-content: center;
   }
 
   .home-btn--primary {
-    background: $bg-primary;
-    color: $brand;
+    background: #ffffff;
+    color: $coral;
+    font-weight: 700;
+    box-shadow: 0 12px 40px rgba(13, 27, 42, 0.2);
 
     &:hover {
       background: $bg-soft;
-      box-shadow: 0 8px 24px rgba(255, 255, 255, 0.3);
+      transform: translateY(-3px);
+      box-shadow: 0 20px 48px rgba(13, 27, 42, 0.25);
     }
   }
 
-  .home-btn--ghost {
+  // Outlined white ghost button (for use on coral bg)
+  .home-btn--ghost-white {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.25s ease;
+    background: transparent;
     color: $color-white;
-    border-color: rgba(255, 255, 255, 0.5);
+    border: 1.5px solid rgba(255, 255, 255, 0.55);
 
     &:hover {
       background: rgba(255, 255, 255, 0.15);

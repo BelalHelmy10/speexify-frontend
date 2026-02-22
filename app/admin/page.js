@@ -558,10 +558,12 @@ function Admin() {
     }
   }
   useEffect(() => {
+    if (checking) return;
     loadUsersAdmin();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [checking, isAdmin]);
   useEffect(() => {
+    if (checking || !isAdmin) return;
     const t = setTimeout(loadUsersAdmin, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps

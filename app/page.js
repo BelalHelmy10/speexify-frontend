@@ -1,7 +1,7 @@
 // app/page.js
 "use client";
 
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useAuth from "@/hooks/useAuth";
@@ -32,11 +32,37 @@ export default function Page({ locale = "en" }) {
 }
 
 /* ============================
+   Scroll reveal observer hook
+   ============================ */
+function useSectionObserver() {
+  useEffect(() => {
+    const els = document.querySelectorAll("[data-reveal]");
+    if (!els.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    );
+
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+}
+
+/* ============================
    Home
    ============================ */
 function Home({ locale = "en" }) {
   const dict = getDictionary(locale, "home");
   const prefix = locale === "ar" ? "/ar" : "";
+  useSectionObserver();
 
   return (
     <div className="home-home">
@@ -187,66 +213,7 @@ function Home({ locale = "en" }) {
       <FeaturesSection dict={dict} />
 
       {/* ===== HOW IT WORKS ===== */}
-      <section className="home-spx-how">
-        <div className="home-container">
-          <div className="home-section-header">
-            <FadeIn as="h2" className="home-section-title">{t(dict, "how_title")}</FadeIn>
-            <FadeIn as="p" className="home-section-subtitle" delay={0.1}>{t(dict, "how_subtitle")}</FadeIn>
-          </div>
-
-          <div className="home-spx-how__grid">
-            <HowStep
-              step="01"
-              title={t(dict, "how_step1_title")}
-              text={t(dict, "how_step1_text")}
-              img="/images/how-step1.png"
-            />
-            <HowStep
-              step="02"
-              title={t(dict, "how_step2_title")}
-              text={t(dict, "how_step2_text")}
-              img="/images/how-step2.png"
-            />
-            <HowStep
-              step="03"
-              title={t(dict, "how_step3_title")}
-              text={t(dict, "how_step3_text")}
-              img="/images/how-step3.png"
-            />
-          </div>
-
-          <div className="home-spx-how__cta">
-            <Link
-              className="home-btn home-btn--primary home-btn--shine"
-              href={`${prefix}/register`}
-            >
-              <span>{t(dict, "how_cta_primary")}</span>
-              <svg
-                className="home-btn__arrow"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 3L11 8L6 13"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </Link>
-            <Link
-              className="home-btn home-btn--ghost"
-              href={`${prefix}/contact`}
-            >
-              {t(dict, "how_cta_secondary")}
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HowItWorksSection dict={dict} prefix={prefix} />
 
       {/* ===== CURRICULUM ===== */}
       <section className="home-spx-curriculum">
@@ -294,13 +261,17 @@ function Home({ locale = "en" }) {
         </div>
       </section>
 
+      {/* ===== PRODUCT DEMO ===== */}
+      <ProductDemoSection />
+
       {/* ===== COACHES ===== */}
       <section className="home-spx-coaches">
         <div className="home-container">
           <div className="home-section-header">
-            <h2 className="home-section-title">{t(dict, "coaches_title")}</h2>
+            <span className="home-spx-coaches__label">The Coaches</span>
+            <h2 className="home-section-title">Meet your coaches</h2>
             <p className="home-section-subtitle">
-              {t(dict, "coaches_subtitle")}
+              Every coach is handpicked — native or bilingual, professionally trained, and relentlessly focused on your growth.
             </p>
           </div>
 
@@ -310,24 +281,30 @@ function Home({ locale = "en" }) {
               role={t(dict, "coach1_role")}
               bio={t(dict, "coach1_bio")}
               img="/images/Billy.jpeg"
+              index={0}
             />
             <CoachCard
               name={t(dict, "coach2_name")}
               role={t(dict, "coach2_role")}
               bio={t(dict, "coach2_bio")}
               img="/images/ZiadAnwer.jpeg"
+              index={1}
             />
             <CoachCard
               name={t(dict, "coach3_name")}
               role={t(dict, "coach3_role")}
               bio={t(dict, "coach3_bio")}
               img="/images/Lina.avif"
+              index={2}
             />
           </div>
 
           <p className="home-spx-coaches__note">{t(dict, "coaches_note")}</p>
         </div>
       </section>
+
+      {/* ===== COMPARISON TABLE ===== */}
+      <ComparisonSection />
 
       {/* ===== CASE STUDIES ===== */}
       <section className="home-spx-cases">
@@ -364,30 +341,8 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== TESTIMONIALS ===== */}
-      <section className="home-testimonials">
-        <div className="home-container">
-          <div className="home-testimonials__grid">
-            <Quote
-              quote={t(dict, "testi1_quote")}
-              author={t(dict, "testi1_author")}
-              role={t(dict, "testi1_role")}
-              rating={5}
-            />
-            <Quote
-              quote={t(dict, "testi2_quote")}
-              author={t(dict, "testi2_author")}
-              role={t(dict, "testi2_role")}
-              rating={5}
-            />
-            <Quote
-              quote={t(dict, "testi3_quote")}
-              author={t(dict, "testi3_author")}
-              role={t(dict, "testi3_role")}
-              rating={5}
-            />
-          </div>
-        </div>
-      </section>
+      <TestimonialsCarousel dict={dict} />
+
 
       {/* ===== FAQ ===== */}
       <section className="home-spx-faq">
@@ -454,19 +409,18 @@ function Home({ locale = "en" }) {
           </div>
         </div>
 
-        <div className="home-container home-cta__inner">
-          <div className="home-cta__content">
-            <h3 className="home-cta__title">{t(dict, "cta_title")}</h3>
-            <p className="home-cta__sub">{t(dict, "cta_sub")}</p>
-          </div>
+        <div className="home-cta__inner">
+          <h2 className="home-cta__title">Ready to speak with confidence?</h2>
+          <p className="home-cta__sub">
+            Join hundreds of professionals who have transformed how they communicate — in boardrooms, on calls, and on global stages.
+          </p>
           <div className="home-cta__actions">
             <Link
-              className="home-btn home-btn--primary home-btn--lg home-btn--shine"
+              className="home-btn home-btn--primary home-btn--lg"
               href={`${prefix}/register`}
             >
-              <span>{t(dict, "cta_primary")}</span>
+              <span>Start free today</span>
               <svg
-                className="home-btn__arrow"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
@@ -483,10 +437,10 @@ function Home({ locale = "en" }) {
               </svg>
             </Link>
             <Link
-              className="home-btn home-btn--ghost home-btn--lg"
+              className="home-btn home-btn--ghost-white home-btn--lg"
               href={`${prefix}/contact`}
             >
-              {t(dict, "cta_secondary")}
+              Talk to us first
             </Link>
           </div>
         </div>
@@ -498,76 +452,134 @@ function Home({ locale = "en" }) {
 /* ========== Local UI bits ========== */
 
 function FeaturesSection({ dict }) {
-  const gridRef = useRef(null);
+  const scenarios = [
+    "Try explaining a complex idea.",
+    "Disagree politely in a meeting.",
+    "Tell a story under pressure.",
+  ];
 
-  useEffect(() => {
-    const cards = gridRef.current?.querySelectorAll(".home-feature");
-    if (!cards) return;
+  const bars = [
+    { h: "30%", active: false },
+    { h: "40%", active: false },
+    { h: "35%", active: false },
+    { h: "55%", active: true },
+    { h: "70%", active: true },
+    { h: "85%", active: true },
+    { h: "100%", active: true },
+  ];
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("home-feature--visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    cards.forEach((card) => observer.observe(card));
-    return () => observer.disconnect();
-  }, []);
+  const smallCards = [
+    {
+      num: "02",
+      tone: "amber",
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M9 3.5h8v7a4 4 0 0 1-8 0v-7Z" />
+          <path d="M9 6.5H6a2.5 2.5 0 0 0 0 5h3M17 6.5h3a2.5 2.5 0 0 1 0 5h-3" />
+          <path d="M13 14.5v4M9.5 18.5h7" />
+        </svg>
+      ),
+      title: t(dict, "feature2_title") || "Outcome-obsessed",
+      text: t(dict, "feature2_text") || "Every session has a clear goal. Every coach measures your progress against real communication benchmarks.",
+    },
+    {
+      num: "03",
+      tone: "indigo",
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3.5" y="5" width="19" height="17" rx="2.5" />
+          <path d="M3.5 10h19M9 3.5v3M17 3.5v3" />
+          <path d="M9.5 15l2.5 2.5 5-5" />
+        </svg>
+      ),
+      title: t(dict, "feature3_title") || "Flexible & measurable",
+      text: t(dict, "feature3_text") || "Book sessions around your life. Get a progress report after every coaching block.",
+    },
+    {
+      num: "04",
+      tone: "navy",
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M14 3.5L6 14.5h7l-1 8 8-11h-7l2-8Z" />
+        </svg>
+      ),
+      title: t(dict, "feature4_title") || "Built for you",
+      text: t(dict, "feature4_text") || "Your curriculum adapts to your industry, goals, and gaps — not a generic syllabus.",
+    },
+  ];
 
   return (
     <section className="home-features">
       <div className="home-container">
         <div className="home-section-header home-features__header">
-          <span className="home-features__eyebrow" aria-hidden="true">
-            Why Speexify
-          </span>
+          <span className="home-features__eyebrow" aria-hidden="true">Why Speexify</span>
           <FadeIn as="h2" className="home-section-title home-features__title">
-            {t(dict, "features_title")}
+            {t(dict, "features_title") || <>Everything you need<br />to speak with power</>}
           </FadeIn>
-          <FadeIn
-            as="p"
-            className="home-section-subtitle home-features__subtitle"
-            delay={0.1}
-          >
-            {t(dict, "features_subtitle")}
+          <FadeIn as="p" className="home-section-subtitle home-features__subtitle" delay={0.1}>
+            {t(dict, "features_subtitle") || "Not a language app. A real-world communication system built around how confident professionals actually speak."}
           </FadeIn>
         </div>
 
-        <div className="home-features__grid" ref={gridRef}>
-          <Feature
-            index={0}
-            icon="chat"
-            tone="orange"
-            title={t(dict, "feature1_title")}
-            text={t(dict, "feature1_text")}
-          />
-          <Feature
-            index={1}
-            icon="trophy"
-            tone="blue"
-            title={t(dict, "feature2_title")}
-            text={t(dict, "feature2_text")}
-          />
-          <Feature
-            index={2}
-            icon="calendar"
-            tone="yellow"
-            title={t(dict, "feature3_title")}
-            text={t(dict, "feature3_text")}
-          />
-          <Feature
-            index={3}
-            icon="bolt"
-            tone="teal"
-            title={t(dict, "feature4_title")}
-            text={t(dict, "feature4_text")}
-          />
+        {/* ── Bento grid ── */}
+        <div className="home-bento">
+
+          {/* Wide hero card */}
+          <div className="home-bento__card home-bento__card--wide home-bento__card--coral" data-reveal>
+            <div className="home-bento__wide-inner">
+              <div className="home-bento__wide-copy">
+                <span className="home-bento__tag">01 — Core feature</span>
+                <div className="home-bento__icon home-bento__icon--coral" aria-hidden="true">
+                  <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M4 5.5C4 4.4 4.9 3.5 6 3.5h14c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2h-7l-5 3.5V16.5H6c-1.1 0-2-.9-2-2v-9Z" />
+                    <path d="M9 9.5h8M9 13h5" />
+                  </svg>
+                </div>
+                <h3 className="home-bento__title">
+                  {t(dict, "feature1_title") || "Real conversations, not drills"}
+                </h3>
+                <p className="home-bento__text">
+                  {t(dict, "feature1_text") || "Every session is a live, unscripted conversation with a native-level coach. No textbooks. No repetition. Just authentic, measurable practice that sticks."}
+                </p>
+              </div>
+
+              {/* Scenario chips */}
+              <div className="home-bento__chips">
+                {scenarios.map((s, i) => (
+                  <div key={i} className="home-bento__chip">{s}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Narrow stat card */}
+          <div className="home-bento__card home-bento__card--narrow home-bento__card--teal" data-reveal style={{ "--reveal-delay": "80" }}>
+            <span className="home-bento__tag">Outcome</span>
+            <div className="home-bento__stat">2.7×</div>
+            <h3 className="home-bento__title">Faster fluency gains</h3>
+            <p className="home-bento__text">Compared to self-study. Measurable in 4 sessions.</p>
+            <div className="home-bento__minichart">
+              {bars.map((b, i) => (
+                <div key={i} className={`home-bento__bar${b.active ? " home-bento__bar--active" : ""}`} style={{ height: b.h }} />
+              ))}
+            </div>
+          </div>
+
+          {/* Three small cards */}
+          {smallCards.map((c, i) => (
+            <div
+              key={i}
+              className={`home-bento__card home-bento__card--third home-bento__card--${c.tone}`}
+              data-reveal
+              style={{ "--reveal-delay": `${(i + 2) * 100}` }}
+            >
+              <span className="home-bento__tag">{c.num}</span>
+              <div className={`home-bento__icon home-bento__icon--${c.tone}`} aria-hidden="true">{c.icon}</div>
+              <h3 className="home-bento__title">{c.title}</h3>
+              <p className="home-bento__text">{c.text}</p>
+            </div>
+          ))}
+
         </div>
       </div>
     </section>
@@ -578,7 +590,8 @@ function Feature({ icon, title, text, tone, index }) {
   return (
     <div
       className={`home-feature home-feature--${tone}`}
-      style={{ "--card-index": index }}
+      style={{ "--card-index": index, "--reveal-delay": index * 100 }}
+      data-reveal
     >
       <div className="home-feature__accent-bar" aria-hidden="true" />
 
@@ -716,9 +729,9 @@ function CurriculumCard({ title, desc, img, color }) {
   );
 }
 
-function CoachCard({ name, role, bio, img }) {
+function CoachCard({ name, role, bio, img, index = 0 }) {
   return (
-    <div className="home-spx-coaches__card">
+    <div className="home-spx-coaches__card" data-reveal style={{ "--reveal-delay": index * 120 }}>
       <div className="home-spx-coaches__avatar-wrap">
         <img className="home-spx-coaches__avatar" src={img} alt={name} />
         <div className="home-spx-coaches__avatar-ring"></div>
@@ -749,5 +762,345 @@ function CaseCard({ logo, title, text, metric, metricLabel }) {
         <p>{text}</p>
       </div>
     </div>
+  );
+}
+
+function TestimonialsCarousel({ dict }) {
+  const trackRef = useRef(null);
+  const [active, setActive] = React.useState(0);
+
+  const testimonials = [
+    {
+      quote: t(dict, "testi1_quote"),
+      author: t(dict, "testi1_author"),
+      role: t(dict, "testi1_role"),
+    },
+    {
+      quote: t(dict, "testi2_quote"),
+      author: t(dict, "testi2_author"),
+      role: t(dict, "testi2_role"),
+    },
+    {
+      quote: t(dict, "testi3_quote"),
+      author: t(dict, "testi3_author"),
+      role: t(dict, "testi3_role"),
+    },
+  ];
+
+  const scroll = (dir) => {
+    if (!trackRef.current) return;
+    const cardWidth = trackRef.current.querySelector(".home-quote")?.offsetWidth || 400;
+    trackRef.current.scrollBy({ left: dir * (cardWidth + 24), behavior: "smooth" });
+  };
+
+  // Update active dot on scroll
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const onScroll = () => {
+      const cardWidth = track.querySelector(".home-quote")?.offsetWidth || 400;
+      const idx = Math.round(track.scrollLeft / (cardWidth + 24));
+      setActive(Math.min(idx, testimonials.length - 1));
+    };
+    track.addEventListener("scroll", onScroll, { passive: true });
+    return () => track.removeEventListener("scroll", onScroll);
+  }, [testimonials.length]);
+
+  return (
+    <section className="home-testimonials">
+      <div className="home-container">
+        <div className="home-testimonials__header-row">
+          <div className="home-testimonials__header">
+            <FadeIn as="h2" className="home-section-title">
+              What our learners say
+            </FadeIn>
+            <FadeIn as="p" className="home-section-subtitle" delay={0.1}>
+              Real results from real people — no fluff.
+            </FadeIn>
+          </div>
+
+          <div className="home-testimonials__arrows" aria-label="Carousel navigation">
+            <button
+              className="home-testimonials__arrow"
+              aria-label="Previous testimonial"
+              onClick={() => scroll(-1)}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button
+              className="home-testimonials__arrow"
+              aria-label="Next testimonial"
+              onClick={() => scroll(1)}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M7 4l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="home-testimonials__track" ref={trackRef}>
+          {testimonials.map((t_, i) => (
+            <Quote key={i} quote={t_.quote} author={t_.author} role={t_.role} rating={5} />
+          ))}
+        </div>
+
+        <div className="home-testimonials__dots" role="tablist" aria-label="Testimonial slides">
+          {testimonials.map((_, i) => (
+            <button
+              key={i}
+              role="tab"
+              aria-selected={active === i}
+              aria-label={`Testimonial ${i + 1}`}
+              className={`home-testimonials__dot${active === i ? " home-testimonials__dot--active" : ""}`}
+              onClick={() => {
+                if (!trackRef.current) return;
+                const cardWidth = trackRef.current.querySelector(".home-quote")?.offsetWidth || 400;
+                trackRef.current.scrollTo({ left: i * (cardWidth + 24), behavior: "smooth" });
+                setActive(i);
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================
+   How It Works — Sticky Tracker
+   ============================ */
+function HowItWorksSection({ dict, prefix }) {
+  const [activeStep, setActiveStep] = useState(0);
+  const step0 = useRef(null);
+  const step1 = useRef(null);
+  const step2 = useRef(null);
+  const stepRefs = [step0, step1, step2];
+
+  useEffect(() => {
+    const observers = stepRefs.map((ref, i) => {
+      const observer = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveStep(i); },
+        { threshold: 0.5 }
+      );
+      if (ref.current) observer.observe(ref.current);
+      return observer;
+    });
+    return () => observers.forEach((obs) => obs.disconnect());
+  }, []);
+
+  const steps = [
+    {
+      num: "01",
+      label: "Set your goals",
+      title: t(dict, "how_step1_title") || "Set your goals",
+      text: t(dict, "how_step1_text") || "Tell us about your English ambitions — job interviews, presentations, travel or daily confidence.",
+      img: "/images/how-step1.png",
+    },
+    {
+      num: "02",
+      label: "Match a coach",
+      title: t(dict, "how_step2_title") || "Get matched instantly",
+      text: t(dict, "how_step2_text") || "We pair you with a vetted native-level coach whose expertise fits your exact goal.",
+      img: "/images/how-step2.png",
+    },
+    {
+      num: "03",
+      label: "See results",
+      title: t(dict, "how_step3_title") || "Start speaking. Measure progress.",
+      text: t(dict, "how_step3_text") || "Live sessions, instant feedback, and a personalised progress tracker to feel every improvement.",
+      img: "/images/how-step3.png",
+    },
+  ];
+
+  return (
+    <section className="home-spx-how">
+      <div className="home-container">
+        <div className="home-section-header">
+          <FadeIn as="h2" className="home-section-title">{t(dict, "how_title") || "How Speexify works"}</FadeIn>
+          <FadeIn as="p" className="home-section-subtitle" delay={0.1}>
+            {t(dict, "how_subtitle") || "Three simple steps to real fluency."}
+          </FadeIn>
+        </div>
+
+        <div className="home-spx-how__inner">
+          <div className="home-spx-how__rail" aria-hidden="true">
+            {steps.map((s, i) => (
+              <React.Fragment key={i}>
+                <div className={`home-spx-how__rail-dot${activeStep === i ? " is-active" : activeStep > i ? " is-done" : ""}`}>
+                  {activeStep > i ? "✓" : s.num}
+                </div>
+                {i < steps.length - 1 && (
+                  <div className={`home-spx-how__rail-line${activeStep > i ? " is-active" : ""}`} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+
+          <div className="home-spx-how__steps">
+            {steps.map((s, i) => (
+              <div key={i} className="home-spx-how__step" ref={stepRefs[i]}>
+                <div className={`home-spx-how__card${activeStep === i ? " is-active" : ""}`}>
+                  <div className="home-spx-how__media">
+                    <img src={s.img} alt={s.title} />
+                    <span className="home-spx-how__badge">{s.num}</span>
+                  </div>
+                  <div className="home-spx-how__body">
+                    <span className="home-spx-how__step-label">{s.label}</span>
+                    <h3>{s.title}</h3>
+                    <p>{s.text}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="home-spx-how__cta">
+          <Link className="home-btn home-btn--primary home-btn--shine" href={`${prefix || ""}/register`}>
+            <span>{t(dict, "how_cta_primary") || "Start for free"}</span>
+            <svg className="home-btn__arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+          <Link className="home-btn home-btn--ghost" href={`${prefix || ""}/contact`}>
+            {t(dict, "how_cta_secondary") || "Talk to us"}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================
+   Product Demo Section
+   ============================ */
+function ProductDemoSection() {
+  const features = [
+    "Live 1-on-1 video sessions with native-level coaches",
+    "Real-time pronunciation & grammar feedback",
+    "Personalised session notes sent after every call",
+    "Flexible scheduling — book in 60 seconds",
+    "Progress dashboard tracking every milestone",
+  ];
+
+  const floatStyle = { animation: "float 3s ease-in-out infinite" };
+  const floatStyle2 = { animation: "float 3.6s ease-in-out 0.8s infinite" };
+
+  return (
+    <section className="home-demo" data-reveal>
+      <div className="home-container">
+        <div className="home-demo__inner">
+          <div className="home-demo__copy">
+            <p className="home-demo__eyebrow">See it in action</p>
+            <h2>The platform built for <em style={{ fontStyle: "normal", color: "#F25C2E" }}>real conversations</em></h2>
+            <p>No generic exercises. No passive watching. Every session is live, personalised, and built to make you speak confidently from day one.</p>
+            <ul className="home-demo__features">
+              {features.map((f, i) => (
+                <li key={i} className="home-demo__feature">
+                  <span className="home-demo__feature-dot" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="home-demo__phone-wrap">
+            <div className="home-demo__float home-demo__float--1" style={floatStyle}>
+              <div style={{ background: "#fff", borderRadius: "12px", padding: "10px 16px", boxShadow: "0 8px 24px rgba(13,27,42,0.14)", fontSize: "13px", fontWeight: "700", color: "#0D1B2A", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: "18px" }}>⭐</span> 4.9 avg rating
+              </div>
+            </div>
+            <div className="home-demo__float home-demo__float--2" style={floatStyle2}>
+              <div style={{ background: "#fff", borderRadius: "12px", padding: "10px 16px", boxShadow: "0 8px 24px rgba(13,27,42,0.14)", fontSize: "13px", fontWeight: "700", color: "#0D1B2A", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: "18px" }}>🎙️</span> 50k+ sessions
+              </div>
+            </div>
+
+            <div className="home-demo__phone">
+              <div className="home-demo__screen">
+                <div className="home-demo__coach-card">
+                  <div className="home-demo__coach-avatar">SJ</div>
+                  <div className="home-demo__coach-info">
+                    <strong>Sarah Johnson</strong>
+                    <span>Senior Communication Coach</span>
+                  </div>
+                  <span className="home-demo__live-badge">LIVE</span>
+                </div>
+                <div className="home-demo__waveform">
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <div key={i} className="home-demo__bar" />
+                  ))}
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: "12px", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px" }}>Session time</span>
+                  <span style={{ color: "#F25C2E", fontWeight: "700", fontSize: "14px" }}>24:07</span>
+                </div>
+                <div style={{ background: "rgba(93,217,124,0.12)", border: "1px solid rgba(93,217,124,0.2)", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", color: "#5dd97c", fontWeight: "600" }}>
+                  ✓ Excellent fluency on that last sentence!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================
+   Comparison Table Section
+   ============================ */
+function ComparisonSection() {
+  const rows = [
+    { feature: "Live 1-on-1 human coaching", speexify: "yes", apps: "no", classroom: "partial" },
+    { feature: "Real-time conversation practice", speexify: "yes", apps: "no", classroom: "partial" },
+    { feature: "Flexible scheduling (your timezone)", speexify: "yes", apps: "yes", classroom: "no" },
+    { feature: "Progress tracking & session notes", speexify: "yes", apps: "partial", classroom: "no" },
+    { feature: "Professional communication focus", speexify: "yes", apps: "no", classroom: "partial" },
+    { feature: "Personalised learning path", speexify: "yes", apps: "partial", classroom: "no" },
+  ];
+
+  const Icon = ({ type }) => {
+    if (type === "yes") return <span className="home-compare__icon home-compare__icon--yes">✓ Yes</span>;
+    if (type === "no") return <span className="home-compare__icon home-compare__icon--no">✕ No</span>;
+    if (type === "partial") return <span className="home-compare__icon home-compare__icon--partial">~ Sometimes</span>;
+    return null;
+  };
+
+  return (
+    <section className="home-compare" data-reveal>
+      <div className="home-container">
+        <div className="home-section-header">
+          <p className="home-features__eyebrow">Why Speexify</p>
+          <h2 className="home-section-title">The smarter choice</h2>
+          <p className="home-section-subtitle">See how Speexify stacks up against the alternatives.</p>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table className="home-compare__table">
+            <thead>
+              <tr className="home-compare__head-row">
+                <th className="home-compare__th" style={{ width: "38%" }}>Feature</th>
+                <th className="home-compare__th home-compare__th--speexify">Speexify</th>
+                <th className="home-compare__th">Generic Apps</th>
+                <th className="home-compare__th">Classroom</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i} className="home-compare__row">
+                  <td className="home-compare__td home-compare__td--feature">{row.feature}</td>
+                  <td className="home-compare__td home-compare__td--speexify"><Icon type={row.speexify} /></td>
+                  <td className="home-compare__td"><Icon type={row.apps} /></td>
+                  <td className="home-compare__td"><Icon type={row.classroom} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   );
 }

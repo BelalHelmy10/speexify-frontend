@@ -11,7 +11,7 @@
 @use "../styles/lenis";
 
 :root {
-  --brand: #2563eb;
+  --brand: #F25C2E;
   --font-inter: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
   --font-outfit: "Outfit", "Segoe UI", Arial, sans-serif;
 }
@@ -34,4 +34,47 @@ body.rtl {
 
 main {
   margin: 0 auto;
+}
+
+/* ── Custom Cursor ── */
+@media (pointer: fine) {
+  .cursor-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #F25C2E;
+    pointer-events: none;
+    z-index: 99999;
+    will-change: transform;
+    transition: width 0.2s ease, height 0.2s ease, background 0.2s ease;
+  }
+
+  .cursor-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid #0D1B2A;
+    pointer-events: none;
+    z-index: 99998;
+    will-change: transform;
+    opacity: 0.5;
+    transition:
+      width 0.3s ease,
+      height 0.3s ease,
+      border-color 0.3s ease,
+      opacity 0.3s ease;
+
+    &.cursor-ring--hover {
+      width: 52px;
+      height: 52px;
+      border-color: #F25C2E;
+      opacity: 0.7;
+    }
+  }
 }
