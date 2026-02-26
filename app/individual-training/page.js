@@ -15,7 +15,6 @@ function IndividualInner({ dict, locale }) {
   const { user } = useAuth();
   const formRef = useRef(null);
 
-  // ✅ only used for URLs, NOT for translations
   const prefix = locale === "ar" ? "/ar" : "";
 
   const [sending, setSending] = useState(false);
@@ -58,10 +57,9 @@ function IndividualInner({ dict, locale }) {
         name: form.name,
         email: form.email,
         role: "Individual",
-        topic: "Trial / Consult",
+        topic: "Individual Session Request",
         budget: "",
-        message: `Level: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone
-          }\nAvailability: ${form.availability}\n\n${form.message || ""}`,
+        message: `Level: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone}\nAvailability: ${form.availability}\n\n${form.message || ""}`,
       });
       setStatus(t(dict, "status_sent"));
       formRef.current?.reset();
@@ -79,498 +77,585 @@ function IndividualInner({ dict, locale }) {
   };
 
   return (
-    <div className="ind">
-      {/* HERO */}
-      <section className="ind-hero">
-        <div className="ind-hero__background">
-          <div className="ind-hero__gradient"></div>
-          <div className="ind-hero__pattern"></div>
-        </div>
+    <div className="individual-page-wrapper">
+      {/* ═══════════════════════════════════════
+         HERO
+      ════════════════════════════════════════ */}
+      <section className="hero">
+        <div className="hero-bg"></div>
+        <div className="hero-watermark">SPEAK</div>
 
-        <div className="container ind-hero__inner">
-          <div className="ind-hero__copy">
-            <FadeIn as="div" className="ind-hero__badge" delay={0.1}>
-              <span className="ind-hero__badge-icon" aria-hidden="true">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                  <path d="M7 1v2.5M7 10.5V13M1 7h2.5M10.5 7H13M3.05 3.05l1.77 1.77M9.18 9.18l1.77 1.77M10.95 3.05L9.18 4.82M4.82 9.18l-1.77 1.77" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                </svg>
-              </span>
-              <span>{t(dict, "hero_badge")}</span>
-            </FadeIn>
+        <div className="container">
+          <div className="hero-grid">
 
-            <FadeIn as="h1" className="ind-hero__title" delay={0.2}>
-              {t(dict, "hero_title_main")}
-              <span className="ind-hero__title-accent">
-                {t(dict, "hero_title_accent")}
-              </span>
-            </FadeIn>
-
-            <FadeIn as="p" className="ind-hero__subtitle" delay={0.3}>{t(dict, "hero_subtitle")}</FadeIn>
-
-            <FadeIn as="div" className="ind-hero__actions" delay={0.4}>
-              <a href="#trial" className="btn btn--primary btn--shine">
-                <span>{t(dict, "hero_cta_primary")}</span>
-                <svg
-                  className="btn__arrow"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                >
-                  <path
-                    d="M6 3L11 8L6 13"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </a>
-              {/* 🔽 only URL changed */}
-              <Link href={`${prefix}/packages`} className="btn btn--ghost">
-                {t(dict, "hero_cta_secondary")}
-              </Link>
-            </FadeIn>
-
-            <FadeIn as="div" className="ind-hero__features" delay={0.6}>
-              <div className="ind-hero__feature">
-                <CheckIcon />
-                <span>{t(dict, "hero_feature_1")}</span>
-              </div>
-              <div className="ind-hero__feature">
-                <CheckIcon />
-                <span>{t(dict, "hero_feature_2")}</span>
-              </div>
-              <div className="ind-hero__feature">
-                <CheckIcon />
-                <span>{t(dict, "hero_feature_3")}</span>
-              </div>
-            </FadeIn>
-          </div>
-
-          <figure className="ind-hero__media">
-            <img
-              src="/images/hero-individual.png"
-              alt="Learner practicing with a coach"
-              loading="eager"
-            />
-            <div className="ind-hero__media-badge">
-              <span className="ind-hero__media-badge-dot"></span>
-              <span>{t(dict, "hero_media_badge")}</span>
-            </div>
-          </figure>
-        </div>
-      </section>
-
-      {/* METRICS */}
-      <section className="container ind-metrics">
-        <div className="grid-3">
-          <MetricCard
-            metric={t(dict, "metric_1_value")}
-            label={t(dict, "metric_1_label")}
-            tone="coral"
-            icon={
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M3 17l5-5 4 4 7-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M15 9h4v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            }
-          />
-          <MetricCard
-            metric={t(dict, "metric_2_value")}
-            label={t(dict, "metric_2_label")}
-            tone="gold"
-            icon={
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 2l2.6 5.26L21 8.27l-4.5 4.38 1.06 6.19L12 15.77l-5.56 2.92 1.06-6.19L3 8.27l6.4-.91L12 2Z" fill="currentColor" />
-              </svg>
-            }
-          />
-          <MetricCard
-            metric={t(dict, "metric_3_value")}
-            label={t(dict, "metric_3_label")}
-            tone="teal"
-            icon={
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-                <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.8" />
-                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                <path d="M12 3V1M12 23v-2M3 12H1M23 12h-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            }
-          />
-        </div>
-      </section>
-
-      {/* WHO IT'S FOR */}
-      <section className="container ind-goals">
-        <div className="section-header">
-          <FadeIn as="h2" className="section-title">{t(dict, "goals_title")}</FadeIn>
-          <FadeIn as="p" className="section-subtitle" delay={0.1}>{t(dict, "goals_subtitle")}</FadeIn>
-        </div>
-
-        <div className="ind-goals__grid">
-          <Goal
-            title={t(dict, "goal_1_title")}
-            p={t(dict, "goal_1_p")}
-            img="/images/goal-career.png"
-          />
-          <Goal
-            title={t(dict, "goal_2_title")}
-            p={t(dict, "goal_2_p")}
-            img="/images/goal-fluency.png"
-          />
-          <Goal
-            title={t(dict, "goal_3_title")}
-            p={t(dict, "goal_3_p")}
-            img="/images/goal-exams.png"
-          />
-        </div>
-
-        <div className="ind-goals__cta">
-          <a href="#trial" className="btn btn--ghost">
-            {t(dict, "goals_cta")}
-          </a>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="container ind-how">
-        <div className="section-header">
-          <FadeIn as="h2" className="section-title">{t(dict, "how_title")}</FadeIn>
-          <FadeIn as="p" className="section-subtitle" delay={0.1}>{t(dict, "how_subtitle")}</FadeIn>
-        </div>
-
-        <div className="ind-steps">
-          <Step n="1" tone="coral" title={t(dict, "how_step1_title")}>
-            {t(dict, "how_step1_p")}
-          </Step>
-          <Step n="2" tone="gold" title={t(dict, "how_step2_title")}>
-            {t(dict, "how_step2_p")}
-          </Step>
-          <Step n="3" tone="teal" title={t(dict, "how_step3_title")}>
-            {t(dict, "how_step3_p")}
-          </Step>
-        </div>
-      </section>
-
-      {/* WHAT YOU'LL LEARN */}
-      <section className="container ind-learn">
-        <div className="section-header">
-          <FadeIn as="h2" className="section-title">{t(dict, "learn_title")}</FadeIn>
-          <FadeIn as="p" className="section-subtitle" delay={0.1}>{t(dict, "learn_subtitle")}</FadeIn>
-        </div>
-
-        <ul className="chips">
-          <li>{t(dict, "chip_everyday")}</li>
-          <li>{t(dict, "chip_meetings")}</li>
-          <li>{t(dict, "chip_interview")}</li>
-          <li>{t(dict, "chip_presentations")}</li>
-          <li>{t(dict, "chip_pronunciation")}</li>
-          <li>{t(dict, "chip_email")}</li>
-          <li>{t(dict, "chip_vocab")}</li>
-          <li>{t(dict, "chip_listening")}</li>
-        </ul>
-      </section>
-
-      {/* TESTIMONIALS */}
-      <section className="container ind-testimonials">
-        <div className="section-header">
-          <FadeIn as="h2" className="section-title">{t(dict, "testi_title")}</FadeIn>
-          <FadeIn as="p" className="section-subtitle" delay={0.1}>{t(dict, "testi_subtitle")}</FadeIn>
-        </div>
-
-        <div className="grid-3">
-          <Testimonial
-            quote={t(dict, "testi1_quote")}
-            by={t(dict, "testi1_by")}
-            role={t(dict, "testi1_role")}
-            avatar="/images/sara.avif"
-            rating={5}
-          />
-          <Testimonial
-            quote={t(dict, "testi2_quote")}
-            by={t(dict, "testi2_by")}
-            role={t(dict, "testi2_role")}
-            avatar="/images/ali.avif"
-            rating={5}
-          />
-          <Testimonial
-            quote={t(dict, "testi3_quote")}
-            by={t(dict, "testi3_by")}
-            role={t(dict, "testi3_role")}
-            avatar="/images/marta.avif"
-            rating={5}
-          />
-        </div>
-      </section>
-
-      {/* TRIAL / CONSULT FORM */}
-      <section id="trial" className="container ind-trial">
-        <div className="ind-trial__card">
-          <div className="section-header">
-            <FadeIn as="h2" className="section-title">{t(dict, "trial_title")}</FadeIn>
-            <FadeIn as="p" className="section-subtitle" delay={0.1}>{t(dict, "trial_subtitle")}</FadeIn>
-          </div>
-
-          <form ref={formRef} onSubmit={submit} className="rfp">
-            <div className="rfp__row">
-              <Field label={t(dict, "field_name")} name="name">
-                <input
-                  className="input"
-                  name="name"
-                  value={form.name}
-                  onChange={onChange}
-                  required
-                />
-              </Field>
-              <Field label={t(dict, "field_email")} name="email">
-                <input
-                  className="input"
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={onChange}
-                  required
-                />
-              </Field>
-            </div>
-
-            <div className="rfp__row rfp__row--3">
-              <Field label={t(dict, "field_timezone")} name="timezone">
-                <select
-                  className="select"
-                  name="timezone"
-                  value={form.timezone}
-                  onChange={onChange}
-                >
-                  <option value="" disabled>
-                    Select your timezone...
-                  </option>
-                  {/* 🔽 Auto-generate ALL supported timezones with offsets */}
-                  {getSupportedTimezones().map(({ value, label }) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label={t(dict, "field_level")} name="level">
-                <select
-                  className="select"
-                  name="level"
-                  value={form.level}
-                  onChange={onChange}
-                >
-                  <option>{t(dict, "level_a2")}</option>
-                  <option>{t(dict, "level_b1")}</option>
-                  <option>{t(dict, "level_b2")}</option>
-                  <option>{t(dict, "level_c1")}</option>
-                  <option>{t(dict, "level_c2")}</option>
-                </select>
-              </Field>
-              <Field label={t(dict, "field_availability")} name="availability">
-                <select
-                  className="select"
-                  name="availability"
-                  value={form.availability}
-                  onChange={onChange}
-                >
-                  <option>{t(dict, "availability_weekdays")}</option>
-                  <option>{t(dict, "availability_weeknights")}</option>
-                  <option>{t(dict, "availability_weekends")}</option>
-                </select>
-              </Field>
-            </div>
-
-            <div className="rfp__row">
-              <Field label={t(dict, "field_goal")} name="goal">
-                <select
-                  className="select"
-                  name="goal"
-                  value={form.goal}
-                  onChange={onChange}
-                >
-                  <option>{t(dict, "goal_confidence")}</option>
-                  <option>{t(dict, "goal_interview")}</option>
-                  <option>{t(dict, "goal_pronunciation")}</option>
-                  <option>{t(dict, "goal_writing")}</option>
-                  <option>{t(dict, "goal_exam")}</option>
-                </select>
-              </Field>
-              <Field label={t(dict, "field_message")} name="message">
-                <input
-                  className="input"
-                  name="message"
-                  placeholder={t(dict, "message_placeholder")}
-                  value={form.message}
-                  onChange={onChange}
-                />
-              </Field>
-            </div>
-
-            <label className="checkbox">
-              <input
-                type="checkbox"
-                name="agree"
-                checked={form.agree}
-                onChange={onChange}
-              />
-              <span>
-                {t(dict, "checkbox_prefix")} {/* 🔽 only URL changed */}
-                <Link href={`${prefix}/privacy`} className="link">
-                  {t(dict, "checkbox_link")}
+            {/* Left copy */}
+            <div className="hero-copy">
+              <FadeIn delay={0.1} className="hero-badge">
+                ✦ {t(dict, "hero_badge") || "Live 1-on-1 English Coaching"}
+              </FadeIn>
+              <FadeIn as="h1" delay={0.2} className="hero-title">
+                {t(dict, "hero_title_1") || "Speak English"}
+                <br />
+                {t(dict, "hero_title_2") || "with "}
+                <span className="accent">{t(dict, "hero_title_accent") || "real"}</span>
+                <br />
+                {t(dict, "hero_title_3") || " confidence"}
+              </FadeIn>
+              <FadeIn as="p" delay={0.3} className="hero-sub">
+                {t(dict, "hero_subtitle") || "Expert-led live sessions that build fluency, precision, and presence — on your schedule, at your pace."}
+              </FadeIn>
+              <FadeIn delay={0.4} className="hero-cta">
+                <a href="#trial" className="btn btn-primary btn-lg">
+                  {t(dict, "hero_cta_primary")}
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </a>
+                <Link href={`${prefix}/packages`} className="btn btn-ghost btn-lg">
+                  {t(dict, "hero_cta_secondary")}
                 </Link>
-                .
-              </span>
-            </label>
-
-            <div className="actions">
-              <button
-                className="btn btn--primary btn--shine"
-                type="submit"
-                disabled={sending}
-              >
-                {sending
-                  ? t(dict, "btn_sending")
-                  : t(dict, "btn_request_consult")}
-              </button>
-              {status && (
-                <span className="form-status" role="status" aria-live="polite">
-                  {status}
-                </span>
-              )}
+              </FadeIn>
             </div>
-          </form>
+
+            {/* Right: Sessions dashboard */}
+            <div className="hero-visual">
+              <div className="hero-toast">
+                <span className="toast-dot"></span>
+                Session starting now
+              </div>
+
+              <div className="sessions-card">
+                <div className="sc-titlebar">
+                  <span className="sc-dot r"></span>
+                  <span className="sc-dot y"></span>
+                  <span className="sc-dot g"></span>
+                  <span className="sc-title">Today's Sessions</span>
+                </div>
+                <div className="sc-body">
+                  <div className="sess-row">
+                    <div className="sess-av av-coral">AM</div>
+                    <div className="sess-info">
+                      <span className="sess-name">Ahmed M.</span>
+                      <span className="sess-detail">Presentation mastery · 45 min</span>
+                    </div>
+                    <span className="sess-badge sb-live">● Live</span>
+                  </div>
+                  <div className="sess-row">
+                    <div className="sess-av av-purple">SR</div>
+                    <div className="sess-info">
+                      <span className="sess-name">Sara R.</span>
+                      <span className="sess-detail">Business writing · 60 min</span>
+                    </div>
+                    <span className="sess-badge sb-done">✓ Done</span>
+                  </div>
+                  <div className="sess-row">
+                    <div className="sess-av av-teal">LK</div>
+                    <div className="sess-info">
+                      <span className="sess-name">Layla K.</span>
+                      <span className="sess-detail">Fluency · 30 min</span>
+                    </div>
+                    <span className="sess-badge sb-time">3:00 PM</span>
+                  </div>
+                  <div className="sc-progress">
+                    <div className="sc-prog-header">
+                      <span>Your progress</span>
+                      <span className="sc-prog-label">Session 7 / 12</span>
+                    </div>
+                    <div className="sc-prog-track">
+                      <div className="sc-prog-fill"></div>
+                    </div>
+                  </div>
+                  <div className="sc-feedback">⚡ Instant feedback after every session</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section className="ind-cta">
-        <div className="ind-cta__background">
-          <div className="ind-cta__gradient"></div>
-          <div className="ind-cta__shapes">
-            <div className="ind-cta__shape ind-cta__shape--1"></div>
-            <div className="ind-cta__shape ind-cta__shape--2"></div>
-          </div>
-        </div>
-
-        <div className="container ind-cta__inner">
-          <div className="ind-cta__content">
-            <h2 className="ind-cta__title">{t(dict, "final_title")}</h2>
-            <p className="ind-cta__subtitle">{t(dict, "final_subtitle")}</p>
-          </div>
-          <div className="ind-cta__actions">
-            <a href="#trial" className="btn btn--primary btn--lg">
-              {t(dict, "final_btn_primary")}
-            </a>
-            {/* 🔽 only URL changed */}
-            <Link
-              href={`${prefix}/packages`}
-              className="btn btn--ghost btn--lg"
-            >
-              {t(dict, "final_btn_secondary")}
-            </Link>
+      {/* ═══════════════════════════════════════
+         STATS STRIP
+      ════════════════════════════════════════ */}
+      <section className="stats">
+        <div className="container">
+          <div className="stats-grid">
+            <MetricCard
+              tone="coral"
+              icon={
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z" />
+                  <path d="M19 11a7 7 0 0 1-14 0" />
+                  <path d="M12 18v3" />
+                  <path d="M8 21h8" />
+                </svg>
+              }
+              metric={t(dict, "metric_1_value")}
+              label={t(dict, "metric_1_label") || "more speaking time than group classes"}
+            />
+            <MetricCard
+              tone="gold"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              }
+              metric={t(dict, "metric_2_value")}
+              label={t(dict, "metric_2_label") || "average coach rating"}
+            />
+            <MetricCard
+              tone="teal"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 6v6l4 2" />
+                </svg>
+              }
+              metric={t(dict, "metric_3_value")}
+              label={t(dict, "metric_3_label") || "to noticeable confidence"}
+            />
           </div>
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════
+         GOALS
+      ════════════════════════════════════════ */}
+      <section className="goals">
+        <div className="container">
+          <div className="section-header">
+            <div className="section-label">Your Path</div>
+            <FadeIn as="h2" className="section-title">{t(dict, "goals_title") || "What do you want to unlock?"}</FadeIn>
+            <FadeIn as="p" delay={0.1} className="section-sub">{t(dict, "goals_subtitle") || "Every session is built around your real-world goals — not a generic curriculum."}</FadeIn>
+          </div>
+          <div className="goals-grid">
+            <Goal
+              cls="g1"
+              visual={
+                <div className="ui-visual">
+                  <div className="ui-grid"></div>
+                  <div className="glow-accent lime"></div>
+                  <div className="ui-chart-box">
+                    <div className="ui-chart-header">
+                      <span className="ui-chart-title">Confidence</span>
+                      <span className="ui-chart-badge">+42%</span>
+                    </div>
+                    <div className="ui-chart-bars">
+                      <div className="bar" style={{ height: "40%" }}></div>
+                      <div className="bar" style={{ height: "55%" }}></div>
+                      <div className="bar" style={{ height: "35%" }}></div>
+                      <div className="bar active" style={{ height: "90%" }}></div>
+                    </div>
+                  </div>
+                </div>
+              }
+              tag="✦ Career"
+              title={t(dict, "goal_1_title")}
+              p={t(dict, "goal_1_p")}
+            />
+            <Goal
+              cls="g2"
+              visual={
+                <div className="ui-visual">
+                  <div className="ui-grid"></div>
+                  <div className="glow-accent coral"></div>
+                  <div className="ui-audio-box">
+                    <div className="ui-play-btn">
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style={{ marginLeft: 2 }}>
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    <div className="ui-wave-bars">
+                      <div className="wave" style={{ height: "40%" }}></div>
+                      <div className="wave" style={{ height: "70%" }}></div>
+                      <div className="wave active" style={{ height: "100%" }}></div>
+                      <div className="wave active" style={{ height: "60%" }}></div>
+                      <div className="wave" style={{ height: "30%" }}></div>
+                      <div className="wave" style={{ height: "80%" }}></div>
+                    </div>
+                  </div>
+                </div>
+              }
+              tag="✦ Fluency"
+              title={t(dict, "goal_2_title")}
+              p={t(dict, "goal_2_p")}
+            />
+            <Goal
+              cls="g3"
+              visual={
+                <div className="ui-visual">
+                  <div className="ui-grid"></div>
+                  <div className="glow-accent violet"></div>
+                  <div className="ui-score-box">
+                    <div className="ui-score-ring"></div>
+                    <div className="ui-score-val">8.5</div>
+                    <div className="ui-score-lbl">IELTS Target</div>
+                  </div>
+                </div>
+              }
+              tag="✦ Academic"
+              title={t(dict, "goal_3_title")}
+              p={t(dict, "goal_3_p")}
+            />
+          </div>
+          <div className="goals-cta">
+            <a href="#trial" className="btn btn-ghost">{t(dict, "goals_cta") || "Talk to a coach"}</a>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+         HOW IT WORKS
+      ════════════════════════════════════════ */}
+      <section className="how">
+        <div className="container">
+          <div className="section-header">
+            <div className="section-label">The Process</div>
+            <FadeIn as="h2" className="section-title">{t(dict, "how_title") || "How it works"}</FadeIn>
+            <FadeIn as="p" delay={0.1} className="section-sub">{t(dict, "how_subtitle") || "Three steps to a measurably better you."}</FadeIn>
+          </div>
+          <div className="how-steps">
+            <Step
+              cls="s1"
+              n="1"
+              title={t(dict, "how_step1_title")}
+              p={t(dict, "how_step1_p")}
+            />
+            <Step
+              cls="s2"
+              n="2"
+              title={t(dict, "how_step2_title")}
+              p={t(dict, "how_step2_p")}
+            />
+            <Step
+              cls="s3"
+              n="3"
+              title={t(dict, "how_step3_title")}
+              p={t(dict, "how_step3_p")}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+         WHAT YOU'LL LEARN
+      ════════════════════════════════════════ */}
+      <section className="learn">
+        <div className="container">
+          <div className="section-header learn-header">
+            <div className="section-label">{t(dict, "learn_label")}</div>
+            <FadeIn as="h2" className="section-title">{t(dict, "learn_title")}</FadeIn>
+            <FadeIn as="p" delay={0.1} className="section-sub">{t(dict, "learn_subtitle")}</FadeIn>
+          </div>
+          <ul className="chips-list">
+            <li className="chip">{t(dict, "chip_everyday")}</li>
+            <li className="chip">{t(dict, "chip_meetings")}</li>
+            <li className="chip">{t(dict, "chip_interview")}</li>
+            <li className="chip">{t(dict, "chip_presentations")}</li>
+            <li className="chip">{t(dict, "chip_pronunciation")}</li>
+            <li className="chip">{t(dict, "chip_writing")}</li>
+            <li className="chip">{t(dict, "chip_email")}</li>
+            <li className="chip">{t(dict, "chip_vocab")}</li>
+            <li className="chip">{t(dict, "chip_listening")}</li>
+            <li className="chip">{t(dict, "chip_social")}</li>
+          </ul>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+         TESTIMONIALS
+      ════════════════════════════════════════ */}
+      <section className="testimonials">
+        <div className="container">
+          <div className="testi-wrap">
+            <div className="section-header">
+              <div className="section-label">{t(dict, "testi_label")}</div>
+              <FadeIn as="h2" className="section-title">{t(dict, "testi_title")}</FadeIn>
+              <FadeIn as="p" delay={0.1} className="section-sub">{t(dict, "testi_subtitle")}</FadeIn>
+            </div>
+            <div className="testi-grid">
+              <Testimonial
+                avatarCls="tav1"
+                avatarTxt="AM"
+                quote={t(dict, "testi1_quote")}
+                by={t(dict, "testi1_by")}
+                role={t(dict, "testi1_role")}
+              />
+              <Testimonial
+                avatarCls="tav2"
+                avatarTxt="SR"
+                quote={t(dict, "testi2_quote")}
+                by={t(dict, "testi2_by")}
+                role={t(dict, "testi2_role")}
+              />
+              <Testimonial
+                avatarCls="tav3"
+                avatarTxt="LK"
+                quote={t(dict, "testi3_quote")}
+                by={t(dict, "testi3_by")}
+                role={t(dict, "testi3_role")}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+         TRIAL FORM
+      ════════════════════════════════════════ */}
+      <section id="trial" className="trial">
+        <div className="container">
+          <div className="section-header trial-intro">
+            <div className="section-label">{t(dict, "trial_intro_label")}</div>
+            <FadeIn as="h2" className="section-title">{t(dict, "trial_intro_title")}</FadeIn>
+            <FadeIn as="p" delay={0.1} className="section-sub">{t(dict, "trial_intro_subtitle")}</FadeIn>
+          </div>
+
+          <div className="trial-card">
+            <div className="trial-head">
+              <FadeIn as="h2" className="trial-title">{t(dict, "trial_title") || "Request your session"}</FadeIn>
+              <FadeIn as="p" delay={0.1} className="trial-sub">{t(dict, "trial_subtitle") || "Book your free starter session."}</FadeIn>
+            </div>
+
+            <form ref={formRef} onSubmit={submit}>
+              <div className="form-row">
+                <div className="form-field">
+                  <label className="form-label">{t(dict, "field_name")}</label>
+                  <input
+                    className="form-input"
+                    name="name"
+                    value={form.name}
+                    onChange={onChange}
+                    required
+                  />
+                </div>
+                <div className="form-field">
+                  <label className="form-label">{t(dict, "field_email")}</label>
+                  <input
+                    className="form-input"
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={onChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-field">
+                  <label className="form-label">{t(dict, "field_timezone")}</label>
+                  <select
+                    className="form-select"
+                    name="timezone"
+                    value={form.timezone}
+                    onChange={onChange}
+                  >
+                    <option value="" disabled>Select your timezone...</option>
+                    {getSupportedTimezones().map(({ value, label }) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label className="form-label">{t(dict, "field_level")}</label>
+                  <select
+                    className="form-select"
+                    name="level"
+                    value={form.level}
+                    onChange={onChange}
+                  >
+                    <option>{t(dict, "level_a2")}</option>
+                    <option>{t(dict, "level_b1")}</option>
+                    <option>{t(dict, "level_b2")}</option>
+                    <option>{t(dict, "level_c1")}</option>
+                    <option>{t(dict, "level_c2")}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-field">
+                  <label className="form-label">{t(dict, "field_availability")}</label>
+                  <select
+                    className="form-select"
+                    name="availability"
+                    value={form.availability}
+                    onChange={onChange}
+                  >
+                    <option>{t(dict, "availability_weekdays")}</option>
+                    <option>{t(dict, "availability_weeknights")}</option>
+                    <option>{t(dict, "availability_weekends")}</option>
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label className="form-label">{t(dict, "field_goal")}</label>
+                  <select
+                    className="form-select"
+                    name="goal"
+                    value={form.goal}
+                    onChange={onChange}
+                  >
+                    <option>{t(dict, "goal_confidence")}</option>
+                    <option>{t(dict, "goal_interview")}</option>
+                    <option>{t(dict, "goal_pronunciation")}</option>
+                    <option>{t(dict, "goal_writing")}</option>
+                    <option>{t(dict, "goal_exam")}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row full">
+                <div className="form-field">
+                  <label className="form-label">{t(dict, "field_message")}</label>
+                  <input
+                    className="form-input"
+                    name="message"
+                    placeholder={t(dict, "message_placeholder")}
+                    value={form.message}
+                    onChange={onChange}
+                  />
+                </div>
+              </div>
+
+              <label className="form-checkbox">
+                <input
+                  type="checkbox"
+                  name="agree"
+                  checked={form.agree}
+                  onChange={onChange}
+                />
+                <span>
+                  {t(dict, "checkbox_prefix")}
+                  <Link href={`${prefix}/privacy`} className="form-link">
+                    {t(dict, "checkbox_link")}
+                  </Link>
+                  .
+                </span>
+              </label>
+
+              <div className="form-actions">
+                <button
+                  className="btn btn-primary"
+                  type="submit"
+                  disabled={sending}
+                >
+                  {sending ? t(dict, "btn_sending") : t(dict, "btn_request_consult")}
+                </button>
+                {status && (
+                  <span className="form-note" role="status" aria-live="polite">
+                    {status}
+                  </span>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+         FINAL CTA
+      ════════════════════════════════════════ */}
+      <section className="cta-section">
+        <div className="container">
+          <div className="cta-wrap">
+            <div className="cta-blob cta-blob-1"></div>
+            <div className="cta-blob cta-blob-2"></div>
+            <div className="cta-inner">
+              <h2 className="cta-title">{t(dict, "final_title")}</h2>
+              <p className="cta-sub">{t(dict, "final_subtitle")}</p>
+              <div className="cta-btns">
+                <a href="#trial" className="btn btn-cta-white btn-lg">
+                  {t(dict, "final_btn_primary")}
+                </a>
+                <Link href={`${prefix}/packages`} className="btn btn-ghost-white btn-lg">
+                  {t(dict, "final_btn_secondary")}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 }
 
 /* ——— small components ——— */
 
-function CheckIcon() {
+function MetricCard({ tone, icon, metric, label }) {
   return (
-    <svg
-      className="ind-hero__feature-icon"
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-    >
-      <path
-        d="M7 10L9 12L13 8M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function Field({ label, name, children }) {
-  return (
-    <div className="field" data-name={name}>
-      <label className="label">{label}</label>
-      {children}
+    <div className={`stat-card t-${tone}`}>
+      <div className="stat-icon">{icon}</div>
+      <div className="stat-value">{metric}</div>
+      <div className="stat-label">{label}</div>
     </div>
   );
 }
 
-function MetricCard({ metric, label, icon, tone = "blue" }) {
+function Goal({ cls, visual, tag, title, p }) {
   return (
-    <div className={`card metric metric--${tone}`}>
-      <div className="metric__icon">{icon}</div>
-      <div className="metric__value">{metric}</div>
-      <div className="metric__label">{label}</div>
-    </div>
-  );
-}
-
-function Goal({ title, p, img }) {
-  return (
-    <div className="card goal">
-      <figure className="goal__media">
-        <img src={img} alt="" loading="lazy" />
-        <div className="goal__overlay"></div>
-      </figure>
-      <div className="goal__body">
-        <h3 className="goal__title">{title}</h3>
-        <p className="goal__p">{p}</p>
+    <div className={`goal-card ${cls}`}>
+      <div className="goal-img-wrap">
+        {visual}
+      </div>
+      <div className="goal-body">
+        <div className="goal-tag">{tag}</div>
+        <h3 className="goal-title">{title}</h3>
+        <p className="goal-p">{p}</p>
       </div>
     </div>
   );
 }
 
-function Step({ n, tone = "blue", title, children }) {
+function Step({ cls, n, title, p }) {
   return (
-    <div className={`step step--${tone}`}>
-      <div className="step__badge">
-        <div className="step__n">{n}</div>
-      </div>
-      <div className="step__body">
-        <div className="step__title">{title}</div>
-        <p className="step__p">{children}</p>
+    <div className={`how-step ${cls}`}>
+      <div className="step-num">{n}</div>
+      <div className="step-body">
+        <div className="step-title">{title}</div>
+        <p className="step-p">{p}</p>
       </div>
     </div>
   );
 }
 
-function Testimonial({ quote, by, role, avatar, rating }) {
+function Testimonial({ avatarCls, avatarTxt, quote, by, role }) {
   return (
-    <div className="card testi">
-      <div className="testi__header">
-        <img className="testi__avatar" src={avatar} alt="" loading="lazy" />
-        <div className="testi__stars" aria-label={`${rating} out of 5 stars`}>
-          {[...Array(rating)].map((_, i) => (
-            <svg key={i} className="testi__star" width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <path d="M7 1.5l1.545 3.13 3.455.503-2.5 2.436.59 3.44L7 9.25l-3.09 1.759.59-3.44L2 5.133l3.455-.503L7 1.5Z" fill="currentColor" />
+    <div className="testi-card">
+      <div className="testi-head">
+        <div className={`testi-av ${avatarCls}`}>{avatarTxt}</div>
+        <div className="testi-stars" aria-label="5 out of 5 stars">
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <svg
+              key={idx}
+              className="testi-star"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M12 2.5l2.87 5.82 6.43.94-4.65 4.53 1.1 6.41L12 17.18 6.25 20.2l1.1-6.41L2.7 9.26l6.43-.94L12 2.5z" />
             </svg>
           ))}
         </div>
       </div>
-      <blockquote className="testi__quote">{quote}</blockquote>
-      <div className="testi__author">
-        <cite className="testi__by">{by}</cite>
-        <span className="testi__role">{role}</span>
+      <div className="testi-quote">{quote}</div>
+      <div className="testi-author">
+        <div className="testi-name">{by}</div>
+        <div className="testi-role">{role}</div>
       </div>
     </div>
   );
 }
 
-// ✅ keep your original locale detection so Arabic stays Arabic
+// Keep original locale detection so Arabic stays Arabic
 export default function IndividualPage() {
   const pathname = usePathname();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
