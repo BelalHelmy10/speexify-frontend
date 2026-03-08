@@ -1,53 +1,29 @@
+@use "variables" as *;
+
 // styles/sessions.scss
 // Comprehensive styles for session components with GROUP session support
-
-// ============================================================================
-// Variables
-// ============================================================================
-$primary: #6366f1;
-$primary-dark: #4f46e5;
-$success: #10b981;
-$warning: #f59e0b;
-$danger: #ef4444;
-$gray-50: #f9fafb;
-$gray-100: #f3f4f6;
-$gray-200: #e5e7eb;
-$gray-300: #d1d5db;
-$gray-400: #9ca3af;
-$gray-500: #6b7280;
-$gray-600: #4b5563;
-$gray-700: #374151;
-$gray-800: #1f2937;
-$gray-900: #111827;
-
-$border-radius: 8px;
-$border-radius-lg: 12px;
-$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-$shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-  0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
 // ============================================================================
 // SESSION CARD
 // ============================================================================
 .session-card {
   background: white;
-  border-radius: $border-radius-lg;
-  box-shadow: $shadow;
+  border-radius: $sessions-border-radius-lg;
+  box-shadow: $sessions-shadow;
   padding: 1.25rem;
   transition: box-shadow 0.2s, transform 0.2s;
 
   &:hover {
-    box-shadow: $shadow-lg;
+    box-shadow: $sessions-shadow-lg;
   }
 
   &--canceled {
     opacity: 0.7;
-    background: $gray-50;
+    background: $sessions-gray-50;
   }
 
   &--live {
-    border: 2px solid $success;
+    border: 2px solid $sessions-success;
     animation: pulse-border 2s infinite;
   }
 
@@ -66,7 +42,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__title {
     font-size: 1.125rem;
     font-weight: 600;
-    color: $gray-900;
+    color: $sessions-gray-900;
     margin: 0 0 0.5rem;
   }
 
@@ -107,7 +83,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     font-weight: 500;
 
     &--live {
-      background: $success;
+      background: $sessions-success;
       color: white;
       animation: pulse 2s infinite;
     }
@@ -118,13 +94,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     }
 
     &--upcoming {
-      background: $gray-100;
-      color: $gray-700;
+      background: $sessions-gray-100;
+      color: $sessions-gray-700;
     }
 
     &--scheduled {
-      background: $gray-100;
-      color: $gray-600;
+      background: $sessions-gray-100;
+      color: $sessions-gray-600;
     }
 
     &--completed {
@@ -155,7 +131,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     display: flex;
     gap: 1rem;
     margin-bottom: 1rem;
-    color: $gray-600;
+    color: $sessions-gray-600;
     font-size: 0.875rem;
   }
 
@@ -173,8 +149,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   // Participants
   &__participants {
     padding: 0.75rem;
-    background: $gray-50;
-    border-radius: $border-radius;
+    background: $sessions-gray-50;
+    border-radius: $sessions-border-radius;
     margin-bottom: 1rem;
   }
 
@@ -195,12 +171,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   }
 
   &__person-label {
-    color: $gray-500;
+    color: $sessions-gray-500;
   }
 
   &__person-name {
     font-weight: 500;
-    color: $gray-800;
+    color: $sessions-gray-800;
   }
 
   &__capacity {
@@ -208,14 +184,14 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: $gray-600;
+    color: $sessions-gray-600;
     margin-top: 0.5rem;
     padding-top: 0.5rem;
-    border-top: 1px solid $gray-200;
+    border-top: 1px solid $sessions-gray-200;
   }
 
   &__capacity-full {
-    background: $danger;
+    background: $sessions-danger;
     color: white;
     padding: 0.125rem 0.375rem;
     border-radius: 4px;
@@ -236,7 +212,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     justify-content: center;
     gap: 0.375rem;
     padding: 0.5rem 1rem;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     font-size: 0.875rem;
     font-weight: 500;
     text-decoration: none;
@@ -245,27 +221,27 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     transition: all 0.2s;
 
     &--primary {
-      background: $primary;
+      background: $sessions-primary;
       color: white;
 
       &:hover {
-        background: $primary-dark;
+        background: $sessions-primary-dark;
       }
     }
 
     &--secondary {
-      background: $gray-100;
-      color: $gray-700;
+      background: $sessions-gray-100;
+      color: $sessions-gray-700;
 
       &:hover {
-        background: $gray-200;
+        background: $sessions-gray-200;
       }
     }
 
     &--danger {
       background: transparent;
-      color: $danger;
-      border: 1px solid $danger;
+      color: $sessions-danger;
+      border: 1px solid $sessions-danger;
 
       &:hover {
         background: #fef2f2;
@@ -290,7 +266,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     gap: 0.25rem;
     font-size: 0.875rem;
     font-weight: 500;
-    color: $gray-700;
+    color: $sessions-gray-700;
     min-width: 100px;
   }
 
@@ -319,34 +295,34 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     justify-content: center;
     padding: 3rem;
     text-align: center;
-    color: $gray-500;
+    color: $sessions-gray-500;
   }
 
   &__spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid $gray-200;
-    border-top-color: $primary;
+    border: 3px solid $sessions-gray-200;
+    border-top-color: $sessions-primary;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 1rem;
   }
 
   &__error-text {
-    color: $danger;
+    color: $sessions-danger;
     margin-bottom: 1rem;
   }
 
   &__retry-btn {
     padding: 0.5rem 1rem;
-    background: $primary;
+    background: $sessions-primary;
     color: white;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     cursor: pointer;
 
     &:hover {
-      background: $primary-dark;
+      background: $sessions-primary-dark;
     }
   }
 
@@ -363,8 +339,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__filter-group {
     display: flex;
     gap: 0.25rem;
-    background: $gray-100;
-    border-radius: $border-radius;
+    background: $sessions-gray-100;
+    border-radius: $sessions-border-radius;
     padding: 0.25rem;
   }
 
@@ -372,7 +348,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     padding: 0.5rem 0.75rem;
     border: none;
     background: transparent;
-    color: $gray-600;
+    color: $sessions-gray-600;
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.875rem;
@@ -380,12 +356,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
     &--active {
       background: white;
-      color: $gray-900;
-      box-shadow: $shadow-sm;
+      color: $sessions-gray-900;
+      box-shadow: $sessions-shadow-sm;
     }
 
     &:hover:not(&--active) {
-      color: $gray-900;
+      color: $sessions-gray-900;
     }
   }
 
@@ -393,8 +369,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__empty {
     text-align: center;
     padding: 3rem;
-    background: $gray-50;
-    border-radius: $border-radius-lg;
+    background: $sessions-gray-50;
+    border-radius: $sessions-border-radius-lg;
   }
 
   &__empty-icon {
@@ -405,12 +381,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__empty-title {
     font-size: 1.125rem;
     font-weight: 600;
-    color: $gray-800;
+    color: $sessions-gray-800;
     margin: 0 0 0.5rem;
   }
 
   &__empty-text {
-    color: $gray-500;
+    color: $sessions-gray-500;
     margin: 0;
   }
 
@@ -422,12 +398,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__group-date {
     font-size: 0.875rem;
     font-weight: 600;
-    color: $gray-500;
+    color: $sessions-gray-500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin: 0 0 0.75rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid $gray-200;
+    border-bottom: 1px solid $sessions-gray-200;
   }
 
   &__cards {
@@ -458,8 +434,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__spinner {
     width: 48px;
     height: 48px;
-    border: 3px solid $gray-200;
-    border-top-color: $primary;
+    border: 3px solid $sessions-gray-200;
+    border-top-color: $sessions-primary;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 1rem;
@@ -475,13 +451,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    color: $gray-600;
+    color: $sessions-gray-600;
     text-decoration: none;
     font-size: 0.875rem;
     margin-bottom: 1.5rem;
 
     &:hover {
-      color: $primary;
+      color: $sessions-primary;
     }
   }
 
@@ -507,7 +483,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: $gray-900;
+    color: $sessions-gray-900;
     margin: 0;
   }
 
@@ -543,8 +519,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     font-weight: 500;
 
     &--scheduled {
-      background: $gray-100;
-      color: $gray-700;
+      background: $sessions-gray-100;
+      color: $sessions-gray-700;
     }
 
     &--completed {
@@ -560,17 +536,17 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__join-btn {
     padding: 0.75rem 1.5rem;
-    background: $success;
+    background: $sessions-success;
     color: white;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     animation: pulse 2s infinite;
 
     &:hover {
-      background: darken($success, 10%);
+      background: darken($sessions-success, 10%);
     }
   }
 
@@ -583,19 +559,19 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__card {
     background: white;
-    border-radius: $border-radius-lg;
-    box-shadow: $shadow;
+    border-radius: $sessions-border-radius-lg;
+    box-shadow: $sessions-shadow;
     padding: 1.5rem;
 
     &--actions {
-      background: $gray-50;
+      background: $sessions-gray-50;
     }
   }
 
   &__card-title {
     font-size: 1rem;
     font-weight: 600;
-    color: $gray-800;
+    color: $sessions-gray-800;
     margin: 0 0 1rem;
     display: flex;
     align-items: center;
@@ -604,12 +580,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__capacity {
     font-weight: 400;
-    color: $gray-500;
+    color: $sessions-gray-500;
   }
 
   // DateTime
   &__datetime {
-    color: $gray-700;
+    color: $sessions-gray-700;
   }
 
   &__date {
@@ -619,11 +595,11 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   }
 
   &__time {
-    color: $gray-600;
+    color: $sessions-gray-600;
   }
 
   &__duration {
-    color: $gray-400;
+    color: $sessions-gray-400;
     margin-left: 0.5rem;
   }
 
@@ -633,8 +609,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem;
-    background: $gray-50;
-    border-radius: $border-radius;
+    background: $sessions-gray-50;
+    border-radius: $sessions-border-radius;
     margin-bottom: 0.5rem;
 
     &--teacher {
@@ -661,13 +637,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__participant-name {
     font-weight: 500;
-    color: $gray-800;
+    color: $sessions-gray-800;
   }
 
   &__participant-role,
   &__participant-status {
     font-size: 0.75rem;
-    color: $gray-500;
+    color: $sessions-gray-500;
   }
 
   &__learners {
@@ -677,12 +653,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__learners-title {
     font-size: 0.875rem;
     font-weight: 600;
-    color: $gray-600;
+    color: $sessions-gray-600;
     margin: 0 0 0.75rem;
   }
 
   &__no-learners {
-    color: $gray-400;
+    color: $sessions-gray-400;
     font-style: italic;
   }
 
@@ -690,7 +666,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__feedback-section {
     margin-bottom: 1rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid $gray-100;
+    border-bottom: 1px solid $sessions-gray-100;
 
     &:last-child {
       margin-bottom: 0;
@@ -701,13 +677,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     h3 {
       font-size: 0.875rem;
       font-weight: 600;
-      color: $gray-600;
+      color: $sessions-gray-600;
       margin: 0 0 0.5rem;
     }
 
     p {
       margin: 0;
-      color: $gray-700;
+      color: $sessions-gray-700;
       white-space: pre-wrap;
     }
   }
@@ -717,14 +693,14 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     display: inline-block;
     margin-top: 1rem;
     padding: 0.5rem 1rem;
-    background: $primary;
+    background: $sessions-primary;
     color: white;
     text-decoration: none;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     font-size: 0.875rem;
 
     &:hover {
-      background: $primary-dark;
+      background: $sessions-primary-dark;
     }
   }
 
@@ -738,18 +714,18 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__action-btn {
     padding: 0.625rem 1.25rem;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
 
     &--primary {
-      background: $success;
+      background: $sessions-success;
       color: white;
 
       &:hover {
-        background: darken($success, 10%);
+        background: darken($sessions-success, 10%);
       }
     }
 
@@ -763,11 +739,11 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     }
 
     &--secondary {
-      background: $gray-100;
-      color: $gray-700;
+      background: $sessions-gray-100;
+      color: $sessions-gray-700;
 
       &:hover {
-        background: $gray-200;
+        background: $sessions-gray-200;
       }
     }
 
@@ -789,7 +765,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__refund-note {
     margin-top: 1rem;
     font-size: 0.75rem;
-    color: $gray-500;
+    color: $sessions-gray-500;
   }
 
   // Modal
@@ -806,7 +782,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__modal {
     background: white;
-    border-radius: $border-radius-lg;
+    border-radius: $sessions-border-radius-lg;
     max-width: 400px;
     width: 100%;
     padding: 1.5rem;
@@ -820,15 +796,15 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__modal-text,
   &__modal-note {
-    color: $gray-600;
+    color: $sessions-gray-600;
     margin-bottom: 1rem;
   }
 
   &__modal-note {
     font-size: 0.875rem;
     padding: 0.75rem;
-    background: $gray-50;
-    border-radius: $border-radius;
+    background: $sessions-gray-50;
+    border-radius: $sessions-border-radius;
   }
 
   &__modal-actions {
@@ -840,17 +816,17 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__modal-btn {
     padding: 0.5rem 1rem;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     font-size: 0.875rem;
     cursor: pointer;
 
     &--cancel {
-      background: $gray-100;
-      color: $gray-700;
+      background: $sessions-gray-100;
+      color: $sessions-gray-700;
     }
 
     &--confirm {
-      background: $danger;
+      background: $sessions-danger;
       color: white;
     }
   }
@@ -866,14 +842,14 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     font-size: 1.25rem;
     font-weight: 600;
     margin: 0 0 1.5rem;
-    color: $gray-900;
+    color: $sessions-gray-900;
   }
 
   &__error {
     padding: 0.75rem 1rem;
     background: #fee2e2;
     color: #991b1b;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
@@ -892,7 +868,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     display: block;
     font-size: 0.875rem;
     font-weight: 500;
-    color: $gray-700;
+    color: $sessions-gray-700;
     margin-bottom: 0.5rem;
   }
 
@@ -900,15 +876,15 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__select {
     width: 100%;
     padding: 0.625rem 0.875rem;
-    border: 1px solid $gray-300;
-    border-radius: $border-radius;
+    border: 1px solid $sessions-gray-300;
+    border-radius: $sessions-border-radius;
     font-size: 0.875rem;
     transition: border-color 0.2s, box-shadow 0.2s;
 
     &:focus {
       outline: none;
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+      border-color: $sessions-primary;
+      box-shadow: 0 0 0 3px rgba($sessions-primary, 0.1);
     }
 
     &--small {
@@ -918,7 +894,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__hint {
     font-size: 0.75rem;
-    color: $gray-500;
+    color: $sessions-gray-500;
     margin-top: 0.25rem;
   }
 
@@ -941,22 +917,22 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__type-btn {
     flex: 1;
     padding: 0.75rem;
-    border: 2px solid $gray-200;
+    border: 2px solid $sessions-gray-200;
     background: white;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
 
     &--active {
-      border-color: $primary;
-      background: rgba($primary, 0.05);
-      color: $primary;
+      border-color: $sessions-primary;
+      background: rgba($sessions-primary, 0.05);
+      color: $sessions-primary;
     }
 
     &:hover:not(&--active) {
-      border-color: $gray-300;
+      border-color: $sessions-gray-300;
     }
 
     &:disabled {
@@ -974,14 +950,14 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     button {
       padding: 0.375rem 0.75rem;
       border: none;
-      background: $gray-100;
-      color: $gray-700;
+      background: $sessions-gray-100;
+      color: $sessions-gray-700;
       border-radius: 4px;
       font-size: 0.75rem;
       cursor: pointer;
 
       &:hover {
-        background: $gray-200;
+        background: $sessions-gray-200;
       }
     }
   }
@@ -997,8 +973,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__learner-list {
     max-height: 250px;
     overflow-y: auto;
-    border: 1px solid $gray-200;
-    border-radius: $border-radius;
+    border: 1px solid $sessions-gray-200;
+    border-radius: $sessions-border-radius;
     padding: 0.5rem;
   }
 
@@ -1012,7 +988,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     transition: background 0.2s;
 
     &:hover {
-      background: $gray-50;
+      background: $sessions-gray-50;
     }
 
     &--selected {
@@ -1027,12 +1003,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__learner-name {
     font-weight: 500;
-    color: $gray-800;
+    color: $sessions-gray-800;
   }
 
   &__learner-email {
     font-size: 0.75rem;
-    color: $gray-500;
+    color: $sessions-gray-500;
   }
 
   // Checkbox
@@ -1056,32 +1032,32 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     gap: 0.75rem;
     margin-top: 1.5rem;
     padding-top: 1rem;
-    border-top: 1px solid $gray-200;
+    border-top: 1px solid $sessions-gray-200;
   }
 
   &__btn {
     padding: 0.625rem 1.25rem;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
 
     &--cancel {
-      background: $gray-100;
-      color: $gray-700;
+      background: $sessions-gray-100;
+      color: $sessions-gray-700;
 
       &:hover {
-        background: $gray-200;
+        background: $sessions-gray-200;
       }
     }
 
     &--save {
-      background: $primary;
+      background: $sessions-primary;
       color: white;
 
       &:hover {
-        background: $primary-dark;
+        background: $sessions-primary-dark;
       }
     }
 
@@ -1113,15 +1089,15 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__create-btn {
     padding: 0.625rem 1.25rem;
-    background: $primary;
+    background: $sessions-primary;
     color: white;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     font-weight: 500;
     cursor: pointer;
 
     &:hover {
-      background: $primary-dark;
+      background: $sessions-primary-dark;
     }
   }
 
@@ -1142,15 +1118,15 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__select {
     padding: 0.5rem 0.75rem;
-    border: 1px solid $gray-300;
-    border-radius: $border-radius;
+    border: 1px solid $sessions-gray-300;
+    border-radius: $sessions-border-radius;
     font-size: 0.875rem;
   }
 
   &__search {
     padding: 0.5rem 0.75rem;
-    border: 1px solid $gray-300;
-    border-radius: $border-radius;
+    border: 1px solid $sessions-gray-300;
+    border-radius: $sessions-border-radius;
     min-width: 200px;
     font-size: 0.875rem;
   }
@@ -1160,15 +1136,15 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__loading {
     text-align: center;
     padding: 2rem;
-    color: $gray-500;
+    color: $sessions-gray-500;
 
     button {
       margin-top: 0.5rem;
       padding: 0.5rem 1rem;
-      background: $primary;
+      background: $sessions-primary;
       color: white;
       border: none;
-      border-radius: $border-radius;
+      border-radius: $sessions-border-radius;
       cursor: pointer;
     }
   }
@@ -1186,7 +1162,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     td {
       padding: 0.75rem;
       text-align: left;
-      border-bottom: 1px solid $gray-200;
+      border-bottom: 1px solid $sessions-gray-200;
     }
 
     th {
@@ -1194,8 +1170,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: $gray-500;
-      background: $gray-50;
+      color: $sessions-gray-500;
+      background: $sessions-gray-50;
     }
   }
 
@@ -1205,13 +1181,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     }
 
     &:hover {
-      background: $gray-50;
+      background: $sessions-gray-50;
     }
   }
 
   &__cell--id {
     font-family: monospace;
-    color: $gray-500;
+    color: $sessions-gray-500;
   }
 
   &__cell--title {
@@ -1241,7 +1217,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__participants-btn {
     background: none;
     border: none;
-    color: $primary;
+    color: $sessions-primary;
     cursor: pointer;
     font-size: 0.875rem;
     display: flex;
@@ -1262,8 +1238,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     text-transform: capitalize;
 
     &--scheduled {
-      background: $gray-100;
-      color: $gray-700;
+      background: $sessions-gray-100;
+      color: $sessions-gray-700;
     }
 
     &--completed {
@@ -1285,13 +1261,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__action-btn {
     padding: 0.375rem;
     border: none;
-    background: $gray-100;
+    background: $sessions-gray-100;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.875rem;
 
     &:hover {
-      background: $gray-200;
+      background: $sessions-gray-200;
     }
 
     &--success:hover {
@@ -1309,7 +1285,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__empty {
     text-align: center;
-    color: $gray-500;
+    color: $sessions-gray-500;
     padding: 2rem;
   }
 
@@ -1323,13 +1299,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
     button {
       padding: 0.5rem 1rem;
-      border: 1px solid $gray-300;
+      border: 1px solid $sessions-gray-300;
       background: white;
-      border-radius: $border-radius;
+      border-radius: $sessions-border-radius;
       cursor: pointer;
 
       &:hover:not(:disabled) {
-        background: $gray-50;
+        background: $sessions-gray-50;
       }
 
       &:disabled {
@@ -1339,7 +1315,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     }
 
     span {
-      color: $gray-500;
+      color: $sessions-gray-500;
       font-size: 0.875rem;
     }
   }
@@ -1358,7 +1334,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__modal {
     background: white;
-    border-radius: $border-radius-lg;
+    border-radius: $sessions-border-radius-lg;
     max-width: 500px;
     width: 100%;
     max-height: 90vh;
@@ -1374,7 +1350,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     justify-content: space-between;
     align-items: center;
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid $gray-200;
+    border-bottom: 1px solid $sessions-gray-200;
 
     h2 {
       margin: 0;
@@ -1384,7 +1360,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__modal-capacity {
     font-weight: 400;
-    color: $gray-500;
+    color: $sessions-gray-500;
     font-size: 0.875rem;
   }
 
@@ -1393,10 +1369,10 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     border: none;
     font-size: 1.25rem;
     cursor: pointer;
-    color: $gray-500;
+    color: $sessions-gray-500;
 
     &:hover {
-      color: $gray-700;
+      color: $sessions-gray-700;
     }
   }
 
@@ -1405,7 +1381,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   }
 
   &__no-participants {
-    color: $gray-500;
+    color: $sessions-gray-500;
     font-style: italic;
   }
 
@@ -1414,8 +1390,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem;
-    background: $gray-50;
-    border-radius: $border-radius;
+    background: $sessions-gray-50;
+    border-radius: $sessions-border-radius;
     margin-bottom: 0.5rem;
 
     &--canceled {
@@ -1435,7 +1411,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__participant-email {
     font-size: 0.75rem;
-    color: $gray-500;
+    color: $sessions-gray-500;
   }
 
   &__participant-status {
@@ -1480,20 +1456,20 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__add-participant {
     padding: 1rem 1.5rem;
-    border-top: 1px solid $gray-200;
+    border-top: 1px solid $sessions-gray-200;
   }
 
   &__add-participant-btn {
     width: 100%;
     padding: 0.625rem;
-    background: $primary;
+    background: $sessions-primary;
     color: white;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $sessions-border-radius;
     cursor: pointer;
 
     &:hover {
-      background: $primary-dark;
+      background: $sessions-primary-dark;
     }
   }
 }
@@ -1542,16 +1518,16 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   &__divider {
     font-size: 0.75rem;
     font-weight: 600;
-    color: $gray-500;
+    color: $sessions-gray-500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 0.75rem 0;
     margin-top: 0.5rem;
-    border-top: 1px solid $gray-200;
+    border-top: 1px solid $sessions-gray-200;
   }
 
   &__empty {
-    color: $gray-400;
+    color: $sessions-gray-400;
     font-style: italic;
     padding: 1rem 0;
   }
@@ -1562,8 +1538,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: $gray-50;
-  border-radius: $border-radius;
+  background: $sessions-gray-50;
+  border-radius: $sessions-border-radius;
   margin-bottom: 0.5rem;
 
   &--teacher {
@@ -1580,13 +1556,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 
   &__name {
     font-weight: 500;
-    color: $gray-800;
+    color: $sessions-gray-800;
     flex: 1;
   }
 
   &__role {
     font-size: 0.75rem;
-    color: $gray-500;
+    color: $sessions-gray-500;
   }
 
   &__status {
@@ -1619,7 +1595,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  background: $danger;
+  background: $sessions-danger;
   color: white;
   border-radius: 9999px;
   font-size: 0.625rem;
@@ -1649,9 +1625,9 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
 @keyframes pulse-border {
   0%,
   100% {
-    border-color: $success;
+    border-color: $sessions-success;
   }
   50% {
-    border-color: lighten($success, 20%);
+    border-color: lighten($sessions-success, 20%);
   }
 }

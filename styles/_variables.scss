@@ -1,22 +1,23 @@
 // ===========================================
 // SPEEXIFY — SIGNATURE BRAND SYSTEM
-// Identity: Deep Navy + Vibrant Coral
+// Identity: Deep Navy + Vibrant Coral + Amber + Sage
 // Voice: Confident · Warm · Human · Expressive
+// Palette: "Ember & Obsidian"
 // ===========================================
 
 // ── Coral (Primary CTA accent)
-$coral: #F25C2E;
-$coral-dark: #D94B1F;
-$coral-light: #FF7A52;
-$coral-pale: #FDF0EB;
+$coral: #f25c2e;
+$coral-dark: #d94b1f;
+$coral-light: #f37550;
+$coral-pale: #fdf0eb;
 // ── Navy (Brand foundation)
-$navy: #0D1B2A;
-$navy-mid: #1A2E44;
-$navy-muted: #2C4A6A;
+$navy: #0d1b2a;
+$navy-mid: #1a3a5c;
+$navy-muted: #2c5478;
 
 // ── Aliases (keep all existing variable names working)
 $primary: $coral;
-$secondary: #10b981;
+$secondary: #2d9e8f;
 $color-primary: $coral;
 $color-primary-dark: $coral-dark;
 $color-primary-light: $coral-light;
@@ -34,42 +35,43 @@ $color-primary-ink: $coral-dark;
 
 // ===========================================
 // COLORS - Secondary & Tertiary
-// REFINED: Harmonized with brand
+// Sage (growth/progress) + Amber (knowledge/value)
 // ===========================================
-$color-secondary-light: #10b981;
-$color-secondary-dark: #059669;
+$color-secondary-light: #2d9e8f;
+$color-secondary-dark: #1f7d71;
 
-$color-tertiary-light: #FF7A52;
-$color-tertiary-dark: #D94B1F;
+$color-tertiary-light: #eeba52;
+$color-tertiary-dark: #d4890a;
 
 // ===========================================
 // COLORS - Neutral & Grayscale
+// Warm undertone — bridges coral warmth & navy cool
 // ===========================================
 $color-white: #ffffff;
 $color-black: $navy;
 
-$color-grey-light: #f7f7f7;
-$color-grey-light-2: #eee;
+$color-grey-light: #fefcfa;
+$color-grey-light-2: #f5f0ea;
 
-$color-dark-grey: #777;
-$color-dark-grey-2: #999;
-$color-dark-grey-3: #333;
+$color-dark-grey: #5a6a7a;
+$color-dark-grey-2: #8a9bae;
+$color-dark-grey-3: #1a3a5c;
 
-$color-muted: #5A6A7A;
+$color-muted: #5a6a7a;
 
 // ===========================================
 // COLORS - Backgrounds
 // ===========================================
-$bg: #FEFCFA;
-$bg-primary: #FEFCFA;
-$bg-secondary: #F5F0EA;
-$bg-light: #FAFAF7;
-$bg-soft: #F5F0EA;
-$bg-subtle: #F5F0EA;
+$bg: #fefcfa;
+$bg-primary: #fefcfa;
+$bg-secondary: #f5f0ea;
+$bg-light: #fefcfa;
+$bg-soft: #f5f0ea;
+$bg-subtle: #f5f0ea;
 
-$card-bg: #FFFFFF;
-$surface: #F5F0EA;
-$color-surface: #F5F0EA;
+$card-bg: #ffffff;
+$surface: #f5f0ea;
+$color-surface: #f5f0ea;
 
 // Dark surface tokens
 $dark-surface: $navy;
@@ -81,33 +83,32 @@ $dark-card: $navy-muted;
 // ===========================================
 $text: $navy;
 $text-dark: $navy;
-$text-light: #5A6A7A;
+$text-light: #5a6a7a;
 $text-primary: $navy;
-$text-secondary: #5A6A7A;
-$text-muted: #8A9BAE;
+$text-secondary: #5a6a7a;
+$text-muted: #8a9bae;
 
 $ink: $navy;
-$muted: #5A6A7A;
+$muted: #5a6a7a;
 
 // ===========================================
 // COLORS - UI States
 // ===========================================
 $error: #ef4444;
 $error-bg: #fef2f2;
-$success: #10b981;
-$success-bg: #ecfdf5;
+$success: #22c55e;
+$success-bg: #f0fdf4;
 
 // ===========================================
 // COLORS - Borders & Rings
 // ===========================================
-$border: #E8E0D5;
-$color-border: #E8E0D5;
-$border-focus: rgba(242, 92, 46, 0.4);
-$ring: #EDE5D8;
+$border: #e8e0d5;
+$color-border: #e8e0d5;
+$border-focus: rgba(242, 92, 46, 0.45);
+$ring: #ede5d8;
 
 // ===========================================
 // THEME - Calendar
-// REFINED: Brand-based gradient (electric blue)
 // ===========================================
 $calendar-primary: $coral;
 $calendar-secondary: $coral-dark;
@@ -118,25 +119,29 @@ $calendar-error-alt: #dc2626;
 // ===========================================
 // SHADOWS & GLASS
 // ===========================================
-$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-  0 2px 4px -1px rgba(0, 0, 0, 0.06);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-  0 4px 6px -2px rgba(0, 0, 0, 0.05);
-$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-  0 10px 10px -5px rgba(0, 0, 0, 0.04);
-$shadow: 0 4px 16px rgba(14, 21, 47, 0.08), 0 8px 32px rgba(14, 21, 47, 0.06);
+$shadow-sm: 0 1px 2px 0 rgba(13, 27, 42, 0.05);
+$shadow-md:
+  0 4px 6px -1px rgba(13, 27, 42, 0.08),
+  0 2px 4px -1px rgba(13, 27, 42, 0.05);
+$shadow-lg:
+  0 10px 15px -3px rgba(13, 27, 42, 0.09),
+  0 4px 6px -2px rgba(13, 27, 42, 0.05);
+$shadow-xl:
+  0 20px 25px -5px rgba(13, 27, 42, 0.12),
+  0 10px 10px -5px rgba(13, 27, 42, 0.06);
+$shadow:
+  0 4px 16px rgba(13, 27, 42, 0.08),
+  0 8px 32px rgba(13, 27, 42, 0.06);
 
-// New Elite Shadows (Kept as they are neutral)
-$shadow-coral: 0 8px 32px rgba(242, 92, 46, 0.25);
+$shadow-coral: 0 8px 32px rgba(242, 92, 46, 0.28);
 $shadow-glass: 0 8px 32px 0 rgba(13, 27, 42, 0.12);
 $glass-border: 1px solid rgba(255, 255, 255, 0.18);
 
 // ===========================================
 // TRANSITIONS
 // ===========================================
-$transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-$transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+$transition-base: 200ms cubic-bezier(0.16, 1, 0.3, 1);
 
 // ===========================================
 // TYPOGRAPHY (ELITE)
@@ -189,20 +194,19 @@ $radius-card: 20px;
 
 // ===========================================
 // THEME - Main (CSS Custom Properties)
-// REFINED: Unified accent color
 // ===========================================
 :root {
-  --accent: #F25C2E;
+  --accent: #f25c2e;
   --accent-soft: rgba(242, 92, 46, 0.15);
-  --accent-coral: #F25C2E;
-  --accent-navy: #0D1B2A;
-  --panel-bg: #FEFCFA;
-  --text: #0D1B2A;
-  --muted: #5A6A7A;
-  --border: #E8E0D5;
-  --ok: #F25C2E;
-  --good: #10b981;
-  --warn: #f59e0b;
+  --accent-coral: #f25c2e;
+  --accent-navy: #0d1b2a;
+  --panel-bg: #fefcfa;
+  --text: #0d1b2a;
+  --muted: #5a6a7a;
+  --border: #e8e0d5;
+  --ok: #2d9e8f;
+  --good: #22c55e;
+  --warn: #d4890a;
   --bad: #ef4444;
 }
 
@@ -210,51 +214,50 @@ $radius-card: 20px;
 // THEME - Admin (CSS Custom Properties)
 // ===========================================
 :root {
-  --admin-bg-primary: #0D1B2A;
-  --admin-bg-secondary: #060E17;
+  --admin-bg-primary: #0d1b2a;
+  --admin-bg-secondary: #070e17;
   --admin-surface: rgba(13, 27, 42, 0.85);
-  --admin-border: rgba(232, 224, 213, 0.1);
+  --admin-border: rgba(232, 224, 213, 0.12);
   --admin-text-primary: #f8fafc;
   --admin-text-secondary: #94a3b8;
-  --admin-text-muted: #5A6A7A;
+  --admin-text-muted: #5a6a7a;
 
-  --admin-primary: #F25C2E;
-  --admin-primary-dark: #D94B1F;
-  --admin-success: #10b981;
-  --admin-success-dark: #059669;
-  --admin-accent: #FF7A52;
-  --admin-accent-dark: #F25C2E;
-  --admin-warning: #f59e0b;
-  --admin-warning-dark: #d97706;
+  --admin-primary: #f25c2e;
+  --admin-primary-dark: #d94b1f;
+  --admin-success: #22c55e;
+  --admin-success-dark: #15803d;
+  --admin-accent: #f37550;
+  --admin-accent-dark: #f25c2e;
+  --admin-warning: #d4890a;
+  --admin-warning-dark: #b37008;
   --admin-danger: #ef4444;
 
   --admin-radius: 24px;
   --admin-radius-sm: 12px;
   --admin-radius-md: 16px;
-  --admin-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  --admin-shadow: 0 20px 60px rgba(7, 14, 23, 0.35);
 }
 
 // ===========================================
 // THEME - Settings (CSS Custom Properties)
-// REFINED: Brand-based gradient
 // ===========================================
 :root {
-  --settings-bg-start: #F25C2E;
-  --settings-bg-end: #D94B1F;
+  --settings-bg-start: #f25c2e;
+  --settings-bg-end: #d94b1f;
   --settings-surface: rgba(255, 255, 255, 0.97);
   --settings-border: rgba(232, 224, 213, 0.25);
-  --settings-text: #0D1B2A;
-  --settings-text-light: #5A6A7A;
-  --settings-text-muted: #8A9BAE;
+  --settings-text: #0d1b2a;
+  --settings-text-light: #5a6a7a;
+  --settings-text-muted: #8a9bae;
 
-  --settings-primary: #F25C2E;
-  --settings-primary-dark: #D94B1F;
-  --settings-success: #10b981;
-  --settings-warning: #f59e0b;
+  --settings-primary: #f25c2e;
+  --settings-primary-dark: #d94b1f;
+  --settings-success: #22c55e;
+  --settings-warning: #d4890a;
   --settings-danger: #ef4444;
 
-  --settings-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  --settings-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --settings-shadow: 0 20px 60px rgba(7, 14, 23, 0.2);
+  --settings-shadow-sm: 0 4px 16px rgba(13, 27, 42, 0.08);
 }
 
 /* ---------------------------------------
@@ -281,85 +284,351 @@ $container-max: 72rem; // 1152px
 $container-pad: 1.25rem; // 20px
 
 /* ---------------------------------------
-   GLOBAL TRANSITIONS (optional but useful)
+   GLOBAL TRANSITIONS
 ----------------------------------------*/
-$transition-fast: 0.2s ease;
 $transition-med: 0.3s ease;
 $transition-slow: 0.6s ease;
 
 /* ---------------------------------------
    ELITE SPRING PHYSICS TIMING FUNCTIONS
-   These create that "120hz" buttery feel
 ----------------------------------------*/
-// Bouncy spring - for playful interactions (buttons, toggles)
 $spring-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-
-// Smooth spring - natural feeling, slight overshoot
 $spring-smooth: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-// Snappy spring - quick with subtle bounce
 $spring-snappy: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-
-// Expo curves - silky smooth without overshoot
 $expo-out: cubic-bezier(0.16, 1, 0.3, 1);
 $expo-in-out: cubic-bezier(0.87, 0, 0.13, 1);
-
-// Circ curve - sharp start, smooth end
 $circ-out: cubic-bezier(0, 0.55, 0.45, 1);
-
-// Power curves - for dramatic emphasis
 $power4-out: cubic-bezier(0.22, 1, 0.36, 1);
 
 /* ---------------------------------------
    ANIMATION DURATION SCALE (120hz optimized)
-   Shorter durations feel snappier on high refresh displays
 ----------------------------------------*/
-$duration-instant: 80ms; // Micro-feedback (press states)
-$duration-fast: 150ms; // Quick interactions (hovers)
-$duration-normal: 250ms; // Standard transitions
-$duration-slow: 400ms; // Emphasis animations
-$duration-dramatic: 600ms; // Page transitions, reveals
+$duration-instant: 80ms;
+$duration-fast: 150ms;
+$duration-normal: 250ms;
+$duration-slow: 400ms;
+$duration-dramatic: 600ms;
 
 // ============================================================================
 // Speexify Checkout Styles
 // ============================================================================
 
-// Variables (adjust to match your design system)
-// Colors
 $primary-color: $coral;
 $primary-hover: $coral-dark;
-$gray-50: #f9fafb;
-$gray-100: #f3f4f6;
-$gray-400: #9ca3af;
-$gray-600: #4b5563;
-$gray-700: #374151;
-$gray-800: #1f2937;
-$yellow-50: #fefce8;
-$yellow-200: #fef08a;
-$yellow-400: #facc15;
-$yellow-700: #a16207;
-$yellow-800: #854d0e;
-$blue-50: #FDF0EB;
+$gray-50: #fefcfa;
+$gray-100: #f5f0ea;
+$gray-400: #b8a99a;
+$gray-600: #5a6a7a;
+$gray-700: #3d4f5f;
+$gray-800: #1a3a5c;
+$yellow-50: #fdf8ec;
+$yellow-200: #f5d48e;
+$yellow-400: #d4890a;
+$yellow-700: #b37008;
+$yellow-800: #8f5806;
+$blue-50: #f5f0ea;
 $blue-600: $coral;
 $blue-800: $coral-dark;
 $white: #ffffff;
-$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-  0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
 // ============================================================================
 // Payment Result Page Styles
 // ============================================================================
 
-// Colors
 $payment-primary: $coral;
 $payment-primary-hover: $coral-dark;
 $payment-white: #ffffff;
-$payment-gray-600: #5A6A7A;
+$payment-gray-600: #5a6a7a;
 $payment-gray-900: $navy;
 $payment-green-50: #f0fdf4;
 $payment-green-100: #dcfce7;
-$payment-green-600: #16a34a;
+$payment-green-600: #22c55e;
 $payment-red-50: #fef2f2;
 $payment-red-100: #fee2e2;
-$payment-red-600: #dc2626;
+$payment-red-600: #ef4444;
+
+// ============================================================================
+// PAGE-SPECIFIC SCSS TOKENS (CENTRALIZED)
+// ============================================================================
+
+// Sessions page
+$sessions-primary: #f25c2e;
+$sessions-primary-dark: #d94b1f;
+$sessions-success: #22c55e;
+$sessions-warning: #d4890a;
+$sessions-danger: #ef4444;
+$sessions-gray-50: #fefcfa;
+$sessions-gray-100: #f5f0ea;
+$sessions-gray-200: #e8e0d5;
+$sessions-gray-300: #d4c9bb;
+$sessions-gray-400: #b8a99a;
+$sessions-gray-500: #8a9bae;
+$sessions-gray-600: #5a6a7a;
+$sessions-gray-700: #3d4f5f;
+$sessions-gray-800: #1a3a5c;
+$sessions-gray-900: #0d1b2a;
+$sessions-border-radius: 8px;
+$sessions-border-radius-lg: 12px;
+$sessions-shadow-sm: 0 1px 2px rgba(13, 27, 42, 0.05);
+$sessions-shadow:
+  0 4px 6px -1px rgba(13, 27, 42, 0.08),
+  0 2px 4px -1px rgba(13, 27, 42, 0.05);
+$sessions-shadow-lg:
+  0 10px 15px -3px rgba(13, 27, 42, 0.09),
+  0 4px 6px -2px rgba(13, 27, 42, 0.05);
+
+// Classroom experience page
+$classroom-primary: #f25c2e;
+$classroom-primary-light: #f37550;
+$classroom-success: #22c55e;
+$classroom-warning: #d4890a;
+$classroom-danger: #ef4444;
+$classroom-gray-50: #fefcfa;
+$classroom-gray-100: #f5f0ea;
+$classroom-gray-200: #e8e0d5;
+$classroom-gray-300: #d4c9bb;
+$classroom-gray-400: #b8a99a;
+$classroom-gray-500: #8a9bae;
+$classroom-gray-600: #5a6a7a;
+$classroom-gray-700: #3d4f5f;
+$classroom-gray-800: #1a3a5c;
+$classroom-gray-900: #0d1b2a;
+$classroom-border-radius: 8px;
+$classroom-border-radius-lg: 12px;
+$classroom-shadow-sm: 0 1px 2px rgba(13, 27, 42, 0.05);
+$classroom-shadow-md: 0 4px 6px -1px rgba(13, 27, 42, 0.08);
+$classroom-shadow-lg: 0 10px 15px -3px rgba(13, 27, 42, 0.09);
+
+// Admin support page
+$asp-primary: #f25c2e;
+$asp-primary-hover: #d94b1f;
+$asp-primary-active: #b83d18;
+$asp-success: #22c55e;
+$asp-danger: #ef4444;
+$asp-warning: #d4890a;
+$asp-info: #2d9e8f;
+$asp-bg: #fefcfa;
+$asp-surface: #ffffff;
+$asp-border: #e8e0d5;
+$asp-text: #0d1b2a;
+$asp-text-secondary: #5a6a7a;
+$asp-text-light: #8a9bae;
+$asp-shadow-sm: 0 1px 2px rgba(13, 27, 42, 0.05);
+$asp-shadow:
+  0 4px 6px -1px rgba(13, 27, 42, 0.08),
+  0 2px 4px -1px rgba(13, 27, 42, 0.05);
+$asp-shadow-lg:
+  0 10px 15px -3px rgba(13, 27, 42, 0.09),
+  0 4px 6px -2px rgba(13, 27, 42, 0.05);
+$asp-shadow-xl:
+  0 20px 25px -5px rgba(13, 27, 42, 0.12),
+  0 10px 10px -5px rgba(13, 27, 42, 0.06);
+$asp-radius: 12px;
+$asp-radius-sm: 8px;
+$asp-radius-lg: 16px;
+$asp-transition: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+
+// Policy pages
+$policy-max-width: 900px;
+$policy-spacing-xs: 0.5rem;
+$policy-spacing-sm: 1rem;
+$policy-spacing-md: 1.5rem;
+$policy-spacing-lg: 2rem;
+$policy-spacing-xl: 3rem;
+$policy-color-bg: #ffffff;
+$policy-color-bg-alt: #fefcfa;
+$policy-color-text: #0d1b2a;
+$policy-color-text-muted: #5a6a7a;
+$policy-color-primary: #f25c2e;
+$policy-color-primary-hover: #d94b1f;
+$policy-color-border: #e8e0d5;
+$policy-color-link: #f25c2e;
+$policy-color-link-hover: #d94b1f;
+$policy-font-size-base: 1rem;
+$policy-font-size-sm: 0.875rem;
+$policy-font-size-lg: 1.125rem;
+$policy-font-size-xl: 1.5rem;
+$policy-font-size-2xl: 2rem;
+$policy-line-height: 1.7;
+$policy-border-radius: 8px;
+$policy-header-height: 80px;
+
+// Calendar availability layer
+$availability-primary: #2d9e8f;
+$availability-secondary: #1f7d71;
+$availability-light: #f0faf9;
+$availability-border: #86d9d2;
+$availability-text: #1f7d71;
+$availability-text-dark: #155d55;
+
+// Support widget
+$sw-primary: $brand;
+$sw-primary-hover: $brand-dark;
+$sw-primary-active: $brand-ink;
+$sw-surface: $card-bg;
+$sw-border: $border;
+$sw-text: $text-primary;
+$sw-text-secondary: $text-secondary;
+$sw-text-light: $text-muted;
+$sw-shadow-sm: 0 1px 2px rgba(13, 27, 42, 0.05);
+$sw-shadow:
+  0 4px 6px -1px rgba(13, 27, 42, 0.08),
+  0 2px 4px -1px rgba(13, 27, 42, 0.05);
+$sw-shadow-lg:
+  0 10px 15px -3px rgba(13, 27, 42, 0.09),
+  0 4px 6px -2px rgba(13, 27, 42, 0.05);
+$sw-shadow-xl:
+  0 20px 25px -5px rgba(13, 27, 42, 0.12),
+  0 10px 10px -5px rgba(13, 27, 42, 0.06);
+$sw-radius: 12px;
+$sw-radius-sm: 8px;
+$sw-radius-lg: 16px;
+$sw-transition: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+$sw-z-fab: 9998;
+$sw-z-panel: 9999;
+$sw-z-lightbox: 10000;
+
+// Resources/classroom tokens
+$cr-bg-primary: #0a0f1a;
+$cr-bg-primary-dark: #060912;
+$cr-bg-secondary: #111827;
+$cr-bg-tertiary: #1e293b;
+$cr-bg-elevated: #1f2937;
+$cr-bg-surface: #151d2e;
+$cr-accent-teacher: #d4890a;
+$cr-accent-learner: #2d9e8f;
+$cr-accent-primary: #f25c2e;
+$cr-accent-primary-light: #f37550;
+$cr-accent-primary-lighter: #f47d5a;
+$cr-accent-success: #22c55e;
+$cr-accent-danger: #ef4444;
+$cr-accent-danger-light: #f26262;
+$cr-accent-purple: #a855f7;
+$cr-accent-pink: #ec4899;
+$cr-text-primary: #f8fafc;
+$cr-text-secondary: #94a3b8;
+$cr-text-muted: #64748b;
+$cr-text-faint: #475569;
+$cr-border-subtle: rgba(148, 163, 184, 0.1);
+$cr-border-default: rgba(148, 163, 184, 0.18);
+$cr-border-strong: rgba(148, 163, 184, 0.32);
+$cr-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+$cr-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+$cr-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+$cr-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+$cr-shadow-glow: 0 0 40px rgba(242, 92, 46, 0.15);
+$cr-radius-sm: 8px;
+$cr-radius-md: 12px;
+$cr-radius-lg: 16px;
+$cr-radius-xl: 20px;
+$cr-radius-2xl: 24px;
+$cr-radius-full: 999px;
+$cr-transition-fast: 0.12s ease;
+$cr-transition-normal: 0.2s ease;
+$cr-transition-slow: 0.3s ease;
+$cr-transition-spring: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+$cr-header-height: 56px;
+$cr-controls-height: 60px;
+$cr-max-width: 1400px;
+$cr-content-max-width: 1200px;
+$cr-font-sans:
+  "DM Sans",
+  -apple-system,
+  BlinkMacSystemFont,
+  "Segoe UI",
+  sans-serif;
+$cr-font-display:
+  "Plus Jakarta Sans",
+  "DM Sans",
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
+$cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+// ============================================================================
+// CENTRALIZED CSS CUSTOM PROPERTIES FOR PAGE THEMES
+// ============================================================================
+:root {
+  --brand: #f25c2e;
+
+  --why-brand-blue: #f25c2e;
+  --why-brand-blue-dark: #d94b1f;
+  --why-brand-blue-light: #f37550;
+  --why-text-primary: #0d1b2a;
+  --why-text-secondary: #5a6a7a;
+  --why-bg-light: #fefcfa;
+  --why-bg-white: #ffffff;
+  --why-border-light: #e8e0d5;
+  --why-success: #22c55e;
+  --why-danger: #ef4444;
+
+  --na-bg: #0b0c10;
+  --na-panel: rgba(255, 255, 255, 0.06);
+  --na-panel-2: rgba(255, 255, 255, 0.08);
+  --na-text: rgba(255, 255, 255, 0.92);
+  --na-muted: rgba(255, 255, 255, 0.65);
+  --na-muted-2: rgba(255, 255, 255, 0.5);
+  --na-line: rgba(255, 255, 255, 0.12);
+  --na-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+  --na-radius: 18px;
+  --na-urgent: rgba(242, 92, 46, 0.85);
+
+  --individual-navy: #0d1b2a;
+  --individual-navy-mid: #1a3a5c;
+  --individual-navy-muted: #2c5478;
+  --individual-coral: #f25c2e;
+  --individual-coral-dark: #d94b1f;
+  --individual-coral-light: #f37550;
+  --individual-coral-pale: #fdf0eb;
+  --individual-bg: #fefcfa;
+  --individual-surface: #f5f0ea;
+  --individual-card: #ffffff;
+  --individual-ink: #0d1b2a;
+  --individual-muted: #5a6a7a;
+  --individual-border: #e8e0d5;
+  --individual-ring: #ede5d8;
+  --individual-white: #ffffff;
+  --individual-shadow-coral: 0 8px 32px rgba(242, 92, 46, 0.28);
+  --individual-shadow-navy: 0 8px 32px rgba(13, 27, 42, 0.15);
+  --individual-radius: 20px;
+  --individual-tone-coral: #f25c2e;
+  --individual-tone-gold: #d4890a;
+  --individual-tone-teal: #2d9e8f;
+
+  --tone-coral-color: #f25c2e;
+  --tone-coral-bg: rgba(242, 92, 46, 0.1);
+  --tone-coral-shadow-14: rgba(242, 92, 46, 0.14);
+  --tone-coral-shadow-15: rgba(242, 92, 46, 0.15);
+  --tone-coral-shadow-18: rgba(242, 92, 46, 0.18);
+
+  --tone-blue-color: #2d9e8f;
+  --tone-blue-bg: rgba(45, 158, 143, 0.1);
+  --tone-blue-shadow-14: rgba(45, 158, 143, 0.14);
+  --tone-blue-shadow-15: rgba(45, 158, 143, 0.15);
+  --tone-blue-shadow-18: rgba(45, 158, 143, 0.18);
+
+  --tone-gold-color: #d4890a;
+  --tone-gold-bg: rgba(212, 137, 10, 0.1);
+  --tone-gold-shadow-15: rgba(212, 137, 10, 0.15);
+  --tone-gold-shadow-18: rgba(212, 137, 10, 0.18);
+
+  --tone-teal-color: #2d9e8f;
+  --tone-teal-bg: rgba(45, 158, 143, 0.1);
+  --tone-teal-shadow-14: rgba(45, 158, 143, 0.14);
+  --tone-teal-shadow-15: rgba(45, 158, 143, 0.15);
+  --tone-teal-shadow-18: rgba(45, 158, 143, 0.18);
+
+  --home-tone-coral-bg-soft: #fdf0eb;
+  --home-tone-coral-bg: #fdf0eb;
+  --home-tone-coral-border-18: rgba(242, 92, 46, 0.18);
+  --home-tone-coral-border-22: rgba(242, 92, 46, 0.22);
+
+  --home-tone-blue-bg: #f0faf9;
+  --home-tone-blue-border-22: rgba(45, 158, 143, 0.22);
+
+  --home-tone-gold-bg: #fdf8ec;
+  --home-tone-gold-border-22: rgba(212, 137, 10, 0.22);
+
+  --home-tone-teal-bg: #f0faf9;
+  --home-tone-teal-border-22: rgba(45, 158, 143, 0.22);
+}

@@ -21,7 +21,7 @@
     sans-serif;
 }
 
-.settings-container {
+.settings-modern .settings-container {
   max-width: 800px;
   margin: 0 auto;
 }
@@ -30,7 +30,7 @@
    Loading State
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.settings-loading {
+.settings-modern .settings-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -64,7 +64,7 @@
    Header
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.settings-header {
+.settings-modern .settings-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -73,7 +73,7 @@
   flex-wrap: wrap;
 }
 
-.settings-title {
+.settings-modern .settings-title {
   font-size: 2.5rem;
   font-weight: 800;
   color: $color-white;
@@ -84,13 +84,13 @@
   line-height: 1.2;
 }
 
-.settings-subtitle {
+.settings-modern .settings-subtitle {
   font-size: 1rem;
   font-weight: 400;
   opacity: 0.9;
 }
 
-.user-avatar-large {
+.settings-modern .user-avatar-large {
   width: 72px;
   height: 72px;
   border-radius: 50%;
@@ -110,7 +110,7 @@
    Cards
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.settings-card {
+.settings-modern .settings-card {
   background: var(--settings-surface);
   border-radius: 24px;
   padding: 2rem;
@@ -128,14 +128,14 @@
   }
 }
 
-.settings-card__header {
+.settings-modern .settings-card__header {
   display: flex;
   align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
 }
 
-.settings-card__icon {
+.settings-modern .settings-card__icon {
   width: 56px;
   height: 56px;
   border-radius: 16px;
@@ -165,14 +165,14 @@
   }
 }
 
-.settings-card__title {
+.settings-modern .settings-card__title {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--settings-text);
   margin: 0 0 0.25rem;
 }
 
-.settings-card__description {
+.settings-modern .settings-card__description {
   font-size: 0.875rem;
   color: var(--settings-text-light);
   margin: 0;
@@ -182,19 +182,19 @@
    Forms
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.settings-form {
+.settings-modern .settings-form {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.form-group {
+.settings-modern .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.form-label {
+.settings-modern .form-label {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--settings-text);
@@ -203,13 +203,13 @@
   gap: 0.25rem;
 }
 
-.form-hint {
+.settings-modern .form-hint {
   font-size: 0.813rem;
   font-weight: 400;
   color: var(--settings-text-light);
 }
 
-.form-input-wrapper {
+.settings-modern .form-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
@@ -223,8 +223,8 @@
   }
 }
 
-.form-input,
-.form-select {
+.settings-modern .form-input,
+.settings-modern .form-select {
   width: 100%;
   padding: 0.875rem 1rem 0.875rem 3rem;
   background: $card-bg;
@@ -252,7 +252,7 @@
   }
 }
 
-.form-select {
+.settings-modern .form-select {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -264,7 +264,7 @@
    Form Actions
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.form-actions {
+.settings-modern .form-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -272,8 +272,8 @@
   flex-wrap: wrap;
 }
 
-.btn-primary,
-.btn-warning {
+.settings-modern .btn-primary,
+.settings-modern .btn-warning {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -299,7 +299,7 @@
   }
 }
 
-.btn-primary {
+.settings-modern .btn-primary {
   background: linear-gradient(
     135deg,
     var(--settings-primary),
@@ -313,7 +313,7 @@
   }
 }
 
-.btn-warning {
+.settings-modern .btn-warning {
   background: linear-gradient(
     135deg,
     var(--settings-primary),
@@ -327,7 +327,7 @@
   }
 }
 
-.success-message {
+.settings-modern .success-message {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -360,13 +360,13 @@
    Info Grid
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.info-grid {
+.settings-modern .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
 }
 
-.info-item {
+.settings-modern .info-item {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -382,7 +382,7 @@
   }
 }
 
-.info-item__icon {
+.settings-modern .info-item__icon {
   width: 48px;
   height: 48px;
   border-radius: 12px;
@@ -398,14 +398,14 @@
   color: var(--settings-primary);
 }
 
-.info-item__content {
+.settings-modern .info-item__content {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
 }
 
-.info-item__label {
+.settings-modern .info-item__label {
   font-size: 0.813rem;
   font-weight: 500;
   color: var(--settings-text-light);
@@ -413,7 +413,7 @@
   letter-spacing: 0.05em;
 }
 
-.info-item__value {
+.settings-modern .info-item__value {
   font-size: 1rem;
   font-weight: 600;
   color: var(--settings-text);
@@ -432,35 +432,35 @@
     padding: 1.5rem 1rem;
   }
 
-  .settings-title {
+  .settings-modern .settings-title {
     font-size: 2rem;
   }
 
-  .settings-card {
+  .settings-modern .settings-card {
     padding: 1.5rem;
   }
 
-  .settings-card__header {
+  .settings-modern .settings-card__header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .settings-card__icon {
+  .settings-modern .settings-card__icon {
     width: 48px;
     height: 48px;
   }
 
-  .user-avatar-large {
+  .settings-modern .user-avatar-large {
     width: 64px;
     height: 64px;
     font-size: 1.75rem;
   }
 
-  .info-grid {
+  .settings-modern .info-grid {
     grid-template-columns: 1fr;
   }
 
-  .form-actions {
+  .settings-modern .form-actions {
     flex-direction: column;
     align-items: stretch;
 
@@ -472,29 +472,29 @@
 }
 
 @media (max-width: 480px) {
-  .settings-title {
+  .settings-modern .settings-title {
     font-size: 1.75rem;
   }
 
-  .settings-subtitle {
+  .settings-modern .settings-subtitle {
     font-size: 0.875rem;
   }
 
-  .settings-card {
+  .settings-modern .settings-card {
     padding: 1.25rem;
   }
 
-  .settings-card__title {
+  .settings-modern .settings-card__title {
     font-size: 1.25rem;
   }
 }
 
 /* Calendar sync helpers */
-.form-input--plain {
+.settings-modern .form-input--plain {
   padding-left: 1rem; // no icon in these inputs
 }
 
-.form-status {
+.settings-modern .form-status {
   display: inline-flex;
   align-items: center;
   padding: 0.625rem 1rem;

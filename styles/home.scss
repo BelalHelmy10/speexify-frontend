@@ -235,7 +235,7 @@
       height: 100%;
       background: linear-gradient(90deg,
           transparent,
-          rgba(255, 255, 255, 0.3),
+          rgba($color-white, 0.3),
           transparent);
       animation: shine 3s infinite;
     }
@@ -424,7 +424,7 @@
   position: relative;
   border-radius: 24px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.6); // Glass base
+  background: rgba($color-white, 0.6); // Glass base
   backdrop-filter: blur(12px); // Frost effect
   box-shadow: $shadow-glass; // Deep glass shadow
   border: $glass-border; // Subtle rim light
@@ -437,9 +437,9 @@
     border-radius: 24px;
     padding: 2px;
     background: linear-gradient(135deg, $brand, $brand-light);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient($color-white 0 0) content-box,
+      linear-gradient($color-white 0 0);
+    mask: linear-gradient($color-white 0 0) content-box, linear-gradient($color-white 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
@@ -483,7 +483,7 @@
   background: rgba($color-white, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 999px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba($color-black, 0.1);
   border: 1px solid rgba($color-white, 0.5);
 
   &__icon {
@@ -576,7 +576,7 @@
 
 .home-features {
   padding: 112px 0 120px;
-  background: #fafaf8;
+  background: $bg-light;
   position: relative;
   overflow: hidden;
 
@@ -586,8 +586,8 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse 70% 60% at 50% 0%, rgba(213, 117, 105, 0.06) 0%, transparent 70%),
-      radial-gradient(ellipse 50% 40% at 100% 100%, rgba(92, 169, 165, 0.05) 0%, transparent 60%);
+      radial-gradient(ellipse 70% 60% at 50% 0%, rgba($coral, 0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 100% 100%, rgba($secondary, 0.05) 0%, transparent 60%);
     pointer-events: none;
     z-index: 0;
   }
@@ -684,7 +684,7 @@
   // Base card
   &__card {
     background: $color-white;
-    border: 1px solid #EDE5D8;
+    border: 1px solid $ring;
     border-radius: 20px;
     padding: 36px 32px;
     position: relative;
@@ -729,15 +729,15 @@
     }
 
     &--teal {
-      border-top: 3px solid #10b981;
+      border-top: 3px solid $success;
     }
 
     &--amber {
-      border-top: 3px solid #f59e0b;
+      border-top: 3px solid $sessions-warning;
     }
 
     &--indigo {
-      border-top: 3px solid #6366f1;
+      border-top: 3px solid $color-primary-light;
     }
 
     &--navy {
@@ -789,18 +789,18 @@
     }
 
     &--teal {
-      background: rgba(16, 185, 129, 0.10);
-      color: #059669;
+      background: rgba($success, 0.10);
+      color: $color-secondary-dark;
     }
 
     &--amber {
-      background: rgba(245, 158, 11, 0.10);
-      color: #d97706;
+      background: rgba($sessions-warning, 0.10);
+      color: color-mix(in srgb, $sessions-warning 82%, $color-black);
     }
 
     &--indigo {
-      background: rgba(99, 102, 241, 0.10);
-      color: #6366f1;
+      background: rgba($color-primary-light, 0.10);
+      color: $color-primary-light;
     }
 
     &--navy {
@@ -890,16 +890,13 @@
 // ── Card ————————————————————————————————————————————————————————————————————
 .home-feature {
   // Tone tokens
-  --tone-hue: 0;
-  --tone-sat: 70%;
-  --tone-light: 55%;
-  --tone-bg: #fff5f3;
-  --tone-border: rgba(213, 117, 105, 0.18);
-  --tone-icon-bg: rgba(213, 117, 105, 0.10);
-  --tone-color: #d47569;
+  --tone-bg: var(--home-tone-coral-bg-soft);
+  --tone-border: var(--home-tone-coral-border-18);
+  --tone-icon-bg: var(--tone-coral-bg);
+  --tone-color: var(--tone-coral-color);
 
-  background: #ffffff;
-  border: 1px solid #ebebeb;
+  background: $color-white;
+  border: 1px solid $border;
   border-radius: 20px;
   padding: 32px 28px 28px;
   position: relative;
@@ -908,8 +905,8 @@
   flex-direction: column;
   min-height: 340px;
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 4px 12px rgba(0, 0, 0, 0.05);
+    0 1px 2px rgba($color-black, 0.04),
+    0 4px 12px rgba($color-black, 0.05);
 
   // Entrance animation
   opacity: 0;
@@ -942,10 +939,10 @@
 
   &:hover {
     box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.04),
-      0 12px 32px rgba(0, 0, 0, 0.10),
-      0 0 0 1px rgba(0, 0, 0, 0.04);
-    border-color: #e0e0e0;
+      0 2px 4px rgba($color-black, 0.04),
+      0 12px 32px rgba($color-black, 0.10),
+      0 0 0 1px rgba($color-black, 0.04);
+    border-color: $border;
     transform: translateY(-4px);
 
     .home-feature__accent-bar {
@@ -981,7 +978,7 @@
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.06em;
-    color: #c8c8c8;
+    color: $text-muted;
     line-height: 1;
     margin-top: 6px;
     font-variant-numeric: tabular-nums;
@@ -994,9 +991,9 @@
     border-radius: 14px;
     display: grid;
     place-items: center;
-    background: #f4f4f2;
-    border: 1px solid #e8e8e8;
-    color: #888;
+    background: $bg-soft;
+    border: 1px solid $border;
+    color: $text-secondary;
     transition:
       background 0.3s ease,
       border-color 0.3s ease,
@@ -1045,34 +1042,34 @@
   &__arrow {
     display: inline-flex;
     align-items: center;
-    color: #bbb;
+    color: $text-muted;
     opacity: 0.7;
     transition: transform 0.3s $expo-out, color 0.3s ease, opacity 0.3s ease;
   }
 
   // ── Tone variants ──────────────────────
   &--orange {
-    --tone-bg: #fff3f1;
-    --tone-border: rgba(213, 117, 105, 0.22);
-    --tone-color: #d47569;
+    --tone-bg: var(--home-tone-coral-bg);
+    --tone-border: var(--home-tone-coral-border-22);
+    --tone-color: var(--tone-coral-color);
   }
 
   &--blue {
-    --tone-bg: #f0f5ff;
-    --tone-border: rgba(95, 147, 216, 0.22);
-    --tone-color: #5187cc;
+    --tone-bg: var(--home-tone-blue-bg);
+    --tone-border: var(--home-tone-blue-border-22);
+    --tone-color: var(--tone-blue-color);
   }
 
   &--yellow {
-    --tone-bg: #fdf8ec;
-    --tone-border: rgba(209, 171, 88, 0.22);
-    --tone-color: #c09a49;
+    --tone-bg: var(--home-tone-gold-bg);
+    --tone-border: var(--home-tone-gold-border-22);
+    --tone-color: var(--tone-gold-color);
   }
 
   &--teal {
-    --tone-bg: #f0faf9;
-    --tone-border: rgba(92, 169, 165, 0.22);
-    --tone-color: #4f9d98;
+    --tone-bg: var(--home-tone-teal-bg);
+    --tone-border: var(--home-tone-teal-border-22);
+    --tone-color: var(--tone-teal-color);
   }
 
   @media (max-width: 980px) {
@@ -1137,7 +1134,7 @@
     &.is-active {
       background: $coral;
       border-color: $coral;
-      color: #fff;
+      color: $color-white;
       transform: scale(1.2);
       box-shadow: 0 0 0 6px rgba($coral, 0.18);
     }
@@ -1225,7 +1222,7 @@
     font-size: 15px;
     padding: 8px 18px;
     border-radius: 999px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba($color-black, 0.2);
     transition: background 0.3s ease;
 
     .is-active & {
@@ -1308,6 +1305,11 @@
       color: $navy;
       line-height: 1.1;
       margin: 0 0 20px;
+    }
+
+    .home-demo__accent-word {
+      font-style: normal;
+      color: $calendar-primary;
     }
 
     p {
@@ -1394,7 +1396,7 @@
     overflow: hidden;
     box-shadow:
       0 32px 80px rgba($navy, 0.35),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+      inset 0 0 0 1px rgba($color-white, 0.06);
 
     // Notch
     &::before {
@@ -1423,8 +1425,8 @@
 
   // Coach card inside phone
   &__coach-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba($color-white, 0.05);
+    border: 1px solid rgba($color-white, 0.08);
     border-radius: 16px;
     padding: 16px;
     display: flex;
@@ -1441,7 +1443,7 @@
     place-items: center;
     font-weight: 800;
     font-size: 16px;
-    color: #fff;
+    color: $color-white;
     flex-shrink: 0;
   }
 
@@ -1450,26 +1452,40 @@
 
     strong {
       display: block;
-      color: #fff;
+      color: $color-white;
       font-size: 14px;
       font-weight: 700;
     }
 
     span {
-      color: rgba(255, 255, 255, 0.45);
+      color: rgba($color-white, 0.45);
       font-size: 12px;
     }
   }
 
   &__live-badge {
     background: $coral;
-    color: #fff;
+    color: $color-white;
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.08em;
     padding: 4px 8px;
     border-radius: 999px;
     animation: pulse-ring 1.5s ease infinite;
+  }
+
+  &__float-card {
+    background: $color-white;
+    border-radius: 12px;
+    padding: 10px 16px;
+    box-shadow: 0 8px 24px rgba($navy, 0.14);
+    font-size: 13px;
+    font-weight: 700;
+    color: $navy;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
   }
 
   // Waveform
@@ -1479,9 +1495,39 @@
     justify-content: center;
     gap: 5px;
     padding: 20px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba($color-white, 0.03);
     border-radius: 12px;
     flex: 1;
+  }
+
+  &__session-row {
+    background: rgba($color-white, 0.04);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__session-label {
+    color: rgba($color-white, 0.5);
+    font-size: 13px;
+  }
+
+  &__session-time {
+    color: $calendar-primary;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  &__session-feedback {
+    background: rgba($success, 0.12);
+    border: 1px solid rgba($success, 0.2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: $color-secondary-light;
+    font-weight: 600;
   }
 
   &__bar {
@@ -1551,11 +1597,11 @@
   }
 
   .home-section-title {
-    color: #fff;
+    color: $color-white;
   }
 
   .home-section-subtitle {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba($color-white, 0.5);
   }
 
   .home-features__eyebrow {
@@ -1573,12 +1619,12 @@
     margin-top: 56px;
     border-radius: 20px;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba($color-white, 0.03);
+    border: 1px solid rgba($color-white, 0.07);
   }
 
   &__head-row {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba($color-white, 0.04);
   }
 
   &__th {
@@ -1587,9 +1633,9 @@
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba($color-white, 0.5);
     text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba($color-white, 0.06);
 
     &--speexify {
       color: $coral;
@@ -1603,22 +1649,22 @@
     transition: background 0.2s ease;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.028);
+      background: rgba($color-white, 0.028);
     }
 
     &:not(:last-child) td {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba($color-white, 0.05);
     }
   }
 
   &__td {
     padding: 18px 28px;
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba($color-white, 0.65);
     font-size: 15px;
     vertical-align: middle;
 
     &--feature {
-      color: rgba(255, 255, 255, 0.85);
+      color: rgba($color-white, 0.85);
       font-weight: 600;
     }
 
@@ -1626,7 +1672,7 @@
       background: rgba($coral, 0.05);
       border-left: 2px solid rgba($coral, 0.35);
       border-right: 2px solid rgba($coral, 0.35);
-      color: #fff;
+      color: $color-white;
     }
   }
 
@@ -1639,15 +1685,15 @@
     font-weight: 600;
 
     &--yes {
-      color: #5dd97c;
+      color: $color-secondary-light;
     }
 
     &--no {
-      color: rgba(255, 255, 255, 0.25);
+      color: rgba($color-white, 0.25);
     }
 
     &--partial {
-      color: #f5c542;
+      color: $sessions-warning;
     }
   }
 }
@@ -1685,7 +1731,7 @@
 
     &:hover {
       transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 20px 40px rgba($color-black, 0.1);
 
       .home-spx-curriculum__thumb img {
         transform: scale(1.1);
@@ -1780,11 +1826,11 @@
 
   // Section header text on dark bg
   .home-section-title {
-    color: #ffffff !important;
+    color: $color-white !important;
   }
 
   .home-section-subtitle {
-    color: rgba(255, 255, 255, 0.55) !important;
+    color: rgba($color-white, 0.55) !important;
   }
 
   .home-features__eyebrow {
@@ -1809,7 +1855,7 @@
 
   &__card {
     background: $navy-mid;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba($color-white, 0.06);
     border-radius: 20px;
     padding: 36px 32px;
     display: flex;
@@ -1820,7 +1866,7 @@
 
     &:hover {
       transform: translateY(-6px);
-      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba($coral, 0.15);
+      box-shadow: 0 24px 48px rgba($color-black, 0.4), 0 0 0 1px rgba($coral, 0.15);
       background: $navy-muted;
 
       .home-spx-coaches__avatar-ring {
@@ -1844,8 +1890,8 @@
     height: 100px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border: 3px solid rgba($color-white, 0.1);
+    box-shadow: 0 8px 24px rgba($color-black, 0.3);
     transition: transform 0.4s ease;
     position: relative;
     z-index: 1;
@@ -1866,7 +1912,7 @@
       margin: 0 0 6px;
       font-size: 20px;
       font-weight: 700;
-      color: #ffffff;
+      color: $color-white;
     }
   }
 
@@ -1880,14 +1926,14 @@
 
   &__bio {
     margin: 0;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba($color-white, 0.5);
     line-height: 1.65;
     font-size: 15px;
   }
 
   &__note {
     text-align: center;
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba($color-white, 0.35);
     margin: 48px 0 0;
     font-size: 15px;
     font-style: italic;
@@ -2054,7 +2100,7 @@
     &:hover {
       background: $coral;
       border-color: $coral;
-      color: #fff;
+      color: $color-white;
       transform: scale(1.1);
     }
 
@@ -2378,7 +2424,7 @@
     position: absolute;
     border-radius: 50%;
     background: radial-gradient(circle,
-        rgba(255, 255, 255, 0.1),
+        rgba($color-white, 0.1),
         transparent 70%);
 
     &--1 {
@@ -2431,15 +2477,15 @@
   }
 
   .home-btn--primary {
-    background: #ffffff;
+    background: $color-white;
     color: $coral;
     font-weight: 700;
-    box-shadow: 0 12px 40px rgba(13, 27, 42, 0.2);
+    box-shadow: 0 12px 40px rgba($navy, 0.2);
 
     &:hover {
       background: $bg-soft;
       transform: translateY(-3px);
-      box-shadow: 0 20px 48px rgba(13, 27, 42, 0.25);
+      box-shadow: 0 20px 48px rgba($navy, 0.25);
     }
   }
 
@@ -2456,10 +2502,10 @@
     transition: all 0.25s ease;
     background: transparent;
     color: $color-white;
-    border: 1.5px solid rgba(255, 255, 255, 0.55);
+    border: 1.5px solid rgba($color-white, 0.55);
 
     &:hover {
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba($color-white, 0.15);
       border-color: $color-white;
     }
   }

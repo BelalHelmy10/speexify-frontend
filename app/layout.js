@@ -4,6 +4,8 @@ import Script from "next/script";
 import "@/lib/sentry";
 import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import "../styles/calendar.scss";
+import { Inter, Outfit } from "next/font/google";
 
 import { Suspense } from "react";
 
@@ -16,7 +18,18 @@ import ScrollToTop from "@/components/ScrollToTop";
 import ClientProviders from "./ClientProviders";
 import LocaleShell from "./LocaleShell";
 import SmoothScroll from "@/components/SmoothScroll";
-import CustomCursor from "@/components/CustomCursor";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
 
 // Force dynamic rendering so the first paint always reflects the live auth state
 export const dynamic = "force-dynamic";
@@ -108,18 +121,6 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        {/* Brand fonts for consistent headings/body across all pages */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-
         {/* Jitsi external API for embedded meetings */}
         <Script
           src="https://meet.speexify.com/external_api.js"
@@ -127,16 +128,17 @@ export default async function RootLayout({ children }) {
         />
 
         {/* Favicons */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon-32x32.png" sizes="32x32" />
-        <link rel="icon" href="/icon.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" href="/favicon-16x16.png" sizes="16x16" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 
         {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#F25C2E" />
+        <meta name="theme-color" content="#2563EB" />
       </head>
-      <body>
+      <body className={`${inter.variable} ${outfit.variable}`}>
         <SmoothScroll />
-        <CustomCursor />
         <LocaleShell>
           <ClientProviders>
             <Providers initialUser={user}>

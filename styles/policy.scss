@@ -1,37 +1,9 @@
+@use "variables" as *;
+
 // ==========================================================================
 // Policy Pages Stylesheet (Terms, Privacy, Refund)
 // Performance-optimized: No heavy animations, minimal transitions
 // ==========================================================================
-
-// Variables
-$policy-max-width: 900px;
-$policy-spacing-xs: 0.5rem;
-$policy-spacing-sm: 1rem;
-$policy-spacing-md: 1.5rem;
-$policy-spacing-lg: 2rem;
-$policy-spacing-xl: 3rem;
-
-$policy-color-bg: #ffffff;
-$policy-color-bg-alt: #f8f9fa;
-$policy-color-text: #1a1a2e;
-$policy-color-text-muted: #6c757d;
-$policy-color-primary: #4f46e5;
-$policy-color-primary-hover: #4338ca;
-$policy-color-border: #e5e7eb;
-$policy-color-link: #4f46e5;
-$policy-color-link-hover: #4338ca;
-
-$policy-font-size-base: 1rem;
-$policy-font-size-sm: 0.875rem;
-$policy-font-size-lg: 1.125rem;
-$policy-font-size-xl: 1.5rem;
-$policy-font-size-2xl: 2rem;
-
-$policy-line-height: 1.7;
-$policy-border-radius: 8px;
-
-// Fixed header height - adjust this to match your actual header height
-$header-height: 80px;
 
 // ==========================================================================
 // Smooth Scrolling
@@ -214,7 +186,7 @@ html {
 .policy__section {
   margin-bottom: $policy-spacing-xl;
   // Offset for fixed header when scrolling to anchor
-  scroll-margin-top: calc(#{$header-height} + #{$policy-spacing-lg});
+  scroll-margin-top: calc(#{$policy-header-height} + #{$policy-spacing-lg});
 
   &:last-child {
     margin-bottom: 0;

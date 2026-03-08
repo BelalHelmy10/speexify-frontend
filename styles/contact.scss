@@ -3,44 +3,44 @@
 /* ---------------------------------------
    UTILITIES
 ----------------------------------------*/
-.stack-2xs>*+* {
+.contact .stack-2xs>*+* {
   margin-top: $space-2xs;
 }
 
-.stack-xs>*+* {
+.contact .stack-xs>*+* {
   margin-top: $space-xs;
 }
 
-.stack-sm>*+* {
+.contact .stack-sm>*+* {
   margin-top: $space-sm;
 }
 
-.stack-md>*+* {
+.contact .stack-md>*+* {
   margin-top: $space-md;
 }
 
-.stack-lg>*+* {
+.contact .stack-lg>*+* {
   margin-top: $space-lg;
 }
 
-.row-gap-xs {
+.contact .row-gap-xs {
   display: flex;
   gap: $space-xs;
   flex-wrap: wrap;
 }
 
-.center {
+.contact .center {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-.section {
+.contact .section {
   padding-block: $space-2xl;
 }
 
-.section--tight {
+.contact .section--tight {
   padding-block: $space-xl;
 }
 
@@ -60,7 +60,7 @@
 /* ---------------------------------------
    BUTTONS
 ----------------------------------------*/
-.btn {
+.contact .btn {
   display: inline-flex;
   align-items: center;
   gap: $space-xs;
@@ -136,7 +136,7 @@
 /* ---------------------------------------
    HERO
 ----------------------------------------*/
-.contact-hero {
+.contact .contact-hero {
   position: relative;
   min-height: 70vh;
   display: flex;
@@ -232,7 +232,7 @@
 /* ---------------------------------------
    GRID
 ----------------------------------------*/
-.contact-grid {
+.contact .contact-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 22.5rem;
   gap: $space-xl;
@@ -245,7 +245,7 @@
 /* ---------------------------------------
    CARDS & FORM
 ----------------------------------------*/
-.card {
+.contact .card {
   background: $color-white;
   border: 1px solid $color-border;
   border-radius: $radius-lg;
@@ -253,13 +253,13 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
-.card__header {
+.contact .card__header {
   display: flex;
   align-items: center;
   gap: $space-sm;
 }
 
-.card__icon {
+.contact .card__icon {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: $radius-md;
@@ -271,17 +271,17 @@
   color: $color-primary;
 }
 
-.card__title {
+.contact .card__title {
   font-size: 1.25rem;
   font-weight: 700;
 }
 
-.card__subtitle {
+.contact .card__subtitle {
   color: $color-muted;
   font-size: 0.9375rem;
 }
 
-.kvs {
+.contact .kvs {
   display: grid;
   gap: $space-sm;
   margin-top: $space-sm;
@@ -328,7 +328,7 @@
 /* ---------------------------------------
    FIELDS
 ----------------------------------------*/
-.form-row {
+.contact .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: $space-lg;
@@ -338,21 +338,21 @@
   }
 }
 
-.field {
+.contact .field {
   display: flex;
   flex-direction: column;
   gap: $space-xs;
 }
 
-.label {
+.contact .label {
   font-weight: 600;
   font-size: 0.875rem;
   color: $color-black;
 }
 
-.input,
-.select,
-.textarea {
+.contact .input,
+.contact .select,
+.contact .textarea {
   padding: 0.75rem 1rem;
   border: 2px solid $color-border;
   border-radius: $radius-md;
@@ -371,7 +371,7 @@
   }
 }
 
-.select {
+.contact .select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -379,7 +379,7 @@
   padding-right: 2.25rem;
 }
 
-.textarea {
+.contact .textarea {
   resize: vertical;
   min-height: 8rem;
 }
@@ -387,13 +387,13 @@
 /* ---------------------------------------
    SIDEBAR
 ----------------------------------------*/
-.contact-sidebar {
+.contact .contact-sidebar {
   display: flex;
   flex-direction: column;
   gap: $space-lg;
 }
 
-.contact-card:hover {
+.contact .contact-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 24px rgba($color-primary, 0.14);
 }
@@ -401,7 +401,7 @@
 /* ---------------------------------------
    LANES
 ----------------------------------------*/
-.lanes {
+.contact .lanes {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: $space-lg;
@@ -411,11 +411,11 @@
   }
 }
 
-.lane {
+.contact .lane {
   // Tone tokens
-  --tone-color: #5187cc;
-  --tone-bg: rgba(81, 135, 204, 0.10);
-  --tone-shadow: rgba(81, 135, 204, 0.14);
+  --tone-color: var(--tone-blue-color);
+  --tone-bg: var(--tone-blue-bg);
+  --tone-shadow: var(--tone-blue-shadow-14);
 
   background: $color-white;
   border: 1px solid $color-border;
@@ -424,21 +424,21 @@
   transition: transform $transition-fast, box-shadow $transition-fast;
 
   &--coral {
-    --tone-color: #d47569;
-    --tone-bg: rgba(212, 117, 105, 0.10);
-    --tone-shadow: rgba(212, 117, 105, 0.14);
+    --tone-color: var(--tone-coral-color);
+    --tone-bg: var(--tone-coral-bg);
+    --tone-shadow: var(--tone-coral-shadow-14);
   }
 
   &--blue {
-    --tone-color: #5187cc;
-    --tone-bg: rgba(81, 135, 204, 0.10);
-    --tone-shadow: rgba(81, 135, 204, 0.14);
+    --tone-color: var(--tone-blue-color);
+    --tone-bg: var(--tone-blue-bg);
+    --tone-shadow: var(--tone-blue-shadow-14);
   }
 
   &--teal {
-    --tone-color: #4f9d98;
-    --tone-bg: rgba(79, 157, 152, 0.10);
-    --tone-shadow: rgba(79, 157, 152, 0.14);
+    --tone-color: var(--tone-teal-color);
+    --tone-bg: var(--tone-teal-bg);
+    --tone-shadow: var(--tone-teal-shadow-14);
   }
 
   &:hover {
@@ -467,7 +467,7 @@
 /* ---------------------------------------
    MAP
 ----------------------------------------*/
-.contact-map {
+.contact .contact-map {
   background: $color-surface;
   border-block: 1px solid $color-border;
 
@@ -516,7 +516,7 @@
   }
 }
 
-.map-placeholder {
+.contact .map-placeholder {
   height: 20rem;
   border-radius: $radius-lg;
   border: 2px dashed $color-border;
@@ -528,7 +528,7 @@
 /* ---------------------------------------
    FAQ
 ----------------------------------------*/
-.faq {
+.contact .faq {
   max-width: 56.25rem;
   margin-inline: auto;
 
@@ -542,7 +542,7 @@
   }
 }
 
-.accordion {
+.contact .accordion {
   display: grid;
   gap: $space-sm;
 
@@ -611,45 +611,45 @@
 /* ---------------------------------------
    CONTACT FORM HEADER (SPLIT)
 ----------------------------------------*/
-.contact-form__header {
+.contact .contact-form__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: $space-lg;
 }
 
-.contact-form__header-left {
+.contact .contact-form__header-left {
   min-width: 0; // prevent overflow
 }
 
-.contact-form__header-right {
+.contact .contact-form__header-right {
   font-size: 0.875rem;
   color: $color-muted;
   white-space: nowrap;
 }
 
-.contact-form__header-hint {
+.contact .contact-form__header-hint {
   color: $color-muted;
 }
 
-.contact-form .card__title {
+.contact .contact-form .card__title {
   font-size: 1.5rem;
   font-weight: 800;
 }
 
-.contact-form .card__subtitle {
+.contact .contact-form .card__subtitle {
   margin-top: $space-2xs;
   font-size: 0.875rem;
   color: $color-muted;
 }
 
 @media (max-width: $bp-sm) {
-  .contact-form__header {
+  .contact .contact-form__header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .contact-form__header-right {
+  .contact .contact-form__header-right {
     white-space: normal;
   }
 }
@@ -657,7 +657,7 @@
 /* ---------------------------------------
    FORM ACTIONS + STATUS
 ----------------------------------------*/
-.actions {
+.contact .actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -665,12 +665,12 @@
   margin-top: $space-lg;
 }
 
-.form-status {
+.contact .form-status {
   font-size: 0.875rem;
   color: $color-muted;
 }
 
-.row-gap-sm {
+.contact .row-gap-sm {
   display: flex;
   gap: $space-sm;
   flex-wrap: wrap;

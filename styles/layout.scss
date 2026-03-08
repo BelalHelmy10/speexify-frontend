@@ -49,7 +49,7 @@
   margin-bottom: 16px;
 }
 
-.panel {
+.layout-panel {
   padding: 16px;
   border: 1px solid $color-border;
   border-radius: $radius;
@@ -62,7 +62,7 @@
   }
 }
 
-.button-row {
+.layout-button-row {
   display: flex;
   gap: 8px;
 }

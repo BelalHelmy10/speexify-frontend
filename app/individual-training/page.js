@@ -129,7 +129,7 @@ function IndividualInner({ dict, locale }) {
                   <span className="sc-dot r"></span>
                   <span className="sc-dot y"></span>
                   <span className="sc-dot g"></span>
-                  <span className="sc-title">Today's Sessions</span>
+                  <span className="sc-title">Today&apos;s Sessions</span>
                 </div>
                 <div className="sc-body">
                   <div className="sess-row">

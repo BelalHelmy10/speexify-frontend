@@ -48,7 +48,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Container
 // ─────────────────────────────────────────────────────────────────────────────
-.auth-container {
+.auth-page .auth-container {
   position: relative;
   z-index: 1;
   width: 100%;
@@ -58,7 +58,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Card
 // ─────────────────────────────────────────────────────────────────────────────
-.auth-card {
+.auth-page .auth-card {
   background: $bg-primary;
   border-radius: 24px;
   padding: 48px 40px;
@@ -86,7 +86,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Brand Icon
 // ─────────────────────────────────────────────────────────────────────────────
-.auth-brand {
+.auth-page .auth-brand {
   display: flex;
   justify-content: center;
   margin-bottom: 32px;
@@ -122,7 +122,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Header
 // ─────────────────────────────────────────────────────────────────────────────
-.auth-header {
+.auth-page .auth-header {
   text-align: center;
   margin-bottom: 32px;
 
@@ -144,7 +144,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Progress Steps (Register-specific)
 // ─────────────────────────────────────────────────────────────────────────────
-.progress-steps {
+.auth-page .progress-steps {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,7 +152,7 @@
   padding: 0 20px;
 }
 
-.step {
+.auth-page .step {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -181,7 +181,7 @@
   }
 }
 
-.step-circle {
+.auth-page .step-circle {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -207,7 +207,7 @@
   }
 }
 
-.step-line {
+.auth-page .step-line {
   width: 60px;
   height: 2px;
   background: $border;
@@ -241,7 +241,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Alerts
 // ─────────────────────────────────────────────────────────────────────────────
-.auth-alert {
+.auth-page .auth-alert {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -287,7 +287,7 @@
 // Social Auth
 // ─────────────────────────────────────────────────────────────────────────────
 // Social Auth
-.auth-social {
+.auth-page .auth-social {
   margin-bottom: 24px;
   width: 100%;
 }
@@ -295,7 +295,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Divider
 // ─────────────────────────────────────────────────────────────────────────────
-.auth-divider {
+.auth-page .auth-divider {
   display: flex;
   align-items: center;
   text-align: center;
@@ -319,13 +319,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Form
 // ─────────────────────────────────────────────────────────────────────────────
-.auth-form {
+.auth-page .auth-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.form-field {
+.auth-page .form-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -347,14 +347,14 @@
   }
 }
 
-.field-hint {
+.auth-page .field-hint {
   margin: 0;
   font-size: 13px;
   color: $text-muted;
   line-height: 1.4;
 }
 
-.optional {
+.auth-page .optional {
   font-weight: 400;
   color: $text-muted;
   font-size: 13px;
@@ -363,7 +363,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Input Wrapper
 // ─────────────────────────────────────────────────────────────────────────────
-.input-wrapper {
+.auth-page .input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
@@ -456,7 +456,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Buttons
 // ─────────────────────────────────────────────────────────────────────────────
-.btn-primary {
+.auth-page .btn-primary {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -522,7 +522,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Form Actions (Resend & Change Email)
 // ─────────────────────────────────────────────────────────────────────────────
-.form-actions {
+.auth-page .form-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -536,7 +536,7 @@
   }
 }
 
-.btn-link {
+.auth-page .btn-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -579,7 +579,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Footer
 // ─────────────────────────────────────────────────────────────────────────────
-.auth-footer {
+.auth-page .auth-footer {
   margin-top: 24px;
   text-align: center;
 
@@ -605,7 +605,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Decorative Elements
 // ─────────────────────────────────────────────────────────────────────────────
-.auth-decoration {
+.auth-page .auth-decoration {
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -613,7 +613,7 @@
   overflow: hidden;
 }
 
-.decoration-circle {
+.auth-page .decoration-circle {
   position: absolute;
   border-radius: 50%;
   background: radial-gradient(
@@ -664,22 +664,22 @@
 // Responsive Adjustments
 // ─────────────────────────────────────────────────────────────────────────────
 @media (max-width: 480px) {
-  .progress-steps {
+  .auth-page .progress-steps {
     padding: 0 8px;
   }
 
-  .step-line {
+  .auth-page .step-line {
     width: 40px;
     margin: 0 4px 24px;
   }
 
-  .step {
+  .auth-page .step {
     span {
       font-size: 12px;
     }
   }
 
-  .step-circle {
+  .auth-page .step-circle {
     width: 36px;
     height: 36px;
     font-size: 14px;
@@ -694,7 +694,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Enhanced Input & Placeholder Styles
 // ─────────────────────────────────────────────────────────────────────────────
-.input-wrapper {
+.auth-page .input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
@@ -810,7 +810,7 @@
 }
 
 // For inputs without icon wrapper (like in ForgotPassword)
-.auth-form input:not(.input-wrapper input) {
+.auth-page .auth-form input:not(.input-wrapper input) {
   padding: 12px 14px;
   font-size: 15px;
   color: $text-primary;

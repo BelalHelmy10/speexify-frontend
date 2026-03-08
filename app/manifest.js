@@ -8,7 +8,7 @@ export default function manifest() {
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#0284c7", // Your brand blue
+    theme_color: "#2563EB", // Brand blue
     orientation: "portrait-primary",
     icons: [
       {

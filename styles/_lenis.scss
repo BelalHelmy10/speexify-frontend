@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 html.lenis,
 html.lenis body {
     height: auto;
@@ -5,7 +7,7 @@ html.lenis body {
 
 html {
     overscroll-behavior: none;
-    background-color: #f9fafb; // Prevent white flash if it does overscroll
+    background-color: $bg-light; // Prevent flash if it does overscroll
 }
 
 .lenis.lenis-smooth {

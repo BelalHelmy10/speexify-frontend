@@ -487,9 +487,9 @@
 
   .spx-corp-metric {
     // Tone tokens
-    --tone-color: #5187cc;
-    --tone-bg: rgba(81, 135, 204, 0.10);
-    --tone-shadow: rgba(81, 135, 204, 0.18);
+    --tone-color: var(--tone-blue-color);
+    --tone-bg: var(--tone-blue-bg);
+    --tone-shadow: var(--tone-blue-shadow-18);
 
     text-align: center;
     padding: $space-7;
@@ -515,21 +515,21 @@
     }
 
     &--coral {
-      --tone-color: #d47569;
-      --tone-bg: rgba(212, 117, 105, 0.10);
-      --tone-shadow: rgba(212, 117, 105, 0.18);
+      --tone-color: var(--tone-coral-color);
+      --tone-bg: var(--tone-coral-bg);
+      --tone-shadow: var(--tone-coral-shadow-18);
     }
 
     &--gold {
-      --tone-color: #c09a49;
-      --tone-bg: rgba(192, 154, 73, 0.10);
-      --tone-shadow: rgba(192, 154, 73, 0.18);
+      --tone-color: var(--tone-gold-color);
+      --tone-bg: var(--tone-gold-bg);
+      --tone-shadow: var(--tone-gold-shadow-18);
     }
 
     &--teal {
-      --tone-color: #4f9d98;
-      --tone-bg: rgba(79, 157, 152, 0.10);
-      --tone-shadow: rgba(79, 157, 152, 0.18);
+      --tone-color: var(--tone-teal-color);
+      --tone-bg: var(--tone-teal-bg);
+      --tone-shadow: var(--tone-teal-shadow-18);
     }
   }
 

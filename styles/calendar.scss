@@ -1,309 +1,143 @@
 @use "variables" as *;
-// ═══════════════════════════════════════════════════════════════════════════
-// Premium Calendar Design System - FINAL MERGED VERSION (Tokenized)
-// Modern, elegant, and highly polished aesthetic for all views
-// ═══════════════════════════════════════════════════════════════════════════
 
-// ─── MAIN CONTAINER ────────────────────────────────────────────────────────
-.calendar-premium-container {
-  position: relative;
-  min-height: 100vh;
-  padding: 2rem 1rem;
-  overflow-x: hidden;
-}
-
-// ─── ANIMATED BACKGROUND GRADIENT ──────────────────────────────────────────
-.calendar-bg-gradient {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60vh;
-  background: linear-gradient(135deg,
-      rgba($calendar-primary, 0.08) 0%,
-      rgba($calendar-secondary, 0.05) 50%,
-      rgba($bg-secondary, 0.6) 100%);
-  z-index: 0;
-  pointer-events: none;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle,
-        rgba($calendar-primary, 0.06) 0%,
-        transparent 70%);
-  }
-}
-
-@keyframes rotate-gradient {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-// ─── HEADER SECTION ────────────────────────────────────────────────────────
-.calendar-header {
-  position: relative;
-  z-index: 1;
-  max-width: 1400px;
-  margin: 0 auto 2rem;
-  text-align: center;
-}
-
-.calendar-header-content {
-  display: inline-block;
-  background: rgba($card-bg, 0.9);
-  border-radius: 24px;
-  padding: 2rem 3rem;
-  box-shadow: $shadow-lg;
-  border: 1px solid rgba($card-bg, 0.8);
-}
-
-.calendar-title {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: $text-primary;
-  margin: 0 0 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  letter-spacing: -0.5px;
-}
-
-.calendar-icon {
-  font-size: 2rem;
-  animation: pulse-icon 2s ease-in-out infinite;
-}
-
-@keyframes pulse-icon {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.1);
-  }
-}
-
-.calendar-subtitle {
+.calx-state {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
   font-size: 1rem;
   color: $text-secondary;
-  margin: 0;
-  font-weight: 500;
 }
 
-.calendar-timezone-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  padding: 0.5rem 1rem;
-  background: rgba($calendar-primary, 0.08);
-  border: 1px solid rgba($calendar-primary, 0.15);
-  border-radius: 99px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: $calendar-primary;
-  animation: fade-in 0.8s ease-out;
-
-  &__icon {
-    font-size: 1.1rem;
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-// ─── ERROR BANNER ──────────────────────────────────────────────────────────
-.calendar-error-banner {
+.calx-page {
+  min-height: auto;
+  background: $bg-primary;
+  color: $text-primary;
+  width: 100vw;
+  max-width: 100vw;
   position: relative;
-  z-index: 1;
-  max-width: 1400px;
-  margin: 0 auto 1.5rem;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(135deg,
-      $calendar-error 0%,
-      $calendar-error-alt 100%);
+  left: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  overflow-x: clip;
+
+  :where(button) {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    outline: none;
+    box-shadow: none;
+  }
+}
+
+.calx-impersonate-bar {
+  background: $navy-mid;
   color: $color-white;
-  border-radius: 16px;
+  padding: 10px 24px;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
+  font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 4px 16px rgba($calendar-error, 0.3);
-  animation: slide-down 0.4s ease;
 
-  .error-icon {
-    font-size: 1.5rem;
+  strong {
+    font-weight: 800;
   }
 }
 
-@keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
+.calx-impersonate-link {
+  color: $color-primary-light;
+  font-weight: 700;
+}
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
+.calx-impersonate-stop {
+  margin-left: auto;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1.5px solid rgba($color-white, 0.4);
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba($color-white, 0.1);
   }
 }
 
-// ─── TWO-PANE LAYOUT ───────────────────────────────────────────────────────
-.calendar-two-pane {
-  position: relative;
-  z-index: 1;
-
-  .calendar-two-pane__wrap {
-    display: grid;
-    grid-template-columns: 340px 1fr;
-    gap: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-    align-items: start;
-  }
-
-  .calendar-two-pane__left,
-  .calendar-two-pane__right {
-    background: rgba($card-bg, 0.95);
-    border-radius: 24px;
-    box-shadow: $shadow;
-    border: 1px solid rgba($card-bg, 0.8);
-    transition: all $transition-base;
-
-    &:hover {
-      box-shadow: $shadow-xl;
-    }
-  }
-
-  .calendar-two-pane__left {
-    padding: 1.5rem;
-    position: sticky;
-    top: 2rem;
-  }
-
-  .calendar-two-pane__right {
-    padding: 1.5rem;
-  }
-
-  @media (max-width: 1024px) {
-    .calendar-two-pane__wrap {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-    }
-
-    .calendar-two-pane__left {
-      position: relative;
-      top: auto;
-    }
-  }
+.calx-shell {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  min-height: calc(100vh - 76px);
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
-// ─── MINI CALENDAR WRAPPER ─────────────────────────────────────────────────
-.mini-cal-wrapper {
+.calx-sidebar {
+  border-right: 1px solid $ring;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 22px;
+  background: $card-bg;
 }
 
-.mini-cal-header {
-  text-align: center;
-
-  .mini-cal-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: $text-primary;
-    margin: 0 0 0.5rem;
-    letter-spacing: -0.3px;
-  }
-
-  .mini-cal-month {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: $calendar-primary;
-    background: linear-gradient(135deg,
-        rgba($calendar-primary, 0.1),
-        rgba($calendar-secondary, 0.1));
-    padding: 0.375rem 1rem;
-    border-radius: 12px;
-    display: inline-block;
-  }
+.calx-sidebar-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $text-muted;
+  margin-bottom: 10px;
 }
 
-// ─── MINI CALENDAR STYLING ────────────────────────────────────────────────
-.mini-cal {
-  .react-calendar {
-    border: none !important;
-    background: transparent;
-    font-family: inherit;
-    width: 100%;
-  }
+.calx-mini-cal {
+  width: 100%;
+  border: none !important;
+  background: transparent;
+  font-family: var(--font-inter), system-ui, sans-serif;
 
   .react-calendar__navigation {
-    display: flex;
-    margin-bottom: 1rem;
-    gap: 0.5rem;
+    margin-bottom: 10px;
 
     button {
+      min-width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: $surface;
+      color: $text-secondary;
+      font-size: 14px;
       font-weight: 700;
-      background: linear-gradient(135deg, $bg-secondary 0%, $bg-soft 100%);
-      border: 1px solid rgba($calendar-primary, 0.15);
-      border-radius: 12px;
-      padding: 0.625rem;
-      min-width: 40px;
-      color: $muted;
-      transition: all $transition-base;
-      cursor: pointer;
+      transition: all 0.2s;
 
       &:hover:not(:disabled) {
-        background: linear-gradient(135deg,
-            $calendar-primary 0%,
-            $calendar-secondary 100%);
-        color: $color-white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba($calendar-primary, 0.3);
+        background: $ring;
+        color: $text-primary;
       }
 
       &:disabled {
         opacity: 0.4;
-        cursor: not-allowed;
       }
     }
 
     .react-calendar__navigation__label {
-      font-weight: 700;
-      font-size: 0.95rem;
-      flex-grow: 1 !important;
+      font-family: var(--font-outfit), sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      color: $navy;
+      letter-spacing: -0.02em;
     }
   }
 
   .react-calendar__month-view__weekdays {
-    text-transform: uppercase;
-    font-size: 0.75rem;
+    font-size: 10px;
     font-weight: 700;
     color: $text-muted;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 
     abbr {
       text-decoration: none;
@@ -311,35 +145,22 @@
   }
 
   .react-calendar__tile {
-    border-radius: 12px;
-    padding: 0.75rem 0.5rem;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    font-size: 12px;
     font-weight: 600;
     color: $text-primary;
-    transition: all $transition-base;
     position: relative;
+    transition: all 0.15s;
 
-    &:hover:not(:disabled) {
-      background: linear-gradient(135deg,
-          rgba($calendar-primary, 0.1),
-          rgba($calendar-secondary, 0.1));
-      transform: scale(1.05);
+    &:hover {
+      background: $surface;
     }
 
-    &:disabled {
-      color: $text-muted;
-    }
-  }
-
-  .react-calendar__tile--now {
-    background: linear-gradient(135deg,
-        rgba($calendar-primary, 0.15),
-        rgba($calendar-secondary, 0.1));
-    font-weight: 700;
-
-    &::after {
+    &.has-event::after {
       content: "";
       position: absolute;
-      bottom: 4px;
+      bottom: 3px;
       left: 50%;
       transform: translateX(-50%);
       width: 4px;
@@ -347,1366 +168,1186 @@
       border-radius: 50%;
       background: $calendar-primary;
     }
-  }
 
-  .react-calendar__tile--active {
-    background: linear-gradient(135deg,
-        $calendar-primary 0%,
-        $calendar-secondary 100%) !important;
-    color: $color-white !important;
-    box-shadow: 0 4px 12px rgba($calendar-primary, 0.4);
-    transform: scale(1.05);
-  }
-
-  .react-calendar__month-view__days__day--neighboringMonth {
-    color: $text-muted;
-  }
-}
-
-// ─── MINI LEGEND ───────────────────────────────────────────────────────────
-.mini-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: linear-gradient(135deg,
-      rgba($bg-secondary, 0.8),
-      rgba($bg-soft, 0.8));
-  border-radius: 16px;
-  border: 1px solid rgba($calendar-primary, 0.1);
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: $muted;
-  }
-
-  .legend-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    box-shadow: $shadow-sm;
-  }
-
-  .legend-dot--scheduled {
-    background: linear-gradient(135deg,
-        $calendar-primary 0%,
-        $calendar-secondary 100%);
-  }
-
-  .legend-dot--canceled {
-    background: linear-gradient(135deg,
-        $calendar-error 0%,
-        $calendar-error-alt 100%);
-  }
-
-  .legend-text {
-    flex: 1;
-  }
-}
-
-// ─── STATS CARD ────────────────────────────────────────────────────────────
-.mini-stats-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 1.25rem;
-  background: linear-gradient(135deg,
-      rgba($calendar-primary, 0.08),
-      rgba($calendar-secondary, 0.06));
-  border-radius: 16px;
-  border: 1px solid rgba($calendar-primary, 0.15);
-
-  .stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.375rem;
-    flex: 1;
-  }
-
-  .stat-value {
-    font-size: 2rem;
-    font-weight: 800;
-    background: linear-gradient(135deg,
-        $calendar-primary 0%,
-        $calendar-secondary 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: $text-secondary;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .stat-divider {
-    width: 1px;
-    height: 40px;
-    background: linear-gradient(to bottom,
-        transparent,
-        rgba($calendar-primary, 0.3),
-        transparent);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// REACT BIG CALENDAR CUSTOMIZATION - ALL VIEWS
-// ═══════════════════════════════════════════════════════════════════════════
-
-// ─── TOOLBAR (Navigation Bar) ──────────────────────────────────────────────
-.rbc-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg,
-      rgba($bg-secondary, 0.8),
-      rgba($bg-soft, 0.8));
-  border-radius: 16px;
-  border: 1px solid rgba($calendar-primary, 0.1);
-
-  .rbc-toolbar-label {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: $text-primary;
-    letter-spacing: -0.3px;
-  }
-
-  .rbc-btn-group {
-    display: flex;
-    gap: 0.5rem;
-
-    button {
-      background: $card-bg;
-      border: 1px solid rgba($calendar-primary, 0.2);
-      border-radius: 12px;
-      padding: 0.625rem 1.25rem;
-      font-weight: 700;
-      font-size: 0.875rem;
-      color: $muted;
-      transition: all $transition-base;
-      cursor: pointer;
-
-      &:hover {
-        background: linear-gradient(135deg,
-            rgba($calendar-primary, 0.1),
-            rgba($calendar-secondary, 0.1));
-        border-color: rgba($calendar-primary, 0.3);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba($calendar-primary, 0.2);
-      }
-
-      &.rbc-active {
-        background: linear-gradient(135deg,
-            $calendar-primary 0%,
-            $calendar-secondary 100%);
-        color: $color-white;
-        border-color: transparent;
-        box-shadow: 0 4px 12px rgba($calendar-primary, 0.4);
-      }
-    }
-  }
-}
-
-// ─── MAIN CALENDAR VIEWS ───────────────────────────────────────────────────
-.rbc-month-view,
-.rbc-time-view,
-.rbc-agenda-view {
-  border: 1px solid rgba($calendar-primary, 0.15);
-  border-radius: 20px;
-  overflow: hidden;
-  background: $card-bg;
-  box-shadow: $shadow-md;
-}
-
-// ─── MONTH VIEW ────────────────────────────────────────────────────────────
-.rbc-month-view {
-  .rbc-header {
-    padding: 1rem 0.5rem;
-    font-weight: 700;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: $text-secondary;
-    background: linear-gradient(to bottom, $bg-secondary, $bg-soft);
-    border-bottom: 2px solid rgba($calendar-primary, 0.15);
-  }
-
-  .rbc-date-cell {
-    padding: 0.5rem;
-    text-align: right;
-
-    >button {
-      background: transparent;
-      border: 0;
-      padding: 0.375rem 0.625rem;
-      font-weight: 700;
-      color: $text-primary;
-      border-radius: $radius;
-      cursor: pointer;
-      transition: all 0.2s ease;
-
-      &:hover {
-        background: linear-gradient(135deg,
-            rgba($calendar-primary, 0.1),
-            rgba($calendar-secondary, 0.1));
-        transform: scale(1.1);
-      }
-    }
-  }
-
-  .rbc-day-bg {
-    border-color: rgba($border, 0.8);
-    transition: background 0.2s ease;
-
-    &:hover {
-      background: rgba($bg-secondary, 0.5);
-    }
-  }
-
-  .rbc-today {
-    background: linear-gradient(135deg,
-        rgba($calendar-primary, 0.05),
-        rgba($calendar-secondary, 0.03));
-  }
-
-  .rbc-off-range-bg {
-    background: rgba($bg-secondary, 0.6);
-  }
-
-  .rbc-month-row {
-    border-color: rgba($border, 0.8);
-  }
-
-  .rbc-day-slot .rbc-event {
-    border: none;
-  }
-}
-
-// ─── WEEK & DAY VIEW ───────────────────────────────────────────────────────
-.rbc-time-view {
-  .rbc-time-header {
-    border-bottom: 2px solid rgba($calendar-primary, 0.15);
-
-    .rbc-header {
-      padding: 0;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-bottom: none;
-      border-left: 1px solid rgba($border, 0.8);
-      background: linear-gradient(to bottom, $bg-secondary, $bg);
-
-      &:first-child {
-        border-left: none;
-      }
-
-      >span,
-      >div {
-        font-weight: 800;
-        font-size: 0.875rem;
-        color: $text-primary;
-        letter-spacing: 0.3px;
-      }
+    &.is-today {
+      background: rgba($calendar-primary, 0.12);
+      color: $calendar-primary;
+      font-weight: 800;
     }
 
-    .rbc-today {
-      background: linear-gradient(135deg,
-          rgba($calendar-primary, 0.08),
-          rgba($calendar-secondary, 0.05));
-
-      .rbc-header>span,
-      .rbc-header>div {
-        color: $calendar-primary;
-      }
-    }
-  }
-
-  .rbc-time-content {
-    height: 700px;
-    border-top: none;
-
-    .rbc-day-slot {
-      border-left: 1px solid rgba($border, 0.8);
-
-      &:first-child {
-        border-left: none;
-      }
-    }
-
-    .rbc-today {
-      background: linear-gradient(135deg,
-          rgba($calendar-primary, 0.02),
-          rgba($calendar-secondary, 0.01));
-    }
-  }
-
-  .rbc-time-slot {
-    border-top: 1px solid rgba($border, 0.5);
-  }
-
-  .rbc-timeslot-group {
-    border-left: 1px solid rgba($border, 0.8);
-    min-height: 60px;
-  }
-
-  .rbc-time-gutter {
-    .rbc-time-slot {
-      border-left: none;
-    }
-
-    .rbc-label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: $text-secondary;
-    }
-  }
-
-  .rbc-current-time-indicator {
-    background-color: $calendar-primary;
-    height: 2px;
-
-    &::before {
-      content: "";
-      position: absolute;
-      left: -6px;
-      top: -5px;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
+    &.is-selected,
+    &.react-calendar__tile--active {
       background: $calendar-primary;
-      box-shadow: 0 0 0 3px rgba($calendar-primary, 0.2);
-    }
-  }
-}
+      color: $color-white;
+      font-weight: 800;
 
-// ─── AGENDA VIEW ───────────────────────────────────────────────────────────
-.rbc-agenda-view {
-  padding: 1.5rem;
-
-  table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 0.5rem;
-  }
-
-  .rbc-agenda-date-cell,
-  .rbc-agenda-time-cell,
-  .rbc-agenda-event-cell {
-    padding: 1rem;
-    vertical-align: middle;
-  }
-
-  .rbc-agenda-date-cell {
-    font-weight: 800;
-    font-size: 0.875rem;
-    color: $text-primary;
-    width: 120px;
-  }
-
-  .rbc-agenda-time-cell {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: $text-secondary;
-    width: 140px;
-  }
-
-  .rbc-agenda-event-cell {
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-
-  tbody>tr {
-    background: $card-bg;
-    border-radius: 12px;
-    box-shadow: $shadow-sm;
-    transition: all 0.3s ease;
-
-    &:hover {
-      box-shadow: 0 4px 16px rgba($calendar-primary, 0.15);
-      transform: translateY(-2px);
-    }
-
-    td {
-      border: none;
-
-      &:first-child {
-        border-top-left-radius: 12px;
-        border-bottom-left-radius: 12px;
-      }
-
-      &:last-child {
-        border-top-right-radius: 12px;
-        border-bottom-right-radius: 12px;
+      &::after {
+        background: rgba($color-white, 0.8);
       }
     }
   }
-
-  .rbc-agenda-empty {
-    text-align: center;
-    padding: 3rem;
-    color: $text-muted;
-    font-weight: 600;
-    font-size: 1.125rem;
-  }
 }
 
-// ─── EVENT STYLING ─────────────────────────────────────────────────────────
-.rbc-event {
-  border: none !important;
-  outline: none !important;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba($calendar-primary, 0.5) !important;
-  }
-
-  &.ev--scheduled {
-    .ev-pill {
-      color: $color-white;
-    }
-  }
-
-  &.ev--canceled {
-    opacity: 0.85;
-
-    .ev-pill {
-      color: $color-white;
-    }
-  }
-}
-
-.rbc-event.ev--canceled {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%) !important;
-  text-decoration: line-through;
-  opacity: 0.85;
-}
-
-.ev-pill {
+.calx-mode-toggle {
+  background: $surface;
+  border-radius: 12px;
+  padding: 4px;
   display: flex;
-  align-items: flex-start; // ✅ allow multi-line title to align nicely
-  gap: 0.5rem;
+  gap: 4px;
+}
+
+.calx-mode-btn {
+  flex: 1;
+  padding: 9px 8px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  font-size: 12px;
   font-weight: 700;
-
-  .ev-icon {
-    font-size: 0.5rem;
-    opacity: 0.9;
-    animation: pulse-dot 2s ease-in-out infinite;
-  }
-
-  .ev-title {
-    flex: 1;
-    min-width: 0; // ✅ IMPORTANT for flex ellipsis + clamp
-    overflow: hidden;
-
-    white-space: normal; // ✅ allow wrap
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2; // ✅ 2 lines max (use 3 if you want)
-    line-height: 1.15;
-  }
-}
-
-@keyframes pulse-dot {
-
-  0%,
-  100% {
-    opacity: 0.9;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.2);
-  }
-}
-
-// ─── POPUP (More Events) ───────────────────────────────────────────────────
-.rbc-overlay {
-  border-radius: 16px;
-  box-shadow: $shadow-lg;
-  border: 1px solid rgba($calendar-primary, 0.2);
-  background: $card-bg;
-  padding: 0.75rem;
-
-  .rbc-overlay-header {
-    font-weight: 800;
-    font-size: 0.875rem;
-    color: $text-primary;
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid rgba($calendar-primary, 0.15);
-  }
-
-  .rbc-event {
-    margin-bottom: 0.5rem;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-}
-
-// ─── SHOW MORE LINK ────────────────────────────────────────────────────────
-.rbc-show-more {
-  background: linear-gradient(135deg,
-      rgba($calendar-primary, 0.1),
-      rgba($calendar-secondary, 0.1));
-  color: $calendar-primary;
-  font-weight: 700;
-  padding: 0.25rem 0.5rem;
-  border-radius: $radius;
-  margin: 0.25rem 0.5rem;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: linear-gradient(135deg,
-        $calendar-primary 0%,
-        $calendar-secondary 100%);
-    color: $color-white;
-    transform: translateY(-1px);
-  }
-}
-
-// ─── RESPONSIVE ADJUSTMENTS ────────────────────────────────────────────────
-@media (max-width: 768px) {
-  .calendar-premium-container {
-    padding: 1.5rem 0.75rem 1.5rem;
-  }
-
-  .calendar-bg-gradient {
-    height: 40vh;
-  }
-
-  .calendar-header {
-    margin-bottom: 1.25rem;
-    padding: 0 0.25rem;
-  }
-
-  .calendar-header-content {
-    width: 100%;
-    padding: 1.25rem 1.5rem;
-    border-radius: 20px;
-  }
-
-  .calendar-title {
-    font-size: 2rem;
-  }
-
-  .calendar-subtitle {
-    font-size: 0.9rem;
-  }
-
-  .calendar-two-pane .calendar-two-pane__wrap {
-    gap: 1.25rem;
-  }
-
-  .calendar-two-pane .calendar-two-pane__left,
-  .calendar-two-pane .calendar-two-pane__right {
-    padding: 1.25rem;
-    border-radius: 20px;
-  }
-
-  .mini-stats-card {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-
-    .stat-divider {
-      display: none;
-    }
-
-    .stat-item {
-      align-items: flex-start;
-    }
-  }
-
-  .rbc-toolbar {
-    flex-direction: column;
-    gap: 0.75rem;
-
-    .rbc-toolbar-label {
-      order: -1;
-      width: 100%;
-      text-align: center;
-    }
-
-    .rbc-btn-group {
-      width: 100%;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-  }
-
-  .rbc-month-view,
-  .rbc-time-view,
-  .rbc-agenda-view {
-    border-radius: 16px;
-  }
-
-  .rbc-time-view .rbc-time-content {
-    height: 420px;
-    overflow-y: auto;
-  }
-}
-
-// ─── ADDITIONAL POLISH & REFINEMENTS ───────────────────────────────────────
-.rbc-addons-dnd .rbc-addons-dnd-resizable {
-  position: relative;
-}
-
-.rbc-selected-cell {
-  background: rgba($calendar-primary, 0.15);
-}
-
-.rbc-time-header-content {
-  border-left: 1px solid rgba($border, 0.8);
-}
-
-.rbc-time-header-gutter {
-  background: linear-gradient(to bottom, $bg-secondary, $bg);
-}
-
-.rbc-allday-cell {
-  background: linear-gradient(to bottom, $bg-soft, $bg-secondary);
-  border-bottom: 1px solid rgba($border, 0.8);
-}
-
-.rbc-button-link {
-  font-weight: 700;
-  color: $calendar-primary;
-  text-decoration: none;
-  transition: all 0.2s ease;
-
-  &:hover {
-    color: $calendar-secondary;
-    text-decoration: underline;
-  }
-}
-
-// Override any conflicting react-calendar base styles
-.react-calendar {
-  border: none !important;
-  font-family: inherit !important;
-}
-
-.react-calendar * {
-  font-family: inherit !important;
-}
-
-.calendar-empty {
-  position: relative;
-  z-index: 1;
-  max-width: 600px;
-  margin: 0 auto 1.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 999px;
-  background: rgba($card-bg, 0.9);
-  border: 1px dashed rgba($border, 0.9);
   color: $text-secondary;
-  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+
+  &.is-active {
+    background: $card-bg;
+    color: $calendar-primary;
+    border-color: $ring;
+    box-shadow: 0 2px 8px rgba($navy, 0.08);
+  }
+
+  &.is-active-green {
+    background: $card-bg;
+    color: $color-secondary-dark;
+    border-color: $ring;
+    box-shadow: 0 2px 8px rgba($navy, 0.08);
+  }
 }
 
-/* RTL FIXES FOR CALENDAR TOOLBAR & BUTTON ORDER */
-[dir="rtl"] .calendar-premium-container {
-  // keep the rest of the layout RTL…
-  direction: rtl;
-}
-
-/* …but force the toolbar + button groups to behave LTR */
-[dir="rtl"] .calendar-premium-container .rbc-toolbar,
-[dir="rtl"] .calendar-premium-container .rbc-toolbar .rbc-btn-group {
-  direction: ltr;
-}
-
-/* keep the label nicely centered in RTL too */
-[dir="rtl"] .calendar-premium-container .rbc-toolbar .rbc-toolbar-label {
+.calx-mode-count {
+  background: $calendar-primary;
+  color: $color-white;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+  min-width: 18px;
   text-align: center;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// AVAILABILITY LAYER STYLES - Add to your existing calendar.scss
-// ═══════════════════════════════════════════════════════════════════════════
-
-// ─── AVAILABILITY COLORS (add to your variables file or top of this file) ───
-$availability-primary: #10b981;
-$availability-secondary: #059669;
-$availability-light: #ecfdf5;
-$availability-border: #6ee7b7;
-$availability-text: #047857;
-$availability-text-dark: #065f46;
-
-// ─── IMPERSONATION BANNER ──────────────────────────────────────────────────
-.impersonation-banner {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: #fff;
-  padding: 0.75rem 1.5rem;
+.calx-stats-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid $ring;
+  border-radius: 16px;
+  overflow: hidden;
+}
 
-  &__info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+.calx-stat {
+  flex: 1;
+  padding: 14px 10px;
+  text-align: center;
 
-    svg {
-      flex-shrink: 0;
-    }
-
-    div {
-      display: flex;
-      flex-direction: column;
-      gap: 0.125rem;
-    }
-
-    strong {
-      font-size: 0.875rem;
-    }
-
-    span {
-      font-size: 0.75rem;
-      opacity: 0.9;
-    }
-  }
-
-  &__actions {
-    display: flex;
-    gap: 0.75rem;
-  }
-
-  &__link {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: background 0.2s ease;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
-  }
-
-  &__stop {
-    background: #fff;
-    color: #d97706;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background: #fef3c7;
-    }
-  }
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    text-align: center;
-
-    &__info {
-      flex-direction: column;
-    }
-
-    &__actions {
-      width: 100%;
-      justify-content: center;
-    }
+  & + .calx-stat {
+    border-left: 1px solid $ring;
   }
 }
 
-// ─── CALENDAR HEADER WITH TOGGLE ───────────────────────────────────────────
-.calendar-header-content--with-toggle {
+.calx-stat__value {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: $navy;
+  line-height: 1;
+  margin-bottom: 4px;
+
+  &.is-primary {
+    color: $calendar-primary;
+  }
+
+  &.is-green {
+    color: $color-secondary-dark;
+  }
+}
+
+.calx-stat__label {
+  font-size: 11px;
+  color: $text-secondary;
+  font-weight: 600;
+}
+
+.calx-upcoming-list {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calx-upcoming-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid $ring;
+  background: $card-bg;
+  transition: all 0.2s;
   text-align: left;
 
-  .calendar-header__left {
-    .calendar-title {
-      justify-content: flex-start;
-    }
-  }
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    text-align: center;
-
-    .calendar-header__left {
-      .calendar-title {
-        justify-content: center;
-      }
-    }
+  &:hover {
+    border-color: $calendar-primary;
+    background: rgba($calendar-primary, 0.08);
   }
 }
 
-.calendar-subtitle__impersonating {
-  color: #d97706;
-  margin-left: 0.5rem;
-  font-weight: 500;
+.calx-upcoming-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+
+  &.is-scheduled {
+    background: $calendar-primary;
+  }
+
+  &.is-live {
+    background: $color-secondary-dark;
+  }
+
+  &.is-group {
+    background: $color-tertiary-dark;
+  }
+
+  &.is-canceled {
+    background: $text-muted;
+  }
 }
 
-// ─── AVAILABILITY MODE TOGGLE ──────────────────────────────────────────────
-.availability-mode-toggle {
+.calx-upcoming-copy {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba($card-bg, 0.9);
-  backdrop-filter: blur(10px);
+  flex-direction: column;
+  gap: 2px;
+}
+
+.calx-upcoming-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: $navy;
+  line-height: 1.3;
+}
+
+.calx-upcoming-time {
+  font-size: 11px;
+  color: $text-secondary;
+}
+
+.calx-empty-small {
+  font-size: 12px;
+  color: $text-secondary;
+  line-height: 1.5;
+  padding: 10px 8px;
+  border: 1px dashed $ring;
+  border-radius: 10px;
+}
+
+.calx-sidebar-cta {
+  background: linear-gradient(135deg, $calendar-primary 0%, $calendar-secondary 100%);
   border-radius: 16px;
-  padding: 0.375rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-
-  &__btn {
-    padding: 0.625rem 1.25rem;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.875rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background: transparent;
-    color: $text-secondary;
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-
-    &:hover:not(&--active):not(&--active-green) {
-      background: rgba($calendar-primary, 0.1);
-    }
-
-    &--active {
-      background: linear-gradient(135deg,
-          $calendar-primary 0%,
-          $calendar-secondary 100%);
-      color: #fff;
-      box-shadow: 0 4px 12px rgba($calendar-primary, 0.4);
-    }
-
-    &--active-green {
-      background: linear-gradient(135deg,
-          $availability-primary 0%,
-          $availability-secondary 100%);
-      color: #fff;
-      box-shadow: 0 4px 12px rgba($availability-primary, 0.4);
-    }
-  }
-
-  &__count {
-    background: #e2e8f0;
-    color: $text-secondary;
-    padding: 0.125rem 0.5rem;
-    border-radius: 10px;
-    font-size: 0.75rem;
-    font-weight: 700;
-
-    &--active {
-      background: rgba(255, 255, 255, 0.3);
-      color: #fff;
-    }
-  }
-
-  @media (max-width: 480px) {
-    width: 100%;
-
-    &__btn {
-      flex: 1;
-      justify-content: center;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.8rem;
-    }
-  }
+  padding: 20px 18px;
+  color: $color-white;
+  text-align: center;
 }
 
-// ─── AVAILABILITY INSTRUCTIONS ─────────────────────────────────────────────
-.calendar-instructions-wrapper {
-  padding: 0 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto 1rem;
+.calx-sidebar-cta__title {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
 }
 
-.availability-instructions {
-  background: linear-gradient(135deg, $availability-light 0%, #d1fae5 100%);
-  border: 1px solid $availability-border;
-  border-radius: 16px;
-  padding: 1rem 1.25rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  animation: slideDown 0.3s ease-out;
-
-  &__icon {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-  }
-
-  &__content {
-    flex: 1;
-  }
-
-  &__title {
-    margin: 0 0 0.5rem 0;
-    color: $availability-text;
-    font-weight: 700;
-    font-size: 0.9375rem;
-  }
-
-  &__list {
-    margin: 0;
-    padding: 0 0 0 1rem;
-    color: $availability-text-dark;
-    font-size: 0.8125rem;
-    line-height: 1.6;
-
-    [dir="rtl"] & {
-      padding: 0 1rem 0 0;
-    }
-  }
-
-  &__close {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: $availability-text;
-    font-size: 1.125rem;
-    padding: 0.25rem;
-    line-height: 1;
-    transition: color 0.2s ease;
-
-    &:hover {
-      color: $availability-text-dark;
-    }
-  }
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-
-    &__close {
-      position: absolute;
-      top: 0.75rem;
-      right: 0.75rem;
-
-      [dir="rtl"] & {
-        right: auto;
-        left: 0.75rem;
-      }
-    }
-  }
+.calx-sidebar-cta__sub {
+  font-size: 12px;
+  color: rgba($color-white, 0.78);
+  margin-bottom: 14px;
+  line-height: 1.5;
 }
 
-// ─── AVAILABILITY QUICK ACTIONS ────────────────────────────────────────────
-.availability-quick-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-top: 1rem;
-
-  &__btn {
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    &--clear-day {
-      border: 1px solid #fca5a5;
-      background: #fef2f2;
-      color: #dc2626;
-
-      &:hover:not(:disabled) {
-        background: #fee2e2;
-      }
-    }
-
-    &--clear-all {
-      border: 1px solid #fca5a5;
-      background: #fff;
-      color: #dc2626;
-
-      &:hover:not(:disabled) {
-        background: #fef2f2;
-      }
-    }
-  }
-}
-
-// ─── AVAILABILITY STATS CARD ───────────────────────────────────────────────
-.mini-stats-card--availability {
-  margin-top: 0.75rem;
-  background: linear-gradient(135deg, $availability-light 0%, #d1fae5 100%);
-  border: 1px solid $availability-border;
-}
-
-.stat-value--green {
-  background: linear-gradient(135deg,
-      $availability-primary 0%,
-      $availability-secondary 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.stat-label--green {
-  color: $availability-text-dark;
-}
-
-.stat-divider--green {
-  background: linear-gradient(to bottom,
-      transparent,
-      $availability-border,
-      transparent);
-}
-
-// ─── LEGEND - AVAILABLE DOT ────────────────────────────────────────────────
-.legend-dot--available {
-  background: linear-gradient(135deg,
-      $availability-primary 0%,
-      $availability-secondary 100%);
-}
-
-// ─── IMPERSONATION INFO CARD ───────────────────────────────────────────────
-.impersonation-info-card {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: #fef3c7;
-  border-radius: 8px;
-  border: 1px solid #f59e0b;
-
-  &__title {
-    font-size: 0.75rem;
-    color: #92400e;
-    font-weight: 600;
-  }
-
-  &__text {
-    font-size: 0.6875rem;
-    color: #a16207;
-    margin-top: 0.25rem;
-  }
-}
-
-// ─── CALENDAR AVAILABILITY MODE INDICATOR ──────────────────────────────────
-.calendar-two-pane__right--availability-mode {
-  box-shadow: inset 0 0 0 3px $availability-primary;
-  border-radius: 24px;
-}
-
-// ─── AVAILABILITY EVENT STYLING ────────────────────────────────────────────
-.ev--availability {
-  background: linear-gradient(135deg,
-      $availability-primary 0%,
-      $availability-secondary 100%) !important;
-  border: none !important;
-  color: #fff !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba($availability-primary, 0.3) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  z-index: 1 !important;
+.calx-sidebar-cta__btn {
+  display: block;
+  width: 100%;
+  background: $color-white;
+  color: $calendar-primary;
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  transition: all 0.2s;
 
   &:hover {
-    transform: translateY(-1px) scale(1.01) !important;
-    box-shadow: 0 4px 12px rgba($availability-primary, 0.4) !important;
+    background: $bg-secondary;
+    text-decoration: none;
   }
 }
 
-.ev--availability-active {
-  opacity: 1 !important;
-  cursor: pointer !important;
+.calx-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
-.ev--availability-faded {
-  opacity: 0.4 !important;
-  cursor: default !important;
-}
-
-.ev--dimmed {
-  filter: brightness(0.7) !important;
-}
-
-.ev-pill--availability {
+.calx-toolbar {
+  padding: 22px 34px;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  font-weight: 500;
+  gap: 12px;
+  border-top: 1px solid $border;
+  border-bottom: 1px solid $border;
+  background: $bg-secondary;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
 
-  .ev-pill__check {
-    font-size: 0.625rem;
-  }
+.calx-toolbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  .ev-pill__text {
-    font-size: 0.6875rem;
+.calx-nav-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  border: 1px solid $border;
+  background: $surface;
+  color: $text-secondary;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 700;
+  transition: all 0.2s;
+
+  &:hover {
+    background: color-mix(in srgb, $surface 88%, $border 12%);
+    color: $navy-mid;
   }
 }
 
-// ─── TIME SLOT HOVER IN AVAILABILITY MODE ──────────────────────────────────
-.calendar-two-pane__right--availability-mode {
-  .rbc-time-slot {
-    cursor: crosshair;
-    transition: background 0.15s ease;
+.calx-today-btn {
+  height: 52px;
+  padding: 0 28px;
+  border-radius: 16px;
+  border: 1px solid $border;
+  background: $surface;
+  font-size: 14px;
+  font-weight: 800;
+  color: $navy;
+  transition: all 0.2s;
 
-    &:hover {
-      background: rgba($availability-primary, 0.1);
+  &:hover {
+    background: color-mix(in srgb, $surface 88%, $border 12%);
+  }
+}
+
+.calx-toolbar-range {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: $navy;
+  letter-spacing: -0.03em;
+  flex: 1;
+  line-height: 1.05;
+}
+
+.calx-view-tabs {
+  display: flex;
+  background: $surface;
+  border-radius: 18px;
+  padding: 5px;
+  gap: 2px;
+}
+
+.calx-view-tab {
+  min-width: 92px;
+  height: 48px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 800;
+  color: $text-secondary;
+  transition: all 0.2s;
+
+  &.is-active {
+    background: $color-white;
+    color: $navy;
+    border-color: $border;
+    box-shadow: 0 2px 10px rgba($navy, 0.12);
+  }
+}
+
+.calx-filters {
+  position: relative;
+}
+
+.calx-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 52px;
+  padding: 0 22px;
+  border-radius: 16px;
+  border: 2px solid $border;
+  font-size: 14px;
+  font-weight: 800;
+  color: $text-secondary;
+  background: $bg-light;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: color-mix(in srgb, $border 70%, $calendar-primary 30%);
+    color: $calendar-primary;
+    background: $color-white;
+  }
+}
+
+.calx-filter-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: $card-bg;
+  border: 1px solid $ring;
+  border-radius: 12px;
+  box-shadow: $shadow-lg;
+  padding: 10px;
+  min-width: 180px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calx-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-primary;
+  cursor: pointer;
+
+  input {
+    accent-color: $calendar-primary;
+  }
+}
+
+.calx-availability-banner {
+  margin: 16px 24px 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba($success, 0.08);
+  border: 1px solid rgba($success, 0.22);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.calx-availability-banner__icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.calx-availability-banner__text {
+  flex: 1;
+  font-size: 13px;
+  color: color-mix(in srgb, $success 72%, $color-black);
+  font-weight: 600;
+  line-height: 1.45;
+
+  strong {
+    font-weight: 800;
+  }
+}
+
+.calx-availability-banner__close {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba($success, 0.15);
+  color: $color-secondary-dark;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba($success, 0.25);
+  }
+}
+
+.calx-error-banner {
+  margin: 14px 24px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, $calendar-error 0%, $calendar-error-alt 100%);
+  color: $color-white;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.calx-week-wrap {
+  flex: 1;
+  position: relative;
+  overflow-x: auto;
+  overflow-y: scroll;
+  width: 100%;
+  padding: 0 24px 24px;
+  background: $bg-secondary;
+  height: calc(12 * 60px + 72px);
+  max-height: calc(12 * 60px + 72px);
+  overscroll-behavior: auto;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.calx-week-grid {
+  min-width: 760px;
+}
+
+.calx-week-header {
+  display: grid;
+  grid-template-columns: 52px repeat(7, minmax(100px, 1fr));
+  border: 1px solid $border;
+  border-bottom: 1px solid $border;
+  position: sticky;
+  top: 0;
+  background: $bg-light;
+  z-index: 12;
+}
+
+.calx-week-header-day {
+  padding: 16px 8px 18px;
+  text-align: center;
+  border: none;
+  background: transparent;
+}
+
+.calx-week-header-dow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: $text-secondary;
+  margin-bottom: 10px;
+}
+
+.calx-week-header-num {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: $navy;
+  line-height: 1;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  transition: all 0.2s;
+
+  &.is-today {
+    background: $calendar-primary;
+    color: $color-white;
+    box-shadow: 0 10px 24px rgba($calendar-primary, 0.22);
+  }
+
+  &.is-selected {
+    background: rgba($calendar-primary, 0.12);
+    color: $calendar-primary;
+  }
+}
+
+.calx-week-body {
+  display: grid;
+  grid-template-columns: 52px repeat(7, minmax(100px, 1fr));
+  border-left: 1px solid $border;
+  border-top: 1px solid $border;
+}
+
+.calx-week-time-col {
+  border-right: 1px solid $border;
+}
+
+.calx-week-time-slot {
+  height: 60px;
+  border-bottom: 1px solid $border;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 4px 8px 0 0;
+}
+
+.calx-week-time-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: $text-secondary;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.calx-week-day-col {
+  border-right: 1px solid $border;
+  position: relative;
+
+  &.is-today {
+    background: rgba($calendar-primary, 0.035);
+  }
+}
+
+.calx-week-cell {
+  height: 60px;
+  display: block;
+  border-bottom: 1px solid $border;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  line-height: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  background: transparent;
+
+  &.is-clickable:hover {
+    background: rgba($success, 0.06);
+    cursor: pointer;
+  }
+
+  &:hover {
+    background: rgba($calendar-primary, 0.03);
+  }
+}
+
+.calx-avail-block {
+  position: absolute;
+  background: rgba($success, 0.12);
+  border: 1px solid rgba($success, 0.3);
+  border-radius: 6px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: $color-secondary-dark;
+  z-index: 2;
+  overflow: hidden;
+  padding: 0 6px;
+
+  &.is-visible {
+    display: flex;
+  }
+
+  &.is-passive {
+    cursor: default;
+    opacity: 0.95;
+  }
+
+  &:hover {
+    background: rgba($success, 0.2);
+  }
+}
+
+.calx-ev-pill {
+  position: absolute;
+  border-radius: 8px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  z-index: 3;
+  font-size: 11px;
+  font-weight: 700;
+  transition: filter 0.15s, transform 0.15s;
+  overflow: hidden;
+  text-align: left;
+
+  &:hover {
+    filter: brightness(1.03);
+    transform: scale(1.01);
+  }
+
+  &.is-dimmed {
+    opacity: 0.35;
+  }
+
+  &.is-scheduled {
+    background: rgba($calendar-primary, 0.12);
+    border: 1px solid rgba($calendar-primary, 0.28);
+    color: $calendar-secondary;
+  }
+
+  &.is-group {
+    background: rgba($color-tertiary-dark, 0.1);
+    border: 1px solid rgba($color-tertiary-dark, 0.26);
+    color: $color-tertiary-dark;
+  }
+
+  &.is-live {
+    background: rgba($success, 0.12);
+    border: 1px solid rgba($success, 0.3);
+    color: color-mix(in srgb, $success 72%, $color-black);
+    animation: calx-live-pulse 2s ease-in-out infinite;
+  }
+
+  &.is-canceled {
+    background: rgba($navy, 0.06);
+    border: 1px solid rgba($navy, 0.1);
+    color: $text-secondary;
+    text-decoration: line-through;
+    opacity: 0.65;
+  }
+}
+
+@keyframes calx-live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba($success, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px rgba($success, 0);
+  }
+}
+
+.calx-ev-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.calx-ev-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.calx-ev-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+
+.calx-ev-sub {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.calx-rbc-panel {
+  flex: 1;
+  padding: 16px 24px 24px;
+  position: relative;
+
+  .rbc-calendar {
+    background: $card-bg;
+    border: 1px solid $ring;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .rbc-header {
+    background: $surface;
+    border-bottom: 1px solid $ring;
+    color: $text-secondary;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 10px 6px;
+  }
+
+  .rbc-time-view,
+  .rbc-month-view {
+    border: none;
+  }
+
+  .rbc-day-bg + .rbc-day-bg,
+  .rbc-month-row + .rbc-month-row,
+  .rbc-time-content > * + * > * {
+    border-left: 1px solid $ring;
+  }
+
+  .rbc-timeslot-group,
+  .rbc-month-row {
+    border-bottom: 1px solid $ring;
+  }
+
+  .rbc-time-gutter .rbc-timeslot-group {
+    font-size: 11px;
+    color: $text-secondary;
+  }
+
+  .rbc-off-range-bg {
+    background: rgba($surface, 0.55);
+  }
+
+  .calx-rbc-event {
+    border-radius: 8px;
+    border: none;
+    padding: 0;
+
+    &.calx-rbc-event--scheduled {
+      background: rgba($calendar-primary, 0.12);
+      color: $calendar-secondary;
+      border: 1px solid rgba($calendar-primary, 0.28);
+    }
+
+    &.calx-rbc-event--group {
+      background: rgba($color-tertiary-dark, 0.1);
+      color: $color-tertiary-dark;
+      border: 1px solid rgba($color-tertiary-dark, 0.26);
+    }
+
+    &.calx-rbc-event--live {
+      background: rgba($success, 0.12);
+      color: color-mix(in srgb, $success 72%, $color-black);
+      border: 1px solid rgba($success, 0.3);
+    }
+
+    &.calx-rbc-event--canceled {
+      background: rgba($navy, 0.06);
+      color: $text-secondary;
+      border: 1px solid rgba($navy, 0.1);
+      opacity: 0.65;
+      text-decoration: line-through;
+    }
+
+    &.calx-rbc-event--availability {
+      background: rgba($success, 0.12);
+      color: $color-secondary-dark;
+      border: 1px solid rgba($success, 0.3);
+
+      &.is-faded {
+        opacity: 0.35;
+      }
+    }
+
+    &.is-dimmed {
+      opacity: 0.35;
     }
   }
 
-  .rbc-day-slot {
-    cursor: crosshair;
+  .calx-rbc-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
-// ─── SAVING OVERLAY ────────────────────────────────────────────────────────
-.availability-saving-overlay {
+.calx-saving-overlay {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(255, 255, 255, 0.95);
-  padding: 1.25rem 2.5rem;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  inset: 16px 24px 24px;
+  background: rgba($bg-primary, 0.86);
+  backdrop-filter: blur(4px);
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  z-index: 100;
-
-  &__spinner {
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 3px solid $availability-primary;
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-
-  span {
-    color: $availability-text;
-    font-weight: 600;
-  }
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: $navy;
+  z-index: 60;
 }
 
-@keyframes spin {
+.calx-saving-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid $ring;
+  border-top-color: $calendar-primary;
+  border-radius: 50%;
+  animation: calx-spin 0.8s linear infinite;
+}
+
+@keyframes calx-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
+.calx-availability-actions {
+  padding: 0 24px 24px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.calx-availability-action {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid $ring;
+  color: $text-primary;
+  background: $card-bg;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    border-color: $calendar-primary;
+    color: $calendar-primary;
   }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &.is-danger:hover:not(:disabled) {
+    border-color: $calendar-error;
+    color: $calendar-error;
   }
 }
 
-// ─── SESSION EVENTS Z-INDEX ────────────────────────────────────────────────
-.ev--scheduled,
-.ev--canceled {
-  z-index: 2 !important;
-}
-
-// ─── RTL ADJUSTMENTS FOR AVAILABILITY ──────────────────────────────────────
-[dir="rtl"] {
-  .availability-mode-toggle {
-    flex-direction: row-reverse;
-  }
-
-  .availability-instructions {
-    &__list {
-      padding: 0 1rem 0 0;
-    }
-  }
-
-  .calendar-subtitle__impersonating {
-    margin-left: 0;
-    margin-right: 0.5rem;
-  }
-}
-
-// ─── EVENT POPOVER ─────────────────────────────────────────────────────────
-.event-popover-backdrop {
+.calx-popover-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.15); // Subtle dim
-  backdrop-filter: blur(4px); // Focus effect
-  z-index: 99999;
-  animation: backdrop-in 0.2s ease-out;
+  background: rgba($navy, 0.22);
+  z-index: 99998;
 }
 
-@keyframes backdrop-in {
+.calx-popover {
+  position: fixed;
+  width: min(92vw, 360px);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 99999;
+  background: $card-bg;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba($navy, 0.18),
+    0 0 0 1px rgba($navy, 0.07);
+  overflow: hidden;
+  animation: calx-pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes calx-pop-in {
   from {
     opacity: 0;
+    transform: translate(-50%, -50%) scale(0.94);
   }
 
   to {
     opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
-.event-popover {
-  position: fixed;
-  width: 340px;
-  background: rgba($card-bg, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 20px;
-  border: 1px solid rgba($calendar-primary, 0.15);
-  box-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.12),
-    0 4px 12px rgba(0, 0, 0, 0.05);
-  z-index: 100000;
-  padding: 24px;
-  animation: popover-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  transform-origin: center top;
+.calx-popover__header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid $ring;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
 
-  &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 16px;
+.calx-popover__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 20px;
+
+  &.calx-popover__icon--scheduled {
+    background: rgba($calendar-primary, 0.1);
   }
 
-  &__title {
-    font-size: 1.15rem;
-    font-weight: 800;
+  &.calx-popover__icon--live {
+    background: rgba($success, 0.1);
+  }
+
+  &.calx-popover__icon--group {
+    background: rgba($color-tertiary-dark, 0.1);
+  }
+
+  &.calx-popover__icon--canceled {
+    background: $surface;
+  }
+}
+
+.calx-popover__head-copy {
+  min-width: 0;
+}
+
+.calx-popover__title {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  color: $navy;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.calx-popover__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+
+  &.calx-popover__type--scheduled {
+    background: rgba($calendar-primary, 0.12);
+    color: $calendar-primary;
+  }
+
+  &.calx-popover__type--live {
+    background: rgba($success, 0.12);
+    color: $color-secondary-dark;
+  }
+
+  &.calx-popover__type--group {
+    background: rgba($color-tertiary-dark, 0.1);
+    color: $color-tertiary-dark;
+  }
+
+  &.calx-popover__type--canceled {
+    background: $surface;
+    color: $text-secondary;
+  }
+}
+
+.calx-popover__close {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: $surface;
+  color: $text-secondary;
+  font-size: 13px;
+  flex-shrink: 0;
+
+  &:hover {
+    background: $ring;
     color: $text-primary;
-    line-height: 1.3;
-    letter-spacing: -0.3px;
-    flex: 1;
   }
+}
 
-  &__close {
-    background: transparent;
-    border: none;
-    color: $muted;
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 50%;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.calx-popover__body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.calx-popover__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: $text-primary;
+
+  span:last-child {
+    font-weight: 600;
+  }
+}
+
+.calx-popover__countdown {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: $surface;
+  font-size: 13px;
+  font-weight: 700;
+  color: $navy;
+  text-align: center;
+  letter-spacing: -0.01em;
+
+  &.is-live {
+    background: rgba($success, 0.12);
+    color: $color-secondary-dark;
+  }
+}
+
+.calx-popover__footer {
+  padding: 14px 20px;
+  border-top: 1px solid $ring;
+  display: flex;
+  gap: 8px;
+}
+
+.calx-popover__btn {
+  flex: 1;
+  padding: 11px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.2s;
+
+  &.calx-popover__btn--primary {
+    background: $calendar-primary;
+    color: $color-white;
+    box-shadow: 0 4px 16px rgba($calendar-primary, 0.3);
 
     &:hover {
-      background: rgba($ink, 0.05);
-      color: $text-primary;
+      background: $calendar-secondary;
+      transform: translateY(-2px);
+      text-decoration: none;
     }
   }
 
-  &__info-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-    color: $text-secondary;
-    font-weight: 500;
-  }
+  &.calx-popover__btn--ghost {
+    background: $surface;
+    color: $text-primary;
 
-  &__time-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: $calendar-primary;
-    background: linear-gradient(135deg, rgba($calendar-primary, 0.1), rgba($calendar-secondary, 0.05));
-    padding: 8px 12px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    margin-top: 4px;
-    border: 1px solid rgba($calendar-primary, 0.1);
-  }
-
-  &__actions {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-top: 8px;
-  }
-
-  &__btn {
-    padding: 12px;
-    border-radius: 14px;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    &--primary {
-      background: linear-gradient(135deg, $calendar-primary 0%, $calendar-secondary 100%);
-      color: #fff;
-      box-shadow: 0 8px 16px rgba($calendar-primary, 0.25);
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 24px rgba($calendar-primary, 0.35);
-      }
-
-      &:active {
-        transform: translateY(-1px);
-      }
+    &:hover {
+      background: $ring;
+      text-decoration: none;
     }
   }
 }
 
-// 120Hz Ultra Smooth Animation (Scale & Opacity only)
-// Layout is handled by JS exact positioning
-@keyframes popover-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.95);
+/* Keep loading skeletons compatible with app/calendar/loading.js */
+.calendar-premium-container {
+  min-height: 70vh;
+  padding: 24px;
+}
+
+.calendar-bg-gradient {
+  display: none;
+}
+
+.calendar-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 16px;
+}
+
+.skeleton-card {
+  border: 1px solid $ring;
+  border-radius: 14px;
+  background: $card-bg;
+  padding: 16px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, $ring 25%, $surface 50%, $ring 75%);
+  background-size: 200% auto;
+  border-radius: 6px;
+  animation: calx-shimmer 1.4s linear infinite;
+}
+
+.skeleton--title {
+  height: 20px;
+  width: 180px;
+  margin-bottom: 12px;
+}
+
+.skeleton--text,
+.skeleton--row {
+  height: 14px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+@keyframes calx-shimmer {
+  from {
+    background-position: -200% center;
   }
 
-  100% {
-    opacity: 1;
-    transform: scale(1);
+  to {
+    background-position: 200% center;
+  }
+}
+
+@media (min-width: 861px) {
+  .calx-sidebar {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .calx-page {
+    width: 100%;
+    max-width: 100%;
+    left: 0;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .calx-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .calx-sidebar {
+    display: none;
+  }
+
+  .calx-week-grid {
+    min-width: 620px;
+  }
+
+  .calendar-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .calx-toolbar {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+
+  .calx-toolbar-range {
+    font-size: 16px;
+    order: 2;
+    width: 100%;
+  }
+
+  .calx-week-wrap {
+    padding: 0 12px 12px;
+    height: calc(8 * 60px + 56px);
+    max-height: calc(8 * 60px + 56px);
+  }
+
+  .calx-rbc-panel {
+    padding: 12px;
+  }
+
+  .calx-availability-actions {
+    padding: 0 12px 12px;
+  }
+
+  .calx-impersonate-bar {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+  }
+
+  .calx-impersonate-stop {
+    margin-left: 0;
   }
 }

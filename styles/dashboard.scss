@@ -21,7 +21,7 @@
   }
 }
 
-.dashboard__header {
+.dashboard .dashboard__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -29,7 +29,7 @@
   gap: 20px;
 }
 
-.dashboard__subtitle {
+.dashboard .dashboard__subtitle {
   margin: 0;
   font-size: 15px;
   color: $text-secondary;
@@ -52,7 +52,7 @@
    Panels
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.panel {
+.dashboard .panel {
   padding: 24px;
   border: 1px solid rgba($border, 0.8);
   border-radius: 16px;
@@ -128,7 +128,7 @@
   }
 }
 
-.panel--featured {
+.dashboard .panel--featured {
   background: linear-gradient(135deg, $card-bg 0%, $bg-soft 100%);
   border: 1px solid rgba($text-muted, 0.2);
 
@@ -141,7 +141,7 @@
    KPI Cards
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.card--kpi {
+.dashboard .card--kpi {
   @include card;
   display: flex;
   align-items: center;
@@ -283,7 +283,7 @@
    Next Session Card
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.next-session {
+.dashboard .next-session {
   display: grid;
   gap: 12px;
   padding: 20px;
@@ -327,7 +327,7 @@
   }
 }
 
-.empty-state {
+.dashboard .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -356,7 +356,7 @@
    Alert Badge
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.alert-badge {
+.dashboard .alert-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -381,12 +381,12 @@
    Session List
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.session-list {
+.dashboard .session-list {
   display: grid;
   gap: 12px;
 }
 
-.session-item {
+.dashboard .session-item {
   border: 1px solid rgba($border, 0.8);
   border-radius: 12px;
   background: $card-bg;
@@ -482,7 +482,7 @@
    Badges
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.badge {
+.dashboard .badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -538,7 +538,7 @@
    Buttons Enhancement
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.btn {
+.dashboard .btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -627,7 +627,7 @@
   }
 }
 
-.button-row {
+.dashboard .button-row {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -638,7 +638,7 @@
    Modal - Glass-morphism Design
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.modal {
+.dashboard .modal {
   position: fixed;
   inset: 0;
   z-index: 60;
@@ -751,7 +751,7 @@
    Form Grid
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.form-grid {
+.dashboard .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
@@ -796,7 +796,7 @@
    Loading State
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.loading-state {
+.dashboard .loading-state {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -827,11 +827,11 @@
     font-size: 24px;
   }
 
-  .panel {
+  .dashboard .panel {
     padding: 18px;
   }
 
-  .card--kpi {
+  .dashboard .card--kpi {
     flex-direction: column;
     align-items: flex-start;
     padding: 18px;
@@ -848,7 +848,7 @@
     }
   }
 
-  .session-item__actions {
+  .dashboard .session-item__actions {
     width: 100%;
 
     .btn {
@@ -857,7 +857,7 @@
     }
   }
 
-  .next-session {
+  .dashboard .next-session {
     padding: 15px;
   }
 }
@@ -870,7 +870,7 @@
 // ============================================================================
 // SCROLLABLE SESSION LIST VARIANT
 // ============================================================================
-.session-list--scrollable {
+.dashboard .session-list--scrollable {
   // Maximum height before scrolling kicks in
   // Shows ~5-6 sessions before scroll
   max-height: 600px;
@@ -930,7 +930,7 @@
 // ============================================================================
 // SESSION COUNT BADGE
 // ============================================================================
-.session-count {
+.dashboard .session-count {
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
@@ -947,14 +947,14 @@
 // ============================================================================
 // PANEL FOOTER (for "View all" link)
 // ============================================================================
-.panel__footer {
+.dashboard .panel__footer {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid rgba($border, 0.6);
 }
 
 // Update panel__head to support flex column for title + badge
-.panel__head {
+.dashboard .panel__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -976,12 +976,12 @@
 // RESPONSIVE ADJUSTMENTS
 // ============================================================================
 @media (max-width: 768px) {
-  .session-list--scrollable {
+  .dashboard .session-list--scrollable {
     // Slightly shorter on mobile
     max-height: 500px;
   }
 
-  .session-count {
+  .dashboard .session-count {
     font-size: 11px;
     padding: 3px 8px;
   }
@@ -990,7 +990,7 @@
 // ============================================================================
 // SMOOTH LOADING STATE
 // ============================================================================
-.session-list--loading {
+.dashboard .session-list--loading {
   opacity: 0.6;
   pointer-events: none;
 
@@ -1014,7 +1014,7 @@
 // ============================================================================
 // IMPROVED BUTTON FULL WIDTH VARIANT
 // ============================================================================
-.btn--full {
+.dashboard .btn--full {
   width: 100%;
   justify-content: center;
 

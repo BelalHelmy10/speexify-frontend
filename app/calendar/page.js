@@ -1,39 +1,36 @@
-// web/src/pages/Calendar.jsx (or app/calendar/page.js)
-// ─────────────────────────────────────────────────────────────────────────────
-// Premium Calendar Experience with Modern Aesthetics & Smooth Interactions
-// ✨ ENHANCED: Added Availability Layer for setting available time slots
-// ─────────────────────────────────────────────────────────────────────────────
-
 "use client";
 
-import { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import api, { clearCsrfToken } from "@/lib/api";
 import MiniCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import useAuth from "@/hooks/useAuth";
-
 import { Calendar as BigCalendar, dateFnsLocalizer } from "react-big-calendar";
 import {
-  parse,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  startOfDay,
-  endOfDay,
-  getDay,
-  format,
   addDays,
+  addMonths,
+  addWeeks,
+  differenceInMinutes,
+  endOfDay,
+  endOfMonth,
+  endOfWeek,
+  format,
+  getDay,
+  isSameDay,
+  parse,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+  subWeeks,
 } from "date-fns";
 import { shiftDateToTimezone } from "@/utils/date";
-
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getDictionary, t } from "@/app/i18n";
 import { useToast } from "@/components/ToastProvider";
 
-// date-fns localizer for RBC
 const locales = {};
 const localizer = dateFnsLocalizer({
   format,
@@ -43,7 +40,12 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Map backend sessions → RBC events
+const SLOT_START_HOUR = 0;
+const SLOT_END_HOUR = 24;
+const DEFAULT_SCROLL_START_HOUR = 8;
+const SLOT_HEIGHT = 60;
+const TIME_GUTTER_WIDTH = 52;
+
 const toRbcEvents = (arr = [], timezone) =>
   arr.map((s) => {
     const type = String(s.type || "").toUpperCase();
@@ -52,7 +54,6 @@ const toRbcEvents = (arr = [], timezone) =>
     const count =
       typeof s.participantCount === "number" ? s.participantCount : null;
 
-    // Shift dates if timezone is provided
     const start = shiftDateToTimezone(s.startAt, timezone);
     const endRaw = s.endAt ? s.endAt : s.startAt;
     const end = shiftDateToTimezone(endRaw, timezone);
@@ -78,69 +79,6 @@ const toRbcEvents = (arr = [], timezone) =>
     };
   });
 
-// Convert availability slots to background events for the calendar
-const toAvailabilityEvents = (slots = [], weekStart) => {
-  const events = [];
-
-  slots.forEach((slot) => {
-    if (slot.status !== "active") return;
-
-    if (slot.isRecurring && slot.dayOfWeek !== null) {
-      const targetDay = slot.dayOfWeek;
-      const mondayDayOfWeek = 1;
-      let daysToAdd = targetDay - mondayDayOfWeek;
-      if (daysToAdd < 0) daysToAdd += 7;
-
-      const eventDate = addDays(weekStart, daysToAdd);
-      const [startHour, startMin] = slot.startTime.split(":").map(Number);
-      const [endHour, endMin] = slot.endTime.split(":").map(Number);
-
-      const start = new Date(eventDate);
-      start.setHours(startHour, startMin, 0, 0);
-
-      const end = new Date(eventDate);
-      end.setHours(endHour, endMin, 0, 0);
-
-      events.push({
-        id: `avail-${slot.id}`,
-        slotId: slot.id,
-        title: slot.note || "",
-        start,
-        end,
-        isAvailability: true,
-        dayOfWeek: slot.dayOfWeek,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        _raw: slot,
-      });
-    } else if (!slot.isRecurring && slot.specificDate) {
-      const eventDate = new Date(slot.specificDate);
-      const [startHour, startMin] = slot.startTime.split(":").map(Number);
-      const [endHour, endMin] = slot.endTime.split(":").map(Number);
-
-      const start = new Date(eventDate);
-      start.setHours(startHour, startMin, 0, 0);
-
-      const end = new Date(eventDate);
-      end.setHours(endHour, endMin, 0, 0);
-
-      events.push({
-        id: `avail-specific-${slot.id}`,
-        slotId: slot.id,
-        title: slot.note || "",
-        start,
-        end,
-        isAvailability: true,
-        isSpecificDate: true,
-        _raw: slot,
-      });
-    }
-  });
-
-  return events;
-};
-
-// Compute visible range for a given date + view
 function getVisibleRange(date, view) {
   if (view === "week") {
     return {
@@ -157,18 +95,85 @@ function getVisibleRange(date, view) {
   };
 }
 
-// Countdown hook
+function toAvailabilityEventsForRange(slots = [], start, end) {
+  const events = [];
+  const startDay = startOfDay(start);
+  const endDay = endOfDay(end);
+
+  for (
+    let cursor = new Date(startDay);
+    cursor <= endDay;
+    cursor = addDays(cursor, 1)
+  ) {
+    const dayOfWeek = cursor.getDay();
+
+    slots.forEach((slot) => {
+      if (slot.status !== "active") return;
+
+      if (slot.isRecurring && slot.dayOfWeek === dayOfWeek) {
+        const [startHour, startMin] = slot.startTime.split(":").map(Number);
+        const [endHour, endMin] = slot.endTime.split(":").map(Number);
+
+        const evStart = new Date(cursor);
+        evStart.setHours(startHour, startMin, 0, 0);
+
+        const evEnd = new Date(cursor);
+        evEnd.setHours(endHour, endMin, 0, 0);
+
+        events.push({
+          id: `avail-${slot.id}-${format(cursor, "yyyy-MM-dd")}`,
+          slotId: slot.id,
+          title: slot.note || "",
+          start: evStart,
+          end: evEnd,
+          isAvailability: true,
+          dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          _raw: slot,
+        });
+      }
+
+      if (!slot.isRecurring && slot.specificDate) {
+        const slotDate = new Date(slot.specificDate);
+        if (!isSameDay(slotDate, cursor)) return;
+
+        const [startHour, startMin] = slot.startTime.split(":").map(Number);
+        const [endHour, endMin] = slot.endTime.split(":").map(Number);
+
+        const evStart = new Date(cursor);
+        evStart.setHours(startHour, startMin, 0, 0);
+
+        const evEnd = new Date(cursor);
+        evEnd.setHours(endHour, endMin, 0, 0);
+
+        events.push({
+          id: `avail-specific-${slot.id}-${format(cursor, "yyyy-MM-dd")}`,
+          slotId: slot.id,
+          title: slot.note || "",
+          start: evStart,
+          end: evEnd,
+          isAvailability: true,
+          isSpecificDate: true,
+          _raw: slot,
+        });
+      }
+    });
+  }
+
+  return events;
+}
+
 const useCountdown = (startAt, endAt, labels = {}) => {
   const startsIn = labels.startsIn || "Starts in";
   const live = labels.live || "Live";
   const ended = labels.ended || "Ended";
 
   const [now, setNow] = useState(Date.now());
-  const timer = useRef(null);
 
   useEffect(() => {
-    timer.current = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer.current);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   if (!startAt) return "";
@@ -183,14 +188,11 @@ const useCountdown = (startAt, endAt, labels = {}) => {
     const hours = Math.floor(remaining / 3600);
     remaining %= 3600;
     const mins = Math.floor(remaining / 60);
-    const secs = remaining % 60;
 
     const parts = [];
     if (days > 0) parts.push(`${days}d`);
     if (hours > 0 || days > 0) parts.push(`${hours}h`);
-    if (mins > 0 || hours > 0 || days > 0) parts.push(`${mins}m`);
-    parts.push(`${String(secs).padStart(2, "0")}s`);
-
+    parts.push(`${mins}m`);
     return `${startsIn} ${parts.join(" ")}`;
   }
 
@@ -198,7 +200,6 @@ const useCountdown = (startAt, endAt, labels = {}) => {
   return ended;
 };
 
-// Time window in which user can "join"
 const canJoin = (startAt, endAt, windowMins = 15) => {
   const now = new Date();
   const start = new Date(startAt);
@@ -209,195 +210,176 @@ const canJoin = (startAt, endAt, windowMins = 15) => {
   return now >= early && now <= end;
 };
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   IMPERSONATION BANNER COMPONENT
-   ═══════════════════════════════════════════════════════════════════════════ */
-function ImpersonationBanner({ user, onStop }) {
-  return (
-    <div className="impersonation-banner">
-      <div className="impersonation-banner__info">
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-          <path d="M12 14l-3-3m3 3l3-3" />
-        </svg>
-        <div>
-          <strong>👁️ Viewing as: {user?.name || user?.email}</strong>
-          <span>Role: {user?.role} • You are impersonating this user</span>
+function buildDayLayout(events, dayDate) {
+  const dayStart = new Date(dayDate);
+  dayStart.setHours(SLOT_START_HOUR, 0, 0, 0);
+  const dayEnd = new Date(dayDate);
+  dayEnd.setHours(SLOT_END_HOUR, 0, 0, 0);
+
+  const normalized = events
+    .filter((ev) => ev.end > dayStart && ev.start < dayEnd)
+    .map((ev) => {
+      const clippedStart = ev.start < dayStart ? dayStart : ev.start;
+      const clippedEnd = ev.end > dayEnd ? dayEnd : ev.end;
+      const startMin = Math.max(
+        0,
+        differenceInMinutes(clippedStart, dayStart)
+      );
+      const endMin = Math.min(
+        (SLOT_END_HOUR - SLOT_START_HOUR) * 60,
+        differenceInMinutes(clippedEnd, dayStart)
+      );
+
+      return {
+        ...ev,
+        startMin,
+        endMin: Math.max(startMin + 15, endMin),
+      };
+    })
+    .sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+
+  const groups = [];
+  normalized.forEach((ev) => {
+    const last = groups[groups.length - 1];
+    if (!last || ev.startMin >= last.maxEnd) {
+      groups.push({ events: [ev], maxEnd: ev.endMin });
+    } else {
+      last.events.push(ev);
+      last.maxEnd = Math.max(last.maxEnd, ev.endMin);
+    }
+  });
+
+  const laidOut = [];
+  groups.forEach((group) => {
+    const colsEnd = [];
+
+    group.events.forEach((ev) => {
+      let col = colsEnd.findIndex((endMin) => endMin <= ev.startMin);
+      if (col === -1) {
+        col = colsEnd.length;
+        colsEnd.push(ev.endMin);
+      } else {
+        colsEnd[col] = ev.endMin;
+      }
+      laidOut.push({ ...ev, col });
+    });
+
+    const colCount = Math.max(1, colsEnd.length);
+    for (let i = laidOut.length - group.events.length; i < laidOut.length; i++) {
+      laidOut[i].colCount = colCount;
+    }
+  });
+
+  return laidOut;
+}
+
+function getEventTone(event) {
+  if (event.status === "canceled") return "canceled";
+  if (event.status === "live" || canJoin(event.start, event.end)) return "live";
+  if (event.isGroup) return "group";
+  return "scheduled";
+}
+
+function getViewRangeLabel(currentDate, view) {
+  if (view === "month") return format(currentDate, "MMMM yyyy");
+  if (view === "day") return format(currentDate, "EEEE, MMM d, yyyy");
+
+  const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const end = endOfWeek(currentDate, { weekStartsOn: 1 });
+  return `${format(start, "MMM d")} - ${format(end, "MMM d, yyyy")}`;
+}
+
+function SessionPopover({ event, onClose, dict, prefix }) {
+  const countdown = useCountdown(event.start, event.end, {
+    startsIn: t(dict, "countdown_starts_in") || "Starts in",
+    live: t(dict, "countdown_live") || "Live",
+    ended: t(dict, "countdown_ended") || "Ended",
+  });
+
+  const tone = getEventTone(event);
+  const coachName =
+    event?._raw?.teacher?.name ||
+    event?._raw?.teacher?.email ||
+    event?._raw?.coach?.name ||
+    event?._raw?.coach?.email ||
+    "-";
+  const duration = Math.max(1, differenceInMinutes(event.end, event.start));
+  const joinHref = event.joinUrl || event.meetingUrl;
+  const joinable = tone !== "canceled" && joinHref && canJoin(event.start, event.end);
+
+  return createPortal(
+    <>
+      <div className="calx-popover-backdrop" onClick={onClose} />
+      <div className="calx-popover" role="dialog" aria-modal="true">
+        <div className="calx-popover__header">
+          <div className={`calx-popover__icon calx-popover__icon--${tone}`}>
+            {tone === "live" ? "🎙️" : event.isGroup ? "👥" : "📚"}
+          </div>
+          <div className="calx-popover__head-copy">
+            <div className="calx-popover__title">
+              {event.title || t(dict, "session_default_title")}
+            </div>
+            <div className={`calx-popover__type calx-popover__type--${tone}`}>
+              {tone === "live" ? "Live" : event.isGroup ? t(dict, "session_group") : "Scheduled"}
+              {event.isGroup && event.seatsLabel ? ` · ${event.seatsLabel}` : ""}
+            </div>
+          </div>
+          <button className="calx-popover__close" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+
+        <div className="calx-popover__body">
+          <div className="calx-popover__row">
+            <span>📅</span>
+            <span>{format(event.start, "EEEE, MMM d · h:mm a")}</span>
+          </div>
+          <div className="calx-popover__row">
+            <span>⏱</span>
+            <span>{duration} min</span>
+          </div>
+          <div className="calx-popover__row">
+            <span>👤</span>
+            <span>{coachName}</span>
+          </div>
+
+          <div className={`calx-popover__countdown ${tone === "live" ? "is-live" : ""}`}>
+            {countdown}
+          </div>
+        </div>
+
+        <div className="calx-popover__footer">
+          {joinable ? (
+            <a
+              className="calx-popover__btn calx-popover__btn--primary"
+              href={joinHref}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Join Session →
+            </a>
+          ) : (
+            <Link
+              className="calx-popover__btn calx-popover__btn--primary"
+              href={`${prefix}/dashboard/sessions/${event.id}`}
+            >
+              {t(dict, "go_to_session") || "Go to Session"} →
+            </Link>
+          )}
+
+          <Link
+            className="calx-popover__btn calx-popover__btn--ghost"
+            href={`${prefix}/dashboard/sessions/${event.id}`}
+          >
+            Details
+          </Link>
         </div>
       </div>
-      <div className="impersonation-banner__actions">
-        <Link href="/dashboard" className="impersonation-banner__link">
-          📊 View Dashboard
-        </Link>
-        <button onClick={onStop} className="impersonation-banner__stop">
-          ✕ Stop Impersonating
-        </button>
-      </div>
-    </div>
+    </>,
+    document.body
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   AVAILABILITY MODE TOGGLE COMPONENT
-   ═══════════════════════════════════════════════════════════════════════════ */
-function AvailabilityModeToggle({
-  mode,
-  onModeChange,
-  availabilityCount,
-  dict,
-}) {
-  return (
-    <div className="availability-mode-toggle">
-      <button
-        onClick={() => onModeChange("sessions")}
-        className={`availability-mode-toggle__btn ${mode === "sessions" ? "availability-mode-toggle__btn--active" : ""
-          }`}
-      >
-        📅 {t(dict, "mode_sessions")}
-      </button>
-
-      <button
-        onClick={() => onModeChange("availability")}
-        className={`availability-mode-toggle__btn availability-mode-toggle__btn--availability ${mode === "availability"
-          ? "availability-mode-toggle__btn--active-green"
-          : ""
-          }`}
-      >
-        🕐 {t(dict, "mode_availability")}
-        {availabilityCount > 0 && (
-          <span
-            className={`availability-mode-toggle__count ${mode === "availability"
-              ? "availability-mode-toggle__count--active"
-              : ""
-              }`}
-          >
-            {availabilityCount}
-          </span>
-        )}
-      </button>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   AVAILABILITY INSTRUCTIONS PANEL
-   ═══════════════════════════════════════════════════════════════════════════ */
-function AvailabilityInstructions({ dict, locale, onClose }) {
-  return (
-    <div className="availability-instructions">
-      <div className="availability-instructions__icon">💡</div>
-      <div className="availability-instructions__content">
-        <h4 className="availability-instructions__title">
-          {t(dict, "instructions_title")}
-        </h4>
-        <ul className="availability-instructions__list">
-          <li>{t(dict, "instructions_drag")}</li>
-          <li>{t(dict, "instructions_click")}</li>
-          <li>{t(dict, "instructions_green")}</li>
-        </ul>
-      </div>
-      <button onClick={onClose} className="availability-instructions__close">
-        ✕
-      </button>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   AVAILABILITY SLOT QUICK ACTIONS
-   ═══════════════════════════════════════════════════════════════════════════ */
-function AvailabilityQuickActions({
-  onClearDay,
-  onClearAll,
-  selectedDay,
-  totalSlots,
-  saving,
-  dict,
-  locale,
-}) {
-  const isRTL = locale === "ar";
-  const dayNames = isRTL
-    ? ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
-    : [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-
-  return (
-    <div className="availability-quick-actions">
-      {selectedDay !== null && (
-        <button
-          onClick={() => onClearDay(selectedDay)}
-          disabled={saving}
-          className="availability-quick-actions__btn availability-quick-actions__btn--clear-day"
-        >
-          🗑️{" "}
-          {isRTL
-            ? `مسح ${dayNames[selectedDay]}`
-            : `Clear ${dayNames[selectedDay]}`}
-        </button>
-      )}
-
-      {totalSlots > 0 && (
-        <button
-          onClick={onClearAll}
-          disabled={saving}
-          className="availability-quick-actions__btn availability-quick-actions__btn--clear-all"
-        >
-          🗑️ {t(dict, "clear_all")}
-        </button>
-      )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   AVAILABILITY STATS CARD
-   ═══════════════════════════════════════════════════════════════════════════ */
-function AvailabilityStatsCard({ slotCount, totalHours, dict, locale }) {
-  return (
-    <div className="mini-stats-card mini-stats-card--availability">
-      <div className="stat-item">
-        <div className="stat-value stat-value--green">{slotCount}</div>
-        <div className="stat-label stat-label--green">{t(dict, "slots")}</div>
-      </div>
-      <div className="stat-divider stat-divider--green"></div>
-      <div className="stat-item">
-        <div className="stat-value stat-value--green">{totalHours}h</div>
-        <div className="stat-label stat-label--green">{t(dict, "weekly")}</div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   SAVING OVERLAY
-   ═══════════════════════════════════════════════════════════════════════════ */
-function SavingOverlay({ dict }) {
-  return (
-    <div className="availability-saving-overlay">
-      <div className="availability-saving-overlay__spinner"></div>
-      <span>{t(dict, "saving")}</span>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   MAIN CALENDAR PAGE COMPONENT
-   ═══════════════════════════════════════════════════════════════════════════ */
 export default function CalendarPage() {
   const { user, checking } = useAuth();
   const { toast } = useToast();
@@ -408,42 +390,34 @@ export default function CalendarPage() {
   const prefix = locale === "ar" ? "/ar" : "";
   const dict = useMemo(() => getDictionary(locale, "calendar"), [locale]);
 
-  // Impersonation detection
-  const isImpersonating = !!user?._impersonating;
-
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [events, setEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState("week");
-  const calRef = useRef(null);
-
-  // Popover State
-  const [activeEvent, setActiveEvent] = useState(null);
-  const [popoverPos, setPopoverPos] = useState(null);
-
-  // Availability state
   const [calendarMode, setCalendarMode] = useState("sessions");
+
+  const [events, setEvents] = useState([]);
   const [availabilitySlots, setAvailabilitySlots] = useState([]);
-  const [availabilityEvents, setAvailabilityEvents] = useState([]);
   const [savingAvailability, setSavingAvailability] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(true);
-  const [selectedDayOfWeek, setSelectedDayOfWeek] = useState(null);
+  const [showAvailabilityHint, setShowAvailabilityHint] = useState(true);
 
-  // Stop impersonation handler
-  const handleStopImpersonate = async () => {
-    try {
-      await api.post("/admin/impersonate/stop");
-      clearCsrfToken();
-      toast.success("Stopped viewing as user");
-      router.push("/admin");
-      setTimeout(() => window.location.reload(), 100);
-    } catch (e) {
-      toast.error(e?.response?.data?.error || "Failed to stop impersonation");
-    }
-  };
+  const [activeEvent, setActiveEvent] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Fetch availability
+  const [filters, setFilters] = useState({
+    scheduled: true,
+    canceled: true,
+    group: true,
+    oneOnOne: true,
+    availability: true,
+  });
+
+  const filtersRef = useRef(null);
+  const weekWrapRef = useRef(null);
+  const hasAutoScrolledWeekRef = useRef(false);
+
+  const isImpersonating = !!user?._impersonating;
+
   const fetchAvailability = useCallback(async () => {
     try {
       const { data } = await api.get("/availability");
@@ -453,79 +427,258 @@ export default function CalendarPage() {
     }
   }, []);
 
+  const fetchEvents = useCallback(async (startISO, endISO) => {
+    setError("");
+    const { data } = await api.get("/me/sessions-between", {
+      params: { start: startISO, end: endISO, includeCanceled: true },
+    });
+    return Array.isArray(data) ? data : data?.sessions || [];
+  }, []);
+
   useEffect(() => {
-    if (!checking && user) {
-      fetchAvailability();
-    }
+    if (!checking && user) fetchAvailability();
   }, [checking, user, fetchAvailability]);
 
-  // Convert availability slots to calendar events
   useEffect(() => {
-    if (availabilitySlots.length > 0) {
-      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-      const availEvents = toAvailabilityEvents(availabilitySlots, weekStart);
-      setAvailabilityEvents(availEvents);
-    } else {
-      setAvailabilityEvents([]);
-    }
-  }, [availabilitySlots, currentDate, view]);
+    if (checking || !user) return;
 
-  // Add availability slot
-  const addAvailabilitySlot = async (dayOfWeek, startTime, endTime) => {
-    try {
-      setSavingAvailability(true);
-      await api.post("/availability", {
-        dayOfWeek,
-        startTime,
-        endTime,
-        isRecurring: true,
-      });
-      toast.success(t(dict, "success_add"));
-      await fetchAvailability();
-    } catch (e) {
-      const errorMsg = e?.response?.data?.error || t(dict, "error_add");
-      toast.error(errorMsg);
-    } finally {
-      setSavingAvailability(false);
-    }
-  };
+    const { start, end } = getVisibleRange(currentDate, view);
+    (async () => {
+      try {
+        const sessions = await fetchEvents(start.toISOString(), end.toISOString());
+        setEvents(toRbcEvents(sessions, user?.timezone));
+      } catch (e) {
+        setError(e?.response?.data?.error || t(dict, "error_failed"));
+      }
+    })();
+  }, [checking, user, currentDate, view, fetchEvents, dict]);
 
-  // Delete availability slot
-  const deleteAvailabilitySlot = async (slotId) => {
-    try {
-      setSavingAvailability(true);
-      await api.delete(`/availability/${slotId}`);
-      toast.success(t(dict, "success_remove"));
-      await fetchAvailability();
-    } catch (e) {
-      toast.error(e?.response?.data?.error || t(dict, "error_remove"));
-    } finally {
-      setSavingAvailability(false);
-    }
-  };
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!filtersRef.current) return;
+      if (!filtersRef.current.contains(e.target)) setShowFilters(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
 
-  // Clear day availability
-  const clearDayAvailability = async (dayOfWeek) => {
-    if (!confirm(t(dict, "confirm_clear_day"))) return;
+  useEffect(() => {
+    const close = () => setActiveEvent(null);
+    window.addEventListener("scroll", close, { capture: true, passive: true });
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, { capture: true });
+      window.removeEventListener("resize", close);
+    };
+  }, []);
 
-    try {
-      setSavingAvailability(true);
-      await api.delete("/availability", {
-        params: { dayOfWeek, isRecurring: true },
-      });
-      toast.success(t(dict, "success_clear"));
-      await fetchAvailability();
-    } catch (e) {
-      toast.error(e?.response?.data?.error || t(dict, "error_clear"));
-    } finally {
-      setSavingAvailability(false);
-    }
-  };
+  useEffect(() => {
+    if (view !== "week") return;
+    if (hasAutoScrolledWeekRef.current) return;
+    if (!weekWrapRef.current) return;
 
-  // Clear all availability
-  const clearAllAvailability = async () => {
+    const targetScroll = Math.max(
+      0,
+      (DEFAULT_SCROLL_START_HOUR - SLOT_START_HOUR) * SLOT_HEIGHT
+    );
+
+    requestAnimationFrame(() => {
+      if (!weekWrapRef.current) return;
+      weekWrapRef.current.scrollTop = targetScroll;
+      hasAutoScrolledWeekRef.current = true;
+    });
+  }, [view]);
+
+  const isSessionVisible = useCallback(
+    (event) => {
+      const isCanceled = event.status === "canceled";
+      if (isCanceled && !filters.canceled) return false;
+      if (!isCanceled && !filters.scheduled) return false;
+      if (event.isGroup && !filters.group) return false;
+      if (!event.isGroup && !filters.oneOnOne) return false;
+      return true;
+    },
+    [filters]
+  );
+
+  const { rangeStart, rangeEnd } = useMemo(
+    () => getVisibleRange(currentDate, view),
+    [currentDate, view]
+  );
+
+  const filteredSessions = useMemo(
+    () => events.filter(isSessionVisible),
+    [events, isSessionVisible]
+  );
+
+  const allAvailabilityEvents = useMemo(
+    () => toAvailabilityEventsForRange(availabilitySlots, rangeStart, rangeEnd),
+    [availabilitySlots, rangeStart, rangeEnd]
+  );
+
+  const filteredAvailabilityEvents = useMemo(() => {
+    if (!filters.availability) return [];
+    return allAvailabilityEvents;
+  }, [allAvailabilityEvents, filters.availability]);
+
+  const combinedEvents = useMemo(() => {
+    return [...filteredSessions, ...filteredAvailabilityEvents];
+  }, [filteredSessions, filteredAvailabilityEvents]);
+
+  const weekStart = useMemo(
+    () => startOfWeek(currentDate, { weekStartsOn: 1 }),
+    [currentDate]
+  );
+
+  const weekDays = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
+    [weekStart]
+  );
+
+  const weekSessions = useMemo(
+    () =>
+      filteredSessions.filter(
+        (ev) => ev.end > weekStart && ev.start < addDays(weekStart, 7)
+      ),
+    [filteredSessions, weekStart]
+  );
+
+  const weekAvailability = useMemo(
+    () =>
+      toAvailabilityEventsForRange(
+        availabilitySlots,
+        weekStart,
+        addDays(weekStart, 6)
+      ).filter(() => filters.availability),
+    [availabilitySlots, weekStart, filters.availability]
+  );
+
+  const timeLabels = useMemo(
+    () =>
+      Array.from({ length: SLOT_END_HOUR - SLOT_START_HOUR }, (_, i) => {
+        const hour = SLOT_START_HOUR + i;
+        const date = new Date();
+        date.setHours(hour, 0, 0, 0);
+        return format(date, "h a");
+      }),
+    []
+  );
+
+  const sessionsByDayLayout = useMemo(() => {
+    return weekDays.map((day) => {
+      const dayEvents = weekSessions.filter((ev) => isSameDay(ev.start, day));
+      return buildDayLayout(dayEvents, day);
+    });
+  }, [weekDays, weekSessions]);
+
+  const availabilityByDayLayout = useMemo(() => {
+    return weekDays.map((day) => {
+      const dayEvents = weekAvailability.filter((ev) => isSameDay(ev.start, day));
+      return buildDayLayout(dayEvents, day);
+    });
+  }, [weekDays, weekAvailability]);
+
+  const hasDateEvents = useCallback(
+    (date) => {
+      return combinedEvents.some((ev) => isSameDay(ev.start, date));
+    },
+    [combinedEvents]
+  );
+
+  const upcomingEvents = useMemo(() => {
+    const inRange = filteredSessions
+      .filter((ev) => ev.start >= rangeStart && ev.start <= rangeEnd)
+      .sort((a, b) => a.start - b.start);
+
+    if (inRange.length > 0) return inRange.slice(0, 4);
+
+    const now = Date.now();
+    return filteredSessions
+      .filter((ev) => ev.end.getTime() >= now)
+      .sort((a, b) => a.start - b.start)
+      .slice(0, 4);
+  }, [filteredSessions, rangeStart, rangeEnd]);
+
+  const weekSessionCount = useMemo(() => {
+    const weekEnd = addDays(weekStart, 7);
+    return filteredSessions.filter((ev) => ev.end > weekStart && ev.start < weekEnd)
+      .length;
+  }, [filteredSessions, weekStart]);
+
+  const activeSlotCount = useMemo(
+    () => availabilitySlots.filter((slot) => slot.status === "active").length,
+    [availabilitySlots]
+  );
+
+  const totalAvailabilityHours = useMemo(() => {
+    let minutes = 0;
+    availabilitySlots.forEach((slot) => {
+      if (slot.status !== "active") return;
+      const [startH, startM] = slot.startTime.split(":").map(Number);
+      const [endH, endM] = slot.endTime.split(":").map(Number);
+      minutes += endH * 60 + endM - (startH * 60 + startM);
+    });
+    return (minutes / 60).toFixed(1);
+  }, [availabilitySlots]);
+
+  const addAvailabilitySlot = useCallback(
+    async (dayOfWeek, startTime, endTime) => {
+      try {
+        setSavingAvailability(true);
+        await api.post("/availability", {
+          dayOfWeek,
+          startTime,
+          endTime,
+          isRecurring: true,
+        });
+        toast.success(t(dict, "success_add"));
+        await fetchAvailability();
+      } catch (e) {
+        toast.error(e?.response?.data?.error || t(dict, "error_add"));
+      } finally {
+        setSavingAvailability(false);
+      }
+    },
+    [dict, fetchAvailability, toast]
+  );
+
+  const deleteAvailabilitySlot = useCallback(
+    async (slotId) => {
+      try {
+        setSavingAvailability(true);
+        await api.delete(`/availability/${slotId}`);
+        toast.success(t(dict, "success_remove"));
+        await fetchAvailability();
+      } catch (e) {
+        toast.error(e?.response?.data?.error || t(dict, "error_remove"));
+      } finally {
+        setSavingAvailability(false);
+      }
+    },
+    [dict, fetchAvailability, toast]
+  );
+
+  const clearDayAvailability = useCallback(
+    async (dayOfWeek) => {
+      if (!confirm(t(dict, "confirm_clear_day"))) return;
+      try {
+        setSavingAvailability(true);
+        await api.delete("/availability", {
+          params: { dayOfWeek, isRecurring: true },
+        });
+        toast.success(t(dict, "success_clear"));
+        await fetchAvailability();
+      } catch (e) {
+        toast.error(e?.response?.data?.error || t(dict, "error_clear"));
+      } finally {
+        setSavingAvailability(false);
+      }
+    },
+    [dict, fetchAvailability, toast]
+  );
+
+  const clearAllAvailability = useCallback(async () => {
     if (!confirm(t(dict, "confirm_clear_all"))) return;
-
     try {
       setSavingAvailability(true);
       await api.delete("/availability");
@@ -536,152 +689,128 @@ export default function CalendarPage() {
     } finally {
       setSavingAvailability(false);
     }
-  };
+  }, [dict, fetchAvailability, toast]);
 
-  // Fetch sessions for a range
-  const fetchEvents = useCallback(async (startISO, endISO) => {
-    setError("");
-    const { data } = await api.get("/me/sessions-between", {
-      params: { start: startISO, end: endISO, includeCanceled: true },
-    });
-    return Array.isArray(data) ? data : data?.sessions || [];
-  }, []);
+  const toggleWeekCellAvailability = useCallback(
+    (dayDate, hour) => {
+      if (calendarMode !== "availability" || savingAvailability) return;
 
-  // Load events whenever date or view changes
-  useEffect(() => {
-    if (checking || !user) return;
-    const { start, end } = getVisibleRange(currentDate, view);
-    (async () => {
-      try {
-        const sessions = await fetchEvents(
-          start.toISOString(),
-          end.toISOString()
-        );
-        // Pass user timezone to shift logic
-        setEvents(toRbcEvents(sessions, user?.timezone));
-      } catch (e) {
-        setError(e?.response?.data?.error || t(dict, "error_failed"));
-      }
-    })();
-  }, [currentDate, view, fetchEvents, checking, user, dict]);
+      const startTime = `${String(hour).padStart(2, "0")}:00`;
+      const endTime =
+        hour === SLOT_END_HOUR - 1
+          ? "23:59"
+          : `${String(hour + 1).padStart(2, "0")}:00`;
+      const dayOfWeek = dayDate.getDay();
 
-  // Handle RBC's range notifications
-  const handleRangeChange = useCallback(
-    async (range) => {
-      if (checking || !user) return;
-      try {
-        let start, end;
-        if (Array.isArray(range)) {
-          start = range[0];
-          end = range[range.length - 1];
-        } else if (range?.start && range?.end) {
-          start = range.start;
-          end = range.end;
-        } else {
-          const r = getVisibleRange(currentDate, view);
-          start = r.start;
-          end = r.end;
-        }
-        const sessions = await fetchEvents(
-          start.toISOString(),
-          end.toISOString()
-        );
-        // Pass user timezone to shift logic
-        setEvents(toRbcEvents(sessions, user?.timezone));
-      } catch (e) {
-        setError(e?.response?.data?.error || t(dict, "error_failed"));
+      const existing = availabilitySlots.find(
+        (slot) =>
+          slot.status === "active" &&
+          slot.isRecurring &&
+          slot.dayOfWeek === dayOfWeek &&
+          slot.startTime === startTime &&
+          slot.endTime === endTime
+      );
+
+      if (existing) {
+        deleteAvailabilitySlot(existing.id);
+      } else {
+        addAvailabilitySlot(dayOfWeek, startTime, endTime);
       }
     },
-    [currentDate, view, fetchEvents, checking, user, dict]
+    [
+      calendarMode,
+      savingAvailability,
+      availabilitySlots,
+      addAvailabilitySlot,
+      deleteAvailabilitySlot,
+    ]
   );
 
-  // Handle slot selection (for adding availability)
-  const handleSelectSlot = useCallback(
+  const handleNavigate = useCallback(
+    (dir) => {
+      if (dir === "today") {
+        const now = new Date();
+        setCurrentDate(now);
+        setSelectedDate(now);
+        return;
+      }
+
+      if (view === "month") {
+        setCurrentDate((prev) => (dir === "next" ? addMonths(prev, 1) : subMonths(prev, 1)));
+        return;
+      }
+
+      if (view === "day") {
+        setCurrentDate((prev) => (dir === "next" ? addDays(prev, 1) : addDays(prev, -1)));
+        return;
+      }
+
+      setCurrentDate((prev) => (dir === "next" ? addWeeks(prev, 1) : subWeeks(prev, 1)));
+    },
+    [view]
+  );
+
+  const handleWeekViewportWheel = useCallback((e) => {
+    const el = weekWrapRef.current;
+    if (!el) return;
+
+    const delta = e.deltaY;
+    if (!delta) return;
+
+    const atTop = el.scrollTop <= 0;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+
+    if ((delta < 0 && atTop) || (delta > 0 && atBottom)) {
+      // Scroll-chain to page once the calendar viewport reached an edge.
+      window.scrollBy({ top: delta, behavior: "auto" });
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+    el.scrollTop += delta;
+  }, []);
+
+  const onMiniChange = useCallback((date) => {
+    setSelectedDate(date);
+    setCurrentDate(date);
+  }, []);
+
+  const handleStopImpersonate = useCallback(async () => {
+    try {
+      await api.post("/admin/impersonate/stop");
+      clearCsrfToken();
+      toast.success("Stopped viewing as user");
+      router.push("/admin");
+      setTimeout(() => window.location.reload(), 100);
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Failed to stop impersonation");
+    }
+  }, [router, toast]);
+
+  const handleSelectRbcSlot = useCallback(
     ({ start, end }) => {
       if (calendarMode !== "availability") return;
       if (savingAvailability) return;
 
       const dayOfWeek = start.getDay();
       const startTime = format(start, "HH:mm");
-      const endTime = format(end, "HH:mm");
+      let endTime = format(end, "HH:mm");
 
-      setSelectedDayOfWeek(dayOfWeek);
+      if (
+        endTime === "00:00" &&
+        format(start, "yyyy-MM-dd") !== format(end, "yyyy-MM-dd")
+      ) {
+        endTime = "23:59";
+      }
+
       addAvailabilitySlot(dayOfWeek, startTime, endTime);
-
     },
-    [calendarMode, savingAvailability]
+    [calendarMode, savingAvailability, addAvailabilitySlot]
   );
 
-  // Fix Lenis scrolling conflict: Apply prevention ONLY to the internal scrollable grid
-  // This allows the page to scroll smoothly when hovering headers/toolbar, but lets the grid scroll natively.
-  useEffect(() => {
-    const applyLenisPrevent = () => {
-      const timeContent = document.querySelector(".rbc-time-content");
-      if (timeContent) {
-        timeContent.setAttribute("data-lenis-prevent", "true");
-      }
-    };
-
-    const timer = setTimeout(applyLenisPrevent, 300);
-    return () => clearTimeout(timer);
-  }, [view, currentDate]);
-
-  // Event styling
-  const eventPropGetter = useCallback(
+  const handleSelectRbcEvent = useCallback(
     (event) => {
-      if (event.isAvailability) {
-        return {
-          className: `ev--availability ${calendarMode === "availability"
-            ? "ev--availability-active"
-            : "ev--availability-faded"
-            }`,
-        };
-      }
-
-      const isCanceled = event.status === "canceled";
-      return {
-        className: `${isCanceled ? "ev--canceled" : "ev--scheduled"} ${calendarMode === "availability" ? "ev--dimmed" : ""
-          }`,
-      };
-    },
-    [calendarMode]
-  );
-
-  // Custom event component
-  const EventComp = useCallback(
-    ({ event }) => {
-      if (event.isAvailability) {
-        return (
-          <div className="ev-pill ev-pill--availability">
-            <span className="ev-pill__check">✓</span>
-            <span className="ev-pill__text">{t(dict, "available")}</span>
-          </div>
-        );
-      }
-
-      const isGroup = !!event?.isGroup;
-      const seats = event?.seatsLabel ? ` · ${event.seatsLabel}` : "";
-
-      return (
-        <div className="ev-pill">
-          <span className="ev-icon">●</span>
-          <span className="ev-title">
-            {event.title || t(dict, "session_default_title")}
-            {isGroup ? ` · ${t(dict, "session_group") || "Group"}` : ""}
-            {isGroup ? seats : ""}
-          </span>
-        </div>
-      );
-    },
-    [dict]
-  );
-
-  const components = useMemo(() => ({ event: EventComp }), [EventComp]);
-
-  // Click handler for events
-  const onSelectEvent = useCallback(
-    (event, e) => {
-      // Logic for availability slots (deletion)
       if (event.isAvailability) {
         if (calendarMode === "availability" && event.slotId) {
           if (confirm(t(dict, "confirm_delete_slot"))) {
@@ -690,406 +819,483 @@ export default function CalendarPage() {
         }
         return;
       }
-
-      if (!event?.id) return;
-
-      // ELITE POPOVER LOGIC
-      // If we have a click event (e), prevent navigation and show popover
-      if (e && e.preventDefault) {
-        e.preventDefault();
-        e.stopPropagation();
-        const target = e.currentTarget || e.target;
-        const rect = target.getBoundingClientRect();
-
-        // --- 1. Vertical Logic ---
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const popoverHeight = 280; // Estimated max height
-        const placeOnTop = spaceBelow < popoverHeight && rect.top > popoverHeight;
-
-        // --- 2. Horizontal Logic ---
-        // Determine zone: left (0-33%), center (33-66%), right (66-100%)
-        const centerX = rect.left + rect.width / 2;
-        const screenW = window.innerWidth;
-        const popoverWidth = 340;
-
-        let horizontal = "center";
-        if (centerX < screenW / 3) horizontal = "left";
-        else if (centerX > (screenW * 2) / 3) horizontal = "right";
-
-        // --- 3. Calculate Exact Coordinates (No transforms for position) ---
-        let style = {
-          position: "fixed",
-          zIndex: 99999999,
-          width: popoverWidth,
-          transform: null, // Will optionally add scale
-        };
-
-        // Vertical
-        if (placeOnTop) {
-          style.bottom = window.innerHeight - rect.top + 12; // 12px gap above event
-          style.top = "auto";
-        } else {
-          style.top = rect.bottom + 12; // 12px gap below event
-          style.bottom = "auto";
-        }
-
-        // Horizontal
-        let originX = "center";
-        if (horizontal === "left") {
-          style.left = rect.left; // Anchor left
-          style.right = "auto";
-          originX = "left";
-        } else if (horizontal === "right") {
-          style.left = "auto";
-          // Anchor right: distance from right edge of screen
-          style.right = screenW - rect.right;
-          originX = "right";
-        } else {
-          // Center
-          style.left = centerX - (popoverWidth / 2);
-          style.right = "auto";
-          // Clamp center
-          style.left = Math.max(12, Math.min(screenW - popoverWidth - 12, style.left));
-          originX = "center";
-        }
-
-        // Set Transform Origin for animation
-        style.transformOrigin = `${originX} ${placeOnTop ? 'bottom' : 'top'}`;
-
-        setPopoverPos(style);
-        setActiveEvent(event);
-      } else {
-        // Fallback for keyboard or other non-click selection
-        router.push(`${prefix}/dashboard/sessions/${event.id}`);
-      }
+      setActiveEvent(event);
     },
-    [router, prefix, calendarMode, dict]
+    [calendarMode, deleteAvailabilitySlot, dict]
   );
 
-  // Close Popover on Scroll (Windows or Calendar Grid) to prevent "sticking"
-  useEffect(() => {
-    if (!activeEvent) return;
-
-    const handleScroll = () => setActiveEvent(null);
-    const handleResize = () => setActiveEvent(null);
-
-    // Capture true is important to catch scroll on any element
-    window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll, { capture: true });
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [activeEvent]);
-
-  // Mini calendar change
-  const onMiniChange = (date) => {
-    setSelectedDate(date);
-    setCurrentDate(date);
-    setSelectedDayOfWeek(date.getDay());
-  };
-
-  // Combine events
-  const combinedEvents = useMemo(() => {
-    if (calendarMode === "sessions") {
-      return [...events, ...availabilityEvents];
-    } else {
-      return [...availabilityEvents, ...events];
-    }
-  }, [events, availabilityEvents, calendarMode]);
-
-  // Stats
-  const scheduledCount = events.filter((e) => e.status === "scheduled").length;
-  const canceledCount = events.filter((e) => e.status === "canceled").length;
-  const currentMonthYear = format(currentDate, "MMMM yyyy");
-  const activeSlotCount = availabilitySlots.filter(
-    (s) => s.status === "active"
-  ).length;
-
-  // Total availability hours
-  const totalAvailabilityHours = useMemo(() => {
-    let minutes = 0;
-    availabilitySlots.forEach((slot) => {
-      if (slot.status === "active") {
-        const [startH, startM] = slot.startTime.split(":").map(Number);
-        const [endH, endM] = slot.endTime.split(":").map(Number);
-        minutes += endH * 60 + endM - (startH * 60 + startM);
+  const eventPropGetter = useCallback(
+    (event) => {
+      if (event.isAvailability) {
+        return {
+          className: `calx-rbc-event calx-rbc-event--availability ${calendarMode === "availability" ? "is-active" : "is-faded"
+            }`,
+        };
       }
-    });
-    return (minutes / 60).toFixed(1);
-  }, [availabilitySlots]);
+      const tone = getEventTone(event);
+      return {
+        className: `calx-rbc-event calx-rbc-event--${tone} ${calendarMode === "availability" ? "is-dimmed" : ""
+          }`,
+      };
+    },
+    [calendarMode]
+  );
 
-  if (checking)
-    return (
-      <div className="calendar-premium-container">{t(dict, "loading")}</div>
-    );
-  if (!user)
-    return (
-      <div className="calendar-premium-container">{t(dict, "not_auth")}</div>
-    );
+  const rbcEventComponent = useCallback(
+    ({ event }) => (
+      <div className="calx-rbc-pill">
+        {event.isAvailability ? (
+          <>
+            <span>✓</span>
+            <span>{t(dict, "available")}</span>
+          </>
+        ) : (
+          <>
+            <span>●</span>
+            <span>{event.title || t(dict, "session_default_title")}</span>
+          </>
+        )}
+      </div>
+    ),
+    [dict]
+  );
+
+  const rbcComponents = useMemo(() => ({ event: rbcEventComponent }), [rbcEventComponent]);
+
+  if (checking) {
+    return <div className="calx-state">{t(dict, "loading")}</div>;
+  }
+
+  if (!user) {
+    return <div className="calx-state">{t(dict, "not_auth")}</div>;
+  }
 
   return (
-    <>
+    <div className="calx-page">
       {isImpersonating && (
-        <ImpersonationBanner user={user} onStop={handleStopImpersonate} />
+        <div className="calx-impersonate-bar">
+          <span>
+            👁️ <strong>Viewing as: {user?.name || user?.email}</strong>
+          </span>
+          <Link href={`${prefix}/dashboard`} className="calx-impersonate-link">
+            📊 View Dashboard
+          </Link>
+          <button className="calx-impersonate-stop" onClick={handleStopImpersonate}>
+            ✕ Stop Impersonating
+          </button>
+        </div>
       )}
 
-      <div className="calendar-premium-container">
-        <div className="calendar-bg-gradient"></div>
-
-        {/* Header Section */}
-        <div className="calendar-header">
-          <div className="calendar-header-content calendar-header-content--with-toggle">
-            <div className="calendar-header__left">
-              <h1 className="calendar-title">
-                <span className="calendar-icon">📅</span>
-                {t(dict, "title")}
-              </h1>
-              <p className="calendar-subtitle">
-                {calendarMode === "availability"
-                  ? t(dict, "availability_subtitle")
-                  : t(dict, "subtitle")}
-                {isImpersonating && (
-                  <span className="calendar-subtitle__impersonating">
-                    • Viewing {user?.name || user?.email}&rsquo;s calendar
-                  </span>
-                )}
-              </p>
-              <div className="calendar-timezone-badge">
-                <span className="calendar-timezone-badge__icon">🌍</span>
-                <span className="calendar-timezone-badge__text">
-                  Times shown in {user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}
-                </span>
-              </div>
-            </div>
-
-            <AvailabilityModeToggle
-              mode={calendarMode}
-              onModeChange={setCalendarMode}
-              availabilityCount={activeSlotCount}
-              dict={dict}
+      <div className="calx-shell">
+        <aside className="calx-sidebar">
+          <div>
+            <div className="calx-sidebar-label">{t(dict, "quick_nav") || "Quick Nav"}</div>
+            <MiniCalendar
+              value={selectedDate}
+              onChange={onMiniChange}
+              showNeighboringMonth={true}
+              next2Label={null}
+              prev2Label={null}
+              className="calx-mini-cal"
+              tileClassName={({ date, view: miniView }) => {
+                if (miniView !== "month") return "";
+                const classes = [];
+                if (isSameDay(date, new Date())) classes.push("is-today");
+                if (isSameDay(date, selectedDate)) classes.push("is-selected");
+                if (hasDateEvents(date)) classes.push("has-event");
+                return classes.join(" ");
+              }}
             />
           </div>
-        </div>
 
-        {/* Availability Instructions */}
-        {calendarMode === "availability" && showInstructions && (
-          <div className="calendar-instructions-wrapper">
-            <AvailabilityInstructions
-              dict={dict}
-              locale={locale}
-              onClose={() => setShowInstructions(false)}
-            />
+          <div>
+            <div className="calx-sidebar-label">View Mode</div>
+            <div className="calx-mode-toggle">
+              <button
+                className={`calx-mode-btn ${calendarMode === "sessions" ? "is-active" : ""}`}
+                onClick={() => setCalendarMode("sessions")}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                  <rect x="3" y="6" width="18" height="15" rx="4" fill="currentColor" fillOpacity="0.15" />
+                  <rect x="3" y="6" width="18" height="15" rx="4" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                  <path d="M3 11H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M8 3V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M16 3V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x="7" y="14" width="4" height="3" rx="1" fill="currentColor" />
+                  <rect x="13" y="14" width="4" height="3" rx="1" fill="currentColor" fillOpacity="0.4" />
+                </svg>
+                {t(dict, "mode_sessions") || "Sessions"}
+              </button>
+              <button
+                className={`calx-mode-btn ${calendarMode === "availability" ? "is-active-green" : ""}`}
+                onClick={() => setCalendarMode("availability")}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="9" fill="currentColor" fillOpacity="0.15" />
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M12 7V12L14.5 14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="12" cy="12" r="2" fill="currentColor" />
+                </svg>
+                {t(dict, "mode_availability") || "Availability"}
+                <span className="calx-mode-count">{activeSlotCount}</span>
+              </button>
+            </div>
           </div>
-        )}
 
-        {events.length === 0 && calendarMode === "sessions" && (
-          <p className="calendar-empty">{t(dict, "empty")}</p>
-        )}
-        {error && (
-          <div className="calendar-error-banner">
-            <span className="error-icon">⚠️</span>
-            <span>{error}</span>
-          </div>
-        )}
-
-        <div className="calendar-two-pane">
-          <div className="calendar-two-pane__wrap">
-            {/* Left: Mini Calendar Sidebar */}
-            <div className="calendar-two-pane__left">
-              <div className="mini-cal-wrapper">
-                <div className="mini-cal-header">
-                  <h3 className="mini-cal-title">{t(dict, "quick_nav")}</h3>
-                  <div className="mini-cal-month">{currentMonthYear}</div>
-                </div>
-
-                <MiniCalendar
-                  value={selectedDate}
-                  onChange={onMiniChange}
-                  showNeighboringMonth={false}
-                  next2Label={null}
-                  prev2Label={null}
-                  className="mini-cal"
-                />
-
-                <div className="mini-legend">
-                  <div className="legend-item">
-                    <span className="legend-dot legend-dot--scheduled"></span>
-                    <span className="legend-text">
-                      {t(dict, "legend_scheduled")}
-                    </span>
-                  </div>
-                  <div className="legend-item">
-                    <span className="legend-dot legend-dot--canceled"></span>
-                    <span className="legend-text">
-                      {t(dict, "legend_canceled")}
-                    </span>
-                  </div>
-                  <div className="legend-item">
-                    <span className="legend-dot legend-dot--available"></span>
-                    <span className="legend-text">
-                      {t(dict, "legend_available")}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Stats Card */}
-                <div className="mini-stats-card">
-                  <div className="stat-item">
-                    <div className="stat-value">{scheduledCount}</div>
-                    <div className="stat-label">
-                      {t(dict, "stats_upcoming")}
-                    </div>
-                  </div>
-                  <div className="stat-divider"></div>
-                  <div className="stat-item">
-                    <div className="stat-value">{canceledCount}</div>
-                    <div className="stat-label">
-                      {t(dict, "stats_canceled")}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Availability Stats */}
-                {calendarMode === "availability" && (
-                  <AvailabilityStatsCard
-                    slotCount={activeSlotCount}
-                    totalHours={totalAvailabilityHours}
-                    dict={dict}
-                    locale={locale}
-                  />
-                )}
-
-                {/* Quick Actions for Availability Mode */}
-                {calendarMode === "availability" && (
-                  <AvailabilityQuickActions
-                    onClearDay={clearDayAvailability}
-                    onClearAll={clearAllAvailability}
-                    selectedDay={selectedDayOfWeek}
-                    totalSlots={activeSlotCount}
-                    saving={savingAvailability}
-                    dict={dict}
-                    locale={locale}
-                  />
-                )}
-
-                {/* Impersonation info card */}
-                {isImpersonating && (
-                  <div className="impersonation-info-card">
-                    <div className="impersonation-info-card__title">
-                      👁️ Admin Preview
-                    </div>
-                    <div className="impersonation-info-card__text">
-                      Viewing {user?.role}&rsquo;s calendar as admin
-                    </div>
-                  </div>
-                )}
+          <div>
+            <div className="calx-sidebar-label">This Week</div>
+            <div className="calx-stats-card">
+              <div className="calx-stat">
+                <div className="calx-stat__value is-primary">{weekSessionCount}</div>
+                <div className="calx-stat__label">Sessions</div>
+              </div>
+              <div className="calx-stat">
+                <div className="calx-stat__value is-green">{activeSlotCount}</div>
+                <div className="calx-stat__label">{t(dict, "slots")}</div>
+              </div>
+              <div className="calx-stat">
+                <div className="calx-stat__value">{totalAvailabilityHours}h</div>
+                <div className="calx-stat__label">{t(dict, "weekly")}</div>
               </div>
             </div>
+          </div>
 
-            {/* Right: Main Calendar */}
+          <div>
+            <div className="calx-sidebar-label">Upcoming</div>
+            <div className="calx-upcoming-list">
+              {upcomingEvents.length === 0 ? (
+                <div className="calx-empty-small">{t(dict, "empty")}</div>
+              ) : (
+                upcomingEvents.map((ev) => (
+                  <button
+                    key={`upcoming-${ev.id}-${ev.start.toISOString()}`}
+                    className="calx-upcoming-item"
+                    onClick={() => setActiveEvent(ev)}
+                  >
+                    <span className={`calx-upcoming-dot is-${getEventTone(ev)}`} />
+                    <span className="calx-upcoming-copy">
+                      <span className="calx-upcoming-title">
+                        {ev.title || t(dict, "session_default_title")}
+                      </span>
+                      <span className="calx-upcoming-time">
+                        {format(ev.start, "EEE · h:mm a")}
+                        {ev.end ? ` - ${format(ev.end, "h:mm a")}` : ""}
+                      </span>
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="calx-sidebar-cta">
+            <div className="calx-sidebar-cta__title">Book a Session</div>
+            <div className="calx-sidebar-cta__sub">
+              Your next coaching session is one click away.
+            </div>
+            <Link className="calx-sidebar-cta__btn" href={`${prefix}/packages`}>
+              + Book Now
+            </Link>
+          </div>
+        </aside>
+
+        <main className="calx-main">
+          <div className="calx-toolbar">
+            <div className="calx-toolbar-nav">
+              <button className="calx-today-btn" onClick={() => handleNavigate("today")}>
+                Today
+              </button>
+              <button className="calx-nav-btn" onClick={() => handleNavigate("prev")}>‹</button>
+              <button className="calx-nav-btn" onClick={() => handleNavigate("next")}>›</button>
+            </div>
+
+            <div className="calx-toolbar-range">{getViewRangeLabel(currentDate, view)}</div>
+
+            <div className="calx-view-tabs">
+              <button
+                className={`calx-view-tab ${view === "week" ? "is-active" : ""}`}
+                onClick={() => setView("week")}
+              >
+                Week
+              </button>
+              <button
+                className={`calx-view-tab ${view === "month" ? "is-active" : ""}`}
+                onClick={() => setView("month")}
+              >
+                Month
+              </button>
+              <button
+                className={`calx-view-tab ${view === "day" ? "is-active" : ""}`}
+                onClick={() => setView("day")}
+              >
+                Day
+              </button>
+            </div>
+
+            <div className="calx-filters" ref={filtersRef}>
+              <button
+                className="calx-filter-btn"
+                onClick={() => setShowFilters((v) => !v)}
+              >
+                ⚙ Filter
+              </button>
+
+              {showFilters && (
+                <div className="calx-filter-menu">
+                  {[
+                    ["scheduled", "Scheduled"],
+                    ["canceled", "Canceled"],
+                    ["group", "Group"],
+                    ["oneOnOne", "1:1"],
+                    ["availability", "Availability"],
+                  ].map(([key, label]) => (
+                    <label key={key} className="calx-filter-item">
+                      <input
+                        type="checkbox"
+                        checked={filters[key]}
+                        onChange={(e) =>
+                          setFilters((prev) => ({ ...prev, [key]: e.target.checked }))
+                        }
+                      />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {calendarMode === "availability" && showAvailabilityHint && (
+            <div className="calx-availability-banner">
+              <span className="calx-availability-banner__icon">💡</span>
+              <span className="calx-availability-banner__text">
+                <strong>{t(dict, "instructions_title") || "Availability Editing Mode"}:</strong>{" "}
+                {t(dict, "instructions_click") ||
+                  "Click any cell to toggle one-hour availability. Click green blocks to remove."}
+              </span>
+              <button
+                className="calx-availability-banner__close"
+                onClick={() => setShowAvailabilityHint(false)}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {error && <div className="calx-error-banner">⚠️ {error}</div>}
+
+          {view === "week" ? (
             <div
-              className={`calendar-two-pane__right ${calendarMode === "availability"
-                ? "calendar-two-pane__right--availability-mode"
-                : ""
-                }`}
+              className="calx-week-wrap"
+              ref={weekWrapRef}
+              data-lenis-prevent
+              onWheel={handleWeekViewportWheel}
             >
+              <div className="calx-week-grid">
+                <div className="calx-week-header">
+                  <div className="calx-week-header-time" />
+                  {weekDays.map((day) => {
+                    const isToday = isSameDay(day, new Date());
+                    const isSel = isSameDay(day, selectedDate);
+                    return (
+                      <button
+                        key={`hdr-${day.toISOString()}`}
+                        className="calx-week-header-day"
+                        onClick={() => {
+                          setSelectedDate(day);
+                          setCurrentDate(day);
+                        }}
+                      >
+                        <div className="calx-week-header-dow">{format(day, "EEE")}</div>
+                        <div
+                          className={`calx-week-header-num ${isToday ? "is-today" : ""} ${!isToday && isSel ? "is-selected" : ""
+                            }`}
+                        >
+                          {format(day, "d")}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="calx-week-body" style={{ minHeight: (SLOT_END_HOUR - SLOT_START_HOUR) * SLOT_HEIGHT }}>
+                  <div className="calx-week-time-col">
+                    {timeLabels.map((label) => (
+                      <div key={`t-${label}`} className="calx-week-time-slot">
+                        <span className="calx-week-time-label">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {weekDays.map((day, dayIdx) => {
+                    const isToday = isSameDay(day, new Date());
+
+                    return (
+                      <div
+                        key={`day-${day.toISOString()}`}
+                        className={`calx-week-day-col ${isToday ? "is-today" : ""} ${calendarMode === "availability" ? "is-availability" : ""
+                          }`}
+                      >
+                        {timeLabels.map((_, rowIdx) => {
+                          const hour = SLOT_START_HOUR + rowIdx;
+                          return (
+                            <button
+                              key={`cell-${day.toISOString()}-${hour}`}
+                              className={`calx-week-cell ${calendarMode === "availability" ? "is-clickable" : ""
+                                }`}
+                              onClick={() => toggleWeekCellAvailability(day, hour)}
+                              disabled={calendarMode !== "availability" || savingAvailability}
+                              aria-label={`Slot ${format(day, "EEEE")} ${hour}:00`}
+                            />
+                          );
+                        })}
+
+                        {filters.availability &&
+                          availabilityByDayLayout[dayIdx]?.map((ev) => {
+                            const top = (ev.startMin / 60) * SLOT_HEIGHT + 2;
+                            const height = Math.max(24, ((ev.endMin - ev.startMin) / 60) * SLOT_HEIGHT - 4);
+                            const widthPct = 100 / (ev.colCount || 1);
+                            const leftPct = widthPct * (ev.col || 0);
+
+                            return (
+                              <button
+                                key={ev.id}
+                                className={`calx-avail-block is-visible ${calendarMode !== "availability" ? "is-passive" : ""
+                                  }`}
+                                style={{
+                                  top,
+                                  height,
+                                  left: `calc(${leftPct}% + 4px)`,
+                                  width: `calc(${widthPct}% - 8px)`,
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (calendarMode === "availability" && ev.slotId) {
+                                    if (confirm(t(dict, "confirm_delete_slot"))) {
+                                      deleteAvailabilitySlot(ev.slotId);
+                                    }
+                                  }
+                                }}
+                              >
+                                ✓ {t(dict, "available")}
+                              </button>
+                            );
+                          })}
+
+                        {sessionsByDayLayout[dayIdx]?.map((ev) => {
+                          const top = (ev.startMin / 60) * SLOT_HEIGHT + 2;
+                          const height = Math.max(28, ((ev.endMin - ev.startMin) / 60) * SLOT_HEIGHT - 4);
+                          const widthPct = 100 / (ev.colCount || 1);
+                          const leftPct = widthPct * (ev.col || 0);
+                          const tone = getEventTone(ev);
+
+                          return (
+                            <button
+                              key={`sess-${ev.id}-${ev.start.toISOString()}`}
+                              className={`calx-ev-pill is-${tone} ${calendarMode === "availability" ? "is-dimmed" : ""
+                                }`}
+                              style={{
+                                top,
+                                height,
+                                left: `calc(${leftPct}% + 4px)`,
+                                width: `calc(${widthPct}% - 8px)`,
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveEvent(ev);
+                              }}
+                            >
+                              <span className="calx-ev-dot" />
+                              <span className="calx-ev-copy">
+                                <span className="calx-ev-title">
+                                  {ev.title || t(dict, "session_default_title")}
+                                </span>
+                                <span className="calx-ev-sub">
+                                  {format(ev.start, "h:mm a")}
+                                  {ev.isGroup ? ` · ${t(dict, "session_group")}` : ""}
+                                  {ev.isGroup && ev.seatsLabel ? ` · ${ev.seatsLabel}` : ""}
+                                </span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {savingAvailability && (
+                <div className="calx-saving-overlay">
+                  <span className="calx-saving-spinner" />
+                  <span>{t(dict, "saving")}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="calx-rbc-panel">
               <BigCalendar
-                ref={calRef}
                 localizer={localizer}
                 date={currentDate}
                 view={view}
-                onView={(v) => setView(v)}
-                onNavigate={(d) => {
-                  setCurrentDate(d);
-                  setSelectedDayOfWeek(d.getDay());
+                onView={(nextView) => setView(nextView)}
+                onNavigate={(nextDate) => {
+                  setCurrentDate(nextDate);
+                  setSelectedDate(nextDate);
                 }}
-                onRangeChange={handleRangeChange}
-                onSelectEvent={onSelectEvent}
-                onSelectSlot={handleSelectSlot}
+                onSelectEvent={handleSelectRbcEvent}
+                onSelectSlot={handleSelectRbcSlot}
                 selectable={calendarMode === "availability"}
                 events={combinedEvents}
                 startAccessor="start"
                 endAccessor="end"
-                components={components}
+                components={rbcComponents}
                 eventPropGetter={eventPropGetter}
-                views={["month", "week", "day", "agenda"]}
-                defaultView="week"
-                drilldownView="day"
-                popup
+                views={["month", "day"]}
+                toolbar={false}
                 step={30}
                 timeslots={2}
-                min={new Date(1970, 1, 1, 0, 0, 0)}
-                max={new Date(1970, 1, 1, 23, 59, 59)}
-                scrollToTime={new Date(1970, 1, 1, 8, 0, 0)}
-                formats={{
-                  dayFormat: (date, culture, lzr) => lzr.format(date, "EEE d"),
-                  weekdayFormat: (date, culture, lzr) =>
-                    lzr.format(date, "EEEE"),
-                  dayHeaderFormat: (date, culture, lzr) =>
-                    lzr.format(date, "EEEE, MMMM d"),
-                }}
-                style={{ height: 800 }}
-                toolbar
+                style={{ height: 760 }}
               />
 
-              {savingAvailability && <SavingOverlay dict={dict} />}
+              {savingAvailability && (
+                <div className="calx-saving-overlay">
+                  <span className="calx-saving-spinner" />
+                  <span>{t(dict, "saving")}</span>
+                </div>
+              )}
             </div>
-          </div>
-        </div>
-      </div>
+          )}
 
-      {activeEvent && popoverPos && typeof document !== "undefined" && createPortal(
-        <>
-          <div
-            className="event-popover-backdrop"
-            onClick={() => setActiveEvent(null)}
-          />
-          <div
-            className="event-popover"
-            style={popoverPos}
-          >
-            <div className="event-popover__header">
-              <div className="event-popover__title">
-                {activeEvent.title || t(dict, "session_default_title")}
-              </div>
+          {calendarMode === "availability" && (
+            <div className="calx-availability-actions">
               <button
-                className="event-popover__close"
-                onClick={() => setActiveEvent(null)}
+                className="calx-availability-action"
+                disabled={savingAvailability}
+                onClick={() => clearDayAvailability(selectedDate.getDay())}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                Clear Selected Day
+              </button>
+              <button
+                className="calx-availability-action is-danger"
+                disabled={savingAvailability || activeSlotCount === 0}
+                onClick={clearAllAvailability}
+              >
+                {t(dict, "clear_all")}
               </button>
             </div>
+          )}
+        </main>
+      </div>
 
-            <div className="event-popover__time-badge">
-              <span>🕒</span>
-              {format(activeEvent.start, "h:mm a")} - {format(activeEvent.end, "h:mm a")}
-            </div>
-
-            {activeEvent.isGroup && (
-              <div className="event-popover__info-row">
-                <span>👥</span>
-                <span>
-                  {t(dict, "session_group") || "Group Session"}
-                  {activeEvent.seatsLabel ? ` (${activeEvent.seatsLabel})` : ""}
-                </span>
-              </div>
-            )}
-
-            <div className="event-popover__actions">
-              <Link
-                href={`${prefix}/dashboard/sessions/${activeEvent.id}`}
-                className="event-popover__btn event-popover__btn--primary"
-              >
-                {t(dict, "go_to_session") || "Go to Session"}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-              </Link>
-            </div>
-          </div>
-        </>,
-        document.body
+      {activeEvent && (
+        <SessionPopover
+          event={activeEvent}
+          onClose={() => setActiveEvent(null)}
+          dict={dict}
+          prefix={prefix}
+        />
       )}
-    </>
+    </div>
   );
 }

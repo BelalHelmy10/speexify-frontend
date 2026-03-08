@@ -995,7 +995,10 @@ function ProductDemoSection() {
         <div className="home-demo__inner">
           <div className="home-demo__copy">
             <p className="home-demo__eyebrow">See it in action</p>
-            <h2>The platform built for <em style={{ fontStyle: "normal", color: "#F25C2E" }}>real conversations</em></h2>
+            <h2>
+              The platform built for{" "}
+              <em className="home-demo__accent-word">real conversations</em>
+            </h2>
             <p>No generic exercises. No passive watching. Every session is live, personalised, and built to make you speak confidently from day one.</p>
             <ul className="home-demo__features">
               {features.map((f, i) => (
@@ -1009,12 +1012,12 @@ function ProductDemoSection() {
 
           <div className="home-demo__phone-wrap">
             <div className="home-demo__float home-demo__float--1" style={floatStyle}>
-              <div style={{ background: "#fff", borderRadius: "12px", padding: "10px 16px", boxShadow: "0 8px 24px rgba(13,27,42,0.14)", fontSize: "13px", fontWeight: "700", color: "#0D1B2A", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
+              <div className="home-demo__float-card">
                 <span style={{ fontSize: "18px" }}>⭐</span> 4.9 avg rating
               </div>
             </div>
             <div className="home-demo__float home-demo__float--2" style={floatStyle2}>
-              <div style={{ background: "#fff", borderRadius: "12px", padding: "10px 16px", boxShadow: "0 8px 24px rgba(13,27,42,0.14)", fontSize: "13px", fontWeight: "700", color: "#0D1B2A", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
+              <div className="home-demo__float-card">
                 <span style={{ fontSize: "18px" }}>🎙️</span> 50k+ sessions
               </div>
             </div>
@@ -1034,11 +1037,11 @@ function ProductDemoSection() {
                     <div key={i} className="home-demo__bar" />
                   ))}
                 </div>
-                <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: "12px", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px" }}>Session time</span>
-                  <span style={{ color: "#F25C2E", fontWeight: "700", fontSize: "14px" }}>24:07</span>
+                <div className="home-demo__session-row">
+                  <span className="home-demo__session-label">Session time</span>
+                  <span className="home-demo__session-time">24:07</span>
                 </div>
-                <div style={{ background: "rgba(93,217,124,0.12)", border: "1px solid rgba(93,217,124,0.2)", borderRadius: "10px", padding: "10px 14px", fontSize: "12px", color: "#5dd97c", fontWeight: "600" }}>
+                <div className="home-demo__session-feedback">
                   ✓ Excellent fluency on that last sentence!
                 </div>
               </div>

@@ -1199,7 +1199,7 @@
 }
 
 /* If you don't already have global skeleton utilities, add a minimal version: */
-.skeleton {
+.adm-admin-modern .skeleton {
   position: relative;
   overflow: hidden;
   display: block;
@@ -1219,31 +1219,31 @@
   }
 }
 
-.skeleton--row {
+.adm-admin-modern .skeleton--row {
   height: 16px;
   margin-bottom: 0.5rem;
 }
 
-.skeleton--title {
+.adm-admin-modern .skeleton--title {
   height: 20px;
   width: 60%;
   margin-bottom: 0.5rem;
 }
 
-.skeleton--text {
+.adm-admin-modern .skeleton--text {
   height: 14px;
   width: 80%;
   margin-bottom: 0.35rem;
 }
 
-.skeleton--chip {
+.adm-admin-modern .skeleton--chip {
   height: 20px;
   width: 90px;
   border-radius: 999px;
   margin-bottom: 0.5rem;
 }
 
-.skeleton-card {
+.adm-admin-modern .skeleton-card {
   padding: 1rem;
   border-radius: 0.875rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1272,7 +1272,7 @@
   gap: 0.75rem;
 }
 
-.skeleton {
+.adm-admin-modern .skeleton {
   background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;

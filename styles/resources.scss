@@ -1,22 +1,22 @@
 // ════════════════════════════════════════════════════════════════════════════
 // SPEEXIFY RESOURCES & CLASSROOM STYLES
-// Modular stylesheet - Uses @import for compatibility with @extend
+// Modular stylesheet - Sass modules
 // ════════════════════════════════════════════════════════════════════════════
 
 // ─── Foundation ─────────────────────────────────────────────────────────────
-@import "resources/tokens";
-@import "resources/mixins";
-@import "resources/animations";
+@use "resources/tokens";
+@use "resources/mixins";
+@use "resources/animations";
 
 // ─── Pages & Components ─────────────────────────────────────────────────────
-@import "resources/base";
-@import "resources/picker";
-@import "resources/unit";
-@import "resources/prep-room";
-@import "resources/pdf-viewer";
-@import "resources/classroom";
-@import "resources/modals";
+@use "resources/base";
+@use "resources/picker";
+@use "resources/unit";
+@use "resources/prep-room";
+@use "resources/pdf-viewer";
+@use "resources/classroom";
+@use "resources/modals";
 
 // ─── Utilities & Generic ────────────────────────────────────────────────────
-@import "resources/buttons";
-@import "resources/utilities";
+@use "resources/buttons";
+@use "resources/utilities";

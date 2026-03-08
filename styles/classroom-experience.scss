@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 // styles/classroom-experience.scss
 // ============================================================================
 // CLASSROOM EXPERIENCE LAYER - Component Styles
@@ -5,37 +7,12 @@
 // ============================================================================
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Variables
-// ─────────────────────────────────────────────────────────────────────────────
-$color-primary: #6366f1;
-$color-primary-light: #818cf8;
-$color-success: #10b981;
-$color-warning: #f59e0b;
-$color-danger: #ef4444;
-$color-gray-50: #f9fafb;
-$color-gray-100: #f3f4f6;
-$color-gray-200: #e5e7eb;
-$color-gray-300: #d1d5db;
-$color-gray-400: #9ca3af;
-$color-gray-500: #6b7280;
-$color-gray-600: #4b5563;
-$color-gray-700: #374151;
-$color-gray-800: #1f2937;
-$color-gray-900: #111827;
-
-$border-radius: 8px;
-$border-radius-lg: 12px;
-$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Attendance Panel
 // ─────────────────────────────────────────────────────────────────────────────
 .attendance-panel {
   background: white;
-  border-radius: $border-radius-lg;
-  border: 1px solid $color-gray-200;
+  border-radius: $classroom-border-radius-lg;
+  border: 1px solid $classroom-gray-200;
   padding: 1.25rem;
 
   &__header {
@@ -48,22 +25,22 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__title {
     font-size: 1rem;
     font-weight: 600;
-    color: $color-gray-800;
+    color: $classroom-gray-800;
     margin: 0;
   }
 
   &__mark-all {
     font-size: 0.75rem;
     padding: 0.375rem 0.75rem;
-    background: $color-success;
+    background: $classroom-success;
     color: white;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $classroom-border-radius;
     cursor: pointer;
     transition: background 0.2s;
 
     &:hover {
-      background: darken($color-success, 8%);
+      background: darken($classroom-success, 8%);
     }
 
     &:disabled {
@@ -73,18 +50,18 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
 
   &__notice {
-    background: $color-gray-50;
-    border: 1px solid $color-gray-200;
-    border-radius: $border-radius;
+    background: $classroom-gray-50;
+    border: 1px solid $classroom-gray-200;
+    border-radius: $classroom-border-radius;
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
-    color: $color-gray-600;
+    color: $classroom-gray-600;
     margin-bottom: 1rem;
 
     &--warning {
-      background: lighten($color-warning, 40%);
-      border-color: $color-warning;
-      color: darken($color-warning, 15%);
+      background: lighten($classroom-warning, 40%);
+      border-color: $classroom-warning;
+      color: darken($classroom-warning, 15%);
     }
   }
 
@@ -96,7 +73,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
   &__empty {
     text-align: center;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
     padding: 2rem;
     font-size: 0.875rem;
   }
@@ -106,8 +83,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem;
-    background: $color-gray-50;
-    border-radius: $border-radius;
+    background: $classroom-gray-50;
+    border-radius: $classroom-border-radius;
     gap: 1rem;
 
     &--canceled {
@@ -136,7 +113,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
   &__name {
     font-weight: 500;
-    color: $color-gray-800;
+    color: $classroom-gray-800;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -144,7 +121,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
   &__time {
     font-size: 0.75rem;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
   }
 
   &__controls {
@@ -158,15 +135,15 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid $color-gray-200;
+    border: 2px solid $classroom-gray-200;
     background: white;
-    border-radius: $border-radius;
+    border-radius: $classroom-border-radius;
     cursor: pointer;
     transition: all 0.2s;
     font-size: 0.875rem;
 
     &:hover {
-      border-color: var(--btn-color, $color-gray-400);
+      border-color: var(--btn-color, $classroom-gray-400);
     }
 
     &--active {
@@ -182,13 +159,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__canceled {
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid $color-gray-200;
+    border-top: 1px solid $classroom-gray-200;
   }
 
   &__canceled-title {
     font-size: 0.75rem;
     font-weight: 600;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
     text-transform: uppercase;
     margin-bottom: 0.5rem;
   }
@@ -196,23 +173,23 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__actions {
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid $color-gray-200;
+    border-top: 1px solid $classroom-gray-200;
     display: flex;
     justify-content: flex-end;
   }
 
   &__save {
     padding: 0.5rem 1rem;
-    background: $color-primary;
+    background: $classroom-primary;
     color: white;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $classroom-border-radius;
     font-weight: 500;
     cursor: pointer;
     transition: background 0.2s;
 
     &:hover {
-      background: $color-primary-light;
+      background: $classroom-primary-light;
     }
 
     &:disabled {
@@ -227,10 +204,10 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 // ─────────────────────────────────────────────────────────────────────────────
 .session-notes {
   background: white;
-  border-radius: $border-radius-lg;
-  border: 1px solid $color-gray-200;
+  border-radius: $classroom-border-radius-lg;
+  border: 1px solid $classroom-gray-200;
   overflow: hidden;
-  box-shadow: $shadow-sm;
+  box-shadow: $classroom-shadow-sm;
 
   &--collapsed {
     .session-notes__body {
@@ -243,12 +220,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    background: $color-gray-50;
+    background: $classroom-gray-50;
     cursor: pointer;
     user-select: none;
 
     &:hover {
-      background: $color-gray-100;
+      background: $classroom-gray-100;
     }
   }
 
@@ -257,7 +234,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     align-items: center;
     gap: 0.5rem;
     font-weight: 600;
-    color: $color-gray-800;
+    color: $classroom-gray-800;
   }
 
   &__icon {
@@ -267,7 +244,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__readonly {
     font-size: 0.75rem;
     font-weight: normal;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
     margin-left: 0.25rem;
   }
 
@@ -284,26 +261,26 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     font-size: 0.75rem;
 
     &--saved {
-      color: $color-success;
+      color: $classroom-success;
     }
 
     &--saving {
-      color: $color-warning;
+      color: $classroom-warning;
     }
 
     &--unsaved {
-      color: $color-gray-500;
+      color: $classroom-gray-500;
     }
 
     &--error {
-      color: $color-danger;
+      color: $classroom-danger;
     }
   }
 
   &__toggle {
     background: none;
     border: none;
-    color: $color-gray-400;
+    color: $classroom-gray-400;
     cursor: pointer;
     padding: 0.25rem;
     font-size: 0.75rem;
@@ -317,8 +294,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     width: 100%;
     min-height: 150px;
     padding: 0.75rem;
-    border: 1px solid $color-gray-200;
-    border-radius: $border-radius;
+    border: 1px solid $classroom-gray-200;
+    border-radius: $classroom-border-radius;
     font-family: inherit;
     font-size: 0.875rem;
     line-height: 1.5;
@@ -327,12 +304,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
     &:focus {
       outline: none;
-      border-color: $color-primary;
-      box-shadow: 0 0 0 3px rgba($color-primary, 0.1);
+      border-color: $classroom-primary;
+      box-shadow: 0 0 0 3px rgba($classroom-primary, 0.1);
     }
 
     &::placeholder {
-      color: $color-gray-400;
+      color: $classroom-gray-400;
     }
   }
 
@@ -341,13 +318,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
 
   &__text {
-    color: $color-gray-700;
+    color: $classroom-gray-700;
     line-height: 1.6;
     white-space: pre-wrap;
   }
 
   &__empty {
-    color: $color-gray-500;
+    color: $classroom-gray-500;
     font-style: italic;
   }
 
@@ -357,12 +334,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     justify-content: space-between;
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px solid $color-gray-100;
+    border-top: 1px solid $classroom-gray-100;
   }
 
   &__count {
     font-size: 0.75rem;
-    color: $color-gray-400;
+    color: $classroom-gray-400;
   }
 
   &__actions {
@@ -374,20 +351,20 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__save-btn {
     font-size: 0.75rem;
     padding: 0.375rem 0.75rem;
-    background: $color-primary;
+    background: $classroom-primary;
     color: white;
     border: none;
-    border-radius: $border-radius;
+    border-radius: $classroom-border-radius;
     cursor: pointer;
 
     &:hover {
-      background: $color-primary-light;
+      background: $classroom-primary-light;
     }
   }
 
   &__hint {
     font-size: 0.75rem;
-    color: $color-gray-400;
+    color: $classroom-gray-400;
   }
 }
 
@@ -396,7 +373,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 // ─────────────────────────────────────────────────────────────────────────────
 .learner-feedback {
   background: white;
-  border-radius: $border-radius-lg;
+  border-radius: $classroom-border-radius-lg;
   padding: 1.5rem;
   max-width: 500px;
   width: 100%;
@@ -407,14 +384,14 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     align-items: center;
     justify-content: center;
     min-height: 200px;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
   }
 
   &__spinner {
     width: 2rem;
     height: 2rem;
-    border: 3px solid $color-gray-200;
-    border-top-color: $color-primary;
+    border: 3px solid $classroom-gray-200;
+    border-top-color: $classroom-primary;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     margin-bottom: 1rem;
@@ -429,17 +406,17 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: $color-gray-800;
+    color: $classroom-gray-800;
     margin: 0 0 0.5rem;
   }
 
   &__subtitle {
-    color: $color-gray-600;
+    color: $classroom-gray-600;
     font-size: 0.875rem;
     margin: 0;
 
     strong {
-      color: $color-gray-800;
+      color: $classroom-gray-800;
     }
   }
 
@@ -447,7 +424,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     display: block;
     margin-top: 0.25rem;
     font-size: 0.8rem;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
   }
 
   &__close {
@@ -459,16 +436,16 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: $color-gray-100;
+    background: $classroom-gray-100;
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
     transition: all 0.2s;
 
     &:hover {
-      background: $color-gray-200;
-      color: $color-gray-700;
+      background: $classroom-gray-200;
+      color: $classroom-gray-700;
     }
   }
 
@@ -486,11 +463,11 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     display: block;
     font-size: 0.875rem;
     font-weight: 500;
-    color: $color-gray-700;
+    color: $classroom-gray-700;
     margin-bottom: 0.5rem;
 
     .required {
-      color: $color-danger;
+      color: $classroom-danger;
     }
   }
 
@@ -506,7 +483,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     background: none;
     border: none;
     cursor: pointer;
-    color: $color-gray-300;
+    color: $classroom-gray-300;
     padding: 0.25rem;
     transition: transform 0.1s, color 0.2s;
 
@@ -522,7 +499,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__rating-label {
     margin-left: 0.75rem;
     font-size: 0.875rem;
-    color: $color-gray-600;
+    color: $classroom-gray-600;
     min-width: 80px;
     text-align: left;
   }
@@ -534,15 +511,15 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
   &__optional {
     font-weight: normal;
-    color: $color-gray-400;
+    color: $classroom-gray-400;
     margin-left: 0.25rem;
   }
 
   &__textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid $color-gray-200;
-    border-radius: $border-radius;
+    border: 1px solid $classroom-gray-200;
+    border-radius: $classroom-border-radius;
     font-family: inherit;
     font-size: 0.875rem;
     line-height: 1.5;
@@ -551,12 +528,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
     &:focus {
       outline: none;
-      border-color: $color-primary;
-      box-shadow: 0 0 0 3px rgba($color-primary, 0.1);
+      border-color: $classroom-primary;
+      box-shadow: 0 0 0 3px rgba($classroom-primary, 0.1);
     }
 
     &::placeholder {
-      color: $color-gray-400;
+      color: $classroom-gray-400;
     }
   }
 
@@ -569,18 +546,18 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
   &__btn {
     padding: 0.625rem 1.25rem;
-    border-radius: $border-radius;
+    border-radius: $classroom-border-radius;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
 
     &--primary {
-      background: $color-primary;
+      background: $classroom-primary;
       color: white;
       border: none;
 
       &:hover:not(:disabled) {
-        background: $color-primary-light;
+        background: $classroom-primary-light;
       }
 
       &:disabled {
@@ -591,18 +568,18 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
     &--secondary {
       background: white;
-      color: $color-gray-600;
-      border: 1px solid $color-gray-300;
+      color: $classroom-gray-600;
+      border: 1px solid $classroom-gray-300;
 
       &:hover:not(:disabled) {
-        background: $color-gray-50;
+        background: $classroom-gray-50;
       }
     }
   }
 
   &__update-note {
     font-size: 0.75rem;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
     text-align: center;
     margin-top: 0.5rem;
   }
@@ -623,7 +600,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 .learner-feedback-modal {
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: $shadow-lg;
+  box-shadow: $classroom-shadow-lg;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -641,15 +618,15 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     align-items: center;
     justify-content: center;
     min-height: 200px;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
     text-align: center;
   }
 
   &__spinner {
     width: 2.5rem;
     height: 2.5rem;
-    border: 3px solid $color-gray-200;
-    border-top-color: $color-primary;
+    border: 3px solid $classroom-gray-200;
+    border-top-color: $classroom-primary;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     margin-bottom: 1rem;
@@ -662,7 +639,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
   &__header {
     padding-bottom: 1rem;
-    border-bottom: 1px solid $color-gray-200;
+    border-bottom: 1px solid $classroom-gray-200;
   }
 
   &__title-row {
@@ -676,7 +653,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: $color-gray-800;
+    color: $classroom-gray-800;
     margin: 0;
   }
 
@@ -687,18 +664,18 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     border-radius: 9999px;
 
     &--scheduled {
-      background: lighten($color-primary, 35%);
-      color: $color-primary;
+      background: lighten($classroom-primary, 35%);
+      color: $classroom-primary;
     }
 
     &--completed {
-      background: lighten($color-success, 45%);
-      color: $color-success;
+      background: lighten($classroom-success, 45%);
+      color: $classroom-success;
     }
 
     &--canceled {
-      background: lighten($color-danger, 35%);
-      color: $color-danger;
+      background: lighten($classroom-danger, 35%);
+      color: $classroom-danger;
     }
   }
 
@@ -707,7 +684,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     flex-wrap: wrap;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: $color-gray-600;
+    color: $classroom-gray-600;
 
     & > span:not(:last-child)::after {
       content: "·";
@@ -717,8 +694,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
   &__section {
     background: white;
-    border-radius: $border-radius-lg;
-    border: 1px solid $color-gray-200;
+    border-radius: $classroom-border-radius-lg;
+    border: 1px solid $classroom-gray-200;
     padding: 1.25rem;
   }
 
@@ -728,7 +705,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     gap: 0.5rem;
     font-size: 1rem;
     font-weight: 600;
-    color: $color-gray-800;
+    color: $classroom-gray-800;
     margin: 0 0 1rem;
   }
 
@@ -746,19 +723,19 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__stat {
     text-align: center;
     padding: 0.75rem;
-    background: $color-gray-50;
-    border-radius: $border-radius;
+    background: $classroom-gray-50;
+    border-radius: $classroom-border-radius;
 
     &--attended {
-      background: lighten($color-success, 45%);
+      background: lighten($classroom-success, 45%);
     }
 
     &--noshow {
-      background: lighten($color-danger, 35%);
+      background: lighten($classroom-danger, 35%);
     }
 
     &--excused {
-      background: lighten($color-warning, 40%);
+      background: lighten($classroom-warning, 40%);
     }
   }
 
@@ -766,12 +743,12 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     display: block;
     font-size: 1.5rem;
     font-weight: 700;
-    color: $color-gray-800;
+    color: $classroom-gray-800;
   }
 
   &__stat-label {
     font-size: 0.75rem;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
     text-transform: uppercase;
   }
 
@@ -786,20 +763,20 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     align-items: center;
     justify-content: space-between;
     padding: 0.5rem 0.75rem;
-    background: $color-gray-50;
-    border-radius: $border-radius;
+    background: $classroom-gray-50;
+    border-radius: $classroom-border-radius;
     font-size: 0.875rem;
 
     &--attended {
-      border-left: 3px solid $color-success;
+      border-left: 3px solid $classroom-success;
     }
 
     &--noshow {
-      border-left: 3px solid $color-danger;
+      border-left: 3px solid $classroom-danger;
     }
 
     &--excused {
-      border-left: 3px solid $color-warning;
+      border-left: 3px solid $classroom-warning;
     }
 
     &--canceled {
@@ -825,8 +802,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem;
-    background: $color-gray-50;
-    border-radius: $border-radius;
+    background: $classroom-gray-50;
+    border-radius: $classroom-border-radius;
   }
 
   &__resource-icon {
@@ -836,29 +813,29 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__resource-title {
     flex: 1;
     font-weight: 500;
-    color: $color-gray-800;
+    color: $classroom-gray-800;
   }
 
   &__resource-time {
     font-size: 0.75rem;
-    color: $color-gray-500;
+    color: $classroom-gray-500;
   }
 
   &__empty {
-    color: $color-gray-500;
+    color: $classroom-gray-500;
     font-style: italic;
     text-align: center;
     padding: 1rem;
   }
 
   &__notes {
-    background: $color-gray-50;
-    border-radius: $border-radius;
+    background: $classroom-gray-50;
+    border-radius: $classroom-border-radius;
     padding: 1rem;
 
     p {
       margin: 0;
-      color: $color-gray-700;
+      color: $classroom-gray-700;
       line-height: 1.6;
       white-space: pre-wrap;
     }
@@ -874,13 +851,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     h4 {
       font-size: 0.875rem;
       font-weight: 600;
-      color: $color-gray-700;
+      color: $classroom-gray-700;
       margin: 0 0 0.375rem;
     }
 
     p {
       margin: 0;
-      color: $color-gray-600;
+      color: $classroom-gray-600;
       line-height: 1.5;
     }
   }
@@ -890,7 +867,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     align-items: center;
     margin-top: 1rem;
     font-size: 0.875rem;
-    color: $color-primary;
+    color: $classroom-primary;
     text-decoration: none;
 
     &:hover {
@@ -914,7 +891,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   &__avg-rating {
     font-size: 2rem;
     font-weight: 700;
-    color: $color-gray-800;
+    color: $classroom-gray-800;
   }
 
   &__stars {
@@ -924,7 +901,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
 
   &__rating-count {
-    color: $color-gray-500;
+    color: $classroom-gray-500;
     font-size: 0.875rem;
   }
 
@@ -935,8 +912,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
 
   &__feedback-card {
-    background: $color-gray-50;
-    border-radius: $border-radius;
+    background: $classroom-gray-50;
+    border-radius: $classroom-border-radius;
     padding: 1rem;
   }
 
@@ -949,7 +926,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
   &__feedback-learner {
     font-weight: 500;
-    color: $color-gray-800;
+    color: $classroom-gray-800;
   }
 
   &__feedback-rating {
@@ -958,18 +935,18 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
   &__feedback-text {
     font-size: 0.875rem;
-    color: $color-gray-600;
+    color: $classroom-gray-600;
     margin: 0.375rem 0 0;
     line-height: 1.5;
 
     strong {
-      color: $color-gray-700;
+      color: $classroom-gray-700;
     }
   }
 
   &__my-feedback {
-    background: $color-gray-50;
-    border-radius: $border-radius;
+    background: $classroom-gray-50;
+    border-radius: $classroom-border-radius;
     padding: 1rem;
   }
 

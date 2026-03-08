@@ -3,7 +3,7 @@
 // FOOTER WRAPPER
 .site-footer-wrapper {
   position: relative;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(180deg, $color-white 0%, $bg-light 100%);
   border-top: 1px solid $border;
   padding: 80px 0 40px;
   margin-top: 120px;
@@ -128,16 +128,16 @@
   color: $ink;
   background: $bg;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 2px rgba($navy, 0.04);
 
   &::placeholder {
-    color: #94a3b8;
+    color: $text-muted;
   }
 
   &:focus {
     outline: none;
     border-color: $brand;
-    box-shadow: 0 0 0 3px rgba($brand, 0.1), 0 1px 2px rgba(15, 23, 42, 0.04);
+    box-shadow: 0 0 0 3px rgba($brand, 0.1), 0 1px 2px rgba($navy, 0.04);
   }
 }
 
@@ -147,7 +147,7 @@
   gap: 6px;
   padding: 12px 20px;
   background: linear-gradient(135deg, $brand 0%, $brand-light 100%);
-  color: #fff;
+  color: $color-white;
   border: none;
   border-radius: 12px;
   font-weight: 700;
@@ -298,7 +298,7 @@
   color: $muted;
   text-decoration: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 2px rgba($navy, 0.04);
 
   svg {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -307,7 +307,7 @@
   &:hover {
     background: $brand;
     border-color: $brand;
-    color: #fff;
+    color: $color-white;
     transform: translateY(-2px);
     box-shadow: 0 8px 16px -6px rgba($brand, 0.4);
     text-decoration: none;
