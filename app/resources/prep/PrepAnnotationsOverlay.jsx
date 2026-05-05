@@ -49,11 +49,13 @@ export default function PrepAnnotationsOverlay({ ctx }) {
     activeTextId,
     resizeState,
     widthResizeState,
+    heightResizeState,
     annotationScale,
     deleteTextBox,
     startTextDrag,
     blurDebounceRef,
     startWidthResize,
+    startHeightResize,
     textAreaRefs,
     updateTextBoxText,
     handleTextBoxBlur,
@@ -192,6 +194,7 @@ export default function PrepAnnotationsOverlay({ ctx }) {
         activeTextId={activeTextId}
         resizeState={resizeState}
         widthResizeState={widthResizeState}
+        heightResizeState={heightResizeState}
         selectedItems={selectedItems}
         annotationScale={annotationScale}
         tool={tool}
@@ -202,6 +205,7 @@ export default function PrepAnnotationsOverlay({ ctx }) {
         startTextDrag={startTextDrag}
         blurDebounceRef={blurDebounceRef}
         startWidthResize={startWidthResize}
+        startHeightResize={startHeightResize}
         textAreaRefs={textAreaRefs}
         updateTextBoxText={updateTextBoxText}
         handleTextBoxBlur={handleTextBoxBlur}

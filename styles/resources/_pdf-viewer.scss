@@ -560,26 +560,74 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 28px;
     background: rgba(255, 255, 255, 0.95);
     border: 2px solid $cr-accent-primary;
-    border-radius: 2px;
+    border-radius: 999px;
     cursor: ew-resize;
     z-index: 5;
-    transition: all $cr-transition-fast;
+    opacity: 0.95;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.2);
+    transition: background $cr-transition-fast, border-color $cr-transition-fast,
+      box-shadow $cr-transition-fast, transform $cr-transition-fast;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -12px -8px;
+    }
 
     &:hover {
       background: $cr-accent-primary;
       transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 5px 16px rgba(15, 23, 42, 0.28);
     }
 
     &--left {
-      left: -6px;
+      left: -8px;
     }
 
     &--right {
-      right: -6px;
+      right: -8px;
+    }
+  }
+
+  // ─── Vertical Resize Handles (Top & Bottom) ───────────────────
+  &__vertical-handle {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 34px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid $cr-accent-primary;
+    border-radius: 999px;
+    cursor: ns-resize;
+    z-index: 5;
+    opacity: 0.95;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.2);
+    transition: background $cr-transition-fast, border-color $cr-transition-fast,
+      box-shadow $cr-transition-fast, transform $cr-transition-fast;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -8px -12px;
+    }
+
+    &:hover {
+      background: $cr-accent-primary;
+      transform: translateX(-50%) scale(1.1);
+      box-shadow: 0 5px 16px rgba(15, 23, 42, 0.28);
+    }
+
+    &--top {
+      top: -8px;
+    }
+
+    &--bottom {
+      bottom: -8px;
     }
   }
 
@@ -594,6 +642,11 @@
     border-radius: 4px;
     display: inline-block;
     max-width: 98vw; // Prevent going off-screen
+    overflow: visible;
+    transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
+    @include custom-scrollbar(8px,
+      rgba(148, 163, 184, 0.12),
+      rgba(148, 163, 184, 0.34));
   }
 
   &__textarea {
@@ -612,6 +665,7 @@
     outline: none;
     overflow: visible;
     field-sizing: content;
+    box-sizing: border-box;
     /* Modern browsers: auto-size to content */
     text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.9),
       1px -1px 0 rgba(255, 255, 255, 0.9), -1px 1px 0 rgba(255, 255, 255, 0.9),
@@ -632,19 +686,26 @@
     position: absolute;
     bottom: -10px;
     right: -10px;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     background: $cr-accent-primary;
     border: 3px solid white;
-    border-radius: 50%;
+    border-radius: 7px;
     cursor: nwse-resize;
     z-index: 5;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-    transition: all $cr-transition-fast;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.28);
+    transition: box-shadow $cr-transition-fast, transform $cr-transition-fast,
+      background $cr-transition-fast;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -10px;
+    }
 
     &:hover {
       transform: scale(1.15);
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 7px 18px rgba(15, 23, 42, 0.32);
     }
   }
 
@@ -659,8 +720,11 @@
     cursor: pointer;
     white-space: pre-wrap;
     word-break: break-word;
-    max-width: 500px;
+    max-width: none;
     position: relative;
+    @include custom-scrollbar(8px,
+      rgba(148, 163, 184, 0.12),
+      rgba(148, 163, 184, 0.34));
     text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.8),
       1px -1px 0 rgba(255, 255, 255, 0.8), -1px 1px 0 rgba(255, 255, 255, 0.8),
       1px 1px 0 rgba(255, 255, 255, 0.8), 0 0 8px rgba(255, 255, 255, 0.5);
@@ -679,14 +743,25 @@
     height: 14px;
     background: $cr-accent-primary;
     border: 2px solid white;
-    border-radius: 50%;
+    border-radius: 5px;
     cursor: nwse-resize;
     opacity: 0;
     transition: opacity $cr-transition-fast;
     z-index: 5;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -10px;
+    }
+
     .prep-text-box:hover & {
+      opacity: 1;
+    }
+
+    .prep-text-box--resizing &,
+    .prep-text-box.is-selected & {
       opacity: 1;
     }
   }
@@ -698,10 +773,38 @@
 
   &--resizing &__input-area {
     border-color: darken($cr-accent-primary, 10%);
+    box-shadow: 0 0 0 4px rgba($cr-accent-primary, 0.14);
+    transition: none;
+  }
+
+  &--resizing &__label {
+    outline: 2px solid rgba($cr-accent-primary, 0.75);
+    outline-offset: 5px;
+    box-shadow: 0 0 0 5px rgba($cr-accent-primary, 0.12);
   }
 
   &--width-resizing &__input-area {
     border-style: dashed;
+    border-color: darken($cr-accent-primary, 10%);
+    box-shadow: 0 0 0 4px rgba($cr-accent-primary, 0.14);
+    transition: none;
+  }
+
+  &--height-resizing &__input-area {
+    border-color: darken($cr-accent-primary, 10%);
+    box-shadow: 0 0 0 4px rgba($cr-accent-primary, 0.14);
+    transition: none;
+  }
+
+  &--text-block &__input-area,
+  &--text-block &__label {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(2px);
+  }
+
+  &--text-block &__textarea,
+  &--text-block &__label {
+    line-height: 1.32;
   }
 
   &.is-selected {

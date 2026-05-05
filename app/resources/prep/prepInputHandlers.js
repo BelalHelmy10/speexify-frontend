@@ -283,8 +283,10 @@ export function handlePrepMouseMove(e, ctx) {
     activeStylusRef,
     resizeState,
     widthResizeState,
+    heightResizeState,
     handleFontSizeResize,
     handleWidthResize,
+    handleHeightResize,
     groupDrag,
     getNormalizedPoint,
     handleGroupDragMove,
@@ -319,6 +321,12 @@ export function handlePrepMouseMove(e, ctx) {
   if (widthResizeState) {
     e.preventDefault();
     handleWidthResize(e);
+    return;
+  }
+
+  if (heightResizeState) {
+    e.preventDefault();
+    handleHeightResize(e);
     return;
   }
 
@@ -414,6 +422,8 @@ export function handlePrepMouseUp(e, ctx) {
     stopFontSizeResize,
     widthResizeState,
     stopWidthResize,
+    heightResizeState,
+    stopHeightResize,
     maskDrag,
     getNormalizedPoint,
     finalizeCreatingMask,
@@ -443,6 +453,11 @@ export function handlePrepMouseUp(e, ctx) {
 
   if (widthResizeState) {
     stopWidthResize();
+    return;
+  }
+
+  if (heightResizeState) {
+    stopHeightResize();
     return;
   }
 

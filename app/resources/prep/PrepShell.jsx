@@ -59,6 +59,9 @@ import {
   startPrepWidthResize,
   handlePrepWidthResize,
   stopPrepWidthResize,
+  startPrepHeightResize,
+  handlePrepHeightResize,
+  stopPrepHeightResize,
 } from "./prepTextBoxLogic";
 import {
   createPrepStickyNote,
@@ -161,6 +164,7 @@ export default function PrepShell({
   const [dragState, setDragState] = useState(null); // { kind: "note"|"text", id, offsetX, offsetY }
   const [resizeState, setResizeState] = useState(null); // { id, startY, startFontSize }
   const [widthResizeState, setWidthResizeState] = useState(null); // { id, startX, startWidth, direction }
+  const [heightResizeState, setHeightResizeState] = useState(null); // { id, startY, startHeight, direction }
   const [maskDrag, setMaskDrag] = useState(null); // { mode: "creating"|"moving", ... }
   const [shapeDrag, setShapeDrag] = useState(null); // { mode: "creating", tool: "line"|"box", startX, startY, currentX, currentY }
   const [activeTextId, setActiveTextId] = useState(null);
@@ -579,14 +583,25 @@ export default function PrepShell({
     span.style.fontWeight = style.fontWeight || "normal";
     span.style.letterSpacing = style.letterSpacing || "normal";
     span.style.whiteSpace = "pre"; // IMPORTANT: no wrap
-    // put at least one char so width isn't 0
-    span.textContent = (text ?? "").length ? text : " ";
-    return span.getBoundingClientRect().width || 0;
+    const lines = String(text ?? "").split(/\r\n|\r|\n/);
+    const safeLines = lines.length ? lines : [" "];
+
+    return safeLines.reduce((maxWidth, line) => {
+      // put at least one char so width isn't 0
+      span.textContent = line.length ? line : " ";
+      return Math.max(maxWidth, span.getBoundingClientRect().width || 0);
+    }, 0);
   }, []);
 
   const autoResizeTextarea = useCallback((id) => {
     const el = textAreaRefs.current?.[id];
     if (!el) return;
+    const box = textBoxesRef.current.find((tbox) => tbox.id === id);
+
+    if (box?.height) {
+      el.style.height = "100%";
+      return;
+    }
 
     // Height
     el.style.height = "auto";
@@ -599,14 +614,51 @@ export default function PrepShell({
       if (!box?.autoWidth) return box;
       const fontSize = box.fontSize || 13;
       const text = nextText ?? box.text ?? "";
+      const textLines = String(text).split(/\r\n|\r|\n/);
+      const nonEmptyLines = textLines.filter((line) => line.trim().length > 0);
+      const longestLineChars = textLines.reduce(
+        (max, line) => Math.max(max, line.length),
+        0
+      );
+      const normalizedLength = String(text).replace(/\s+/g, " ").trim().length;
+      const shouldUseTextBlock =
+        normalizedLength > 260 ||
+        longestLineChars > 95 ||
+        (nonEmptyLines.length >= 4 && normalizedLength > 180);
+      const scale = annotationScale > 0 ? annotationScale : 1;
+      const container = containerRef.current || canvasRef.current;
+      const rect = container?.getBoundingClientRect();
+
+      if (shouldUseTextBlock) {
+        const maxDisplayW = rect?.width ? Math.floor(rect.width * 0.92) : 760;
+        const preferredDisplayW = clamp(
+          rect?.width ? Math.round(rect.width * 0.56) : 620,
+          360,
+          maxDisplayW
+        );
+        const newWidth = Math.max(120, Math.round(preferredDisplayW / scale));
+        let newX = box.x;
+
+        if (rect?.width) {
+          const normW = (newWidth * scale) / rect.width;
+          const half = Math.min(0.5, normW / 2);
+          newX = clamp(newX, half, 1 - half);
+        }
+
+        return {
+          ...box,
+          x: newX,
+          width: newWidth,
+          autoWidth: false,
+        };
+      }
+
       // Measure the actual text content width
       const measured = measureTextWidthPx(text, { fontSize });
       // padding + caret room + extra buffer
       const desired = measured + 40;
       // CHANGED: Increase max width significantly
-      const container = containerRef.current || canvasRef.current;
-      const rect = container?.getBoundingClientRect();
-      const maxW = rect?.width ? Math.floor(rect.width * 0.95) : 8000;
+      const maxW = rect?.width ? Math.floor((rect.width * 0.95) / scale) : 8000;
       const oldWidth = box.width || 120;
       let newWidth = clamp(Math.round(desired), 100, maxW);
       let newX = box.x;
@@ -617,7 +669,7 @@ export default function PrepShell({
       const isRTL = box.dir === "rtl";
 
       if (rect && newWidth !== oldWidth) {
-        const widthDelta = newWidth - oldWidth;
+        const widthDelta = (newWidth - oldWidth) * scale;
         const normDelta = widthDelta / rect.width;
 
         if (isRTL) {
@@ -633,7 +685,7 @@ export default function PrepShell({
         }
 
         // Clamp to container bounds
-        const normW = newWidth / rect.width;
+        const normW = (newWidth * scale) / rect.width;
         const half = normW / 2;
         const projectedLeft = newX - half;
         const projectedRight = newX + half;
@@ -646,7 +698,7 @@ export default function PrepShell({
       }
       return { ...box, x: newX, width: newWidth };
     },
-    [measureTextWidthPx]
+    [annotationScale, measureTextWidthPx]
   );
 
   // ─────────────────────────────────────────────────────────────
@@ -663,7 +715,12 @@ export default function PrepShell({
       // Debounce the blur - 300ms delay allows for click-and-continue interactions
       blurDebounceRef.current = setTimeout(() => {
         // Don't blur if resize/drag is in progress - prevents accidental focus loss
-        if (resizeState?.id === boxId || widthResizeState?.id === boxId || dragState?.id === boxId) {
+        if (
+          resizeState?.id === boxId ||
+          widthResizeState?.id === boxId ||
+          heightResizeState?.id === boxId ||
+          dragState?.id === boxId
+        ) {
           return;
         }
 
@@ -679,7 +736,7 @@ export default function PrepShell({
         setActiveTextId((currentId) => (currentId === boxId ? null : currentId));
       }, 300);
     },
-    [resizeState, widthResizeState, dragState]
+    [resizeState, widthResizeState, heightResizeState, dragState]
   );
 
   // Cleanup blur timeout on unmount
@@ -1540,8 +1597,10 @@ export default function PrepShell({
       containerRef,
       canvasRef,
       setWidthResizeState,
+      setHeightResizeState,
       setTextBoxes,
       setResizeState,
+      annotationScale,
     });
   }
 
@@ -1571,7 +1630,9 @@ export default function PrepShell({
       containerRef,
       canvasRef,
       setWidthResizeState,
+      setHeightResizeState,
       setTextBoxes,
+      annotationScale,
     });
   }
 
@@ -1590,6 +1651,36 @@ export default function PrepShell({
     stopPrepWidthResize({
       widthResizeState,
       setWidthResizeState,
+      saveAnnotations,
+      broadcastAnnotations,
+    });
+  }
+
+  function startHeightResize(e, box, direction) {
+    startPrepHeightResize(e, box, direction, {
+      containerRef,
+      canvasRef,
+      setWidthResizeState,
+      setHeightResizeState,
+      setTextBoxes,
+      annotationScale,
+    });
+  }
+
+  function handleHeightResize(e) {
+    handlePrepHeightResize(e, {
+      heightResizeState,
+      setTextBoxes,
+      scheduleSaveAnnotations,
+      scheduleBroadcastAnnotations,
+      autoResizeTextarea,
+    });
+  }
+
+  function stopHeightResize() {
+    stopPrepHeightResize({
+      heightResizeState,
+      setHeightResizeState,
       saveAnnotations,
       broadcastAnnotations,
     });
@@ -1776,8 +1867,10 @@ export default function PrepShell({
       activeStylusRef,
       resizeState,
       widthResizeState,
+      heightResizeState,
       handleFontSizeResize,
       handleWidthResize,
+      handleHeightResize,
       groupDrag,
       getNormalizedPoint,
       handleGroupDragMove: handlePrepGroupDragMove,
@@ -1848,6 +1941,8 @@ export default function PrepShell({
       stopFontSizeResize,
       widthResizeState,
       stopWidthResize,
+      heightResizeState,
+      stopHeightResize,
       maskDrag,
       getNormalizedPoint,
       finalizeCreatingMask,
@@ -1865,6 +1960,7 @@ export default function PrepShell({
     const shouldCapture =
       !!resizeState ||
       !!widthResizeState ||
+      !!heightResizeState ||
       !!dragState ||
       !!maskDrag ||
       !!shapeDrag ||
@@ -1886,11 +1982,31 @@ export default function PrepShell({
   }, [
     resizeState,
     widthResizeState,
+    heightResizeState,
     dragState,
     maskDrag,
     shapeDrag,
     isDrawing,
   ]);
+
+  useEffect(() => {
+    if (!resizeState && !widthResizeState && !heightResizeState) return;
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+
+    document.body.style.cursor = resizeState
+      ? "nwse-resize"
+      : heightResizeState
+        ? "ns-resize"
+        : "ew-resize";
+    document.body.style.userSelect = "none";
+
+    return () => {
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+    };
+  }, [resizeState, widthResizeState, heightResizeState]);
 
   // ─────────────────────────────────────────────────────────────
   // Tool switching helper (toggling)
@@ -1945,11 +2061,13 @@ export default function PrepShell({
           activeTextId,
           resizeState,
           widthResizeState,
+          heightResizeState,
           annotationScale,
           deleteTextBox,
           startTextDrag,
           blurDebounceRef,
           startWidthResize,
+          startHeightResize,
           textAreaRefs,
           updateTextBoxText,
           handleTextBoxBlur,

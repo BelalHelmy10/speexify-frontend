@@ -7,6 +7,7 @@ export default function PrepTextBoxesLayer({
   activeTextId,
   resizeState,
   widthResizeState,
+  heightResizeState,
   selectedItems,
   annotationScale,
   tool,
@@ -17,6 +18,7 @@ export default function PrepTextBoxesLayer({
   startTextDrag,
   blurDebounceRef,
   startWidthResize,
+  startHeightResize,
   textAreaRefs,
   updateTextBoxText,
   handleTextBoxBlur,
@@ -33,14 +35,32 @@ export default function PrepTextBoxesLayer({
           const isEditing = activeTextId === box.id;
           const isResizing = resizeState?.id === box.id;
           const isWidthResizing = widthResizeState?.id === box.id;
+          const isHeightResizing = heightResizeState?.id === box.id;
           const isSelected = selectedItems.some(
             (i) => i.type === "text" && i.id === box.id
           );
 
           const baseFontSize = box.fontSize || 16;
           const baseWidth = box.width || 150;
+          const baseHeight = box.height || null;
           const fontSize = Math.round(baseFontSize * annotationScale);
           const boxWidth = Math.round(baseWidth * annotationScale);
+          const boxHeight = baseHeight
+            ? Math.round(baseHeight * annotationScale)
+            : null;
+          const hasManualLineBreaks = /[\r\n]/.test(box.text || "");
+          const shouldPreserveLineBreaks = hasManualLineBreaks || !box.autoWidth;
+          const normalizedTextLength = String(box.text || "")
+            .replace(/\s+/g, " ")
+            .trim().length;
+          const textLines = String(box.text || "").split(/\r\n|\r|\n/);
+          const longestLineChars = textLines.reduce(
+            (max, line) => Math.max(max, line.length),
+            0
+          );
+          const isLargeTextBlock =
+            !box.autoWidth &&
+            (normalizedTextLength > 260 || longestLineChars > 95);
 
           return (
             <div
@@ -50,6 +70,8 @@ export default function PrepTextBoxesLayer({
                 (isEditing ? " prep-text-box--editing" : "") +
                 (isResizing ? " prep-text-box--resizing" : "") +
                 (isWidthResizing ? " prep-text-box--width-resizing" : "") +
+                (isHeightResizing ? " prep-text-box--height-resizing" : "") +
+                (isLargeTextBlock ? " prep-text-box--text-block" : "") +
                 (isSelected ? " is-selected" : "")
               }
               style={{
@@ -127,8 +149,23 @@ export default function PrepTextBoxesLayer({
                       style={{
                         width: box.autoWidth ? "auto" : `${boxWidth}px`,
                         minWidth: box.autoWidth ? `${boxWidth}px` : undefined,
+                        height: boxHeight ? `${boxHeight}px` : undefined,
+                        maxHeight:
+                          isLargeTextBlock && !boxHeight
+                            ? "min(70vh, 620px)"
+                            : undefined,
                       }}
                     >
+                      <span
+                        className="prep-text-box__vertical-handle prep-text-box__vertical-handle--top"
+                        onMouseDown={(e) => {
+                          if (blurDebounceRef.current) {
+                            clearTimeout(blurDebounceRef.current);
+                          }
+                          startHeightResize(e, box, "top");
+                        }}
+                      />
+
                       <textarea
                         ref={(el) => {
                           if (el) textAreaRefs.current[box.id] = el;
@@ -140,13 +177,24 @@ export default function PrepTextBoxesLayer({
                         style={{
                           color: box.color,
                           fontSize: `${fontSize}px`,
+                          height: boxHeight ? "100%" : undefined,
                           width: box.autoWidth ? `${boxWidth}px` : "100%",
                           minWidth: box.autoWidth ? "100px" : undefined,
-                          whiteSpace: box.autoWidth ? "nowrap" : "pre-wrap",
-                          overflowWrap: box.autoWidth ? "normal" : "break-word",
+                          whiteSpace: shouldPreserveLineBreaks ? "pre-wrap" : "nowrap",
+                          overflowWrap: shouldPreserveLineBreaks ? "break-word" : "normal",
                           wordBreak: "normal",
                           resize: "none",
-                          overflow: box.autoWidth ? "visible" : "hidden",
+                          maxHeight:
+                            isLargeTextBlock && !boxHeight
+                              ? "min(68vh, 590px)"
+                              : undefined,
+                          overflowX:
+                            isLargeTextBlock || boxHeight ? "hidden" : "visible",
+                          overflowY: boxHeight || isLargeTextBlock
+                            ? "auto"
+                            : box.autoWidth
+                              ? "visible"
+                              : "hidden",
                         }}
                         placeholder={textPlaceholder}
                         value={box.text}
@@ -176,6 +224,16 @@ export default function PrepTextBoxesLayer({
                         }}
                         title="Resize font"
                       />
+
+                      <span
+                        className="prep-text-box__vertical-handle prep-text-box__vertical-handle--bottom"
+                        onMouseDown={(e) => {
+                          if (blurDebounceRef.current) {
+                            clearTimeout(blurDebounceRef.current);
+                          }
+                          startHeightResize(e, box, "bottom");
+                        }}
+                      />
                     </div>
 
                     <span
@@ -197,11 +255,14 @@ export default function PrepTextBoxesLayer({
                     color: box.color,
                     fontSize: `${fontSize}px`,
                     width: `${boxWidth}px`,
-                    whiteSpace: box.autoWidth ? "nowrap" : "pre-wrap",
-                    overflowWrap: box.autoWidth ? "normal" : "break-word",
+                    height: boxHeight ? `${boxHeight}px` : undefined,
+                    whiteSpace: shouldPreserveLineBreaks ? "pre-wrap" : "nowrap",
+                    overflowWrap: shouldPreserveLineBreaks ? "break-word" : "normal",
                     wordBreak: "normal",
-                    overflowX: "visible",
-                    overflowY: "visible",
+                    maxHeight:
+                      isLargeTextBlock && !boxHeight ? "min(70vh, 620px)" : undefined,
+                    overflowX: isLargeTextBlock || boxHeight ? "hidden" : "visible",
+                    overflowY: boxHeight || isLargeTextBlock ? "auto" : "visible",
                   }}
                   onMouseDown={(e) => startTextDrag(e, box)}
                   onDoubleClick={(e) => {

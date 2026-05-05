@@ -113,6 +113,9 @@ const FOCUS_MODE_ORDER = [
   FOCUS_MODES.CONTENT,
 ];
 
+const MIN_SPLIT_PERCENT = 12;
+const MAX_SPLIT_PERCENT = 88;
+
 /* -----------------------------------------------------------
    MAIN COMPONENT
 ----------------------------------------------------------- */
@@ -169,6 +172,9 @@ export default function ClassroomShell({
   const [customSplit, setCustomSplit] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const customSplitRef = useRef(customSplit);
+  const pendingSplitRef = useRef(customSplit);
+  const splitDragRafRef = useRef(null);
 
   // ✅ Layout sync throttling (teacher -> learners)
   const lastLayoutSentAtRef = useRef(0);
@@ -250,6 +256,19 @@ export default function ClassroomShell({
   const send = classroomChannel?.send ?? (() => { });
   const subscribe = classroomChannel?.subscribe ?? (() => () => { });
 
+  useEffect(() => {
+    customSplitRef.current = customSplit;
+    pendingSplitRef.current = customSplit;
+  }, [customSplit]);
+
+  useEffect(() => {
+    return () => {
+      if (splitDragRafRef.current) {
+        cancelAnimationFrame(splitDragRafRef.current);
+      }
+    };
+  }, []);
+
   /* -----------------------------------------------------------
      Drag-to-resize logic
   ----------------------------------------------------------- */
@@ -274,25 +293,42 @@ export default function ClassroomShell({
       const container = containerRef.current;
       const rect = container.getBoundingClientRect();
       const x = e.clientX - rect.left;
-      const percentage = Math.min(Math.max((x / rect.width) * 100, 15), 85);
+      const percentage = Math.min(
+        Math.max((x / rect.width) * 100, MIN_SPLIT_PERCENT),
+        MAX_SPLIT_PERCENT
+      );
+      const nextSplit = Math.round(percentage * 10) / 10;
 
-      setCustomSplit(percentage);
+      customSplitRef.current = nextSplit;
+      pendingSplitRef.current = nextSplit;
+
+      if (splitDragRafRef.current) return;
+      splitDragRafRef.current = requestAnimationFrame(() => {
+        splitDragRafRef.current = null;
+        setCustomSplit(pendingSplitRef.current);
+      });
     },
     [isDragging, isTeacher, followTeacherLayout]
   );
 
   const handleMouseUp = useCallback(() => {
+    if (splitDragRafRef.current) {
+      cancelAnimationFrame(splitDragRafRef.current);
+      splitDragRafRef.current = null;
+      setCustomSplit(pendingSplitRef.current);
+    }
+
     setIsDragging(false);
     // ✅ Immediately broadcast final position on drag end for snappier sync
     if (isTeacher && ready) {
       send({
         type: "LAYOUT_STATE",
         focusMode,
-        customSplit,
+        customSplit: customSplitRef.current,
         teacherAllowsFollowing,
       });
     }
-  }, [isTeacher, ready, send, focusMode, customSplit, teacherAllowsFollowing]);
+  }, [isTeacher, ready, send, focusMode, teacherAllowsFollowing]);
 
   useEffect(() => {
     if (isDragging) {
@@ -332,6 +368,8 @@ export default function ClassroomShell({
 
   const resetToMode = (mode) => {
     setFocusMode(mode);
+    customSplitRef.current = null;
+    pendingSplitRef.current = null;
     setCustomSplit(null);
   };
 
@@ -447,9 +485,17 @@ export default function ClassroomShell({
               : Number(msg.customSplit);
 
           if (nextSplit === null) {
+            customSplitRef.current = null;
+            pendingSplitRef.current = null;
             setCustomSplit(null);
           } else if (Number.isFinite(nextSplit)) {
-            setCustomSplit(Math.min(Math.max(nextSplit, 15), 85));
+            const clampedSplit = Math.min(
+              Math.max(nextSplit, MIN_SPLIT_PERCENT),
+              MAX_SPLIT_PERCENT
+            );
+            customSplitRef.current = clampedSplit;
+            pendingSplitRef.current = clampedSplit;
+            setCustomSplit(clampedSplit);
           }
         }
         return;
