@@ -912,8 +912,10 @@ export default function CalendarPage() {
             <div className="calx-sidebar-label">View Mode</div>
             <div className="calx-mode-toggle">
               <button
+                type="button"
                 className={`calx-mode-btn ${calendarMode === "sessions" ? "is-active" : ""}`}
                 onClick={() => setCalendarMode("sessions")}
+                aria-pressed={calendarMode === "sessions"}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
                   <rect x="3" y="6" width="18" height="15" rx="4" fill="currentColor" fillOpacity="0.15" />
@@ -927,8 +929,10 @@ export default function CalendarPage() {
                 {t(dict, "mode_sessions") || "Sessions"}
               </button>
               <button
+                type="button"
                 className={`calx-mode-btn ${calendarMode === "availability" ? "is-active-green" : ""}`}
                 onClick={() => setCalendarMode("availability")}
+                aria-pressed={calendarMode === "availability"}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
                   <circle cx="12" cy="12" r="9" fill="currentColor" fillOpacity="0.15" />
@@ -1002,31 +1006,56 @@ export default function CalendarPage() {
         <main className="calx-main">
           <div className="calx-toolbar">
             <div className="calx-toolbar-nav">
-              <button className="calx-today-btn" onClick={() => handleNavigate("today")}>
+              <button
+                type="button"
+                className="calx-today-btn"
+                onClick={() => handleNavigate("today")}
+                aria-label="Jump to today"
+              >
                 Today
               </button>
-              <button className="calx-nav-btn" onClick={() => handleNavigate("prev")}>‹</button>
-              <button className="calx-nav-btn" onClick={() => handleNavigate("next")}>›</button>
+              <button
+                type="button"
+                className="calx-nav-btn"
+                onClick={() => handleNavigate("prev")}
+                aria-label="Previous period"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="calx-nav-btn"
+                onClick={() => handleNavigate("next")}
+                aria-label="Next period"
+              >
+                ›
+              </button>
             </div>
 
             <div className="calx-toolbar-range">{getViewRangeLabel(currentDate, view)}</div>
 
             <div className="calx-view-tabs">
               <button
+                type="button"
                 className={`calx-view-tab ${view === "week" ? "is-active" : ""}`}
                 onClick={() => setView("week")}
+                aria-pressed={view === "week"}
               >
                 Week
               </button>
               <button
+                type="button"
                 className={`calx-view-tab ${view === "month" ? "is-active" : ""}`}
                 onClick={() => setView("month")}
+                aria-pressed={view === "month"}
               >
                 Month
               </button>
               <button
+                type="button"
                 className={`calx-view-tab ${view === "day" ? "is-active" : ""}`}
                 onClick={() => setView("day")}
+                aria-pressed={view === "day"}
               >
                 Day
               </button>
@@ -1034,8 +1063,10 @@ export default function CalendarPage() {
 
             <div className="calx-filters" ref={filtersRef}>
               <button
-                className="calx-filter-btn"
+                type="button"
+                className={`calx-filter-btn ${showFilters ? "is-active" : ""}`}
                 onClick={() => setShowFilters((v) => !v)}
+                aria-expanded={showFilters}
               >
                 ⚙ Filter
               </button>
@@ -1099,12 +1130,15 @@ export default function CalendarPage() {
                     const isSel = isSameDay(day, selectedDate);
                     return (
                       <button
+                        type="button"
                         key={`hdr-${day.toISOString()}`}
                         className="calx-week-header-day"
                         onClick={() => {
                           setSelectedDate(day);
                           setCurrentDate(day);
                         }}
+                        aria-pressed={isSel}
+                        aria-label={`Select ${format(day, "EEEE, MMMM d")}`}
                       >
                         <div className="calx-week-header-dow">{format(day, "EEE")}</div>
                         <div

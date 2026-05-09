@@ -29,6 +29,14 @@
     color: inherit;
     outline: none;
     box-shadow: none;
+
+    &:not(:disabled) {
+      cursor: pointer;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
   }
 }
 
@@ -194,6 +202,7 @@
   padding: 4px;
   display: flex;
   gap: 4px;
+  box-shadow: inset 0 0 0 1px rgba($border, 0.72);
 }
 
 .calx-mode-btn {
@@ -208,20 +217,48 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.2s;
+  position: relative;
+  transition: background 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+
+  &:hover:not(.is-active):not(.is-active-green) {
+    background: rgba($color-white, 0.82);
+    color: $navy-mid;
+    border-color: rgba($border, 0.74);
+    box-shadow: 0 0 0 3px rgba($calendar-primary, 0.06);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: scale(0.985);
+  }
+
+  &:focus-visible {
+    border-color: $calendar-primary;
+    box-shadow: 0 0 0 4px rgba($calendar-primary, 0.16);
+  }
 
   &.is-active {
     background: $card-bg;
     color: $calendar-primary;
     border-color: $ring;
-    box-shadow: 0 2px 8px rgba($navy, 0.08);
+    box-shadow: 0 8px 18px rgba($navy, 0.11),
+      0 1px 0 rgba($color-white, 0.88) inset;
+    transform: translateY(-1px);
   }
 
   &.is-active-green {
     background: $card-bg;
     color: $color-secondary-dark;
     border-color: $ring;
-    box-shadow: 0 2px 8px rgba($navy, 0.08);
+    box-shadow: 0 8px 18px rgba($navy, 0.11),
+      0 1px 0 rgba($color-white, 0.88) inset;
+    transform: translateY(-1px);
+  }
+
+  &.is-active-green:focus-visible {
+    border-color: $color-secondary-dark;
+    box-shadow: 0 0 0 4px rgba($success, 0.14);
   }
 }
 
@@ -433,11 +470,30 @@
   font-size: 20px;
   line-height: 1;
   font-weight: 700;
-  transition: all 0.2s;
+  position: relative;
+  isolation: isolate;
+  box-shadow: 0 1px 0 rgba($color-white, 0.75) inset;
+  transition: background 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 
   &:hover {
-    background: color-mix(in srgb, $surface 88%, $border 12%);
-    color: $navy-mid;
+    background: color-mix(in srgb, $color-white 78%, $calendar-primary 22%);
+    border-color: color-mix(in srgb, $border 58%, $calendar-primary 42%);
+    color: $calendar-primary;
+    box-shadow: 0 10px 24px rgba($navy, 0.1),
+      0 0 0 4px rgba($calendar-primary, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba($navy, 0.08),
+      0 0 0 3px rgba($calendar-primary, 0.1);
+  }
+
+  &:focus-visible {
+    border-color: $calendar-primary;
+    box-shadow: 0 0 0 4px rgba($calendar-primary, 0.18);
   }
 }
 
@@ -450,10 +506,28 @@
   font-size: 14px;
   font-weight: 800;
   color: $navy;
-  transition: all 0.2s;
+  box-shadow: 0 1px 0 rgba($color-white, 0.75) inset;
+  transition: background 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 
   &:hover {
-    background: color-mix(in srgb, $surface 88%, $border 12%);
+    background: color-mix(in srgb, $color-white 76%, $calendar-primary 24%);
+    border-color: color-mix(in srgb, $border 58%, $calendar-primary 42%);
+    color: $calendar-primary;
+    box-shadow: 0 10px 24px rgba($navy, 0.1),
+      0 0 0 4px rgba($calendar-primary, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba($navy, 0.08),
+      0 0 0 3px rgba($calendar-primary, 0.1);
+  }
+
+  &:focus-visible {
+    border-color: $calendar-primary;
+    box-shadow: 0 0 0 4px rgba($calendar-primary, 0.18);
   }
 }
 
@@ -473,6 +547,7 @@
   border-radius: 18px;
   padding: 5px;
   gap: 2px;
+  box-shadow: inset 0 0 0 1px rgba($border, 0.7);
 }
 
 .calx-view-tab {
@@ -484,13 +559,33 @@
   font-size: 13px;
   font-weight: 800;
   color: $text-secondary;
-  transition: all 0.2s;
+  position: relative;
+  transition: background 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+
+  &:hover:not(.is-active) {
+    background: rgba($color-white, 0.82);
+    color: $navy-mid;
+    border-color: rgba($border, 0.72);
+    box-shadow: 0 0 0 3px rgba($calendar-primary, 0.06);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
 
   &.is-active {
     background: $color-white;
     color: $navy;
     border-color: $border;
-    box-shadow: 0 2px 10px rgba($navy, 0.12);
+    box-shadow: 0 8px 20px rgba($navy, 0.13),
+      0 1px 0 rgba($color-white, 0.9) inset;
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    border-color: $calendar-primary;
+    box-shadow: 0 0 0 4px rgba($calendar-primary, 0.18);
   }
 }
 
@@ -510,12 +605,29 @@
   font-weight: 800;
   color: $text-secondary;
   background: $bg-light;
-  transition: all 0.2s;
+  box-shadow: 0 1px 0 rgba($color-white, 0.75) inset;
+  transition: background 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 
-  &:hover {
+  &:hover,
+  &.is-active {
     border-color: color-mix(in srgb, $border 70%, $calendar-primary 30%);
     color: $calendar-primary;
     background: $color-white;
+    box-shadow: 0 10px 24px rgba($navy, 0.1),
+      0 0 0 4px rgba($calendar-primary, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba($navy, 0.08),
+      0 0 0 3px rgba($calendar-primary, 0.1);
+  }
+
+  &:focus-visible {
+    border-color: $calendar-primary;
+    box-shadow: 0 0 0 4px rgba($calendar-primary, 0.18);
   }
 }
 
@@ -637,8 +749,36 @@
 .calx-week-header-day {
   padding: 16px 8px 18px;
   text-align: center;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
+  border-radius: 16px;
+  margin: 8px 8px 10px;
+  transition: background 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    background: rgba($color-white, 0.78);
+    border-color: rgba($border, 0.72);
+    box-shadow: 0 10px 24px rgba($navy, 0.08),
+      0 0 0 4px rgba($calendar-primary, 0.05);
+    transform: translateY(-1px);
+
+    .calx-week-header-num:not(.is-today) {
+      background: rgba($calendar-primary, 0.1);
+      color: $calendar-primary;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba($navy, 0.07),
+      0 0 0 3px rgba($calendar-primary, 0.08);
+  }
+
+  &:focus-visible {
+    border-color: $calendar-primary;
+    box-shadow: 0 0 0 4px rgba($calendar-primary, 0.16);
+  }
 }
 
 .calx-week-header-dow {
