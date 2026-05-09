@@ -876,6 +876,43 @@
   }
 }
 
+.calx-current-time-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px solid rgba($calendar-primary, 0.9);
+  z-index: 6;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba($calendar-primary, 0.18));
+}
+
+.calx-current-time-dot {
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: $calendar-primary;
+  box-shadow: 0 0 0 3px rgba($calendar-primary, 0.14);
+}
+
+.calx-current-time-label {
+  position: absolute;
+  right: 6px;
+  top: -12px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: $calendar-primary;
+  color: $color-white;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px rgba($calendar-primary, 0.18);
+}
+
 .calx-avail-block {
   position: absolute;
   background: rgba($success, 0.12);

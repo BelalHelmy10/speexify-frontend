@@ -393,6 +393,7 @@ export default function CalendarPage() {
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [now, setNow] = useState(() => new Date());
   const [view, setView] = useState("week");
   const [calendarMode, setCalendarMode] = useState("sessions");
 
@@ -470,6 +471,11 @@ export default function CalendarPage() {
       window.removeEventListener("scroll", close, { capture: true });
       window.removeEventListener("resize", close);
     };
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60 * 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -563,6 +569,11 @@ export default function CalendarPage() {
       }),
     []
   );
+
+  const currentTimeTop = useMemo(() => {
+    const minutesFromDayStart = now.getHours() * 60 + now.getMinutes();
+    return ((minutesFromDayStart / 60) - SLOT_START_HOUR) * SLOT_HEIGHT;
+  }, [now]);
 
   const sessionsByDayLayout = useMemo(() => {
     return weekDays.map((day) => {
@@ -1183,6 +1194,19 @@ export default function CalendarPage() {
                             />
                           );
                         })}
+
+                        {isToday && (
+                          <div
+                            className="calx-current-time-line"
+                            style={{ top: currentTimeTop }}
+                            aria-hidden="true"
+                          >
+                            <span className="calx-current-time-dot" />
+                            <span className="calx-current-time-label">
+                              {format(now, "h:mm a")}
+                            </span>
+                          </div>
+                        )}
 
                         {filters.availability &&
                           availabilityByDayLayout[dayIdx]?.map((ev) => {
