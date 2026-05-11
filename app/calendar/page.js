@@ -769,6 +769,7 @@ export default function CalendarPage() {
 
   const filtersRef = useRef(null);
   const weekWrapRef = useRef(null);
+  const rbcPanelRef = useRef(null);
   const hasAutoScrolledWeekRef = useRef(false);
   const dragSelectionRef = useRef(null);
   const slotInteractionRef = useRef(null);
@@ -1553,6 +1554,32 @@ export default function CalendarPage() {
     el.scrollTop += delta;
   }, []);
 
+  const handleRbcViewportWheel = useCallback(
+    (e) => {
+      if (view !== "day") return;
+
+      const scrollEl = rbcPanelRef.current?.querySelector(".rbc-time-content");
+      if (!scrollEl) return;
+
+      const delta = e.deltaY;
+      if (!delta) return;
+
+      const canScroll = scrollEl.scrollHeight > scrollEl.clientHeight + 1;
+      if (!canScroll) return;
+
+      const atTop = scrollEl.scrollTop <= 0;
+      const atBottom =
+        scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1;
+
+      if ((delta < 0 && atTop) || (delta > 0 && atBottom)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      scrollEl.scrollTop += delta;
+    },
+    [view]
+  );
+
   const onMiniChange = useCallback((date) => {
     setSelectedDate(date);
     setCurrentDate(date);
@@ -1704,39 +1731,113 @@ export default function CalendarPage() {
     (event) => {
       if (event.isAvailability) {
         return {
-          className: `calx-rbc-event calx-rbc-event--availability ${calendarMode === "availability" ? "is-active" : "is-faded"
+          className: `calx-rbc-event calx-rbc-event--view-${view} calx-rbc-event--availability ${calendarMode === "availability" ? "is-active" : "is-faded"
             }`,
         };
       }
       const tone = getEventTone(event);
       return {
-        className: `calx-rbc-event calx-rbc-event--${tone} ${calendarMode === "availability" ? "is-dimmed" : ""
+        className: `calx-rbc-event calx-rbc-event--view-${view} calx-rbc-event--${tone} ${calendarMode === "availability" ? "is-dimmed" : ""
           }`,
       };
     },
-    [calendarMode]
+    [calendarMode, view]
+  );
+
+  const dayPropGetter = useCallback(
+    (date) => {
+      const classes = ["calx-rbc-day-surface"];
+      const day = date.getDay();
+      if (isSameDay(date, new Date())) classes.push("is-today");
+      if (isSameDay(date, selectedDate)) classes.push("is-selected");
+      if (day === 0 || day === 6) classes.push("is-weekend");
+      return { className: classes.join(" ") };
+    },
+    [selectedDate]
+  );
+
+  const slotPropGetter = useCallback((date) => {
+    const hour = date.getHours();
+    return {
+      className:
+        hour < 7 || hour >= 19 ? "calx-rbc-slot-surface is-quiet-hour" : "calx-rbc-slot-surface",
+    };
+  }, []);
+
+  const rbcHeaderComponent = useCallback(
+    ({ date, label }) => {
+      const headerDate = date instanceof Date ? date : null;
+      const isToday = headerDate ? isSameDay(headerDate, new Date()) : false;
+
+      return (
+        <div className={`calx-rbc-header-cell ${isToday ? "is-today" : ""}`}>
+          <span className="calx-rbc-header-dow">
+            {headerDate ? format(headerDate, "EEE") : label}
+          </span>
+          {view === "day" && headerDate && (
+            <span className="calx-rbc-header-num">{format(headerDate, "d")}</span>
+          )}
+        </div>
+      );
+    },
+    [view]
+  );
+
+  const rbcMonthDateHeader = useCallback(
+    ({ date, label, isOffRange }) => {
+      const isToday = isSameDay(date, new Date());
+      const isSelected = isSameDay(date, selectedDate);
+
+      return (
+        <span
+          className={`calx-rbc-month-date ${isToday ? "is-today" : ""} ${isSelected ? "is-selected" : ""
+            } ${isOffRange ? "is-off-range" : ""}`}
+        >
+          {label}
+        </span>
+      );
+    },
+    [selectedDate]
   );
 
   const rbcEventComponent = useCallback(
-    ({ event }) => (
-      <div className="calx-rbc-pill">
-        {event.isAvailability ? (
-          <>
-            <span>✓</span>
-            <span>{t(dict, "available")}</span>
-          </>
-        ) : (
-          <>
-            <span>●</span>
-            <span>{event.title || t(dict, "session_default_title")}</span>
-          </>
-        )}
-      </div>
-    ),
+    ({ event }) => {
+      const title = event.isAvailability
+        ? t(dict, "available")
+        : event.title || t(dict, "session_default_title");
+      const startLabel = format(event.start, "h:mm a");
+      const endLabel = format(event.end, "h:mm a");
+      const meta = event.isAvailability
+        ? `${startLabel} - ${endLabel}`
+        : `${startLabel}${event.isGroup ? ` · ${t(dict, "session_group")}` : ""}`;
+
+      return (
+        <div className="calx-rbc-pill">
+          <span className="calx-rbc-pill__accent" />
+          <span className="calx-rbc-pill__copy">
+            <span className="calx-rbc-pill__title">{title}</span>
+            <span className="calx-rbc-pill__meta">{meta}</span>
+          </span>
+        </div>
+      );
+    },
     [dict]
   );
 
-  const rbcComponents = useMemo(() => ({ event: rbcEventComponent }), [rbcEventComponent]);
+  const rbcComponents = useMemo(
+    () => ({
+      event: rbcEventComponent,
+      header: rbcHeaderComponent,
+      month: {
+        dateHeader: rbcMonthDateHeader,
+        event: rbcEventComponent,
+      },
+      day: {
+        event: rbcEventComponent,
+      },
+    }),
+    [rbcEventComponent, rbcHeaderComponent, rbcMonthDateHeader]
+  );
 
   if (checking) {
     return <div className="calx-state">{t(dict, "loading")}</div>;
@@ -2289,7 +2390,11 @@ export default function CalendarPage() {
               )}
             </div>
           ) : (
-            <div className="calx-rbc-panel">
+            <div
+              className="calx-rbc-panel"
+              ref={rbcPanelRef}
+              onWheel={handleRbcViewportWheel}
+            >
               <BigCalendar
                 localizer={localizer}
                 date={currentDate}
@@ -2307,6 +2412,8 @@ export default function CalendarPage() {
                 endAccessor="end"
                 components={rbcComponents}
                 eventPropGetter={eventPropGetter}
+                dayPropGetter={dayPropGetter}
+                slotPropGetter={slotPropGetter}
                 views={["month", "day"]}
                 toolbar={false}
                 step={30}
