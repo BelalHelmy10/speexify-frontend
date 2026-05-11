@@ -39,8 +39,10 @@ import {
   Clock3,
   Copy,
   ExternalLink,
+  LifeBuoy,
   PanelRightOpen,
-  Plus,
+  PanelLeftClose,
+  PanelLeftOpen,
   SlidersHorizontal,
   UserRound,
   X,
@@ -758,6 +760,7 @@ export default function CalendarPage() {
   const [drawerEvent, setDrawerEvent] = useState(null);
   const [cancelingSessionId, setCancelingSessionId] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const [filters, setFilters] = useState({
     scheduled: true,
@@ -912,6 +915,21 @@ export default function CalendarPage() {
     [currentDate]
   );
 
+  const selectedWeekStart = useMemo(
+    () => startOfWeek(selectedDate, { weekStartsOn: 1 }),
+    [selectedDate]
+  );
+
+  const selectedWeekEnd = useMemo(
+    () => addDays(selectedWeekStart, 6),
+    [selectedWeekStart]
+  );
+
+  const selectedWeekLabel = useMemo(
+    () => `${format(selectedWeekStart, "MMM d")} - ${format(selectedWeekEnd, "MMM d")}`,
+    [selectedWeekEnd, selectedWeekStart]
+  );
+
   const weekDays = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
     [weekStart]
@@ -1015,6 +1033,16 @@ export default function CalendarPage() {
     });
     return (minutes / 60).toFixed(1);
   }, [availabilitySlots]);
+
+  const eventToneLabels = useMemo(
+    () => ({
+      scheduled: "Scheduled",
+      group: "Group",
+      live: "Live",
+      canceled: "Canceled",
+    }),
+    []
+  );
 
   const updateAvailabilityDraft = useCallback((updater) => {
     setAvailabilitySlots((prev) => {
@@ -1863,121 +1891,158 @@ export default function CalendarPage() {
         </div>
       )}
 
-      <div className="calx-shell">
-        <aside className="calx-sidebar">
-          <div>
-            <div className="calx-sidebar-label">{t(dict, "quick_nav") || "Quick Nav"}</div>
-            <MiniCalendar
-              value={selectedDate}
-              onChange={onMiniChange}
-              showNeighboringMonth={true}
-              next2Label={null}
-              prev2Label={null}
-              className="calx-mini-cal"
-              tileClassName={({ date, view: miniView }) => {
-                if (miniView !== "month") return "";
-                const classes = [];
-                if (isSameDay(date, new Date())) classes.push("is-today");
-                if (isSameDay(date, selectedDate)) classes.push("is-selected");
-                if (hasDateEvents(date)) classes.push("has-event");
-                return classes.join(" ");
-              }}
-            />
-          </div>
-
-          <div>
-            <div className="calx-sidebar-label">View Mode</div>
-            <div className="calx-mode-toggle">
-              <button
-                type="button"
-                className={`calx-mode-btn ${calendarMode === "sessions" ? "is-active" : ""}`}
-                onClick={() => setCalendarMode("sessions")}
-                aria-pressed={calendarMode === "sessions"}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-                  <rect x="3" y="6" width="18" height="15" rx="4" fill="currentColor" fillOpacity="0.15" />
-                  <rect x="3" y="6" width="18" height="15" rx="4" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                  <path d="M3 11H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M8 3V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M16 3V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <rect x="7" y="14" width="4" height="3" rx="1" fill="currentColor" />
-                  <rect x="13" y="14" width="4" height="3" rx="1" fill="currentColor" fillOpacity="0.4" />
-                </svg>
-                {t(dict, "mode_sessions") || "Sessions"}
-              </button>
-              <button
-                type="button"
-                className={`calx-mode-btn ${calendarMode === "availability" ? "is-active-green" : ""}`}
-                onClick={() => setCalendarMode("availability")}
-                aria-pressed={calendarMode === "availability"}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-                  <circle cx="12" cy="12" r="9" fill="currentColor" fillOpacity="0.15" />
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M12 7V12L14.5 14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="12" cy="12" r="2" fill="currentColor" />
-                </svg>
-                {t(dict, "mode_availability") || "Availability"}
-                <span className="calx-mode-count">{activeSlotCount}</span>
-              </button>
+      <div className={`calx-shell ${isSidebarCollapsed ? "is-sidebar-collapsed" : ""}`}>
+        <aside className={`calx-sidebar ${isSidebarCollapsed ? "is-collapsed" : ""}`}>
+          <div className="calx-sidebar-header">
+            <div className="calx-sidebar-heading">
+              <span className="calx-sidebar-title">Calendar</span>
+              <span className="calx-sidebar-range">{selectedWeekLabel}</span>
             </div>
-          </div>
-
-          <div>
-            <div className="calx-sidebar-label">This Week</div>
-            <div className="calx-stats-card">
-              <div className="calx-stat">
-                <div className="calx-stat__value is-primary">{weekSessionCount}</div>
-                <div className="calx-stat__label">Sessions</div>
-              </div>
-              <div className="calx-stat">
-                <div className="calx-stat__value is-green">{activeSlotCount}</div>
-                <div className="calx-stat__label">{t(dict, "slots")}</div>
-              </div>
-              <div className="calx-stat">
-                <div className="calx-stat__value">{totalAvailabilityHours}h</div>
-                <div className="calx-stat__label">{t(dict, "weekly")}</div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="calx-sidebar-label">Upcoming</div>
-            <div className="calx-upcoming-list">
-              {upcomingEvents.length === 0 ? (
-                <div className="calx-empty-small">{t(dict, "empty")}</div>
+            <button
+              type="button"
+              className="calx-sidebar-toggle"
+              onClick={() => setIsSidebarCollapsed((value) => !value)}
+              aria-label={isSidebarCollapsed ? "Expand calendar sidebar" : "Collapse calendar sidebar"}
+              aria-expanded={!isSidebarCollapsed}
+            >
+              {isSidebarCollapsed ? (
+                <PanelLeftOpen size={17} strokeWidth={2.4} />
               ) : (
-                upcomingEvents.map((ev) => (
-                  <button
-                    key={`upcoming-${ev.id}-${ev.start.toISOString()}`}
-                    className="calx-upcoming-item"
-                    onClick={(e) => openSessionPopover(ev, e.currentTarget)}
-                  >
-                    <span className={`calx-upcoming-dot is-${getEventTone(ev)}`} />
-                    <span className="calx-upcoming-copy">
-                      <span className="calx-upcoming-title">
-                        {ev.title || t(dict, "session_default_title")}
-                      </span>
-                      <span className="calx-upcoming-time">
-                        {format(ev.start, "EEE · h:mm a")}
-                        {ev.end ? ` - ${format(ev.end, "h:mm a")}` : ""}
-                      </span>
-                    </span>
-                  </button>
-                ))
+                <PanelLeftClose size={17} strokeWidth={2.4} />
               )}
-            </div>
+            </button>
           </div>
 
-          <div className="calx-sidebar-cta">
-            <div className="calx-sidebar-cta__title">Book a Session</div>
-            <div className="calx-sidebar-cta__sub">
-              Your next coaching session is one click away.
+          {isSidebarCollapsed ? (
+            <button
+              type="button"
+              className="calx-sidebar-rail"
+              onClick={() => setIsSidebarCollapsed(false)}
+              aria-label="Expand calendar sidebar"
+            >
+              <CalendarDays size={18} strokeWidth={2.4} />
+              <span>{format(selectedDate, "MMM")}</span>
+              <strong>{format(selectedDate, "d")}</strong>
+            </button>
+          ) : (
+            <div className="calx-sidebar-content">
+              <section className="calx-sidebar-section">
+                <div className="calx-sidebar-label">{t(dict, "quick_nav") || "Quick Nav"}</div>
+                <MiniCalendar
+                  value={selectedDate}
+                  onChange={onMiniChange}
+                  showNeighboringMonth={true}
+                  next2Label={null}
+                  prev2Label={null}
+                  className="calx-mini-cal"
+                  tileClassName={({ date, view: miniView }) => {
+                    if (miniView !== "month") return "";
+                    const classes = [];
+                    if (date >= selectedWeekStart && date <= selectedWeekEnd) {
+                      classes.push("is-week-range");
+                    }
+                    if (isSameDay(date, selectedWeekStart)) classes.push("is-week-start");
+                    if (isSameDay(date, selectedWeekEnd)) classes.push("is-week-end");
+                    if (isSameDay(date, new Date())) classes.push("is-today");
+                    if (isSameDay(date, selectedDate)) classes.push("is-selected");
+                    if (hasDateEvents(date)) classes.push("has-event");
+                    return classes.join(" ");
+                  }}
+                />
+              </section>
+
+              <section className="calx-sidebar-section">
+                <div className="calx-sidebar-label">View Mode</div>
+                <div className="calx-mode-toggle">
+                  <button
+                    type="button"
+                    className={`calx-mode-btn ${calendarMode === "sessions" ? "is-active" : ""}`}
+                    onClick={() => setCalendarMode("sessions")}
+                    aria-pressed={calendarMode === "sessions"}
+                  >
+                    <CalendarDays size={17} strokeWidth={2.4} />
+                    {t(dict, "mode_sessions") || "Sessions"}
+                  </button>
+                  <button
+                    type="button"
+                    className={`calx-mode-btn ${calendarMode === "availability" ? "is-active-green" : ""}`}
+                    onClick={() => setCalendarMode("availability")}
+                    aria-pressed={calendarMode === "availability"}
+                  >
+                    <Clock3 size={17} strokeWidth={2.4} />
+                    {t(dict, "mode_availability") || "Availability"}
+                    <span className="calx-mode-count">{activeSlotCount}</span>
+                  </button>
+                </div>
+              </section>
+
+              <section className="calx-sidebar-section">
+                <div className="calx-sidebar-label">This Week</div>
+                <div className="calx-week-metrics">
+                  <div className="calx-week-metric">
+                    <span>Sessions</span>
+                    <strong className="is-primary">{weekSessionCount}</strong>
+                  </div>
+                  <div className="calx-week-metric">
+                    <span>{t(dict, "slots")}</span>
+                    <strong className="is-green">{activeSlotCount}</strong>
+                  </div>
+                  <div className="calx-week-metric">
+                    <span>{t(dict, "weekly")}</span>
+                    <strong>{totalAvailabilityHours}h</strong>
+                  </div>
+                </div>
+              </section>
+
+              <section className="calx-sidebar-section">
+                <div className="calx-sidebar-label">Upcoming</div>
+                <div className="calx-upcoming-list">
+                  {upcomingEvents.length === 0 ? (
+                    <div className="calx-empty-small">
+                      <strong>No sessions scheduled</strong>
+                      <span>Your coach or admin will schedule sessions for you.</span>
+                      <Link href={`${prefix}/contact`}>Contact support</Link>
+                    </div>
+                  ) : (
+                    upcomingEvents.map((ev) => {
+                      const tone = getEventTone(ev);
+                      return (
+                        <button
+                          key={`upcoming-${ev.id}-${ev.start.toISOString()}`}
+                          className={`calx-upcoming-item is-${tone}`}
+                          onClick={(e) => openSessionPopover(ev, e.currentTarget)}
+                        >
+                          <span className={`calx-upcoming-dot is-${tone}`} />
+                          <span className="calx-upcoming-copy">
+                            <span className="calx-upcoming-topline">
+                              <span className="calx-upcoming-title">
+                                {ev.title || t(dict, "session_default_title")}
+                              </span>
+                              <span className={`calx-upcoming-status is-${tone}`}>
+                                {eventToneLabels[tone] || "Session"}
+                              </span>
+                            </span>
+                            <span className="calx-upcoming-time">
+                              {format(ev.start, "EEE · h:mm a")}
+                              {ev.end ? ` - ${format(ev.end, "h:mm a")}` : ""}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </section>
+
+              <div className="calx-sidebar-note">
+                <div>
+                  <strong>Need a schedule change?</strong>
+                  <span>Sessions are managed by your coach or admin.</span>
+                </div>
+                <Link href={`${prefix}/contact`}>Get help</Link>
+              </div>
             </div>
-            <Link className="calx-sidebar-cta__btn" href={`${prefix}/packages`}>
-              + Book Now
-            </Link>
-          </div>
+          )}
         </aside>
 
         <main className="calx-main">
@@ -2079,9 +2144,9 @@ export default function CalendarPage() {
                 )}
               </div>
 
-              <Link className="calx-toolbar-book" href={`${prefix}/packages`}>
-                <Plus size={15} strokeWidth={2.7} />
-                Book
+              <Link className="calx-toolbar-support" href={`${prefix}/contact`}>
+                <LifeBuoy size={15} strokeWidth={2.5} />
+                Support
               </Link>
             </div>
           </div>
