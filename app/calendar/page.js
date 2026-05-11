@@ -34,10 +34,14 @@ import {
   Ban,
   CalendarClock,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Copy,
   ExternalLink,
   PanelRightOpen,
+  Plus,
+  SlidersHorizontal,
   UserRound,
   X,
 } from "lucide-react";
@@ -1877,7 +1881,7 @@ export default function CalendarPage() {
 
         <main className="calx-main">
           <div className="calx-toolbar">
-            <div className="calx-toolbar-nav">
+            <div className="calx-toolbar__left">
               <button
                 type="button"
                 className="calx-today-btn"
@@ -1886,85 +1890,98 @@ export default function CalendarPage() {
               >
                 Today
               </button>
-              <button
-                type="button"
-                className="calx-nav-btn"
-                onClick={() => handleNavigate("prev")}
-                aria-label="Previous period"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                className="calx-nav-btn"
-                onClick={() => handleNavigate("next")}
-                aria-label="Next period"
-              >
-                ›
-              </button>
+              <div className="calx-toolbar-nav" role="group" aria-label="Calendar navigation">
+                <button
+                  type="button"
+                  className="calx-nav-btn"
+                  onClick={() => handleNavigate("prev")}
+                  aria-label="Previous period"
+                >
+                  <ChevronLeft size={17} strokeWidth={2.8} />
+                </button>
+                <button
+                  type="button"
+                  className="calx-nav-btn"
+                  onClick={() => handleNavigate("next")}
+                  aria-label="Next period"
+                >
+                  <ChevronRight size={17} strokeWidth={2.8} />
+                </button>
+              </div>
             </div>
 
-            <div className="calx-toolbar-range">{getViewRangeLabel(currentDate, view)}</div>
-
-            <div className="calx-view-tabs">
-              <button
-                type="button"
-                className={`calx-view-tab ${view === "week" ? "is-active" : ""}`}
-                onClick={() => setView("week")}
-                aria-pressed={view === "week"}
-              >
-                Week
-              </button>
-              <button
-                type="button"
-                className={`calx-view-tab ${view === "month" ? "is-active" : ""}`}
-                onClick={() => setView("month")}
-                aria-pressed={view === "month"}
-              >
-                Month
-              </button>
-              <button
-                type="button"
-                className={`calx-view-tab ${view === "day" ? "is-active" : ""}`}
-                onClick={() => setView("day")}
-                aria-pressed={view === "day"}
-              >
-                Day
-              </button>
+            <div className="calx-toolbar__center" aria-live="polite">
+              <div className="calx-toolbar-range">{getViewRangeLabel(currentDate, view)}</div>
+              <div className="calx-toolbar-timezone">{user?.timezone || "Local timezone"}</div>
             </div>
 
-            <div className="calx-filters" ref={filtersRef}>
-              <button
-                type="button"
-                className={`calx-filter-btn ${showFilters ? "is-active" : ""}`}
-                onClick={() => setShowFilters((v) => !v)}
-                aria-expanded={showFilters}
-              >
-                ⚙ Filter
-              </button>
+            <div className="calx-toolbar__right">
+              <div className="calx-view-tabs" role="group" aria-label="Calendar view">
+                <button
+                  type="button"
+                  className={`calx-view-tab ${view === "week" ? "is-active" : ""}`}
+                  onClick={() => setView("week")}
+                  aria-pressed={view === "week"}
+                >
+                  Week
+                </button>
+                <button
+                  type="button"
+                  className={`calx-view-tab ${view === "month" ? "is-active" : ""}`}
+                  onClick={() => setView("month")}
+                  aria-pressed={view === "month"}
+                >
+                  Month
+                </button>
+                <button
+                  type="button"
+                  className={`calx-view-tab ${view === "day" ? "is-active" : ""}`}
+                  onClick={() => setView("day")}
+                  aria-pressed={view === "day"}
+                >
+                  Day
+                </button>
+              </div>
 
-              {showFilters && (
-                <div className="calx-filter-menu">
-                  {[
-                    ["scheduled", "Scheduled"],
-                    ["canceled", "Canceled"],
-                    ["group", "Group"],
-                    ["oneOnOne", "1:1"],
-                    ["availability", "Availability"],
-                  ].map(([key, label]) => (
-                    <label key={key} className="calx-filter-item">
-                      <input
-                        type="checkbox"
-                        checked={filters[key]}
-                        onChange={(e) =>
-                          setFilters((prev) => ({ ...prev, [key]: e.target.checked }))
-                        }
-                      />
-                      <span>{label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+              <div className="calx-filters" ref={filtersRef}>
+                <button
+                  type="button"
+                  className={`calx-filter-btn ${showFilters ? "is-active" : ""}`}
+                  onClick={() => setShowFilters((v) => !v)}
+                  aria-expanded={showFilters}
+                >
+                  <SlidersHorizontal size={15} strokeWidth={2.5} />
+                  Filter
+                </button>
+
+                {showFilters && (
+                  <div className="calx-filter-menu">
+                    {[
+                      ["scheduled", "Scheduled"],
+                      ["canceled", "Canceled"],
+                      ["group", "Group"],
+                      ["oneOnOne", "1:1"],
+                      ["availability", "Availability"],
+                    ].map(([key, label]) => (
+                      <label key={key} className="calx-filter-item">
+                        <input
+                          type="checkbox"
+                          checked={filters[key]}
+                          onChange={(e) =>
+                            setFilters((prev) => ({ ...prev, [key]: e.target.checked }))
+                          }
+                        />
+                        <span>{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Link className="calx-toolbar-book" href={`${prefix}/packages`}>
+                <Plus size={15} strokeWidth={2.7} />
+                Book
+              </Link>
             </div>
           </div>
 

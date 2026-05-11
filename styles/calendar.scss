@@ -439,56 +439,82 @@
 }
 
 .calx-toolbar {
-  padding: 22px 34px;
-  display: flex;
+  padding: 14px 24px;
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   border-top: 1px solid $border;
   border-bottom: 1px solid $border;
   background: $bg-secondary;
-  flex-wrap: wrap;
   position: sticky;
   top: 0;
   z-index: 30;
 }
 
-.calx-toolbar-nav {
+.calx-toolbar__left,
+.calx-toolbar__right {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+
+.calx-toolbar__left {
+  justify-content: flex-start;
+}
+
+.calx-toolbar__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.calx-toolbar__right {
+  justify-content: flex-end;
+}
+
+.calx-toolbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border: 1px solid rgba($border, 0.78);
+  border-radius: 12px;
+  background: rgba($color-white, 0.72);
 }
 
 .calx-nav-btn {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  border: 1px solid $border;
-  background: $surface;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
   color: $text-secondary;
   display: grid;
   place-items: center;
-  font-size: 20px;
   line-height: 1;
   font-weight: 700;
+  cursor: pointer;
   position: relative;
   isolation: isolate;
-  box-shadow: 0 1px 0 rgba($color-white, 0.75) inset;
   transition: background 0.18s ease, border-color 0.18s ease,
     color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 
   &:hover {
-    background: color-mix(in srgb, $color-white 78%, $calendar-primary 22%);
+    background: color-mix(in srgb, $color-white 82%, $calendar-primary 18%);
     border-color: color-mix(in srgb, $border 58%, $calendar-primary 42%);
     color: $calendar-primary;
-    box-shadow: 0 10px 24px rgba($navy, 0.1),
-      0 0 0 4px rgba($calendar-primary, 0.08);
+    box-shadow: 0 7px 18px rgba($navy, 0.1);
     transform: translateY(-1px);
   }
 
   &:active {
     transform: translateY(0);
-    box-shadow: 0 3px 10px rgba($navy, 0.08),
-      0 0 0 3px rgba($calendar-primary, 0.1);
+    box-shadow: 0 3px 10px rgba($navy, 0.08);
   }
 
   &:focus-visible {
@@ -498,14 +524,15 @@
 }
 
 .calx-today-btn {
-  height: 52px;
-  padding: 0 28px;
-  border-radius: 16px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 10px;
   border: 1px solid $border;
   background: $surface;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   color: $navy;
+  cursor: pointer;
   box-shadow: 0 1px 0 rgba($color-white, 0.75) inset;
   transition: background 0.18s ease, border-color 0.18s ease,
     color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
@@ -533,32 +560,50 @@
 
 .calx-toolbar-range {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 900;
   color: $navy;
-  letter-spacing: -0.03em;
-  flex: 1;
-  line-height: 1.05;
+  letter-spacing: 0;
+  line-height: 1.1;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calx-toolbar-timezone {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  color: $text-muted;
+  letter-spacing: 0;
+  line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .calx-view-tabs {
   display: flex;
-  background: $surface;
-  border-radius: 18px;
-  padding: 5px;
+  background: rgba($color-white, 0.72);
+  border-radius: 12px;
+  padding: 3px;
   gap: 2px;
   box-shadow: inset 0 0 0 1px rgba($border, 0.7);
 }
 
 .calx-view-tab {
-  min-width: 92px;
-  height: 48px;
-  padding: 0 18px;
-  border-radius: 14px;
+  min-width: 68px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
   border: 1px solid transparent;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: $text-secondary;
+  cursor: pointer;
   position: relative;
   transition: background 0.18s ease, border-color 0.18s ease,
     color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
@@ -578,7 +623,7 @@
     background: $color-white;
     color: $navy;
     border-color: $border;
-    box-shadow: 0 8px 20px rgba($navy, 0.13),
+    box-shadow: 0 7px 18px rgba($navy, 0.11),
       0 1px 0 rgba($color-white, 0.9) inset;
     transform: translateY(-1px);
   }
@@ -596,15 +641,17 @@
 .calx-filter-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  height: 52px;
-  padding: 0 22px;
-  border-radius: 16px;
-  border: 2px solid $border;
-  font-size: 14px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid $border;
+  font-size: 12px;
   font-weight: 800;
   color: $text-secondary;
   background: $bg-light;
+  cursor: pointer;
   box-shadow: 0 1px 0 rgba($color-white, 0.75) inset;
   transition: background 0.18s ease, border-color 0.18s ease,
     color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
@@ -631,9 +678,49 @@
   }
 }
 
+.calx-toolbar-book {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, $calendar-primary 82%, $color-white 18%);
+  background: $calendar-primary;
+  color: $color-white;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba($calendar-primary, 0.18);
+  transition: background 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    background: color-mix(in srgb, $calendar-primary 88%, $navy 12%);
+    border-color: color-mix(in srgb, $calendar-primary 76%, $navy 24%);
+    color: $color-white;
+    text-decoration: none;
+    box-shadow: 0 12px 24px rgba($calendar-primary, 0.24);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 6px 14px rgba($calendar-primary, 0.18);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba($calendar-primary, 0.18),
+      0 10px 22px rgba($calendar-primary, 0.18);
+  }
+}
+
 .calx-filter-menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 10px);
   right: 0;
   background: $card-bg;
   border: 1px solid $ring;
@@ -1931,17 +2018,64 @@
   .calendar-layout {
     grid-template-columns: 1fr;
   }
+
+  .calx-toolbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .calx-toolbar__center {
+    order: -1;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .calx-toolbar__left,
+  .calx-toolbar__right {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .calx-view-tabs {
+    flex: 1 1 220px;
+  }
+
+  .calx-view-tab {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 @media (max-width: 640px) {
   .calx-toolbar {
     padding: 12px 16px;
-    gap: 8px;
+    gap: 10px;
   }
 
   .calx-toolbar-range {
     font-size: 16px;
-    order: 2;
+  }
+
+  .calx-toolbar-timezone {
+    font-size: 10px;
+  }
+
+  .calx-today-btn,
+  .calx-filter-btn,
+  .calx-toolbar-book {
+    height: 38px;
+  }
+
+  .calx-toolbar-book {
+    flex: 1 1 92px;
+  }
+
+  .calx-filters {
+    flex: 1 1 106px;
+  }
+
+  .calx-filter-btn {
     width: 100%;
   }
 
