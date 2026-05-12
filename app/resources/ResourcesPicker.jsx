@@ -49,6 +49,7 @@ function findUnitWithContext(tracks, unitId) {
 ----------------------------------------------------------- */
 export default function ResourcesPicker({ tracks, locale = "en" }) {
   const dict = getDictionary(locale, "resources");
+  const prefix = locale === "ar" ? "/ar" : "";
 
   // Build the picker index (shared with classroom)
   const {
@@ -169,7 +170,7 @@ export default function ResourcesPicker({ tracks, locale = "en" }) {
   // Prep Room link – this MUST carry a real resourceId
   const prepHref = selectedResource
     ? {
-        pathname: "/resources/prep",
+        pathname: `${prefix}/resources/prep`,
         query: {
           resourceId: selectedResource._id,
           unitId: currentUnit?._id,
@@ -402,6 +403,8 @@ export default function ResourcesPicker({ tracks, locale = "en" }) {
                 <Link
                   href={prepHref}
                   className="resources-button resources-button--primary"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   <span>{t(dict, "resources_btn_open_prep")}</span>
                 </Link>

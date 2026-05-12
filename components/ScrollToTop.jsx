@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
 
 export default function ScrollToTop() {
+    const pathname = usePathname();
     const [isVisible, setIsVisible] = useState(false);
+    const isFocusedWorkspace = isFocusedWorkspacePath(pathname);
 
     useEffect(() => {
         const toggleVisibility = () => {
@@ -25,7 +29,7 @@ export default function ScrollToTop() {
         });
     };
 
-    if (!isVisible) return null;
+    if (isFocusedWorkspace || !isVisible) return null;
 
     return (
         <button

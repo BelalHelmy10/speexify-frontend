@@ -22,6 +22,7 @@ import {
   replyToSupportTicket,
   uploadSupportAttachment,
 } from "@/lib/supportApi";
+import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
 import "@/styles/support-widget.scss";
 
 const CATEGORIES = [
@@ -209,8 +210,9 @@ ImageLightbox.displayName = "ImageLightbox";
 export default function SupportWidget() {
   const pathname = usePathname();
 
-  // Hide support widget in classroom
-  const isClassroom = pathname?.startsWith("/classroom");
+  // Hide support widget in focused workspaces.
+  const isHiddenWorkspace =
+    pathname?.startsWith("/classroom") || isFocusedWorkspacePath(pathname);
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -697,8 +699,8 @@ export default function SupportWidget() {
 
   const showBack = activeTicket || category || view === "list";
 
-  // Don't render support widget in classroom
-  if (isClassroom) {
+  // Don't render support widget in focused workspaces.
+  if (isHiddenWorkspace) {
     return null;
   }
 

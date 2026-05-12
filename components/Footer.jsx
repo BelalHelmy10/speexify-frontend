@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
 import { getDictionary, t } from "@/app/i18n";
 
 function Footer() {
@@ -11,12 +12,15 @@ function Footer() {
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = getDictionary(locale, "footer");
   const $t = (key) => t(dict, key);
+  const isFocusedWorkspace = isFocusedWorkspacePath(pathname);
 
   const dir = locale === "ar" ? "rtl" : "ltr";
   const prefix = locale === "ar" ? "/ar" : "";
 
   // avoid recomputing
   const currentYear = useMemo(() => new Date().getFullYear(), []);
+
+  if (isFocusedWorkspace) return null;
 
   const handleNewsletterSubmit = (e) => {
     e.preventDefault();

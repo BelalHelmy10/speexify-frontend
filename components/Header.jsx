@@ -6,6 +6,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import { logout as apiLogout } from "@/lib/auth";
+import {
+  isFocusedWorkspacePath,
+  normalizeLocalizedPath,
+} from "@/lib/chromeRoutes";
 import { getDictionary, t } from "@/app/i18n";
 import NotificationsBell from "@/components/NotificationsBell";
 import DigitalClock from "@/components/DigitalClock";
@@ -99,7 +103,8 @@ export default function Header() {
   const locale = isArabic ? "ar" : "en";
 
   // Normalized path WITHOUT /ar for active-state checks
-  const normalizedPath = (pathname || "/").replace(/^\/ar/, "") || "/";
+  const normalizedPath = normalizeLocalizedPath(pathname);
+  const isFocusedWorkspace = isFocusedWorkspacePath(pathname);
 
   const navDict = getDictionary(locale, "nav");
 
@@ -263,6 +268,8 @@ export default function Header() {
         </span>
       </button>
     );
+
+  if (isFocusedWorkspace) return null;
 
   return (
     <header

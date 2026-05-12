@@ -291,6 +291,8 @@ export default async function UnitPage({ params }) {
                           },
                         }}
                         className="resources-button resources-button--primary"
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         🧑‍🏫 Prep Room
                       </Link>
