@@ -2,6 +2,228 @@
 
 import TimePicker from "@/components/ui/TimePicker";
 
+function PreviewBadge({ tone = "neutral", children }) {
+  return <span className={`adm-scheduler-badge adm-scheduler-badge--${tone}`}>{children}</span>;
+}
+
+function formatSlot(slot) {
+  if (!slot) return "No matching slot";
+  return `${slot.startTime}-${slot.endTime}${slot.timezone ? ` ${slot.timezone}` : ""}`;
+}
+
+function formatDateTime(value) {
+  if (!value) return "Not selected";
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch {
+    return String(value);
+  }
+}
+
+function SchedulerPreview({
+  preview,
+  loading,
+  error,
+  adminTimezone,
+  form,
+  onCreateChange,
+}) {
+  if (loading) {
+    return (
+      <div className="adm-scheduler-preview adm-scheduler-preview--loading">
+        Checking availability, conflicts, credits, and notifications...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="adm-scheduler-preview adm-scheduler-preview--error">
+        {error}
+      </div>
+    );
+  }
+
+  if (!preview) {
+    return (
+      <div className="adm-scheduler-preview adm-scheduler-preview--empty">
+        Complete the learner, date, and time to preview the booking.
+      </div>
+    );
+  }
+
+  const availability = preview.availability || {};
+  const creditRows = preview.credit?.learners || [];
+  const hasCreditIssue = preview.credit?.requiresOverride;
+  const teacherConflictCount = preview.conflicts?.teacher?.length || 0;
+  const learnerConflictCount = (preview.conflicts?.learners || []).reduce(
+    (sum, entry) => sum + (entry.conflicts?.length || 0),
+    0
+  );
+  const notificationRecipients = preview.notifications?.recipients || [];
+  const availabilityTone =
+    availability.status === "available"
+      ? "success"
+      : availability.status === "unassigned"
+        ? "neutral"
+        : availability.status === "partial"
+          ? "warning"
+          : "danger";
+
+  return (
+    <div className="adm-scheduler-preview">
+      <div className="adm-scheduler-preview__header">
+        <div>
+          <h3>Scheduling Preview</h3>
+          <p>
+            {formatDateTime(preview.schedule?.startAt)} -{" "}
+            {formatDateTime(preview.schedule?.endAt)}
+          </p>
+        </div>
+        <PreviewBadge tone={preview.canCreate ? "success" : "danger"}>
+          {preview.canCreate ? "Ready to create" : "Needs attention"}
+        </PreviewBadge>
+      </div>
+
+      {(preview.blockers?.length > 0 || preview.warnings?.length > 0) && (
+        <div className="adm-scheduler-alerts">
+          {preview.blockers?.map((item) => (
+            <div key={item} className="adm-scheduler-alert adm-scheduler-alert--danger">
+              {item}
+            </div>
+          ))}
+          {preview.warnings?.map((item) => (
+            <div key={item} className="adm-scheduler-alert adm-scheduler-alert--warning">
+              {item}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="adm-scheduler-grid">
+        <div className="adm-scheduler-panel">
+          <div className="adm-scheduler-panel__top">
+            <span>Teacher Availability</span>
+            <PreviewBadge tone={availabilityTone}>{availability.label}</PreviewBadge>
+          </div>
+          <p>{availability.message}</p>
+          <div className="adm-scheduler-meta">
+            <span>Best match</span>
+            <strong>{formatSlot(availability.matchingSlots?.[0])}</strong>
+          </div>
+          {availability.sameDaySlots?.length > 0 && (
+            <div className="adm-scheduler-slot-list">
+              {availability.sameDaySlots.slice(0, 4).map((slot) => (
+                <span key={slot.id}>{formatSlot(slot)}</span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="adm-scheduler-panel">
+          <div className="adm-scheduler-panel__top">
+            <span>Conflicts</span>
+            <PreviewBadge
+              tone={teacherConflictCount + learnerConflictCount > 0 ? "danger" : "success"}
+            >
+              {teacherConflictCount + learnerConflictCount > 0 ? "Conflict" : "Clear"}
+            </PreviewBadge>
+          </div>
+          <p>
+            {teacherConflictCount} teacher conflict{teacherConflictCount === 1 ? "" : "s"} ·{" "}
+            {learnerConflictCount} learner conflict{learnerConflictCount === 1 ? "" : "s"}
+          </p>
+          {preview.conflicts?.learners?.slice(0, 3).map((entry) => (
+            <div key={entry.learner.id} className="adm-scheduler-conflict-row">
+              <strong>{entry.learner.name || entry.learner.email}</strong>
+              <span>{entry.conflicts.length} overlapping session(s)</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="adm-scheduler-panel">
+          <div className="adm-scheduler-panel__top">
+            <span>Credits</span>
+            <PreviewBadge tone={hasCreditIssue ? "danger" : "success"}>
+              {hasCreditIssue ? "Override needed" : "Enough credits"}
+            </PreviewBadge>
+          </div>
+          <div className="adm-credit-preview-list">
+            {creditRows.map((row) => (
+              <div key={row.userId} className="adm-credit-preview-row">
+                <span>{row.name || row.email}</span>
+                <strong className={row.hasCredit ? "" : "is-danger"}>
+                  {row.remaining} now · {row.afterBooking} after
+                </strong>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="adm-scheduler-panel">
+          <div className="adm-scheduler-panel__top">
+            <span>Notifications</span>
+            <PreviewBadge tone={notificationRecipients.length ? "success" : "neutral"}>
+              {notificationRecipients.length} recipient{notificationRecipients.length === 1 ? "" : "s"}
+            </PreviewBadge>
+          </div>
+          <p>{preview.notifications?.meetingMode}</p>
+          <div className="adm-scheduler-slot-list">
+            {notificationRecipients.slice(0, 5).map((recipient) => (
+              <span key={`${recipient.role}-${recipient.userId}`}>
+                {recipient.role}: {recipient.name || recipient.email}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="adm-timezone-strip">
+        <span>Admin: {adminTimezone}</span>
+        <span>Teacher: {preview.timezones?.teacher || "Not set"}</span>
+        <span>
+          Learners:{" "}
+          {preview.timezones?.learners?.length
+            ? Array.from(
+                new Set(
+                  preview.timezones.learners.map((learner) => learner.timezone || "Not set")
+                )
+              ).join(", ")
+            : "Not selected"}
+        </span>
+      </div>
+
+      {hasCreditIssue && (
+        <div className="adm-credit-override">
+          <label className="adm-credit-override__toggle">
+            <input
+              type="checkbox"
+              name="allowNoCredit"
+              checked={!!form.allowNoCredit}
+              onChange={onCreateChange}
+            />
+            <span>Allow no-credit booking</span>
+          </label>
+          {form.allowNoCredit && (
+            <textarea
+              name="allowNoCreditReason"
+              className="adm-form-textarea"
+              value={form.allowNoCreditReason}
+              onChange={onCreateChange}
+              rows={2}
+              placeholder="Required reason for audit trail..."
+              required
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminCreateSessionSection({
   form,
   teachers,
@@ -10,6 +232,11 @@ export default function AdminCreateSessionSection({
   onCreateChange,
   onCreateLearnersChange,
   createSession,
+  creatingSession,
+  sessionPreview,
+  sessionPreviewLoading,
+  sessionPreviewError,
+  adminTimezone,
   setForm,
   setShowBulkScheduler,
 }) {
@@ -195,7 +422,10 @@ export default function AdminCreateSessionSection({
             />
           </div>
           <div className="adm-form-field">
-            <label className="adm-form-label">Duration (minutes)</label>
+            <label className="adm-form-label">
+              Duration (minutes)
+              <span className="adm-form-label__hint">{adminTimezone}</span>
+            </label>
             <input
               type="number"
               name="duration"
@@ -232,8 +462,21 @@ export default function AdminCreateSessionSection({
           </div>
         </div>
 
+        <SchedulerPreview
+          preview={sessionPreview}
+          loading={sessionPreviewLoading}
+          error={sessionPreviewError}
+          adminTimezone={adminTimezone}
+          form={form}
+          onCreateChange={onCreateChange}
+        />
+
         <div className="adm-form-actions">
-          <button type="submit" className="adm-btn-primary">
+          <button
+            type="submit"
+            className="adm-btn-primary"
+            disabled={creatingSession}
+          >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
                 d="M8 3V13M3 8H13"
@@ -242,7 +485,9 @@ export default function AdminCreateSessionSection({
                 strokeLinecap="round"
               />
             </svg>
-            Create {normType(form.type) === "GROUP" ? "Group " : ""}Session
+            {creatingSession
+              ? "Creating..."
+              : `Create ${normType(form.type) === "GROUP" ? "Group " : ""}Session`}
           </button>
 
           <button
@@ -261,6 +506,8 @@ export default function AdminCreateSessionSection({
                 duration: "60",
                 meetingUrl: "",
                 notes: "",
+                allowNoCredit: false,
+                allowNoCreditReason: "",
               }))
             }
           >

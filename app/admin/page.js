@@ -27,6 +27,16 @@ import {
   normType,
   getSessionLearnerDisplay,
 } from "./components/adminPageUtils";
+
+const ADMIN_SESSION_PREVIEW_DEBOUNCE_MS = 450;
+
+function createRequestKey(prefix) {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function Admin() {
   const { toast } = useToast();
   const { confirmModal } = useConfirm();
@@ -44,6 +54,12 @@ function Admin() {
   const [to, setTo] = useState("");
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
+  const [creatingSession, setCreatingSession] = useState(false);
+  const createSessionKeyRef = useRef(null);
+  const adminTimezone = useMemo(() => {
+    if (typeof Intl === "undefined") return "Local timezone";
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Local timezone";
+  }, []);
   // ─────────────────────────────────────────────
   // CREATE FORM STATE
   // ─────────────────────────────────────────────
@@ -60,6 +76,8 @@ function Admin() {
     duration: "60",
     meetingUrl: "",
     notes: "",
+    allowNoCredit: false,
+    allowNoCreditReason: "",
   });
   // ─────────────────────────────────────────────
   // EDIT FORM STATE
@@ -111,6 +129,9 @@ function Admin() {
   // BULK SCHEDULER MODAL STATE
   // ─────────────────────────────────────────────
   const [showBulkScheduler, setShowBulkScheduler] = useState(false);
+  const [sessionPreview, setSessionPreview] = useState(null);
+  const [sessionPreviewLoading, setSessionPreviewLoading] = useState(false);
+  const [sessionPreviewError, setSessionPreviewError] = useState("");
   // ─────────────────────────────────────────────
   // PARTICIPANT MANAGEMENT (for editing GROUP sessions)
   // ─────────────────────────────────────────────
@@ -279,7 +300,7 @@ function Admin() {
   // CREATE FORM HANDLERS
   // ─────────────────────────────────────────────
   const onCreateChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     if (name === "type") {
       const t = normType(value);
       setForm((f) => ({
@@ -288,6 +309,18 @@ function Admin() {
         userId: t === "ONE_ON_ONE" ? f.userId : "",
         learnerIds: t === "GROUP" ? f.learnerIds : [],
         capacity: t === "GROUP" ? f.capacity : "",
+        allowNoCredit: false,
+        allowNoCreditReason: "",
+      }));
+      return;
+    }
+    if (type === "checkbox") {
+      setForm((f) => ({
+        ...f,
+        [name]: checked,
+        ...(name === "allowNoCredit" && !checked
+          ? { allowNoCreditReason: "" }
+          : {}),
       }));
       return;
     }
@@ -297,13 +330,132 @@ function Admin() {
     const ids = Array.from(e.target.selectedOptions).map((o) => o.value);
     setForm((f) => ({ ...f, learnerIds: ids }));
   };
-  const createSession = async (e) => {
-    e.preventDefault();
+
+  const buildCreateSessionPayload = () => {
     const startAt = joinDateTime(form.date, form.startTime);
-    if (!startAt) {
-      toast.error("Please select a valid date and time");
+    if (!startAt) return { error: "Please select a valid date and time" };
+
+    const type = normType(form.type);
+    if (type === "ONE_ON_ONE" && !form.userId) {
+      return { error: "Please select a learner for the 1:1 session" };
+    }
+    if (
+      type === "GROUP" &&
+      (!form.learnerIds || form.learnerIds.length === 0)
+    ) {
+      return { error: "Please select at least one learner for the group session" };
+    }
+
+    const endAt = form.endTime ? joinDateTime(form.date, form.endTime) : null;
+    const payload = {
+      type,
+      title:
+        form.title.trim() || (type === "GROUP" ? "Group Session" : "Lesson"),
+      startAt: startAt.toISOString(),
+      ...(form.teacherId ? { teacherId: Number(form.teacherId) } : {}),
+      ...(endAt
+        ? { endAt: endAt.toISOString() }
+        : { durationMin: Number(form.duration || 60) }),
+      joinUrl: form.meetingUrl || null,
+      notes: form.notes || null,
+      ...(form.allowNoCredit
+        ? {
+            allowNoCredit: true,
+            allowNoCreditReason: form.allowNoCreditReason.trim(),
+          }
+        : {}),
+    };
+
+    if (type === "GROUP") {
+      payload.learnerIds = form.learnerIds
+        .map((x) => Number(x))
+        .filter((n) => n > 0);
+      payload.capacity = form.capacity ? Number(form.capacity) : null;
+    } else {
+      payload.learnerId = Number(form.userId);
+    }
+
+    return { payload, startAt, type };
+  };
+
+  useEffect(() => {
+    if (checking || !isAdmin) return;
+    const { payload } = buildCreateSessionPayload();
+    if (!payload) {
+      setSessionPreview(null);
+      setSessionPreviewError("");
+      setSessionPreviewLoading(false);
       return;
     }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setSessionPreviewLoading(true);
+      setSessionPreviewError("");
+      try {
+        const { data } = await api.post("/admin/sessions/preview", payload, {
+          signal: controller.signal,
+        });
+        setSessionPreview(data);
+      } catch (e) {
+        if (e.name === "CanceledError" || e.code === "ERR_CANCELED") return;
+        setSessionPreview(null);
+        setSessionPreviewError(
+          e.response?.data?.message ||
+            e.response?.data?.error ||
+            "Failed to preview this session"
+        );
+      } finally {
+        setSessionPreviewLoading(false);
+      }
+    }, ADMIN_SESSION_PREVIEW_DEBOUNCE_MS);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    checking,
+    isAdmin,
+    form.type,
+    form.userId,
+    form.learnerIds,
+    form.capacity,
+    form.teacherId,
+    form.title,
+    form.date,
+    form.startTime,
+    form.endTime,
+    form.duration,
+    form.meetingUrl,
+    form.notes,
+    form.allowNoCredit,
+    form.allowNoCreditReason,
+  ]);
+
+  useEffect(() => {
+    if (!sessionPreview || sessionPreview.credit?.requiresOverride) return;
+    if (!form.allowNoCredit && !form.allowNoCreditReason) return;
+    setForm((f) => ({
+      ...f,
+      allowNoCredit: false,
+      allowNoCreditReason: "",
+    }));
+  }, [sessionPreview, form.allowNoCredit, form.allowNoCreditReason]);
+
+  const createSession = async (e) => {
+    e.preventDefault();
+    if (createSessionKeyRef.current) return;
+
+    const built = buildCreateSessionPayload();
+    if (built.error || !built.payload) {
+      toast.error(built.error || "Please complete the session details");
+      return;
+    }
+
+    const { payload, startAt, type } = built;
+
     // Warn if session is in the past
     if (startAt < new Date()) {
       const proceed = await confirmModal(
@@ -311,43 +463,31 @@ function Admin() {
       );
       if (!proceed) return;
     }
-    const type = normType(form.type);
-    // Validation
-    if (type === "ONE_ON_ONE" && !form.userId) {
-      toast.error("Please select a learner for the 1:1 session");
-      return;
-    }
+
     if (
-      type === "GROUP" &&
-      (!form.learnerIds || form.learnerIds.length === 0)
+      sessionPreview?.credit?.requiresOverride &&
+      !payload.allowNoCredit
     ) {
-      toast.error("Please select at least one learner for the group session");
+      toast.error("Add a no-credit override reason before creating this session");
       return;
     }
+
+    if (
+      payload.allowNoCredit &&
+      String(payload.allowNoCreditReason || "").trim().length < 6
+    ) {
+      toast.error("No-credit override reason must be at least 6 characters");
+      return;
+    }
+
+    const idempotencyKey = createRequestKey("admin-session-create");
+    createSessionKeyRef.current = idempotencyKey;
+    setCreatingSession(true);
     setStatus("Saving…");
     try {
-      const endAt = form.endTime ? joinDateTime(form.date, form.endTime) : null;
-      const payload = {
-        type,
-        title:
-          form.title.trim() || (type === "GROUP" ? "Group Session" : "Lesson"),
-        startAt: startAt.toISOString(),
-        ...(form.teacherId ? { teacherId: Number(form.teacherId) } : {}),
-        ...(endAt
-          ? { endAt: endAt.toISOString() }
-          : { durationMin: Number(form.duration || 60) }),
-        joinUrl: form.meetingUrl || null,
-        notes: form.notes || null,
-      };
-      if (type === "GROUP") {
-        payload.learnerIds = form.learnerIds
-          .map((x) => Number(x))
-          .filter((n) => n > 0);
-        payload.capacity = form.capacity ? Number(form.capacity) : null;
-      } else {
-        payload.learnerId = Number(form.userId);
-      }
-      const { data } = await api.post("/admin/sessions", payload);
+      const { data } = await api.post("/admin/sessions", payload, {
+        headers: { "Idempotency-Key": idempotencyKey },
+      });
       trackEvent("session_booked", {
         source: "admin",
         sessionId: data?.session?.id || data?.id,
@@ -376,7 +516,10 @@ function Admin() {
         duration: "60",
         meetingUrl: "",
         notes: "",
+        allowNoCredit: false,
+        allowNoCreditReason: "",
       }));
+      setSessionPreview(null);
     } catch (e) {
       setStatus("");
       if (e.response?.status === 409) {
@@ -392,6 +535,9 @@ function Admin() {
       } else {
         toast.error(e.response?.data?.error || "Failed to create session");
       }
+    } finally {
+      createSessionKeyRef.current = null;
+      setCreatingSession(false);
     }
   };
   // ─────────────────────────────────────────────
@@ -923,6 +1069,11 @@ function Admin() {
         onCreateChange={onCreateChange}
         onCreateLearnersChange={onCreateLearnersChange}
         createSession={createSession}
+        creatingSession={creatingSession}
+        sessionPreview={sessionPreview}
+        sessionPreviewLoading={sessionPreviewLoading}
+        sessionPreviewError={sessionPreviewError}
+        adminTimezone={adminTimezone}
         setForm={setForm}
         setShowBulkScheduler={setShowBulkScheduler}
       />
