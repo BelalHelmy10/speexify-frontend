@@ -1,154 +1,797 @@
 @use "variables" as *;
 
-/* ─────────────────────────────────────────────
-   PAGE LAYOUT
-   ───────────────────────────────────────────── */
+.learning-progress {
+  padding: $space-8 0 $space-12;
+  color: $text-primary;
 
-.page-progress {
-  padding: $space-10 0 $space-12;
-
-  &__header {
-    max-width: 640px;
-    margin: 0 auto $space-8;
+  * {
+    box-sizing: border-box;
   }
 
-  &__title {
-    margin: 0 0 8px;
-    font-size: clamp(24px, 3vw, 32px);
+  h1,
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h1 {
+    font-family: $font-heading;
+    font-size: 38px;
+    line-height: 1.05;
     font-weight: 800;
-    color: $color-black;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 
-  &__subtitle {
-    margin: 0;
+  h2 {
+    font-family: $font-heading;
+    font-size: 22px;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  h3 {
     font-size: 15px;
-    color: $color-muted;
+    line-height: 1.35;
+    font-weight: 800;
+    letter-spacing: 0;
   }
 
-  &__error-alert {
-    margin: 0 auto $space-6;
-    max-width: 640px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid #fecaca;
-    background: #fef2f2;
-    color: #b91c1c;
-    font-size: 14px;
+  p {
+    color: $text-secondary;
+    font-size: 15px;
+    line-height: 1.6;
   }
 
-  &__footer {
-    margin-top: $space-8;
+  a {
+    text-decoration: none;
   }
 }
 
-/* ─────────────────────────────────────────────
-   SUMMARY CARDS
-   ───────────────────────────────────────────── */
+.learning-progress--state {
+  min-height: 52vh;
+  display: grid;
+  align-items: center;
+}
 
-.progress-summary {
-  margin-bottom: $space-9;
+.learning-progress__state-card {
+  max-width: 640px;
+  padding: 32px;
+  border: 1px solid $color-border;
+  border-radius: 8px;
+  background: $color-white;
+  box-shadow: $shadow-lg;
+}
 
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: $space-5;
+.learning-progress__error {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.learning-progress__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  align-items: stretch;
+  padding: 32px;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(13, 27, 42, 0.98), rgba(26, 58, 92, 0.96)),
+    $navy;
+  box-shadow: $shadow-xl;
+}
+
+.learning-progress__hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+
+  h1,
+  p {
+    color: $color-white;
   }
 
-  &__card {
-    background: $color-white;
-    border-radius: 20px;
-    border: 1px solid $color-border;
-    padding: $space-6;
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+  > p:not(.learning-progress__eyebrow) {
+    max-width: 700px;
+    color: rgba(255, 255, 255, 0.78);
+  }
+}
+
+.learning-progress__eyebrow,
+.learning-progress__section-kicker {
+  color: $coral;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.learning-progress__hero-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+
+  span {
+    max-width: 520px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+}
+
+.learning-progress__primary-link,
+.learning-progress__secondary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform $transition-fast,
+    box-shadow $transition-fast,
+    border-color $transition-fast,
+    background $transition-fast;
+}
+
+.learning-progress__primary-link {
+  color: $color-white;
+  background: $coral;
+  box-shadow: 0 12px 24px rgba(242, 92, 46, 0.24);
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-1px);
+    background: $coral-light;
+    box-shadow: 0 16px 32px rgba(242, 92, 46, 0.32);
+  }
+}
+
+.learning-progress__secondary-link {
+  width: fit-content;
+  color: $navy;
+  background: $color-white;
+  border: 1px solid $color-border;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(242, 92, 46, 0.45);
+    box-shadow: $shadow-md;
+  }
+}
+
+.learning-progress__score {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.learning-progress__score-ring {
+  position: relative;
+  width: 164px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient($coral var(--ring-progress), rgba(255, 255, 255, 0.18) 0);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    background: $navy;
   }
 
-  &__label {
-    margin: 0;
-    font-size: 14px;
-    color: $color-muted;
-    font-weight: 600;
+  strong,
+  span {
+    position: relative;
+    z-index: 1;
+    display: block;
+    text-align: center;
   }
 
-  &__value {
-    margin: 8px 0 0;
-    font-size: 28px;
-    font-weight: 700;
-    color: $color-black;
+  strong {
+    color: $color-white;
+    font-size: 34px;
+    line-height: 1;
   }
 
-  &__meta {
-    margin: 4px 0 0;
+  span {
+    max-width: 92px;
+    color: rgba(255, 255, 255, 0.68);
     font-size: 12px;
-    color: $color-muted;
+    line-height: 1.25;
   }
 }
 
-/* ─────────────────────────────────────────────
-   TIMELINE
-   ───────────────────────────────────────────── */
+.learning-progress__score-meta {
+  display: grid;
+  gap: 5px;
+  text-align: center;
 
-.progress-timeline {
-  &__header {
-    margin-bottom: $space-3;
+  strong {
+    color: $color-white;
+    font-size: 15px;
   }
 
-  &__title {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 700;
-    color: $color-black;
+  span {
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 13px;
+  }
+}
+
+.learning-progress__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.learning-progress__metric {
+  position: relative;
+  min-height: 138px;
+  padding: 18px;
+  border: 1px solid $color-border;
+  border-radius: 8px;
+  background: $color-white;
+  box-shadow: $shadow-sm;
+
+  p {
+    color: $text-muted;
+    font-size: 13px;
+    font-weight: 800;
   }
 
-  &__subtitle {
-    margin: 4px 0 0;
-    font-size: 14px;
-    color: $color-muted;
+  strong {
+    display: block;
+    margin-top: 18px;
+    color: $text-primary;
+    font-size: 28px;
+    line-height: 1;
   }
 
-  &__empty {
-    margin-top: $space-4;
-    padding: $space-5;
-    border-radius: 16px;
-    background: $color-surface;
+  small {
+    display: block;
+    margin-top: 8px;
+    color: $text-secondary;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
+
+.learning-progress__metric-dot {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--metric-color, $coral);
+}
+
+.learning-progress__metric--coral {
+  --metric-color: #{$coral};
+}
+
+.learning-progress__metric--sage {
+  --metric-color: #{$color-secondary-light};
+}
+
+.learning-progress__metric--amber {
+  --metric-color: #{$color-tertiary-light};
+}
+
+.learning-progress__metric--navy {
+  --metric-color: #{$navy};
+}
+
+.learning-progress__course {
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(300px, 1fr);
+  gap: 24px;
+  align-items: center;
+  margin-top: 26px;
+  padding: 24px 0;
+  border-top: 1px solid $color-border;
+  border-bottom: 1px solid $color-border;
+
+  h2 {
+    margin-top: 8px;
+  }
+
+  p {
+    margin-top: 8px;
+  }
+}
+
+.learning-progress__course-track {
+  display: grid;
+  gap: 14px;
+}
+
+.learning-progress__course-bar,
+.learning-progress__mini-bar,
+.learning-progress__skill-track {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eee6da;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, $coral 0%, $color-secondary-light 100%);
+  }
+}
+
+.learning-progress__course-bar {
+  height: 12px;
+}
+
+.learning-progress__milestone {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid $color-border;
+  border-radius: 8px;
+  background: $color-white;
+
+  span {
+    color: $text-muted;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  strong {
+    color: $text-primary;
+    font-size: 15px;
+  }
+}
+
+.learning-progress__mini-bar {
+  height: 7px;
+}
+
+.learning-progress__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.32fr) minmax(340px, 0.68fr);
+  gap: 26px;
+  margin-top: 30px;
+}
+
+.learning-progress__panel {
+  min-width: 0;
+}
+
+.learning-progress__panel-header {
+  margin-bottom: 16px;
+
+  h2 {
+    margin-top: 8px;
+  }
+
+  p:not(.learning-progress__section-kicker) {
+    margin-top: 7px;
+    max-width: 760px;
+  }
+}
+
+.learning-progress__side {
+  display: grid;
+  align-content: start;
+  gap: 30px;
+}
+
+.learning-progress__panel--mission {
+  padding: 20px;
+  border: 1px solid $color-border;
+  border-radius: 8px;
+  background: $color-white;
+  box-shadow: $shadow-sm;
+}
+
+.learning-progress__mission-queue {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.learning-progress__queue-item {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid $color-border;
+  border-radius: 8px;
+  background: $bg-primary;
+  transition:
+    transform $transition-fast,
+    border-color $transition-fast,
+    box-shadow $transition-fast;
+
+  span {
+    color: $text-primary;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  small {
+    color: $text-secondary;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(242, 92, 46, 0.4);
+    box-shadow: $shadow-sm;
+  }
+}
+
+.learning-progress__path-list {
+  display: grid;
+  gap: 16px;
+}
+
+.learning-progress__journey-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.learning-progress__journey-marker {
+  position: relative;
+  display: flex;
+  justify-content: center;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 42px;
+    bottom: -22px;
+    width: 1px;
+    background: $color-border;
+  }
+
+  span {
+    position: relative;
+    z-index: 1;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(242, 92, 46, 0.34);
+    border-radius: 999px;
+    color: $coral;
+    background: $color-white;
+    font-size: 13px;
+    font-weight: 900;
+  }
+}
+
+.learning-progress__journey-item:last-child .learning-progress__journey-marker::after {
+  display: none;
+}
+
+.learning-progress__journey-body {
+  padding: 16px;
+  border: 1px solid $color-border;
+  border-radius: 8px;
+  background: $color-white;
+  box-shadow: $shadow-sm;
+}
+
+.learning-progress__journey-top {
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  p {
+    margin-top: 4px;
+    font-size: 13px;
+  }
+
+  a {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
     border: 1px solid $color-border;
+    border-radius: 8px;
+    color: $text-primary;
+    background: $bg-primary;
+    font-size: 12px;
+    font-weight: 900;
+    transition:
+      border-color $transition-fast,
+      transform $transition-fast;
 
-    p {
-      margin: 0;
-      font-size: 14px;
-      color: $color-muted;
-      line-height: 1.6;
-    }
-  }
-
-  &__table {
-    margin-top: $space-4;
-
-    th,
-    td {
-      padding-inline: 4px;
+    &:hover,
+    &:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(242, 92, 46, 0.45);
     }
   }
 }
 
-/* ─────────────────────────────────────────────
-   RESPONSIVE
-   ───────────────────────────────────────────── */
+.learning-progress__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border: 1px solid $color-border;
+    border-radius: 999px;
+    color: $text-secondary;
+    background: $bg-primary;
+    font-size: 12px;
+    font-weight: 750;
+  }
+
+  .is-positive {
+    border-color: rgba(45, 158, 143, 0.3);
+    color: $color-secondary-dark;
+    background: rgba(45, 158, 143, 0.09);
+  }
+}
+
+.learning-progress__future-step {
+  margin-top: 12px;
+  padding: 12px;
+  border-left: 3px solid $coral;
+  border-radius: 8px;
+  background: $coral-pale;
+  color: $text-primary;
+  font-size: 13px;
+}
+
+.learning-progress__empty {
+  padding: 22px;
+  border: 1px dashed $color-border;
+  border-radius: 8px;
+  background: $bg-primary;
+
+  h3 {
+    color: $text-primary;
+  }
+
+  p {
+    margin-top: 6px;
+  }
+}
+
+.learning-progress__skills {
+  display: grid;
+  gap: 14px;
+}
+
+.learning-progress__skill {
+  display: grid;
+  gap: 8px;
+
+  > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+  }
+
+  strong,
+  span {
+    color: $text-primary;
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+}
+
+.learning-progress__skill-track {
+  height: 8px;
+}
+
+.learning-progress__badges {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.learning-progress__badge {
+  min-height: 150px;
+  padding: 14px;
+  border: 1px solid $color-border;
+  border-radius: 8px;
+  background: $color-white;
+  opacity: 0.74;
+
+  h3 {
+    margin-top: 12px;
+  }
+
+  p {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  small {
+    display: block;
+    margin-top: 10px;
+    color: $text-muted;
+    font-size: 11px;
+    font-weight: 800;
+  }
+}
+
+.learning-progress__badge--earned {
+  opacity: 1;
+  border-color: rgba(45, 158, 143, 0.28);
+  background: rgba(45, 158, 143, 0.08);
+}
+
+.learning-progress__badge-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: $bg-secondary;
+  color: $text-secondary;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.learning-progress__badge--earned .learning-progress__badge-status {
+  background: rgba(45, 158, 143, 0.14);
+  color: $color-secondary-dark;
+}
+
+.learning-progress__timeline-panel {
+  margin-top: 34px;
+}
+
+.learning-progress__chart {
+  height: 220px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(38px, 1fr));
+  gap: 10px;
+  align-items: end;
+  padding-top: 12px;
+  overflow-x: auto;
+}
+
+.learning-progress__chart-item {
+  min-width: 38px;
+  display: grid;
+  gap: 7px;
+  justify-items: center;
+
+  strong {
+    color: $text-primary;
+    font-size: 12px;
+  }
+
+  small {
+    color: $text-muted;
+    font-size: 11px;
+    font-weight: 800;
+  }
+}
+
+.learning-progress__chart-bar {
+  width: 100%;
+  height: 150px;
+  display: flex;
+  align-items: flex-end;
+  padding: 4px;
+  border-radius: 8px;
+  background: $bg-secondary;
+
+  span {
+    width: 100%;
+    min-height: 10px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, $coral 0%, $color-tertiary-light 100%);
+  }
+}
+
+.learning-progress__footer {
+  margin-top: 34px;
+}
+
+@media (max-width: $bp-lg) {
+  .learning-progress__hero,
+  .learning-progress__course,
+  .learning-progress__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-progress__score {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .learning-progress__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
 @media (max-width: $bp-sm) {
-  .page-progress {
-    padding: $space-8 0 $space-10;
+  .learning-progress {
+    padding: $space-6 0 $space-10;
 
-    &__header {
-      margin-bottom: $space-7;
+    h1 {
+      font-size: 30px;
+    }
+
+    h2 {
+      font-size: 20px;
     }
   }
 
-  .progress-summary__card {
-    border-radius: 18px;
+  .learning-progress__hero,
+  .learning-progress__state-card {
+    padding: 22px;
   }
 
-  .progress-timeline__empty {
-    border-radius: 14px;
+  .learning-progress__score {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-progress__metrics,
+  .learning-progress__badges {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-progress__journey-item {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .learning-progress__journey-marker span {
+    width: 30px;
+    height: 30px;
+  }
+
+  .learning-progress__journey-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .learning-progress__chart {
+    grid-template-columns: repeat(12, 44px);
   }
 }
