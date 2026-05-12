@@ -17,6 +17,7 @@ import {
 import api from "@/lib/api";
 import { buildResourcePickerIndex } from "@/lib/resourcePickerIndex";
 import { getDictionary, t } from "@/app/i18n";
+import useAuth from "@/hooks/useAuth";
 
 const RECENT_RESOURCES_KEY = "speexify:resources:recent:v1";
 const FAVORITE_RESOURCES_KEY = "speexify:resources:favorites:v1";
@@ -207,6 +208,7 @@ function findUnitWithContext(tracks, unitId) {
 export default function ResourcesPicker({ tracks, locale = "en" }) {
   const dict = getDictionary(locale, "resources");
   const prefix = locale === "ar" ? "/ar" : "";
+  const { user, checking } = useAuth();
 
   // Build the picker index (shared with classroom)
   const {
@@ -263,6 +265,13 @@ export default function ResourcesPicker({ tracks, locale = "en" }) {
     let cancelled = false;
 
     async function loadLastSessionResources() {
+      if (checking) return;
+
+      if (!user) {
+        setLastSessionResources([]);
+        return;
+      }
+
       try {
         const { data: sessions } = await api.get("/me/sessions", {
           params: { range: "past", limit: 5 },
@@ -295,7 +304,7 @@ export default function ResourcesPicker({ tracks, locale = "en" }) {
     return () => {
       cancelled = true;
     };
-  }, [resourceContextIndex]);
+  }, [checking, resourceContextIndex, user]);
 
   /* ---------------------------------------------------------
      Cascading defaults: track → book → level → unit → resource

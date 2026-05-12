@@ -104,24 +104,96 @@ async function getResourcesTree() {
   return Array.isArray(data) ? data : [];
 }
 
+function summarizeResourceLibrary(tracks = []) {
+  const unitIds = new Set();
+  const resourceIds = new Set();
+  const mediaResourceIds = new Set();
+
+  tracks.forEach((track) => {
+    (track.levels || []).forEach((level) => {
+      (level.subLevels || []).forEach((subLevel) => {
+        (subLevel.units || []).forEach((unit) => {
+          if ((unit.resources || []).length > 0) {
+            unitIds.add(unit._id);
+          }
+
+          (unit.resources || []).forEach((resource) => {
+            if (!resource?._id) return;
+
+            resourceIds.add(resource._id);
+
+            if (
+              resource.audioUrl ||
+              resource.youtubeUrl ||
+              resource.googleSlidesUrl ||
+              resource.externalUrl ||
+              (resource.audioTracks || []).length > 0
+            ) {
+              mediaResourceIds.add(resource._id);
+            }
+          });
+        });
+      });
+    });
+  });
+
+  return {
+    courses: tracks.length,
+    units: unitIds.size,
+    resources: resourceIds.size,
+    media: mediaResourceIds.size,
+  };
+}
+
 // locale comes from the wrapper (normal = "en", /ar = "ar")
 export default async function ResourcesPage({ locale = "en" }) {
   const tracks = await getResourcesTree();
   const dict = getDictionary(locale, "resources");
+  const stats = summarizeResourceLibrary(tracks);
+  const numberFormatter = new Intl.NumberFormat(locale === "ar" ? "ar" : "en");
+  const heroStats = [
+    {
+      label: t(dict, "resources_stat_courses"),
+      value: stats.courses,
+    },
+    {
+      label: t(dict, "resources_stat_units"),
+      value: stats.units,
+    },
+    {
+      label: t(dict, "resources_stat_resources"),
+      value: stats.resources,
+    },
+    {
+      label: t(dict, "resources_stat_media"),
+      value: stats.media,
+    },
+  ];
 
   return (
     <div className="spx-resources-page">
       <div className="spx-resources-page__inner">
         <header className="spx-resources-hero">
-          <span className="spx-resources-hero__eyebrow">
-            {t(dict, "resources_eyebrow")}
-          </span>
-          <h1 className="spx-resources-hero__title">
-            {t(dict, "resources_page_title")}
-          </h1>
-          <p className="spx-resources-hero__subtitle">
-            {t(dict, "resources_page_subtitle")}
-          </p>
+          <div className="spx-resources-hero__copy">
+            <span className="spx-resources-hero__eyebrow">
+              {t(dict, "resources_eyebrow")}
+            </span>
+            <h1 className="spx-resources-hero__title">
+              {t(dict, "resources_page_title")}
+            </h1>
+            <p className="spx-resources-hero__subtitle">
+              {t(dict, "resources_page_subtitle")}
+            </p>
+          </div>
+
+          <dl className="spx-resources-hero__stats">
+            {heroStats.map((stat) => (
+              <div className="spx-resources-hero__stat" key={stat.label}>
+                <dt>{stat.label}</dt>
+                <dd>{numberFormatter.format(stat.value)}</dd>
+              </div>
+            ))}
+          </dl>
         </header>
 
         {tracks.length === 0 ? (
