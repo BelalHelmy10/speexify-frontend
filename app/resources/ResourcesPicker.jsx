@@ -205,10 +205,12 @@ function findUnitWithContext(tracks, unitId) {
 /* -----------------------------------------------------------
    MAIN COMPONENT
 ----------------------------------------------------------- */
-export default function ResourcesPicker({ tracks, locale = "en" }) {
+export default function ResourcesPicker({ tracks, locale = "en", access = null }) {
   const dict = getDictionary(locale, "resources");
   const prefix = locale === "ar" ? "/ar" : "";
   const { user, checking } = useAuth();
+  const canUsePrep = access?.canUsePrep !== false;
+  const canOpenOriginal = access?.canOpenOriginal !== false;
 
   // Build the picker index (shared with classroom)
   const {
@@ -473,7 +475,7 @@ export default function ResourcesPicker({ tracks, locale = "en" }) {
   const unitHref =
     currentUnit && currentUnit.slug
       ? {
-          pathname: `/resources/units/${currentUnit.slug}`,
+          pathname: `${prefix}/resources/units/${currentUnit.slug}`,
         }
       : null;
 
@@ -507,13 +509,15 @@ export default function ResourcesPicker({ tracks, locale = "en" }) {
           items={lastSessionResources}
           onSelect={selectResourceById}
         />
-        <OperationalShelf
-          icon={<BookmarkCheck size={18} aria-hidden="true" />}
-          title={t(dict, "resources_shelf_prepared_title")}
-          emptyText={t(dict, "resources_shelf_prepared_empty")}
-          items={preparedResources}
-          onSelect={selectResourceById}
-        />
+        {canUsePrep && (
+          <OperationalShelf
+            icon={<BookmarkCheck size={18} aria-hidden="true" />}
+            title={t(dict, "resources_shelf_prepared_title")}
+            emptyText={t(dict, "resources_shelf_prepared_empty")}
+            items={preparedResources}
+            onSelect={selectResourceById}
+          />
+        )}
       </section>
 
       <div className="resources-layout">
@@ -806,7 +810,7 @@ export default function ResourcesPicker({ tracks, locale = "en" }) {
             {/* Actions */}
             <div className="resources-preview__actions">
               {/* Open in Prep Room */}
-              {prepHref ? (
+              {canUsePrep && prepHref ? (
                 <Link
                   href={prepHref}
                   className="resources-button resources-button--primary"
@@ -816,6 +820,14 @@ export default function ResourcesPicker({ tracks, locale = "en" }) {
                 >
                   <span>{t(dict, "resources_btn_open_prep")}</span>
                 </Link>
+              ) : !canUsePrep ? (
+                <button
+                  type="button"
+                  className="resources-button resources-button--disabled"
+                  disabled
+                >
+                  Prep Room is teacher-only
+                </button>
               ) : (
                 <button
                   type="button"
@@ -846,7 +858,7 @@ export default function ResourcesPicker({ tracks, locale = "en" }) {
               )}
 
               {/* Open original file/link */}
-              {primaryUrl ? (
+              {canOpenOriginal && primaryUrl ? (
                 <a
                   href={primaryUrl}
                   target="_blank"

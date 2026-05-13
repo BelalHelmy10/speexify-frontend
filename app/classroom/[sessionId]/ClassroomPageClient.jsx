@@ -7,13 +7,13 @@ import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import ClassroomShell from "./ClassroomShell";
 
-export default function ClassroomPageClient({ sessionId, tracks }) {
+export default function ClassroomPageClient({ sessionId, tracks, initialSession = null }) {
   const pathname = usePathname();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const prefix = locale === "ar" ? "/ar" : "";
 
-  const [session, setSession] = useState(null);
-  const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"
+  const [session, setSession] = useState(initialSession);
+  const [status, setStatus] = useState(initialSession ? "ok" : "loading"); // "loading" | "ok" | "error"
   const [error, setError] = useState("");
 
   // Add class to body when classroom is active (to hide site header/footer)
@@ -33,7 +33,7 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
 
   // Load session details from API
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || initialSession) return;
 
     let cancelled = false;
 
@@ -69,7 +69,7 @@ export default function ClassroomPageClient({ sessionId, tracks }) {
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [initialSession, sessionId]);
 
   // LOADING - full screen loading
   if (status === "loading") {

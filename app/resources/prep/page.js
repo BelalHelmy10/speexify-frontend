@@ -4,6 +4,7 @@ import { sanityClient } from "@/lib/sanity";
 import PrepShell from "./PrepShell";
 import { getViewerInfo } from "@/lib/viewerHelpers";
 import { getDictionary, t } from "@/app/i18n";
+import { requireResourceAccess } from "@/app/protected-access";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,29 @@ export default async function PrepPage({
   // ⬅️ unwrap the Promise (Next 13 app router quirk)
   const searchParams = await searchParamsPromise;
   const dict = getDictionary(locale, "resources");
+  const { access } = await requireResourceAccess({
+    locale,
+    nextPath: locale === "ar" ? "/ar/resources/prep" : "/resources/prep",
+  });
+
+  if (!access.canUsePrep) {
+    return (
+      <div className="spx-resources-page">
+        <div className="spx-resources-page__inner">
+          <div className="spx-resources-empty-card">
+            <h1>Prep Room is for teachers</h1>
+            <p>
+              Learner accounts can review assigned materials from Resources, but
+              the editable preparation room is limited to teachers and admins.
+            </p>
+            <Link href={locale === "ar" ? "/ar/resources" : "/resources"} className="resources-button">
+              Back to resources
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Accept a few possible names, but Resources uses ?resourceId=
   const resourceId =

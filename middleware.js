@@ -9,6 +9,11 @@ const PRIVATE_ROUTES = [
   "/calendar",
   "/settings",
   "/admin",
+  "/classroom",
+  "/resources",
+  "/assessment",
+  "/onboarding",
+  "/manual-payment",
 
   // ✅ new protected routes
   "/checkout",
@@ -41,6 +46,7 @@ export function middleware(req) {
     const dest = url.clone();
 
     dest.pathname = loginPath;
+    dest.search = "";
 
     const originalPathWithQuery =
       pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
@@ -63,6 +69,11 @@ export const config = {
     "/calendar/:path*",
     "/settings/:path*",
     "/admin/:path*",
+    "/classroom/:path*",
+    "/resources/:path*",
+    "/assessment/:path*",
+    "/onboarding/:path*",
+    "/manual-payment/:path*",
     "/checkout/:path*", // ✅ protect checkout
     "/payment/:path*", // ✅ protect /payment/success and friends
 
@@ -74,6 +85,11 @@ export const config = {
     "/ar/calendar/:path*",
     "/ar/settings/:path*",
     "/ar/admin/:path*",
+    "/ar/classroom/:path*",
+    "/ar/resources/:path*",
+    "/ar/assessment/:path*",
+    "/ar/onboarding/:path*",
+    "/ar/manual-payment/:path*",
     "/ar/checkout/:path*", // ✅ ar checkout
     "/ar/payment/:path*", // ✅ ar payment/success
   ],

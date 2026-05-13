@@ -48,6 +48,13 @@ function Admin() {
   const [sessions, setSessions] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [teacherIdFilter, setTeacherIdFilter] = useState("");
+  const [sessionRangeFilter, setSessionRangeFilter] = useState("");
+  const [sessionTypeFilter, setSessionTypeFilter] = useState("");
+  const [sessionStatusFilter, setSessionStatusFilter] = useState("");
+  const [sessionNeedsTeacher, setSessionNeedsTeacher] = useState(false);
+  const [sessionNeedsFeedback, setSessionNeedsFeedback] = useState(false);
+  const [sessionLimit, setSessionLimit] = useState(50);
+  const [sessionOffset, setSessionOffset] = useState(0);
   const [q, setQ] = useState("");
   const [qDebounced, setQDebounced] = useState("");
   const [from, setFrom] = useState("");
@@ -228,6 +235,20 @@ function Admin() {
     const t = setTimeout(() => setQDebounced(q), 300);
     return () => clearTimeout(t);
   }, [q]);
+  useEffect(() => {
+    setSessionOffset(0);
+  }, [
+    qDebounced,
+    from,
+    to,
+    teacherIdFilter,
+    sessionRangeFilter,
+    sessionTypeFilter,
+    sessionStatusFilter,
+    sessionNeedsTeacher,
+    sessionNeedsFeedback,
+    sessionLimit,
+  ]);
   // Build query params
   const params = useMemo(() => {
     const p = new URLSearchParams();
@@ -235,10 +256,31 @@ function Admin() {
     if (from) p.set("from", from);
     if (to) p.set("to", to);
     if (teacherIdFilter) p.set("teacherId", String(teacherIdFilter));
-    p.set("limit", "50");
-    p.set("offset", "0");
+    if (sessionRangeFilter) p.set("range", sessionRangeFilter);
+    if (sessionTypeFilter) p.set("type", sessionTypeFilter);
+    if (sessionStatusFilter) p.set("status", sessionStatusFilter);
+    if (sessionNeedsTeacher) p.set("needsTeacher", "1");
+    if (sessionNeedsFeedback) p.set("needsFeedback", "1");
+    p.set(
+      "sort",
+      sessionRangeFilter === "upcoming" ? "start_asc" : "start_desc"
+    );
+    p.set("limit", String(sessionLimit));
+    p.set("offset", String(sessionOffset));
     return p.toString();
-  }, [qDebounced, from, to, teacherIdFilter]);
+  }, [
+    qDebounced,
+    from,
+    to,
+    teacherIdFilter,
+    sessionRangeFilter,
+    sessionTypeFilter,
+    sessionStatusFilter,
+    sessionNeedsTeacher,
+    sessionNeedsFeedback,
+    sessionLimit,
+    sessionOffset,
+  ]);
   const normalizeSessionsResponse = (data) => {
     if (Array.isArray(data)) return { items: data, total: data.length };
     return {
@@ -828,11 +870,18 @@ function Admin() {
     });
   };
   const toggleAllSessions = () => {
-    if (selectedSessionIds.size === sessions.length) {
-      setSelectedSessionIds(new Set());
-    } else {
-      setSelectedSessionIds(new Set(sessions.map((s) => s.id)));
-    }
+    const pageIds = sessions.map((s) => s.id);
+    setSelectedSessionIds((prev) => {
+      const next = new Set(prev);
+      const allPageSelected =
+        pageIds.length > 0 && pageIds.every((id) => next.has(id));
+      if (allPageSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
   };
   const clearAllSelections = () => {
     setSelectedUserIds(new Set());
@@ -1088,6 +1137,23 @@ function Admin() {
         setQ={setQ}
         teacherIdFilter={teacherIdFilter}
         setTeacherIdFilter={setTeacherIdFilter}
+        sessionRangeFilter={sessionRangeFilter}
+        setSessionRangeFilter={setSessionRangeFilter}
+        sessionTypeFilter={sessionTypeFilter}
+        setSessionTypeFilter={setSessionTypeFilter}
+        sessionStatusFilter={sessionStatusFilter}
+        setSessionStatusFilter={setSessionStatusFilter}
+        sessionNeedsTeacher={sessionNeedsTeacher}
+        setSessionNeedsTeacher={setSessionNeedsTeacher}
+        sessionNeedsFeedback={sessionNeedsFeedback}
+        setSessionNeedsFeedback={setSessionNeedsFeedback}
+        sessionLimit={sessionLimit}
+        setSessionLimit={setSessionLimit}
+        sessionOffset={sessionOffset}
+        setSessionOffset={setSessionOffset}
+        selectedSessionIds={selectedSessionIds}
+        toggleAllSessions={toggleAllSessions}
+        toggleSessionSelection={toggleSessionSelection}
         teachers={teachers}
         from={from}
         setFrom={setFrom}

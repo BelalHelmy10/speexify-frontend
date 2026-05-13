@@ -1,23 +1,15 @@
 // app/layout.js
 import "./globals.scss";
-import Script from "next/script";
 import "@/lib/sentry";
 import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../styles/calendar.scss";
 import { Inter, Outfit } from "next/font/google";
 
-import { Suspense } from "react";
-
-import { getServerUser } from "./server-auth";
 import Providers from "@/components/Providers";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import SupportWidget from "@/components/SupportWidget";
-import ScrollToTop from "@/components/ScrollToTop";
 import ClientProviders from "./ClientProviders";
 import LocaleShell from "./LocaleShell";
-import SmoothScroll from "@/components/SmoothScroll";
+import AppChrome from "@/components/AppChrome";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,9 +22,6 @@ const outfit = Outfit({
   variable: "--font-outfit",
   display: "swap",
 });
-
-// Force dynamic rendering so the first paint always reflects the live auth state
-export const dynamic = "force-dynamic";
 
 export const metadata = {
   metadataBase: new URL("https://speexify.com"),
@@ -115,18 +104,9 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  // Seed client auth from SSR using the real backend (with cookies)
-  const user = await getServerUser();
-
   return (
     <html lang="en">
       <head>
-        {/* Jitsi external API for embedded meetings */}
-        <Script
-          src="https://meet.speexify.com/external_api.js"
-          strategy="beforeInteractive"
-        />
-
         {/* Favicons */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -138,17 +118,10 @@ export default async function RootLayout({ children }) {
         <meta name="theme-color" content="#2563EB" />
       </head>
       <body className={`${inter.variable} ${outfit.variable}`}>
-        <SmoothScroll />
         <LocaleShell>
           <ClientProviders>
-            <Providers initialUser={user}>
-              <Header />
-              <Suspense fallback={null}>
-                <main>{children}</main>
-              </Suspense>
-              <Footer />
-              <SupportWidget />
-              <ScrollToTop />
+            <Providers>
+              <AppChrome>{children}</AppChrome>
             </Providers>
           </ClientProviders>
         </LocaleShell>

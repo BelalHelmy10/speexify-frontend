@@ -1,6 +1,7 @@
 // app/resources/units/[slug]/page.js
 import { sanityClient } from "@/lib/sanity";
 import Link from "next/link";
+import { requireResourceAccess } from "@/app/protected-access";
 
 export const dynamic = "force-dynamic";
 
@@ -85,7 +86,13 @@ function getPrimaryUrl(resource) {
 }
 
 export default async function UnitPage({ params }) {
-  const slug = params?.slug;
+  const resolvedParams = await params;
+  const slug = resolvedParams?.slug;
+  const { access } = await requireResourceAccess({
+    locale: "en",
+    nextPath: `/resources/units/${slug || ""}`,
+  });
+  const canUsePrep = access.canUsePrep !== false;
 
   const unit = await getUnit(slug);
 
@@ -282,20 +289,30 @@ export default async function UnitPage({ params }) {
 
                     <div className="unit-resource-card__actions">
                       {/* Open in Prep Room */}
-                      <Link
-                        href={{
-                          pathname: "/resources/prep",
-                          query: {
-                            resourceId: res._id,
-                            unitId: unit._id,
-                          },
-                        }}
-                        className="resources-button resources-button--primary"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        🧑‍🏫 Prep Room
-                      </Link>
+                      {canUsePrep ? (
+                        <Link
+                          href={{
+                            pathname: "/resources/prep",
+                            query: {
+                              resourceId: res._id,
+                              unitId: unit._id,
+                            },
+                          }}
+                          className="resources-button resources-button--primary"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Prep Room
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className="resources-button resources-button--disabled"
+                          disabled
+                        >
+                          Teacher-only prep
+                        </button>
+                      )}
 
                       {/* Open original file / URL */}
                       {url ? (

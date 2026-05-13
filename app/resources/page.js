@@ -2,6 +2,7 @@
 import { sanityClient } from "@/lib/sanity";
 import ResourcesPicker from "./ResourcesPicker";
 import { getDictionary, t } from "@/app/i18n";
+import { requireResourceAccess } from "@/app/protected-access";
 
 export const dynamic = "force-dynamic";
 
@@ -147,6 +148,10 @@ function summarizeResourceLibrary(tracks = []) {
 
 // locale comes from the wrapper (normal = "en", /ar = "ar")
 export default async function ResourcesPage({ locale = "en" }) {
+  const { access } = await requireResourceAccess({
+    locale,
+    nextPath: locale === "ar" ? "/ar/resources" : "/resources",
+  });
   const tracks = await getResourcesTree();
   const dict = getDictionary(locale, "resources");
   const stats = summarizeResourceLibrary(tracks);
@@ -201,7 +206,7 @@ export default async function ResourcesPage({ locale = "en" }) {
             {t(dict, "resources_empty_tracks")}
           </p>
         ) : (
-          <ResourcesPicker tracks={tracks} locale={locale} />
+          <ResourcesPicker tracks={tracks} locale={locale} access={access} />
         )}
       </div>
     </div>

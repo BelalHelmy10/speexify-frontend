@@ -214,19 +214,14 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Use the display amount (backend will handle conversion to EGP if needed)
-      const amountCents = Math.round(regionalPrice.displayAmount * 100);
-      const currency = regionalPrice.displayCurrency;
-
       const nameParts = (user.name || "User").split(" ");
       const firstName = nameParts[0] || "User";
       const lastName = nameParts.slice(1).join(" ") || "";
 
       const body = {
-        amountCents,
         orderId: `order_${Date.now()}_${pkg.id}_user${user.id}`,
         packageId: Number(pkg.id),
-        currency,
+        countryCode,
         discountCode: discountCode || null,
         customer: {
           firstName,

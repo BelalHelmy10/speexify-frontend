@@ -1,6 +1,7 @@
 // app/classroom/[sessionId]/page.js
 import { sanityClient } from "@/lib/sanity";
 import ClassroomPageClient from "./ClassroomPageClient";
+import { requireClassroomPageAccess } from "@/app/protected-access";
 
 export const dynamic = "force-dynamic";
 
@@ -114,7 +115,37 @@ export default async function ClassroomPage({ params }) {
     );
   }
 
+  const session = await requireClassroomPageAccess({
+    sessionId: String(sessionId),
+    locale: "en",
+    nextPath: `/classroom/${sessionId}`,
+  });
+
+  if (!session) {
+    return (
+      <div className="cr-error-screen">
+        <div className="cr-error-screen__content">
+          <span className="cr-error-screen__icon">⚠️</span>
+          <h1 className="cr-error-screen__title">Session not found</h1>
+          <p className="cr-error-screen__text">
+            We could not find this classroom session. Please go back to the
+            dashboard and open it again.
+          </p>
+          <a href="/dashboard" className="cr-error-screen__btn">
+            ← Back to dashboard
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   const tracks = await getResourcesTree();
 
-  return <ClassroomPageClient sessionId={String(sessionId)} tracks={tracks} />;
+  return (
+    <ClassroomPageClient
+      sessionId={String(sessionId)}
+      tracks={tracks}
+      initialSession={session}
+    />
+  );
 }

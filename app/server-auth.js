@@ -16,32 +16,57 @@ if (!BASE && process.env.NODE_ENV !== "development") {
   );
 }
 
-function userPath(path) {
+export function backendApiPath(path) {
   const p = path.startsWith("/") ? path.slice(1) : path;
   if (BASE) return `${BASE}/api/${p}`;
   return `/api/${p}`;
 }
 
+export async function getServerCookieHeader() {
+  const cookieStore = await cookies();
+  return cookieStore
+    .getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join("; ");
+}
+
+export async function fetchServerApi(path, options = {}) {
+  const cookieHeader = await getServerCookieHeader();
+
+  return fetch(backendApiPath(path), {
+    ...options,
+    headers: {
+      cookie: cookieHeader,
+      "cache-control": "no-store, no-cache, must-revalidate",
+      pragma: "no-cache",
+      ...(options.headers || {}),
+    },
+    cache: "no-store",
+    next: { revalidate: 0 },
+  });
+}
+
+export async function getServerApiJson(path, options = {}) {
+  const res = await fetchServerApi(path, options);
+  let data = null;
+
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    data,
+  };
+}
+
 export async function getServerUser() {
   try {
-    // ✅ await cookies()
-    const cookieStore = await cookies();
-
-    // ✅ build a cookie header string explicitly
-    const cookieHeader = cookieStore
-      .getAll()
-      .map(({ name, value }) => `${name}=${value}`)
-      .join("; ");
-
-    const res = await fetch(userPath("auth/me"), {
+    const res = await fetchServerApi("auth/me", {
       method: "GET",
-      headers: {
-        cookie: cookieHeader,
-        "cache-control": "no-store, no-cache, must-revalidate",
-        pragma: "no-cache",
-      },
-      cache: "no-store",
-      next: { revalidate: 0 },
     });
 
     if (!res.ok) {
