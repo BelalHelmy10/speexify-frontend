@@ -252,6 +252,7 @@ export default function PrepShell({
   // ✅ PDF scroll/page sync refs (teacher -> learners)
   const pdfScrollRef = useRef(null); // scroll container (mainRef inside PdfViewerWithSidebar)
   const pdfNavApiRef = useRef(null); // nav API from PdfViewerWithSidebar (setPage, etc.)
+  const layoutResizeTimeoutRef = useRef(null);
   const lastScrollSentAtRef = useRef(0); // throttle
   const rafPendingRef = useRef(false); // throttle (rAF)
 
@@ -1357,6 +1358,36 @@ export default function PrepShell({
       return () => window.removeEventListener("resize", resizeCanvas);
     }
   }, [hasScreenShare, isPdf, pdfCurrentPage]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(() => {
+      if (layoutResizeTimeoutRef.current) {
+        clearTimeout(layoutResizeTimeoutRef.current);
+      }
+
+      layoutResizeTimeoutRef.current = setTimeout(() => {
+        layoutResizeTimeoutRef.current = null;
+        window.dispatchEvent(new Event("resize"));
+
+        if (isPdf) {
+          pdfNavApiRef.current?.fitToPage?.();
+        }
+      }, 80);
+    });
+
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+      if (layoutResizeTimeoutRef.current) {
+        clearTimeout(layoutResizeTimeoutRef.current);
+        layoutResizeTimeoutRef.current = null;
+      }
+    };
+  }, [isPdf, resource._id]);
 
   // ─────────────────────────────────────────────────────────────
   // Persistence + broadcasting

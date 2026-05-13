@@ -24,6 +24,91 @@ const canJoin = (startAt, endAt, windowMins = 15) => {
   return now >= early && now <= end;
 };
 
+function DashboardNextActionIcon({ tone }) {
+  if (tone === "live") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polygon points="8 5 19 12 8 19 8 5" />
+      </svg>
+    );
+  }
+
+  if (tone === "setup") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M9 11l3 3L22 4" />
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+      </svg>
+    );
+  }
+
+  if (tone === "feedback") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+      </svg>
+    );
+  }
+
+  if (tone === "progress") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M3 3v18h18" />
+        <path d="M7 15l4-4 4 3 5-7" />
+      </svg>
+    );
+  }
+
+  if (tone === "schedule") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4" />
+        <path d="M8 2v4" />
+        <path d="M3 10h18" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 2l3 7 7 .5-5.4 4.6 1.7 6.9L12 17.3 5.7 21l1.7-6.9L2 9.5 9 9z" />
+    </svg>
+  );
+}
+
+function DashboardNextAction({ action }) {
+  if (!action) return null;
+
+  return (
+    <section className={`dashboard-next-action dashboard-next-action--${action.tone}`}>
+      <div className="dashboard-next-action__icon" aria-hidden="true">
+        <DashboardNextActionIcon tone={action.tone} />
+      </div>
+
+      <div className="dashboard-next-action__content">
+        <div className="dashboard-next-action__topline">
+          <span>{action.kicker}</span>
+          {action.meta ? <strong>{action.meta}</strong> : null}
+        </div>
+        <h3>{action.title}</h3>
+        <p>{action.body}</p>
+      </div>
+
+      <div className="dashboard-next-action__actions">
+        <Link href={action.primary.href} className="btn btn--primary">
+          {action.primary.label}
+        </Link>
+        {action.secondary?.map((item) => (
+          <Link key={`${item.href}-${item.label}`} href={item.href} className="btn btn--ghost">
+            {item.label}
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function DashboardInner({ dict, prefix }) {
   const { toast, confirmModal } = useToast();
   const router = useRouter();
@@ -369,6 +454,282 @@ function DashboardInner({ dict, prefix }) {
     isLearner || (isImpersonating && user?.role === "learner");
   const showTeacherContent =
     isTeacher || (isImpersonating && user?.role === "teacher");
+  const nextLearnerSession =
+    visibleNext ||
+    upcoming.find((s) => String(s.status || "").toLowerCase() !== "canceled");
+  const nextLearnerJoinable =
+    nextLearnerSession &&
+    canJoin(nextLearnerSession.startAt, nextLearnerSession.endAt);
+  const latestFeedbackSession = past.find((s) => s.teacherFeedback);
+  const teacherNeedsFeedbackSession = past.find(
+    (s) =>
+      String(s.status || "").toLowerCase() === "completed" &&
+      !s.teacherFeedback
+  );
+  const actionSessionTitle = (session) =>
+    session?.title || t(dict, "session_title_default");
+  const actionSessionTime = (session) =>
+    session?.startAt ? fmtInTz(session.startAt, timezone) : "";
+
+  const nextAction = (() => {
+    if (showTeacherContent) {
+      const teachingSession = teachSummary.nextTeach;
+
+      if (teachingSession && joinableTeach) {
+        return {
+          tone: "live",
+          kicker: t(dict, "next_action_label"),
+          meta: t(dict, "next_action_meta_live"),
+          title: t(dict, "next_action_teach_join_title"),
+          body: t(dict, "next_action_teach_join_body", {
+            title: actionSessionTitle(teachingSession),
+          }),
+          primary: {
+            href: `/classroom/${teachingSession.id}`,
+            label: t(dict, "next_action_cta_join"),
+          },
+          secondary: [
+            {
+              href: `${prefix}/calendar`,
+              label: t(dict, "next_action_secondary_calendar"),
+            },
+          ],
+        };
+      }
+
+      if (teacherNeedsFeedbackSession) {
+        return {
+          tone: "feedback",
+          kicker: t(dict, "next_action_label"),
+          meta: t(dict, "next_action_meta_feedback"),
+          title: t(dict, "next_action_teacher_feedback_title"),
+          body: t(dict, "next_action_teacher_feedback_body", {
+            title: actionSessionTitle(teacherNeedsFeedbackSession),
+          }),
+          primary: {
+            href: `${prefix}/dashboard/sessions/${teacherNeedsFeedbackSession.id}/feedback`,
+            label: t(dict, "next_action_cta_give_feedback"),
+          },
+          secondary: [
+            {
+              href: `${prefix}/dashboard/sessions/${teacherNeedsFeedbackSession.id}`,
+              label: t(dict, "session_view_details"),
+            },
+          ],
+        };
+      }
+
+      if (teachingSession) {
+        return {
+          tone: "schedule",
+          kicker: t(dict, "next_action_label"),
+          meta: t(dict, "next_action_meta_next"),
+          title: t(dict, "next_action_teach_prepare_title"),
+          body: t(dict, "next_action_teach_prepare_body", {
+            title: actionSessionTitle(teachingSession),
+            time: actionSessionTime(teachingSession),
+          }),
+          primary: {
+            href: `${prefix}/resources`,
+            label: t(dict, "next_action_cta_prepare"),
+          },
+          secondary: [
+            {
+              href: `${prefix}/calendar`,
+              label: t(dict, "next_action_secondary_calendar"),
+            },
+          ],
+        };
+      }
+
+      return {
+        tone: "schedule",
+        kicker: t(dict, "next_action_label"),
+        meta: t(dict, "next_action_meta_schedule"),
+        title: t(dict, "next_action_teacher_empty_title"),
+        body: t(dict, "next_action_teacher_empty_body"),
+        primary: {
+          href: `${prefix}/calendar`,
+          label: t(dict, "next_action_cta_calendar"),
+        },
+        secondary: [
+          {
+            href: `${prefix}/resources`,
+            label: t(dict, "next_action_secondary_resources"),
+          },
+        ],
+      };
+    }
+
+    if (showLearnerContent) {
+      if (nextLearnerSession && nextLearnerJoinable) {
+        return {
+          tone: "live",
+          kicker: t(dict, "next_action_label"),
+          meta: t(dict, "next_action_meta_live"),
+          title: t(dict, "next_action_join_title"),
+          body: t(dict, "next_action_join_body", {
+            title: actionSessionTitle(nextLearnerSession),
+          }),
+          primary: {
+            href: `/classroom/${nextLearnerSession.id}`,
+            label: t(dict, "next_action_cta_join"),
+          },
+          secondary: [
+            {
+              href: `${prefix}/dashboard/sessions/${nextLearnerSession.id}`,
+              label: t(dict, "session_view_details"),
+            },
+          ],
+        };
+      }
+
+      if (!onbComplete) {
+        return {
+          tone: "setup",
+          kicker: t(dict, "next_action_label"),
+          meta: t(dict, "next_action_meta_setup"),
+          title: t(dict, "next_action_onboarding_title"),
+          body: t(dict, "next_action_onboarding_body"),
+          primary: {
+            href: `${prefix}/onboarding`,
+            label: t(dict, "next_action_cta_onboarding"),
+          },
+          secondary: [
+            {
+              href: `${prefix}/dashboard/progress`,
+              label: t(dict, "next_action_secondary_progress"),
+            },
+          ],
+        };
+      }
+
+      if (!assComplete) {
+        return {
+          tone: "setup",
+          kicker: t(dict, "next_action_label"),
+          meta: t(dict, "next_action_meta_setup"),
+          title: t(dict, "next_action_assessment_title"),
+          body: t(dict, "next_action_assessment_body"),
+          primary: {
+            href: `${prefix}/assessment`,
+            label: t(dict, "next_action_cta_assessment"),
+          },
+          secondary: [
+            {
+              href: `${prefix}/dashboard/progress`,
+              label: t(dict, "next_action_secondary_progress"),
+            },
+          ],
+        };
+      }
+
+      if (nextLearnerSession) {
+        return {
+          tone: "schedule",
+          kicker: t(dict, "next_action_label"),
+          meta: t(dict, "next_action_meta_next"),
+          title: t(dict, "next_action_prepare_title"),
+          body: t(dict, "next_action_prepare_body", {
+            title: actionSessionTitle(nextLearnerSession),
+            time: actionSessionTime(nextLearnerSession),
+          }),
+          primary: {
+            href: `${prefix}/resources`,
+            label: t(dict, "next_action_cta_prepare"),
+          },
+          secondary: [
+            {
+              href: `${prefix}/dashboard/sessions/${nextLearnerSession.id}`,
+              label: t(dict, "session_view_details"),
+            },
+          ],
+        };
+      }
+
+      if (latestFeedbackSession) {
+        return {
+          tone: "feedback",
+          kicker: t(dict, "next_action_label"),
+          meta: t(dict, "next_action_meta_feedback"),
+          title: t(dict, "next_action_feedback_title"),
+          body: t(dict, "next_action_feedback_body", {
+            title: actionSessionTitle(latestFeedbackSession),
+          }),
+          primary: {
+            href: `${prefix}/dashboard/sessions/${latestFeedbackSession.id}`,
+            label: t(dict, "next_action_cta_feedback"),
+          },
+          secondary: [
+            {
+              href: `${prefix}/dashboard/progress`,
+              label: t(dict, "next_action_secondary_progress"),
+            },
+          ],
+        };
+      }
+
+      if (outOfCredits) {
+        return {
+          tone: "progress",
+          kicker: t(dict, "next_action_label"),
+          meta: t(dict, "next_action_meta_progress"),
+          title: t(dict, "next_action_package_title"),
+          body: t(dict, "next_action_package_body"),
+          primary: {
+            href: `${prefix}/packages`,
+            label: t(dict, "warning_browse_packages"),
+          },
+          secondary: [
+            {
+              href: `${prefix}/dashboard/progress`,
+              label: t(dict, "next_action_secondary_progress"),
+            },
+          ],
+        };
+      }
+
+      return {
+        tone: "progress",
+        kicker: t(dict, "next_action_label"),
+        meta: t(dict, "next_action_meta_progress"),
+        title: t(dict, "next_action_progress_title"),
+        body: t(dict, "next_action_progress_body"),
+        primary: {
+          href: `${prefix}/dashboard/progress`,
+          label: t(dict, "next_action_cta_progress"),
+        },
+        secondary: [
+          {
+            href: `${prefix}/calendar`,
+            label: t(dict, "next_action_secondary_calendar"),
+          },
+          {
+            href: `${prefix}/resources`,
+            label: t(dict, "next_action_secondary_resources"),
+          },
+        ],
+      };
+    }
+
+    return {
+      tone: "schedule",
+      kicker: t(dict, "next_action_label"),
+      meta: t(dict, "next_action_meta_admin"),
+      title: t(dict, "next_action_admin_title"),
+      body: t(dict, "next_action_admin_body"),
+      primary: {
+        href: "/admin",
+        label: t(dict, "next_action_cta_admin"),
+      },
+      secondary: [
+        {
+          href: `${prefix}/calendar`,
+          label: t(dict, "next_action_secondary_calendar"),
+        },
+      ],
+    };
+  })();
 
   return (
     <>
@@ -413,6 +774,8 @@ function DashboardInner({ dict, prefix }) {
             )}
           </div>
         </div>
+
+        <DashboardNextAction action={nextAction} />
 
         <div className="grid-3">
           <DashboardKpiCard
@@ -926,9 +1289,21 @@ function DashboardInner({ dict, prefix }) {
                 <div className="panel__footer">
                   <Link
                     href={`${prefix}/calendar`}
-                    className="btn btn--secondary btn--full"
+                    className="btn btn--secondary btn--full dashboard-past__view-all"
                   >
-                    View all {past.length} past sessions →
+                    <span>View all {past.length} past sessions</span>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="m12 5 7 7-7 7" />
+                    </svg>
                   </Link>
                 </div>
               )}

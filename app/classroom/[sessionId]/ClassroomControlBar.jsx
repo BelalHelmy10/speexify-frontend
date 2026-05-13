@@ -8,6 +8,7 @@ export default function ClassroomControlBar({
   isTeacher,
   setIsPickerOpen,
   isPageRecording,
+  pageRecWarning,
   stopPageRecording,
   startPageRecording,
   isGroup,
@@ -57,6 +58,12 @@ export default function ClassroomControlBar({
               {isPageRecording ? "Stop recording" : "Record class"}
             </span>
           </button>
+        )}
+
+        {isTeacher && pageRecWarning && (
+          <span className="cr-controls__recording-warning" title={pageRecWarning}>
+            Audio latency
+          </span>
         )}
 
         {isGroup && (

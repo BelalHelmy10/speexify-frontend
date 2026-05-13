@@ -374,7 +374,8 @@ body.classroom-active {
     cursor: col-resize;
     user-select: none;
 
-    * {
+    .cr-panel iframe,
+    .cr-panel video {
       pointer-events: none;
     }
 
@@ -410,6 +411,9 @@ body.classroom-active {
     background: $cr-bg-secondary;
     border-right: 1px solid $cr-border-subtle;
     overflow-y: auto;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    will-change: width;
 
     @media (max-width: 900px) {
       max-height: 50vh;
@@ -595,6 +599,73 @@ body.classroom-active {
 
     &:hover {
       background: $cr-accent-primary-lighter;
+    }
+  }
+
+  &__mic-status {
+    position: absolute;
+    left: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 12;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 30px;
+    padding: 0.35rem 0.55rem;
+    border: 1px solid rgba($cr-accent-success, 0.32);
+    border-radius: $cr-radius-full;
+    background: rgba($cr-bg-primary, 0.74);
+    color: $cr-accent-success;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+  }
+
+  &__mic-bars {
+    display: inline-flex;
+    align-items: end;
+    gap: 2px;
+    height: 13px;
+
+    span {
+      display: block;
+      width: 3px;
+      height: 5px;
+      border-radius: $cr-radius-full;
+      background: rgba($cr-text-muted, 0.48);
+      transition: height 80ms linear, background $cr-transition-fast;
+
+      &:nth-child(2) {
+        height: 7px;
+      }
+
+      &:nth-child(3) {
+        height: 10px;
+      }
+
+      &:nth-child(4) {
+        height: 13px;
+      }
+
+      &.is-active {
+        background: $cr-accent-success;
+      }
+    }
+  }
+
+  &__mic-label {
+    line-height: 1;
+  }
+
+  &__mic-status--muted,
+  &__mic-status--unavailable {
+    border-color: rgba($cr-text-muted, 0.32);
+    color: $cr-text-muted;
+
+    .cr-video__mic-bars span {
+      background: rgba($cr-text-muted, 0.28);
     }
   }
 }
@@ -1632,6 +1703,20 @@ body.classroom-active {
         border-color: $cr-border-strong;
       }
     }
+  }
+
+  &__recording-warning {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid rgba($cr-accent-teacher, 0.32);
+    border-radius: $cr-radius-full;
+    background: rgba($cr-accent-teacher, 0.1);
+    color: $cr-accent-teacher;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    white-space: nowrap;
   }
 
   &__reset {

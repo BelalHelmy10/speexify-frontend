@@ -962,6 +962,7 @@ export default function ClassroomShell({
 ----------------------------------------------------------- */
   const [isPageRecording, setIsPageRecording] = useState(false);
   const [pageRecError, setPageRecError] = useState(null);
+  const [pageRecWarning, setPageRecWarning] = useState(null);
 
   const pageRecorderRef = useRef(null);
   const pageStreamRef = useRef(null);
@@ -982,6 +983,7 @@ export default function ClassroomShell({
   async function startPageRecording() {
     try {
       setPageRecError(null);
+      setPageRecWarning(null);
 
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: 30 },
@@ -999,6 +1001,13 @@ export default function ClassroomShell({
 
       // ✅ SOLUTION: Use Web Audio API to properly mix audio sources
       const audioContext = new AudioContext();
+      const baseLatency = Number(audioContext.baseLatency || 0);
+      if (baseLatency > 0.03) {
+        setPageRecWarning(
+          `Recording audio latency is elevated (${Math.round(baseLatency * 1000)}ms).`
+        );
+      }
+
       const destination = audioContext.createMediaStreamDestination();
 
       // Add display audio if available
@@ -1058,6 +1067,7 @@ export default function ClassroomShell({
     } catch (err) {
       console.error("Page recording failed:", err);
       setPageRecError("Failed to start recording");
+      setPageRecWarning(null);
     }
   }
 
@@ -1077,6 +1087,7 @@ export default function ClassroomShell({
       }
     } finally {
       setIsPageRecording(false);
+      setPageRecWarning(null);
       pageRecorderRef.current = null;
       pageStreamRef.current = null;
     }
@@ -1265,6 +1276,7 @@ export default function ClassroomShell({
         isTeacher={isTeacher}
         setIsPickerOpen={setIsPickerOpen}
         isPageRecording={isPageRecording}
+        pageRecWarning={pageRecWarning}
         stopPageRecording={stopPageRecording}
         startPageRecording={startPageRecording}
         isGroup={isGroup}

@@ -39,6 +39,8 @@ export default function PrepVideoCall({
   const [selectedVideoInputId, setSelectedVideoInputId] = useState("");
   const [selectedAudioOutputId, setSelectedAudioOutputId] = useState("");
   const [micLevel, setMicLevel] = useState(0);
+  const [sessionAudioMuted, setSessionAudioMuted] = useState(true);
+  const [micMonitorUnavailable, setMicMonitorUnavailable] = useState(false);
   const [networkStatus, setNetworkStatus] = useState({
     state: "checking",
     label: "Checking network",
@@ -173,6 +175,23 @@ export default function PrepVideoCall({
 
     return { audio, video };
   }, [joinVideoMuted, selectedAudioInputId, selectedVideoInputId]);
+
+  const buildAudioMonitorConstraints = useCallback(() => {
+    const audio = selectedAudioInputId
+      ? {
+          deviceId: { exact: selectedAudioInputId },
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      : {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        };
+
+    return { audio, video: false };
+  }, [selectedAudioInputId]);
 
   const runNetworkCheck = useCallback(async () => {
     if (typeof window === "undefined") return;
@@ -370,6 +389,56 @@ export default function PrepVideoCall({
     };
   }, [stopPreviewStream, stopSpeakerTest]);
 
+  useEffect(() => {
+    if (!hasJoined || sessionAudioMuted) {
+      stopPreviewStream();
+      setMicMonitorUnavailable(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function startSessionMicMonitor() {
+      if (typeof navigator === "undefined" || !navigator.mediaDevices) {
+        setMicMonitorUnavailable(true);
+        setMicLevel(0);
+        return;
+      }
+
+      try {
+        setMicMonitorUnavailable(false);
+        const stream = await navigator.mediaDevices.getUserMedia(
+          buildAudioMonitorConstraints()
+        );
+
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        stopPreviewStream();
+        previewStreamRef.current = stream;
+        startMicMeter(stream);
+      } catch {
+        setMicMonitorUnavailable(true);
+        setMicLevel(0);
+      }
+    }
+
+    startSessionMicMonitor();
+
+    return () => {
+      cancelled = true;
+      stopPreviewStream();
+    };
+  }, [
+    buildAudioMonitorConstraints,
+    hasJoined,
+    sessionAudioMuted,
+    startMicMeter,
+    stopPreviewStream,
+  ]);
+
   // keep callback stable
   const screenShareCbRef = useRef(onScreenShareStreamChange);
   useEffect(() => {
@@ -495,12 +564,23 @@ export default function PrepVideoCall({
 
         const api = new JitsiAPI(JITSI_DOMAIN, options);
         apiRef.current = api;
+        setSessionAudioMuted(Boolean(joinAudioMuted));
 
         setIsLoading(false);
         setError(null);
 
         api.addListener("videoConferenceJoined", () => {
           setError(null);
+          const audioMutedPromise = api.isAudioMuted?.();
+          if (typeof audioMutedPromise?.then === "function") {
+            audioMutedPromise
+              .then((muted) => setSessionAudioMuted(Boolean(muted)))
+              .catch(() => { });
+          }
+        });
+
+        api.addListener("audioMuteStatusChanged", (status) => {
+          setSessionAudioMuted(Boolean(status?.muted));
         });
 
         api.addListener("errorOccurred", (e) => {
@@ -765,6 +845,45 @@ export default function PrepVideoCall({
           transition: "opacity 0.3s ease",
         }}
       />
+
+      <div
+        className={
+          "cr-video__mic-status" +
+          (sessionAudioMuted ? " cr-video__mic-status--muted" : "") +
+          (micMonitorUnavailable ? " cr-video__mic-status--unavailable" : "")
+        }
+        title={
+          sessionAudioMuted
+            ? "Microphone is muted"
+            : micMonitorUnavailable
+              ? "Microphone level monitor unavailable"
+              : "Live microphone level"
+        }
+        aria-label={
+          sessionAudioMuted
+            ? "Microphone muted"
+            : micMonitorUnavailable
+              ? "Microphone level unavailable"
+              : "Live microphone level"
+        }
+      >
+        {sessionAudioMuted ? <MicOff size={14} /> : <Mic size={14} />}
+        <span className="cr-video__mic-bars" aria-hidden="true">
+          {[0.18, 0.38, 0.62, 0.84].map((threshold) => (
+            <span
+              key={threshold}
+              className={micLevel >= threshold ? "is-active" : ""}
+            />
+          ))}
+        </span>
+        <span className="cr-video__mic-label">
+          {sessionAudioMuted
+            ? "Muted"
+            : micMonitorUnavailable
+              ? "No meter"
+              : "Mic"}
+        </span>
+      </div>
     </div>
   );
 }

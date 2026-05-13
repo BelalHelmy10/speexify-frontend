@@ -55,6 +55,35 @@ const useCountdown = (startAt, endAt, labels = {}) => {
   return ended;
 };
 
+const getSessionTone = (status, isUpcoming) => {
+  const value = String(status || "").trim().toLowerCase();
+
+  if (["completed", "complete", "done", "attended"].includes(value)) {
+    return "completed";
+  }
+
+  if (
+    [
+      "canceled",
+      "cancelled",
+      "cancelled_by_admin",
+      "cancelled_by_teacher",
+      "no_show",
+    ].includes(value)
+  ) {
+    return "canceled";
+  }
+
+  if (
+    isUpcoming ||
+    ["scheduled", "confirmed", "upcoming", "booked", "pending"].includes(value)
+  ) {
+    return "scheduled";
+  }
+
+  return "neutral";
+};
+
 export default function SessionRow({
   s,
   timezone,
@@ -80,6 +109,9 @@ export default function SessionRow({
     typeof s.participantCount === "number" ? s.participantCount : null;
 
   const canReschedule = isTeacher || isAdmin || isImpersonating;
+  const normalizedStatus = String(s.status || "").trim().toLowerCase();
+  const sessionTone = getSessionTone(normalizedStatus, isUpcoming);
+  const badgeTone = sessionTone === "neutral" ? normalizedStatus : sessionTone;
 
   const cancelLabel =
     isGroup && !isTeacher && !isAdmin && !isImpersonating
@@ -92,7 +124,7 @@ export default function SessionRow({
       : t(dict, "session_cancel_title") || "Cancel session";
 
   return (
-    <div className="session-item">
+    <div className={`session-item session-item--${sessionTone}`}>
       <div className="session-item__indicator"></div>
       <div className="session-item__content">
         <div className="session-item__main">
@@ -133,8 +165,8 @@ export default function SessionRow({
               </span>
             )}
 
-            {s.status && (
-              <span className={`badge badge--${s.status}`}>{s.status}</span>
+            {normalizedStatus && (
+              <span className={`badge badge--${badgeTone}`}>{s.status}</span>
             )}
           </div>
         </div>

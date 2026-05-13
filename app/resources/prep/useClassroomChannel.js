@@ -8,6 +8,8 @@ const MAX_RECONNECT_ATTEMPTS = 10;
 const MAX_RECONNECT_DELAY_MS = 30000;
 const WS_TOKEN_REFRESH_SKEW_MS = 30000;
 const WS_CONNECT_TIMEOUT_MS = 7000;
+const WS_HEARTBEAT_INTERVAL_MS = 15000;
+const WS_SEND_BATCH_DELAY_MS = 16;
 const WS_CONFIG_ENDPOINTS = ["/ws-config", "/api/ws-config"];
 const CLASSROOM_WS_DEBUG =
   process.env.NODE_ENV !== "production" &&
@@ -103,6 +105,8 @@ export function useClassroomChannel(roomId) {
   const retryAttemptRef = useRef(0);
   const reconnectTimeoutRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
+  const sendBufferRef = useRef([]);
+  const sendFlushTimeoutRef = useRef(null);
   const closingRef = useRef(false);
   const currentUrlIndexRef = useRef(0);
   const wsEndpointStateRef = useRef({
@@ -150,7 +154,7 @@ export function useClassroomChannel(roomId) {
       } catch (err) {
         console.warn("Classroom WS ping failed", err);
       }
-    }, 25000);
+    }, WS_HEARTBEAT_INTERVAL_MS);
   }, [stopHeartbeat]);
 
   const getConfiguredWsUrl = useCallback(async () => {
@@ -414,12 +418,19 @@ export function useClassroomChannel(roomId) {
             msg.signalType === "classroom-event" &&
             msg.data
           ) {
-            handlersRef.current.forEach((fn) => {
-              try {
-                fn(msg.data);
-              } catch (err) {
-                console.warn("Classroom handler error", err);
-              }
+            const events =
+              msg.data?.type === "BATCH" && Array.isArray(msg.data.events)
+                ? msg.data.events
+                : [msg.data];
+
+            events.forEach((eventPayload) => {
+              handlersRef.current.forEach((fn) => {
+                try {
+                  fn(eventPayload);
+                } catch (err) {
+                  console.warn("Classroom handler error", err);
+                }
+              });
             });
           }
         };
@@ -507,6 +518,11 @@ export function useClassroomChannel(roomId) {
 
       clearReconnectTimeout();
       stopHeartbeat();
+      if (sendFlushTimeoutRef.current) {
+        clearTimeout(sendFlushTimeoutRef.current);
+        sendFlushTimeoutRef.current = null;
+      }
+      sendBufferRef.current = [];
 
       const ws = wsRef.current;
       if (ws) {
@@ -533,7 +549,7 @@ export function useClassroomChannel(roomId) {
     };
   }, [roomId, connect, clearReconnectTimeout, stopHeartbeat]);
 
-  const send = useCallback((payload) => {
+  const sendRaw = useCallback((payload) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       return;
@@ -551,6 +567,38 @@ export function useClassroomChannel(roomId) {
       console.warn("Failed to send classroom payload", err);
     }
   }, []);
+
+  const flushSendBuffer = useCallback(() => {
+    sendFlushTimeoutRef.current = null;
+
+    const events = sendBufferRef.current;
+    sendBufferRef.current = [];
+    if (!events.length) return;
+
+    sendRaw(
+      events.length === 1
+        ? events[0]
+        : {
+            type: "BATCH",
+            events,
+          }
+    );
+  }, [sendRaw]);
+
+  const send = useCallback((payload) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    sendBufferRef.current.push(payload);
+    if (sendFlushTimeoutRef.current) return;
+
+    sendFlushTimeoutRef.current = setTimeout(
+      flushSendBuffer,
+      WS_SEND_BATCH_DELAY_MS
+    );
+  }, [flushSendBuffer]);
 
   const subscribe = useCallback((handler) => {
     if (typeof handler !== "function") return () => {};
