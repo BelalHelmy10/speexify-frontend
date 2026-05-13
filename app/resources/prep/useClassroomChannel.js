@@ -9,6 +9,27 @@ const MAX_RECONNECT_DELAY_MS = 30000;
 const WS_TOKEN_REFRESH_SKEW_MS = 30000;
 const WS_CONNECT_TIMEOUT_MS = 7000;
 const WS_CONFIG_ENDPOINTS = ["/ws-config", "/api/ws-config"];
+const CLASSROOM_WS_DEBUG =
+  process.env.NODE_ENV !== "production" &&
+  process.env.NEXT_PUBLIC_CLASSROOM_WS_DEBUG === "1";
+
+function debugClassroomWs(...args) {
+  if (CLASSROOM_WS_DEBUG) {
+    console.debug("[Classroom WS]", ...args);
+  }
+}
+
+function sanitizeWsUrlForLog(value) {
+  if (!value) return value;
+
+  try {
+    const url = new URL(value);
+    url.searchParams.delete("token");
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
 
 function resolveWsCandidates(configuredWsUrl = "") {
   const directBackend = process.env.NEXT_PUBLIC_DIRECT_BACKEND === "1";
@@ -284,16 +305,19 @@ export function useClassroomChannel(roomId) {
       setReady(false);
 
       const establishConnection = async () => {
-        console.log("[Classroom WS] Starting connection for room:", roomId);
-        
+        debugClassroomWs("Starting connection", { roomId });
+
         const configuredWsUrl = await getConfiguredWsUrl();
-        console.log("[Classroom WS] Configured URL from ws-config:", configuredWsUrl || "(none)");
-        
+        debugClassroomWs(
+          "Configured URL from ws-config",
+          sanitizeWsUrlForLog(configuredWsUrl) || "(none)"
+        );
+
         if (closingRef.current) return;
 
         const urls = resolveWsCandidates(configuredWsUrl);
-        console.log("[Classroom WS] URL candidates:", urls);
-        
+        debugClassroomWs("URL candidates", urls.map(sanitizeWsUrlForLog));
+
         if (!urls.length) {
           console.error("[Classroom WS] No WebSocket URLs available!");
           setStatus("error");
@@ -306,18 +330,21 @@ export function useClassroomChannel(roomId) {
           urls.length - 1
         );
         const wsUrl = urls[normalizedIndex];
-        console.log("[Classroom WS] Trying URL:", wsUrl, "(index:", normalizedIndex, ")");
+        debugClassroomWs("Trying URL", {
+          url: sanitizeWsUrlForLog(wsUrl),
+          index: normalizedIndex,
+        });
 
         const wsToken = await getWsAuthToken();
-        console.log("[Classroom WS] Auth token:", wsToken ? `obtained (${wsToken.substring(0, 20)}...)` : "MISSING!");
-        
+        debugClassroomWs("Auth token status", wsToken ? "available" : "missing");
+
         if (closingRef.current) return;
 
         const ws = createWebSocket(wsUrl, wsToken);
         wsRef.current = ws;
-        console.log("[Classroom WS] WebSocket created, waiting for connection...");
+        debugClassroomWs("WebSocket created, waiting for connection");
 
-        if (typeof window !== "undefined") {
+        if (CLASSROOM_WS_DEBUG && typeof window !== "undefined") {
           window.__ws_classroom = ws;
         }
 
@@ -346,7 +373,7 @@ export function useClassroomChannel(roomId) {
         }, WS_CONNECT_TIMEOUT_MS);
 
         ws.onopen = () => {
-          console.log("[Classroom WS] ✅ Connection opened successfully!");
+          debugClassroomWs("Connection opened successfully");
           if (closingRef.current) return;
           clearConnectTimeout();
 
@@ -356,7 +383,7 @@ export function useClassroomChannel(roomId) {
           setReady(true);
           setStatus("ready");
 
-          console.log("[Classroom WS] Joining room:", roomId);
+          debugClassroomWs("Joining room", { roomId });
           ws.send(
             JSON.stringify({
               type: "join",
@@ -398,7 +425,7 @@ export function useClassroomChannel(roomId) {
         };
 
         ws.onerror = (err) => {
-          console.error("[Classroom WS] ❌ Connection error!", err);
+          console.error("[Classroom WS] Connection error", err);
           if (closingRef.current) return;
           clearConnectTimeout();
           setReady(false);
@@ -407,13 +434,16 @@ export function useClassroomChannel(roomId) {
         };
 
         ws.onclose = (e) => {
-          console.warn("[Classroom WS] Connection closed. Code:", e?.code, "Reason:", e?.reason || "(none)");
+          debugClassroomWs("Connection closed", {
+            code: e?.code,
+            reason: e?.reason || "(none)",
+          });
           clearConnectTimeout();
           stopHeartbeat();
           setReady(false);
 
           if (closingRef.current) {
-            console.log("[Classroom WS] Closed intentionally.");
+            debugClassroomWs("Closed intentionally");
             setStatus("closed");
             return;
           }
@@ -481,6 +511,10 @@ export function useClassroomChannel(roomId) {
       const ws = wsRef.current;
       if (ws) {
         try {
+          if (CLASSROOM_WS_DEBUG && window.__ws_classroom === ws) {
+            delete window.__ws_classroom;
+          }
+
           ws.onopen = null;
           ws.onmessage = null;
           ws.onerror = null;

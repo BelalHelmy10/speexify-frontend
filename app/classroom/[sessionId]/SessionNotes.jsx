@@ -254,7 +254,11 @@ export default function SessionNotes({
                       Save Now
                     </button>
                   )}
-                  <span className="session-notes__hint">Ctrl+S to save</span>
+                  <span className="session-notes__hint">
+                    {typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent)
+                      ? "⌘S to save"
+                      : "Ctrl+S to save"}
+                  </span>
                 </div>
               </div>
             </>

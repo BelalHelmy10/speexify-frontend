@@ -111,6 +111,9 @@ export default function PrepShell({
   screenShareStream = null,
   isTeacher = false,
   locale = "en",
+  initialAudioState = null,
+  initialPdfScroll = null,
+  onClassroomStateChange,
 }) {
   const dict = getDictionary(locale, "resources");
   const prefix = locale === "ar" ? "/ar" : "";
@@ -451,7 +454,6 @@ export default function PrepShell({
 
   const sendAudioState = useCallback(
     ({ trackIndex, time, playing } = {}) => {
-      if (!channelReady || !sendOnChannel) return;
       if (!isTeacher) return;
       const el = audioRef.current;
       const nextTrack =
@@ -467,7 +469,7 @@ export default function PrepShell({
 
       const seq = (audioSeqRef.current = (audioSeqRef.current || 0) + 1);
 
-      sendOnChannel({
+      const audioState = {
         type: "AUDIO_STATE",
         resourceId: resource._id,
         seq,
@@ -475,9 +477,29 @@ export default function PrepShell({
         trackIndex: nextTrack,
         time: Math.max(0, nextTime),
         playing: !!nextPlaying,
-      });
+      };
+
+      if (channelReady && sendOnChannel) {
+        sendOnChannel(audioState);
+      }
+
+      if (typeof onClassroomStateChange === "function") {
+        onClassroomStateChange(
+          {
+            audio: audioState,
+          },
+          { delay: nextPlaying ? 1200 : 0, immediate: !nextPlaying }
+        );
+      }
     },
-    [channelReady, sendOnChannel, isTeacher, resource._id, currentTrackIndex]
+    [
+      channelReady,
+      sendOnChannel,
+      isTeacher,
+      resource._id,
+      currentTrackIndex,
+      onClassroomStateChange,
+    ]
   );
 
   const applyAudioState = useCallback((msg, { isSnapshot = false } = {}) => {
@@ -547,6 +569,30 @@ export default function PrepShell({
       }
     });
   }, []);
+  const initialAudioStateKeyRef = useRef("");
+
+  useEffect(() => {
+    if (!initialAudioState || initialAudioState.resourceId !== resource._id) return;
+
+    const key = [
+      initialAudioState.resourceId,
+      initialAudioState.seq,
+      initialAudioState.sentAt,
+      initialAudioState.trackIndex,
+      initialAudioState.time,
+      initialAudioState.playing,
+    ].join(":");
+
+    if (initialAudioStateKeyRef.current === key) return;
+    initialAudioStateKeyRef.current = key;
+
+    const id = setTimeout(() => {
+      applyAudioState(initialAudioState, { isSnapshot: true });
+    }, 0);
+
+    return () => clearTimeout(id);
+  }, [initialAudioState, resource._id, applyAudioState]);
+
   const toolMenuRef = useRef(null);
   const colorMenuRef = useRef(null);
 
@@ -880,7 +926,6 @@ export default function PrepShell({
   useEffect(() => {
     if (!isPdf) return;
     if (!isTeacher) return;
-    if (!channelReady || !sendOnChannel) return;
 
     const el = pdfScrollRef.current;
     if (!el) return;
@@ -906,12 +951,27 @@ export default function PrepShell({
 
         lastScrollSentAtRef.current = Date.now();
 
-        sendOnChannel({
-          type: "PDF_SCROLL",
-          resourceId: resource._id,
-          page: pdfCurrentPage,
-          scrollNorm,
-        });
+        if (channelReady && sendOnChannel) {
+          sendOnChannel({
+            type: "PDF_SCROLL",
+            resourceId: resource._id,
+            page: pdfCurrentPage,
+            scrollNorm,
+          });
+        }
+
+        if (typeof onClassroomStateChange === "function") {
+          onClassroomStateChange(
+            {
+              pdfScroll: {
+                resourceId: resource._id,
+                page: pdfCurrentPage,
+                scrollNorm,
+              },
+            },
+            { delay: 1500 }
+          );
+        }
       });
     };
 
@@ -924,7 +984,41 @@ export default function PrepShell({
     sendOnChannel,
     resource._id,
     pdfCurrentPage,
+    onClassroomStateChange,
   ]);
+
+  const initialPdfScrollKeyRef = useRef("");
+
+  useEffect(() => {
+    if (!initialPdfScroll || initialPdfScroll.resourceId !== resource._id) return;
+    if (!isPdf) return;
+
+    const targetPage = Math.max(1, Number(initialPdfScroll.page) || 1);
+    const scrollNorm = Math.min(
+      1,
+      Math.max(0, Number(initialPdfScroll.scrollNorm) || 0)
+    );
+    const key = `${initialPdfScroll.resourceId}:${targetPage}:${scrollNorm}`;
+
+    if (initialPdfScrollKeyRef.current === key) return;
+    initialPdfScrollKeyRef.current = key;
+
+    const id = setTimeout(() => {
+      const api = pdfNavApiRef.current;
+      if (api?.setPage && targetPage !== pdfCurrentPage) {
+        api.setPage(targetPage);
+      }
+
+      setTimeout(() => {
+        const el = pdfScrollRef.current;
+        if (!el) return;
+        const maxScroll = Math.max(1, el.scrollHeight - el.clientHeight);
+        el.scrollTop = scrollNorm * maxScroll;
+      }, 0);
+    }, 150);
+
+    return () => clearTimeout(id);
+  }, [initialPdfScroll, resource._id, isPdf, pdfCurrentPage]);
 
   useEffect(() => {
     if (!activeTextId) return;

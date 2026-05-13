@@ -11,6 +11,7 @@ import ClassroomControlBar from "./ClassroomControlBar";
 import ClassroomResourcePickerModal from "./ClassroomResourcePickerModal";
 import ClassroomParticipantsModal from "./ClassroomParticipantsModal";
 import ClassroomLeaveConfirmModal from "./ClassroomLeaveConfirmModal";
+import { ClassroomRaiseHandOverlay, useClassroomRaiseHand } from "./ClassroomRaiseHand";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import api from "@/lib/api";
@@ -112,9 +113,35 @@ const FOCUS_MODE_ORDER = [
   FOCUS_MODES.BALANCED,
   FOCUS_MODES.CONTENT,
 ];
+const CLASSROOM_FOCUS_MODES = new Set(Object.values(FOCUS_MODES));
 
 const MIN_SPLIT_PERCENT = 12;
 const MAX_SPLIT_PERCENT = 88;
+
+function clampSplitPercent(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  return Math.min(MAX_SPLIT_PERCENT, Math.max(MIN_SPLIT_PERCENT, num));
+}
+
+function clampScrollNorm(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  return Math.min(1, Math.max(0, num));
+}
+
+function mergeClassroomStatePatch(current, patch) {
+  return {
+    ...(current || {}),
+    ...(patch || {}),
+    layout: patch?.layout
+      ? { ...(current?.layout || {}), ...patch.layout }
+      : current?.layout,
+    contentScroll: patch?.contentScroll || current?.contentScroll,
+    pdfScroll: patch?.pdfScroll || current?.pdfScroll,
+    audio: patch?.audio || current?.audio,
+  };
+}
 
 /* -----------------------------------------------------------
    MAIN COMPONENT
@@ -243,6 +270,22 @@ export default function ClassroomShell({
     } catch (_) { }
   }, [followLayoutStorageKey, learnerWantsToFollow, isTeacher]);
 
+  const handleTeacherAllowsFollowingChange = useCallback(
+    (nextValue) => {
+      if (!isTeacher) return;
+      setTeacherAllowsFollowing(Boolean(nextValue));
+    },
+    [isTeacher]
+  );
+
+  const handleLearnerWantsToFollowChange = useCallback(
+    (nextValue) => {
+      if (isTeacher) return;
+      setLearnerWantsToFollow(Boolean(nextValue));
+    },
+    [isTeacher]
+  );
+
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showParticipantList, setShowParticipantList] = useState(false);
@@ -256,10 +299,177 @@ export default function ClassroomShell({
   const send = classroomChannel?.send ?? (() => { });
   const subscribe = classroomChannel?.subscribe ?? (() => () => { });
 
+  /* -----------------------------------------------------------
+     Raise Hand
+  ----------------------------------------------------------- */
+  const { raisedHands, isHandRaised, toggleHand } = useClassroomRaiseHand(
+    classroomChannel,
+    userName
+  );
+
+  const [classroomStateLoaded, setClassroomStateLoaded] = useState(false);
+  const [classroomStateSnapshot, setClassroomStateSnapshot] = useState(null);
+  const classroomStateLoadedRef = useRef(false);
+  const pendingClassroomStatePatchRef = useRef({});
+  const classroomStateSaveTimeoutRef = useRef(null);
+  const pendingContentScrollNormRef = useRef(null);
+
+  useEffect(() => {
+    classroomStateLoadedRef.current = classroomStateLoaded;
+  }, [classroomStateLoaded]);
+
+  const flushClassroomStatePatch = useCallback(async () => {
+    if (!isTeacher || !sessionId) return;
+
+    const patch = pendingClassroomStatePatchRef.current;
+    pendingClassroomStatePatchRef.current = {};
+    if (!patch || !Object.keys(patch).length) return;
+
+    try {
+      const { data } = await api.patch(`/sessions/${sessionId}/classroom-state`, {
+        state: patch,
+      });
+      if (data?.state) {
+        setClassroomStateSnapshot(data.state);
+      }
+    } catch (err) {
+      console.warn("Failed to persist classroom state:", err);
+    }
+  }, [isTeacher, sessionId]);
+
+  const persistClassroomState = useCallback(
+    (patch, options = {}) => {
+      if (!isTeacher || !sessionId || !classroomStateLoadedRef.current) return;
+      if (!patch || typeof patch !== "object") return;
+
+      pendingClassroomStatePatchRef.current = mergeClassroomStatePatch(
+        pendingClassroomStatePatchRef.current,
+        patch
+      );
+
+      if (classroomStateSaveTimeoutRef.current) {
+        clearTimeout(classroomStateSaveTimeoutRef.current);
+        classroomStateSaveTimeoutRef.current = null;
+      }
+
+      const delay =
+        typeof options.delay === "number" ? Math.max(0, options.delay) : 700;
+
+      if (options.immediate || delay === 0) {
+        void flushClassroomStatePatch();
+        return;
+      }
+
+      classroomStateSaveTimeoutRef.current = setTimeout(() => {
+        classroomStateSaveTimeoutRef.current = null;
+        void flushClassroomStatePatch();
+      }, delay);
+    },
+    [flushClassroomStatePatch, isTeacher, sessionId]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (classroomStateSaveTimeoutRef.current) {
+        clearTimeout(classroomStateSaveTimeoutRef.current);
+        classroomStateSaveTimeoutRef.current = null;
+      }
+      void flushClassroomStatePatch();
+    };
+  }, [flushClassroomStatePatch]);
+
   useEffect(() => {
     customSplitRef.current = customSplit;
     pendingSplitRef.current = customSplit;
   }, [customSplit]);
+
+  const applyPersistedContentScroll = useCallback((scrollNorm) => {
+    const norm = clampScrollNorm(scrollNorm);
+    if (norm === null) return;
+
+    pendingContentScrollNormRef.current = norm;
+
+    requestAnimationFrame(() => {
+      const el = contentScrollRef.current;
+      if (!el) return;
+
+      const maxScroll = Math.max(1, el.scrollHeight - el.clientHeight);
+      el.scrollTop = norm * maxScroll;
+      pendingContentScrollNormRef.current = null;
+    });
+  }, []);
+
+  useEffect(() => {
+    const pending = pendingContentScrollNormRef.current;
+    if (pending === null || pending === undefined) return;
+    applyPersistedContentScroll(pending);
+  }, [applyPersistedContentScroll, selectedResourceId, isMobile, mobileActiveTab]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadClassroomState() {
+      if (!sessionId) return;
+      setClassroomStateLoaded(false);
+
+      try {
+        const { data } = await api.get(`/sessions/${sessionId}/classroom-state`);
+        if (cancelled) return;
+
+        const state = data?.state && typeof data.state === "object" ? data.state : {};
+        setClassroomStateSnapshot(state);
+
+        const savedResourceId =
+          state.resourceId && resourcesById[state.resourceId]
+            ? state.resourceId
+            : null;
+
+        setSelectedResourceId(savedResourceId);
+
+        if (typeof window !== "undefined") {
+          try {
+            const key = `classroom_resource_${sessionId}`;
+            if (savedResourceId) {
+              sessionStorage.setItem(key, savedResourceId);
+            } else {
+              sessionStorage.removeItem(key);
+            }
+          } catch (_) { }
+        }
+
+        const layout = state.layout || {};
+        if (CLASSROOM_FOCUS_MODES.has(layout.focusMode)) {
+          setFocusMode(layout.focusMode);
+        }
+
+        const nextSplit =
+          layout.customSplit === null || layout.customSplit === undefined
+            ? null
+            : clampSplitPercent(layout.customSplit);
+        customSplitRef.current = nextSplit;
+        pendingSplitRef.current = nextSplit;
+        setCustomSplit(nextSplit);
+
+        if (layout.teacherAllowsFollowing !== undefined) {
+          setTeacherAllowsFollowing(!!layout.teacherAllowsFollowing);
+        }
+
+        if (state.contentScroll?.scrollNorm !== undefined) {
+          applyPersistedContentScroll(state.contentScroll.scrollNorm);
+        }
+      } catch (err) {
+        console.warn("Failed to load classroom state:", err);
+        setClassroomStateSnapshot({});
+      } finally {
+        if (!cancelled) setClassroomStateLoaded(true);
+      }
+    }
+
+    loadClassroomState();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, resourcesById, applyPersistedContentScroll]);
 
   useEffect(() => {
     return () => {
@@ -328,7 +538,19 @@ export default function ClassroomShell({
         teacherAllowsFollowing,
       });
     }
-  }, [isTeacher, ready, send, focusMode, teacherAllowsFollowing]);
+    if (isTeacher) {
+      persistClassroomState(
+        {
+          layout: {
+            focusMode,
+            customSplit: customSplitRef.current,
+            teacherAllowsFollowing,
+          },
+        },
+        { immediate: true }
+      );
+    }
+  }, [isTeacher, ready, send, focusMode, teacherAllowsFollowing, persistClassroomState]);
 
   useEffect(() => {
     if (isDragging) {
@@ -371,16 +593,25 @@ export default function ClassroomShell({
     customSplitRef.current = null;
     pendingSplitRef.current = null;
     setCustomSplit(null);
+    persistClassroomState(
+      {
+        layout: {
+          focusMode: mode,
+          customSplit: null,
+          teacherAllowsFollowing,
+        },
+      },
+      { immediate: true }
+    );
   };
 
 
   // ✅ Teacher: broadcast layout (focusMode + customSplit + follow control)
   useEffect(() => {
-    if (!ready) return;
     if (!isTeacher) return;
 
     const now = Date.now();
-    if (now - lastLayoutSentAtRef.current < 16) return; // ~60fps for smoother sync
+    if (now - lastLayoutSentAtRef.current < 100) return; // ~10fps — smooth enough for layout sync
     if (layoutRafPendingRef.current) return;
 
     layoutRafPendingRef.current = true;
@@ -389,18 +620,38 @@ export default function ClassroomShell({
       layoutRafPendingRef.current = false;
       lastLayoutSentAtRef.current = Date.now();
 
-      send({
-        type: "LAYOUT_STATE",
-        focusMode,
-        customSplit,
-        teacherAllowsFollowing, // ✅ NEW: broadcast teacher's follow control
-      });
+      if (ready) {
+        send({
+          type: "LAYOUT_STATE",
+          focusMode,
+          customSplit,
+          teacherAllowsFollowing, // ✅ NEW: broadcast teacher's follow control
+        });
+      }
+
+      persistClassroomState(
+        {
+          layout: {
+            focusMode,
+            customSplit,
+            teacherAllowsFollowing,
+          },
+        },
+        { delay: 700 }
+      );
     });
-  }, [ready, isTeacher, send, focusMode, customSplit, teacherAllowsFollowing]);
+  }, [
+    ready,
+    isTeacher,
+    send,
+    focusMode,
+    customSplit,
+    teacherAllowsFollowing,
+    persistClassroomState,
+  ]);
 
   // ✅ Teacher: broadcast content scroll (works for PDF + any resource)
   useEffect(() => {
-    if (!ready) return;
     if (!isTeacher) return;
 
     const el = contentScrollRef.current;
@@ -408,7 +659,7 @@ export default function ClassroomShell({
 
     const onScroll = () => {
       const now = Date.now();
-      if (now - lastContentScrollSentAtRef.current < 16) return; // ~60fps for smoother scroll sync
+      if (now - lastContentScrollSentAtRef.current < 80) return; // ~12fps — smooth enough for scroll sync
       if (contentScrollRafPendingRef.current) return;
 
       contentScrollRafPendingRef.current = true;
@@ -427,23 +678,31 @@ export default function ClassroomShell({
 
         lastContentScrollSentAtRef.current = Date.now();
 
-        send({
-          type: "CONTENT_SCROLL",
-          scrollNorm,
-        });
+        if (ready) {
+          send({
+            type: "CONTENT_SCROLL",
+            scrollNorm,
+          });
+        }
+
+        persistClassroomState(
+          {
+            contentScroll: { scrollNorm },
+          },
+          { delay: 1500 }
+        );
       });
     };
 
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, [ready, isTeacher, send]);
+  }, [ready, isTeacher, send, persistClassroomState]);
 
   useEffect(() => {
     if (!ready) return;
 
     const unsub = subscribe((msg) => {
       if (!msg) return;
-      console.log("[Classroom] Subscribe callback received message:", msg.type, msg);
 
       // ✅ Learner: follow teacher content scroll (PDF + any resource)
       if (msg.type === "CONTENT_SCROLL" && !isTeacher) {
@@ -512,21 +771,20 @@ export default function ClassroomShell({
         return;
       }
 
-      // ✅ Teacher: receive and sync learner follow preference
+      // Learner follow preference is local; it must not change the teacher's global setting.
       if (msg.type === "LEARNER_FOLLOW_PREFERENCE" && isTeacher) {
-        const newState = !!msg.wantsToFollow;
-        setTeacherAllowsFollowing(newState);
         return;
       }
 
       if (msg.type === "SET_RESOURCE") {
         const { resourceId } = msg;
-        console.log("[Classroom] SET_RESOURCE received:", resourceId);
-        console.log("[Classroom] Available resource IDs:", Object.keys(resourcesById || {}));
-        console.log("[Classroom] Resource found:", !!resourcesById[resourceId]);
         if (resourceId && resourcesById[resourceId]) {
           setSelectedResourceId(resourceId);
-          console.log("[Classroom] ✅ Resource set successfully!");
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem(`classroom_resource_${sessionId}`, resourceId);
+            } catch (_) { }
+          }
         } else {
           console.warn("[Classroom] ⚠️ Resource NOT found in resourcesById!");
         }
@@ -561,7 +819,6 @@ export default function ClassroomShell({
     if (!ready) return;
     if (isTeacher) return;
 
-    console.log("[Classroom] Learner: WebSocket ready, sending REQUEST_RESOURCE");
     send({ type: "REQUEST_RESOURCE" });
 
     // ✅ only request layout if learner is following
@@ -570,15 +827,10 @@ export default function ClassroomShell({
     }
   }, [ready, isTeacher, send, followTeacherLayout]);
 
-  // ✅ Learner: broadcast preference changes to teacher
+  // ✅ Learner: request the saved teacher layout when turning follow back on.
   useEffect(() => {
     if (!ready) return;
     if (isTeacher) return;
-
-    send({
-      type: "LEARNER_FOLLOW_PREFERENCE",
-      wantsToFollow: learnerWantsToFollow,
-    });
 
     // Request layout when turning follow ON
     if (learnerWantsToFollow && teacherAllowsFollowing) {
@@ -588,12 +840,25 @@ export default function ClassroomShell({
 
   useEffect(() => {
     if (!isTeacher || selectedResourceId) return;
+    if (!classroomStateLoaded) return;
 
     const all = Object.values(resourcesById || {});
     if (all.length && all[0]?._id) {
       setSelectedResourceId(all[0]._id);
+      persistClassroomState(
+        {
+          resourceId: all[0]._id,
+        },
+        { immediate: true }
+      );
     }
-  }, [isTeacher, selectedResourceId, resourcesById]);
+  }, [
+    isTeacher,
+    selectedResourceId,
+    resourcesById,
+    classroomStateLoaded,
+    persistClassroomState,
+  ]);
 
   /* -----------------------------------------------------------
      Resource & viewer
@@ -652,6 +917,16 @@ export default function ClassroomShell({
 
     if (ready && isTeacher) {
       send({ type: "SET_RESOURCE", resourceId: newId });
+    }
+
+    if (isTeacher) {
+      persistClassroomState(
+        {
+          resourceId: newId || null,
+          contentScroll: { scrollNorm: 0 },
+        },
+        { immediate: true }
+      );
     }
   };
 
@@ -830,6 +1105,7 @@ export default function ClassroomShell({
         teacherName={teacherName}
         learnerName={learnerName}
         setShowParticipantList={setShowParticipantList}
+        wsStatus={classroomChannel?.status}
       />
 
       {/* Main Content - Desktop only (hidden on mobile where MobileClassroomLayout is used) */}
@@ -849,6 +1125,9 @@ export default function ClassroomShell({
                 userName={userName}
                 isTeacher={isTeacher}
                 onScreenShareStreamChange={handleScreenShareStreamChange}
+              />
+              <ClassroomRaiseHandOverlay
+                raisedHands={raisedHands}
               />
             </div>
 
@@ -949,6 +1228,9 @@ export default function ClassroomShell({
                   classroomChannel={classroomChannel}
                   isTeacher={isTeacher}
                   locale={locale}
+                  initialAudioState={classroomStateSnapshot?.audio || null}
+                  initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
+                  onClassroomStateChange={persistClassroomState}
                   className="cr-prep-shell-fullsize"
                 />
               ) : (
@@ -996,12 +1278,14 @@ export default function ClassroomShell({
         customSplit={customSplit}
         setCustomSplit={setCustomSplit}
         teacherAllowsFollowing={teacherAllowsFollowing}
-        setTeacherAllowsFollowing={setTeacherAllowsFollowing}
+        onTeacherAllowsFollowingChange={handleTeacherAllowsFollowingChange}
         learnerWantsToFollow={learnerWantsToFollow}
-        setLearnerWantsToFollow={setLearnerWantsToFollow}
+        onLearnerWantsToFollowChange={handleLearnerWantsToFollowChange}
         isChatOpen={isChatOpen}
         setIsChatOpen={setIsChatOpen}
         chatUnreadCount={chatUnreadCount}
+        isHandRaised={isHandRaised}
+        toggleHand={toggleHand}
       />
 
       {/* Mobile Layout (shown only on screens < 900px) */}
@@ -1013,13 +1297,20 @@ export default function ClassroomShell({
           onOpenPicker={() => setIsPickerOpen(true)}
           chatUnreadCount={chatUnreadCount}
           hasResource={!!resource}
+          isHandRaised={isHandRaised}
+          toggleHand={toggleHand}
           videoComponent={
-            <PrepVideoCall
-              roomId={sessionId}
-              userName={userName}
-              isTeacher={isTeacher}
-              onScreenShareStreamChange={handleScreenShareStreamChange}
-            />
+            <>
+              <PrepVideoCall
+                roomId={sessionId}
+                userName={userName}
+                isTeacher={isTeacher}
+                onScreenShareStreamChange={handleScreenShareStreamChange}
+              />
+              <ClassroomRaiseHandOverlay
+                raisedHands={raisedHands}
+              />
+            </>
           }
           contentComponent={
             isScreenShareActive ? (
@@ -1053,6 +1344,9 @@ export default function ClassroomShell({
                 classroomChannel={classroomChannel}
                 isTeacher={isTeacher}
                 locale={locale}
+                initialAudioState={classroomStateSnapshot?.audio || null}
+                initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
+                onClassroomStateChange={persistClassroomState}
               />
             ) : (
               <div className="cr-placeholder">

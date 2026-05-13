@@ -1,6 +1,8 @@
 // app/classroom/[sessionId]/MobileClassroomLayout.jsx
 "use client";
 
+import { Video, FileText, MessageSquare, BookOpen, SmilePlus } from "lucide-react";
+
 /**
  * Mobile-specific tabbed layout for classroom
  * Shows Video/Content/Chat as fullscreen tabs with bottom navigation
@@ -15,6 +17,8 @@ export default function MobileClassroomLayout({
     onOpenPicker,
     chatUnreadCount = 0,
     hasResource = false,
+    isHandRaised,
+    toggleHand,
 }) {
     return (
         <div className="cr-mobile-layout">
@@ -42,18 +46,28 @@ export default function MobileClassroomLayout({
                 </div>
             </div>
 
-            {/* Floating quick actions (teacher only) */}
-            {isTeacher && activeTab !== "video" && (
-                <div className="cr-mobile-quick-actions">
+            {/* Floating quick actions */}
+            <div className="cr-mobile-quick-actions">
+                {/* Raise hand (always visible) */}
+                <button
+                    className={`cr-mobile-quick-actions__btn ${isHandRaised ? "cr-controls__btn--active" : ""}`}
+                    onClick={toggleHand}
+                    aria-label={isHandRaised ? "Lower hand" : "Raise hand"}
+                >
+                    ✋
+                </button>
+
+                {/* Resource picker (teacher only, not on video tab) */}
+                {isTeacher && activeTab !== "video" && (
                     <button
                         className="cr-mobile-quick-actions__btn"
                         onClick={onOpenPicker}
                         aria-label="Choose resource"
                     >
-                        📚
+                        <BookOpen size={20} />
                     </button>
-                </div>
-            )}
+                )}
+            </div>
 
             {/* Bottom tab bar */}
             <nav className="cr-mobile-tabs" aria-label="Classroom navigation">
@@ -63,7 +77,9 @@ export default function MobileClassroomLayout({
                     onClick={() => onTabChange("video")}
                     aria-selected={activeTab === "video"}
                 >
-                    <span className="cr-mobile-tabs__tab-icon">🎥</span>
+                    <span className="cr-mobile-tabs__tab-icon">
+                        <Video size={22} />
+                    </span>
                     <span className="cr-mobile-tabs__tab-label">Video</span>
                 </button>
 
@@ -73,9 +89,11 @@ export default function MobileClassroomLayout({
                     onClick={() => onTabChange("content")}
                     aria-selected={activeTab === "content"}
                 >
-                    <span className="cr-mobile-tabs__tab-icon">📄</span>
+                    <span className="cr-mobile-tabs__tab-icon">
+                        <FileText size={22} />
+                    </span>
                     <span className="cr-mobile-tabs__tab-label">
-                        {hasResource ? "Content" : "Content"}
+                        Content
                     </span>
                 </button>
 
@@ -86,7 +104,7 @@ export default function MobileClassroomLayout({
                     aria-selected={activeTab === "chat"}
                 >
                     <span className="cr-mobile-tabs__tab-icon">
-                        💬
+                        <MessageSquare size={22} />
                         {chatUnreadCount > 0 && activeTab !== "chat" && (
                             <span className="cr-mobile-tabs__badge">{chatUnreadCount}</span>
                         )}

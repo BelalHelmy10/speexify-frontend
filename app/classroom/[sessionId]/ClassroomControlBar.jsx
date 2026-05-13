@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpen, Circle, MessageSquare, Square, Users } from "lucide-react";
+import { ClassroomRaiseHandButton } from "./ClassroomRaiseHand";
 
 export default function ClassroomControlBar({
   isMobile,
@@ -20,12 +21,14 @@ export default function ClassroomControlBar({
   customSplit,
   setCustomSplit,
   teacherAllowsFollowing,
-  setTeacherAllowsFollowing,
+  onTeacherAllowsFollowingChange,
   learnerWantsToFollow,
-  setLearnerWantsToFollow,
+  onLearnerWantsToFollowChange,
   isChatOpen,
   setIsChatOpen,
   chatUnreadCount,
+  isHandRaised,
+  toggleHand,
 }) {
   if (isMobile) return null;
 
@@ -103,13 +106,14 @@ export default function ClassroomControlBar({
       </div>
 
       <div className="cr-controls__right">
+        <ClassroomRaiseHandButton isHandRaised={isHandRaised} onToggleHand={toggleHand} />
         {isTeacher && (
           <label className="cr-controls__toggle-wrapper">
             <input
               type="checkbox"
               className="cr-controls__toggle-input"
               checked={teacherAllowsFollowing}
-              onChange={(e) => setTeacherAllowsFollowing(e.target.checked)}
+              onChange={(e) => onTeacherAllowsFollowingChange(e.target.checked)}
             />
             <span className="cr-controls__toggle-slider"></span>
             <span className="cr-controls__toggle-label">
@@ -124,7 +128,7 @@ export default function ClassroomControlBar({
               type="checkbox"
               className="cr-controls__toggle-input"
               checked={learnerWantsToFollow}
-              onChange={(e) => setLearnerWantsToFollow(e.target.checked)}
+              onChange={(e) => onLearnerWantsToFollowChange(e.target.checked)}
               disabled={!teacherAllowsFollowing}
             />
             <span className="cr-controls__toggle-slider"></span>

@@ -1,15 +1,73 @@
 // app/classroom/[sessionId]/ClassroomChat.jsx
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { MessageSquare } from "lucide-react";
+import api from "@/lib/api";
 
-const STORAGE_PREFIX = "speexify_classroom_chat_";
+const CHAT_HISTORY_LIMIT = 100;
+const TEMP_MESSAGE_PREFIX = "temp_chat_";
 
 function formatTime(isoString) {
   if (!isoString) return "";
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function getErrorMessage(err, fallback) {
+  return err?.response?.data?.error || err?.message || fallback;
+}
+
+function createTempId() {
+  return `${TEMP_MESSAGE_PREFIX}${Date.now()}_${Math.random()
+    .toString(16)
+    .slice(2)}`;
+}
+
+function normalizeMessage(
+  message = {},
+  { fallbackMine = false, fallbackCanDelete = false } = {}
+) {
+  const isDeleted = Boolean(message.isDeleted || message.deletedAt);
+
+  return {
+    id: message.id || createTempId(),
+    clientId: message.clientId || null,
+    type: message.type || "message",
+    role: message.role || "learner",
+    name:
+      message.name ||
+      message.senderName ||
+      (message.role === "teacher" ? "Teacher" : "Learner"),
+    text:
+      typeof message.text === "string"
+        ? message.text
+        : typeof message.body === "string"
+          ? message.body
+          : "",
+    at: message.at || message.createdAt || new Date().toISOString(),
+    updatedAt: message.updatedAt || null,
+    senderId: message.senderId ?? null,
+    isMine:
+      typeof message.isMine === "boolean" ? message.isMine : fallbackMine,
+    isDeleted,
+    deletedAt: message.deletedAt || null,
+    canDelete: isDeleted
+      ? false
+      : Boolean(message.canDelete ?? fallbackCanDelete),
+    deliveryStatus: message.deliveryStatus || "sent",
+    error: message.error || "",
+  };
+}
+
+function toSocketMessage(message) {
+  const safeMessage = { ...message };
+  delete safeMessage.canDelete;
+  delete safeMessage.deliveryStatus;
+  delete safeMessage.error;
+  delete safeMessage.isMine;
+  return safeMessage;
 }
 
 export default function ClassroomChat({
@@ -24,94 +82,253 @@ export default function ClassroomChat({
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [nextBefore, setNextBefore] = useState(null);
 
-  // “Other user is typing…”
+  // Other user is typing.
   const [otherTypingName, setOtherTypingName] = useState(null);
 
-  // role + display name for this client
   const myRole = isTeacher ? "teacher" : "learner";
   const myName = isTeacher
     ? teacherName || "Teacher"
     : learnerName || "Learner";
 
   const ready = classroomChannel?.ready ?? false;
-  const send = classroomChannel?.send ?? (() => { });
-  const subscribe = classroomChannel?.subscribe ?? (() => () => { });
+  const send = classroomChannel?.send ?? (() => undefined);
+  const subscribe = classroomChannel?.subscribe ?? (() => () => undefined);
 
-  const storageKey = `${STORAGE_PREFIX}${sessionId}`;
-
+  const messagesEndRef = useRef(null);
+  const knownMessageIdsRef = useRef(new Set());
   const otherTypingTimeoutRef = useRef(null);
   const localTypingTimeoutRef = useRef(null);
   const hasSentTypingRef = useRef(false);
-
-  // ✅ NEW: prevent duplicate join/leave spam on reconnects
   const hasAnnouncedJoinRef = useRef(false);
   const hasAnnouncedLeaveRef = useRef(false);
   const seenSystemEventsRef = useRef(new Set());
 
-  // ─────────────────────────────────────────────────────────────
-  // Load persisted chat from localStorage
-  // ─────────────────────────────────────────────────────────────
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        setMessages(parsed);
-      }
-    } catch (err) {
-      console.warn("Failed to load classroom chat history", err);
-    }
-  }, [storageKey]);
+  const appendOrMergeMessage = useCallback(
+    (
+      message,
+      {
+        countAsUnread = true,
+        fallbackMine = false,
+        fallbackCanDelete = false,
+      } = {}
+    ) => {
+      const normalized = normalizeMessage(message, {
+        fallbackMine,
+        fallbackCanDelete,
+      });
+      const isKnown = knownMessageIdsRef.current.has(normalized.id);
+      knownMessageIdsRef.current.add(normalized.id);
 
-  // Persist chat to localStorage whenever it changes
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKey, JSON.stringify(messages));
-    } catch (err) {
-      console.warn("Failed to persist classroom chat history", err);
-    }
-  }, [messages, storageKey]);
+      setMessages((prev) => {
+        const existingIndex = prev.findIndex((item) => item.id === normalized.id);
+        if (existingIndex === -1) {
+          return [...prev, normalized];
+        }
 
-  useEffect(() => {
-    hasAnnouncedJoinRef.current = false;
-    hasAnnouncedLeaveRef.current = false;
-    seenSystemEventsRef.current = new Set();
-  }, [sessionId]);
+        const next = [...prev];
+        const existing = next[existingIndex];
+        next[existingIndex] = {
+          ...existing,
+          ...normalized,
+          isMine: existing.isMine || normalized.isMine,
+          canDelete: normalized.isDeleted
+            ? false
+            : existing.canDelete || normalized.canDelete,
+        };
+        return next;
+      });
 
-  // ─────────────────────────────────────────────────────────────
-  // Helper: push message into state
-  // ─────────────────────────────────────────────────────────────
-  const appendMessage = useCallback(
-    (msg, { countAsUnread = true } = {}) => {
-      setMessages((prev) => [...prev, msg]);
-
-      // If chat is closed, bump unread count in parent
       if (
-        !isOpen &&
+        !isKnown &&
+        !normalized.isMine &&
         countAsUnread &&
+        !isOpen &&
         typeof onUnreadCountChange === "function"
       ) {
         onUnreadCountChange((prev) =>
           typeof prev === "number" ? prev + 1 : 1
         );
       }
+
+      return normalized;
     },
     [isOpen, onUnreadCountChange]
   );
 
-  // ─────────────────────────────────────────────────────────────
-  // Join / leave system messages
-  // ─────────────────────────────────────────────────────────────
+  const replaceMessage = useCallback(
+    (oldId, message, options = {}) => {
+      const normalized = normalizeMessage(message, options);
+      knownMessageIdsRef.current.delete(oldId);
+      knownMessageIdsRef.current.add(normalized.id);
+
+      setMessages((prev) => {
+        let replaced = false;
+        const withoutDuplicate = prev.filter(
+          (item) => item.id === oldId || item.id !== normalized.id
+        );
+        const next = withoutDuplicate.map((item) => {
+          if (item.id !== oldId) return item;
+          replaced = true;
+          return normalized;
+        });
+        return replaced ? next : [...next, normalized];
+      });
+
+      return normalized;
+    },
+    []
+  );
+
+  const broadcastChatMessage = useCallback(
+    (message) => {
+      if (!ready) return;
+      try {
+        const socketMessage = toSocketMessage(message);
+        send({
+          type: "CHAT_MESSAGE",
+          sessionId,
+          message: socketMessage,
+          id: socketMessage.id,
+          role: socketMessage.role,
+          name: socketMessage.name,
+          text: socketMessage.text,
+          at: socketMessage.at,
+          senderId: socketMessage.senderId,
+        });
+      } catch (err) {
+        console.warn("Failed to broadcast chat message", err);
+      }
+    },
+    [ready, send, sessionId]
+  );
+
+  const broadcastDeletedMessage = useCallback(
+    (message) => {
+      if (!ready) return;
+      try {
+        send({
+          type: "CHAT_DELETE",
+          sessionId,
+          message: toSocketMessage(message),
+          messageId: message.id,
+          at: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn("Failed to broadcast deleted chat message", err);
+      }
+    },
+    [ready, send, sessionId]
+  );
+
+  const loadInitialHistory = useCallback(async () => {
+    if (!sessionId) return;
+
+    setIsLoadingHistory(true);
+    setHistoryError("");
+    setHasMoreHistory(false);
+    setNextBefore(null);
+
+    try {
+      const res = await api.get(`/sessions/${sessionId}/chat/messages`, {
+        params: { limit: CHAT_HISTORY_LIMIT },
+      });
+      const normalized = (res.data?.messages || []).map((message) =>
+        normalizeMessage(message)
+      );
+
+      setMessages((prev) => {
+        const byId = new Map(
+          normalized.map((message) => [message.id, message])
+        );
+        prev
+          .filter(
+            (message) =>
+              message.deliveryStatus === "sending" ||
+              message.deliveryStatus === "failed" ||
+              message.type === "system_local"
+          )
+          .forEach((message) => {
+            if (!byId.has(message.id)) byId.set(message.id, message);
+          });
+
+        const next = Array.from(byId.values());
+        knownMessageIdsRef.current = new Set(
+          next.map((message) => message.id)
+        );
+        return next;
+      });
+      setHasMoreHistory(Boolean(res.data?.hasMore));
+      setNextBefore(res.data?.nextBefore || null);
+    } catch (err) {
+      setHistoryError(
+        getErrorMessage(err, "Chat transcript could not be loaded.")
+      );
+      setMessages([]);
+      knownMessageIdsRef.current = new Set();
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [sessionId]);
+
+  const loadEarlierMessages = useCallback(async () => {
+    if (!sessionId || !nextBefore || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    setHistoryError("");
+
+    try {
+      const res = await api.get(`/sessions/${sessionId}/chat/messages`, {
+        params: { limit: CHAT_HISTORY_LIMIT, before: nextBefore },
+      });
+      const olderMessages = (res.data?.messages || []).map((message) =>
+        normalizeMessage(message)
+      );
+
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((message) => message.id));
+        const uniqueOlder = olderMessages.filter(
+          (message) => !existingIds.has(message.id)
+        );
+        const next = [...uniqueOlder, ...prev];
+        knownMessageIdsRef.current = new Set(
+          next.map((message) => message.id)
+        );
+        return next;
+      });
+
+      setHasMoreHistory(Boolean(res.data?.hasMore));
+      setNextBefore(res.data?.nextBefore || null);
+    } catch (err) {
+      setHistoryError(
+        getErrorMessage(err, "Earlier chat messages could not be loaded.")
+      );
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, nextBefore, sessionId]);
+
+  useEffect(() => {
+    hasAnnouncedJoinRef.current = false;
+    hasAnnouncedLeaveRef.current = false;
+    seenSystemEventsRef.current = new Set();
+    knownMessageIdsRef.current = new Set();
+    setMessages([]);
+    setOtherTypingName(null);
+    loadInitialHistory();
+  }, [loadInitialHistory, sessionId]);
+
   useEffect(() => {
     if (!ready) return;
 
-    // ✅ Only announce JOIN once per session/page load (not on every reconnect)
     if (!hasAnnouncedJoinRef.current) {
       hasAnnouncedJoinRef.current = true;
 
-      // Broadcast join
       send({
         type: "CHAT_SYSTEM",
         kind: "join",
@@ -121,13 +338,11 @@ export default function ClassroomChat({
         at: new Date().toISOString(),
       });
 
-      // Local “you joined” message (not broadcast)
-      appendMessage(
+      appendOrMergeMessage(
         {
           id: `local_join_${sessionId}_${myRole}`,
           type: "system_local",
-          text: `You joined as ${myName} (${myRole === "teacher" ? "teacher" : "learner"
-            })`,
+          text: `You joined as ${myName} (${myRole})`,
           at: new Date().toISOString(),
         },
         { countAsUnread: false }
@@ -135,7 +350,6 @@ export default function ClassroomChat({
     }
 
     return () => {
-      // ✅ Only announce LEAVE once
       if (hasAnnouncedLeaveRef.current) return;
       hasAnnouncedLeaveRef.current = true;
 
@@ -149,15 +363,12 @@ export default function ClassroomChat({
           at: new Date().toISOString(),
         });
       } catch {
-        // ignore
+        // no-op
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Listen to incoming messages on the channel
-  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!ready) return;
 
@@ -165,28 +376,44 @@ export default function ClassroomChat({
       if (!msg || !msg.type) return;
 
       if (msg.sessionId && String(msg.sessionId) !== String(sessionId)) {
-        // Different classroom
         return;
       }
 
       switch (msg.type) {
         case "CHAT_MESSAGE": {
-          const isMine =
-            msg.role === myRole && (msg.name === myName || !msg.name); // best-effort match
-
-          const messageObj = {
-            id:
-              msg.id ||
-              `remote_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+          const incoming = msg.message || {
+            id: msg.id,
             type: "message",
             role: msg.role || "unknown",
-            name: msg.name || (msg.role === "teacher" ? "Teacher" : "Learner"),
+            name:
+              msg.name || (msg.role === "teacher" ? "Teacher" : "Learner"),
             text: msg.text || "",
             at: msg.at || new Date().toISOString(),
-            isMine,
+            senderId: msg.senderId ?? null,
           };
 
-          appendMessage(messageObj, { countAsUnread: !isMine });
+          appendOrMergeMessage(incoming, {
+            countAsUnread: true,
+            fallbackMine: false,
+            fallbackCanDelete: isTeacher,
+          });
+          break;
+        }
+
+        case "CHAT_DELETE": {
+          const incoming = msg.message || {
+            id: msg.messageId,
+            type: "message",
+            isDeleted: true,
+            deletedAt: msg.at || new Date().toISOString(),
+            at: msg.at || new Date().toISOString(),
+          };
+
+          appendOrMergeMessage(incoming, {
+            countAsUnread: false,
+            fallbackMine: false,
+            fallbackCanDelete: false,
+          });
           break;
         }
 
@@ -196,7 +423,6 @@ export default function ClassroomChat({
             msg.kind === "join" ? "join" : msg.kind === "leave" ? "leave" : "";
           if (!kind) return;
 
-          // ✅ Dedupe: ignore repeated join/leave spam (usually from reconnects)
           const dedupeKey = `${sessionId}:${kind}:${who}`;
           if (seenSystemEventsRef.current.has(dedupeKey)) return;
           seenSystemEventsRef.current.add(dedupeKey);
@@ -206,13 +432,9 @@ export default function ClassroomChat({
               ? `${who} joined the classroom`
               : `${who} left the classroom`;
 
-          appendMessage(
+          appendOrMergeMessage(
             {
-              id:
-                msg.id ||
-                `system_${kind}_${Date.now()}_${Math.random()
-                  .toString(16)
-                  .slice(2)}`,
+              id: msg.id || `system_${kind}_${who}`,
               type: "system",
               text: systemText,
               at: msg.at || new Date().toISOString(),
@@ -223,8 +445,7 @@ export default function ClassroomChat({
         }
 
         case "CHAT_TYPING": {
-          // ignore our own typing echoes
-          if (msg.role === myRole) return;
+          if (msg.role === myRole && msg.name === myName) return;
 
           if (msg.isTyping) {
             setOtherTypingName(
@@ -259,11 +480,16 @@ export default function ClassroomChat({
         otherTypingTimeoutRef.current = null;
       }
     };
-  }, [ready, subscribe, appendMessage, myRole, myName, sessionId]);
+  }, [
+    appendOrMergeMessage,
+    isTeacher,
+    myName,
+    myRole,
+    ready,
+    sessionId,
+    subscribe,
+  ]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Local typing: send “is typing” with debounce
-  // ─────────────────────────────────────────────────────────────
   const sendTyping = useCallback(
     (isTyping) => {
       if (!ready) return;
@@ -281,20 +507,18 @@ export default function ClassroomChat({
         console.warn("Failed to send typing event", err);
       }
     },
-    [ready, send, myRole, myName, sessionId]
+    [myName, myRole, ready, send, sessionId]
   );
 
   const handleInputChange = (e) => {
     const nextValue = e.target.value;
     setInputValue(nextValue);
 
-    // If user started typing, send typing-on once
     if (nextValue.trim() && !hasSentTypingRef.current) {
       hasSentTypingRef.current = true;
       sendTyping(true);
     }
 
-    // Reset local typing timeout
     if (localTypingTimeoutRef.current) {
       clearTimeout(localTypingTimeoutRef.current);
     }
@@ -306,7 +530,6 @@ export default function ClassroomChat({
     }, 3000);
   };
 
-  // Clear local typing on blur
   const handleInputBlur = () => {
     if (hasSentTypingRef.current) {
       hasSentTypingRef.current = false;
@@ -318,91 +541,194 @@ export default function ClassroomChat({
     }
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // Send message
-  // ─────────────────────────────────────────────────────────────
+  const persistMessage = useCallback(
+    async (text, tempId) => {
+      const res = await api.post(`/sessions/${sessionId}/chat/messages`, {
+        text,
+      });
+
+      const saved = replaceMessage(tempId, res.data?.message, {
+        fallbackMine: true,
+        fallbackCanDelete: true,
+      });
+      broadcastChatMessage(saved);
+      return saved;
+    },
+    [broadcastChatMessage, replaceMessage, sessionId]
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const text = inputValue.trim();
-    if (!text || !ready) return;
+    if (!text || isSending) return;
 
     setIsSending(true);
+    setInputValue("");
 
-    const nowIso = new Date().toISOString();
-    const id = `chat_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-
-    const outgoing = {
-      type: "CHAT_MESSAGE",
-      id,
-      role: myRole,
-      name: myName,
-      text,
-      at: nowIso,
-      sessionId,
-    };
-
-    // Optimistic local append
-    appendMessage(
+    const tempId = createTempId();
+    appendOrMergeMessage(
       {
-        ...outgoing,
+        id: tempId,
+        clientId: tempId,
         type: "message",
+        role: myRole,
+        name: myName,
+        text,
+        at: new Date().toISOString(),
         isMine: true,
+        canDelete: false,
+        deliveryStatus: "sending",
       },
-      { countAsUnread: false }
+      { countAsUnread: false, fallbackMine: true }
     );
 
     try {
-      send(outgoing);
+      await persistMessage(text, tempId);
     } catch (err) {
-      console.warn("Failed to send chat message", err);
-    }
+      const error = getErrorMessage(err, "Message failed to send.");
+      appendOrMergeMessage(
+        {
+          id: tempId,
+          clientId: tempId,
+          type: "message",
+          role: myRole,
+          name: myName,
+          text,
+          at: new Date().toISOString(),
+          isMine: true,
+          canDelete: false,
+          deliveryStatus: "failed",
+          error,
+        },
+        { countAsUnread: false, fallbackMine: true }
+      );
+    } finally {
+      setIsSending(false);
 
-    setInputValue("");
-    setIsSending(false);
+      if (hasSentTypingRef.current) {
+        hasSentTypingRef.current = false;
+        sendTyping(false);
+      }
+      if (localTypingTimeoutRef.current) {
+        clearTimeout(localTypingTimeoutRef.current);
+        localTypingTimeoutRef.current = null;
+      }
 
-    // Ensure typing state is reset
-    if (hasSentTypingRef.current) {
-      hasSentTypingRef.current = false;
-      sendTyping(false);
-    }
-    if (localTypingTimeoutRef.current) {
-      clearTimeout(localTypingTimeoutRef.current);
-      localTypingTimeoutRef.current = null;
-    }
-
-    // When chat is open and user sends a message, reset unread count
-    if (isOpen && typeof onUnreadCountChange === "function") {
-      onUnreadCountChange(0);
+      if (isOpen && typeof onUnreadCountChange === "function") {
+        onUnreadCountChange(0);
+      }
     }
   };
 
-  // When chat just became open, clear unread count
+  const handleRetryMessage = async (message) => {
+    if (!message?.text) return;
+
+    appendOrMergeMessage(
+      {
+        ...message,
+        deliveryStatus: "sending",
+        error: "",
+      },
+      { countAsUnread: false, fallbackMine: true }
+    );
+
+    try {
+      await persistMessage(message.text, message.id);
+    } catch (err) {
+      appendOrMergeMessage(
+        {
+          ...message,
+          deliveryStatus: "failed",
+          error: getErrorMessage(err, "Message failed to send."),
+        },
+        { countAsUnread: false, fallbackMine: true }
+      );
+    }
+  };
+
+  const handleDeleteMessage = async (message) => {
+    if (!message?.id || message.deliveryStatus !== "sent") return;
+
+    try {
+      const res = await api.delete(
+        `/sessions/${sessionId}/chat/messages/${message.id}`
+      );
+      const deleted = appendOrMergeMessage(res.data?.message, {
+        countAsUnread: false,
+        fallbackCanDelete: false,
+      });
+      broadcastDeletedMessage(deleted);
+    } catch (err) {
+      appendOrMergeMessage(
+        {
+          ...message,
+          error: getErrorMessage(err, "Message could not be deleted."),
+        },
+        { countAsUnread: false }
+      );
+    }
+  };
+
   useEffect(() => {
     if (isOpen && typeof onUnreadCountChange === "function") {
       onUnreadCountChange(0);
     }
   }, [isOpen, onUnreadCountChange]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Scroll to bottom on new messages
-  // ─────────────────────────────────────────────────────────────
-  const messagesEndRef = useRef(null);
   useEffect(() => {
-    if (!messagesEndRef.current) return;
+    if (!messagesEndRef.current || isLoadingMore) return;
     messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages]);
+  }, [isLoadingMore, messages]);
 
-  // ─────────────────────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────────────────────
   const hasMessages = messages.length > 0;
+  const transcriptStatus = historyError
+    ? "Transcript unavailable"
+    : isLoadingHistory
+      ? "Loading transcript"
+      : "Transcript saved";
 
   return (
     <div className="cr-chat">
+      <div className="cr-chat__statusbar">
+        <span>{transcriptStatus}</span>
+        <a
+          href={`/api/sessions/${sessionId}/chat/export`}
+          className="cr-chat__export"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Export
+        </a>
+      </div>
+
       <div className="cr-chat__messages" data-lenis-prevent>
-        {!hasMessages && (
+        {hasMoreHistory && (
+          <button
+            type="button"
+            className="cr-chat__load-more"
+            onClick={loadEarlierMessages}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? "Loading..." : "Load earlier messages"}
+          </button>
+        )}
+
+        {historyError && (
+          <div className="cr-chat__history-error">
+            <span>{historyError}</span>
+            <button type="button" onClick={loadInitialHistory}>
+              Retry
+            </button>
+          </div>
+        )}
+
+        {isLoadingHistory && (
+          <div className="cr-chat__loading">Loading transcript...</div>
+        )}
+
+        {!isLoadingHistory && !hasMessages && (
           <div className="cr-chat__empty">
-            <div className="cr-chat__empty-icon">💭</div>
+            <div className="cr-chat__empty-icon">Chat</div>
             <p className="cr-chat__empty-text">No messages yet</p>
             <p className="cr-chat__empty-hint">
               Start the conversation with your{" "}
@@ -431,22 +757,25 @@ export default function ClassroomChat({
               );
             }
 
-            const isMine = msg.isMine;
             const roleClass =
               msg.role === "teacher"
                 ? "cr-chat__message--teacher"
                 : msg.role === "learner"
                   ? "cr-chat__message--learner"
                   : "";
-
-            const sideClass = isMine
+            const sideClass = msg.isMine
               ? "cr-chat__message--self"
               : "cr-chat__message--other";
+            const stateClass = msg.isDeleted
+              ? "cr-chat__message--deleted"
+              : msg.deliveryStatus === "failed"
+                ? "cr-chat__message--failed"
+                : "";
 
             return (
               <div
                 key={msg.id}
-                className={`cr-chat__message ${roleClass} ${sideClass}`}
+                className={`cr-chat__message ${roleClass} ${sideClass} ${stateClass}`}
               >
                 <div className="cr-chat__bubble">
                   <div className="cr-chat__bubble-header">
@@ -458,7 +787,56 @@ export default function ClassroomChat({
                       {formatTime(msg.at)}
                     </span>
                   </div>
-                  <div className="cr-chat__bubble-text">{msg.text}</div>
+
+                  <div
+                    className={`cr-chat__bubble-text ${msg.isDeleted ? "cr-chat__bubble-text--deleted" : ""
+                      }`}
+                  >
+                    {msg.isDeleted ? "Message deleted" : msg.text}
+                  </div>
+
+                  {(msg.deliveryStatus === "sending" ||
+                    msg.deliveryStatus === "failed" ||
+                    msg.error ||
+                    (msg.canDelete && !msg.isDeleted)) && (
+                      <div className="cr-chat__bubble-footer">
+                        {msg.deliveryStatus === "sending" && (
+                          <span className="cr-chat__bubble-status">
+                            Sending...
+                          </span>
+                        )}
+                        {msg.deliveryStatus === "failed" && (
+                          <>
+                            <span className="cr-chat__bubble-status cr-chat__bubble-status--failed">
+                              {msg.error || "Failed"}
+                            </span>
+                            <button
+                              type="button"
+                              className="cr-chat__retry"
+                              onClick={() => handleRetryMessage(msg)}
+                            >
+                              Retry
+                            </button>
+                          </>
+                        )}
+                        {msg.error && msg.deliveryStatus !== "failed" && (
+                          <span className="cr-chat__bubble-status cr-chat__bubble-status--failed">
+                            {msg.error}
+                          </span>
+                        )}
+                        {msg.canDelete &&
+                          !msg.isDeleted &&
+                          msg.deliveryStatus === "sent" && (
+                            <button
+                              type="button"
+                              className="cr-chat__delete"
+                              onClick={() => handleDeleteMessage(msg)}
+                            >
+                              Delete
+                            </button>
+                          )}
+                      </div>
+                    )}
                 </div>
               </div>
             );
@@ -472,7 +850,7 @@ export default function ClassroomChat({
               <span />
             </div>
             <div className="cr-chat__typing-text">
-              {otherTypingName} is typing…
+              {otherTypingName} is typing...
             </div>
           </div>
         )}
@@ -484,17 +862,18 @@ export default function ClassroomChat({
         <input
           type="text"
           className="cr-chat__input"
-          placeholder="Type a message…"
+          placeholder="Type a message..."
           value={inputValue}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
-          disabled={isSending}
+          maxLength={4000}
         />
         <button
           type="submit"
           className="cr-chat__send"
-          disabled={!ready || isSending || !inputValue.trim()}
+          disabled={isSending || !inputValue.trim()}
           aria-label="Send message"
+          title={ready ? "Send message" : "Send when live sync reconnects"}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M4 20L20 12L4 4V10L14 12L4 14V20Z" fill="currentColor" />

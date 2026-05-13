@@ -1,9 +1,19 @@
 // app/resources/prep/PrepVideoCall.jsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { JITSI_DOMAIN, buildJitsiOptions } from "@/lib/jitsiConfig";
 import { getDictionary, t } from "@/app/i18n";
+import {
+  Camera,
+  CameraOff,
+  Mic,
+  MicOff,
+  Play,
+  RefreshCw,
+  Volume2,
+  Wifi,
+} from "lucide-react";
 
 export default function PrepVideoCall({
   roomId,
@@ -16,99 +26,349 @@ export default function PrepVideoCall({
   const apiRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasJoined, setHasJoined] = useState(true);
+  const [joinAudioMuted, setJoinAudioMuted] = useState(true);
+  const [joinVideoMuted, setJoinVideoMuted] = useState(false);
+  const [prejoinError, setPrejoinError] = useState(null);
+  const [devices, setDevices] = useState({
+    audioInputs: [],
+    videoInputs: [],
+    audioOutputs: [],
+  });
+  const [selectedAudioInputId, setSelectedAudioInputId] = useState("");
+  const [selectedVideoInputId, setSelectedVideoInputId] = useState("");
+  const [selectedAudioOutputId, setSelectedAudioOutputId] = useState("");
+  const [micLevel, setMicLevel] = useState(0);
+  const [networkStatus, setNetworkStatus] = useState({
+    state: "checking",
+    label: "Checking network",
+    detail: "Measuring connection quality...",
+    latency: null,
+  });
+  const [isTestingSpeaker, setIsTestingSpeaker] = useState(false);
+  const previewVideoRef = useRef(null);
+  const previewStreamRef = useRef(null);
+  const micAudioContextRef = useRef(null);
+  const micMeterRafRef = useRef(null);
+  const speakerTestRef = useRef(null);
+  const speakerTestTimeoutRef = useRef(null);
 
   // ─────────────────────────────────────────────
-  // Teacher-only page recording (local download)
+  // Page recording is handled by ClassroomShell
+  // (which mixes mic + display audio via Web Audio API)
   // ─────────────────────────────────────────────
-  const [isPageRecording, setIsPageRecording] = useState(false);
-  const [pageRecError, setPageRecError] = useState(null);
 
-  const pageRecorderRef = useRef(null);
-  const pageStreamRef = useRef(null);
-  const pageChunksRef = useRef([]);
-
-  function pickSupportedMime() {
-    const types = [
-      "video/webm;codecs=vp9,opus",
-      "video/webm;codecs=vp8,opus",
-      "video/webm",
-    ];
-    for (const t of types) {
-      if (window.MediaRecorder?.isTypeSupported(t)) return t;
-    }
-    return "video/webm";
-  }
-
-  async function startPageRecording() {
-    try {
-      setPageRecError(null);
-
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: 30 },
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          sampleRate: 44100,
-        },
-        preferCurrentTab: true,
-      });
-
-      pageStreamRef.current = stream;
-      pageChunksRef.current = [];
-
-      const recorder = new MediaRecorder(stream, {
-        mimeType: pickSupportedMime(),
-      });
-
-      pageRecorderRef.current = recorder;
-
-      recorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) pageChunksRef.current.push(e.data);
-      };
-
-      recorder.onstop = () => {
-        const blob = new Blob(pageChunksRef.current, {
-          type: recorder.mimeType,
-        });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `classroom-${roomId}-${new Date().toISOString()}.webm`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-
-        URL.revokeObjectURL(url);
-      };
-
-      // If teacher clicks "Stop sharing" in browser UI
-      stream.getVideoTracks()[0]?.addEventListener("ended", stopPageRecording);
-
-      recorder.start(1000);
-      setIsPageRecording(true);
-    } catch (e) {
-      console.error(e);
-      setPageRecError(e?.message || "Failed to start page recording");
-    }
-  }
-
-  function stopPageRecording() {
-    try {
-      if (pageRecorderRef.current?.state !== "inactive") {
-        pageRecorderRef.current.stop();
-      }
-      pageStreamRef.current?.getTracks().forEach((t) => t.stop());
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsPageRecording(false);
-      pageRecorderRef.current = null;
-      pageStreamRef.current = null;
-    }
-  }
 
   const dict = getDictionary(locale, "classroom");
+
+  const stopMicMeter = useCallback(() => {
+    if (micMeterRafRef.current) {
+      cancelAnimationFrame(micMeterRafRef.current);
+      micMeterRafRef.current = null;
+    }
+
+    if (micAudioContextRef.current) {
+      micAudioContextRef.current.close().catch(() => { });
+      micAudioContextRef.current = null;
+    }
+
+    setMicLevel(0);
+  }, []);
+
+  const stopPreviewStream = useCallback(() => {
+    stopMicMeter();
+
+    if (previewVideoRef.current) {
+      previewVideoRef.current.srcObject = null;
+    }
+
+    previewStreamRef.current?.getTracks().forEach((track) => track.stop());
+    previewStreamRef.current = null;
+  }, [stopMicMeter]);
+
+  const refreshDevices = useCallback(async () => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices) return;
+
+    const allDevices = await navigator.mediaDevices.enumerateDevices();
+    const nextDevices = {
+      audioInputs: allDevices.filter((device) => device.kind === "audioinput"),
+      videoInputs: allDevices.filter((device) => device.kind === "videoinput"),
+      audioOutputs: allDevices.filter((device) => device.kind === "audiooutput"),
+    };
+
+    setDevices(nextDevices);
+    setSelectedAudioInputId((current) =>
+      current || nextDevices.audioInputs[0]?.deviceId || ""
+    );
+    setSelectedVideoInputId((current) =>
+      current || nextDevices.videoInputs[0]?.deviceId || ""
+    );
+    setSelectedAudioOutputId((current) =>
+      current || nextDevices.audioOutputs[0]?.deviceId || ""
+    );
+  }, []);
+
+  const startMicMeter = useCallback(
+    (stream) => {
+      stopMicMeter();
+
+      const audioTrack = stream?.getAudioTracks?.()[0];
+      const AudioContextImpl =
+        window.AudioContext || window.webkitAudioContext;
+      if (!audioTrack || !AudioContextImpl) {
+        setMicLevel(0);
+        return;
+      }
+
+      const audioContext = new AudioContextImpl();
+      const source = audioContext.createMediaStreamSource(
+        new MediaStream([audioTrack])
+      );
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      micAudioContextRef.current = audioContext;
+
+      const data = new Uint8Array(analyser.frequencyBinCount);
+
+      const tick = () => {
+        analyser.getByteFrequencyData(data);
+        const average =
+          data.reduce((total, value) => total + value, 0) / data.length;
+        setMicLevel(Math.min(1, average / 110));
+        micMeterRafRef.current = requestAnimationFrame(tick);
+      };
+
+      tick();
+    },
+    [stopMicMeter]
+  );
+
+  const buildPreviewConstraints = useCallback(() => {
+    const audio = selectedAudioInputId
+      ? {
+          deviceId: { exact: selectedAudioInputId },
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      : {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        };
+
+    const video = joinVideoMuted
+      ? false
+      : selectedVideoInputId
+        ? {
+            deviceId: { exact: selectedVideoInputId },
+            width: { ideal: 960 },
+            height: { ideal: 540 },
+          }
+        : {
+            width: { ideal: 960 },
+            height: { ideal: 540 },
+          };
+
+    return { audio, video };
+  }, [joinVideoMuted, selectedAudioInputId, selectedVideoInputId]);
+
+  const runNetworkCheck = useCallback(async () => {
+    if (typeof window === "undefined") return;
+
+    const connection =
+      navigator.connection ||
+      navigator.mozConnection ||
+      navigator.webkitConnection ||
+      null;
+    const start = performance.now();
+
+    try {
+      await fetch(`/api/ws-config?prejoin=${Date.now()}`, {
+        method: "GET",
+        cache: "no-store",
+        credentials: "include",
+      });
+
+      const latency = Math.round(performance.now() - start);
+      const effectiveType = connection?.effectiveType || "";
+      const downlink = Number(connection?.downlink || 0);
+      const detailParts = [`${latency} ms`];
+      if (effectiveType) detailParts.push(effectiveType.toUpperCase());
+      if (downlink) detailParts.push(`${downlink} Mbps`);
+
+      const state =
+        latency < 180 && (!downlink || downlink >= 2)
+          ? "good"
+          : latency < 450
+            ? "fair"
+            : "poor";
+
+      setNetworkStatus({
+        state,
+        label:
+          state === "good"
+            ? "Network ready"
+            : state === "fair"
+              ? "Network is usable"
+              : "Network may be unstable",
+        detail: detailParts.join(" - "),
+        latency,
+      });
+    } catch {
+      setNetworkStatus({
+        state: "poor",
+        label: "Network check failed",
+        detail: "Check your connection before joining.",
+        latency: null,
+      });
+    }
+  }, []);
+
+  const stopSpeakerTest = useCallback((shouldUpdateState = true) => {
+    if (speakerTestTimeoutRef.current) {
+      window.clearTimeout(speakerTestTimeoutRef.current);
+      speakerTestTimeoutRef.current = null;
+    }
+
+    const currentSpeakerTest = speakerTestRef.current;
+    if (currentSpeakerTest) {
+      try {
+        currentSpeakerTest.oscillator.stop();
+      } catch {
+        // already stopped
+      }
+
+      currentSpeakerTest.audio.pause();
+      currentSpeakerTest.audio.srcObject
+        ?.getTracks?.()
+        .forEach((track) => track.stop());
+      currentSpeakerTest.audio.srcObject = null;
+      currentSpeakerTest.audioContext.close().catch(() => { });
+      speakerTestRef.current = null;
+    }
+
+    if (shouldUpdateState) {
+      setIsTestingSpeaker(false);
+    }
+  }, []);
+
+  const playSpeakerTest = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    const AudioContextImpl = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextImpl || isTestingSpeaker) return;
+
+    setIsTestingSpeaker(true);
+
+    try {
+      const audioContext = new AudioContextImpl();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const destination = audioContext.createMediaStreamDestination();
+      const audio = new Audio();
+
+      oscillator.type = "sine";
+      oscillator.frequency.value = 660;
+      gain.gain.value = 0.08;
+      oscillator.connect(gain);
+      gain.connect(destination);
+
+      audio.srcObject = destination.stream;
+      speakerTestRef.current = { audio, audioContext, oscillator };
+
+      if (selectedAudioOutputId && typeof audio.setSinkId === "function") {
+        await audio.setSinkId(selectedAudioOutputId);
+      }
+
+      oscillator.start();
+      await audio.play();
+
+      speakerTestTimeoutRef.current = window.setTimeout(() => {
+        stopSpeakerTest();
+      }, 900);
+    } catch {
+      stopSpeakerTest();
+    }
+  }, [isTestingSpeaker, selectedAudioOutputId, stopSpeakerTest]);
+
+  const handleJoin = useCallback(() => {
+    stopPreviewStream();
+    setHasJoined(true);
+  }, [stopPreviewStream]);
+
+  useEffect(() => {
+    if (hasJoined) return;
+
+    let cancelled = false;
+
+    async function initPrejoinPreview() {
+      if (typeof navigator === "undefined" || !navigator.mediaDevices) {
+        setPrejoinError("Camera and microphone are not available in this browser.");
+        return;
+      }
+
+      try {
+        setPrejoinError(null);
+        const stream = await navigator.mediaDevices.getUserMedia(
+          buildPreviewConstraints()
+        );
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        stopPreviewStream();
+        previewStreamRef.current = stream;
+
+        if (previewVideoRef.current && !joinVideoMuted) {
+          previewVideoRef.current.srcObject = stream;
+          await previewVideoRef.current.play().catch(() => { });
+        }
+
+        startMicMeter(stream);
+        await refreshDevices();
+      } catch (err) {
+        stopPreviewStream();
+        setPrejoinError(
+          err?.name === "NotAllowedError"
+            ? "Allow camera and microphone access, or join with devices muted."
+            : "Could not start camera or microphone preview."
+        );
+        setJoinAudioMuted(true);
+        if (!joinVideoMuted) setJoinVideoMuted(true);
+        await refreshDevices().catch(() => { });
+      }
+    }
+
+    initPrejoinPreview();
+
+    return () => {
+      cancelled = true;
+      stopPreviewStream();
+    };
+  }, [
+    buildPreviewConstraints,
+    hasJoined,
+    joinVideoMuted,
+    refreshDevices,
+    startMicMeter,
+    stopPreviewStream,
+  ]);
+
+  useEffect(() => {
+    if (hasJoined) return;
+    runNetworkCheck();
+    const intervalId = window.setInterval(runNetworkCheck, 30000);
+    return () => window.clearInterval(intervalId);
+  }, [hasJoined, runNetworkCheck]);
+
+  useEffect(() => {
+    return () => {
+      stopPreviewStream();
+      stopSpeakerTest(false);
+    };
+  }, [stopPreviewStream, stopSpeakerTest]);
 
   // keep callback stable
   const screenShareCbRef = useRef(onScreenShareStreamChange);
@@ -204,6 +464,7 @@ export default function PrepVideoCall({
     async function init() {
       if (typeof window === "undefined") return;
       if (!roomId) return;
+      if (!hasJoined) return;
       if (!containerRef.current) return;
 
       setIsLoading(true);
@@ -223,6 +484,13 @@ export default function PrepVideoCall({
           userName,
           isTeacher: !!isTeacher,
           parentNode: containerRef.current,
+          devices: {
+            audioInput: selectedAudioInputId,
+            audioOutput: selectedAudioOutputId,
+            videoInput: selectedVideoInputId,
+          },
+          startWithAudioMuted: joinAudioMuted,
+          startWithVideoMuted: joinVideoMuted,
         });
 
         const api = new JitsiAPI(JITSI_DOMAIN, options);
@@ -289,7 +557,181 @@ export default function PrepVideoCall({
       apiRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]); // ✅ only roomId
+  }, [roomId, hasJoined]); // Jitsi mounts only after the custom prejoin lobby
+
+  if (!hasJoined) {
+    const networkClass = `cr-prejoin__network cr-prejoin__network--${networkStatus.state}`;
+    const levelPercent = Math.round(micLevel * 100);
+
+    return (
+      <div className="cr-video cr-video--prejoin">
+        <div className="cr-prejoin">
+          <section className="cr-prejoin__preview" aria-label="Camera preview">
+            {!joinVideoMuted && !prejoinError ? (
+              <video
+                ref={previewVideoRef}
+                className="cr-prejoin__video"
+                autoPlay
+                muted
+                playsInline
+              />
+            ) : (
+              <div className="cr-prejoin__camera-off">
+                <CameraOff size={32} />
+                <span>{joinVideoMuted ? "Camera off" : "Preview unavailable"}</span>
+              </div>
+            )}
+
+            <div className="cr-prejoin__preview-bar">
+              <span>{userName || (isTeacher ? "Teacher" : "Learner")}</span>
+              <span>{joinAudioMuted ? "Joining muted" : "Mic on"}</span>
+            </div>
+          </section>
+
+          <section className="cr-prejoin__panel" aria-label="Prejoin setup">
+            <div className="cr-prejoin__header">
+              <span className="cr-prejoin__eyebrow">Classroom Lobby</span>
+              <h2>Ready to join?</h2>
+              <p>Check your devices before entering the live session.</p>
+            </div>
+
+            {prejoinError && (
+              <div className="cr-prejoin__notice" role="status">
+                {prejoinError}
+              </div>
+            )}
+
+            <div className="cr-prejoin__quick-actions">
+              <button
+                type="button"
+                className={`cr-prejoin__pill ${joinAudioMuted ? "" : "cr-prejoin__pill--active"}`}
+                onClick={() => setJoinAudioMuted((value) => !value)}
+                aria-pressed={!joinAudioMuted}
+              >
+                {joinAudioMuted ? <MicOff size={16} /> : <Mic size={16} />}
+                {joinAudioMuted ? "Join muted" : "Mic on"}
+              </button>
+
+              <button
+                type="button"
+                className={`cr-prejoin__pill ${joinVideoMuted ? "" : "cr-prejoin__pill--active"}`}
+                onClick={() => setJoinVideoMuted((value) => !value)}
+                aria-pressed={!joinVideoMuted}
+              >
+                {joinVideoMuted ? <CameraOff size={16} /> : <Camera size={16} />}
+                {joinVideoMuted ? "Camera off" : "Camera on"}
+              </button>
+
+              <button
+                type="button"
+                className="cr-prejoin__pill"
+                onClick={refreshDevices}
+              >
+                <RefreshCw size={16} />
+                Refresh
+              </button>
+            </div>
+
+            <div className="cr-prejoin__device-grid">
+              <label className="cr-prejoin__field">
+                <span>Microphone</span>
+                <select
+                  value={selectedAudioInputId}
+                  onChange={(e) => setSelectedAudioInputId(e.target.value)}
+                >
+                  {devices.audioInputs.length ? (
+                    devices.audioInputs.map((device, index) => (
+                      <option key={device.deviceId} value={device.deviceId}>
+                        {device.label || `Microphone ${index + 1}`}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Default microphone</option>
+                  )}
+                </select>
+              </label>
+
+              <label className="cr-prejoin__field">
+                <span>Camera</span>
+                <select
+                  value={selectedVideoInputId}
+                  onChange={(e) => setSelectedVideoInputId(e.target.value)}
+                >
+                  {devices.videoInputs.length ? (
+                    devices.videoInputs.map((device, index) => (
+                      <option key={device.deviceId} value={device.deviceId}>
+                        {device.label || `Camera ${index + 1}`}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Default camera</option>
+                  )}
+                </select>
+              </label>
+
+              <label className="cr-prejoin__field cr-prejoin__field--wide">
+                <span>Speaker</span>
+                <div className="cr-prejoin__speaker-row">
+                  <select
+                    value={selectedAudioOutputId}
+                    onChange={(e) => setSelectedAudioOutputId(e.target.value)}
+                  >
+                    {devices.audioOutputs.length ? (
+                      devices.audioOutputs.map((device, index) => (
+                        <option key={device.deviceId} value={device.deviceId}>
+                          {device.label || `Speaker ${index + 1}`}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">System default speaker</option>
+                    )}
+                  </select>
+
+                  <button
+                    type="button"
+                    className="cr-prejoin__test"
+                    onClick={playSpeakerTest}
+                    disabled={isTestingSpeaker}
+                  >
+                    {isTestingSpeaker ? <Volume2 size={16} /> : <Play size={16} />}
+                    {isTestingSpeaker ? "Playing" : "Test"}
+                  </button>
+                </div>
+              </label>
+            </div>
+
+            <div className="cr-prejoin__checks">
+              <div className="cr-prejoin__meter" aria-label="Microphone level">
+                <div className="cr-prejoin__meter-header">
+                  <span>Mic level</span>
+                  <span>{levelPercent}%</span>
+                </div>
+                <div className="cr-prejoin__meter-track">
+                  <span style={{ width: `${levelPercent}%` }} />
+                </div>
+              </div>
+
+              <div className={networkClass}>
+                <Wifi size={16} />
+                <div>
+                  <strong>{networkStatus.label}</strong>
+                  <span>{networkStatus.detail}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="cr-prejoin__join"
+              onClick={handleJoin}
+            >
+              Join classroom
+            </button>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="cr-video">

@@ -1,6 +1,48 @@
 "use client";
 
-import { GraduationCap, UserRound, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { GraduationCap, UserRound, Users, Wifi, WifiOff } from "lucide-react";
+
+/* ─── Elapsed Timer ────────────────────────────────────────────────────── */
+/* ─── Elapsed Timer (counts from page mount) ──────────────────────── */
+function useElapsedTime() {
+  const [elapsed, setElapsed] = useState("00:00");
+
+  useEffect(() => {
+    const mountTime = Date.now();
+
+    const tick = () => {
+      const diff = Math.max(0, Date.now() - mountTime);
+      const totalSeconds = Math.floor(diff / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      const pad = (n) => String(n).padStart(2, "0");
+      setElapsed(
+        hours > 0
+          ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+          : `${pad(minutes)}:${pad(seconds)}`
+      );
+    };
+
+    tick();
+    const intervalId = setInterval(tick, 1000);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return elapsed;
+}
+
+/* ─── Connection Status Dot ───────────────────────────────────────────── */
+const WS_STATUS_MAP = {
+  ready: { color: "var(--cr-accent-success, #22c55e)", label: "Connected" },
+  connecting: { color: "var(--cr-accent-teacher, #f59e0b)", label: "Connecting…" },
+  reconnecting: { color: "var(--cr-accent-teacher, #f59e0b)", label: "Reconnecting…" },
+  error: { color: "var(--cr-accent-danger, #ef4444)", label: "Connection error" },
+  closed: { color: "var(--cr-text-muted, #64748b)", label: "Disconnected" },
+  idle: { color: "var(--cr-text-muted, #64748b)", label: "Idle" },
+};
 
 export default function ClassroomHeaderBar({
   prefix,
@@ -13,7 +55,11 @@ export default function ClassroomHeaderBar({
   teacherName,
   learnerName,
   setShowParticipantList,
+  wsStatus,
 }) {
+  const elapsed = useElapsedTime();
+  const wsInfo = WS_STATUS_MAP[wsStatus] || WS_STATUS_MAP.idle;
+
   return (
     <header className="cr-header">
       <div className="cr-header__left">
@@ -36,9 +82,32 @@ export default function ClassroomHeaderBar({
           {headerTitle} • {typeLabel}
           {isGroup ? ` • ${countLabel} participants` : ""}
         </div>
+
+        {/* Session elapsed timer */}
+        {elapsed && (
+          <div className="cr-header__timer" title="Session elapsed time">
+            <span className="cr-header__timer-dot" />
+            {elapsed}
+          </div>
+        )}
       </div>
 
       <div className="cr-header__right">
+        {/* Connection quality indicator */}
+        <span
+          className="cr-header__ws-status"
+          title={wsInfo.label}
+          aria-label={wsInfo.label}
+        >
+          {wsStatus === "ready" ? (
+            <Wifi size={14} style={{ color: wsInfo.color }} />
+          ) : wsStatus === "error" || wsStatus === "closed" ? (
+            <WifiOff size={14} style={{ color: wsInfo.color }} />
+          ) : (
+            <Wifi size={14} style={{ color: wsInfo.color }} />
+          )}
+        </span>
+
         <span
           className="cr-header__role-badge"
           data-role={isTeacher ? "teacher" : "learner"}
