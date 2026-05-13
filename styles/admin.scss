@@ -283,7 +283,7 @@
     max-height: 620px;
     /* ~10 rows at 60px height + header */
     overflow-y: auto;
-    overscroll-behavior: contain;
+    overscroll-behavior-y: auto;
     -webkit-overflow-scrolling: touch;
 
     table {
@@ -1021,7 +1021,7 @@
   &--scrollable {
     max-height: 700px;
     overflow-y: auto;
-    overscroll-behavior: contain;
+    overscroll-behavior-y: auto;
     -webkit-overflow-scrolling: touch;
     padding-right: 0.5rem;
 

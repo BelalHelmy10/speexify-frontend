@@ -67,7 +67,11 @@ export default function AdminUserManagementSection({
         </div>
       </div>
 
-      <div className="adm-data-table adm-data-table--scrollable" data-lenis-prevent>
+      <div
+        className="adm-data-table adm-data-table--scrollable"
+        data-lenis-prevent
+        data-scroll-chain="page"
+      >
         {usersBusy ? (
           <div className="adm-table-skeleton">
             {Array.from({ length: 5 }).map((_, i) => (

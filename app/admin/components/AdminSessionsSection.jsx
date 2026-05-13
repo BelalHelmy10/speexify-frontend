@@ -124,7 +124,11 @@ export default function AdminSessionsSection({
         </div>
       </div>
 
-      <div className="adm-sessions-grid adm-sessions-grid--scrollable" data-lenis-prevent>
+      <div
+        className="adm-sessions-grid adm-sessions-grid--scrollable"
+        data-lenis-prevent
+        data-scroll-chain="page"
+      >
         {loading ? (
           <div className="adm-sessions-skeleton">
             {Array.from({ length: 4 }).map((_, i) => (

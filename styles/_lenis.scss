@@ -18,6 +18,10 @@ html {
     overscroll-behavior: contain;
 }
 
+.lenis.lenis-smooth [data-lenis-prevent][data-scroll-chain="page"] {
+    overscroll-behavior-y: auto;
+}
+
 .lenis.lenis-stopped {
     overflow: hidden;
 }

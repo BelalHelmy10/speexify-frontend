@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speexify — Logomark Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0d1b2a;
+    --coral: #f25c2e;
+    --coral-pale: #fdf0eb;
+    --muted: #5a6a7a;
+    --border: #e8e0d5;
+    --bg: #fefcfa;
+  }
+
+  body {
+    background: var(--navy);
+    font-family: 'Inter', sans-serif;
+    color: #f8fafc;
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 56px 40px 40px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--coral);
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 16px;
+  }
+
+  h1 span { color: var(--coral); }
+
+  .subtitle {
+    font-size: 16px;
+    color: rgba(255,255,255,0.5);
+    max-width: 520px;
+    line-height: 1.65;
+  }
+
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 48px 40px 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+    color: rgba(255,255,255,0.35);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2px;
+  }
+
+  .card {
+    background: #0a1520;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    position: relative;
+  }
+
+  .card:hover {
+    border-color: rgba(242, 92, 46, 0.4);
+    background: #0e1e2e;
+    z-index: 2;
+  }
+
+  .card:hover .card-num {
+    color: var(--coral);
+  }
+
+  .card-img {
+    width: 100%;
+    aspect-ratio: 1;
+    display: block;
+    object-fit: cover;
+  }
+
+  .card-body {
+    padding: 20px 22px 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .card-num {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.25);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    transition: color 0.2s;
+  }
+
+  .card-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    line-height: 1.6;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+  }
+
+  .badge--pick {
+    background: rgba(242, 92, 46, 0.15);
+    color: var(--coral);
+    border: 1px solid rgba(242, 92, 46, 0.3);
+  }
+
+  .badge--concept {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .footer {
+    padding: 80px 40px;
+    text-align: center;
+    max-width: 1400px;
+    margin: 0 auto;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin-top: 40px;
+    color: rgba(255,255,255,0.25);
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Speexify · Brand Identity</p>
+  <h1>Logo<span>mark</span><br>Concepts</h1>
+  <p class="subtitle">All directions explored — from classic lettermarks to abstract conceptual marks. Click any to explore. Palette: Navy #0d1b2a · Coral #f25c2e.</p>
+</header>
+
+<div class="divider"></div>
+
+<p class="section-label">Round 1 — Initial Directions</p>
+
+<div class="grid">
+
+  <div class="card">
+    <img class="card-img" src="/Gemini_Generated_Image_j9u3vcj9u3vcj9u3.png" alt="Speech Wave S" onerror="this.style.background='#0d1b2a';this.style.minHeight='280px'">
+    <div class="card-body">
+      <div class="card-num">01</div>
+      <div class="card-name">Speech Wave S</div>
+      <p class="card-desc">S letterform constructed as a flowing vocal frequency ribbon.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <img class="card-img" src="./logo-concepts/c1-wave-s.png" alt="Speech Wave S"
+      onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22512%22 height=%22512%22 viewBox=%220 0 512 512%22><rect width=%22512%22 height=%22512%22 fill=%22%230d1b2a%22 rx=%2240%22/><path d=%22M256 80 C440 80,440 256,256 256 C72 256,72 432,256 432%22 stroke=%22%23f25c2e%22 stroke-width=%2290%22 stroke-linecap=%22round%22 fill=%22none%22/></svg>'">
+    <div class="card-body">
+      <div class="card-num">01</div>
+      <div class="card-name">Speech Wave S</div>
+      <p class="card-desc">S letterform built from a continuous vocal frequency ribbon.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Since images are local, embed as base64 data URIs via inline SVG placeholders -->
+<script>
+  // Replace img srcs with the correct absolute paths served locally
+  // This gallery is best opened via a local dev server
+</script>
+
+<p class="section-label">Round 2 — Conceptual Non-Cliché Directions</p>
+
+<div class="grid" id="elite-grid">
+  <!-- Cards injected by script -->
+</div>
+
+<div class="footer">
+  Speexify Brand Identity Exploration · All concepts rendered in brand palette: Navy #0d1b2a + Coral #f25c2e
+</div>
+
+<script>
+const concepts = [
+  {
+    num: 'A',
+    name: 'The Breath Before',
+    desc: 'The single most human moment in language — the intake of breath just before speaking. A vertical bar with a notch + a pause dash.',
+    pick: false
+  },
+  {
+    num: 'B',
+    name: 'The Axis',
+    desc: 'Encodes Arabic RTL and English LTR into one symmetrical bilateral form — two directions, one voice.',
+    pick: false
+  },
+  {
+    num: 'C',
+    name: 'The Resonance Chamber',
+    desc: 'An architectural arch form referencing a concert hall cross-section and Arabic door archways simultaneously.',
+    pick: false
+  },
+  {
+    num: 'D',
+    name: 'The Ignition Point',
+    desc: 'A single dot + a bold arc. The moment a spark jumps. Japanese in its restraint — asymmetric, spare, intentional.',
+    pick: false
+  },
+  {
+    num: 'E',
+    name: 'The Threshold',
+    desc: 'A gateway open at the bottom with a dramatic weight contrast between strokes — encoding transformation.',
+    pick: false
+  },
+  {
+    num: 'F',
+    name: 'The Double-X',
+    desc: 'Speexify\'s unique "xx" encoded as two interlocking X marks — one solid, one outline — forming a compass rose.',
+    pick: false
+  },
+  {
+    num: 'G',
+    name: 'The Open Vowel',
+    desc: 'A bold vertical alif stroke + a sweeping arc — the geometry of the vocal tract fully open at maximum resonance.',
+    pick: false
+  },
+  {
+    num: 'H',
+    name: 'The Ember Glyph',
+    desc: 'A custom invented symbol with no precedent — a cut diamond body with an angular spark arm. An original brand sigil.',
+    pick: false
+  }
+];
+
+const grid = document.getElementById('elite-grid');
+concepts.forEach(c => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div style="aspect-ratio:1;background:#0d1b2a;display:flex;align-items:center;justify-content:center;">
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+        <text x="40" y="52" text-anchor="middle" font-family="Outfit,sans-serif" font-size="40" font-weight="900" fill="#f25c2e">${c.num}</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <div class="card-num">Concept ${c.num}</div>
+      ${c.pick ? '<span class="badge badge--pick">★ Top Pick</span>' : '<span class="badge badge--concept">Concept</span>'}
+      <div class="card-name">${c.name}</div>
+      <p class="card-desc">${c.desc}</p>
+    </div>
+  `;
+  grid.appendChild(card);
+});
+</script>
+
+</body>
+</html>
