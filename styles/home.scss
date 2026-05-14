@@ -1,6 +1,10 @@
 @use "variables" as *;
 @use "performance" as *;
 
+html.home-client-ready #home-ssr-fallback {
+  display: none;
+}
+
 // ========================================
 // ANIMATIONS
 // ========================================
@@ -454,6 +458,7 @@
 
   &__img {
     width: 100%;
+    height: auto;
     display: block;
     position: relative;
     z-index: 1;

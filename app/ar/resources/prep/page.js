@@ -1,6 +1,6 @@
 // app/ar/resources/prep/page.js
-import Page from "../../../resources/prep/page";
+import PrepPageContent from "../../../resources/prep/PrepPageContent";
 
-export default function ArabicPrepPage(props) {
-  return <Page {...props} locale="ar" />;
+export default async function ArabicPrepPage({ searchParams }) {
+  return <PrepPageContent searchParams={searchParams} locale="ar" />;
 }

@@ -1,11 +1,10 @@
 // src/components/Header.jsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
-import { logout as apiLogout } from "@/lib/auth";
 import {
   isFocusedWorkspacePath,
   normalizeLocalizedPath,
@@ -46,6 +45,10 @@ function localizeHref(baseHref, locale) {
   // locale === "en"
   if (baseHref === "/ar") return "/";
   return baseHref;
+}
+
+function itemIndexStyle(index: number): CSSProperties {
+  return { "--item-index": index } as CSSProperties;
 }
 
 /* ------------------------------------------------------------------
@@ -94,7 +97,7 @@ function LanguageSwitcher({ locale, pathname }) {
 ------------------------------------------------------------------ */
 
 export default function Header() {
-  const { user, checking, setUser } = useAuth();
+  const { user, checking, logout: authLogout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -148,11 +151,10 @@ export default function Header() {
   const baseLogoTo = checking ? "/" : user ? "/dashboard" : "/";
   const logoTo = localizeHref(baseLogoTo, locale);
 
-  const logout = async () => {
+  const handleLogout = async () => {
     try {
-      await apiLogout();
+      await authLogout();
     } catch { }
-    setUser(null);
     setOpen(false);
     router.push(localizeHref("/login", locale));
   };
@@ -239,7 +241,7 @@ export default function Header() {
       <button
         type="button"
         className="spx-nav-cta spx-logout-btn"
-        onClick={logout}
+        onClick={handleLogout}
       >
         <span className="spx-cta-bg"></span>
         <span className="spx-cta-content">
@@ -294,7 +296,7 @@ export default function Header() {
                 <li
                   key={item.to}
                   className="spx-nav-item"
-                  style={{ "--item-index": idx }}
+                  style={itemIndexStyle(idx)}
                 >
                   <Link
                     href={href}
@@ -314,7 +316,7 @@ export default function Header() {
             {!checking && !user && (
               <li
                 className="spx-nav-item spx-nav-item-special"
-                style={{ "--item-index": links.length }}
+                style={itemIndexStyle(links.length)}
               >
                 <Link
                   href={localizeHref("/register", locale)}
@@ -335,7 +337,7 @@ export default function Header() {
             {/* Desktop language switcher */}
             <li
               className="spx-nav-item spx-nav-item-lang"
-              style={{ "--item-index": links.length + 1 }}
+              style={itemIndexStyle(links.length + 1)}
             >
               <LanguageSwitcher locale={locale} pathname={pathname} />
             </li>
@@ -344,7 +346,7 @@ export default function Header() {
             {!checking && user && (
               <li
                 className="spx-nav-item spx-nav-item-clock"
-                style={{ "--item-index": links.length + 0.75 }}
+                style={itemIndexStyle(links.length + 0.75)}
               >
                 <DigitalClock />
               </li>
@@ -354,7 +356,7 @@ export default function Header() {
             {!checking && user && (
               <li
                 className="spx-nav-item spx-nav-item-notif"
-                style={{ "--item-index": links.length + 0.5 }}
+                style={itemIndexStyle(links.length + 0.5)}
               >
                 <NotificationsBell locale={locale} />
               </li>
@@ -381,7 +383,10 @@ export default function Header() {
       </div>
 
       {/* Mobile drawer */}
-      <div className={"spx-mobile-drawer" + (open ? " spx-is-open" : "")}>
+      <div
+        className={"spx-mobile-drawer" + (open ? " spx-is-open" : "")}
+        aria-hidden={!open}
+      >
         <div className="spx-mobile-drawer-inner">
           <ul className="spx-mobile-list">
             {links.map((item, idx) => {
@@ -390,7 +395,7 @@ export default function Header() {
                 <li
                   key={item.to}
                   className="spx-mobile-item"
-                  style={{ "--item-index": idx }}
+                  style={itemIndexStyle(idx)}
                 >
                   <Link
                     href={href}
@@ -428,7 +433,7 @@ export default function Header() {
               <>
                 <li
                   className="spx-mobile-item"
-                  style={{ "--item-index": links.length }}
+                  style={itemIndexStyle(links.length)}
                 >
                   <Link
                     href={localizeHref("/register", locale)}
@@ -463,7 +468,7 @@ export default function Header() {
                 </li>
                 <li
                   className="spx-mobile-item spx-mobile-item-cta"
-                  style={{ "--item-index": links.length + 1 }}
+                  style={itemIndexStyle(links.length + 1)}
                 >
                   <Link
                     href={localizeHref("/login", locale)}
@@ -498,18 +503,18 @@ export default function Header() {
                 {/* Mobile notifications bell */}
                 <li
                   className="spx-mobile-item spx-mobile-item-notif"
-                  style={{ "--item-index": links.length }}
+                  style={itemIndexStyle(links.length)}
                 >
                   <NotificationsBell locale={locale} />
                 </li>
 
                 <li
                   className="spx-mobile-item spx-mobile-item-cta"
-                  style={{ "--item-index": links.length + 1 }}
+                  style={itemIndexStyle(links.length + 1)}
                 >
                   <button
                     className="spx-mobile-cta spx-logout-btn"
-                    onClick={logout}
+                    onClick={handleLogout}
                     type="button"
                   >
                     <span className="spx-mobile-cta-bg"></span>
@@ -544,7 +549,7 @@ export default function Header() {
             {/* Mobile language switcher */}
             <li
               className="spx-mobile-item spx-mobile-item-lang"
-              style={{ "--item-index": links.length + 2 }}
+              style={itemIndexStyle(links.length + 2)}
             >
               <LanguageSwitcher locale={locale} pathname={pathname} />
             </li>

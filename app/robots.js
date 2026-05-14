@@ -6,18 +6,39 @@
 
 export default function robots() {
   const baseUrl = "https://speexify.com";
+  const privatePaths = [
+    "/api/",
+    "/admin/",
+    "/ar/admin/",
+    "/dashboard/",
+    "/ar/dashboard/",
+    "/calendar/",
+    "/ar/calendar/",
+    "/settings/",
+    "/ar/settings/",
+    "/classroom/",
+    "/ar/classroom/",
+    "/resources/",
+    "/ar/resources/",
+    "/assessment",
+    "/ar/assessment",
+    "/onboarding",
+    "/ar/onboarding",
+    "/manual-payment",
+    "/ar/manual-payment",
+    "/checkout/",
+    "/ar/checkout/",
+    "/payment/",
+    "/ar/payment/",
+    "/_next/",
+  ];
 
   return {
     rules: [
       {
         userAgent: "*",
         allow: "/",
-        disallow: [
-          "/api/", // Don't index API routes
-          "/admin/", // Don't index admin pages (if you have any)
-          "/private/", // Private pages
-          "/_next/", // Next.js internal files
-        ],
+        disallow: privatePaths,
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

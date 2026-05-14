@@ -21,9 +21,13 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@types/node": "^25.7.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "eslint": "latest",
     "eslint-config-next": "latest",
-    "sass": "^1.93.2"
+    "sass": "^1.93.2",
+    "typescript": "^6.0.3"
   },
   "scripts": {
     "dev": "./node_modules/.bin/next dev",

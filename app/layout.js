@@ -5,11 +5,13 @@ import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../styles/calendar.scss";
 import { Inter, Outfit } from "next/font/google";
+import { headers } from "next/headers";
 
 import Providers from "@/components/Providers";
 import ClientProviders from "./ClientProviders";
 import LocaleShell from "./LocaleShell";
 import AppChrome from "@/components/AppChrome";
+import { organizationJsonLd, websiteJsonLd } from "./seo";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -60,7 +62,7 @@ export const metadata = {
     siteName: "Speexify",
     images: [
       {
-        url: "/og-image.png", // Create this: 1200x630px
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "Speexify - Language and Communication Coaching",
@@ -75,7 +77,7 @@ export const metadata = {
     description:
       "Personalized language and communication coaching for teams and professionals.",
     creator: "@speexify",
-    images: ["/twitter-image.png"],
+    images: ["/twitter-image"],
   },
 
   // Robots directives
@@ -91,11 +93,6 @@ export const metadata = {
     },
   },
 
-  // Canonical URL
-  alternates: {
-    canonical: "https://speexify.com",
-  },
-
   // Uncomment after you verify with each service:
   // verification: {
   //   google: "your-google-verification-code",
@@ -104,8 +101,16 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
+  const requestHeaders = await headers();
+  const locale = requestHeaders.get("x-speexify-locale") || "en";
+  const isArabic = locale === "ar";
+
   return (
-    <html lang="en">
+    <html
+      lang={isArabic ? "ar" : "en"}
+      dir={isArabic ? "rtl" : "ltr"}
+      suppressHydrationWarning
+    >
       <head>
         {/* Favicons */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -116,6 +121,18 @@ export default async function RootLayout({ children }) {
 
         {/* Theme color for mobile browsers */}
         <meta name="theme-color" content="#2563EB" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteJsonLd),
+          }}
+        />
       </head>
       <body className={`${inter.variable} ${outfit.variable}`}>
         <LocaleShell>

@@ -26,12 +26,20 @@ function isPrivate(pathname) {
   );
 }
 
+function withCommonHeaders(response) {
+  response.headers.set(
+    "Cross-Origin-Opener-Policy",
+    "same-origin-allow-popups"
+  );
+  return response;
+}
+
 export function middleware(req) {
   const url = req.nextUrl.clone();
   const pathname = url.pathname;
   const searchParams = url.searchParams;
 
-  const isArabic = pathname.startsWith("/ar/");
+  const isArabic = pathname === "/ar" || pathname.startsWith("/ar/");
   // Normalize to EN-style base path ("/dashboard", "/login", etc.)
   const basePath = isArabic ? pathname.replace(/^\/ar/, "") || "/" : pathname;
 
@@ -51,13 +59,22 @@ export function middleware(req) {
     const originalPathWithQuery =
       pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
 
-    dest.searchParams.set("next", encodeURIComponent(originalPathWithQuery));
+    dest.searchParams.set("next", originalPathWithQuery);
 
-    return NextResponse.redirect(dest);
+    return withCommonHeaders(NextResponse.redirect(dest));
   }
 
   // Otherwise allow through
-  return NextResponse.next();
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-speexify-locale", isArabic ? "ar" : "en");
+
+  return withCommonHeaders(
+    NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+  );
 }
 
 export const config = {
@@ -79,6 +96,7 @@ export const config = {
 
     // Arabic equivalents
     "/ar",
+    "/ar/:path*",
     "/ar/login",
     "/ar/register",
     "/ar/dashboard/:path*",

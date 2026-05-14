@@ -14,7 +14,7 @@ export default function AdminDashboardHeader() {
         </h1>
       </div>
 
-      <div className="adm-admin-header__actions" style={{ gap: 12 }}>
+      <div className="adm-admin-header__actions">
         <Link href="/admin/support" className="adm-btn-primary">
           🛟 Support Inbox
         </Link>

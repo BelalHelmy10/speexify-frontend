@@ -2,6 +2,9 @@
 
 // This imports the default export from app/page.js (your English homepage)
 import Page from "../page";
+import { pageMetadata } from "../seo";
+
+export const metadata = pageMetadata("home", "ar");
 
 export default function ArabicHomePage() {
   // For now we just render the same component.

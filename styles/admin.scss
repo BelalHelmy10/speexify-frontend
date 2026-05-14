@@ -48,6 +48,22 @@
   color: var(--admin-text-secondary);
 }
 
+.adm-admin-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  a {
+    text-decoration: none;
+  }
+
+  a:hover,
+  a:focus-visible {
+    text-decoration: none;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    Status Toast
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -915,6 +931,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
+  text-decoration: none;
   transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease,
     box-shadow 0.3s ease;
   box-shadow: 0 4px 12px rgba($brand, 0.3);
@@ -949,12 +966,14 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
+  text-decoration: none;
   transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease,
     box-shadow 0.3s ease;
 
   &:hover {
     background: rgba($text-muted, 0.2);
     transform: translateY(-2px);
+    text-decoration: none;
   }
 
   &:active {
