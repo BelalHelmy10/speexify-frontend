@@ -1,9 +1,33 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  Bell,
+  CalendarPlus,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  FileText,
+  Link,
+  Loader2,
+  Search,
+  ShieldAlert,
+  User,
+  Users,
+  Video,
+  X,
+} from "lucide-react";
 import TimePicker from "@/components/ui/TimePicker";
 
+const DURATION_OPTIONS = ["30", "45", "60", "90"];
+
 function PreviewBadge({ tone = "neutral", children }) {
-  return <span className={`adm-scheduler-badge adm-scheduler-badge--${tone}`}>{children}</span>;
+  return (
+    <span className={`adm-scheduler-badge adm-scheduler-badge--${tone}`}>
+      {children}
+    </span>
+  );
 }
 
 function formatSlot(slot) {
@@ -23,6 +47,218 @@ function formatDateTime(value) {
   }
 }
 
+function personLabel(person) {
+  if (!person) return "";
+  return person.name ? `${person.name} - ${person.email}` : person.email;
+}
+
+function filterPeople(people, query, excludeIds = []) {
+  const normalized = query.trim().toLowerCase();
+  const excluded = new Set(excludeIds.map(String));
+  return people
+    .filter((person) => !excluded.has(String(person.id)))
+    .filter((person) => {
+      if (!normalized) return true;
+      return `${person.name || ""} ${person.email || ""} ${person.timezone || ""}`
+        .toLowerCase()
+        .includes(normalized);
+    });
+}
+
+function emitChange(name, value, type = "text") {
+  return {
+    target: {
+      name,
+      value,
+      type,
+      checked: type === "checkbox" ? Boolean(value) : undefined,
+    },
+  };
+}
+
+function PersonOption({ person, onSelect }) {
+  return (
+    <button
+      type="button"
+      className="adm-person-option"
+      onClick={() => onSelect(String(person.id))}
+    >
+      <span className="adm-person-option__avatar">
+        {(person.name || person.email || "?").slice(0, 2).toUpperCase()}
+      </span>
+      <span className="adm-person-option__body">
+        <strong>{person.name || "Unnamed user"}</strong>
+        <small>{person.email}</small>
+      </span>
+      <span className="adm-person-option__meta">
+        {person.timezone || "No timezone"}
+      </span>
+    </button>
+  );
+}
+
+function PersonPicker({
+  label,
+  people,
+  value,
+  onChange,
+  placeholder,
+  required = false,
+  emptyText = "No matching users",
+}) {
+  const [query, setQuery] = useState("");
+  const selected = people.find((person) => String(person.id) === String(value));
+  const results = useMemo(
+    () => filterPeople(people, query, selected ? [selected.id] : []),
+    [people, query, selected]
+  );
+
+  return (
+    <div className="adm-form-field adm-person-picker">
+      <label className="adm-form-label">
+        {label}
+        {required && <span className="adm-form-required">*</span>}
+      </label>
+
+      {selected ? (
+        <div className="adm-person-selected">
+          <PersonOption person={selected} onSelect={() => {}} />
+          <button
+            type="button"
+            className="adm-person-selected__clear"
+            onClick={() => onChange("")}
+            aria-label={`Clear ${label}`}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="adm-search-control">
+            <Search size={16} />
+            <input
+              type="search"
+              className="adm-form-input"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={placeholder}
+              aria-label={label}
+            />
+          </div>
+          <div className="adm-person-results">
+            <div className="adm-person-results__summary">
+              Showing {results.length} matching {results.length === 1 ? "person" : "people"}
+            </div>
+            {results.length > 0 ? (
+              results.map((person) => (
+                <PersonOption
+                  key={person.id}
+                  person={person}
+                  onSelect={(nextValue) => {
+                    onChange(nextValue);
+                    setQuery("");
+                  }}
+                />
+              ))
+            ) : (
+              <div className="adm-person-results__empty">{emptyText}</div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function LearnerMultiPicker({ learners, selectedIds, capacity, setForm }) {
+  const [query, setQuery] = useState("");
+  const selectedSet = useMemo(
+    () => new Set((selectedIds || []).map(String)),
+    [selectedIds]
+  );
+  const selectedLearners = useMemo(
+    () => learners.filter((learner) => selectedSet.has(String(learner.id))),
+    [learners, selectedSet]
+  );
+  const results = useMemo(
+    () => filterPeople(learners, query, selectedIds),
+    [learners, query, selectedIds]
+  );
+  const capacityNumber = capacity ? Number(capacity) : null;
+  const isOverCapacity =
+    Number.isFinite(capacityNumber) && selectedLearners.length > capacityNumber;
+
+  const addLearner = (id) => {
+    const next = Array.from(new Set([...(selectedIds || []), String(id)]));
+    setForm((current) => ({ ...current, learnerIds: next }));
+    setQuery("");
+  };
+
+  const removeLearner = (id) => {
+    setForm((current) => ({
+      ...current,
+      learnerIds: current.learnerIds.filter(
+        (learnerId) => String(learnerId) !== String(id)
+      ),
+    }));
+  };
+
+  return (
+    <div className="adm-form-field adm-form-field--full adm-learner-picker">
+      <div className="adm-field-heading">
+        <label className="adm-form-label">
+          Participants<span className="adm-form-required">*</span>
+        </label>
+        <span className={isOverCapacity ? "is-danger" : ""}>
+          {selectedLearners.length}
+          {capacityNumber ? ` / ${capacityNumber}` : ""} selected
+        </span>
+      </div>
+
+      {selectedLearners.length > 0 && (
+        <div className="adm-selected-chips">
+          {selectedLearners.map((learner) => (
+            <span key={learner.id} className="adm-selected-chip">
+              <span>{personLabel(learner)}</span>
+              <button
+                type="button"
+                onClick={() => removeLearner(learner.id)}
+                aria-label={`Remove ${personLabel(learner)}`}
+              >
+                <X size={14} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="adm-search-control">
+        <Search size={16} />
+        <input
+          type="search"
+          className="adm-form-input"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search learners by name, email, or timezone"
+        />
+      </div>
+
+      <div className="adm-person-results adm-person-results--grid">
+        <div className="adm-person-results__summary">
+          Showing {results.length} available learner{results.length === 1 ? "" : "s"}
+        </div>
+        {results.length > 0 ? (
+          results.map((person) => (
+            <PersonOption key={person.id} person={person} onSelect={addLearner} />
+          ))
+        ) : (
+          <div className="adm-person-results__empty">No matching learners</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SchedulerPreview({
   preview,
   loading,
@@ -34,6 +270,7 @@ function SchedulerPreview({
   if (loading) {
     return (
       <div className="adm-scheduler-preview adm-scheduler-preview--loading">
+        <Loader2 size={18} className="adm-spin" />
         Checking availability, conflicts, credits, and notifications...
       </div>
     );
@@ -42,6 +279,7 @@ function SchedulerPreview({
   if (error) {
     return (
       <div className="adm-scheduler-preview adm-scheduler-preview--error">
+        <AlertTriangle size={18} />
         {error}
       </div>
     );
@@ -50,7 +288,8 @@ function SchedulerPreview({
   if (!preview) {
     return (
       <div className="adm-scheduler-preview adm-scheduler-preview--empty">
-        Complete the learner, date, and time to preview the booking.
+        <CalendarPlus size={18} />
+        Complete learner, date, and time to preview the booking.
       </div>
     );
   }
@@ -64,6 +303,7 @@ function SchedulerPreview({
     0
   );
   const notificationRecipients = preview.notifications?.recipients || [];
+  const totalConflictCount = teacherConflictCount + learnerConflictCount;
   const availabilityTone =
     availability.status === "available"
       ? "success"
@@ -74,29 +314,37 @@ function SchedulerPreview({
           : "danger";
 
   return (
-    <div className="adm-scheduler-preview">
+    <div className="adm-scheduler-preview adm-scheduler-preview--sticky">
       <div className="adm-scheduler-preview__header">
         <div>
-          <h3>Scheduling Preview</h3>
+          <h3>Readiness Check</h3>
           <p>
             {formatDateTime(preview.schedule?.startAt)} -{" "}
             {formatDateTime(preview.schedule?.endAt)}
           </p>
         </div>
         <PreviewBadge tone={preview.canCreate ? "success" : "danger"}>
-          {preview.canCreate ? "Ready to create" : "Needs attention"}
+          {preview.canCreate ? "Ready" : "Blocked"}
         </PreviewBadge>
       </div>
 
       {(preview.blockers?.length > 0 || preview.warnings?.length > 0) && (
         <div className="adm-scheduler-alerts">
           {preview.blockers?.map((item) => (
-            <div key={item} className="adm-scheduler-alert adm-scheduler-alert--danger">
+            <div
+              key={item}
+              className="adm-scheduler-alert adm-scheduler-alert--danger"
+            >
+              <ShieldAlert size={15} />
               {item}
             </div>
           ))}
           {preview.warnings?.map((item) => (
-            <div key={item} className="adm-scheduler-alert adm-scheduler-alert--warning">
+            <div
+              key={item}
+              className="adm-scheduler-alert adm-scheduler-alert--warning"
+            >
+              <AlertTriangle size={15} />
               {item}
             </div>
           ))}
@@ -106,7 +354,10 @@ function SchedulerPreview({
       <div className="adm-scheduler-grid">
         <div className="adm-scheduler-panel">
           <div className="adm-scheduler-panel__top">
-            <span>Teacher Availability</span>
+            <span>
+              <Clock size={16} />
+              Teacher availability
+            </span>
             <PreviewBadge tone={availabilityTone}>{availability.label}</PreviewBadge>
           </div>
           <p>{availability.message}</p>
@@ -125,16 +376,18 @@ function SchedulerPreview({
 
         <div className="adm-scheduler-panel">
           <div className="adm-scheduler-panel__top">
-            <span>Conflicts</span>
-            <PreviewBadge
-              tone={teacherConflictCount + learnerConflictCount > 0 ? "danger" : "success"}
-            >
-              {teacherConflictCount + learnerConflictCount > 0 ? "Conflict" : "Clear"}
+            <span>
+              <ShieldAlert size={16} />
+              Conflicts
+            </span>
+            <PreviewBadge tone={totalConflictCount > 0 ? "danger" : "success"}>
+              {totalConflictCount > 0 ? "Conflict" : "Clear"}
             </PreviewBadge>
           </div>
           <p>
-            {teacherConflictCount} teacher conflict{teacherConflictCount === 1 ? "" : "s"} ·{" "}
-            {learnerConflictCount} learner conflict{learnerConflictCount === 1 ? "" : "s"}
+            {teacherConflictCount} teacher conflict
+            {teacherConflictCount === 1 ? "" : "s"} · {learnerConflictCount}{" "}
+            learner conflict{learnerConflictCount === 1 ? "" : "s"}
           </p>
           {preview.conflicts?.learners?.slice(0, 3).map((entry) => (
             <div key={entry.learner.id} className="adm-scheduler-conflict-row">
@@ -146,7 +399,10 @@ function SchedulerPreview({
 
         <div className="adm-scheduler-panel">
           <div className="adm-scheduler-panel__top">
-            <span>Credits</span>
+            <span>
+              <CreditCard size={16} />
+              Credits
+            </span>
             <PreviewBadge tone={hasCreditIssue ? "danger" : "success"}>
               {hasCreditIssue ? "Override needed" : "Enough credits"}
             </PreviewBadge>
@@ -165,9 +421,13 @@ function SchedulerPreview({
 
         <div className="adm-scheduler-panel">
           <div className="adm-scheduler-panel__top">
-            <span>Notifications</span>
+            <span>
+              <Bell size={16} />
+              Notifications
+            </span>
             <PreviewBadge tone={notificationRecipients.length ? "success" : "neutral"}>
-              {notificationRecipients.length} recipient{notificationRecipients.length === 1 ? "" : "s"}
+              {notificationRecipients.length} recipient
+              {notificationRecipients.length === 1 ? "" : "s"}
             </PreviewBadge>
           </div>
           <p>{preview.notifications?.meetingMode}</p>
@@ -189,7 +449,9 @@ function SchedulerPreview({
           {preview.timezones?.learners?.length
             ? Array.from(
                 new Set(
-                  preview.timezones.learners.map((learner) => learner.timezone || "Not set")
+                  preview.timezones.learners.map(
+                    (learner) => learner.timezone || "Not set"
+                  )
                 )
               ).join(", ")
             : "Not selected"}
@@ -198,6 +460,16 @@ function SchedulerPreview({
 
       {hasCreditIssue && (
         <div className="adm-credit-override">
+          <div className="adm-credit-override__header">
+            <ShieldAlert size={18} />
+            <div>
+              <strong>No-credit override</strong>
+              <p>
+                This bypasses learner credit checks and will be stored in the
+                admin audit trail.
+              </p>
+            </div>
+          </div>
           <label className="adm-credit-override__toggle">
             <input
               type="checkbox"
@@ -205,7 +477,7 @@ function SchedulerPreview({
               checked={!!form.allowNoCredit}
               onChange={onCreateChange}
             />
-            <span>Allow no-credit booking</span>
+            <span>Allow booking without available credits</span>
           </label>
           {form.allowNoCredit && (
             <textarea
@@ -230,7 +502,6 @@ export default function AdminCreateSessionSection({
   users,
   normType,
   onCreateChange,
-  onCreateLearnersChange,
   createSession,
   creatingSession,
   sessionPreview,
@@ -240,262 +511,340 @@ export default function AdminCreateSessionSection({
   setForm,
   setShowBulkScheduler,
 }) {
+  const sessionType = normType(form.type);
+  const isGroup = sessionType === "GROUP";
+  const hasPreviewBlocker = sessionPreview && !sessionPreview.canCreate;
+  const createDisabled =
+    creatingSession || sessionPreviewLoading || Boolean(hasPreviewBlocker);
+  const meetingMode = form.meetingMode || "built_in";
+
+  const updateDuration = (duration) => {
+    setForm((current) => ({
+      ...current,
+      duration,
+      endTime: "",
+    }));
+  };
+
+  const updateMeetingMode = (mode) => {
+    setForm((current) => ({
+      ...current,
+      meetingMode: mode,
+      meetingUrl: mode === "built_in" ? "" : current.meetingUrl,
+    }));
+  };
+
   return (
-    <section className="adm-admin-card">
+    <section className="adm-admin-card adm-session-create">
       <div className="adm-admin-card__header">
         <div className="adm-admin-card__title-group">
           <div className="adm-admin-card__icon adm-admin-card__icon--success">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 5V19M5 12H19"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+            <CalendarPlus size={24} />
           </div>
           <div>
             <h2 className="adm-admin-card__title">Create New Session</h2>
             <p className="adm-admin-card__subtitle">
-              {normType(form.type) === "GROUP"
-                ? "Schedule a group session with multiple learners"
-                : "Schedule a 1:1 session for a learner"}
+              Build a session with live availability, conflict, credit, and
+              notification checks.
             </p>
           </div>
         </div>
         <div className="adm-admin-card__actions">
           <button
             type="button"
-            className="adm-btn-primary"
+            className="adm-btn-primary adm-btn-primary--compact"
             onClick={() => setShowBulkScheduler(true)}
           >
-            📅 Bulk Schedule
+            <CalendarPlus size={16} />
+            Bulk Schedule
           </button>
         </div>
       </div>
 
       <form onSubmit={createSession} className="adm-modern-form">
-        <div className="adm-form-grid">
-          <div className="adm-form-field">
-            <label className="adm-form-label">Session Type</label>
-            <select
-              name="type"
-              className="adm-form-input"
-              value={form.type}
-              onChange={onCreateChange}
-            >
-              <option value="ONE_ON_ONE">👤 One-on-One (1:1)</option>
-              <option value="GROUP">👥 Group Session</option>
-            </select>
-          </div>
-
-          <div className="adm-form-field">
-            <label className="adm-form-label">Teacher</label>
-            <select
-              name="teacherId"
-              className="adm-form-input"
-              value={form.teacherId}
-              onChange={onCreateChange}
-            >
-              <option value="">Select teacher (optional)</option>
-              {teachers.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name || t.email}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {normType(form.type) === "ONE_ON_ONE" && (
-            <div className="adm-form-field">
-              <label className="adm-form-label">
-                Learner<span className="adm-form-required">*</span>
-              </label>
-              <select
-                name="userId"
-                className="adm-form-input"
-                value={form.userId}
-                onChange={onCreateChange}
-                required
-              >
-                <option value="">Select learner...</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name ? `${u.name} — ${u.email}` : u.email}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {normType(form.type) === "GROUP" && (
-            <>
-              <div className="adm-form-field">
-                <label className="adm-form-label">Capacity</label>
-                <input
-                  type="number"
-                  name="capacity"
-                  className="adm-form-input"
-                  value={form.capacity}
-                  onChange={onCreateChange}
-                  min="1"
-                  max="100"
-                  placeholder="Max participants (optional)"
-                />
+        <div className="adm-scheduler-workspace">
+          <div className="adm-scheduler-form-column">
+            <div className="adm-form-section">
+              <div className="adm-form-section__heading">
+                <User size={17} />
+                <div>
+                  <h3>People</h3>
+                  <p>Choose who will teach and attend this session.</p>
+                </div>
               </div>
+
+              <div className="adm-form-field adm-form-field--full">
+                <label className="adm-form-label">Session Type</label>
+                <div className="adm-segmented-control">
+                  <button
+                    type="button"
+                    className={sessionType === "ONE_ON_ONE" ? "is-active" : ""}
+                    onClick={() =>
+                      onCreateChange(emitChange("type", "ONE_ON_ONE"))
+                    }
+                    aria-pressed={sessionType === "ONE_ON_ONE"}
+                  >
+                    <User size={16} />
+                    1:1
+                  </button>
+                  <button
+                    type="button"
+                    className={sessionType === "GROUP" ? "is-active" : ""}
+                    onClick={() => onCreateChange(emitChange("type", "GROUP"))}
+                    aria-pressed={sessionType === "GROUP"}
+                  >
+                    <Users size={16} />
+                    Group
+                  </button>
+                </div>
+              </div>
+
+              <PersonPicker
+                label="Teacher"
+                people={teachers}
+                value={form.teacherId}
+                onChange={(value) =>
+                  onCreateChange(emitChange("teacherId", value))
+                }
+                placeholder="Search teachers by name, email, or timezone"
+                emptyText="No matching teachers"
+              />
+
+              {!isGroup && (
+                <PersonPicker
+                  label="Learner"
+                  people={users}
+                  value={form.userId}
+                  onChange={(value) =>
+                    onCreateChange(emitChange("userId", value))
+                  }
+                  placeholder="Search learners by name, email, or timezone"
+                  required
+                  emptyText="No matching learners"
+                />
+              )}
+
+              {isGroup && (
+                <>
+                  <div className="adm-form-field">
+                    <label className="adm-form-label">Capacity</label>
+                    <input
+                      type="number"
+                      name="capacity"
+                      className="adm-form-input"
+                      value={form.capacity}
+                      onChange={onCreateChange}
+                      min="1"
+                      max="100"
+                      placeholder="Optional seat limit"
+                    />
+                  </div>
+
+                  <LearnerMultiPicker
+                    learners={users}
+                    selectedIds={form.learnerIds}
+                    capacity={form.capacity}
+                    setForm={setForm}
+                  />
+                </>
+              )}
+            </div>
+
+            <div className="adm-form-section">
+              <div className="adm-form-section__heading">
+                <Clock size={17} />
+                <div>
+                  <h3>Timing</h3>
+                  <p>Set the schedule and duration in {adminTimezone}.</p>
+                </div>
+              </div>
+
+              <div className="adm-form-grid adm-form-grid--compact">
+                <div className="adm-form-field">
+                  <label className="adm-form-label">
+                    Date<span className="adm-form-required">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="date"
+                    className="adm-form-input"
+                    value={form.date}
+                    onChange={onCreateChange}
+                    required
+                  />
+                </div>
+
+                <div className="adm-form-field">
+                  <label className="adm-form-label">
+                    Start Time<span className="adm-form-required">*</span>
+                  </label>
+                  <TimePicker
+                    name="startTime"
+                    value={form.startTime}
+                    onChange={onCreateChange}
+                    required
+                  />
+                </div>
+
+                <div className="adm-form-field">
+                  <label className="adm-form-label">End Time</label>
+                  <TimePicker
+                    name="endTime"
+                    value={form.endTime}
+                    onChange={onCreateChange}
+                  />
+                </div>
+
+                <div className="adm-form-field">
+                  <label className="adm-form-label">Duration</label>
+                  <div className="adm-duration-options">
+                    {DURATION_OPTIONS.map((duration) => (
+                      <button
+                        type="button"
+                        key={duration}
+                        className={
+                          !form.endTime && form.duration === duration
+                            ? "is-active"
+                            : ""
+                        }
+                        onClick={() => updateDuration(duration)}
+                        disabled={!!form.endTime}
+                      >
+                        {duration}m
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="number"
+                    name="duration"
+                    className="adm-form-input adm-form-input--compact"
+                    value={form.duration}
+                    onChange={onCreateChange}
+                    min="15"
+                    step="15"
+                    disabled={!!form.endTime}
+                    aria-label="Custom duration in minutes"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="adm-form-section">
+              <div className="adm-form-section__heading">
+                <FileText size={17} />
+                <div>
+                  <h3>Session Details</h3>
+                  <p>Add the title, access mode, and internal notes.</p>
+                </div>
+              </div>
+
               <div className="adm-form-field adm-form-field--full">
                 <label className="adm-form-label">
-                  Participants<span className="adm-form-required">*</span>
-                  <span style={{ fontWeight: 400, marginLeft: 8, opacity: 0.7 }}>
-                    ({form.learnerIds.length} selected)
-                  </span>
+                  Session Title<span className="adm-form-required">*</span>
                 </label>
-                <select
-                  multiple
+                <input
+                  name="title"
                   className="adm-form-input"
-                  value={form.learnerIds}
-                  onChange={onCreateLearnersChange}
+                  value={form.title}
+                  onChange={onCreateChange}
+                  placeholder={
+                    isGroup ? "Speaking Practice Group" : "Grammar Review"
+                  }
                   required
-                  style={{ minHeight: 160 }}
-                >
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name ? `${u.name} — ${u.email}` : u.email}
-                    </option>
-                  ))}
-                </select>
-                <small style={{ opacity: 0.6, marginTop: 4, display: "block" }}>
-                  Hold Ctrl/Cmd to select multiple learners
-                </small>
+                />
               </div>
-            </>
-          )}
 
-          <div className="adm-form-field adm-form-field--full">
-            <label className="adm-form-label">
-              Session Title<span className="adm-form-required">*</span>
-            </label>
-            <input
-              name="title"
-              className="adm-form-input"
-              value={form.title}
-              onChange={onCreateChange}
-              placeholder={
-                normType(form.type) === "GROUP"
-                  ? "e.g., Speaking Practice Group"
-                  : "e.g., Grammar Review"
-              }
-              required
-            />
-          </div>
+              <div className="adm-form-field adm-form-field--full">
+                <label className="adm-form-label">Meeting Access</label>
+                <div className="adm-segmented-control">
+                  <button
+                    type="button"
+                    className={meetingMode === "built_in" ? "is-active" : ""}
+                    onClick={() => updateMeetingMode("built_in")}
+                    aria-pressed={meetingMode === "built_in"}
+                  >
+                    <Video size={16} />
+                    Built-in Classroom
+                  </button>
+                  <button
+                    type="button"
+                    className={meetingMode === "external" ? "is-active" : ""}
+                    onClick={() => updateMeetingMode("external")}
+                    aria-pressed={meetingMode === "external"}
+                  >
+                    <Link size={16} />
+                    External Link
+                  </button>
+                </div>
+              </div>
 
-          <div className="adm-form-field">
-            <label className="adm-form-label">
-              Date<span className="adm-form-required">*</span>
-            </label>
-            <input
-              type="date"
-              name="date"
-              className="adm-form-input"
-              value={form.date}
-              onChange={onCreateChange}
-              required
-            />
-          </div>
-          <div className="adm-form-field">
-            <label className="adm-form-label">
-              Start Time<span className="adm-form-required">*</span>
-            </label>
-            <TimePicker
-              name="startTime"
-              value={form.startTime}
-              onChange={onCreateChange}
-              required
-            />
-          </div>
-          <div className="adm-form-field">
-            <label className="adm-form-label">End Time</label>
-            <TimePicker
-              name="endTime"
-              value={form.endTime}
-              onChange={onCreateChange}
-            />
-          </div>
-          <div className="adm-form-field">
-            <label className="adm-form-label">
-              Duration (minutes)
-              <span className="adm-form-label__hint">{adminTimezone}</span>
-            </label>
-            <input
-              type="number"
-              name="duration"
-              className="adm-form-input"
-              value={form.duration}
-              onChange={onCreateChange}
-              min="15"
-              step="15"
-              disabled={!!form.endTime}
-            />
+              {meetingMode === "external" && (
+                <div className="adm-form-field adm-form-field--full">
+                  <label className="adm-form-label">
+                    External Meeting URL
+                    <span className="adm-form-required">*</span>
+                  </label>
+                  <input
+                    name="meetingUrl"
+                    className="adm-form-input"
+                    value={form.meetingUrl}
+                    onChange={onCreateChange}
+                    placeholder="https://meet.google.com/..."
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="adm-form-field adm-form-field--full">
+                <label className="adm-form-label">Admin Notes</label>
+                <textarea
+                  name="notes"
+                  className="adm-form-textarea"
+                  value={form.notes}
+                  onChange={onCreateChange}
+                  rows={3}
+                  placeholder="Internal context for this session..."
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="adm-form-field adm-form-field--full">
-            <label className="adm-form-label">Meeting URL</label>
-            <input
-              name="meetingUrl"
-              className="adm-form-input"
-              value={form.meetingUrl}
-              onChange={onCreateChange}
-              placeholder="https://meet.google.com/... (leave empty for built-in classroom)"
+          <aside className="adm-scheduler-preview-column">
+            <SchedulerPreview
+              preview={sessionPreview}
+              loading={sessionPreviewLoading}
+              error={sessionPreviewError}
+              adminTimezone={adminTimezone}
+              form={form}
+              onCreateChange={onCreateChange}
             />
-          </div>
-
-          <div className="adm-form-field adm-form-field--full">
-            <label className="adm-form-label">Notes</label>
-            <textarea
-              name="notes"
-              className="adm-form-textarea"
-              value={form.notes}
-              onChange={onCreateChange}
-              rows={3}
-              placeholder="Additional notes for this session..."
-            />
-          </div>
+          </aside>
         </div>
 
-        <SchedulerPreview
-          preview={sessionPreview}
-          loading={sessionPreviewLoading}
-          error={sessionPreviewError}
-          adminTimezone={adminTimezone}
-          form={form}
-          onCreateChange={onCreateChange}
-        />
-
-        <div className="adm-form-actions">
+        <div className="adm-form-actions adm-form-actions--scheduler">
           <button
             type="submit"
             className="adm-btn-primary"
-            disabled={creatingSession}
+            disabled={createDisabled}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path
-                d="M8 3V13M3 8H13"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+            {creatingSession ? (
+              <Loader2 size={16} className="adm-spin" />
+            ) : sessionPreview?.canCreate ? (
+              <CheckCircle2 size={16} />
+            ) : (
+              <CalendarPlus size={16} />
+            )}
             {creatingSession
               ? "Creating..."
-              : `Create ${normType(form.type) === "GROUP" ? "Group " : ""}Session`}
+              : `Create ${isGroup ? "Group " : ""}Session`}
           </button>
 
           <button
             type="button"
             className="adm-btn-secondary"
             onClick={() =>
-              setForm((f) => ({
-                ...f,
+              setForm((current) => ({
+                ...current,
                 type: "ONE_ON_ONE",
                 userId: "",
                 learnerIds: [],
@@ -504,6 +853,7 @@ export default function AdminCreateSessionSection({
                 startTime: "",
                 endTime: "",
                 duration: "60",
+                meetingMode: "built_in",
                 meetingUrl: "",
                 notes: "",
                 allowNoCredit: false,

@@ -81,6 +81,7 @@ function Admin() {
     startTime: "",
     endTime: "",
     duration: "60",
+    meetingMode: "built_in",
     meetingUrl: "",
     notes: "",
     allowNoCredit: false,
@@ -101,6 +102,7 @@ function Admin() {
     startTime: "",
     endTime: "",
     duration: "60",
+    meetingMode: "built_in",
     meetingUrl: "",
     notes: "",
   });
@@ -389,6 +391,20 @@ function Admin() {
     }
 
     const endAt = form.endTime ? joinDateTime(form.date, form.endTime) : null;
+    const usesExternalMeeting = form.meetingMode === "external";
+    const meetingUrl = usesExternalMeeting ? String(form.meetingUrl || "").trim() : "";
+
+    if (usesExternalMeeting) {
+      try {
+        const parsedUrl = new URL(meetingUrl);
+        if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+          return { error: "External meeting URL must start with http:// or https://" };
+        }
+      } catch {
+        return { error: "Enter a valid external meeting URL" };
+      }
+    }
+
     const payload = {
       type,
       title:
@@ -398,7 +414,7 @@ function Admin() {
       ...(endAt
         ? { endAt: endAt.toISOString() }
         : { durationMin: Number(form.duration || 60) }),
-      joinUrl: form.meetingUrl || null,
+      joinUrl: meetingUrl || null,
       notes: form.notes || null,
       ...(form.allowNoCredit
         ? {
@@ -470,6 +486,7 @@ function Admin() {
     form.startTime,
     form.endTime,
     form.duration,
+    form.meetingMode,
     form.meetingUrl,
     form.notes,
     form.allowNoCredit,
@@ -501,9 +518,19 @@ function Admin() {
     // Warn if session is in the past
     if (startAt < new Date()) {
       const proceed = await confirmModal(
-        "⚠️ This session is scheduled in the past. Are you sure you want to create it?"
+        "This session is scheduled in the past. Are you sure you want to create it?"
       );
       if (!proceed) return;
+    }
+
+    if (sessionPreviewLoading) {
+      toast.error("Wait for the scheduling preview to finish before creating");
+      return;
+    }
+
+    if (sessionPreview && !sessionPreview.canCreate) {
+      toast.error("Resolve the scheduling preview blockers before creating");
+      return;
     }
 
     if (
@@ -556,6 +583,7 @@ function Admin() {
         startTime: "",
         endTime: "",
         duration: "60",
+        meetingMode: "built_in",
         meetingUrl: "",
         notes: "",
         allowNoCredit: false,
@@ -613,6 +641,7 @@ function Admin() {
       startTime: toTimeInput(row.startAt),
       endTime: row.endAt ? toTimeInput(row.endAt) : "",
       duration: row.endAt ? "" : "60",
+      meetingMode: row.meetingUrl || row.joinUrl ? "external" : "built_in",
       meetingUrl: row.meetingUrl || row.joinUrl || "",
       notes: row.notes || "",
     });
@@ -630,6 +659,7 @@ function Admin() {
       startTime: "",
       endTime: "",
       duration: "60",
+      meetingMode: "built_in",
       meetingUrl: "",
       notes: "",
     });
