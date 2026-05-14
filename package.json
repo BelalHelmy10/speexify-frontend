@@ -2,6 +2,9 @@
   "name": "web",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "@react-oauth/google": "^0.12.2",
     "@sanity/client": "^7.13.0",
@@ -27,7 +30,7 @@
     "eslint": "latest",
     "eslint-config-next": "latest",
     "sass": "^1.93.2",
-    "typescript": "^6.0.3"
+    "typescript": "^5.9.3"
   },
   "scripts": {
     "dev": "./node_modules/.bin/next dev",
