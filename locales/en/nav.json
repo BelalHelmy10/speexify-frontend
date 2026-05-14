@@ -13,5 +13,16 @@
   "progress": "Progress",
   "resources": "Resources",
   "settings": "Settings",
-  "admin": "Admin"
+  "admin": "Admin",
+  "profile": "Profile",
+  "support": "Support",
+  "role_learner": "Learner",
+  "role_teacher": "Teacher",
+  "role_admin": "Admin",
+  "account_open": "Open account menu",
+  "profile_hint": "Identity and account snapshot",
+  "settings_hint": "Security, calendar, and preferences",
+  "admin_hint": "Operations and user management",
+  "resources_hint": "Teaching materials and prep",
+  "support_hint": "Help, questions, and requests"
 }

@@ -1,9 +1,18 @@
 // src/components/Header.jsx
 "use client";
 
-import { useState, useEffect, type CSSProperties } from "react";
+import { useState, useEffect, useRef, type CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import {
+  BookOpen,
+  ChevronDown,
+  HelpCircle,
+  LogOut,
+  Settings,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import {
   isFocusedWorkspacePath,
@@ -49,6 +58,29 @@ function localizeHref(baseHref, locale) {
 
 function itemIndexStyle(index: number): CSSProperties {
   return { "--item-index": index } as CSSProperties;
+}
+
+function getDisplayName(user) {
+  return user?.name || user?.email?.split("@")?.[0] || "Speexify user";
+}
+
+function getInitials(user) {
+  const source = user?.name || user?.email || "S";
+  const parts = source
+    .replace(/@.*$/, "")
+    .split(/\s+|[._-]+/)
+    .filter(Boolean);
+
+  return (parts.length > 1 ? parts[0][0] + parts[1][0] : source.slice(0, 2))
+    .toUpperCase()
+    .replace(/[^A-Z0-9\u0600-\u06FF]/g, "");
+}
+
+function AvatarContent({ user }) {
+  if (user?.avatarUrl) {
+    return <img src={user.avatarUrl} alt="" />;
+  }
+  return getInitials(user);
 }
 
 /* ------------------------------------------------------------------
@@ -100,6 +132,7 @@ export default function Header() {
   const { user, checking, logout: authLogout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Locale detection from URL
   const isArabic = pathname?.startsWith("/ar");
@@ -112,6 +145,7 @@ export default function Header() {
   const navDict = getDictionary(locale, "nav");
 
   const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const isActive = (hrefBase) => {
@@ -146,7 +180,34 @@ export default function Header() {
 
   useEffect(() => {
     setOpen(false);
+    setAccountOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!accountOpen) return undefined;
+
+    function onPointerDown(event) {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        accountMenuRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setAccountOpen(false);
+    }
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") setAccountOpen(false);
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [accountOpen]);
 
   const baseLogoTo = checking ? "/" : user ? "/dashboard" : "/";
   const logoTo = localizeHref(baseLogoTo, locale);
@@ -156,7 +217,19 @@ export default function Header() {
       await authLogout();
     } catch { }
     setOpen(false);
+    setAccountOpen(false);
     router.push(localizeHref("/login", locale));
+  };
+
+  const navText = (key, fallback) => {
+    const value = t(navDict, key);
+    return value === `__${key}__` ? fallback : value;
+  };
+
+  const roleLabel = (role) => {
+    if (role === "admin") return navText("role_admin", "Admin");
+    if (role === "teacher") return navText("role_teacher", "Teacher");
+    return navText("role_learner", "Learner");
   };
 
   const loggedOut = [
@@ -172,8 +245,6 @@ export default function Header() {
     { to: "/dashboard", label: t(navDict, "dashboard") },
     { to: "/calendar", label: t(navDict, "calendar") },
     { to: "/dashboard/progress", label: t(navDict, "progress") },
-    // ❌ learners should NOT see Resources in the header
-    { to: "/settings", label: t(navDict, "settings") },
   ];
 
   const teacher = [
@@ -182,18 +253,16 @@ export default function Header() {
     { to: "/dashboard/progress", label: t(navDict, "progress") },
     // ✅ teachers DO see Resources
     { to: "/resources", label: t(navDict, "resources") },
-    { to: "/settings", label: t(navDict, "settings") },
   ];
 
   const adminExtra = [{ to: "/admin", label: t(navDict, "admin") }];
 
-  // Admin nav: Dashboard, Calendar, Admin, Resources, Settings (no Progress)
+  // Admin nav: Settings now lives in the account menu.
   const admin = [
     { to: "/dashboard", label: t(navDict, "dashboard") },
     { to: "/calendar", label: t(navDict, "calendar") },
     ...adminExtra,
     { to: "/resources", label: t(navDict, "resources") },
-    { to: "/settings", label: t(navDict, "settings") },
   ];
 
   const links =
@@ -204,6 +273,48 @@ export default function Header() {
         : user.role === "teacher"
           ? teacher
           : learner;
+
+  const accountLinks = user
+    ? [
+      {
+        to: "/profile",
+        label: navText("profile", "Profile"),
+        hint: navText("profile_hint", "Identity and account snapshot"),
+        icon: UserRound,
+      },
+      {
+        to: "/settings",
+        label: t(navDict, "settings"),
+        hint: navText("settings_hint", "Security, calendar, and preferences"),
+        icon: Settings,
+      },
+      ...(user.role === "admin"
+        ? [
+          {
+            to: "/admin",
+            label: t(navDict, "admin"),
+            hint: navText("admin_hint", "Operations and user management"),
+            icon: ShieldCheck,
+          },
+        ]
+        : user.role === "teacher"
+          ? [
+            {
+              to: "/resources",
+              label: t(navDict, "resources"),
+              hint: navText("resources_hint", "Teaching materials and prep"),
+              icon: BookOpen,
+            },
+          ]
+          : []),
+      {
+        to: "/contact",
+        label: navText("support", "Support"),
+        hint: navText("support_hint", "Help, questions, and requests"),
+        icon: HelpCircle,
+      },
+    ]
+    : [];
 
   const RightCTA = () =>
     checking ? (
@@ -238,37 +349,78 @@ export default function Header() {
         </span>
       </Link>
     ) : (
-      <button
-        type="button"
-        className="spx-nav-cta spx-logout-btn"
-        onClick={handleLogout}
+      <div
+        className={`spx-account-menu${accountOpen ? " spx-is-open" : ""}${isActive("/profile") || isActive("/settings") ? " spx-is-active" : ""
+          }`}
+        ref={accountMenuRef}
       >
-        <span className="spx-cta-bg"></span>
-        <span className="spx-cta-content">
-          <span className="spx-cta-text">{t(navDict, "logout")}</span>
-          <svg
-            className="spx-cta-icon"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <path
-              d="M6 14H3.33333C2.59695 14 2 13.403 2 12.6667V3.33333C2 2.59695 2.59695 2 3.33333 2H6"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d="M10.6667 11.3333L14 8M14 8L10.6667 4.66667M14 8H6"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      </button>
+        <button
+          type="button"
+          className="spx-account-trigger"
+          aria-haspopup="menu"
+          aria-expanded={accountOpen}
+          aria-label={navText("account_open", "Open account menu")}
+          onClick={() => setAccountOpen((value) => !value)}
+        >
+          <span className="spx-account-avatar" aria-hidden="true">
+            <AvatarContent user={user} />
+          </span>
+          <span className="spx-account-copy">
+            <strong>{getDisplayName(user)}</strong>
+            <small>{roleLabel(user.role)}</small>
+          </span>
+          <ChevronDown className="spx-account-chevron" size={16} />
+        </button>
+
+        {accountOpen && (
+          <div className="spx-account-dropdown" role="menu">
+            <div className="spx-account-card">
+              <span className="spx-account-card__avatar" aria-hidden="true">
+                <AvatarContent user={user} />
+              </span>
+              <div>
+                <strong>{getDisplayName(user)}</strong>
+                <span>{user.email}</span>
+              </div>
+              <em>{roleLabel(user.role)}</em>
+            </div>
+
+            <div className="spx-account-links">
+              {accountLinks.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    href={localizeHref(item.to, locale)}
+                    className={`spx-account-link${isActive(item.to) ? " spx-is-active" : ""
+                      }`}
+                    key={item.to}
+                    role="menuitem"
+                    onClick={() => setAccountOpen(false)}
+                  >
+                    <span className="spx-account-link__icon">
+                      <Icon size={17} />
+                    </span>
+                    <span>
+                      <strong>{item.label}</strong>
+                      <small>{item.hint}</small>
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              className="spx-account-logout"
+              onClick={handleLogout}
+              role="menuitem"
+            >
+              <LogOut size={17} />
+              <span>{t(navDict, "logout")}</span>
+            </button>
+          </div>
+        )}
+      </div>
     );
 
   if (isFocusedWorkspace) return null;
@@ -500,17 +652,72 @@ export default function Header() {
 
             {!checking && user && (
               <>
+                <li
+                  className="spx-mobile-item spx-mobile-account"
+                  style={itemIndexStyle(links.length)}
+                >
+                  <div className="spx-mobile-account-card">
+                    <span className="spx-mobile-account-card__avatar">
+                      <AvatarContent user={user} />
+                    </span>
+                    <span>
+                      <strong>{getDisplayName(user)}</strong>
+                      <small>{user.email}</small>
+                    </span>
+                  </div>
+                </li>
+
+                {accountLinks.map((item, accountIndex) => {
+                  const href = localizeHref(item.to, locale);
+                  return (
+                    <li
+                      key={`mobile-account-${item.to}`}
+                      className="spx-mobile-item"
+                      style={itemIndexStyle(links.length + accountIndex + 1)}
+                    >
+                      <Link
+                        href={href}
+                        className={
+                          "spx-mobile-link" +
+                          (isActive(item.to) ? " spx-is-active" : "")
+                        }
+                        onClick={() => setOpen(false)}
+                      >
+                        <span className="spx-mobile-link-bg"></span>
+                        <span className="spx-mobile-link-content">
+                          <span className="spx-mobile-link-text">{item.label}</span>
+                          <svg
+                            className="spx-mobile-link-arrow"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 18 18"
+                            fill="none"
+                          >
+                            <path
+                              d="M6.75 13.5L11.25 9L6.75 4.5"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+
                 {/* Mobile notifications bell */}
                 <li
                   className="spx-mobile-item spx-mobile-item-notif"
-                  style={itemIndexStyle(links.length)}
+                  style={itemIndexStyle(links.length + accountLinks.length + 1)}
                 >
                   <NotificationsBell locale={locale} />
                 </li>
 
                 <li
                   className="spx-mobile-item spx-mobile-item-cta"
-                  style={itemIndexStyle(links.length + 1)}
+                  style={itemIndexStyle(links.length + accountLinks.length + 2)}
                 >
                   <button
                     className="spx-mobile-cta spx-logout-btn"
@@ -549,7 +756,9 @@ export default function Header() {
             {/* Mobile language switcher */}
             <li
               className="spx-mobile-item spx-mobile-item-lang"
-              style={itemIndexStyle(links.length + 2)}
+              style={itemIndexStyle(
+                links.length + (!checking && user ? accountLinks.length + 3 : 2)
+              )}
             >
               <LanguageSwitcher locale={locale} pathname={pathname} />
             </li>

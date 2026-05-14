@@ -54,6 +54,16 @@ const SECTION_IDS = [
   "devices",
 ];
 
+const SETTINGS_SCROLL_OFFSET_FALLBACK = 132;
+
+function getSettingsScrollOffset() {
+  if (typeof window === "undefined") return SETTINGS_SCROLL_OFFSET_FALLBACK;
+
+  const header = document.querySelector(".spx-header-wrapper");
+  const headerHeight = header?.getBoundingClientRect?.().height || 104;
+  return Math.round(headerHeight + 24);
+}
+
 function getApiError(error, fallback) {
   return error?.response?.data?.error || error?.message || fallback;
 }
@@ -195,6 +205,7 @@ export default function SettingsPage() {
   const [privacyBusy, setPrivacyBusy] = useState("");
   const [privacyError, setPrivacyError] = useState("");
   const [privacySuccess, setPrivacySuccess] = useState("");
+  const settingsReady = Boolean(me);
 
   useEffect(() => {
     if (checking || !user) return;
@@ -252,6 +263,60 @@ export default function SettingsPage() {
       ignore = true;
     };
   }, [checking, user, dict]);
+
+  useEffect(() => {
+    if (initialLoading || !settingsReady) return undefined;
+
+    let frame = null;
+
+    function updateActiveSection() {
+      frame = null;
+      const offset = getSettingsScrollOffset() + 8;
+      let nextSection = SECTION_IDS[0];
+      let bestDistance = Number.NEGATIVE_INFINITY;
+      let closestSection = SECTION_IDS[0];
+      let closestDistance = Number.POSITIVE_INFINITY;
+
+      SECTION_IDS.forEach((sectionId) => {
+        const element = document.getElementById(sectionId);
+        if (!element) return;
+
+        const distanceFromAnchor = element.getBoundingClientRect().top - offset;
+        const absoluteDistance = Math.abs(distanceFromAnchor);
+
+        if (absoluteDistance < closestDistance) {
+          closestDistance = absoluteDistance;
+          closestSection = sectionId;
+        }
+
+        if (distanceFromAnchor <= 0 && distanceFromAnchor > bestDistance) {
+          bestDistance = distanceFromAnchor;
+          nextSection = sectionId;
+        }
+      });
+
+      const resolvedSection =
+        bestDistance === Number.NEGATIVE_INFINITY ? closestSection : nextSection;
+      setActiveSection((current) =>
+        current === resolvedSection ? current : resolvedSection
+      );
+    }
+
+    function scheduleUpdate() {
+      if (frame !== null) return;
+      frame = window.requestAnimationFrame(updateActiveSection);
+    }
+
+    updateActiveSection();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+
+    return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+    };
+  }, [initialLoading, settingsReady]);
 
   const sectionLabels = useMemo(
     () => ({
@@ -470,9 +535,14 @@ export default function SettingsPage() {
 
   function jumpToSection(sectionId) {
     setActiveSection(sectionId);
-    document.getElementById(sectionId)?.scrollIntoView({
+    const element = document.getElementById(sectionId);
+    if (!element) return;
+
+    const top =
+      element.getBoundingClientRect().top + window.scrollY - getSettingsScrollOffset();
+    window.scrollTo({
+      top: Math.max(0, top),
       behavior: "smooth",
-      block: "start",
     });
   }
 

@@ -1,6 +1,8 @@
 @use "variables" as *;
 
 .settings-modern {
+  --settings-scroll-offset: 132px;
+
   min-height: 100vh;
   background:
     linear-gradient(180deg, rgba(255, 246, 240, 0.88), rgba(248, 250, 252, 0.96)),
@@ -41,7 +43,9 @@
 
 .settings-rail {
   position: sticky;
-  top: 24px;
+  top: var(--settings-scroll-offset);
+  max-height: calc(100vh - var(--settings-scroll-offset) - 24px);
+  overflow-y: auto;
   display: grid;
   gap: 18px;
   background: rgba(255, 255, 255, 0.86);
@@ -50,6 +54,21 @@
   padding: 16px;
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(18px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.28) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.22);
+    border-radius: 999px;
+  }
 }
 
 .settings-rail__profile {
@@ -127,6 +146,9 @@
     &.is-active {
       background: #fff0e9;
       color: #d9481e;
+      box-shadow:
+        inset 3px 0 0 #ff5a2f,
+        0 8px 20px rgba(255, 90, 47, 0.08);
     }
   }
 }
@@ -248,7 +270,7 @@
 }
 
 .settings-card {
-  scroll-margin-top: 24px;
+  scroll-margin-top: calc(var(--settings-scroll-offset) + 12px);
   border-radius: 16px;
   padding: 22px;
 }
@@ -375,7 +397,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  row-gap: 12px;
 }
 
 .settings-btn {
@@ -629,6 +652,17 @@
 .settings-callout,
 .settings-request-list,
 .settings-package-list {
+  margin-top: 14px;
+}
+
+.settings-inline-panel + .settings-actions,
+.settings-callout + .settings-actions {
+  margin-top: 18px;
+}
+
+.settings-actions + .settings-calendar-links,
+.settings-actions + .settings-status,
+.settings-card > .settings-status {
   margin-top: 14px;
 }
 
@@ -889,6 +923,8 @@
 
   .settings-rail {
     position: static;
+    max-height: none;
+    overflow: visible;
   }
 
   .settings-nav {

@@ -344,6 +344,268 @@
   }
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+   ACCOUNT MENU
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.spx-account-menu {
+  position: relative;
+  grid-column: 3;
+  justify-self: end;
+  z-index: 20;
+}
+
+.spx-account-trigger {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba($ink, 0.08);
+  border-radius: 14px;
+  background: rgba($color-white, 0.84);
+  color: $ink;
+  padding: 6px 10px 6px 6px;
+  box-shadow: 0 6px 16px rgba($ink, 0.07);
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    background: $color-white;
+    border-color: rgba($brand, 0.28);
+    box-shadow: 0 10px 24px rgba($ink, 0.1), 0 0 0 4px rgba($brand, 0.08);
+  }
+}
+
+.spx-account-menu.spx-is-active .spx-account-trigger,
+.spx-account-menu.spx-is-open .spx-account-trigger {
+  border-color: rgba($brand, 0.32);
+  background: rgba($brand, 0.06);
+}
+
+.spx-account-avatar,
+.spx-account-card__avatar,
+.spx-mobile-account-card__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: linear-gradient(135deg, $brand 0%, $brand-ink 100%);
+  color: $color-white;
+  font-family: $font-heading;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  box-shadow: 0 8px 18px rgba($brand, 0.24);
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+}
+
+.spx-account-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.05;
+
+  strong,
+  small {
+    max-width: 124px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    font-size: 13px;
+    font-weight: 800;
+    color: $ink;
+  }
+
+  small {
+    margin-top: 4px;
+    color: $muted;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+}
+
+.spx-account-chevron {
+  flex: 0 0 auto;
+  color: $muted;
+  transition: transform 0.16s ease, color 0.2s ease;
+
+  .spx-account-menu.spx-is-open & {
+    transform: rotate(180deg);
+    color: $brand;
+  }
+}
+
+.spx-account-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(340px, calc(100vw - 32px));
+  padding: 10px;
+  border: 1px solid rgba($ink, 0.1);
+  border-radius: 18px;
+  background: rgba($color-white, 0.98);
+  box-shadow: 0 24px 60px rgba($ink, 0.17);
+}
+
+.spx-account-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba($ink, 0.95), rgba($navy-mid, 0.96));
+  color: $color-white;
+
+  div {
+    min-width: 0;
+  }
+
+  strong,
+  span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  span {
+    margin-top: 3px;
+    color: rgba($color-white, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  em {
+    align-self: start;
+    border-radius: 999px;
+    background: rgba($brand, 0.18);
+    color: #ffd8ca;
+    padding: 5px 8px;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+}
+
+.spx-account-card__avatar {
+  width: 42px;
+  height: 42px;
+}
+
+.spx-account-links {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.spx-account-link,
+.spx-account-logout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  border: 0;
+  background: transparent;
+  color: $ink;
+  padding: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.15s ease, color 0.18s ease;
+}
+
+.spx-account-link {
+  &:hover,
+  &.spx-is-active {
+    background: rgba($brand, 0.08);
+    color: $brand;
+    text-decoration: none;
+    transform: translateX(2px);
+  }
+
+  > span:last-child {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    color: inherit;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  small {
+    color: $muted;
+    font-size: 11px;
+    font-weight: 600;
+  }
+}
+
+.spx-account-link__icon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background: rgba($ink, 0.04);
+  color: inherit;
+}
+
+.spx-account-logout {
+  border-top: 1px solid rgba($ink, 0.08);
+  border-radius: 12px;
+  color: $error;
+  font-size: 13px;
+  font-weight: 800;
+  justify-content: center;
+
+  &:hover {
+    background: rgba($error, 0.08);
+    transform: translateY(-1px);
+  }
+}
+
 /* DIGITAL CLOCK */
 .spx-digital-clock {
   grid-column: 2;
@@ -500,6 +762,48 @@
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px solid rgba($ink, 0.08);
+  }
+}
+
+.spx-mobile-account {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba($ink, 0.08);
+}
+
+.spx-mobile-account-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba($ink, 0.08);
+  border-radius: 16px;
+  background: rgba($ink, 0.03);
+  padding: 12px;
+
+  span:last-child {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    color: $ink;
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  small {
+    color: $muted;
+    font-size: 12px;
+    font-weight: 600;
   }
 }
 
@@ -736,6 +1040,7 @@
 
   .spx-nav,
   .spx-nav-cta,
+  .spx-account-menu,
   .spx-nav-status {
     display: none !important;
   }
@@ -968,6 +1273,9 @@
   .spx-header-container,
   .spx-nav-link,
   .spx-nav-cta,
+  .spx-account-trigger,
+  .spx-account-link,
+  .spx-account-logout,
   .spx-mobile-link,
   .spx-mobile-cta,
   .spx-mobile-drawer,
@@ -982,6 +1290,9 @@
 .spx-nav-link,
 .spx-mobile-link,
 .spx-nav-cta,
+.spx-account-trigger,
+.spx-account-link,
+.spx-account-logout,
 .spx-mobile-cta,
 .spx-nav-toggle,
 .spx-brand {
@@ -1026,6 +1337,7 @@
   .spx-header-glow,
   .spx-nav-toggle,
   .spx-mobile-drawer,
+  .spx-account-menu,
   .spx-nav-cta {
     display: none !important;
   }

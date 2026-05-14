@@ -170,8 +170,6 @@
   "resources_prep_info_view_unit": "View full unit",
   "resources_prep_info_open_raw": "Open original file",
 
-  "resources_focus_viewer_exit": "Exit focus mode",
-  "resources_focus_viewer_enter": "Focus on viewer",
 
   "resources_toolbar_sidebar_show": "Show details",
   "resources_toolbar_sidebar_hide": "Hide details",
@@ -183,6 +181,17 @@
   "resources_toolbar_note": "Sticky note",
   "resources_toolbar_pointer": "Pointer",
   "resources_toolbar_clear_all": "Clear all",
+  "resources_export_label": "Export",
+  "resources_export_png": "PNG image",
+  "resources_export_pdf": "PDF page",
+  "resources_export_hint": "Current page with annotations",
+  "resources_export_failed": "We couldn’t export this page. Please try again.",
+
+  "resources_clear_confirm_title": "Clear annotations?",
+  "resources_clear_confirm_message_page": "This will remove every annotation on page {page}. You can undo this right after clearing.",
+  "resources_clear_confirm_message": "This will remove every annotation from this resource. You can undo this right after clearing.",
+  "resources_clear_confirm_cancel": "Cancel",
+  "resources_clear_confirm_yes": "Clear",
 
   "resources_viewer_no_preview_title": "No preview available",
   "resources_viewer_no_preview_text": "You can still open the original file using the button on the left.",
@@ -205,6 +214,7 @@
   "resources_pdf_prev_page": "Previous page",
   "resources_pdf_next_page": "Next page",
   "resources_pdf_sidebar_empty": "No pages to show.",
-  "resources_pdf_page_label": "Page {{current}} of {{total}}",
+  "resources_pdf_page_label": "Page {current} of {total}",
+  "resources_pdf_page_short": "Page",
   "resources_pdf_fit_to_page": "Fit to page"
 }

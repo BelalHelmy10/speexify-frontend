@@ -25,7 +25,7 @@ import {
   clamp,
   getDetectedShape,
   drawStrokesOnContext,
-  exportAnnotationsAsPng,
+  exportAnnotatedPage,
 } from "./prepAnnotationUtils";
 import { handlePrepChannelMessage } from "./prepRealtimeSync";
 import {
@@ -147,7 +147,6 @@ export default function PrepShell({
   const isPdf = viewer?.type === "pdf";
   const pdfViewerUrl = isPdf ? viewerUrl : null;
 
-  const [focusMode, setFocusMode] = useState(false);
   const [tool, setTool] = useState(TOOL_NONE);
   const [isDrawing, setIsDrawing] = useState(false);
   // Teacher pointer is now per-page
@@ -611,7 +610,7 @@ export default function PrepShell({
 
   const layoutClasses =
     "prep-layout" +
-    (focusMode || sidebarCollapsed || hideSidebar ? " prep-layout--focus" : "");
+    (sidebarCollapsed || hideSidebar ? " prep-layout--focus" : "");
 
   // ─────────────────────────────────────────────────────────────
   // Text tool helpers:
@@ -1225,19 +1224,30 @@ export default function PrepShell({
   }
 
   // ─────────────────────────────────────────────────────────────
-  // REDRAW + EXPORT: legacy bitmap rendering helpers
+  // REDRAW + EXPORT: bitmap rendering helpers
   // ─────────────────────────────────────────────────────────────
-  function handleExport() {
-    exportAnnotationsAsPng({
-      canvas: canvasRef.current,
-      isPdf,
-      pdfCurrentPage,
-      strokes,
-      lines,
-      boxes,
-      textBoxes,
-      penColor,
-    });
+  async function handleExport(format = "png") {
+    try {
+      await exportAnnotatedPage({
+        format,
+        container: containerRef.current,
+        canvas: canvasRef.current,
+        isPdf,
+        pdfCurrentPage,
+        strokes,
+        lines,
+        boxes,
+        textBoxes,
+        stickyNotes,
+        masks,
+        penColor,
+        fileBaseName:
+          resource?.title || resource?.name || resource?.fileName || "speexify-export",
+      });
+    } catch (error) {
+      console.error("Failed to export annotated page", error);
+      window.alert(t(dict, "resources_export_failed"));
+    }
   }
 
   // REDRAW: render all strokes (normalized) onto canvas (legacy bitmap)
@@ -2270,18 +2280,6 @@ export default function PrepShell({
         />
 
         <section className="prep-viewer">
-          {viewerIsActive && !hideBreadcrumbs && (
-            <button
-              type="button"
-              className="prep-viewer__focus-toggle"
-              onClick={() => setFocusMode((v) => !v)}
-            >
-              {focusMode
-                ? t(dict, "resources_focus_viewer_exit")
-                : t(dict, "resources_focus_viewer_enter")}
-            </button>
-          )}
-
           {viewerIsActive ? (
             <>
               {/* Toolbar */}
@@ -2323,6 +2321,10 @@ export default function PrepShell({
                 showGrid={showGrid}
                 setShowGrid={setShowGrid}
                 handleExport={handleExport}
+                exportLabel={t(dict, "resources_export_label")}
+                exportPngLabel={t(dict, "resources_export_png")}
+                exportPdfLabel={t(dict, "resources_export_pdf")}
+                exportHintLabel={t(dict, "resources_export_hint")}
                 viewport={viewport}
                 setViewport={setViewport}
                 requestClearAll={requestClearAll}
@@ -2376,7 +2378,9 @@ export default function PrepShell({
         onCancel={cancelClearAll}
         onConfirm={confirmClearAll}
         title={t(dict, "resources_clear_confirm_title")}
-        messagePage={t(dict, "resources_clear_confirm_message_page")}
+        messagePage={t(dict, "resources_clear_confirm_message_page", {
+          page: pdfCurrentPage,
+        })}
         message={t(dict, "resources_clear_confirm_message")}
         cancelLabel={t(dict, "resources_clear_confirm_cancel")}
         confirmLabel={t(dict, "resources_clear_confirm_yes")}

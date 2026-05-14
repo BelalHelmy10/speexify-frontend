@@ -18,7 +18,7 @@ export default function PrepPointersLayer({
             pointerEvents: "none",
             filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))",
             animation: "blink 1s ease-in-out infinite",
-            zIndex: 9999,
+            zIndex: 2000000000,
           }}
           width="40"
           height="40"
@@ -47,7 +47,7 @@ export default function PrepPointersLayer({
                 top: `${pos.y * 100}%`,
                 transform: "translate(-100%, -50%)",
                 pointerEvents: "none",
-                zIndex: 9998,
+                zIndex: 1999999999,
                 display: "flex",
                 alignItems: "center",
                 gap: "4px",

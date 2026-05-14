@@ -50,6 +50,10 @@ export default function PrepToolbar({
   showGrid,
   setShowGrid,
   handleExport,
+  exportLabel,
+  exportPngLabel,
+  exportPdfLabel,
+  exportHintLabel,
   viewport,
   setViewport,
   requestClearAll,
@@ -149,6 +153,10 @@ export default function PrepToolbar({
         showGrid={showGrid}
         setShowGrid={setShowGrid}
         handleExport={handleExport}
+        exportLabel={exportLabel}
+        exportPngLabel={exportPngLabel}
+        exportPdfLabel={exportPdfLabel}
+        exportHintLabel={exportHintLabel}
         viewport={viewport}
         setViewport={setViewport}
       />

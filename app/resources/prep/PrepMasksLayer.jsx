@@ -8,6 +8,7 @@ export default function PrepMasksLayer({
   TOOL_ERASER,
   startMaskMove,
   maskPreview,
+  getZIndexFromId,
 }) {
   return (
     <>
@@ -26,7 +27,7 @@ export default function PrepMasksLayer({
               backgroundColor: "#ffffff",
               boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
               pointerEvents: tool === TOOL_ERASER ? "none" : "auto",
-              zIndex: 49,
+              zIndex: getZIndexFromId(mask.id),
             }}
             onMouseDown={(e) => startMaskMove(e, mask)}
           />
@@ -44,6 +45,7 @@ export default function PrepMasksLayer({
             backgroundColor: "rgba(255,255,255,0.85)",
             boxShadow: "0 0 0 1px rgba(0,0,0,0.2)",
             pointerEvents: "none",
+            zIndex: 1900000000,
           }}
         />
       )}

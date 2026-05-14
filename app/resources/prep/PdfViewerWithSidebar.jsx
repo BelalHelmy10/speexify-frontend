@@ -4,6 +4,29 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { getDictionary, t } from "@/app/i18n";
 
+function PdfPageIndicator({ dict, currentPage, numPages }) {
+  const pageTotalLabel = numPages || "…";
+  const pageAriaLabel = t(dict, "resources_pdf_page_label", {
+    current: currentPage,
+    total: pageTotalLabel,
+  });
+
+  return (
+    <div
+      className="cpv-nav__pages"
+      aria-label={pageAriaLabel}
+      aria-live="polite"
+    >
+      <span className="cpv-nav__pages-kicker">
+        {t(dict, "resources_pdf_page_short")}
+      </span>
+      <span className="cpv-nav__pages-current">{currentPage}</span>
+      <span className="cpv-nav__pages-divider">/</span>
+      <span className="cpv-nav__pages-total">{pageTotalLabel}</span>
+    </div>
+  );
+}
+
 export default function PdfViewerWithSidebar({
   fileUrl,
   onFatalError,
@@ -609,12 +632,11 @@ export default function PdfViewerWithSidebar({
               >
                 ←
               </button>
-              <div className="cpv-nav__pages">
-                {t(dict, "resources_pdf_page_label", {
-                  current: currentPage,
-                  total: numPages || "…",
-                })}
-              </div>
+              <PdfPageIndicator
+                dict={dict}
+                currentPage={currentPage}
+                numPages={numPages}
+              />
               <button
                 type="button"
                 className="cpv-nav__btn"
@@ -777,12 +799,11 @@ export function PdfNavBar({ navState, locale = "en", className = "" }) {
         >
           ←
         </button>
-        <div className="cpv-nav__pages">
-          {t(dict, "resources_pdf_page_label", {
-            current: currentPage,
-            total: numPages || "…",
-          })}
-        </div>
+        <PdfPageIndicator
+          dict={dict}
+          currentPage={currentPage}
+          numPages={numPages}
+        />
         <button
           type="button"
           className="cpv-nav__btn"

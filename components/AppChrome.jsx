@@ -20,6 +20,7 @@ const APP_PATH_PREFIXES = [
   "/manual-payment",
   "/onboarding",
   "/payment",
+  "/profile",
   "/resources",
   "/settings",
 ];

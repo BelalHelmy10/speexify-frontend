@@ -237,6 +237,7 @@ export default function PrepAnnotationsOverlay({ ctx }) {
         TOOL_ERASER={TOOL_ERASER}
         startMaskMove={startMaskMove}
         maskPreview={maskPreview}
+        getZIndexFromId={getZIndexFromId}
       />
 
       <PrepShapePreviewLayer

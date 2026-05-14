@@ -14,7 +14,7 @@ export default function PrepShapePreviewLayer({
             position: "absolute",
             inset: 0,
             pointerEvents: "none",
-            zIndex: 9997,
+            zIndex: 1900000000,
           }}
           width="100%"
           height="100%"
@@ -40,7 +40,7 @@ export default function PrepShapePreviewLayer({
             position: "absolute",
             inset: 0,
             pointerEvents: "none",
-            zIndex: 9997,
+            zIndex: 1900000000,
           }}
           width="100%"
           height="100%"

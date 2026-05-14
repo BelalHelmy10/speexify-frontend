@@ -18,6 +18,7 @@ const PRIVATE_ROUTES = [
   // ✅ new protected routes
   "/checkout",
   "/payment", // protect ALL /payment/*, including /payment/success
+  "/profile",
 ];
 
 function isPrivate(pathname) {
@@ -93,6 +94,8 @@ export const config = {
     "/manual-payment/:path*",
     "/checkout/:path*", // ✅ protect checkout
     "/payment/:path*", // ✅ protect /payment/success and friends
+    "/profile",
+    "/profile/:path*",
 
     // Arabic equivalents
     "/ar",
@@ -110,5 +113,7 @@ export const config = {
     "/ar/manual-payment/:path*",
     "/ar/checkout/:path*", // ✅ ar checkout
     "/ar/payment/:path*", // ✅ ar payment/success
+    "/ar/profile",
+    "/ar/profile/:path*",
   ],
 };

@@ -13,5 +13,16 @@
   "progress": "التقدم",
   "resources": "المصادر",
   "settings": "الإعدادات",
-  "admin": "الإدارة"
+  "admin": "الإدارة",
+  "profile": "الملف الشخصي",
+  "support": "الدعم",
+  "role_learner": "متعلم",
+  "role_teacher": "مدرب",
+  "role_admin": "مسؤول",
+  "account_open": "فتح قائمة الحساب",
+  "profile_hint": "الهوية وملخص الحساب",
+  "settings_hint": "الأمان والتقويم والتفضيلات",
+  "admin_hint": "العمليات وإدارة المستخدمين",
+  "resources_hint": "مواد التدريس والتحضير",
+  "support_hint": "المساعدة والأسئلة والطلبات"
 }

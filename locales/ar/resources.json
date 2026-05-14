@@ -170,8 +170,6 @@
   "resources_prep_info_view_unit": "عرض الوحدة كاملة",
   "resources_prep_info_open_raw": "فتح الملف الأصلي",
 
-  "resources_focus_viewer_exit": "الخروج من وضع التركيز",
-  "resources_focus_viewer_enter": "التركيز على العرض",
 
   "resources_toolbar_sidebar_show": "إظهار التفاصيل",
   "resources_toolbar_sidebar_hide": "إخفاء التفاصيل",
@@ -183,6 +181,17 @@
   "resources_toolbar_note": "ملاحظة لاصقة",
   "resources_toolbar_pointer": "مؤشِّر",
   "resources_toolbar_clear_all": "مسح الكل",
+  "resources_export_label": "تصدير",
+  "resources_export_png": "صورة PNG",
+  "resources_export_pdf": "صفحة PDF",
+  "resources_export_hint": "الصفحة الحالية مع التعليقات",
+  "resources_export_failed": "تعذر تصدير هذه الصفحة. حاول مرة أخرى.",
+
+  "resources_clear_confirm_title": "مسح التعليقات؟",
+  "resources_clear_confirm_message_page": "سيتم حذف كل التعليقات على الصفحة {page}. يمكنك التراجع مباشرة بعد المسح.",
+  "resources_clear_confirm_message": "سيتم حذف كل التعليقات من هذا المورد. يمكنك التراجع مباشرة بعد المسح.",
+  "resources_clear_confirm_cancel": "إلغاء",
+  "resources_clear_confirm_yes": "مسح",
 
   "resources_viewer_no_preview_title": "لا يوجد معاينة للملف",
   "resources_viewer_no_preview_text": "ما زال بإمكانك فتح الملف الأصلي من الزر في الجانب الأيسر.",
@@ -203,6 +212,7 @@
   "resources_pdf_prev_page": "الصفحة السابقة",
   "resources_pdf_next_page": "الصفحة التالية",
   "resources_pdf_sidebar_empty": "لا توجد صفحات لعرضها.",
-  "resources_pdf_page_label": "الصفحة {{current}} من {{total}}",
+  "resources_pdf_page_label": "الصفحة {current} من {total}",
+  "resources_pdf_page_short": "الصفحة",
   "resources_pdf_fit_to_page": "ملاءمة الصفحة"
 }

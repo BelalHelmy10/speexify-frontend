@@ -126,13 +126,10 @@ export function getTouchPoint(touchEvent) {
 }
 
 export function getZIndexFromId(id) {
-  if (!id) return 10;
-  const match = id.match(/_(\d+)_/);
-  if (!match) return 10;
+  const timestamp = getTimestampFromId(id);
+  if (!timestamp) return 10000;
 
-  const timestamp = parseInt(match[1], 10);
-  const orderValue = timestamp % 10000;
-  return 10 + Math.floor((orderValue / 10000) * 39);
+  return 10000 + (timestamp % 1000000000);
 }
 
 export function getTimestampFromId(id) {
@@ -254,7 +251,7 @@ export function drawStrokesOnContext(
   strokesToDraw,
   width,
   height,
-  { penColor }
+  { penColor, strokeScale = 1 }
 ) {
   strokesToDraw.forEach((stroke) => {
     if (!stroke.points || stroke.points.length < 2) return;
@@ -265,17 +262,17 @@ export function drawStrokesOnContext(
 
     if (stroke.tool === TOOL_PEN) {
       ctx.strokeStyle = stroke.color || penColor;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = (stroke.strokeWidth || 3) * strokeScale;
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
     } else if (stroke.tool === TOOL_HIGHLIGHTER) {
-      ctx.strokeStyle = "rgba(250, 224, 120, 0.3)";
-      ctx.lineWidth = 12;
-      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = "#FFEB3B";
+      ctx.lineWidth = (stroke.strokeWidth || 12) * strokeScale;
+      ctx.globalAlpha = 0.55;
       ctx.globalCompositeOperation = "source-over";
     } else if (stroke.tool === TOOL_ERASER) {
       ctx.strokeStyle = "rgba(0,0,0,1)";
-      ctx.lineWidth = 20;
+      ctx.lineWidth = 20 * strokeScale;
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "destination-out";
     }
@@ -297,45 +294,463 @@ export function drawExtrasOnContext(
   ctx,
   width,
   height,
-  { isPdf, lines, boxes, textBoxes, pdfCurrentPage, penColor }
+  { isPdf, lines, boxes, textBoxes, pdfCurrentPage, penColor, exportScale = 1 }
 ) {
   const visibleLines = isPdf
     ? lines.filter((l) => (l.page ?? 1) === pdfCurrentPage)
     : lines;
   visibleLines.forEach((l) => {
-    ctx.beginPath();
-    ctx.moveTo(l.x1 * width, l.y1 * height);
-    ctx.lineTo(l.x2 * width, l.y2 * height);
-    ctx.strokeStyle = l.color || penColor;
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    drawLineOnContext(ctx, l, width, height, penColor, exportScale);
   });
 
   const visibleBoxes = isPdf
     ? boxes.filter((b) => (b.page ?? 1) === pdfCurrentPage)
     : boxes;
   visibleBoxes.forEach((b) => {
-    ctx.strokeStyle = b.color || penColor;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(b.x * width, b.y * height, b.width * width, b.height * height);
+    drawBoxOnContext(ctx, b, width, height, penColor, exportScale);
   });
 
   const visibleText = isPdf
     ? textBoxes.filter((t) => (t.page ?? 1) === pdfCurrentPage)
     : textBoxes;
   visibleText.forEach((tb) => {
-    ctx.fillStyle = tb.color || "black";
-    ctx.font = `${tb.fontSize || 16}px sans-serif`;
-    ctx.textBaseline = "top";
-    const linesInBox = (tb.text || "").split("\n");
-    linesInBox.forEach((line, i) => {
-      ctx.fillText(
-        line,
-        tb.x * width - (tb.width * width) / 2,
-        tb.y * height - (tb.height * height) / 2 + i * (tb.fontSize || 16) * 1.2
-      );
-    });
+    drawTextBoxOnContext(ctx, tb, width, height, exportScale);
   });
+}
+
+function drawLineOnContext(ctx, line, width, height, penColor, exportScale = 1) {
+  ctx.beginPath();
+  ctx.moveTo(line.x1 * width, line.y1 * height);
+  ctx.lineTo(line.x2 * width, line.y2 * height);
+  ctx.strokeStyle = line.color || penColor;
+  ctx.lineWidth = 2 * exportScale;
+  ctx.stroke();
+}
+
+function drawBoxOnContext(ctx, box, width, height, penColor, exportScale = 1) {
+  ctx.strokeStyle = box.color || penColor;
+  ctx.lineWidth = 2 * exportScale;
+  ctx.strokeRect(box.x * width, box.y * height, box.width * width, box.height * height);
+}
+
+function sanitizeExportName(name) {
+  return String(name || "speexify-export")
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 80) || "speexify-export";
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.download = fileName;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Failed to create export blob"));
+      },
+      type,
+      quality
+    );
+  });
+}
+
+function concatUint8Arrays(parts) {
+  const total = parts.reduce((sum, part) => sum + part.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  parts.forEach((part) => {
+    out.set(part, offset);
+    offset += part.length;
+  });
+  return out;
+}
+
+function makePdfObject(id, body) {
+  return `${id} 0 obj\n${body}\nendobj\n`;
+}
+
+async function createPdfBlobFromCanvas(canvas) {
+  const encoder = new TextEncoder();
+  const jpegBlob = await canvasToBlob(canvas, "image/jpeg", 0.94);
+  const imageBytes = new Uint8Array(await jpegBlob.arrayBuffer());
+  const pageWidth = Math.round(canvas.width);
+  const pageHeight = Math.round(canvas.height);
+  const content = `q\n${pageWidth} 0 0 ${pageHeight} 0 0 cm\n/Im0 Do\nQ`;
+
+  const objects = [
+    encoder.encode(makePdfObject(1, "<< /Type /Catalog /Pages 2 0 R >>")),
+    encoder.encode(makePdfObject(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>")),
+    encoder.encode(
+      makePdfObject(
+        3,
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`
+      )
+    ),
+    concatUint8Arrays([
+      encoder.encode(
+        `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${pageWidth} /Height ${pageHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.length} >>\nstream\n`
+      ),
+      imageBytes,
+      encoder.encode("\nendstream\nendobj\n"),
+    ]),
+    encoder.encode(
+      makePdfObject(5, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`)
+    ),
+  ];
+
+  const header = encoder.encode("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+  const offsets = [0];
+  let cursor = header.length;
+  objects.forEach((obj) => {
+    offsets.push(cursor);
+    cursor += obj.length;
+  });
+
+  const xrefStart = cursor;
+  const xrefRows = ["xref", `0 ${objects.length + 1}`, "0000000000 65535 f "];
+  for (let i = 1; i <= objects.length; i += 1) {
+    xrefRows.push(`${String(offsets[i]).padStart(10, "0")} 00000 n `);
+  }
+  const trailer = [
+    ...xrefRows,
+    "trailer",
+    `<< /Size ${objects.length + 1} /Root 1 0 R >>`,
+    "startxref",
+    String(xrefStart),
+    "%%EOF",
+  ].join("\n");
+
+  return new Blob([header, ...objects, encoder.encode(trailer)], {
+    type: "application/pdf",
+  });
+}
+
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, options = {}) {
+  const preserveBreaks = options.preserveBreaks ?? true;
+  const paragraphs = preserveBreaks ? String(text || "").split(/\r\n|\r|\n/) : [String(text || "")];
+  let cursorY = y;
+
+  paragraphs.forEach((paragraph, paragraphIndex) => {
+    const words = paragraph.split(/(\s+)/).filter(Boolean);
+    let line = "";
+
+    if (!words.length) {
+      cursorY += lineHeight;
+      return;
+    }
+
+    words.forEach((word) => {
+      const test = `${line}${word}`;
+      if (line && ctx.measureText(test).width > maxWidth) {
+        ctx.fillText(line.trimEnd(), x, cursorY);
+        line = word.trimStart();
+        cursorY += lineHeight;
+      } else {
+        line = test;
+      }
+    });
+
+    if (line) {
+      ctx.fillText(line.trimEnd(), x, cursorY);
+      cursorY += lineHeight;
+    }
+
+    if (paragraphIndex < paragraphs.length - 1) {
+      cursorY += lineHeight * 0.15;
+    }
+  });
+
+  return cursorY;
+}
+
+function drawTextBoxOnContext(ctx, tb, width, height, exportScale = 1) {
+  const fontSize = (tb.fontSize || 16) * exportScale;
+  const boxWidth = (tb.width || 150) * exportScale;
+  const boxHeight = tb.height ? tb.height * exportScale : null;
+  const x = tb.x * width - boxWidth / 2;
+  const y = tb.y * height - (boxHeight || fontSize * 1.2) / 2;
+  const text = tb.text || "";
+  const hasManualLineBreaks = /[\r\n]/.test(text);
+  const shouldWrap = hasManualLineBreaks || !tb.autoWidth;
+
+  ctx.save();
+  if (boxHeight) {
+    ctx.beginPath();
+    ctx.rect(x, y, boxWidth, boxHeight);
+    ctx.clip();
+  }
+  ctx.fillStyle = tb.color || "black";
+  ctx.font = `${fontSize}px sans-serif`;
+  ctx.textBaseline = "top";
+  if (shouldWrap) {
+    drawWrappedText(ctx, text, x, y, boxWidth, fontSize * 1.2);
+  } else {
+    ctx.fillText(text, x, y);
+  }
+  ctx.restore();
+}
+
+function drawMasksOnContext(ctx, masks, width, height, { isPdf, pdfCurrentPage, exportScale }) {
+  const visibleMasks = isPdf
+    ? masks.filter((mask) => (mask.page ?? 1) === pdfCurrentPage)
+    : masks;
+
+  visibleMasks.forEach((mask) => {
+    drawMaskOnContext(ctx, mask, width, height, exportScale);
+  });
+}
+
+function drawMaskOnContext(ctx, mask, width, height, exportScale = 1) {
+  const x = mask.x * width;
+  const y = mask.y * height;
+  const w = mask.width * width;
+  const h = mask.height * height;
+  ctx.save();
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "rgba(15, 23, 42, 0.18)";
+  ctx.lineWidth = Math.max(1, exportScale);
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeRect(x, y, w, h);
+  ctx.restore();
+}
+
+function drawStickyNotesOnContext(ctx, stickyNotes, width, height, {
+  isPdf,
+  pdfCurrentPage,
+  exportScale,
+}) {
+  const visibleNotes = isPdf
+    ? stickyNotes.filter((note) => (note.page ?? 1) === pdfCurrentPage)
+    : stickyNotes;
+
+  visibleNotes.forEach((note) => {
+    drawStickyNoteOnContext(ctx, note, width, height, exportScale);
+  });
+}
+
+function drawStickyNoteOnContext(ctx, note, width, height, exportScale = 1) {
+  const noteWidth = 220 * exportScale;
+  const headerHeight = 26 * exportScale;
+  const paddingX = 12 * exportScale;
+  const paddingY = 10 * exportScale;
+  const fontSize = 14 * exportScale;
+  const lineHeight = fontSize * 1.28;
+  const text = note.text || "";
+  const linesEstimate = Math.max(3, Math.ceil(text.length / 24));
+  const noteHeight = Math.max(
+    108 * exportScale,
+    headerHeight + paddingY * 2 + linesEstimate * lineHeight
+  );
+  const x = note.x * width - noteWidth / 2;
+  const y = note.y * height - noteHeight / 2;
+  const radius = 8 * exportScale;
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0, 0, 0, 0.22)";
+  ctx.shadowBlur = 10 * exportScale;
+  ctx.shadowOffsetY = 4 * exportScale;
+  ctx.fillStyle = "#fef08a";
+  roundRect(ctx, x, y, noteWidth, noteHeight, radius);
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+
+  ctx.fillStyle = "rgba(15, 23, 42, 0.08)";
+  roundRect(ctx, x, y, noteWidth, headerHeight, radius);
+  ctx.fill();
+
+  ctx.fillStyle = "#1f2937";
+  ctx.font = `${fontSize}px sans-serif`;
+  ctx.textBaseline = "top";
+  drawWrappedText(
+    ctx,
+    text,
+    x + paddingX,
+    y + headerHeight + paddingY,
+    noteWidth - paddingX * 2,
+    lineHeight
+  );
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+}
+
+function isVisibleOnPage(item, isPdf, pdfCurrentPage) {
+  return !isPdf || (item.page ?? 1) === pdfCurrentPage;
+}
+
+function drawStackedPageAnnotations(ctx, width, height, {
+  isPdf,
+  pdfCurrentPage,
+  strokes,
+  lines,
+  boxes,
+  textBoxes,
+  stickyNotes,
+  masks,
+  penColor,
+  exportScale,
+}) {
+  const layeredItems = [
+    ...strokes
+      .filter((item) => isVisibleOnPage(item, isPdf, pdfCurrentPage))
+      .map((item) => ({ type: "stroke", item })),
+    ...lines
+      .filter((item) => isVisibleOnPage(item, isPdf, pdfCurrentPage))
+      .map((item) => ({ type: "line", item })),
+    ...boxes
+      .filter((item) => isVisibleOnPage(item, isPdf, pdfCurrentPage))
+      .map((item) => ({ type: "box", item })),
+    ...textBoxes
+      .filter((item) => isVisibleOnPage(item, isPdf, pdfCurrentPage))
+      .map((item) => ({ type: "text", item })),
+    ...stickyNotes
+      .filter((item) => isVisibleOnPage(item, isPdf, pdfCurrentPage))
+      .map((item) => ({ type: "note", item })),
+    ...masks
+      .filter((item) => isVisibleOnPage(item, isPdf, pdfCurrentPage))
+      .map((item) => ({ type: "mask", item })),
+  ].sort((a, b) => getTimestampFromId(a.item.id) - getTimestampFromId(b.item.id));
+
+  layeredItems.forEach(({ type, item }) => {
+    if (type === "stroke") {
+      drawStrokesOnContext(ctx, [item], width, height, {
+        penColor,
+        strokeScale: exportScale,
+      });
+    } else if (type === "line") {
+      drawLineOnContext(ctx, item, width, height, penColor, exportScale);
+    } else if (type === "box") {
+      drawBoxOnContext(ctx, item, width, height, penColor, exportScale);
+    } else if (type === "text") {
+      drawTextBoxOnContext(ctx, item, width, height, exportScale);
+    } else if (type === "note") {
+      drawStickyNoteOnContext(ctx, item, width, height, exportScale);
+    } else if (type === "mask") {
+      drawMaskOnContext(ctx, item, width, height, exportScale);
+    }
+  });
+}
+
+function composeAnnotatedPageCanvas({
+  container,
+  canvas,
+  isPdf,
+  pdfCurrentPage,
+  strokes,
+  lines,
+  boxes,
+  textBoxes,
+  stickyNotes = [],
+  masks = [],
+  penColor,
+}) {
+  const pdfCanvas = isPdf
+    ? container?.querySelector?.(".cpv-page-canvas")
+    : null;
+  const baseEl = pdfCanvas || container || canvas;
+  if (!baseEl) throw new Error("Nothing is available to export.");
+
+  const rect = baseEl.getBoundingClientRect?.();
+  const cssWidth = Math.max(
+    1,
+    Math.round(baseEl.clientWidth || rect?.width || canvas?.width || 1)
+  );
+  const cssHeight = Math.max(
+    1,
+    Math.round(baseEl.clientHeight || rect?.height || canvas?.height || 1)
+  );
+  const exportScale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+
+  const out = document.createElement("canvas");
+  out.width = Math.round(cssWidth * exportScale);
+  out.height = Math.round(cssHeight * exportScale);
+  const ctx = out.getContext("2d");
+  if (!ctx) throw new Error("Could not prepare export canvas.");
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, out.width, out.height);
+
+  if (pdfCanvas) {
+    ctx.drawImage(pdfCanvas, 0, 0, out.width, out.height);
+  }
+
+  drawStackedPageAnnotations(ctx, out.width, out.height, {
+    isPdf,
+    pdfCurrentPage,
+    strokes,
+    lines,
+    boxes,
+    textBoxes,
+    stickyNotes,
+    masks,
+    penColor,
+    exportScale,
+  });
+
+  return out;
+}
+
+export async function exportAnnotatedPage({
+  format = "png",
+  container,
+  canvas,
+  isPdf,
+  pdfCurrentPage,
+  strokes,
+  lines,
+  boxes,
+  textBoxes,
+  stickyNotes,
+  masks,
+  penColor,
+  fileBaseName,
+}) {
+  const out = composeAnnotatedPageCanvas({
+    container,
+    canvas,
+    isPdf,
+    pdfCurrentPage,
+    strokes,
+    lines,
+    boxes,
+    textBoxes,
+    stickyNotes,
+    masks,
+    penColor,
+  });
+
+  const suffix = isPdf ? `page-${pdfCurrentPage}` : "annotations";
+  const baseName = `${sanitizeExportName(fileBaseName)}-${suffix}`;
+
+  if (format === "pdf") {
+    const pdfBlob = await createPdfBlobFromCanvas(out);
+    downloadBlob(pdfBlob, `${baseName}.pdf`);
+    return;
+  }
+
+  const pngBlob = await canvasToBlob(out, "image/png");
+  downloadBlob(pngBlob, `${baseName}.png`);
 }
 
 export function exportAnnotationsAsPng({
@@ -346,34 +761,22 @@ export function exportAnnotationsAsPng({
   lines,
   boxes,
   textBoxes,
+  stickyNotes,
+  masks,
   penColor,
 }) {
-  if (!canvas) return;
-
-  const off = document.createElement("canvas");
-  off.width = canvas.width;
-  off.height = canvas.height;
-  const ctx = off.getContext("2d");
-  if (!ctx) return;
-
-  const visibleStrokes = isPdf
-    ? strokes.filter((s) => (s.page ?? 1) === pdfCurrentPage)
-    : strokes;
-
-  drawStrokesOnContext(ctx, visibleStrokes, off.width, off.height, { penColor });
-  drawExtrasOnContext(ctx, off.width, off.height, {
+  return exportAnnotatedPage({
+    format: "png",
+    canvas,
+    container: canvas?.parentElement || null,
     isPdf,
+    pdfCurrentPage,
+    strokes,
     lines,
     boxes,
     textBoxes,
-    pdfCurrentPage,
+    stickyNotes,
+    masks,
     penColor,
   });
-
-  const data = off.toDataURL("image/png");
-  const link = document.createElement("a");
-  link.download = `speexify-export-${Date.now()}.png`;
-  link.href = data;
-  link.click();
-  link.remove();
 }

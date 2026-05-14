@@ -1,5 +1,6 @@
 // app/resources/prep/PrepToolDropdownMenus.jsx
 
+import { useState } from "react";
 import {
   PenTool,
   Highlighter,
@@ -12,6 +13,8 @@ import {
   Minus,
   Grid3x3,
   Download,
+  FileImage,
+  FileText,
   ChevronDown,
   MoreHorizontal,
   RotateCcw,
@@ -43,9 +46,21 @@ export default function PrepToolDropdownMenus({
   showGrid,
   setShowGrid,
   handleExport,
+  exportLabel = "Export",
+  exportPngLabel = "PNG image",
+  exportPdfLabel = "PDF page",
+  exportHintLabel = "Current page with annotations",
   viewport,
   setViewport,
 }) {
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+
+  function runExport(format) {
+    handleExport(format);
+    setExportMenuOpen(false);
+    setMoreMenuOpen(false);
+  }
+
   return (
     <>
       <div className="prep-toolbar-dropdown" ref={drawMenuRef}>
@@ -60,6 +75,7 @@ export default function PrepToolDropdownMenus({
           onClick={() => {
             setDrawMenuOpen((v) => !v);
             setMoreMenuOpen(false);
+            setExportMenuOpen(false);
             setShowWidthPicker(false);
             setColorMenuOpen(false);
           }}
@@ -170,6 +186,7 @@ export default function PrepToolDropdownMenus({
           onClick={() => {
             setMoreMenuOpen((v) => !v);
             setDrawMenuOpen(false);
+            setExportMenuOpen(false);
             setShowWidthPicker(false);
             setColorMenuOpen(false);
           }}
@@ -286,22 +303,54 @@ export default function PrepToolDropdownMenus({
               onClick={() => {
                 setShowGrid((v) => !v);
                 setMoreMenuOpen(false);
+                setExportMenuOpen(false);
               }}
             >
               <Grid3x3 size={16} />
               <span>Grid</span>
             </button>
-            <button
-              type="button"
-              className="prep-toolbar-dropdown__item"
-              onClick={() => {
-                handleExport();
-                setMoreMenuOpen(false);
-              }}
-            >
-              <Download size={16} />
-              <span>Export</span>
-            </button>
+            <div className="prep-toolbar-dropdown__export">
+              <button
+                type="button"
+                className={
+                  "prep-toolbar-dropdown__item prep-toolbar-dropdown__item--export" +
+                  (exportMenuOpen ? " is-active" : "")
+                }
+                onClick={() => setExportMenuOpen((v) => !v)}
+                aria-expanded={exportMenuOpen}
+                aria-haspopup="true"
+              >
+                <Download size={16} />
+                <span>{exportLabel}</span>
+                <ChevronDown size={14} className={exportMenuOpen ? "rotated" : ""} />
+              </button>
+              {exportMenuOpen && (
+                <div className="prep-toolbar-dropdown__export-options">
+                  <button
+                    type="button"
+                    className="prep-toolbar-dropdown__export-option"
+                    onClick={() => runExport("png")}
+                  >
+                    <FileImage size={16} />
+                    <span>
+                      <strong>{exportPngLabel}</strong>
+                      <small>{exportHintLabel}</small>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="prep-toolbar-dropdown__export-option"
+                    onClick={() => runExport("pdf")}
+                  >
+                    <FileText size={16} />
+                    <span>
+                      <strong>{exportPdfLabel}</strong>
+                      <small>{exportHintLabel}</small>
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
             {(viewport.scale !== 1 || viewport.x !== 0 || viewport.y !== 0) && (
               <button
                 type="button"
@@ -309,6 +358,7 @@ export default function PrepToolDropdownMenus({
                 onClick={() => {
                   setViewport({ x: 0, y: 0, scale: 1 });
                   setMoreMenuOpen(false);
+                  setExportMenuOpen(false);
                 }}
               >
                 <RotateCcw size={16} />
