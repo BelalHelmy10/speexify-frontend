@@ -64,6 +64,8 @@ function HomeSsrFallback({ locale = "en" }) {
                 width={2048}
                 height={2048}
                 priority
+                quality={82}
+                sizes="(max-width: 768px) 92vw, (max-width: 1200px) 46vw, 620px"
               />
             </div>
           </div>

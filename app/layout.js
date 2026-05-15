@@ -13,6 +13,10 @@ import LocaleShell from "./LocaleShell";
 import AppChrome from "@/components/AppChrome";
 import { organizationJsonLd, websiteJsonLd } from "./seo";
 
+const googleSiteVerification =
+  process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
+  process.env.GOOGLE_SITE_VERIFICATION;
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -93,11 +97,13 @@ export const metadata = {
     },
   },
 
-  // Uncomment after you verify with each service:
-  // verification: {
-  //   google: "your-google-verification-code",
-  //   yandex: "your-yandex-verification-code",
-  // },
+  ...(googleSiteVerification
+    ? {
+        verification: {
+          google: googleSiteVerification,
+        },
+      }
+    : {}),
 };
 
 export default async function RootLayout({ children }) {

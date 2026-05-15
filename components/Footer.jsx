@@ -258,10 +258,9 @@ function Footer() {
               <h4 className="nav-col-title">{$t("resourcesTitle")}</h4>
               <ul className="nav-col-list">
                 <li>
-                  <a
-                    href="#blog"
+                  <Link
+                    href={`${prefix}/blog`}
                     className="nav-col-link"
-                    onClick={(e) => e.preventDefault()}
                     aria-label={$t("ariaBlog")}
                   >
                     <span>{$t("blog")}</span>
@@ -281,13 +280,12 @@ function Footer() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="#guides"
+                  <Link
+                    href={`${prefix}/guides`}
                     className="nav-col-link"
-                    onClick={(e) => e.preventDefault()}
                     aria-label={$t("ariaGuides")}
                   >
                     <span>{$t("guides")}</span>
@@ -307,13 +305,12 @@ function Footer() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="#help"
+                  <Link
+                    href={`${prefix}/help-center`}
                     className="nav-col-link"
-                    onClick={(e) => e.preventDefault()}
                     aria-label={$t("ariaHelp")}
                   >
                     <span>{$t("helpCenter")}</span>
@@ -333,7 +330,7 @@ function Footer() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>

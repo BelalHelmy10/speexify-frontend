@@ -141,6 +141,8 @@ function Home({ locale = "en" }) {
                 width={2048}
                 height={2048}
                 priority
+                quality={82}
+                sizes="(max-width: 768px) 92vw, (max-width: 1200px) 46vw, 620px"
               />
               <div className="home-media-card__float home-media-card__float--1">
                 <div className="home-float-badge">

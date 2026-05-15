@@ -30,7 +30,6 @@ export default function robots() {
     "/ar/checkout/",
     "/payment/",
     "/ar/payment/",
-    "/_next/",
   ];
 
   return {

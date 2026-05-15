@@ -1,5 +1,5 @@
-const SITE_URL = "https://speexify.com";
-const SITE_NAME = "Speexify";
+export const SITE_URL = "https://speexify.com";
+export const SITE_NAME = "Speexify";
 const DEFAULT_OG_IMAGE = "/opengraph-image";
 const DEFAULT_TWITTER_IMAGE = "/twitter-image";
 
@@ -15,8 +15,8 @@ export const seoPages = {
   home: {
     path: "",
     arPath: "/ar",
-    title: "Speexify - Personalized English & Communication Coaching",
-    arTitle: "Speexify - تدريب شخصي على الإنجليزية والتواصل",
+    title: "Speexify - 1-on-1 English Speaking Coaching for Professionals",
+    arTitle: "Speexify - تدريب إنجليزي فردي للمحترفين",
     description:
       "Speexify helps professionals and teams speak English with more fluency, clarity, and confidence through live personalized coaching.",
     arDescription:
@@ -27,6 +27,13 @@ export const seoPages = {
       "communication coaching",
       "business English",
       "professional English training",
+    ],
+    arKeywords: [
+      "Speexify",
+      "تدريب انجليزي",
+      "تدريب محادثة انجليزي",
+      "انجليزي للأعمال",
+      "تدريب تواصل مهني",
     ],
   },
   about: {
@@ -43,8 +50,8 @@ export const seoPages = {
   individual: {
     path: "/individual-training",
     arPath: "/ar/individual-training",
-    title: "Individual English Coaching",
-    arTitle: "تدريب إنجليزي فردي",
+    title: "1-on-1 English Speaking Coaching for Professionals",
+    arTitle: "تدريب محادثة إنجليزية فردي للمحترفين",
     description:
       "Personalized one-on-one English coaching for career growth, interviews, presentations, travel, and everyday fluency.",
     arDescription:
@@ -54,8 +61,8 @@ export const seoPages = {
   corporate: {
     path: "/corporate-training",
     arPath: "/ar/corporate-training",
-    title: "Corporate English & Communication Training",
-    arTitle: "تدريب الشركات على الإنجليزية والتواصل",
+    title: "Corporate English Training for Teams and Companies",
+    arTitle: "تدريب إنجليزي للشركات والفرق",
     description:
       "English and communication coaching programs for teams, managers, customer-facing roles, and global workplace communication.",
     arDescription:
@@ -65,7 +72,7 @@ export const seoPages = {
   packages: {
     path: "/packages",
     arPath: "/ar/packages",
-    title: "English Coaching Packages",
+    title: "English Coaching Packages and Pricing",
     arTitle: "باقات تدريب الإنجليزية",
     description:
       "Compare Speexify coaching packages for individuals, groups, and companies, and choose the plan that fits your goals.",
@@ -139,6 +146,95 @@ export const seoPages = {
       "اقرأ سياسة الاسترداد في Speexify الخاصة بالباقات والمدفوعات والإلغاءات والأرصدة.",
     keywords: ["Speexify refund policy", "refund policy", "coaching refunds"],
   },
+  blog: {
+    path: "/blog",
+    arPath: "/ar/blog",
+    title: "English Speaking and Communication Coaching Blog",
+    arTitle: "مدونة التدريب على التحدث والإنجليزية",
+    description:
+      "Practical articles from Speexify on English speaking confidence, business communication, presentations, interviews, and learning momentum.",
+    arDescription:
+      "مقالات عملية من Speexify عن الثقة في التحدث بالإنجليزية، التواصل المهني، العروض، المقابلات، والاستمرارية.",
+    keywords: ["English speaking blog", "business English tips", "communication coaching articles"],
+  },
+  guides: {
+    path: "/guides",
+    arPath: "/ar/guides",
+    title: "English Speaking Guides for Professionals",
+    arTitle: "أدلة التحدث بالإنجليزية للمحترفين",
+    description:
+      "Step-by-step Speexify guides for choosing English coaching, improving spoken fluency, preparing presentations, and building workplace confidence.",
+    arDescription:
+      "أدلة عملية من Speexify لاختيار تدريب الإنجليزية وتحسين الطلاقة والتحضير للعروض وبناء الثقة في العمل.",
+    keywords: ["English speaking guides", "business English guide", "presentation English guide"],
+  },
+  helpCenter: {
+    path: "/help-center",
+    arPath: "/ar/help-center",
+    title: "Speexify Help Center",
+    arTitle: "مركز مساعدة Speexify",
+    description:
+      "Learn how Speexify sessions, packages, placement, scheduling, classroom tools, payments, and support work.",
+    arDescription:
+      "تعرف على طريقة عمل جلسات Speexify والباقات وتحديد المستوى والجدولة والفصل والمدفوعات والدعم.",
+    keywords: ["Speexify help", "Speexify support", "English coaching help center"],
+  },
+  speakingCoachEgypt: {
+    path: "/english-speaking-coach-egypt",
+    arPath: "/ar/english-speaking-coach-egypt",
+    title: "English Speaking Coach in Egypt",
+    arTitle: "مدرب محادثة إنجليزية في مصر",
+    description:
+      "Work with a Speexify English speaking coach in Egypt through live 1-on-1 sessions focused on fluency, confidence, and real conversations.",
+    arDescription:
+      "تدرّب مع مدرب محادثة إنجليزية في مصر من Speexify من خلال جلسات مباشرة فردية تركز على الطلاقة والثقة والمحادثات الواقعية.",
+    keywords: ["English speaking coach Egypt", "English conversation coach Egypt", "English coach Cairo"],
+    arKeywords: ["مدرب محادثة انجليزي في مصر", "كورس محادثة انجليزي", "تدريب انجليزي اونلاين مصر"],
+  },
+  businessEnglishTrainingCompanies: {
+    path: "/business-english-training-companies",
+    arPath: "/ar/business-english-training-companies",
+    title: "Business English Training for Companies",
+    arTitle: "تدريب إنجليزي أعمال للشركات",
+    description:
+      "Business English training for companies that need clearer meetings, presentations, customer conversations, and confident global communication.",
+    arDescription:
+      "تدريب إنجليزي أعمال للشركات التي تحتاج إلى اجتماعات أوضح وعروض أقوى وتواصل أفضل مع العملاء والفرق العالمية.",
+    keywords: ["business English training companies", "corporate English training", "English training for employees"],
+  },
+  onlineEnglishConversationPractice: {
+    path: "/online-english-conversation-practice",
+    arPath: "/ar/online-english-conversation-practice",
+    title: "Online English Conversation Practice",
+    arTitle: "تدريب محادثة إنجليزية أونلاين",
+    description:
+      "Practice English conversation online with real coaches, structured feedback, speaking goals, and live sessions built around your daily life.",
+    arDescription:
+      "تمرّن على المحادثة الإنجليزية أونلاين مع مدربين حقيقيين وملاحظات منظمة وأهداف تحدث وجلسات مباشرة تناسب حياتك اليومية.",
+    keywords: ["online English conversation practice", "English speaking practice online", "live English conversation"],
+  },
+  englishPresentationCoaching: {
+    path: "/english-presentation-coaching",
+    arPath: "/ar/english-presentation-coaching",
+    title: "English Presentation Coaching",
+    arTitle: "تدريب العروض التقديمية بالإنجليزية",
+    description:
+      "Prepare English presentations with coaching on structure, delivery, pronunciation, confidence, and handling questions professionally.",
+    arDescription:
+      "استعد للعروض التقديمية بالإنجليزية مع تدريب على التنظيم والإلقاء والنطق والثقة والتعامل مع الأسئلة باحتراف.",
+    keywords: ["English presentation coaching", "presentation skills English", "business presentation coach"],
+  },
+  corporateEnglishTrainingEgypt: {
+    path: "/corporate-english-training-egypt",
+    arPath: "/ar/corporate-english-training-egypt",
+    title: "Corporate English Training in Egypt",
+    arTitle: "تدريب إنجليزي للشركات في مصر",
+    description:
+      "Corporate English training in Egypt for teams that need measurable speaking confidence, workplace fluency, and practical communication outcomes.",
+    arDescription:
+      "تدريب إنجليزي للشركات في مصر للفرق التي تحتاج إلى ثقة قابلة للقياس في التحدث وطلاقة عملية ونتائج تواصل واضحة.",
+    keywords: ["corporate English training Egypt", "business English Egypt", "English training companies Egypt"],
+  },
 };
 
 function absoluteUrl(path = "") {
@@ -182,11 +278,12 @@ export function pageMetadata(key, locale = "en") {
   const arabicUrl = absoluteUrl(page.arPath);
   const title = isArabic ? page.arTitle : page.title;
   const description = isArabic ? page.arDescription : page.description;
+  const keywords = isArabic && page.arKeywords ? page.arKeywords : page.keywords;
 
   return {
     title,
     description,
-    keywords: page.keywords,
+    keywords,
     alternates: {
       canonical,
       languages: {
@@ -274,3 +371,83 @@ export const websiteJsonLd = {
     url: SITE_URL,
   },
 };
+
+export function absoluteSiteUrl(path = "") {
+  return absoluteUrl(path);
+}
+
+export function breadcrumbJsonLd(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
+    })),
+  };
+}
+
+export function serviceJsonLd({
+  name,
+  description,
+  path,
+  serviceType = "English coaching",
+  areaServed = ["Egypt", "Middle East", "Online"],
+  audience = "Professionals and teams",
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name,
+    description,
+    serviceType,
+    url: absoluteUrl(path),
+    areaServed,
+    audience: {
+      "@type": "Audience",
+      audienceType: audience,
+    },
+    provider: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    availableChannel: {
+      "@type": "ServiceChannel",
+      serviceUrl: absoluteUrl(path),
+      availableLanguage: ["English", "Arabic"],
+    },
+  };
+}
+
+export function faqJsonLd(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
+}
+
+export function collectionPageJsonLd({ name, description, path }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name,
+    description,
+    url: absoluteUrl(path),
+    isPartOf: {
+      "@type": "WebSite",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+  };
+}
