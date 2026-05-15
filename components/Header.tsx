@@ -185,6 +185,14 @@ export default function Header() {
   }, [pathname]);
 
   useEffect(() => {
+    document.body.classList.toggle("spx-mobile-menu-open", open);
+
+    return () => {
+      document.body.classList.remove("spx-mobile-menu-open");
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (!accountOpen) return undefined;
 
     function onPointerDown(event) {

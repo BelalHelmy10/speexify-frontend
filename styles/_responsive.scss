@@ -1,0 +1,130 @@
+/* Shared responsive safety layer. Keep this generic and low-specificity. */
+
+:root {
+  --spx-safe-top: env(safe-area-inset-top, 0px);
+  --spx-safe-right: env(safe-area-inset-right, 0px);
+  --spx-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --spx-safe-left: env(safe-area-inset-left, 0px);
+  --spx-touch-target: 44px;
+  --spx-mobile-shell: 100vh;
+  --spx-mobile-shell: 100dvh;
+  --spx-mobile-gutter: clamp(14px, 4vw, 22px);
+}
+
+html {
+  min-width: 320px;
+  overflow-x: clip;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-width: 320px;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+}
+
+main {
+  min-width: 0;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  max-width: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+@media (max-width: 760px) {
+  body {
+    -webkit-tap-highlight-color: rgba(242, 92, 46, 0.14);
+  }
+
+  .container {
+    width: min(100% - (var(--spx-mobile-gutter) * 2), 1200px);
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  :where(.dashboard,
+    .settings-modern,
+    .profile-page,
+    .spx-resources-page,
+    .learning-progress,
+    .calendar-premium-container) {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  :where(.card,
+    .panel,
+    .settings-card,
+    .profile-panel,
+    .profile-stat-card,
+    .spx-resources-hero,
+    .spx-resource-card,
+    .learning-progress__card) {
+    min-width: 0;
+  }
+
+  :where(.dashboard__kpis,
+    .profile-stats,
+    .spx-resources-hero__stats,
+    .settings-grid,
+    .learning-progress__metrics) {
+    grid-template-columns: 1fr;
+  }
+
+  :where(.btn,
+    .home-btn,
+    .spx-nav-cta,
+    .spx-mobile-cta,
+    .calx-today-btn,
+    .calx-filter-btn,
+    .calx-toolbar-support,
+    .sw-send-btn,
+    .sw-attach-btn) {
+    min-height: var(--spx-touch-target);
+  }
+}
+
+@media (max-width: 480px) {
+  :where(.home-hero__cta,
+    .home-cta__actions,
+    .hero-cta,
+    .contact .hero-actions) {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  :where(.home-btn,
+    .hero-cta a,
+    .contact .hero-actions a) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

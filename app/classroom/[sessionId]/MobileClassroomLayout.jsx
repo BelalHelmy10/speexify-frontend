@@ -1,7 +1,7 @@
 // app/classroom/[sessionId]/MobileClassroomLayout.jsx
 "use client";
 
-import { Video, FileText, MessageSquare, BookOpen, SmilePlus } from "lucide-react";
+import { BookOpen, FileText, Hand, MessageSquare, Video } from "lucide-react";
 
 /**
  * Mobile-specific tabbed layout for classroom
@@ -20,13 +20,21 @@ export default function MobileClassroomLayout({
     isHandRaised,
     toggleHand,
 }) {
+    const shouldShowVideoPip = activeTab !== "video";
+
     return (
         <div className="cr-mobile-layout">
             {/* Content panels - only active one is visible */}
             <div className="cr-mobile-content" data-lenis-prevent>
                 <div
-                    className={`cr-mobile-content__panel ${activeTab === "video" ? "cr-mobile-content__panel--active" : ""
-                        }`}
+                    className={[
+                        "cr-mobile-content__panel",
+                        "cr-mobile-content__panel--video",
+                        activeTab === "video" ? "cr-mobile-content__panel--active" : "",
+                        shouldShowVideoPip ? "cr-mobile-content__panel--pip" : "",
+                    ]
+                        .filter(Boolean)
+                        .join(" ")}
                 >
                     <div className="cr-mobile-video-wrapper">{videoComponent}</div>
                 </div>
@@ -54,7 +62,7 @@ export default function MobileClassroomLayout({
                     onClick={toggleHand}
                     aria-label={isHandRaised ? "Lower hand" : "Raise hand"}
                 >
-                    ✋
+                    <Hand size={20} />
                 </button>
 
                 {/* Resource picker (teacher only, not on video tab) */}

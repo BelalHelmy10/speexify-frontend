@@ -156,6 +156,7 @@ body.classroom-active {
 .cr-shell {
   position: fixed;
   inset: 0;
+  height: var(--spx-mobile-shell);
   display: flex;
   flex-direction: column;
   background: $cr-bg-primary;
@@ -180,8 +181,8 @@ body.classroom-active {
   z-index: 100;
 
   @media (max-width: 768px) {
-    padding: 0 1rem;
-    height: 52px;
+    padding: var(--spx-safe-top) calc(1rem + var(--spx-safe-right)) 0 calc(1rem + var(--spx-safe-left));
+    height: calc(52px + var(--spx-safe-top));
   }
 
   &__left {
@@ -1014,6 +1015,9 @@ body.classroom-active {
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
+    height: var(--spx-mobile-shell);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 
     &__preview {
       min-height: 220px;
@@ -1022,6 +1026,7 @@ body.classroom-active {
     &__panel {
       border-left: 0;
       border-top: 1px solid $cr-border-subtle;
+      overflow: visible;
     }
   }
 
@@ -1033,6 +1038,12 @@ body.classroom-active {
 
     &__field--wide {
       grid-column: auto;
+    }
+
+    &__join {
+      position: sticky;
+      bottom: calc(0.75rem + var(--spx-safe-bottom));
+      z-index: 4;
     }
   }
 }
@@ -1844,32 +1855,34 @@ body.classroom-active {
     right: 0;
     bottom: 0;
     background: $cr-bg-primary;
+    height: var(--spx-mobile-shell);
+    overflow: hidden;
   }
 }
 
 // ─── Mobile Header (Compact) ────────────────────────────────────────────────
 .cr-header {
   @media (max-width: 900px) {
-    height: 44px;
-    padding: 0 0.75rem;
+    height: calc(44px + var(--spx-safe-top));
+    padding: var(--spx-safe-top) calc(0.75rem + var(--spx-safe-right)) 0 calc(0.75rem + var(--spx-safe-left));
   }
 
   @media (max-width: 640px) {
-    height: 40px;
+    height: calc(40px + var(--spx-safe-top));
   }
 }
 
 // ─── Mobile Content Panels ──────────────────────────────────────────────────
 .cr-mobile-content {
   position: fixed;
-  top: 44px;
-  bottom: 60px;
+  top: calc(44px + var(--spx-safe-top));
+  bottom: calc(60px + var(--spx-safe-bottom));
   left: 0;
   right: 0;
   overflow: hidden;
 
   @media (max-width: 640px) {
-    top: 40px;
+    top: calc(40px + var(--spx-safe-top));
   }
 
   &__panel {
@@ -1882,6 +1895,34 @@ body.classroom-active {
 
     &--active {
       display: flex;
+    }
+
+    &--video.cr-mobile-content__panel--pip {
+      display: flex;
+      inset: auto calc(12px + var(--spx-safe-right)) 12px auto;
+      width: min(42vw, 180px);
+      height: 112px;
+      z-index: 45;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 16px;
+      background: $cr-bg-primary;
+      box-shadow: 0 18px 46px rgba($cr-bg-primary-dark, 0.45);
+      overflow: hidden;
+
+      .cr-mobile-video-wrapper,
+      .cr-video-container {
+        min-height: 0;
+        max-height: none;
+        height: 100%;
+      }
+
+      .cr-video-container {
+        border-radius: 16px;
+      }
+
+      .cr-video__mic-status {
+        display: none;
+      }
     }
   }
 }
@@ -1943,14 +1984,14 @@ body.classroom-active {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  height: calc(60px + var(--spx-safe-bottom));
   display: flex;
   background: linear-gradient(180deg,
       rgba($cr-bg-secondary, 0.98) 0%,
       rgba($cr-bg-primary-dark, 1) 100%);
   border-top: 1px solid $cr-border-subtle;
   z-index: 200;
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-bottom: var(--spx-safe-bottom);
 
   &__tab {
     flex: 1;
@@ -2026,8 +2067,8 @@ body.classroom-active {
 // ─── Mobile Quick Actions (Floating) ────────────────────────────────────────
 .cr-mobile-quick-actions {
   position: fixed;
-  bottom: 72px;
-  right: 12px;
+  bottom: calc(72px + var(--spx-safe-bottom));
+  right: calc(12px + var(--spx-safe-right));
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2053,6 +2094,21 @@ body.classroom-active {
     &:active {
       transform: scale(0.92);
     }
+  }
+}
+
+@media (max-width: 420px) {
+  .cr-mobile-content__panel--video.cr-mobile-content__panel--pip {
+    width: min(46vw, 160px);
+    height: 96px;
+  }
+
+  .cr-mobile-tabs__tab {
+    padding-inline: 0.25rem;
+  }
+
+  .cr-mobile-tabs__tab-label {
+    font-size: 0.5625rem;
   }
 }
 

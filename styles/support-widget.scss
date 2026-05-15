@@ -14,11 +14,12 @@
 .sw-fab {
   // FIXED: High z-index to stay above content
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: calc(24px + var(--spx-safe-bottom));
+  right: calc(24px + var(--spx-safe-right));
   z-index: $sw-z-fab;
 
   min-width: 58px;
+  max-width: calc(100vw - 32px - var(--spx-safe-left) - var(--spx-safe-right));
   width: auto;
   height: 56px;
   padding: 0 18px 0 14px;
@@ -127,13 +128,15 @@
 .sw-panel {
   // FIXED: Position below navbar with proper spacing
   position: fixed;
-  bottom: 96px; // Space for FAB button
-  right: 24px;
+  bottom: calc(96px + var(--spx-safe-bottom)); // Space for FAB button
+  right: calc(24px + var(--spx-safe-right));
   z-index: $sw-z-panel;
 
   width: 380px;
+  max-width: calc(100vw - 32px - var(--spx-safe-left) - var(--spx-safe-right));
   // FIXED: Dynamic height that respects navbar
-  max-height: calc(100vh - 120px); // Leave space for navbar (typical ~60-80px) + FAB + padding
+  height: min(680px, calc(100dvh - 120px - var(--spx-safe-bottom)));
+  max-height: calc(100dvh - 120px - var(--spx-safe-bottom));
 
   background: $sw-surface;
   border-radius: $sw-radius-lg;
@@ -159,11 +162,14 @@
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: var(--spx-mobile-shell) !important;
+    min-height: var(--spx-mobile-shell) !important;
     max-height: 100dvh !important; // Use dynamic viewport height
     border-radius: 0 !important;
     z-index: 2147483647 !important;
     margin: 0 !important;
+    padding-top: var(--spx-safe-top);
+    padding-bottom: var(--spx-safe-bottom);
     transform: none !important;
     animation: sw-fade-in-mobile 0.3s ease-out !important;
   }
@@ -351,6 +357,35 @@
     &:hover {
       background: rgba($sw-text-light, 0.5);
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .sw-header {
+    border-radius: 0;
+    padding: 14px 16px;
+  }
+
+  .sw-body {
+    padding: 16px;
+  }
+
+  .sw-messages {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sw-input-area {
+    position: sticky;
+    bottom: 0;
+    margin: 0 -16px -16px;
+    padding: 12px 16px 16px;
+    background: $sw-surface;
+  }
+
+  .sw-textarea {
+    min-height: 42px;
+    max-height: min(140px, 24dvh);
   }
 }
 
@@ -1239,7 +1274,8 @@
     right: 0;
     left: 0;
     width: 100%;
-    max-height: 100vh;
+    height: var(--spx-mobile-shell);
+    max-height: var(--spx-mobile-shell);
     border-radius: 0;
   }
 
@@ -1248,9 +1284,27 @@
   }
 
   .sw-fab {
-    bottom: 16px;
-    right: 16px;
-    width: 52px;
+    bottom: calc(16px + var(--spx-safe-bottom));
+    right: calc(16px + var(--spx-safe-right));
+    width: auto;
     height: 52px;
+    padding: 0 14px 0 12px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .sw-fab {
+    width: 52px;
+    padding: 0;
+  }
+
+  .sw-fab__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }

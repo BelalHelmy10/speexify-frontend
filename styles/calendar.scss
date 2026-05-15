@@ -78,7 +78,7 @@
 .calx-shell {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
-  min-height: calc(100vh - 76px);
+  min-height: calc(var(--spx-mobile-shell) - 76px);
   width: 100%;
   max-width: none;
   margin: 0;
@@ -974,6 +974,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: min(420px, calc(100dvh - 160px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .calx-filter-item {
@@ -1055,9 +1058,10 @@
   height: calc(12 * 60px + 72px);
   max-height: calc(12 * 60px + 72px);
   overscroll-behavior: auto;
+  overscroll-behavior-x: contain;
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
 }
 
 .calx-week-grid {
@@ -1461,6 +1465,10 @@
   padding: 0 24px 24px;
   position: relative;
   background: $bg-secondary;
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 
   .rbc-calendar {
     background: $card-bg;
@@ -2383,12 +2391,14 @@
   right: 0;
   z-index: 99992;
   width: min(430px, 100vw);
-  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   background: $card-bg;
   border-left: 1px solid rgba($navy, 0.08);
   box-shadow: -24px 0 56px rgba($navy, 0.16);
   display: flex;
   flex-direction: column;
+  padding-top: var(--spx-safe-top);
   animation: calx-drawer-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -2444,7 +2454,7 @@
 
 .calx-session-drawer__actions {
   margin-top: auto;
-  padding: 18px 24px 24px;
+  padding: 18px 24px calc(24px + var(--spx-safe-bottom));
   border-top: 1px solid $ring;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2568,6 +2578,14 @@
 }
 
 @media (max-width: 640px) {
+  .calx-page {
+    overflow-x: hidden;
+  }
+
+  .calx-shell {
+    min-height: calc(var(--spx-mobile-shell) - 64px);
+  }
+
   .calx-toolbar {
     padding: 12px 16px;
     gap: 10px;
@@ -2599,14 +2617,43 @@
     width: 100%;
   }
 
+  .calx-filter-menu {
+    position: fixed;
+    left: var(--spx-mobile-gutter);
+    right: var(--spx-mobile-gutter);
+    top: auto;
+    bottom: calc(16px + var(--spx-safe-bottom));
+    min-width: 0;
+    max-height: min(58dvh, 430px);
+    border-radius: 18px;
+    padding: 12px;
+    z-index: 100000;
+    box-shadow: 0 28px 70px rgba($navy, 0.22);
+  }
+
+  .calx-filter-item {
+    min-height: 42px;
+    padding: 0 8px;
+    border-radius: 10px;
+  }
+
   .calx-week-wrap {
     padding: 0 12px 12px;
-    height: calc(8 * 60px + 56px);
-    max-height: calc(8 * 60px + 56px);
+    height: min(58dvh, calc(8 * 60px + 56px));
+    max-height: min(58dvh, calc(8 * 60px + 56px));
+  }
+
+  .calx-week-grid {
+    min-width: 560px;
   }
 
   .calx-rbc-panel {
     padding: 12px;
+    max-height: calc(var(--spx-mobile-shell) - 196px);
+
+    .rbc-calendar {
+      min-width: 620px;
+    }
   }
 
   .calx-availability-actions {
@@ -2620,5 +2667,68 @@
 
   .calx-impersonate-stop {
     margin-left: 0;
+  }
+
+  .calx-popover {
+    left: var(--spx-mobile-gutter);
+    right: var(--spx-mobile-gutter);
+    top: auto;
+    bottom: calc(14px + var(--spx-safe-bottom));
+    width: auto;
+    max-height: min(82dvh, 620px);
+    overflow-y: auto;
+    border-radius: 22px;
+    transform: none;
+    animation: calx-mobile-sheet-in 0.18s ease-out both;
+  }
+
+  .calx-event-popover {
+    left: var(--spx-mobile-gutter) !important;
+    right: var(--spx-mobile-gutter) !important;
+    top: auto !important;
+    bottom: calc(14px + var(--spx-safe-bottom)) !important;
+    width: auto;
+    max-height: min(82dvh, 620px);
+    overflow-y: auto;
+    border-radius: 20px;
+    animation: calx-mobile-sheet-in 0.18s ease-out both;
+  }
+
+  .calx-event-popover__footer,
+  .calx-popover__footer {
+    flex-wrap: wrap;
+  }
+
+  .calx-session-drawer {
+    width: 100vw;
+    border-left: 0;
+  }
+
+  .calx-session-drawer__header {
+    padding: 20px 18px 16px;
+  }
+
+  .calx-session-drawer__details {
+    padding: 18px;
+  }
+
+  .calx-session-drawer__actions {
+    position: sticky;
+    bottom: 0;
+    padding: 14px 18px calc(18px + var(--spx-safe-bottom));
+    background: rgba($card-bg, 0.96);
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes calx-mobile-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

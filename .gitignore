@@ -5,6 +5,7 @@ dist/
 build/
 .cache/
 coverage/
+.responsive-qa/
 
 .env*
 *.log
