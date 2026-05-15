@@ -458,8 +458,11 @@ html.home-client-ready #home-ssr-fallback {
 
   &__img {
     width: 100%;
+    aspect-ratio: 1 / 1;
     height: auto;
     display: block;
+    object-fit: cover;
+    object-position: 52% 50%;
     position: relative;
     z-index: 1;
   }
@@ -469,13 +472,13 @@ html.home-client-ready #home-ssr-fallback {
     z-index: 2;
 
     &--1 {
-      top: 20px;
-      right: 20px;
+      top: 24px;
+      left: 24px;
     }
 
     &--2 {
-      bottom: 20px;
-      left: 20px;
+      right: 24px;
+      bottom: 24px;
     }
   }
 }

@@ -58,11 +58,11 @@ function HomeSsrFallback({ locale = "en" }) {
           <div className="home-hero__media" aria-hidden="true">
             <div className="home-media-card">
               <Image
-                src="/images/hero-photo.png"
+                src="/images/home-hero-clean.png"
                 alt=""
                 className="home-media-card__img"
-                width={1024}
-                height={1024}
+                width={2048}
+                height={2048}
                 priority
               />
             </div>

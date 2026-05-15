@@ -19,7 +19,6 @@ import {
   Video,
   User,
   CircleHelp,
-  LifeBuoy,
   Clock3,
   Star,
 } from "lucide-react";
@@ -33,6 +32,7 @@ import {
   rateSupportTicket,
 } from "@/lib/supportApi";
 import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
+import SpeexifyLogoMark from "@/components/SpeexifyLogoMark";
 import "@/styles/support-widget.scss";
 
 const CATEGORIES = [
@@ -823,7 +823,11 @@ export default function SupportWidget() {
         aria-label={open ? "Close support" : "Contact support"}
       >
         <span className="sw-fab__icon">
-          {open ? <X size={20} /> : <LifeBuoy size={20} />}
+          {open ? (
+            <X size={20} />
+          ) : (
+            <SpeexifyLogoMark className="sw-logo-mark sw-logo-mark--fab" />
+          )}
         </span>
         {!open && <span className="sw-fab__label">Help</span>}
         {!open && unreadCount > 0 && (
@@ -1090,7 +1094,7 @@ export default function SupportWidget() {
               <>
                 <div className="sw-welcome">
                   <div className="sw-welcome__icon">
-                    <LifeBuoy size={28} />
+                    <SpeexifyLogoMark className="sw-logo-mark sw-logo-mark--welcome" />
                   </div>
                   <div className="sw-welcome__title">How can we help?</div>
                   <div className="sw-welcome__subtitle">

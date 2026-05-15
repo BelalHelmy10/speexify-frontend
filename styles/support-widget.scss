@@ -21,30 +21,33 @@
   min-width: 58px;
   width: auto;
   height: 56px;
-  padding: 0 18px;
+  padding: 0 18px 0 14px;
   border-radius: 999px;
   background: linear-gradient(135deg, $sw-primary 0%, $sw-primary-hover 100%);
   color: white;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   cursor: pointer;
 
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  gap: 10px;
 
   box-shadow: $sw-shadow-xl;
   transition: all $sw-transition;
 
   &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 20px 30px rgba($sw-primary, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 34px rgba($sw-primary, 0.34);
   }
 
   &__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
   }
 
   &__label {
@@ -54,7 +57,7 @@
   }
 
   &:active {
-    transform: scale(0.95);
+    transform: translateY(0) scale(0.98);
   }
 
   // Badge
@@ -77,6 +80,32 @@
     justify-content: center;
 
     animation: sw-badge-pulse 2s ease-in-out infinite;
+  }
+}
+
+.sw-logo-mark {
+  display: block;
+  filter: drop-shadow(0 5px 10px rgba($ink, 0.18));
+
+  .spx-logo-mark__background {
+    fill: $ink;
+  }
+
+  .spx-logo-mark__stroke {
+    fill: none;
+    stroke: $brand;
+    stroke-width: 88;
+    stroke-linecap: round;
+  }
+
+  &--fab {
+    width: 30px;
+    height: 30px;
+  }
+
+  &--welcome {
+    width: 48px;
+    height: 48px;
   }
 }
 
@@ -737,12 +766,14 @@
   padding: 20px 0;
 
   &__icon {
-    width: 52px;
-    height: 52px;
+    width: 58px;
+    height: 58px;
     margin: 0 auto 16px;
-    border-radius: 18px;
-    background: rgba($sw-primary, 0.1);
-    color: $sw-primary;
+    border-radius: 20px;
+    background:
+      linear-gradient(135deg, rgba($sw-primary, 0.12), rgba($sw-primary, 0.04)),
+      $sw-surface;
+    box-shadow: 0 14px 28px rgba($ink, 0.08);
     display: inline-flex;
     align-items: center;
     justify-content: center;

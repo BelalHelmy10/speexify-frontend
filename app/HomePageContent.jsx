@@ -135,11 +135,11 @@ function Home({ locale = "en" }) {
             <div className="home-media-card">
               <div className="home-media-card__glow"></div>
               <Image
-                src="/images/hero-photo.png"
-                alt="Live English coaching product preview"
+                src="/images/home-hero-clean.png"
+                alt="Learner practicing live English coaching on Speexify"
                 className="home-media-card__img"
-                width={1024}
-                height={1024}
+                width={2048}
+                height={2048}
                 priority
               />
               <div className="home-media-card__float home-media-card__float--1">
