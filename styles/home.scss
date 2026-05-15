@@ -176,83 +176,7 @@ html.home-client-ready #home-ssr-fallback {
   line-height: 1.65;
 }
 
-// ========================================
-// BUTTONS
-// ========================================
-.home-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border-radius: 12px;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 15px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  border: none;
-  cursor: pointer;
-
-  &:active {
-    transform: translateY(1px);
-  }
-
-  &--primary {
-    background: $coral;
-    color: $color-white;
-    box-shadow: 0 4px 12px rgba($coral, 0.3);
-
-    &:hover {
-      background: $coral-dark;
-      box-shadow: 0 8px 24px rgba($coral, 0.4);
-      transform: translateY(-3px);
-      text-decoration: none;
-    }
-  }
-
-  &--ghost {
-    background: transparent;
-    border: 2px solid $navy;
-    color: $navy;
-
-    &:hover {
-      background: rgba($navy, 0.06);
-      border-color: $navy-mid;
-      transform: translateY(-3px);
-      text-decoration: none;
-    }
-  }
-
-  &--lg {
-    padding: 14px 28px;
-    font-size: 16px;
-  }
-
-  &--shine {
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 50%;
-      height: 100%;
-      background: linear-gradient(90deg,
-          transparent,
-          rgba($color-white, 0.3),
-          transparent);
-      animation: shine 3s infinite;
-    }
-  }
-
-  &__arrow {
-    transition: transform 0.3s ease;
-  }
-
-  &:hover &__arrow {
-    transform: translateX(4px);
-  }
-}
+// Homepage buttons: global .spx-btn (styles/_buttons.scss)
 
 // ========================================
 // HOME
@@ -2484,7 +2408,7 @@ html.home-client-ready #home-ssr-fallback {
     justify-content: center;
   }
 
-  .home-btn--primary {
+  .spx-btn--primary {
     background: $color-white;
     color: $coral;
     font-weight: 700;
@@ -2492,29 +2416,9 @@ html.home-client-ready #home-ssr-fallback {
 
     &:hover {
       background: $bg-soft;
+      color: $coral-dark;
       transform: translateY(-3px);
       box-shadow: 0 20px 48px rgba($navy, 0.25);
-    }
-  }
-
-  // Outlined white ghost button (for use on coral bg)
-  .home-btn--ghost-white {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    border-radius: 12px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 15px;
-    transition: all 0.25s ease;
-    background: transparent;
-    color: $color-white;
-    border: 1.5px solid rgba($color-white, 0.55);
-
-    &:hover {
-      background: rgba($color-white, 0.15);
-      border-color: $color-white;
     }
   }
 }

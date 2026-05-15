@@ -208,6 +208,15 @@ $radius-card: 20px;
   --good: #22c55e;
   --warn: #d4890a;
   --bad: #ef4444;
+
+  --font-body: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-outfit), var(--font-inter), sans-serif;
+  --text-display: clamp(2.25rem, 4vw, 3.5rem);
+  --text-title: clamp(1.5rem, 2.5vw, 2rem);
+  --text-body: 1rem;
+  --text-label: 0.9375rem;
+  --text-caption: 0.8125rem;
+  --leading-body: 1.65;
 }
 
 // ===========================================
@@ -531,19 +540,9 @@ $cr-header-height: 56px;
 $cr-controls-height: 60px;
 $cr-max-width: 1400px;
 $cr-content-max-width: 1200px;
-$cr-font-sans:
-  "DM Sans",
-  -apple-system,
-  BlinkMacSystemFont,
-  "Segoe UI",
-  sans-serif;
-$cr-font-display:
-  "Plus Jakarta Sans",
-  "DM Sans",
-  -apple-system,
-  BlinkMacSystemFont,
-  sans-serif;
-$cr-font-mono: "JetBrains Mono", "Fira Code", monospace;
+$cr-font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+$cr-font-display: var(--font-outfit), var(--font-inter), system-ui, sans-serif;
+$cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
 // ============================================================================
 // CENTRALIZED CSS CUSTOM PROPERTIES FOR PAGE THEMES

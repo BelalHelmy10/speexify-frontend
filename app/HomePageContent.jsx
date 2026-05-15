@@ -86,12 +86,12 @@ function Home({ locale = "en" }) {
 
             <FadeIn as="div" className="home-hero__cta" delay={0.4}>
               <Link
-                className="home-btn home-btn--primary home-btn--shine"
+                className="spx-btn spx-btn--primary spx-btn--shine"
                 href={routeHref(APP_ROUTES.register, locale)}
               >
                 <span>{t(dict, "ctaPrimary")}</span>
                 <svg
-                  className="home-btn__arrow"
+                  className="spx-btn__arrow"
                   width="16"
                   height="16"
                   viewBox="0 0 16 16"
@@ -108,7 +108,7 @@ function Home({ locale = "en" }) {
                 </svg>
               </Link>
               <Link
-                className="home-btn home-btn--ghost"
+                className="spx-btn spx-btn--ghost-navy"
                 href={routeHref(APP_ROUTES.packages, locale)}
               >
                 {t(dict, "ctaSecondary")}
@@ -117,16 +117,16 @@ function Home({ locale = "en" }) {
 
             <FadeIn as="div" className="home-hero__stats" delay={0.6}>
               <div className="home-hero__stat">
-                <div className="home-hero__stat-num">98%</div>
-                <div className="home-hero__stat-label">Client satisfaction</div>
+                <div className="home-hero__stat-num">{t(dict, "hero_stat1_num")}</div>
+                <div className="home-hero__stat-label">{t(dict, "hero_stat1_label")}</div>
               </div>
               <div className="home-hero__stat">
-                <div className="home-hero__stat-num">50k+</div>
-                <div className="home-hero__stat-label">Coaching hours</div>
+                <div className="home-hero__stat-num">{t(dict, "hero_stat2_num")}</div>
+                <div className="home-hero__stat-label">{t(dict, "hero_stat2_label")}</div>
               </div>
               <div className="home-hero__stat">
-                <div className="home-hero__stat-num">2.7×</div>
-                <div className="home-hero__stat-label">Faster outcomes</div>
+                <div className="home-hero__stat-num">{t(dict, "hero_stat3_num")}</div>
+                <div className="home-hero__stat-label">{t(dict, "hero_stat3_label")}</div>
               </div>
             </FadeIn>
           </div>
@@ -152,7 +152,7 @@ function Home({ locale = "en" }) {
                       <path d="M5 6h6M5 8.5h3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     </svg>
                   </span>
-                  <span className="home-float-badge__text">Live coaching</span>
+                  <span className="home-float-badge__text">{t(dict, "float_live_coaching")}</span>
                 </div>
               </div>
               <div className="home-media-card__float home-media-card__float--2">
@@ -162,7 +162,7 @@ function Home({ locale = "en" }) {
                       <path d="M9.5 2L4 9h4.5L7.5 14l6-7H9l.5-5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
-                  <span className="home-float-badge__text">Instant feedback</span>
+                  <span className="home-float-badge__text">{t(dict, "float_instant_feedback")}</span>
                 </div>
               </div>
             </div>
@@ -173,7 +173,7 @@ function Home({ locale = "en" }) {
       {/* ===== SOCIAL PROOF ===== */}
       <section className="home-proof">
         <div className="home-container">
-          <FadeIn as="p" className="home-proof__title">Trusted by teams at</FadeIn>
+          <FadeIn as="p" className="home-proof__title">{t(dict, "proof_title")}</FadeIn>
           <div className="home-proof__scroller">
             <div className="home-proof__logos">
               {/* Set 1 */}
@@ -182,7 +182,7 @@ function Home({ locale = "en" }) {
                   <Image
                     src={`/images/logo-${["amazon", "cocacola", "tesla", "allianz", "indeed"][i - 1]
                       }.svg`}
-                    alt="Client Logo"
+                    alt={t(dict, "proof_logo_alt")}
                     className="home-logo"
                     width={140}
                     height={50}
@@ -195,7 +195,7 @@ function Home({ locale = "en" }) {
                   <Image
                     src={`/images/logo-${["amazon", "cocacola", "tesla", "allianz", "indeed"][i - 1]
                       }.svg`}
-                    alt="Client Logo"
+                    alt={t(dict, "proof_logo_alt")}
                     className="home-logo"
                     width={140}
                     height={50}
@@ -250,7 +250,7 @@ function Home({ locale = "en" }) {
 
           <div className="home-spx-curriculum__more">
             <Link
-              className="home-btn home-btn--ghost"
+              className="spx-btn spx-btn--ghost-navy"
               href={routeHref(APP_ROUTES.packages, locale)}
             >
               {t(dict, "curr_more")}
@@ -260,17 +260,15 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== PRODUCT DEMO ===== */}
-      <ProductDemoSection />
+      <ProductDemoSection dict={dict} />
 
       {/* ===== COACHES ===== */}
       <section className="home-spx-coaches">
         <div className="home-container">
           <div className="home-section-header">
-            <span className="home-spx-coaches__label">The Coaches</span>
-            <h2 className="home-section-title">Meet your coaches</h2>
-            <p className="home-section-subtitle">
-              Every coach is handpicked — native or bilingual, professionally trained, and relentlessly focused on your growth.
-            </p>
+            <span className="home-spx-coaches__label">{t(dict, "coaches_label")}</span>
+            <h2 className="home-section-title">{t(dict, "coaches_title")}</h2>
+            <p className="home-section-subtitle">{t(dict, "coaches_subtitle")}</p>
           </div>
 
           <div className="home-spx-coaches__grid">
@@ -302,7 +300,7 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== COMPARISON TABLE ===== */}
-      <ComparisonSection />
+      <ComparisonSection dict={dict} />
 
       {/* ===== CASE STUDIES ===== */}
       <section className="home-spx-cases">
@@ -389,7 +387,7 @@ function Home({ locale = "en" }) {
                 aria-label="Email"
                 className="home-spx-newsletter__input"
               />
-              <button className="home-btn home-btn--primary" type="submit">
+              <button className="spx-btn spx-btn--primary" type="submit">
                 {t(dict, "newsletter_button")}
               </button>
             </form>
@@ -408,16 +406,14 @@ function Home({ locale = "en" }) {
         </div>
 
         <div className="home-cta__inner">
-          <h2 className="home-cta__title">Ready to speak with confidence?</h2>
-          <p className="home-cta__sub">
-            Join hundreds of professionals who have transformed how they communicate — in boardrooms, on calls, and on global stages.
-          </p>
+          <h2 className="home-cta__title">{t(dict, "cta_title")}</h2>
+          <p className="home-cta__sub">{t(dict, "cta_sub")}</p>
           <div className="home-cta__actions">
             <Link
-              className="home-btn home-btn--primary home-btn--lg"
+              className="spx-btn spx-btn--primary spx-btn--lg"
               href={routeHref(APP_ROUTES.register, locale)}
             >
-              <span>Start free today</span>
+              <span>{t(dict, "cta_primary")}</span>
               <svg
                 width="16"
                 height="16"
@@ -435,10 +431,10 @@ function Home({ locale = "en" }) {
               </svg>
             </Link>
             <Link
-              className="home-btn home-btn--ghost-white home-btn--lg"
+              className="spx-btn spx-btn--ghost-white spx-btn--lg"
               href={routeHref(APP_ROUTES.contact, locale)}
             >
-              Talk to us first
+              {t(dict, "cta_secondary")}
             </Link>
           </div>
         </div>
@@ -468,7 +464,7 @@ function FeaturesSection({ dict }) {
 
   const smallCards = [
     {
-      num: "02",
+      num: t(dict, "bento_num_02"),
       tone: "amber",
       icon: (
         <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -481,7 +477,7 @@ function FeaturesSection({ dict }) {
       text: t(dict, "feature2_text") || "Every session has a clear goal. Every coach measures your progress against real communication benchmarks.",
     },
     {
-      num: "03",
+      num: t(dict, "bento_num_03"),
       tone: "indigo",
       icon: (
         <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -494,7 +490,7 @@ function FeaturesSection({ dict }) {
       text: t(dict, "feature3_text") || "Book sessions around your life. Get a progress report after every coaching block.",
     },
     {
-      num: "04",
+      num: t(dict, "bento_num_04"),
       tone: "navy",
       icon: (
         <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -510,7 +506,7 @@ function FeaturesSection({ dict }) {
     <section className="home-features">
       <div className="home-container">
         <div className="home-section-header home-features__header">
-          <span className="home-features__eyebrow" aria-hidden="true">Why Speexify</span>
+          <span className="home-features__eyebrow" aria-hidden="true">{t(dict, "features_eyebrow")}</span>
           <FadeIn as="h2" className="home-section-title home-features__title">
             {t(dict, "features_title") || <>Everything you need<br />to speak with power</>}
           </FadeIn>
@@ -526,7 +522,7 @@ function FeaturesSection({ dict }) {
           <div className="home-bento__card home-bento__card--wide home-bento__card--coral" data-reveal>
             <div className="home-bento__wide-inner">
               <div className="home-bento__wide-copy">
-                <span className="home-bento__tag">01 — Core feature</span>
+                <span className="home-bento__tag">{t(dict, "bento_tag_core")}</span>
                 <div className="home-bento__icon home-bento__icon--coral" aria-hidden="true">
                   <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M4 5.5C4 4.4 4.9 3.5 6 3.5h14c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2h-7l-5 3.5V16.5H6c-1.1 0-2-.9-2-2v-9Z" />
@@ -552,10 +548,10 @@ function FeaturesSection({ dict }) {
 
           {/* Narrow stat card */}
           <div className="home-bento__card home-bento__card--narrow home-bento__card--teal" data-reveal style={{ "--reveal-delay": "80" }}>
-            <span className="home-bento__tag">Outcome</span>
+            <span className="home-bento__tag">{t(dict, "bento_tag_outcome")}</span>
             <div className="home-bento__stat">2.7×</div>
-            <h3 className="home-bento__title">Faster fluency gains</h3>
-            <p className="home-bento__text">Compared to self-study. Measurable in 4 sessions.</p>
+            <h3 className="home-bento__title">{t(dict, "bento_stat_title")}</h3>
+            <p className="home-bento__text">{t(dict, "bento_stat_text")}</p>
             <div className="home-bento__minichart">
               {bars.map((b, i) => (
                 <div key={i} className={`home-bento__bar${b.active ? " home-bento__bar--active" : ""}`} style={{ height: b.h }} />
@@ -810,17 +806,17 @@ function TestimonialsCarousel({ dict }) {
         <div className="home-testimonials__header-row">
           <div className="home-testimonials__header">
             <FadeIn as="h2" className="home-section-title">
-              What our learners say
+              {t(dict, "testimonials_title")}
             </FadeIn>
             <FadeIn as="p" className="home-section-subtitle" delay={0.1}>
-              Real results from real people — no fluff.
+              {t(dict, "testimonials_subtitle")}
             </FadeIn>
           </div>
 
           <div className="home-testimonials__arrows" aria-label="Carousel navigation">
             <button
               className="home-testimonials__arrow"
-              aria-label="Previous testimonial"
+              aria-label={t(dict, "testimonials_prev")}
               onClick={() => scroll(-1)}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
@@ -829,7 +825,7 @@ function TestimonialsCarousel({ dict }) {
             </button>
             <button
               className="home-testimonials__arrow"
-              aria-label="Next testimonial"
+              aria-label={t(dict, "testimonials_next")}
               onClick={() => scroll(1)}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
@@ -851,7 +847,7 @@ function TestimonialsCarousel({ dict }) {
               key={i}
               role="tab"
               aria-selected={active === i}
-              aria-label={`Testimonial ${i + 1}`}
+              aria-label={`${t(dict, "testimonials_slide")} ${i + 1}`}
               className={`home-testimonials__dot${active === i ? " home-testimonials__dot--active" : ""}`}
               onClick={() => {
                 if (!trackRef.current) return;
@@ -892,21 +888,21 @@ function HowItWorksSection({ dict, locale }) {
   const steps = [
     {
       num: "01",
-      label: "Set your goals",
+      label: t(dict, "how_step1_label"),
       title: t(dict, "how_step1_title") || "Set your goals",
       text: t(dict, "how_step1_text") || "Tell us about your English ambitions — job interviews, presentations, travel or daily confidence.",
       img: "/images/how-step1.png",
     },
     {
-      num: "02",
-      label: "Match a coach",
+      num: t(dict, "bento_num_02"),
+      label: t(dict, "how_step2_label"),
       title: t(dict, "how_step2_title") || "Get matched instantly",
       text: t(dict, "how_step2_text") || "We pair you with a vetted native-level coach whose expertise fits your exact goal.",
       img: "/images/how-step2.png",
     },
     {
-      num: "03",
-      label: "See results",
+      num: t(dict, "bento_num_03"),
+      label: t(dict, "how_step3_label"),
       title: t(dict, "how_step3_title") || "Start speaking. Measure progress.",
       text: t(dict, "how_step3_text") || "Live sessions, instant feedback, and a personalised progress tracker to feel every improvement.",
       img: "/images/how-step3.png",
@@ -957,13 +953,13 @@ function HowItWorksSection({ dict, locale }) {
         </div>
 
         <div className="home-spx-how__cta">
-          <Link className="home-btn home-btn--primary home-btn--shine" href={routeHref(APP_ROUTES.register, locale)}>
+          <Link className="spx-btn spx-btn--primary spx-btn--shine" href={routeHref(APP_ROUTES.register, locale)}>
             <span>{t(dict, "how_cta_primary") || "Start for free"}</span>
-            <svg className="home-btn__arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <svg className="spx-btn__arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-          <Link className="home-btn home-btn--ghost" href={routeHref(APP_ROUTES.contact, locale)}>
+          <Link className="spx-btn spx-btn--ghost-navy" href={routeHref(APP_ROUTES.contact, locale)}>
             {t(dict, "how_cta_secondary") || "Talk to us"}
           </Link>
         </div>
@@ -975,13 +971,13 @@ function HowItWorksSection({ dict, locale }) {
 /* ============================
    Product Demo Section
    ============================ */
-function ProductDemoSection() {
+function ProductDemoSection({ dict }) {
   const features = [
-    "Live 1-on-1 video sessions with native-level coaches",
-    "Real-time pronunciation & grammar feedback",
-    "Personalised session notes sent after every call",
-    "Flexible scheduling — book in 60 seconds",
-    "Progress dashboard tracking every milestone",
+    t(dict, "demo_feature_1"),
+    t(dict, "demo_feature_2"),
+    t(dict, "demo_feature_3"),
+    t(dict, "demo_feature_4"),
+    t(dict, "demo_feature_5"),
   ];
 
   const floatStyle = { animation: "float 3s ease-in-out infinite" };
@@ -992,12 +988,12 @@ function ProductDemoSection() {
       <div className="home-container">
         <div className="home-demo__inner">
           <div className="home-demo__copy">
-            <p className="home-demo__eyebrow">See it in action</p>
+            <p className="home-demo__eyebrow">{t(dict, "demo_eyebrow")}</p>
             <h2>
-              The platform built for{" "}
-              <em className="home-demo__accent-word">real conversations</em>
+              {t(dict, "demo_title_prefix")}{" "}
+              <em className="home-demo__accent-word">{t(dict, "demo_title_accent")}</em>
             </h2>
-            <p>No generic exercises. No passive watching. Every session is live, personalised, and built to make you speak confidently from day one.</p>
+            <p>{t(dict, "demo_body")}</p>
             <ul className="home-demo__features">
               {features.map((f, i) => (
                 <li key={i} className="home-demo__feature">
@@ -1011,12 +1007,12 @@ function ProductDemoSection() {
           <div className="home-demo__phone-wrap">
             <div className="home-demo__float home-demo__float--1" style={floatStyle}>
               <div className="home-demo__float-card">
-                <span style={{ fontSize: "18px" }}>⭐</span> 4.9 avg rating
+                {t(dict, "demo_rating_label")}
               </div>
             </div>
             <div className="home-demo__float home-demo__float--2" style={floatStyle2}>
               <div className="home-demo__float-card">
-                <span style={{ fontSize: "18px" }}>🎙️</span> 50k+ sessions
+                {t(dict, "demo_sessions_label")}
               </div>
             </div>
 
@@ -1025,10 +1021,10 @@ function ProductDemoSection() {
                 <div className="home-demo__coach-card">
                   <div className="home-demo__coach-avatar">SJ</div>
                   <div className="home-demo__coach-info">
-                    <strong>Sarah Johnson</strong>
-                    <span>Senior Communication Coach</span>
+                    <strong>{t(dict, "demo_coach_name")}</strong>
+                    <span>{t(dict, "demo_coach_role")}</span>
                   </div>
-                  <span className="home-demo__live-badge">LIVE</span>
+                  <span className="home-demo__live-badge">{t(dict, "demo_live_badge")}</span>
                 </div>
                 <div className="home-demo__waveform">
                   {Array.from({ length: 12 }, (_, i) => (
@@ -1036,11 +1032,11 @@ function ProductDemoSection() {
                   ))}
                 </div>
                 <div className="home-demo__session-row">
-                  <span className="home-demo__session-label">Session time</span>
+                  <span className="home-demo__session-label">{t(dict, "demo_session_label")}</span>
                   <span className="home-demo__session-time">24:07</span>
                 </div>
                 <div className="home-demo__session-feedback">
-                  ✓ Excellent fluency on that last sentence!
+                  ✓ {t(dict, "demo_session_feedback")}
                 </div>
               </div>
             </div>
@@ -1054,20 +1050,26 @@ function ProductDemoSection() {
 /* ============================
    Comparison Table Section
    ============================ */
-function ComparisonSection() {
+function ComparisonSection({ dict }) {
   const rows = [
-    { feature: "Live 1-on-1 human coaching", speexify: "yes", apps: "no", classroom: "partial" },
-    { feature: "Real-time conversation practice", speexify: "yes", apps: "no", classroom: "partial" },
-    { feature: "Flexible scheduling (your timezone)", speexify: "yes", apps: "yes", classroom: "no" },
-    { feature: "Progress tracking & session notes", speexify: "yes", apps: "partial", classroom: "no" },
-    { feature: "Professional communication focus", speexify: "yes", apps: "no", classroom: "partial" },
-    { feature: "Personalised learning path", speexify: "yes", apps: "partial", classroom: "no" },
+    { feature: t(dict, "compare_row_1"), speexify: "yes", apps: "no", classroom: "partial" },
+    { feature: t(dict, "compare_row_2"), speexify: "yes", apps: "no", classroom: "partial" },
+    { feature: t(dict, "compare_row_3"), speexify: "yes", apps: "yes", classroom: "no" },
+    { feature: t(dict, "compare_row_4"), speexify: "yes", apps: "partial", classroom: "no" },
+    { feature: t(dict, "compare_row_5"), speexify: "yes", apps: "no", classroom: "partial" },
+    { feature: t(dict, "compare_row_6"), speexify: "yes", apps: "partial", classroom: "no" },
   ];
 
   const Icon = ({ type }) => {
-    if (type === "yes") return <span className="home-compare__icon home-compare__icon--yes">✓ Yes</span>;
-    if (type === "no") return <span className="home-compare__icon home-compare__icon--no">✕ No</span>;
-    if (type === "partial") return <span className="home-compare__icon home-compare__icon--partial">~ Sometimes</span>;
+    if (type === "yes") {
+      return <span className="home-compare__icon home-compare__icon--yes">✓ {t(dict, "compare_yes")}</span>;
+    }
+    if (type === "no") {
+      return <span className="home-compare__icon home-compare__icon--no">✕ {t(dict, "compare_no")}</span>;
+    }
+    if (type === "partial") {
+      return <span className="home-compare__icon home-compare__icon--partial">~ {t(dict, "compare_partial")}</span>;
+    }
     return null;
   };
 
@@ -1075,18 +1077,18 @@ function ComparisonSection() {
     <section className="home-compare" data-reveal>
       <div className="home-container">
         <div className="home-section-header">
-          <p className="home-features__eyebrow">Why Speexify</p>
-          <h2 className="home-section-title">The smarter choice</h2>
-          <p className="home-section-subtitle">See how Speexify stacks up against the alternatives.</p>
+          <p className="home-features__eyebrow">{t(dict, "compare_eyebrow")}</p>
+          <h2 className="home-section-title">{t(dict, "compare_title")}</h2>
+          <p className="home-section-subtitle">{t(dict, "compare_subtitle")}</p>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table className="home-compare__table">
             <thead>
               <tr className="home-compare__head-row">
-                <th className="home-compare__th" style={{ width: "38%" }}>Feature</th>
-                <th className="home-compare__th home-compare__th--speexify">Speexify</th>
-                <th className="home-compare__th">Generic Apps</th>
-                <th className="home-compare__th">Classroom</th>
+                <th className="home-compare__th" style={{ width: "38%" }}>{t(dict, "compare_th_feature")}</th>
+                <th className="home-compare__th home-compare__th--speexify">{t(dict, "compare_th_speexify")}</th>
+                <th className="home-compare__th">{t(dict, "compare_th_apps")}</th>
+                <th className="home-compare__th">{t(dict, "compare_th_classroom")}</th>
               </tr>
             </thead>
             <tbody>

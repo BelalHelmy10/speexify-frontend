@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 import { getDictionary, t } from "@/app/i18n";
+import BrandLogo from "@/components/brand/BrandLogo";
 
 function Footer() {
   const pathname = usePathname();
@@ -35,18 +36,15 @@ function Footer() {
         <div className="footer-top">
           {/* Brand Section */}
           <div className="brand-section">
-            <Link
+            <BrandLogo
+              context="footer"
               href={hrefFor(APP_ROUTES.home)}
-              className="brand-link"
-              aria-label={
+              ariaLabel={
                 locale === "ar"
                   ? "العودة إلى الصفحة الرئيسية"
                   : "Go to homepage"
               }
-            >
-              <span className="brand-text">Speexify</span>
-              <span className="brand-shimmer" />
-            </Link>
+            />
             <p className="brand-tagline">{$t("tagline")}</p>
 
             {/* Newsletter Signup */}

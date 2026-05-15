@@ -1,24 +1,25 @@
 @use "variables" as *;
 @use "performance" as *;
 
-.btn {
+@mixin spx-button-base {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 10px 16px;
   border-radius: $radius;
+  font-family: var(--font-body, #{$font-main});
   font-weight: 600;
-  font-size: 0.9375rem; // 15px
+  font-size: 0.9375rem;
   text-decoration: none;
   cursor: pointer;
   border: none;
   position: relative;
   overflow: hidden;
+  line-height: 1.2;
 
-  // GPU acceleration for smooth animations
   @extend %gpu-accelerated;
 
-  // Elite spring transitions
   transition:
     background $duration-fast $spring-smooth,
     color $duration-fast $spring-smooth,
@@ -26,130 +27,257 @@
     transform $duration-fast $spring-bounce,
     border-color $duration-fast $spring-smooth;
 
-  // Smart will-change on hover
   @include animate-ready((transform, box-shadow));
 
-  // Instant press feedback
   &:active {
     transform: translateY(2px) scale(0.98);
     transition-duration: $duration-instant;
   }
 
-  // Respect reduced motion preference
   @include reduced-motion;
+}
 
-  /* --------------------------------
-     PRIMARY
-  -------------------------------- */
-  &--primary {
+@mixin spx-button-primary {
+  background: $color-primary;
+  color: $color-white;
+  box-shadow: 0 4px 12px rgba($color-primary, 0.25);
+
+  &:hover {
+    background: $color-primary-dark;
+    box-shadow: 0 8px 24px rgba($color-primary, 0.35);
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+}
+
+@mixin spx-button-ghost {
+  background: transparent;
+  color: $color-primary;
+  border: 2px solid rgba($color-primary, 0.3);
+  box-shadow: none;
+
+  &:hover {
     background: $color-primary;
+    border-color: $color-primary;
     color: $color-white;
-    box-shadow: 0 4px 12px rgba($color-primary, 0.25);
+    box-shadow: 0 8px 24px rgba($color-primary, 0.25);
+    transform: translateY(-2px) scale(1.02);
+    text-decoration: none;
+  }
+}
 
-    &:hover {
-      background: $color-primary-dark;
-      box-shadow: 0 8px 24px rgba($color-primary, 0.35);
-      transform: translateY(-2px);
-    }
+@mixin spx-button-ghost-navy {
+  background: transparent;
+  border: 2px solid $navy;
+  color: $navy;
+  box-shadow: none;
 
-    &:active {
-      box-shadow: 0 2px 8px rgba($color-primary, 0.3);
-    }
+  &:hover {
+    background: rgba($navy, 0.06);
+    border-color: $navy-mid;
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+}
+
+@mixin spx-button-ghost-white {
+  background: transparent;
+  color: $color-white;
+  border: 1.5px solid rgba($color-white, 0.55);
+  box-shadow: none;
+
+  &:hover {
+    background: rgba($color-white, 0.15);
+    border-color: $color-white;
+    text-decoration: none;
+  }
+}
+
+@mixin spx-button-danger {
+  background: $error;
+  color: $color-white;
+  box-shadow: 0 4px 12px rgba($error, 0.25);
+
+  &:hover {
+    background: darken($error, 5%);
+    box-shadow: 0 8px 24px rgba($error, 0.35);
+    transform: translateY(-2px);
+  }
+}
+
+@mixin spx-button-secondary {
+  background: $bg-secondary;
+  color: $ink;
+  border: 1px solid $border;
+
+  &:hover {
+    background: $surface;
+    transform: translateY(-1px);
+  }
+}
+
+@mixin spx-button-shine {
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba($color-white, 0.3),
+      transparent
+    );
+    animation: spx-btn-shine 3s infinite;
+  }
+}
+
+@keyframes spx-btn-shine {
+  0% {
+    transform: translateX(-100%);
   }
 
-  /* --------------------------------
-     GHOST
-  -------------------------------- */
-  /* --------------------------------
-     GHOST (Elite Update)
-  -------------------------------- */
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.spx-btn {
+  @include spx-button-base;
+
+  &--primary {
+    @include spx-button-primary;
+  }
+
   &--ghost {
-    background: transparent;
-    color: $color-primary;
-    border: 2px solid rgba($color-primary, 0.3); // Subtle default border
-    box-shadow: none;
-
-    &:hover {
-      background: $color-primary;
-      border-color: $color-primary;
-      color: $color-white;
-      box-shadow: 0 8px 24px rgba($color-primary, 0.25); // Soft glow
-      transform: translateY(-2px) scale(1.02); // Slight scale for "pop"
-    }
-
-    &:active {
-      transform: translateY(1px) scale(0.98);
-      box-shadow: 0 2px 8px rgba($color-primary, 0.2);
-    }
+    @include spx-button-ghost;
   }
 
-  /* --------------------------------
-     DANGER (Cancel Button)
-  -------------------------------- */
+  &--ghost-navy {
+    @include spx-button-ghost-navy;
+  }
+
+  &--ghost-white {
+    @include spx-button-ghost-white;
+  }
+
   &--danger {
-    background: $error;
-    color: $color-white;
-    box-shadow: 0 4px 12px rgba($error, 0.25);
-
-    &:hover {
-      background: darken($error, 5%);
-      box-shadow: 0 8px 24px rgba($error, 0.35);
-      transform: translateY(-2px);
-    }
-
-    &:active {
-      box-shadow: 0 2px 8px rgba($error, 0.3);
-    }
-
-    // Danger + Ghost variant (The "Cancel" button)
-    &.btn--ghost {
-      background: transparent;
-      color: $text-muted; // Muted initially for sleek look
-      border: 2px solid $border; // Very subtle border initially
-      box-shadow: none;
-
-      &:hover {
-        background: $error;
-        border-color: $error;
-        color: $color-white;
-        box-shadow: 0 8px 24px rgba($error, 0.3); // Red glow
-        transform: translateY(-2px) scale(1.02);
-      }
-
-      &:active {
-        background: darken($error, 5%);
-        transform: translateY(1px) scale(0.98);
-        box-shadow: 0 2px 8px rgba($error, 0.2);
-      }
-    }
+    @include spx-button-danger;
   }
 
-  /* --------------------------------
-     SMALL / MEDIUM / LARGE
-  -------------------------------- */
+  &--secondary {
+    @include spx-button-secondary;
+  }
+
+  &--shine {
+    @include spx-button-shine;
+  }
+
   &--sm {
     padding: 6px 12px;
     font-size: 0.875rem;
-    border-radius: calc(#{$radius} - 2px);
   }
 
   &--lg {
     padding: 14px 22px;
     font-size: 1rem;
-    border-radius: calc(#{$radius} + 2px);
   }
 
-  /* --------------------------------
-     ICON SUPPORT
-  -------------------------------- */
-  &__icon {
+  &__arrow {
     display: inline-flex;
-    align-items: center;
-    font-size: 1.1em;
     transition: transform $duration-fast $spring-bounce;
   }
 
-  &:hover &__icon--arrow {
+  &:hover &__arrow {
     transform: translateX(4px);
+  }
+}
+
+.btn {
+  @extend .spx-btn;
+
+  &--primary {
+    @extend .spx-btn--primary;
+  }
+
+  &--ghost {
+    @extend .spx-btn--ghost;
+  }
+
+  &--danger {
+    @extend .spx-btn--danger;
+  }
+
+  &--sm {
+    @extend .spx-btn--sm;
+  }
+
+  &--lg {
+    @extend .spx-btn--lg;
+  }
+}
+
+.btn-primary {
+  @extend .spx-btn;
+  @extend .spx-btn--primary;
+}
+
+.btn-secondary {
+  @extend .spx-btn;
+  @extend .spx-btn--secondary;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: $color-primary;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  &:hover {
+    color: $color-primary-dark;
+  }
+}
+
+.home-btn {
+  @extend .spx-btn;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 15px;
+  gap: 8px;
+
+  &--primary {
+    @extend .spx-btn--primary;
+  }
+
+  &--ghost {
+    @extend .spx-btn--ghost-navy;
+  }
+
+  &--ghost-white {
+    @extend .spx-btn--ghost-white;
+  }
+
+  &--shine {
+    @extend .spx-btn--shine;
+  }
+
+  &--lg {
+    @extend .spx-btn--lg;
+  }
+
+  &__arrow {
+    @extend .spx-btn__arrow;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spx-btn--shine::before {
+    animation: none;
   }
 }

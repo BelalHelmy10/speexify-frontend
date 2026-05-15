@@ -44,12 +44,12 @@ function HomeSsrFallback({ locale = "en" }) {
             <p className="home-hero__sub">{t(dict, "subtitle")}</p>
             <div className="home-hero__cta">
               <Link
-                className="home-btn home-btn--primary home-btn--shine"
+                className="spx-btn spx-btn--primary spx-btn--shine"
                 href={routeHref(APP_ROUTES.register, locale)}
               >
                 <span>{t(dict, "ctaPrimary")}</span>
               </Link>
-              <Link className="home-btn home-btn--ghost" href={routeHref(APP_ROUTES.packages, locale)}>
+              <Link className="spx-btn spx-btn--ghost-navy" href={routeHref(APP_ROUTES.packages, locale)}>
                 {t(dict, "ctaSecondary")}
               </Link>
             </div>

@@ -11,6 +11,7 @@
 @use "./calendar";
 @use "./careers";
 /* src/styles/global.scss (or wherever you collect partials) */
+@use "./brand";
 @use "./header"; // <= add this line (resolves to _header.scss)
 @use "./auth";
 @use "./footer";

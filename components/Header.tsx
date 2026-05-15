@@ -22,7 +22,7 @@ import { APP_ROUTES } from "@/lib/routes";
 import { getDictionary, t } from "@/app/i18n";
 import NotificationsBell from "@/components/NotificationsBell";
 import DigitalClock from "@/components/DigitalClock";
-import SpeexifyLogoMark from "@/components/SpeexifyLogoMark";
+import BrandLogo from "@/components/brand/BrandLogo";
 
 /* ------------------------------------------------------------------
    Locale helpers
@@ -441,15 +441,12 @@ export default function Header() {
     >
       <div className="spx-header-glow"></div>
       <div className="spx-header-container container">
-        <Link
+        <BrandLogo
+          context="header"
           href={logoTo}
-          className="spx-brand"
-          aria-label="Speexify"
+          ariaLabel="Speexify"
           onClick={() => setOpen(false)}
-        >
-          <SpeexifyLogoMark className="spx-brand-mark" />
-          <span className="spx-brand-text">Speexify</span>
-        </Link>
+        />
 
         <nav className="spx-nav">
           <ul className="spx-nav-list">
