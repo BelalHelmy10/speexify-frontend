@@ -100,6 +100,58 @@
   flex-wrap: wrap;
 }
 
+.asp-queue-bar {
+  max-width: 1600px;
+  margin: 0 auto 1rem;
+  display: flex;
+  gap: 0.625rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.asp-queue-pill {
+  min-height: 42px;
+  padding: 0.625rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid $asp-border;
+  background: $asp-surface;
+  color: $asp-text-secondary;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.813rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all $asp-transition;
+
+  strong {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    background: rgba($asp-text-light, 0.12);
+    color: $asp-text;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+
+  &:hover {
+    color: $asp-primary;
+    border-color: rgba($asp-primary, 0.45);
+    transform: translateY(-1px);
+  }
+
+  &--active {
+    color: $asp-primary;
+    border-color: rgba($asp-primary, 0.5);
+    background: rgba($asp-primary, 0.08);
+    box-shadow: $asp-shadow-sm;
+  }
+}
+
 .asp-search-box {
   position: relative;
   flex: 1;
@@ -221,6 +273,12 @@
       color: $asp-text;
       margin: 0;
     }
+
+    p {
+      margin: 0.25rem 0 0;
+      color: $asp-text-secondary;
+      font-size: 0.75rem;
+    }
   }
 }
 
@@ -324,11 +382,43 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.75rem;
   }
 
   &__time {
     font-size: 0.75rem;
     color: $asp-text-light;
+  }
+}
+
+.asp-ticket-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0 0 0.75rem;
+
+  span {
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+    background: rgba($asp-primary, 0.08);
+    color: $asp-primary;
+    font-size: 0.688rem;
+    font-weight: 700;
+  }
+}
+
+.asp-pagination {
+  padding: 1rem;
+  border-top: 1px solid $asp-border;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  span {
+    color: $asp-text-secondary;
+    font-size: 0.75rem;
+    font-weight: 700;
   }
 }
 
@@ -385,6 +475,81 @@
   font-weight: 600;
   color: $asp-text;
   margin: 0 0 0.5rem;
+}
+
+.asp-ticket-eyebrow {
+  margin-bottom: 0.25rem;
+  color: $asp-primary;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.asp-ticket-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+
+  @media (max-width: 1280px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.asp-conversation {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid $asp-border;
+
+  @media (max-width: 1280px) {
+    border-right: 0;
+  }
+}
+
+.asp-tag-editor {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid $asp-border;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: $asp-text-secondary;
+}
+
+.asp-tag-list {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  button {
+    padding: 0.35rem 0.55rem;
+    border: 1px solid rgba($asp-primary, 0.25);
+    border-radius: 999px;
+    background: rgba($asp-primary, 0.08);
+    color: $asp-primary;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  input {
+    min-width: 120px;
+    flex: 1;
+    border: 0;
+    outline: 0;
+    color: $asp-text;
+    font: inherit;
+    font-size: 0.813rem;
+    background: transparent;
+  }
 }
 
 .asp-ticket-meta {
@@ -659,19 +824,58 @@
 }
 
 .asp-attachment {
-  display: block;
+  min-height: 40px;
+  padding: 0.625rem 0.75rem;
   border-radius: $asp-radius-sm;
-  overflow: hidden;
+  border: 1px solid $asp-border;
+  background: rgba(255, 255, 255, 0.65);
   box-shadow: $asp-shadow-sm;
-  transition: transform $asp-transition;
+  transition: all $asp-transition;
+  color: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 260px;
 
   &:hover {
-    transform: scale(1.05);
+    transform: translateY(-1px);
+    border-color: rgba($asp-primary, 0.4);
   }
 
   img {
     max-width: 200px;
+    max-height: 140px;
+    object-fit: cover;
     display: block;
+    border-radius: $asp-radius-sm;
+  }
+
+  span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.813rem;
+    font-weight: 700;
+  }
+
+  &--image {
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+
+    svg {
+      position: absolute;
+      right: 0.5rem;
+      bottom: 0.5rem;
+      padding: 0.25rem;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.55);
+      color: white;
+    }
   }
 }
 
@@ -709,6 +913,157 @@
   padding: 1.5rem;
   border-top: 1px solid $asp-border;
   background: $asp-bg;
+}
+
+.asp-macros {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+
+  span,
+  button {
+    min-height: 32px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+  }
+
+  span {
+    color: $asp-text-secondary;
+  }
+
+  button {
+    border: 1px solid $asp-border;
+    background: $asp-surface;
+    color: $asp-text-secondary;
+    padding: 0 0.7rem;
+    cursor: pointer;
+    transition: all $asp-transition;
+
+    &:hover {
+      color: $asp-primary;
+      border-color: rgba($asp-primary, 0.4);
+    }
+  }
+}
+
+.asp-inline-error {
+  margin-top: 0.75rem;
+  color: $asp-danger;
+  font-size: 0.813rem;
+  font-weight: 700;
+}
+
+.asp-customer-panel {
+  min-width: 0;
+  padding: 1.25rem;
+  background: rgba(248, 250, 252, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.asp-customer-card {
+  padding: 1rem;
+  border: 1px solid $asp-border;
+  border-radius: $asp-radius;
+  background: $asp-surface;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+
+  &__avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, $asp-primary, $asp-primary-hover);
+    color: white;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+  }
+
+  strong,
+  span,
+  small {
+    display: block;
+  }
+
+  strong {
+    color: $asp-text;
+    font-size: 0.925rem;
+  }
+
+  span,
+  small {
+    color: $asp-text-secondary;
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+}
+
+.asp-context-section {
+  padding: 1rem;
+  border: 1px solid $asp-border;
+  border-radius: $asp-radius;
+  background: $asp-surface;
+
+  h3 {
+    margin: 0 0 0.75rem;
+    color: $asp-text;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 800;
+
+    svg {
+      color: $asp-primary;
+    }
+  }
+
+  p {
+    margin: 0;
+    color: $asp-text-secondary;
+    font-size: 0.813rem;
+  }
+}
+
+.asp-context-row {
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba($asp-border, 0.75);
+
+  &:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    color: $asp-text;
+    font-size: 0.813rem;
+    line-height: 1.35;
+  }
+
+  span {
+    margin-top: 0.2rem;
+    color: $asp-text-secondary;
+    font-size: 0.75rem;
+    line-height: 1.35;
+  }
 }
 
 .asp-note-input {

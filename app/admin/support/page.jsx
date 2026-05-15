@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { getSupportWebSocketToken } from "@/lib/supportApi";
 import useAuth from "@/hooks/useAuth";
 import {
   MessageCircle,
@@ -15,12 +16,27 @@ import {
   ArrowUp,
   ArrowDown,
   Minus,
+  Inbox,
+  UserCheck,
+  Bell,
+  TimerReset,
 } from "lucide-react";
 import "@/styles/admin-support.scss";
 import SupportTicketDetailPane from "./SupportTicketDetailPane";
 
 const STATUS_OPTIONS = ["OPEN", "IN_PROGRESS", "RESOLVED"];
 const PRIORITY_OPTIONS = ["LOW", "NORMAL", "HIGH", "URGENT"];
+const PAGE_SIZE = 25;
+
+const QUEUES = [
+  { key: "active", label: "All active", icon: Inbox },
+  { key: "mine", label: "Mine", icon: UserCheck },
+  { key: "unassigned", label: "Unassigned", icon: MessageCircle },
+  { key: "urgent", label: "Urgent", icon: AlertCircle },
+  { key: "overdue", label: "Overdue", icon: TimerReset },
+  { key: "waiting", label: "Waiting", icon: Clock },
+  { key: "resolved", label: "Resolved", icon: CheckCircle },
+];
 
 const PRIORITY_CONFIG = {
   LOW: { color: "#6b7280", icon: ArrowDown, label: "Low" },
@@ -87,11 +103,15 @@ export default function AdminSupportInboxPage() {
   // Filters
   const [q, setQ] = useState("");
   const [qDebounced, setQDebounced] = useState("");
-  const [statusFilter, setStatusFilter] = useState("OPEN");
+  const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
+  const [queueFilter, setQueueFilter] = useState("active");
+  const [page, setPage] = useState(0);
 
   // Data
   const [tickets, setTickets] = useState([]);
+  const [ticketTotal, setTicketTotal] = useState(0);
+  const [ticketSummary, setTicketSummary] = useState({});
   const [activeId, setActiveId] = useState(null);
   const [activeTicket, setActiveTicket] = useState(null);
   const [staffMembers, setStaffMembers] = useState([]);
@@ -123,12 +143,20 @@ export default function AdminSupportInboxPage() {
 
   // Build list params
   const listParams = useMemo(() => {
-    const params = {};
-    if (statusFilter) params.status = statusFilter;
+    const params = {
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    };
+    if (statusFilter && queueFilter !== "resolved") params.status = statusFilter;
     if (priorityFilter) params.priority = priorityFilter;
+    if (queueFilter) params.queue = queueFilter;
     if (qDebounced) params.q = qDebounced;
     return params;
-  }, [statusFilter, priorityFilter, qDebounced]);
+  }, [statusFilter, priorityFilter, queueFilter, qDebounced, page]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, priorityFilter, queueFilter, qDebounced]);
 
   // ============================================================================
   // WebSocket Connection
@@ -151,18 +179,38 @@ export default function AdminSupportInboxPage() {
     return `${protocol}//${window.location.host}/ws/support`;
   }, []);
 
+  const appendWsToken = useCallback((wsUrl, token) => {
+    if (!token) return wsUrl;
+    try {
+      const url = new URL(wsUrl);
+      url.searchParams.set("token", token);
+      return url.toString();
+    } catch {
+      return wsUrl;
+    }
+  }, []);
+
   const connectWebSocket = useCallback(() => {
     if (!isAdmin) return;
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const wsUrl = buildSupportWsUrl();
+    (async () => {
+      let wsUrl = buildSupportWsUrl();
+      try {
+        const tokenResponse = await getSupportWebSocketToken();
+        wsUrl = appendWsToken(wsUrl, tokenResponse?.token);
+      } catch {
+        // Cookie auth may still work locally; the token path is production-safe.
+      }
 
-    try {
-      const ws = new WebSocket(wsUrl);
+      try {
+        const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("[Admin Support WS] Connected");
+        if (process.env.NODE_ENV !== "production") {
+          console.info("[Admin Support WS] Connected");
+        }
         setWsConnected(true);
       };
 
@@ -176,11 +224,21 @@ export default function AdminSupportInboxPage() {
       };
 
       ws.onerror = (error) => {
-        console.error("[Admin Support WS] Error:", error);
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[Admin Support WS] Connection error",
+            error?.message || ""
+          );
+        }
       };
 
-      ws.onclose = () => {
-        console.log("[Admin Support WS] Disconnected");
+      ws.onclose = (event) => {
+        if (process.env.NODE_ENV !== "production") {
+          console.info("[Admin Support WS] Disconnected", {
+            code: event.code,
+            reason: event.reason,
+          });
+        }
         setWsConnected(false);
 
         // Reconnect after 3 seconds
@@ -188,10 +246,16 @@ export default function AdminSupportInboxPage() {
           connectWebSocket();
         }, 3000);
       };
-    } catch (err) {
-      console.error("[Admin Support WS] Connection failed:", err);
-    }
-  }, [isAdmin, buildSupportWsUrl]);
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[Admin Support WS] Connection failed:",
+            err?.message || err
+          );
+        }
+      }
+    })();
+  }, [appendWsToken, isAdmin, buildSupportWsUrl]);
 
   const handleWebSocketMessage = useCallback(
     (data) => {
@@ -199,7 +263,6 @@ export default function AdminSupportInboxPage() {
 
       switch (type) {
         case "connected":
-          console.log("[Admin Support WS] Connection confirmed");
           break;
 
         case "new_message":
@@ -223,7 +286,9 @@ export default function AdminSupportInboxPage() {
           break;
 
         default:
-          console.warn("[Admin Support WS] Unknown message type:", type);
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[Admin Support WS] Unknown message type:", type);
+          }
       }
     },
     [activeId, activeTicket]
@@ -363,9 +428,15 @@ export default function AdminSupportInboxPage() {
 
       const items = Array.isArray(data?.tickets) ? data.tickets : [];
       setTickets(items);
+      setTicketTotal(Number(data?.total || 0));
+      setTicketSummary(data?.summary || {});
 
-      if (!activeId && items.length > 0) {
+      const activeStillVisible = items.some((item) => item.id === activeId);
+      if ((!activeId || !activeStillVisible) && items.length > 0) {
         setActiveId(items[0].id);
+      } else if (!items.length) {
+        setActiveId(null);
+        setActiveTicket(null);
       }
     } catch (e) {
       setError(e?.response?.data?.error || "Failed to load tickets");
@@ -409,7 +480,9 @@ export default function AdminSupportInboxPage() {
       });
       setStaffMembers(Array.isArray(data?.users) ? data.users : []);
     } catch (e) {
-      console.error("Failed to load staff members:", e);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("Failed to load staff members:", e);
+      }
     }
   }
 
@@ -483,6 +556,27 @@ export default function AdminSupportInboxPage() {
     }
   }
 
+  async function updateTags(tags) {
+    if (!activeTicket?.id) return;
+    setError(null);
+    try {
+      const { data } = await api.patch(
+        `/support/admin/tickets/${activeTicket.id}/tags`,
+        { tags }
+      );
+
+      const nextTicket = data?.ticket || { ...activeTicket, tags };
+      setActiveTicket((prev) => ({ ...prev, tags: nextTicket.tags || tags }));
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === activeTicket.id ? { ...t, tags: nextTicket.tags || tags } : t
+        )
+      );
+    } catch (e) {
+      setError(e?.response?.data?.error || "Failed to update tags");
+    }
+  }
+
   async function sendReply() {
     if (!activeTicket?.id) return;
     if (!reply.trim()) return;
@@ -495,6 +589,8 @@ export default function AdminSupportInboxPage() {
       });
 
       setReply("");
+      await loadTicket(activeTicket.id);
+      await loadTickets();
     } catch (e) {
       setError(e?.response?.data?.error || "Failed to send reply");
     } finally {
@@ -534,7 +630,7 @@ export default function AdminSupportInboxPage() {
   useEffect(() => {
     if (!isAdmin) return;
     loadTickets();
-  }, [isAdmin, statusFilter, priorityFilter, qDebounced]);
+  }, [isAdmin, statusFilter, priorityFilter, queueFilter, qDebounced, page]);
 
   // Load active ticket
   useEffect(() => {
@@ -557,21 +653,21 @@ export default function AdminSupportInboxPage() {
     else if (!isAdmin) router.push("/dashboard");
   }, [checking, user, isAdmin, router]);
 
-  // Request notification permission
-  useEffect(() => {
-    if (isAdmin && Notification.permission === "default") {
-      Notification.requestPermission();
+  async function requestNotifications() {
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission === "default") {
+      await Notification.requestPermission();
     }
-  }, [isAdmin]);
+  }
 
   if (checking || !user || !isAdmin) return null;
 
   const activePriorityConfig = activeTicket
     ? PRIORITY_CONFIG[activeTicket.priority]
     : null;
-  const activeStatusConfig = activeTicket
-    ? STATUS_CONFIG[activeTicket.status]
-    : null;
+  const totalPages = Math.max(1, Math.ceil(ticketTotal / PAGE_SIZE));
+  const pageStart = ticketTotal === 0 ? 0 : page * PAGE_SIZE + 1;
+  const pageEnd = Math.min(ticketTotal, (page + 1) * PAGE_SIZE);
 
   return (
     <main className="asp-admin-support">
@@ -599,6 +695,14 @@ export default function AdminSupportInboxPage() {
         <div className="asp-header__actions">
           <button
             className="asp-btn asp-btn--secondary"
+            onClick={requestNotifications}
+            type="button"
+          >
+            <Bell size={16} />
+            Notifications
+          </button>
+          <button
+            className="asp-btn asp-btn--secondary"
             onClick={loadTickets}
             disabled={loadingList}
           >
@@ -607,6 +711,36 @@ export default function AdminSupportInboxPage() {
           </button>
         </div>
       </header>
+
+      <section className="asp-queue-bar" aria-label="Support queues">
+        {QUEUES.map((queue) => {
+          const QueueIcon = queue.icon;
+          const isActive = queueFilter === queue.key;
+          const count =
+            queue.key === "active"
+              ? ticketTotal
+              : Number(ticketSummary?.[queue.key] || 0);
+
+          return (
+            <button
+              key={queue.key}
+              type="button"
+              className={`asp-queue-pill ${isActive ? "asp-queue-pill--active" : ""
+                }`}
+              onClick={() => {
+                setQueueFilter(queue.key);
+                if (queue.key === "active" || queue.key === "resolved") {
+                  setStatusFilter("");
+                }
+              }}
+            >
+              <QueueIcon size={16} />
+              <span>{queue.label}</span>
+              <strong>{count}</strong>
+            </button>
+          );
+        })}
+      </section>
 
       {/* Filters */}
       <div className="asp-filters">
@@ -661,8 +795,13 @@ export default function AdminSupportInboxPage() {
         {/* Ticket List */}
         <aside className="asp-sidebar">
           <div className="asp-sidebar__header">
-            <h2>Tickets</h2>
-            <span className="asp-badge">{tickets.length}</span>
+            <div>
+              <h2>Tickets</h2>
+              <p>
+                Showing {pageStart}-{pageEnd} of {ticketTotal}
+              </p>
+            </div>
+            <span className="asp-badge">{ticketTotal}</span>
           </div>
 
           <div className="asp-ticket-list">
@@ -720,6 +859,14 @@ export default function AdminSupportInboxPage() {
                       </div>
                     )}
 
+                    {(t.tags || []).length > 0 && (
+                      <div className="asp-ticket-card__tags">
+                        {t.tags.slice(0, 3).map((tag) => (
+                          <span key={tag}>{tag}</span>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="asp-ticket-card__footer">
                       <div
                         className="asp-status-badge"
@@ -731,13 +878,37 @@ export default function AdminSupportInboxPage() {
                         {t.status}
                       </div>
                       <div className="asp-ticket-card__time">
-                        {fmtTime(t.updatedAt || t.createdAt)}
+                        SLA {fmtTime(t.slaDueAt) || "not set"}
                       </div>
                     </div>
                   </button>
                 );
               })
             )}
+          </div>
+
+          <div className="asp-pagination">
+            <button
+              className="asp-btn asp-btn--secondary asp-btn--small"
+              type="button"
+              onClick={() => setPage((value) => Math.max(0, value - 1))}
+              disabled={page === 0 || loadingList}
+            >
+              Previous
+            </button>
+            <span>
+              Page {page + 1} of {totalPages}
+            </span>
+            <button
+              className="asp-btn asp-btn--secondary asp-btn--small"
+              type="button"
+              onClick={() =>
+                setPage((value) => Math.min(totalPages - 1, value + 1))
+              }
+              disabled={page + 1 >= totalPages || loadingList}
+            >
+              Next
+            </button>
           </div>
         </aside>
 
@@ -759,6 +930,7 @@ export default function AdminSupportInboxPage() {
           updateAssignment={updateAssignment}
           savingAssignment={savingAssignment}
           staffMembers={staffMembers}
+          updateTags={updateTags}
           getAttachmentUrl={getAttachmentUrl}
           typingUsers={typingUsers}
           bottomRef={bottomRef}
@@ -772,6 +944,7 @@ export default function AdminSupportInboxPage() {
           setReply={setReply}
           sendReply={sendReply}
           sendingReply={sendingReply}
+          onTicketRefresh={() => loadTicket(activeTicket?.id)}
         />
       </div>
     </main>

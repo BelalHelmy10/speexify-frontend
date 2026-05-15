@@ -14,6 +14,14 @@ import {
   CheckCheck,
   Download,
   FileText,
+  CreditCard,
+  CalendarDays,
+  Video,
+  User,
+  CircleHelp,
+  LifeBuoy,
+  Clock3,
+  Star,
 } from "lucide-react";
 import {
   listSupportTickets,
@@ -21,16 +29,43 @@ import {
   createSupportTicket,
   replyToSupportTicket,
   uploadSupportAttachment,
+  getSupportWebSocketToken,
+  rateSupportTicket,
 } from "@/lib/supportApi";
 import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
 import "@/styles/support-widget.scss";
 
 const CATEGORIES = [
-  { key: "PAYMENT", label: "Payment issue", icon: "💳" },
-  { key: "BOOKING", label: "Booking / scheduling", icon: "📅" },
-  { key: "CLASSROOM_TECH", label: "Classroom / audio / video", icon: "🎥" },
-  { key: "ACCOUNT", label: "Account", icon: "👤" },
-  { key: "OTHER", label: "Other", icon: "💬" },
+  {
+    key: "PAYMENT",
+    label: "Payment issue",
+    description: "Invoices, package payments, or billing questions.",
+    Icon: CreditCard,
+  },
+  {
+    key: "BOOKING",
+    label: "Booking / scheduling",
+    description: "Sessions, times, reminders, or calendar changes.",
+    Icon: CalendarDays,
+  },
+  {
+    key: "CLASSROOM_TECH",
+    label: "Classroom / audio / video",
+    description: "Mic, camera, audio delay, resources, or live class issues.",
+    Icon: Video,
+  },
+  {
+    key: "ACCOUNT",
+    label: "Account",
+    description: "Login, profile, settings, or account access.",
+    Icon: User,
+  },
+  {
+    key: "OTHER",
+    label: "Other",
+    description: "Anything else the team can help with.",
+    Icon: CircleHelp,
+  },
 ];
 
 // Check if file is an image
@@ -50,9 +85,18 @@ function formatFileSize(bytes) {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 }
 
-// Memoized message component - FIXED: Proper image and file handling
 const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick }) => {
   const hasAttachments = message.attachments?.length > 0;
+  const [failedImages, setFailedImages] = useState(() => new Set());
+
+  const downloadFile = useCallback((fileUrl, fileName) => {
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = fileName || "file";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
 
   return (
     <div
@@ -66,9 +110,9 @@ const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick }) => {
           {message.attachments.map((a) => {
             const isImage = isImageFile(a.mimeType, a.fileName);
             const fileUrl = getAttachmentUrl(a.id);
+            const showImage = isImage && !failedImages.has(a.id);
 
-            if (isImage) {
-              // FIXED: Display image inline with proper loading
+            if (showImage) {
               return (
                 <div key={a.id} className="sw-message__image-wrapper">
                   <img
@@ -77,66 +121,37 @@ const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick }) => {
                     className="sw-message__image"
                     loading="lazy"
                     onClick={() => onImageClick?.(fileUrl, a.fileName)}
-                    onError={(e) => {
-                      // Fallback if image fails to load
-                      e.target.style.display = "none";
-                      const parent = e.target.parentElement;
-                      if (parent) {
-                        parent.innerHTML = `
-                          <div class="sw-message__file-download" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: rgba(0,0,0,0.05); border-radius: 8px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                              <polyline points="7 10 12 15 17 10"></polyline>
-                              <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            <span>${a.fileName || "Download file"}</span>
-                          </div>
-                        `;
-                        parent.onclick = () => {
-                          const link = document.createElement("a");
-                          link.href = fileUrl;
-                          link.download = a.fileName || "file";
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        };
-                      }
-                    }}
+                    onError={() =>
+                      setFailedImages((prev) => new Set(prev).add(a.id))
+                    }
                   />
                 </div>
               );
-            } else {
-              // FIXED: Show download link for non-images with proper download behavior
-              return (
-                <button
-                  key={a.id}
-                  className="sw-message__file-download"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    // Force download instead of navigation
-                    const link = document.createElement("a");
-                    link.href = fileUrl;
-                    link.download = a.fileName || "file";
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  }}
-                >
-                  <FileText size={16} />
-                  <div className="sw-message__file-info">
-                    <div className="sw-message__file-name">
-                      {a.fileName || "Download file"}
-                    </div>
-                    {a.fileSize && (
-                      <div className="sw-message__file-size">
-                        {formatFileSize(a.fileSize)}
-                      </div>
-                    )}
-                  </div>
-                  <Download size={14} />
-                </button>
-              );
             }
+
+            return (
+              <button
+                key={a.id}
+                className="sw-message__file-download"
+                onClick={(e) => {
+                  e.preventDefault();
+                  downloadFile(fileUrl, a.fileName);
+                }}
+              >
+                <FileText size={16} />
+                <div className="sw-message__file-info">
+                  <div className="sw-message__file-name">
+                    {a.fileName || "Download file"}
+                  </div>
+                  {a.fileSize && (
+                    <div className="sw-message__file-size">
+                      {formatFileSize(a.fileSize)}
+                    </div>
+                  )}
+                </div>
+                <Download size={14} />
+              </button>
+            );
           })}
         </div>
       )}
@@ -223,7 +238,9 @@ export default function SupportWidget() {
   const [view, setView] = useState("home"); // home | list | ticket
 
   const [category, setCategory] = useState(null);
+  const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState(null);
 
   // Unread badge
@@ -243,6 +260,9 @@ export default function SupportWidget() {
 
   // Image lightbox
   const [lightboxImage, setLightboxImage] = useState(null);
+  const [satisfactionRating, setSatisfactionRating] = useState(0);
+  const [satisfactionComment, setSatisfactionComment] = useState("");
+  const [savingSatisfaction, setSavingSatisfaction] = useState(false);
 
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -296,17 +316,37 @@ export default function SupportWidget() {
     return `${protocol}//${window.location.host}/ws/support`;
   }, []);
 
+  const appendWsToken = useCallback((wsUrl, token) => {
+    if (!token) return wsUrl;
+    try {
+      const url = new URL(wsUrl);
+      url.searchParams.set("token", token);
+      return url.toString();
+    } catch {
+      return wsUrl;
+    }
+  }, []);
+
   const connectWebSocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const wsUrl = buildSupportWsUrl();
+    (async () => {
+      let wsUrl = buildSupportWsUrl();
+      try {
+        const tokenResponse = await getSupportWebSocketToken();
+        wsUrl = appendWsToken(wsUrl, tokenResponse?.token);
+      } catch {
+        // Cookie auth may still work locally; the token path is the production-safe path.
+      }
 
-    try {
-      const ws = new WebSocket(wsUrl);
+      try {
+        const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("[Support WS] Connected");
+        if (process.env.NODE_ENV !== "production") {
+          console.info("[Support WS] Connected");
+        }
         setWsConnected(true);
       };
 
@@ -320,21 +360,31 @@ export default function SupportWidget() {
       };
 
       ws.onerror = (error) => {
-        console.error("[Support WS] Error:", error);
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[Support WS] Connection error", error?.message || "");
+        }
       };
 
-      ws.onclose = () => {
-        console.log("[Support WS] Disconnected");
+      ws.onclose = (event) => {
+        if (process.env.NODE_ENV !== "production") {
+          console.info("[Support WS] Disconnected", {
+            code: event.code,
+            reason: event.reason,
+          });
+        }
         setWsConnected(false);
 
         reconnectTimeoutRef.current = setTimeout(() => {
           connectWebSocket();
         }, 3000);
       };
-    } catch (err) {
-      console.error("[Support WS] Connection failed:", err);
-    }
-  }, [buildSupportWsUrl]);
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[Support WS] Connection failed:", err?.message || err);
+        }
+      }
+    })();
+  }, [appendWsToken, buildSupportWsUrl]);
 
   const handleWebSocketMessage = useCallback(
     (data) => {
@@ -342,7 +392,6 @@ export default function SupportWidget() {
 
       switch (type) {
         case "connected":
-          console.log("[Support WS] Connection confirmed");
           break;
 
         case "new_message":
@@ -361,7 +410,9 @@ export default function SupportWidget() {
           break;
 
         default:
-          console.warn("[Support WS] Unknown message type:", type);
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[Support WS] Unknown message type:", type);
+          }
       }
     },
     [activeTicket, open]
@@ -532,6 +583,8 @@ export default function SupportWidget() {
         const res = await getSupportTicket(id);
         const ticket = res.ticket;
         setActiveTicket(ticket);
+        setSatisfactionRating(ticket?.satisfactionRating || 0);
+        setSatisfactionComment(ticket?.satisfactionComment || "");
         setView("ticket");
 
         const latest = ticket?.messages?.[ticket.messages.length - 1];
@@ -590,6 +643,7 @@ export default function SupportWidget() {
   // ============================================================================
   const sendMessage = useCallback(async () => {
     if (!message.trim() || sending) return;
+    if (!activeTicket && !category) return;
 
     setSending(true);
     setError(null);
@@ -606,14 +660,25 @@ export default function SupportWidget() {
       } else {
         const res = await createSupportTicket({
           category,
+          subject: subject.trim() || undefined,
           message,
+          source: "widget",
         });
+
+        if (selectedFile) {
+          await uploadSupportAttachment({
+            ticketId: res.ticket.id,
+            file: selectedFile,
+          });
+        }
 
         await refreshTickets();
         await loadTicket(res.ticket.id);
       }
 
       setMessage("");
+      setSubject("");
+      setSelectedFile(null);
       setMessageStatus("sent");
     } catch (e) {
       setError(e.message);
@@ -621,12 +686,27 @@ export default function SupportWidget() {
     } finally {
       setSending(false);
     }
-  }, [message, sending, activeTicket, category, loadTicket, refreshTickets]);
+  }, [
+    message,
+    sending,
+    activeTicket,
+    category,
+    subject,
+    selectedFile,
+    loadTicket,
+    refreshTickets,
+  ]);
 
   const handleFileSelect = useCallback(
     async (e) => {
       const file = e.target.files?.[0];
-      if (!file || !activeTicket) return;
+      if (!file) return;
+
+      if (!activeTicket) {
+        setSelectedFile(file);
+        e.target.value = "";
+        return;
+      }
 
       setSending(true);
       setError(null);
@@ -674,10 +754,40 @@ export default function SupportWidget() {
     [activeTicket, sendTypingIndicator]
   );
 
+  const saveSatisfaction = useCallback(async () => {
+    if (!activeTicket?.id || !satisfactionRating || savingSatisfaction) return;
+
+    setSavingSatisfaction(true);
+    setError(null);
+    try {
+      const res = await rateSupportTicket({
+        ticketId: activeTicket.id,
+        rating: satisfactionRating,
+        comment: satisfactionComment,
+      });
+      setActiveTicket((prev) => ({
+        ...prev,
+        satisfactionRating: res.ticket?.satisfactionRating,
+        satisfactionComment: res.ticket?.satisfactionComment,
+      }));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSavingSatisfaction(false);
+    }
+  }, [
+    activeTicket,
+    satisfactionRating,
+    satisfactionComment,
+    savingSatisfaction,
+  ]);
+
   const reset = useCallback(() => {
     setActiveTicket(null);
     setCategory(null);
+    setSubject("");
     setMessage("");
+    setSelectedFile(null);
     setError(null);
     setView("home");
   }, []);
@@ -712,7 +822,10 @@ export default function SupportWidget() {
         onClick={toggleWidget}
         aria-label={open ? "Close support" : "Contact support"}
       >
-        {open ? <X size={24} /> : <MessageCircle size={24} />}
+        <span className="sw-fab__icon">
+          {open ? <X size={20} /> : <LifeBuoy size={20} />}
+        </span>
+        {!open && <span className="sw-fab__label">Help</span>}
         {!open && unreadCount > 0 && (
           <span className="sw-fab__badge">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -737,12 +850,13 @@ export default function SupportWidget() {
               )}
               <div>
                 <div className="sw-header__title">Support</div>
-                {wsConnected && (
-                  <div className="sw-header__status">
-                    <span className="sw-status-dot"></span>
-                    Online
-                  </div>
-                )}
+                <div className="sw-header__status">
+                  <span
+                    className={`sw-status-dot ${wsConnected ? "" : "sw-status-dot--muted"
+                      }`}
+                  ></span>
+                  {wsConnected ? "Online" : "Connecting"}
+                </div>
               </div>
             </div>
 
@@ -768,11 +882,16 @@ export default function SupportWidget() {
               <>
                 <div className="sw-ticket-header">
                   <div className="sw-ticket-header__category">
-                    {CATEGORIES.find((c) => c.key === activeTicket.category)
-                      ?.label || activeTicket.category}
+                    <span>
+                      {CATEGORIES.find((c) => c.key === activeTicket.category)
+                        ?.label || activeTicket.category}
+                    </span>
+                    {activeTicket.subject && (
+                      <strong>{activeTicket.subject}</strong>
+                    )}
                   </div>
                   <div className="sw-ticket-header__status">
-                    {activeTicket.status}
+                    {activeTicket.status.replace("_", " ")}
                   </div>
                 </div>
 
@@ -798,6 +917,50 @@ export default function SupportWidget() {
 
                   <div ref={messagesEndRef} />
                 </div>
+
+                {activeTicket.status === "RESOLVED" && (
+                  <div className="sw-satisfaction">
+                    <div>
+                      <strong>Was this helpful?</strong>
+                      <span>Rate this conversation or reply below to reopen it.</span>
+                    </div>
+                    <div className="sw-satisfaction__stars">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          className={
+                            value <= satisfactionRating ? "is-active" : ""
+                          }
+                          onClick={() => setSatisfactionRating(value)}
+                          aria-label={`Rate ${value} out of 5`}
+                        >
+                          <Star size={16} />
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      className="sw-textarea sw-satisfaction__comment"
+                      value={satisfactionComment}
+                      onChange={(e) => setSatisfactionComment(e.target.value)}
+                      placeholder="Optional note for the team..."
+                      rows={2}
+                    />
+                    <button
+                      type="button"
+                      className="sw-secondary-action"
+                      onClick={saveSatisfaction}
+                      disabled={!satisfactionRating || savingSatisfaction}
+                    >
+                      {savingSatisfaction ? (
+                        <Loader2 size={16} className="sw-spin" />
+                      ) : (
+                        <Check size={16} />
+                      )}
+                      Save rating
+                    </button>
+                  </div>
+                )}
 
                 <div className="sw-input-area">
                   {error && (
@@ -885,8 +1048,8 @@ export default function SupportWidget() {
                       >
                         <div className="sw-ticket-card__top">
                           <span className="sw-ticket-card__category">
-                            {CATEGORIES.find((c) => c.key === t.category)?.icon}{" "}
-                            {t.category}
+                            {CATEGORIES.find((c) => c.key === t.category)
+                              ?.label || t.category}
                           </span>
                           <span
                             className={`sw-ticket-card__status sw-ticket-card__status--${t.status.toLowerCase()}`}
@@ -894,6 +1057,12 @@ export default function SupportWidget() {
                             {t.status}
                           </span>
                         </div>
+
+                        {t.subject && (
+                          <div className="sw-ticket-card__subject">
+                            {t.subject}
+                          </div>
+                        )}
 
                         {t.lastMessage?.body && (
                           <div className="sw-ticket-card__preview">
@@ -920,11 +1089,18 @@ export default function SupportWidget() {
               /* Home View */
               <>
                 <div className="sw-welcome">
-                  <div className="sw-welcome__icon">💬</div>
+                  <div className="sw-welcome__icon">
+                    <LifeBuoy size={28} />
+                  </div>
                   <div className="sw-welcome__title">How can we help?</div>
                   <div className="sw-welcome__subtitle">
-                    Choose a category to get started
+                    Tell us what happened. Typical reply time is under 2 hours.
                   </div>
+                </div>
+
+                <div className="sw-service-card">
+                  <Clock3 size={16} />
+                  <span>Support is available for payments, scheduling, and live classroom issues.</span>
                 </div>
 
                 <button
@@ -945,8 +1121,17 @@ export default function SupportWidget() {
                       className="sw-category-btn"
                       onClick={() => setCategory(c.key)}
                     >
-                      <span className="sw-category-btn__icon">{c.icon}</span>
-                      <span className="sw-category-btn__label">{c.label}</span>
+                      <span className="sw-category-btn__icon">
+                        <c.Icon size={18} />
+                      </span>
+                      <span>
+                        <span className="sw-category-btn__label">
+                          {c.label}
+                        </span>
+                        <span className="sw-category-btn__description">
+                          {c.description}
+                        </span>
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -970,6 +1155,15 @@ export default function SupportWidget() {
                   issue
                 </div>
 
+                <input
+                  className="sw-input"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Subject, for example: Payment confirmation"
+                  maxLength={140}
+                  disabled={sending}
+                />
+
                 <textarea
                   ref={textareaRef}
                   className="sw-textarea sw-textarea--large"
@@ -979,6 +1173,31 @@ export default function SupportWidget() {
                   disabled={sending}
                   rows={6}
                 />
+
+                <div className="sw-attachment-picker">
+                  <button
+                    type="button"
+                    className="sw-secondary-action"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={sending}
+                  >
+                    <Paperclip size={16} />
+                    {selectedFile ? "Change attachment" : "Attach file"}
+                  </button>
+                  {selectedFile && (
+                    <div className="sw-selected-file">
+                      <FileText size={16} />
+                      <span>{selectedFile.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFile(null)}
+                        aria-label="Remove attachment"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 {error && (
                   <div className="sw-error">
@@ -1004,6 +1223,14 @@ export default function SupportWidget() {
                     </>
                   )}
                 </button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx"
+                  hidden
+                  onChange={handleFileSelect}
+                />
               </>
             )}
           </div>
