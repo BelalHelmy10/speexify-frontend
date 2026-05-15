@@ -496,6 +496,20 @@
   box-shadow: 0 24px 60px rgba($ink, 0.17);
 }
 
+[dir="rtl"] {
+  .spx-account-dropdown {
+    right: auto;
+    left: 0;
+  }
+
+  .spx-account-link {
+    &:hover,
+    &.spx-is-active {
+      transform: translateX(-2px);
+    }
+  }
+}
+
 .spx-account-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

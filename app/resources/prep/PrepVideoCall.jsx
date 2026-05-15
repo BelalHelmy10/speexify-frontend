@@ -846,44 +846,24 @@ export default function PrepVideoCall({
         }}
       />
 
-      <div
-        className={
-          "cr-video__mic-status" +
-          (sessionAudioMuted ? " cr-video__mic-status--muted" : "") +
-          (micMonitorUnavailable ? " cr-video__mic-status--unavailable" : "")
-        }
-        title={
-          sessionAudioMuted
-            ? "Microphone is muted"
-            : micMonitorUnavailable
-              ? "Microphone level monitor unavailable"
-              : "Live microphone level"
-        }
-        aria-label={
-          sessionAudioMuted
-            ? "Microphone muted"
-            : micMonitorUnavailable
-              ? "Microphone level unavailable"
-              : "Live microphone level"
-        }
-      >
-        {sessionAudioMuted ? <MicOff size={14} /> : <Mic size={14} />}
-        <span className="cr-video__mic-bars" aria-hidden="true">
-          {[0.18, 0.38, 0.62, 0.84].map((threshold) => (
-            <span
-              key={threshold}
-              className={micLevel >= threshold ? "is-active" : ""}
-            />
-          ))}
-        </span>
-        <span className="cr-video__mic-label">
-          {sessionAudioMuted
-            ? "Muted"
-            : micMonitorUnavailable
-              ? "No meter"
-              : "Mic"}
-        </span>
-      </div>
+      {!sessionAudioMuted && !micMonitorUnavailable && (
+        <div
+          className="cr-video__mic-status"
+          title="Live microphone level"
+          aria-label="Live microphone level"
+        >
+          <Mic size={14} />
+          <span className="cr-video__mic-bars" aria-hidden="true">
+            {[0.18, 0.38, 0.62, 0.84].map((threshold) => (
+              <span
+                key={threshold}
+                className={micLevel >= threshold ? "is-active" : ""}
+              />
+            ))}
+          </span>
+          <span className="cr-video__mic-label">Mic</span>
+        </div>
+      )}
     </div>
   );
 }
