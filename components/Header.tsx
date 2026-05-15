@@ -21,6 +21,7 @@ import {
 import { getDictionary, t } from "@/app/i18n";
 import NotificationsBell from "@/components/NotificationsBell";
 import DigitalClock from "@/components/DigitalClock";
+import SpeexifyLogoMark from "@/components/SpeexifyLogoMark";
 
 /* ------------------------------------------------------------------
    Locale helpers
@@ -437,6 +438,7 @@ export default function Header() {
           aria-label="Speexify"
           onClick={() => setOpen(false)}
         >
+          <SpeexifyLogoMark className="spx-brand-mark" />
           <span className="spx-brand-text">Speexify</span>
         </Link>
 
