@@ -475,6 +475,125 @@ function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, options = {}) {
   return cursorY;
 }
 
+function normalizeCanvasTextColorRuns(text = "", colorRuns = [], fallbackColor = "black") {
+  const value = String(text || "");
+  const length = value.length;
+  if (!length) return [];
+
+  const runs = Array.isArray(colorRuns)
+    ? colorRuns
+      .map((run) => ({
+        start: Math.max(0, Math.min(length, Number(run.start) || 0)),
+        end: Math.max(0, Math.min(length, Number(run.end) || 0)),
+        color: run.color || fallbackColor,
+      }))
+      .filter((run) => run.end > run.start)
+      .sort((a, b) => a.start - b.start || a.end - b.end)
+    : [];
+
+  const filled = [];
+  let cursor = 0;
+
+  runs.forEach((run) => {
+    if (run.start > cursor) {
+      filled.push({ start: cursor, end: run.start, color: fallbackColor });
+    }
+
+    const start = Math.max(run.start, cursor);
+    if (run.end > start) {
+      filled.push({ start, end: run.end, color: run.color || fallbackColor });
+      cursor = run.end;
+    }
+  });
+
+  if (cursor < length) {
+    filled.push({ start: cursor, end: length, color: fallbackColor });
+  }
+
+  return filled.reduce((merged, run) => {
+    const previous = merged[merged.length - 1];
+    if (previous && previous.color === run.color && previous.end === run.start) {
+      previous.end = run.end;
+      return merged;
+    }
+    merged.push(run);
+    return merged;
+  }, []);
+}
+
+function getCanvasTextColorSegments(text = "", colorRuns = [], fallbackColor = "black") {
+  const value = String(text || "");
+  return normalizeCanvasTextColorRuns(value, colorRuns, fallbackColor)
+    .map((run) => ({
+      color: run.color || fallbackColor,
+      text: value.slice(run.start, run.end),
+    }))
+    .filter((segment) => segment.text.length > 0);
+}
+
+function drawInlineColorSegments(ctx, segments, x, y) {
+  let cursorX = x;
+
+  segments.forEach((segment) => {
+    ctx.fillStyle = segment.color || "black";
+    ctx.fillText(segment.text, cursorX, y);
+    cursorX += ctx.measureText(segment.text).width;
+  });
+}
+
+function drawRichWrappedText(ctx, segments, x, y, maxWidth, lineHeight) {
+  let cursorX = x;
+  let cursorY = y;
+  const right = x + maxWidth;
+
+  const newLine = () => {
+    cursorX = x;
+    cursorY += lineHeight;
+  };
+
+  const drawToken = (token, color) => {
+    if (!token) return;
+
+    ctx.fillStyle = color || "black";
+    const isWhitespace = /^\s+$/.test(token);
+    const tokenWidth = ctx.measureText(token).width;
+
+    if (isWhitespace && cursorX === x) return;
+
+    if (!isWhitespace && cursorX > x && cursorX + tokenWidth > right) {
+      newLine();
+    }
+
+    if (!isWhitespace && tokenWidth > maxWidth) {
+      Array.from(token).forEach((char) => {
+        const charWidth = ctx.measureText(char).width;
+        if (cursorX > x && cursorX + charWidth > right) newLine();
+        ctx.fillText(char, cursorX, cursorY);
+        cursorX += charWidth;
+      });
+      return;
+    }
+
+    ctx.fillText(token, cursorX, cursorY);
+    cursorX += tokenWidth;
+  };
+
+  segments.forEach((segment) => {
+    String(segment.text || "")
+      .split(/(\r\n|\r|\n|\s+)/)
+      .filter((token) => token.length > 0)
+      .forEach((token) => {
+        if (/^\r\n$|^\r$|^\n$/.test(token)) {
+          newLine();
+          return;
+        }
+        drawToken(token, segment.color);
+      });
+  });
+
+  return cursorY + lineHeight;
+}
+
 function drawTextBoxOnContext(ctx, tb, width, height, exportScale = 1) {
   const fontSize = (tb.fontSize || 16) * exportScale;
   const boxWidth = (tb.width || 150) * exportScale;
@@ -491,13 +610,18 @@ function drawTextBoxOnContext(ctx, tb, width, height, exportScale = 1) {
     ctx.rect(x, y, boxWidth, boxHeight);
     ctx.clip();
   }
-  ctx.fillStyle = tb.color || "black";
   ctx.font = `${fontSize}px sans-serif`;
   ctx.textBaseline = "top";
+  const colorSegments = getCanvasTextColorSegments(
+    text,
+    tb.colorRuns,
+    tb.color || "black"
+  );
+
   if (shouldWrap) {
-    drawWrappedText(ctx, text, x, y, boxWidth, fontSize * 1.2);
+    drawRichWrappedText(ctx, colorSegments, x, y, boxWidth, fontSize * 1.2);
   } else {
-    ctx.fillText(text, x, y);
+    drawInlineColorSegments(ctx, colorSegments, x, y);
   }
   ctx.restore();
 }

@@ -197,6 +197,7 @@ export default function PrepAnnotationsOverlay({ ctx }) {
         heightResizeState={heightResizeState}
         selectedItems={selectedItems}
         annotationScale={annotationScale}
+        penColor={penColor}
         tool={tool}
         TOOL_TEXT={TOOL_TEXT}
         TOOL_SELECT={TOOL_SELECT}

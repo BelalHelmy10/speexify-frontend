@@ -52,6 +52,7 @@ import {
   createPrepTextBox,
   updatePrepTextBoxText,
   deletePrepTextBox,
+  applyPrepTextColorRange,
   startPrepTextDrag,
   startPrepFontSizeResize,
   handlePrepFontSizeResize,
@@ -1699,11 +1700,76 @@ export default function PrepShell({
 
   function updateTextBoxText(id, text) {
     updatePrepTextBoxText(id, text, {
+      penColor,
       setTextBoxes,
       autoFitTextBoxWidthIfNeeded,
       scheduleSaveAnnotations,
       scheduleBroadcastAnnotations,
       autoResizeTextarea,
+    });
+  }
+
+  function handlePenColorChange(nextColor) {
+    setPenColor(nextColor);
+
+    if (activeTextId) {
+      const textarea = textAreaRefs.current?.[activeTextId];
+      const start = Number(textarea?.selectionStart);
+      const end = Number(textarea?.selectionEnd);
+
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start === end) {
+        return;
+      }
+
+      pushHistory();
+
+      setTextBoxes((prev) => {
+        const updated = prev.map((box) =>
+          box.id === activeTextId
+            ? applyPrepTextColorRange(box, start, end, nextColor)
+            : box
+        );
+
+        scheduleSaveAnnotations({ textBoxes: updated });
+        scheduleBroadcastAnnotations({ textBoxes: updated });
+
+        return updated;
+      });
+
+      requestAnimationFrame(() => {
+        const currentTextarea = textAreaRefs.current?.[activeTextId];
+        currentTextarea?.focus?.();
+        currentTextarea?.setSelectionRange?.(start, end);
+      });
+      return;
+    }
+
+    const targetTextIds = new Set(
+      selectedItems
+        .filter((item) => item.type === "text")
+        .map((item) => item.id)
+    );
+
+    if (targetTextIds.size === 0) return;
+
+    pushHistory();
+
+    setTextBoxes((prev) => {
+      const updated = prev.map((box) =>
+        targetTextIds.has(box.id)
+          ? applyPrepTextColorRange(
+              box,
+              0,
+              String(box.text || "").length,
+              nextColor
+            )
+          : box
+      );
+
+      scheduleSaveAnnotations({ textBoxes: updated });
+      scheduleBroadcastAnnotations({ textBoxes: updated });
+
+      return updated;
     });
   }
 
@@ -2339,7 +2405,7 @@ export default function PrepShell({
                 penColor={penColor}
                 colorMenuOpen={colorMenuOpen}
                 PEN_COLORS={PEN_COLORS}
-                setPenColor={setPenColor}
+                setPenColor={handlePenColorChange}
               />
 
               <div className="prep-viewer__frame-wrapper">

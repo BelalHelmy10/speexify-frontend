@@ -121,6 +121,205 @@ function getResizedBoxFromVerticalEdges(topPx, bottomPx, state) {
   };
 }
 
+function mergeColorRuns(runs) {
+  return runs.reduce((merged, run) => {
+    if (!run || run.end <= run.start) return merged;
+    const color = run.color || "#111111";
+    const previous = merged[merged.length - 1];
+
+    if (previous && previous.color === color && previous.end === run.start) {
+      previous.end = run.end;
+      return merged;
+    }
+
+    merged.push({ start: run.start, end: run.end, color });
+    return merged;
+  }, []);
+}
+
+export function normalizePrepTextColorRuns(text = "", colorRuns = [], fallbackColor = "#111111") {
+  const length = String(text).length;
+  if (length === 0) return [];
+
+  const normalizedRuns = Array.isArray(colorRuns)
+    ? colorRuns
+      .map((run) => ({
+        start: clampNumber(Number(run.start) || 0, 0, length),
+        end: clampNumber(Number(run.end) || 0, 0, length),
+        color: run.color || fallbackColor,
+      }))
+      .filter((run) => run.end > run.start)
+      .sort((a, b) => a.start - b.start || a.end - b.end)
+    : [];
+
+  const filled = [];
+  let cursor = 0;
+
+  normalizedRuns.forEach((run) => {
+    if (run.start > cursor) {
+      filled.push({ start: cursor, end: run.start, color: fallbackColor });
+    }
+
+    const start = Math.max(run.start, cursor);
+    const end = Math.max(start, run.end);
+    if (end > start) {
+      filled.push({ start, end, color: run.color || fallbackColor });
+      cursor = end;
+    }
+  });
+
+  if (cursor < length) {
+    filled.push({ start: cursor, end: length, color: fallbackColor });
+  }
+
+  return mergeColorRuns(filled);
+}
+
+export function getPrepTextColorSegments(text = "", colorRuns = [], fallbackColor = "#111111") {
+  const value = String(text);
+  return normalizePrepTextColorRuns(value, colorRuns, fallbackColor)
+    .map((run) => ({
+      color: run.color || fallbackColor,
+      text: value.slice(run.start, run.end),
+    }))
+    .filter((segment) => segment.text.length > 0);
+}
+
+function updateTextColorRunsForTextChange({
+  oldText,
+  newText,
+  colorRuns,
+  insertColor,
+  fallbackColor,
+}) {
+  const oldValue = String(oldText || "");
+  const newValue = String(newText || "");
+
+  if (newValue.length === 0) return [];
+  if (oldValue === newValue) {
+    return normalizePrepTextColorRuns(newValue, colorRuns, fallbackColor);
+  }
+
+  let prefixLength = 0;
+  const sharedPrefixLimit = Math.min(oldValue.length, newValue.length);
+  while (
+    prefixLength < sharedPrefixLimit &&
+    oldValue[prefixLength] === newValue[prefixLength]
+  ) {
+    prefixLength += 1;
+  }
+
+  let suffixLength = 0;
+  while (
+    suffixLength < oldValue.length - prefixLength &&
+    suffixLength < newValue.length - prefixLength &&
+    oldValue[oldValue.length - 1 - suffixLength] ===
+      newValue[newValue.length - 1 - suffixLength]
+  ) {
+    suffixLength += 1;
+  }
+
+  const oldReplaceEnd = oldValue.length - suffixLength;
+  const newReplaceEnd = newValue.length - suffixLength;
+  const insertedLength = Math.max(0, newReplaceEnd - prefixLength);
+  const delta = newValue.length - oldValue.length;
+  const oldRuns = normalizePrepTextColorRuns(oldValue, colorRuns, fallbackColor);
+  const nextRuns = [];
+
+  oldRuns.forEach((run) => {
+    if (run.end <= prefixLength) {
+      nextRuns.push(run);
+      return;
+    }
+
+    if (run.start >= oldReplaceEnd) {
+      nextRuns.push({
+        ...run,
+        start: run.start + delta,
+        end: run.end + delta,
+      });
+      return;
+    }
+
+    if (run.start < prefixLength) {
+      nextRuns.push({ ...run, end: prefixLength });
+    }
+
+    if (run.end > oldReplaceEnd) {
+      nextRuns.push({
+        ...run,
+        start: newReplaceEnd,
+        end: run.end + delta,
+      });
+    }
+  });
+
+  if (insertedLength > 0) {
+    nextRuns.push({
+      start: prefixLength,
+      end: prefixLength + insertedLength,
+      color: insertColor || fallbackColor,
+    });
+  }
+
+  return mergeColorRuns(
+    nextRuns
+      .map((run) => ({
+        start: clampNumber(run.start, 0, newValue.length),
+        end: clampNumber(run.end, 0, newValue.length),
+        color: run.color || fallbackColor,
+      }))
+      .filter((run) => run.end > run.start)
+      .sort((a, b) => a.start - b.start || a.end - b.end)
+  );
+}
+
+export function applyPrepTextColorRange(box, start, end, color) {
+  const text = String(box?.text || "");
+  const length = text.length;
+  const rangeStart = clampNumber(Math.min(start, end), 0, length);
+  const rangeEnd = clampNumber(Math.max(start, end), 0, length);
+
+  if (!box || rangeStart === rangeEnd) return box;
+
+  const fallbackColor = box.color || color || "#111111";
+  const runs = normalizePrepTextColorRuns(text, box.colorRuns, fallbackColor);
+  const nextRuns = [];
+
+  runs.forEach((run) => {
+    if (run.end <= rangeStart || run.start >= rangeEnd) {
+      nextRuns.push(run);
+      return;
+    }
+
+    if (run.start < rangeStart) {
+      nextRuns.push({ ...run, end: rangeStart });
+    }
+
+    nextRuns.push({
+      start: Math.max(run.start, rangeStart),
+      end: Math.min(run.end, rangeEnd),
+      color,
+    });
+
+    if (run.end > rangeEnd) {
+      nextRuns.push({ ...run, start: rangeEnd });
+    }
+  });
+
+  const colorRuns = mergeColorRuns(
+    nextRuns
+      .filter((run) => run.end > run.start)
+      .sort((a, b) => a.start - b.start || a.end - b.end)
+  );
+
+  return {
+    ...box,
+    color: rangeStart === 0 && rangeEnd === length ? color : box.color,
+    colorRuns,
+  };
+}
+
 export function createPrepTextBox(e, ctx) {
   const {
     getNormalizedPoint,
@@ -145,6 +344,7 @@ export function createPrepTextBox(e, ctx) {
     y: p.y,
     text: "",
     color: penColor,
+    colorRuns: [],
     fontSize: 13,
     width: 120,
     minWidth: 60,
@@ -166,6 +366,7 @@ export function createPrepTextBox(e, ctx) {
 
 export function updatePrepTextBoxText(id, text, ctx) {
   const {
+    penColor,
     setTextBoxes,
     autoFitTextBoxWidthIfNeeded,
     scheduleSaveAnnotations,
@@ -182,7 +383,18 @@ export function updatePrepTextBoxText(id, text, ctx) {
         detectedDir = isTextRTL(text) ? "rtl" : "ltr";
       }
 
-      const withText = { ...tbox, text, dir: detectedDir };
+      const withText = {
+        ...tbox,
+        text,
+        dir: detectedDir,
+        colorRuns: updateTextColorRunsForTextChange({
+          oldText: tbox.text,
+          newText: text,
+          colorRuns: tbox.colorRuns,
+          insertColor: penColor || tbox.color,
+          fallbackColor: tbox.color || penColor,
+        }),
+      };
       return autoFitTextBoxWidthIfNeeded(withText, text);
     });
 

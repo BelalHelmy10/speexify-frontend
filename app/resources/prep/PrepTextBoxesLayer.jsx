@@ -1,5 +1,7 @@
 // app/resources/prep/PrepTextBoxesLayer.jsx
 
+import { getPrepTextColorSegments } from "./prepTextBoxLogic";
+
 export default function PrepTextBoxesLayer({
   textBoxes,
   isPdf,
@@ -10,6 +12,7 @@ export default function PrepTextBoxesLayer({
   heightResizeState,
   selectedItems,
   annotationScale,
+  penColor,
   tool,
   TOOL_TEXT,
   TOOL_SELECT,
@@ -61,6 +64,25 @@ export default function PrepTextBoxesLayer({
           const isLargeTextBlock =
             !box.autoWidth &&
             (normalizedTextLength > 260 || longestLineChars > 95);
+          const colorSegments = getPrepTextColorSegments(
+            box.text || "",
+            box.colorRuns,
+            box.color || penColor || "#111111"
+          );
+          const richTextContent = colorSegments.map((segment, index) => (
+            <span
+              key={`${box.id}-color-${index}`}
+              style={{ color: segment.color }}
+            >
+              {segment.text}
+            </span>
+          ));
+          const richTextStyle = {
+            fontSize: `${fontSize}px`,
+            whiteSpace: shouldPreserveLineBreaks ? "pre-wrap" : "nowrap",
+            overflowWrap: shouldPreserveLineBreaks ? "break-word" : "normal",
+            wordBreak: "normal",
+          };
 
           return (
             <div
@@ -166,6 +188,33 @@ export default function PrepTextBoxesLayer({
                         }}
                       />
 
+                      {box.text ? (
+                        <div
+                          className="prep-text-box__rich-preview"
+                          aria-hidden="true"
+                          dir="auto"
+                          style={{
+                            ...richTextStyle,
+                            width: box.autoWidth ? `${boxWidth}px` : "100%",
+                            minWidth: box.autoWidth ? "100px" : undefined,
+                            height: boxHeight ? "100%" : undefined,
+                            maxHeight:
+                              isLargeTextBlock && !boxHeight
+                                ? "min(68vh, 590px)"
+                                : undefined,
+                            overflowX:
+                              isLargeTextBlock || boxHeight ? "hidden" : "visible",
+                            overflowY: boxHeight || isLargeTextBlock
+                              ? "auto"
+                              : box.autoWidth
+                                ? "visible"
+                                : "hidden",
+                          }}
+                        >
+                          {richTextContent}
+                        </div>
+                      ) : null}
+
                       <textarea
                         ref={(el) => {
                           if (el) textAreaRefs.current[box.id] = el;
@@ -175,7 +224,8 @@ export default function PrepTextBoxesLayer({
                         dir="auto"
                         wrap={box.autoWidth ? "off" : "soft"}
                         style={{
-                          color: box.color,
+                          color: box.text ? "transparent" : box.color,
+                          caretColor: penColor || box.color,
                           fontSize: `${fontSize}px`,
                           height: boxHeight ? "100%" : undefined,
                           width: box.autoWidth ? `${boxWidth}px` : "100%",
@@ -271,7 +321,7 @@ export default function PrepTextBoxesLayer({
                     setTimeout(() => autoResizeTextarea(box.id), 0);
                   }}
                 >
-                  {box.text}
+                  {richTextContent.length ? richTextContent : box.text}
                   <span
                     className="prep-text-box__resize-handle"
                     onMouseDown={(e) => {
