@@ -10,6 +10,7 @@ import {
   getNetworkProfile,
   subscribeToNetworkProfileChanges,
 } from "@/lib/network-profile";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
@@ -133,10 +134,9 @@ export default function PaymentSuccessPage() {
     setPollSeed((prev) => prev + 1);
   }
 
-  const isArabic = locale === "ar";
-  const onboardingPath = isArabic ? "/ar/onboarding" : "/onboarding";
-  const dashboardPath = isArabic ? "/ar/dashboard" : "/dashboard";
-  const packagesPath = isArabic ? "/ar/packages" : "/packages";
+  const onboardingPath = routeHref(APP_ROUTES.onboarding, locale);
+  const dashboardPath = routeHref(APP_ROUTES.dashboard, locale);
+  const packagesPath = routeHref(APP_ROUTES.packages, locale);
 
   // ---------- Loading ----------
   if (status === "loading") {

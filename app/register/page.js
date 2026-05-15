@@ -17,6 +17,7 @@ import {
 } from "@/lib/auth";
 import { trackEvent } from "@/lib/analytics";
 import { getDictionary, t } from "@/app/i18n";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 function RegisterInner({ dict, locale }) {
   const [step, setStep] = useState(1);
@@ -32,9 +33,8 @@ function RegisterInner({ dict, locale }) {
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  const base = locale === "ar" ? "/ar" : "";
-  const loginPath = `${base}/login`;
-  const dashboardPath = `${base}/dashboard`;
+  const loginPath = routeHref(APP_ROUTES.login, locale);
+  const dashboardPath = routeHref(APP_ROUTES.dashboard, locale);
 
   const sendCode = async (e) => {
     e?.preventDefault?.();

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "../i18n";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 import "@/styles/contact.scss";
 
 const DEFAULT_ROLE = "INDIVIDUAL";
@@ -49,7 +50,6 @@ function Contact() {
 
   const locale = pathname && pathname.startsWith("/ar") ? "ar" : "en";
   const dict = useMemo(() => getDictionary(locale, "contact"), [locale]);
-  const prefix = locale === "ar" ? "/ar" : "";
 
   const [form, setForm] = useState({
     name: "",
@@ -265,7 +265,7 @@ function Contact() {
                   <input type="checkbox" name="agree" checked={form.agree} onChange={onChange} />
                   <span>
                     {t(dict, "form_privacy_label")}{" "}
-                    <Link href={`${prefix}/privacy`}>{t(dict, "form_privacy_link")}</Link>.
+                    <Link href={routeHref(APP_ROUTES.privacy, locale)}>{t(dict, "form_privacy_link")}</Link>.
                   </span>
                 </label>
 
@@ -387,7 +387,7 @@ function Contact() {
               </div>
               <h3>{t(dict, "lanes_individual_title")}</h3>
               <p>{t(dict, "lanes_individual_body")}</p>
-              <Link className="lane-btn" href={`${prefix}/individual-training`}>
+              <Link className="lane-btn" href={routeHref(APP_ROUTES.individualTraining, locale)}>
                 {t(dict, "lanes_individual_cta")}
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -407,7 +407,7 @@ function Contact() {
               </div>
               <h3>{t(dict, "lanes_teams_title")}</h3>
               <p>{t(dict, "lanes_teams_body")}</p>
-              <Link className="lane-btn" href={`${prefix}/corporate-training`}>
+              <Link className="lane-btn" href={routeHref(APP_ROUTES.corporateTraining, locale)}>
                 {t(dict, "lanes_teams_cta")}
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -425,7 +425,7 @@ function Contact() {
               </div>
               <h3>{t(dict, "lanes_packages_title")}</h3>
               <p>{t(dict, "lanes_packages_body")}</p>
-              <Link className="lane-btn" href={`${prefix}/packages`}>
+              <Link className="lane-btn" href={routeHref(APP_ROUTES.packages, locale)}>
                 {t(dict, "lanes_packages_cta")}
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

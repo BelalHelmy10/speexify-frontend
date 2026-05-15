@@ -16,6 +16,7 @@ import {
 } from "@/lib/regional-pricing";
 import { oneOnOnePlans, groupPlans, corporatePlans } from "@/lib/plans";
 import { getPricingRegion } from "@/lib/pricing-regions";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
@@ -51,7 +52,6 @@ function Packages() {
   const pathname = usePathname();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = getDictionary(locale, "packages");
-  const localePrefix = locale === "ar" ? "/ar" : "";
 
   const [tab, setTab] = useState(AUD.INDIVIDUAL);
   const [lessonType, setLessonType] = useState(LESSON_TYPE.ONE_ON_ONE);
@@ -330,7 +330,7 @@ function Packages() {
                 {t(dict, "estimator_period", "mo")}
               </div>
               <Link
-                href={`${localePrefix}/corporate#rfp`}
+                href={routeHref(APP_ROUTES.corporateTraining, locale, "#rfp")}
                 className="ecp-btn ecp-btn--primary"
               >
                 {t(dict, "estimator_cta", "Get Custom Quote")}
@@ -513,13 +513,13 @@ function Packages() {
             <div className="ecp-cta__actions">
               <Link
                 className="ecp-btn ecp-btn--primary ecp-btn--lg"
-                href={`${localePrefix}/individual#trial`}
+                href={routeHref(APP_ROUTES.individualTraining, locale, "#trial")}
               >
                 {t(dict, "cta_individual_primary", "Book Free Consultation")}
               </Link>
               <Link
                 className="ecp-btn ecp-btn--ghost ecp-btn--lg"
-                href={`${localePrefix}/packages`}
+                href={routeHref(APP_ROUTES.packages, locale)}
               >
                 {t(dict, "cta_individual_secondary", "View All Plans")}
               </Link>
@@ -527,14 +527,14 @@ function Packages() {
           ) : (
             <div className="ecp-cta__actions">
               <Link
-                href={`${localePrefix}/corporate#rfp`}
+                href={routeHref(APP_ROUTES.corporateTraining, locale, "#rfp")}
                 className="ecp-btn ecp-btn--primary ecp-btn--lg"
               >
                 {t(dict, "cta_corp_primary", "Request Proposal")}
               </Link>
               <Link
                 className="ecp-btn ecp-btn--ghost ecp-btn--lg"
-                href={`${localePrefix}/corporate`}
+                href={routeHref(APP_ROUTES.corporateTraining, locale)}
               >
                 {t(
                   dict,
@@ -572,7 +572,6 @@ function PricingCard({
 
   const bullets = parseFeatures(plan.featuresRaw || "").slice(0, 8);
   const isCorp = audience === AUD.CORPORATE;
-  const localePrefix = locale === "ar" ? "/ar" : "";
 
   // Calculate regional pricing
   const regionalPrice = calculatePackagePrice(plan, countryCode);
@@ -602,8 +601,8 @@ function PricingCard({
   })();
 
   // inside function PricingCard({ plan, ... })
-  const target = `${localePrefix}/${PAYMENT_MODE === "paymob" ? "checkout" : "manual-payment"
-    }?plan=${encodeURIComponent(plan.title)}&cc=${encodeURIComponent(
+  const paymentRoute = PAYMENT_MODE === "paymob" ? APP_ROUTES.checkout : APP_ROUTES.manualPayment;
+  const target = `${routeHref(paymentRoute, locale)}?plan=${encodeURIComponent(plan.title)}&cc=${encodeURIComponent(
       countryCode || ""
     )}&cur=${encodeURIComponent(currency || "")}`;
 
@@ -653,14 +652,14 @@ function PricingCard({
         {isCorp ? (
           <>
             <Link
-              href={`${localePrefix}/corporate#rfp`}
+              href={routeHref(APP_ROUTES.corporateTraining, locale, "#rfp")}
               className="ecp-btn ecp-btn--primary"
             >
               {t(dict, "cta_corp_card_primary", "Contact Sales")}
             </Link>
             <Link
               className="ecp-btn ecp-btn--ghost"
-              href={`${localePrefix}/corporate`}
+              href={routeHref(APP_ROUTES.corporateTraining, locale)}
             >
               {t(dict, "cta_corp_card_secondary", "Learn More")}
             </Link>
@@ -669,7 +668,7 @@ function PricingCard({
           <>
             {/* <Link
               WILL REVERT BACK TO THIS UPON PRODUCTION
-              href={`${localePrefix}/checkout?plan=${encodeURIComponent(
+              href={`${routeHref(APP_ROUTES.checkout, locale)}?plan=${encodeURIComponent(
                 plan.title
               )}`}
               className="ecp-btn ecp-btn--primary"
@@ -678,7 +677,7 @@ function PricingCard({
             </Link> */}
 
             <Link
-              href={`${localePrefix}/login?next=${encodeURIComponent(target)}`}
+              href={`${routeHref(APP_ROUTES.login, locale)}?next=${encodeURIComponent(target)}`}
               className="ecp-btn ecp-btn--primary"
             >
               {t(dict, "cta_buy_now", "Buy Now")}

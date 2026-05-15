@@ -16,6 +16,7 @@ import {
   getNetworkProfile,
   subscribeToNetworkProfileChanges,
 } from "@/lib/network-profile";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 export default function CheckoutPage() {
   const { toast, confirmModal } = useToast();
@@ -208,8 +209,7 @@ export default function CheckoutPage() {
         );
         if (shouldLogin) {
           const currentUrl = encodeURIComponent(window.location.href);
-          const loginPath = locale === "ar" ? "/ar/login" : "/login";
-          router.push(`${loginPath}?next=${currentUrl}`);
+          router.push(`${routeHref(APP_ROUTES.login, locale)}?next=${currentUrl}`);
         }
         return;
       }
@@ -285,7 +285,7 @@ export default function CheckoutPage() {
           </p>
           <button
             onClick={() =>
-              router.push(locale === "ar" ? "/ar/packages" : "/packages")
+              router.push(routeHref(APP_ROUTES.packages, locale))
             }
             className="checkout__error-button"
           >
@@ -498,7 +498,7 @@ export default function CheckoutPage() {
         <div className="checkout__back">
           <button
             onClick={() =>
-              router.push(locale === "ar" ? "/ar/packages" : "/packages")
+              router.push(routeHref(APP_ROUTES.packages, locale))
             }
           >
             {t(dict, "back_to_packages")}

@@ -18,6 +18,7 @@ import {
   isFocusedWorkspacePath,
   normalizeLocalizedPath,
 } from "@/lib/chromeRoutes";
+import { APP_ROUTES } from "@/lib/routes";
 import { getDictionary, t } from "@/app/i18n";
 import NotificationsBell from "@/components/NotificationsBell";
 import DigitalClock from "@/components/DigitalClock";
@@ -218,7 +219,7 @@ export default function Header() {
     };
   }, [accountOpen]);
 
-  const baseLogoTo = checking ? "/" : user ? "/dashboard" : "/";
+  const baseLogoTo = checking ? APP_ROUTES.home : user ? APP_ROUTES.dashboard : APP_ROUTES.home;
   const logoTo = localizeHref(baseLogoTo, locale);
 
   const handleLogout = async () => {
@@ -227,7 +228,7 @@ export default function Header() {
     } catch { }
     setOpen(false);
     setAccountOpen(false);
-    router.push(localizeHref("/login", locale));
+    router.push(localizeHref(APP_ROUTES.login, locale));
   };
 
   const navText = (key, fallback) => {
@@ -242,22 +243,22 @@ export default function Header() {
   };
 
   const loggedOut = [
-    { to: "/", label: t(navDict, "home") },
-    { to: "/individual-training", label: t(navDict, "individual") },
-    { to: "/corporate-training", label: t(navDict, "corporate") },
-    { to: "/packages", label: t(navDict, "packages") },
-    { to: "/about", label: t(navDict, "about") },
-    { to: "/contact", label: t(navDict, "contact") },
+    { to: APP_ROUTES.home, label: t(navDict, "home") },
+    { to: APP_ROUTES.individualTraining, label: t(navDict, "individual") },
+    { to: APP_ROUTES.corporateTraining, label: t(navDict, "corporate") },
+    { to: APP_ROUTES.packages, label: t(navDict, "packages") },
+    { to: APP_ROUTES.about, label: t(navDict, "about") },
+    { to: APP_ROUTES.contact, label: t(navDict, "contact") },
   ];
 
   const learner = [
-    { to: "/dashboard", label: t(navDict, "dashboard") },
+    { to: APP_ROUTES.dashboard, label: t(navDict, "dashboard") },
     { to: "/calendar", label: t(navDict, "calendar") },
     { to: "/dashboard/progress", label: t(navDict, "progress") },
   ];
 
   const teacher = [
-    { to: "/dashboard", label: t(navDict, "dashboard") },
+    { to: APP_ROUTES.dashboard, label: t(navDict, "dashboard") },
     { to: "/calendar", label: t(navDict, "calendar") },
     { to: "/dashboard/progress", label: t(navDict, "progress") },
     // ✅ teachers DO see Resources
@@ -268,7 +269,7 @@ export default function Header() {
 
   // Admin nav: Settings now lives in the account menu.
   const admin = [
-    { to: "/dashboard", label: t(navDict, "dashboard") },
+    { to: APP_ROUTES.dashboard, label: t(navDict, "dashboard") },
     { to: "/calendar", label: t(navDict, "calendar") },
     ...adminExtra,
     { to: "/resources", label: t(navDict, "resources") },
@@ -317,7 +318,7 @@ export default function Header() {
           ]
           : []),
       {
-        to: "/contact",
+        to: APP_ROUTES.contact,
         label: navText("support", "Support"),
         hint: navText("support_hint", "Help, questions, and requests"),
         icon: HelpCircle,
@@ -333,7 +334,7 @@ export default function Header() {
       </span>
     ) : !user ? (
       <Link
-        href={localizeHref("/login", locale)}
+        href={localizeHref(APP_ROUTES.login, locale)}
         className="spx-nav-cta"
         onClick={() => setOpen(false)}
       >
@@ -481,10 +482,10 @@ export default function Header() {
                 style={itemIndexStyle(links.length)}
               >
                 <Link
-                  href={localizeHref("/register", locale)}
+                  href={localizeHref(APP_ROUTES.register, locale)}
                   className={
                     "spx-nav-link" +
-                    (isActive("/register") ? " spx-is-active" : "")
+                    (isActive(APP_ROUTES.register) ? " spx-is-active" : "")
                   }
                   onClick={() => setOpen(false)}
                 >
@@ -598,10 +599,10 @@ export default function Header() {
                   style={itemIndexStyle(links.length)}
                 >
                   <Link
-                    href={localizeHref("/register", locale)}
+                    href={localizeHref(APP_ROUTES.register, locale)}
                     className={
                       "spx-mobile-link" +
-                      (isActive("/register") ? " spx-is-active" : "")
+                      (isActive(APP_ROUTES.register) ? " spx-is-active" : "")
                     }
                     onClick={() => setOpen(false)}
                   >
@@ -633,7 +634,7 @@ export default function Header() {
                   style={itemIndexStyle(links.length + 1)}
                 >
                   <Link
-                    href={localizeHref("/login", locale)}
+                    href={localizeHref(APP_ROUTES.login, locale)}
                     className="spx-mobile-cta"
                     onClick={() => setOpen(false)}
                   >

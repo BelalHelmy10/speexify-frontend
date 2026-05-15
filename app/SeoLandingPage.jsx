@@ -6,6 +6,7 @@ import {
   faqJsonLd,
   serviceJsonLd,
 } from "./seo";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 export default function SeoLandingPage({ pageKey, locale = "en" }) {
   const config = landingPages[pageKey];
@@ -13,14 +14,13 @@ export default function SeoLandingPage({ pageKey, locale = "en" }) {
 
   if (!config || !page) return null;
 
-  const prefix = locale === "ar" ? "/ar" : "";
-  const contactPath = `${prefix}/contact`;
-  const packagesPath = `${prefix}/packages`;
+  const contactPath = routeHref(APP_ROUTES.contact, locale);
+  const packagesPath = routeHref(APP_ROUTES.packages, locale);
   const homeLabel = locale === "ar" ? "الرئيسية" : "Home";
 
   const jsonLd = [
     breadcrumbJsonLd([
-      { name: homeLabel, path: prefix || "/" },
+      { name: homeLabel, path: routeHref(APP_ROUTES.home, locale) },
       { name: page.eyebrow, path: page.path },
     ]),
     serviceJsonLd({

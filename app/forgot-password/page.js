@@ -7,11 +7,12 @@ import { usePathname, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { login as apiLogin } from "@/lib/auth";
 import { getDictionary, t } from "@/app/i18n";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 function ForgotPasswordInner({ dict }) {
   const router = useRouter();
   const pathname = usePathname();
-  const isArabic = pathname?.startsWith("/ar");
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
 
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
@@ -74,7 +75,7 @@ function ForgotPasswordInner({ dict }) {
         await apiLogin({ email, password: newPassword });
 
         // Locale-aware redirect after successful auto-login
-        router.replace(isArabic ? "/ar/dashboard" : "/dashboard");
+        router.replace(routeHref(APP_ROUTES.dashboard, locale));
         router.refresh?.();
         return;
       } catch {
@@ -182,7 +183,7 @@ function ForgotPasswordInner({ dict }) {
               </button>
               <Link
                 className="btn-link"
-                href={isArabic ? "/ar/login" : "/login"}
+                href={routeHref(APP_ROUTES.login, locale)}
               >
                 {t(dict, "back_to_login")}
               </Link>

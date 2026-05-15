@@ -2,17 +2,17 @@ import Link from "next/link";
 import SeoJsonLd from "./SeoJsonLd";
 import { hubPages } from "./seoContent";
 import { breadcrumbJsonLd, collectionPageJsonLd } from "./seo";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 export default function SeoHubPage({ hubKey, locale = "en" }) {
   const page = hubPages[hubKey]?.[locale];
   if (!page) return null;
 
-  const prefix = locale === "ar" ? "/ar" : "";
   const homeLabel = locale === "ar" ? "الرئيسية" : "Home";
 
   const jsonLd = [
     breadcrumbJsonLd([
-      { name: homeLabel, path: prefix || "/" },
+      { name: homeLabel, path: routeHref(APP_ROUTES.home, locale) },
       { name: page.eyebrow, path: page.path },
     ]),
     collectionPageJsonLd({

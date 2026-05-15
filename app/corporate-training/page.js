@@ -8,6 +8,7 @@ import api from "@/lib/api";
 import "@/styles/corporate.scss";
 import { getDictionary, t } from "@/app/i18n";
 import FadeIn from "@/components/FadeIn";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 function CorporateTraining({ dict, locale }) {
   const formRef = useRef(null);
@@ -24,9 +25,6 @@ function CorporateTraining({ dict, locale }) {
     message: "",
     agree: false,
   });
-
-  // ✅ prefix ONLY for URLs, not for translations
-  const prefix = locale === "ar" ? "/ar" : "";
 
   const onChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -126,9 +124,8 @@ function CorporateTraining({ dict, locale }) {
                   />
                 </svg>
               </a>
-              {/* ✅ locale-aware packages link */}
               <Link
-                href={`${prefix}/packages?tab=corporate`}
+                href={routeHref(APP_ROUTES.packages, locale, "?tab=corporate")}
                 className="spx-corp-btn spx-corp-btn--ghost"
               >
                 {t(dict, "hero_cta_secondary")}
@@ -264,7 +261,7 @@ function CorporateTraining({ dict, locale }) {
                 t(dict, "plan1_b3"),
               ]}
               dict={dict}
-              prefix={prefix}
+              locale={locale}
             />
             <Plan
               img="/images/elite-team-large.png"
@@ -278,7 +275,7 @@ function CorporateTraining({ dict, locale }) {
               popular
               popularLabel={t(dict, "plan2_badge")}
               dict={dict}
-              prefix={prefix}
+              locale={locale}
             />
             <Plan
               img="/images/elite-company.png"
@@ -290,14 +287,13 @@ function CorporateTraining({ dict, locale }) {
                 t(dict, "plan3_b3"),
               ]}
               dict={dict}
-              prefix={prefix}
+              locale={locale}
             />
           </div>
 
           <div className="spx-corp-center">
-            {/* ✅ locale-aware plans link */}
             <Link
-              href={`${prefix}/packages?tab=corporate`}
+              href={routeHref(APP_ROUTES.packages, locale, "?tab=corporate")}
               className="spx-corp-btn spx-corp-btn--primary"
             >
               {t(dict, "plans_view_corp")}
@@ -464,8 +460,7 @@ function CorporateTraining({ dict, locale }) {
                 />
                 <span>
                   {t(dict, "check_privacy_prefix")}{" "}
-                  {/* ✅ locale-aware privacy link */}
-                  <Link href={`${prefix}/privacy`} className="spx-corp-link">
+                  <Link href={routeHref(APP_ROUTES.privacy, locale)} className="spx-corp-link">
                     {t(dict, "check_privacy_link")}
                   </Link>
                   .
@@ -511,9 +506,8 @@ function CorporateTraining({ dict, locale }) {
             >
               {t(dict, "cta_btn_primary")}
             </a>
-            {/* ✅ locale-aware packages link */}
             <Link
-              href={`${prefix}/packages?tab=corporate`}
+              href={routeHref(APP_ROUTES.packages, locale, "?tab=corporate")}
               className="spx-corp-btn spx-corp-btn--ghost spx-corp-btn--lg"
             >
               {t(dict, "cta_btn_secondary")}
@@ -613,7 +607,7 @@ function Plan({
   popular = false,
   popularLabel,
   dict,
-  prefix,
+  locale,
 }) {
   return (
     <div
@@ -637,7 +631,7 @@ function Plan({
           {t(dict, "btn_request_proposal")}
         </a>
         <Link
-          href={`${prefix}/packages?tab=corporate`}
+          href={routeHref(APP_ROUTES.packages, locale, "?tab=corporate")}
           className="spx-corp-btn spx-corp-btn--ghost"
         >
           {t(dict, "hero_cta_secondary")}

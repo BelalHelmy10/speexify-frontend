@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import "@/styles/about.scss";
 import { getDictionary, t } from "@/app/i18n";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 const heroImg = "/images/about_hero.avif";
 const historyImg = "/images/about_history.avif";
@@ -194,7 +195,6 @@ export default function AboutPage() {
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = getDictionary(locale, "about");
   const isRtl = locale === "ar";
-  const prefix = isRtl ? "/ar" : "";
 
   const contactEmail = "support@speexify.com";
   const contactLine = t(dict, "about_contact_line", { email: contactEmail });
@@ -225,13 +225,13 @@ export default function AboutPage() {
             <p className="hero-sub">{t(dict, "hero_sub")}</p>
 
             <div className="hero-cta">
-              <Link href={`${prefix}/register`} className="btn btn-primary btn-lg">
+              <Link href={routeHref(APP_ROUTES.register, locale)} className="btn btn-primary btn-lg">
                 {t(dict, "hero_cta_primary")}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </Link>
-              <Link href={`${prefix}/packages`} className="btn btn-outline btn-lg">
+              <Link href={routeHref(APP_ROUTES.packages, locale)} className="btn btn-outline btn-lg">
                 {t(dict, "hero_cta_secondary")}
               </Link>
             </div>
@@ -451,13 +451,13 @@ export default function AboutPage() {
             </p>
 
             <div className="cta-btns">
-              <Link href={`${prefix}/careers`} className="btn btn-cta-coral btn-lg">
+              <Link href={routeHref(APP_ROUTES.careers, locale)} className="btn btn-cta-coral btn-lg">
                 {t(dict, "cta_primary")}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </Link>
-              <Link href={`${prefix}/contact`} className="btn btn-cta-ghost btn-lg">
+              <Link href={routeHref(APP_ROUTES.contact, locale)} className="btn btn-cta-ghost btn-lg">
                 {t(dict, "cta_secondary")}
               </Link>
             </div>

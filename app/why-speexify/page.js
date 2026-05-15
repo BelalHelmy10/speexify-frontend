@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import "@/styles/why-speexify.scss";
 import { getDictionary, t } from "@/app/i18n";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 const valuesConfig = [
     { num: "01", titleKey: "value1_title", descKey: "value1_desc", detailKey: "value1_detail", icon: "🎯" },
@@ -45,7 +46,6 @@ export default function WhySpeexifyPage() {
     const pathname = usePathname();
     const locale = pathname?.startsWith("/ar") ? "ar" : "en";
     const dict = getDictionary(locale, "why-speexify");
-    const prefix = locale === "ar" ? "/ar" : "";
 
     return (
         <main className="why">
@@ -199,14 +199,14 @@ export default function WhySpeexifyPage() {
                     <p>{t(dict, "cta_sub")}</p>
 
                     <div className="why__cta-buttons">
-                        <Link href={`${prefix}/individual-training`} className="why-btn why-btn--primary why-btn--lg">
+                        <Link href={routeHref(APP_ROUTES.individualTraining, locale)} className="why-btn why-btn--primary why-btn--lg">
                             <span>{t(dict, "cta_primary")}</span>
                             <svg className="why-btn__arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         </Link>
 
-                        <Link href={`${prefix}/packages`} className="why-btn why-btn--outline why-btn--lg">
+                        <Link href={routeHref(APP_ROUTES.packages, locale)} className="why-btn why-btn--outline why-btn--lg">
                             {t(dict, "cta_secondary")}
                         </Link>
                     </div>

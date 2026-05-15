@@ -8,6 +8,7 @@ import {
   calculatePackagePrice,
   formatRegionalPrice,
 } from "@/lib/regional-pricing";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 function findPlanByTitle(title) {
   if (!title) return null;
@@ -87,7 +88,6 @@ export default function ManualPaymentPage() {
   const searchParams = useSearchParams();
 
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
-  const localePrefix = locale === "ar" ? "/ar" : "";
 
   const planTitle = searchParams.get("plan");
   const plan = useMemo(() => findPlanByTitle(planTitle), [planTitle]);
@@ -189,7 +189,7 @@ export default function ManualPaymentPage() {
         <p style={{ color: "crimson" }}>
           Plan not found. Please go back and select a package again.
         </p>
-        <button onClick={() => router.push(`${localePrefix}/packages`)}>
+        <button onClick={() => router.push(routeHref(APP_ROUTES.packages, locale))}>
           Back to packages
         </button>
       </div>
@@ -215,7 +215,7 @@ export default function ManualPaymentPage() {
     const message =
       "Thanks for your payment. We’ll be in touch soon to confirm and activate your package.";
     router.push(
-      `${localePrefix}/dashboard?notice=${encodeURIComponent(message)}`
+      `${routeHref(APP_ROUTES.dashboard, locale)}?notice=${encodeURIComponent(message)}`
     );
   }
 

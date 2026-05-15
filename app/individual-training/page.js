@@ -10,12 +10,11 @@ import "@/styles/individual.scss";
 import { getDictionary, t } from "@/app/i18n";
 import { getSupportedTimezones } from "../../lib/timezones";
 import FadeIn from "@/components/FadeIn";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 function IndividualInner({ dict, locale }) {
   const { user } = useAuth();
   const formRef = useRef(null);
-
-  const prefix = locale === "ar" ? "/ar" : "";
 
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState("");
@@ -111,7 +110,7 @@ function IndividualInner({ dict, locale }) {
                     <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
                   </svg>
                 </a>
-                <Link href={`${prefix}/packages`} className="btn btn-ghost btn-lg">
+                <Link href={routeHref(APP_ROUTES.packages, locale)} className="btn btn-ghost btn-lg">
                   {t(dict, "hero_cta_secondary")}
                 </Link>
               </FadeIn>
@@ -534,7 +533,7 @@ function IndividualInner({ dict, locale }) {
                 />
                 <span>
                   {t(dict, "checkbox_prefix")}
-                  <Link href={`${prefix}/privacy`} className="form-link">
+                  <Link href={routeHref(APP_ROUTES.privacy, locale)} className="form-link">
                     {t(dict, "checkbox_link")}
                   </Link>
                   .
@@ -575,7 +574,7 @@ function IndividualInner({ dict, locale }) {
                 <a href="#trial" className="btn btn-cta-white btn-lg">
                   {t(dict, "final_btn_primary")}
                 </a>
-                <Link href={`${prefix}/packages`} className="btn btn-ghost-white btn-lg">
+                <Link href={routeHref(APP_ROUTES.packages, locale)} className="btn btn-ghost-white btn-lg">
                   {t(dict, "final_btn_secondary")}
                 </Link>
               </div>

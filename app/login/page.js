@@ -16,6 +16,7 @@ import {
 } from "@/lib/auth";
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "@/app/i18n";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 function LoginInner({ dict }) {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -30,7 +31,6 @@ function LoginInner({ dict }) {
   const pathname = usePathname();
 
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
-  const prefix = locale === "ar" ? "/ar" : "";
 
   const { user, checking, refresh } = useAuth();
 
@@ -53,8 +53,7 @@ function LoginInner({ dict }) {
     }
 
     // 3) Final fallback: locale-aware dashboard
-    const dashboardPath = locale === "ar" ? "/ar/dashboard" : "/dashboard";
-    router.replace(dashboardPath);
+    router.replace(routeHref(APP_ROUTES.dashboard, locale));
     router.refresh();
   }, [params, router, locale]);
 
@@ -114,7 +113,7 @@ function LoginInner({ dict }) {
       // ignore
     }
     await refresh();
-    router.replace(`${prefix}/login`);
+    router.replace(routeHref(APP_ROUTES.login, locale));
     router.refresh();
   };
 
@@ -220,7 +219,7 @@ function LoginInner({ dict }) {
                       {t(dict, "label_password")}
                     </label>
                     <Link
-                      href={`${prefix}/forgot-password`}
+                      href={routeHref(APP_ROUTES.forgotPassword, locale)}
                       className="forgot-link"
                     >
                       {t(dict, "forgot_password")}
@@ -313,7 +312,7 @@ function LoginInner({ dict }) {
               <footer className="auth-footer">
                 <p>
                   {t(dict, "no_account")}{" "}
-                  <Link href={`${prefix}/register`} className="link-primary">
+                  <Link href={routeHref(APP_ROUTES.register, locale)} className="link-primary">
                     {t(dict, "link_create_account")}
                   </Link>
                 </p>

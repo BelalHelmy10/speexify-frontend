@@ -7,6 +7,7 @@ import "@/styles/home.scss";
 
 import { getDictionary, t } from "./i18n"; // ✅ i18n
 import FadeIn from "@/components/FadeIn";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 export default function HomePageContent({ locale = "en" }) {
   useEffect(() => {
@@ -50,7 +51,6 @@ function useSectionObserver() {
    ============================ */
 function Home({ locale = "en" }) {
   const dict = getDictionary(locale, "home");
-  const prefix = locale === "ar" ? "/ar" : "";
   useSectionObserver();
 
   return (
@@ -87,7 +87,7 @@ function Home({ locale = "en" }) {
             <FadeIn as="div" className="home-hero__cta" delay={0.4}>
               <Link
                 className="home-btn home-btn--primary home-btn--shine"
-                href={`${prefix}/register`}
+                href={routeHref(APP_ROUTES.register, locale)}
               >
                 <span>{t(dict, "ctaPrimary")}</span>
                 <svg
@@ -109,7 +109,7 @@ function Home({ locale = "en" }) {
               </Link>
               <Link
                 className="home-btn home-btn--ghost"
-                href={`${prefix}/packages`}
+                href={routeHref(APP_ROUTES.packages, locale)}
               >
                 {t(dict, "ctaSecondary")}
               </Link>
@@ -211,7 +211,7 @@ function Home({ locale = "en" }) {
       <FeaturesSection dict={dict} />
 
       {/* ===== HOW IT WORKS ===== */}
-      <HowItWorksSection dict={dict} prefix={prefix} />
+      <HowItWorksSection dict={dict} locale={locale} />
 
       {/* ===== CURRICULUM ===== */}
       <section className="home-spx-curriculum">
@@ -251,7 +251,7 @@ function Home({ locale = "en" }) {
           <div className="home-spx-curriculum__more">
             <Link
               className="home-btn home-btn--ghost"
-              href={`${prefix}/packages`}
+              href={routeHref(APP_ROUTES.packages, locale)}
             >
               {t(dict, "curr_more")}
             </Link>
@@ -415,7 +415,7 @@ function Home({ locale = "en" }) {
           <div className="home-cta__actions">
             <Link
               className="home-btn home-btn--primary home-btn--lg"
-              href={`${prefix}/register`}
+              href={routeHref(APP_ROUTES.register, locale)}
             >
               <span>Start free today</span>
               <svg
@@ -436,7 +436,7 @@ function Home({ locale = "en" }) {
             </Link>
             <Link
               className="home-btn home-btn--ghost-white home-btn--lg"
-              href={`${prefix}/contact`}
+              href={routeHref(APP_ROUTES.contact, locale)}
             >
               Talk to us first
             </Link>
@@ -870,7 +870,7 @@ function TestimonialsCarousel({ dict }) {
 /* ============================
    How It Works — Sticky Tracker
    ============================ */
-function HowItWorksSection({ dict, prefix }) {
+function HowItWorksSection({ dict, locale }) {
   const [activeStep, setActiveStep] = useState(0);
   const step0 = useRef(null);
   const step1 = useRef(null);
@@ -957,13 +957,13 @@ function HowItWorksSection({ dict, prefix }) {
         </div>
 
         <div className="home-spx-how__cta">
-          <Link className="home-btn home-btn--primary home-btn--shine" href={`${prefix || ""}/register`}>
+          <Link className="home-btn home-btn--primary home-btn--shine" href={routeHref(APP_ROUTES.register, locale)}>
             <span>{t(dict, "how_cta_primary") || "Start for free"}</span>
             <svg className="home-btn__arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-          <Link className="home-btn home-btn--ghost" href={`${prefix || ""}/contact`}>
+          <Link className="home-btn home-btn--ghost" href={routeHref(APP_ROUTES.contact, locale)}>
             {t(dict, "how_cta_secondary") || "Talk to us"}
           </Link>
         </div>

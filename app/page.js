@@ -4,6 +4,7 @@ import HomeAuthRedirect from "./HomeAuthRedirect";
 import HomePageContent from "./HomePageContent";
 import { getDictionary, t } from "./i18n";
 import { pageMetadata } from "./seo";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 import "@/styles/home.scss";
 
 export const metadata = pageMetadata("home", "en");
@@ -20,7 +21,6 @@ export default function Page({ locale = "en" }) {
 
 function HomeSsrFallback({ locale = "en" }) {
   const dict = getDictionary(locale, "home");
-  const prefix = locale === "ar" ? "/ar" : "";
 
   return (
     <div id="home-ssr-fallback" className="home-home">
@@ -45,11 +45,11 @@ function HomeSsrFallback({ locale = "en" }) {
             <div className="home-hero__cta">
               <Link
                 className="home-btn home-btn--primary home-btn--shine"
-                href={`${prefix}/register`}
+                href={routeHref(APP_ROUTES.register, locale)}
               >
                 <span>{t(dict, "ctaPrimary")}</span>
               </Link>
-              <Link className="home-btn home-btn--ghost" href={`${prefix}/packages`}>
+              <Link className="home-btn home-btn--ghost" href={routeHref(APP_ROUTES.packages, locale)}>
                 {t(dict, "ctaSecondary")}
               </Link>
             </div>

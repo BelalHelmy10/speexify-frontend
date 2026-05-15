@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 import { getDictionary, t } from "@/app/i18n";
 
 function Footer() {
@@ -15,7 +16,7 @@ function Footer() {
   const isFocusedWorkspace = isFocusedWorkspacePath(pathname);
 
   const dir = locale === "ar" ? "rtl" : "ltr";
-  const prefix = locale === "ar" ? "/ar" : "";
+  const hrefFor = (path) => routeHref(path, locale);
 
   // avoid recomputing
   const currentYear = useMemo(() => new Date().getFullYear(), []);
@@ -35,7 +36,7 @@ function Footer() {
           {/* Brand Section */}
           <div className="brand-section">
             <Link
-              href={prefix || "/"}
+              href={hrefFor(APP_ROUTES.home)}
               className="brand-link"
               aria-label={
                 locale === "ar"
@@ -94,7 +95,7 @@ function Footer() {
               <ul className="nav-col-list">
                 <li>
                   <Link
-                    href={`${prefix}/individual-training`}
+                    href={hrefFor(APP_ROUTES.individualTraining)}
                     className="nav-col-link"
                   >
                     <span>{$t("individualTraining")}</span>
@@ -118,7 +119,7 @@ function Footer() {
                 </li>
                 <li>
                   <Link
-                    href={`${prefix}/corporate-training`}
+                    href={hrefFor(APP_ROUTES.corporateTraining)}
                     className="nav-col-link"
                   >
                     <span>{$t("corporateTraining")}</span>
@@ -141,7 +142,7 @@ function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href={`${prefix}/packages`} className="nav-col-link">
+                  <Link href={hrefFor(APP_ROUTES.packages)} className="nav-col-link">
                     <span>{$t("packages")}</span>
                     <svg
                       className="link-arrow"
@@ -162,7 +163,7 @@ function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href={`${prefix}/why-speexify`} className="nav-col-link">
+                  <Link href={hrefFor(APP_ROUTES.whySpeexify)} className="nav-col-link">
                     <span>{$t("whySpeexify")}</span>
                     <svg
                       className="link-arrow"
@@ -189,7 +190,7 @@ function Footer() {
               <h4 className="nav-col-title">{$t("companyTitle")}</h4>
               <ul className="nav-col-list">
                 <li>
-                  <Link href={`${prefix}/about`} className="nav-col-link">
+                  <Link href={hrefFor(APP_ROUTES.about)} className="nav-col-link">
                     <span>{$t("about")}</span>
                     <svg
                       className="link-arrow"
@@ -210,7 +211,7 @@ function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href={`${prefix}/contact`} className="nav-col-link">
+                  <Link href={hrefFor(APP_ROUTES.contact)} className="nav-col-link">
                     <span>{$t("contact")}</span>
                     <svg
                       className="link-arrow"
@@ -231,7 +232,7 @@ function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href={`${prefix}/careers`} className="nav-col-link">
+                  <Link href={hrefFor(APP_ROUTES.careers)} className="nav-col-link">
                     <span>{$t("careers")}</span>
                     <svg
                       className="link-arrow"
@@ -259,7 +260,7 @@ function Footer() {
               <ul className="nav-col-list">
                 <li>
                   <Link
-                    href={`${prefix}/blog`}
+                    href={hrefFor(APP_ROUTES.blog)}
                     className="nav-col-link"
                     aria-label={$t("ariaBlog")}
                   >
@@ -284,7 +285,7 @@ function Footer() {
                 </li>
                 <li>
                   <Link
-                    href={`${prefix}/guides`}
+                    href={hrefFor(APP_ROUTES.guides)}
                     className="nav-col-link"
                     aria-label={$t("ariaGuides")}
                   >
@@ -309,7 +310,7 @@ function Footer() {
                 </li>
                 <li>
                   <Link
-                    href={`${prefix}/help-center`}
+                    href={hrefFor(APP_ROUTES.helpCenter)}
                     className="nav-col-link"
                     aria-label={$t("ariaHelp")}
                   >
@@ -340,7 +341,7 @@ function Footer() {
               <ul className="nav-col-list">
                 <li>
                   <Link
-                    href={`${prefix}/privacy`}
+                    href={hrefFor(APP_ROUTES.privacy)}
                     className="nav-col-link"
                     aria-label={$t("ariaPrivacy")}
                   >
@@ -366,7 +367,7 @@ function Footer() {
 
                 <li>
                   <Link
-                    href={`${prefix}/terms`}
+                    href={hrefFor(APP_ROUTES.terms)}
                     className="nav-col-link"
                     aria-label={$t("ariaTerms")}
                   >
@@ -392,7 +393,7 @@ function Footer() {
 
                 <li>
                   <Link
-                    href={`${prefix}/refund-policy`}
+                    href={hrefFor(APP_ROUTES.refundPolicy)}
                     className="nav-col-link"
                     aria-label={$t("ariaRefund")}
                   >
