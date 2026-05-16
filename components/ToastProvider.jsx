@@ -17,15 +17,34 @@ export function ToastProvider({ children }) {
   const showToast = useCallback(
     (message, options = {}) => {
       const id = ++idCounter;
-      const { type = "info", duration = 4000 } = options;
+      const { type = "info", duration = 4000, actionLabel, onAction } = options;
 
-      setToasts((prev) => [...prev, { id, type, message }]);
+      setToasts((prev) => [...prev, { id, type, message, actionLabel, onAction }]);
 
       if (duration > 0) {
         setTimeout(() => removeToast(id), duration);
       }
+
+      return id;
     },
     [removeToast]
+  );
+
+  const showUndoToast = useCallback(
+    (message, { onUndo, duration = 6000, actionLabel = "Undo" } = {}) => {
+      let toastId;
+      toastId = showToast(message, {
+        type: "info",
+        duration,
+        actionLabel,
+        onAction: () => {
+          onUndo?.();
+          removeToast(toastId);
+        },
+      });
+      return toastId;
+    },
+    [showToast, removeToast]
   );
 
   // Promise-based confirm modal
@@ -46,17 +65,14 @@ export function ToastProvider({ children }) {
     success: (msg, opts) => showToast(msg, { ...opts, type: "success" }),
     error: (msg, opts) => showToast(msg, { ...opts, type: "error" }),
     info: (msg, opts) => showToast(msg, { ...opts, type: "info" }),
+    undo: showUndoToast,
   };
 
   const value = {
-    // Backwards-compatible helpers
     show: showToast,
+    showUndoToast,
     ...toast,
-
-    // For patterns like `const { toast } = useToast()`
     toast,
-
-    // Confirm modal API
     confirmModal,
   };
 
@@ -102,20 +118,44 @@ export function ToastProvider({ children }) {
             }}
           >
             <span>{t.message}</span>
-            <button
-              onClick={() => removeToast(t.id)}
-              style={{
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
-                fontSize: 16,
-                lineHeight: 1,
-                color: "inherit",
-              }}
-              aria-label="Dismiss notification"
-            >
-              ×
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {t.actionLabel && t.onAction && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    t.onAction();
+                    removeToast(t.id);
+                  }}
+                  style={{
+                    border: "none",
+                    background: "rgba(255,255,255,0.55)",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                    color: "inherit",
+                  }}
+                >
+                  {t.actionLabel}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => removeToast(t.id)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  lineHeight: 1,
+                  color: "inherit",
+                }}
+                aria-label="Dismiss notification"
+              >
+                ×
+              </button>
+            </div>
           </div>
         ))}
       </div>
