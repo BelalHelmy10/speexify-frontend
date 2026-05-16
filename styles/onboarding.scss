@@ -1,173 +1,291 @@
-// ============================================================================
-// Onboarding Page Styles
-// ============================================================================
-
 @use "variables" as *;
-
-// ============================================================================
-// Layout & Container
-// ============================================================================
 
 .onboarding-wrapper {
   min-height: 100vh;
-  background: linear-gradient(
-    135deg,
-    rgba($brand, 0.03) 0%,
-    rgba($brand, 0.08) 100%
-  );
-  padding: $space-8 $spacing-md;
-
-  @media (max-width: $bp-sm) {
-    padding: $space-6 $spacing-md;
-  }
-}
-
-.onboarding-container {
-  max-width: 900px;
-  margin: 0 auto;
-  background: $bg-primary;
-  border-radius: 24px;
-  box-shadow: 0 4px 6px -1px rgba($brand, 0.06),
-    0 20px 40px -8px rgba($brand, 0.12), 0 0 0 1px rgba($brand, 0.04);
-  overflow: hidden;
-
-  @media (max-width: $bp-sm) {
-    border-radius: 16px;
-  }
-}
-
-// ============================================================================
-// Header
-// ============================================================================
-
-.onboarding-header {
-  background: linear-gradient(135deg, $brand 0%, $brand-dark 100%);
-  padding: $space-9 $space-8;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    right: -10%;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(
-      circle,
-      rgba($color-white, 0.1) 0%,
-      transparent 70%
-    );
-    border-radius: 50%;
-  }
-
-  @media (max-width: $bp-sm) {
-    padding: $space-7 $spacing-lg;
-  }
-}
-
-.onboarding-header__title {
-  color: $color-white;
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0 0 $spacing-md;
-  letter-spacing: -0.02em;
-  position: relative;
-
-  @media (max-width: $bp-sm) {
-    font-size: 2rem;
-  }
-}
-
-.onboarding-header__subtitle {
-  color: rgba($color-white, 0.9);
-  font-size: 1.125rem;
-  line-height: 1.6;
-  max-width: 600px;
-  margin: 0 auto;
-  position: relative;
-
-  @media (max-width: $bp-sm) {
-    font-size: 1rem;
-  }
-}
-
-// ============================================================================
-// Form
-// ============================================================================
-
-.onboarding-form {
-  padding: $space-8;
-
-  @media (max-width: $bp-sm) {
-    padding: $spacing-lg;
-  }
-}
-
-// ============================================================================
-// Sections
-// ============================================================================
-
-.onboarding-section {
-  margin-bottom: $space-9;
-
-  &:last-of-type {
-    margin-bottom: $space-7;
-  }
-
-  @media (max-width: $bp-sm) {
-    margin-bottom: $space-7;
-  }
-}
-
-.onboarding-section__header {
-  margin-bottom: $space-6;
-  padding-bottom: $spacing-lg;
-  border-bottom: 2px solid $border;
-}
-
-.onboarding-section__title {
+  padding: 32px 20px 56px;
+  background:
+    linear-gradient(180deg, rgba($coral-pale, 0.85) 0%, rgba($bg-secondary, 0.55) 100%),
+    $bg;
   color: $text-primary;
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0 0 $spacing-sm;
-  letter-spacing: -0.01em;
+}
 
-  @media (max-width: $bp-sm) {
-    font-size: 1.25rem;
+body:has(.onboarding-wrapper) .site-footer-wrapper {
+  display: none;
+}
+
+.onboarding-shell {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 20px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.onboarding-rail,
+.onboarding-stage,
+.onboarding-complete {
+  min-width: 0;
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: rgba($color-white, 0.92);
+  box-shadow: $shadow-md;
+}
+
+.onboarding-rail {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  padding: 22px;
+
+  h1 {
+    margin: 8px 0 12px;
+    color: $navy;
+    font-family: $font-heading;
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.04;
+    letter-spacing: 0;
+    overflow-wrap: break-word;
+  }
+
+  > p:not(.onboarding-kicker) {
+    margin: 0;
+    color: $text-secondary;
+    font-size: 15px;
+    line-height: 1.65;
   }
 }
 
-.onboarding-section__hint {
-  color: $text-secondary;
-  font-size: 0.9375rem;
+.onboarding-kicker {
   margin: 0;
-  line-height: 1.5;
+  color: $brand-dark;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
-// ============================================================================
-// Form Grid
-// ============================================================================
+.onboarding-status {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+
+  div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 8px 10px;
+    border: 1px solid rgba($border, 0.8);
+    border-radius: 8px;
+    background: $bg-light;
+    color: $text-secondary;
+    font-size: 13px;
+    font-weight: 750;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: $brand;
+    flex: 0 0 auto;
+  }
+}
+
+.onboarding-progress {
+  height: 8px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: $bg-secondary;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, $brand 0%, $color-secondary-light 100%);
+    transition: width $transition-base;
+  }
+}
+
+.onboarding-stepper {
+  display: grid;
+  gap: 8px;
+}
+
+.onboarding-step {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: $text-secondary;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background $transition-fast, border-color $transition-fast,
+    color $transition-fast;
+
+  &:hover {
+    border-color: rgba($brand, 0.18);
+    background: rgba($brand, 0.04);
+  }
+
+  &.is-active {
+    border-color: rgba($brand, 0.28);
+    background: $coral-pale;
+    color: $navy;
+  }
+
+  &.is-complete {
+    color: $navy;
+  }
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    font-size: 14px;
+    font-weight: 850;
+    line-height: 1.25;
+  }
+
+  small {
+    margin-top: 2px;
+    color: $text-muted;
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+.onboarding-step__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: $bg-secondary;
+  color: $brand-dark;
+
+  svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .is-active &,
+  .is-complete & {
+    background: $brand;
+    color: $color-white;
+  }
+}
+
+.onboarding-coach-note {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid rgba($color-secondary-light, 0.22);
+  border-radius: 8px;
+  background: rgba($color-secondary-light, 0.08);
+
+  > svg {
+    width: 20px;
+    height: 20px;
+    color: $color-secondary-dark;
+  }
+
+  strong {
+    display: block;
+    margin-top: 8px;
+    color: $navy;
+    font-size: 14px;
+    font-weight: 850;
+  }
+
+  p {
+    margin: 7px 0 0;
+    color: $text-secondary;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  ul {
+    display: grid;
+    gap: 6px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    color: $navy-muted;
+    font-size: 12px;
+    font-weight: 800;
+  }
+}
+
+.onboarding-stage {
+  display: flex;
+  min-height: 640px;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.onboarding-stage__header {
+  padding: 28px 30px 24px;
+  border-bottom: 1px solid $border;
+  background: $color-white;
+
+  span {
+    display: inline-flex;
+    margin-bottom: 10px;
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: $coral-pale;
+    color: $brand-dark;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  h2 {
+    margin: 0;
+    color: $navy;
+    font-family: $font-heading;
+    font-size: 31px;
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: 0;
+    overflow-wrap: break-word;
+  }
+
+  p {
+    max-width: 680px;
+    margin: 10px 0 0;
+    color: $text-secondary;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+}
+
+.onboarding-stage__body {
+  flex: 1;
+  padding: 28px 30px 30px;
+}
 
 .onboarding-form__grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: $spacing-lg;
-
-  @media (max-width: $bp-sm) {
-    grid-template-columns: 1fr;
-    gap: $spacing-md;
-  }
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
 }
 
-// ============================================================================
-// Form Fields
-// ============================================================================
-
 .onboarding-field {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  gap: 8px;
 
   &--full {
     grid-column: 1 / -1;
@@ -175,238 +293,208 @@
 }
 
 .onboarding-field__label {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: $spacing-sm;
-  gap: 2px;
+  display: grid;
+  gap: 3px;
 }
 
 .onboarding-field__label-text {
-  color: $text-primary;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: -0.005em;
+  color: $navy;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.3;
 }
 
 .onboarding-field__label-hint {
   color: $text-muted;
-  font-size: 0.8125rem;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
-// ============================================================================
-// Input Elements
-// ============================================================================
-
 .onboarding-field__input,
-.onboarding-field__textarea {
+.onboarding-field__textarea,
+.onboarding-field__select {
+  min-width: 0;
   width: 100%;
-  padding: 12px 16px;
-  border: 1.5px solid $border;
-  border-radius: 12px;
-  font-size: 0.9375rem;
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: $color-white;
   color: $text-primary;
-  background: $bg-primary;
-  transition: all $transition-base;
-  font-family: inherit;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  transition: border-color $transition-fast, box-shadow $transition-fast,
+    background $transition-fast;
 
   &::placeholder {
     color: $text-muted;
   }
 
   &:hover {
-    border-color: $ring;
+    border-color: rgba($brand, 0.35);
   }
 
   &:focus {
     outline: none;
     border-color: $brand;
-    box-shadow: 0 0 0 3px rgba($brand, 0.1);
+    box-shadow: 0 0 0 3px rgba($brand, 0.12);
     background: $color-white;
   }
+}
 
-  &:disabled {
-    background: $bg-secondary;
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
+.onboarding-field__input,
+.onboarding-field__select {
+  min-height: 46px;
+  padding: 0 14px;
 }
 
 .onboarding-field__textarea {
+  min-height: 104px;
+  padding: 13px 14px;
   resize: vertical;
-  min-height: 100px;
-  line-height: 1.6;
-}
 
-// ============================================================================
-// Select Dropdown
-// ============================================================================
+  &--large {
+    min-height: 146px;
+  }
+}
 
 .onboarding-field__select-wrapper {
   position: relative;
-  display: flex;
-  align-items: center;
 }
 
 .onboarding-field__select {
   appearance: none;
-  width: 100%;
-  padding: 12px 40px 12px 16px;
-  border: 1.5px solid $border;
-  border-radius: 12px;
-  font-size: 0.9375rem;
-  color: $text-primary;
-  background: $bg-primary;
+  padding-inline-end: 42px;
   cursor: pointer;
-  transition: all $transition-base;
-  font-family: inherit;
-
-  &:hover {
-    border-color: $ring;
-  }
-
-  &:focus {
-    outline: none;
-    border-color: $brand;
-    box-shadow: 0 0 0 3px rgba($brand, 0.1);
-  }
 }
 
 .onboarding-field__select-icon {
   position: absolute;
-  right: 14px;
-  pointer-events: none;
+  top: 50%;
+  inset-inline-end: 14px;
+  width: 17px;
+  height: 17px;
   color: $text-muted;
-  transition: transform $transition-base, color $transition-base;
+  pointer-events: none;
+  transform: translateY(-50%);
 }
 
-.onboarding-field__select:focus + .onboarding-field__select-icon {
-  transform: rotate(180deg);
-  color: $brand;
-}
-
-// ============================================================================
-// Checkbox Grid
-// ============================================================================
-
-.onboarding-checkbox-grid {
+.onboarding-quick-goals {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: $spacing-sm;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba($brand, 0.14);
+  border-radius: 8px;
+  background: rgba($coral-pale, 0.58);
 
-  @media (max-width: $bp-sm) {
-    grid-template-columns: 1fr;
+  > span {
+    color: $brand-dark;
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  button {
+    min-height: 34px;
+    padding: 0 11px;
+    border: 1px solid rgba($brand, 0.22);
+    border-radius: 999px;
+    background: $color-white;
+    color: $navy;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+    cursor: pointer;
+    transition: border-color $transition-fast, color $transition-fast,
+      background $transition-fast;
+
+    &:hover {
+      border-color: $brand;
+      background: rgba($brand, 0.06);
+      color: $brand-dark;
+    }
   }
 }
 
-.onboarding-checkbox {
-  display: flex;
-  align-items: flex-start;
-  gap: $spacing-sm;
-  padding: 12px;
-  border: 1.5px solid $border;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all $transition-base;
-  background: $bg-primary;
+.onboarding-chip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
 
-  &:hover {
-    border-color: $brand-light;
-    background: rgba($brand, 0.02);
-  }
-
-  &--inline {
-    border: none;
-    padding: 0;
-    border-radius: 0;
-
-    &:hover {
-      background: transparent;
-    }
-  }
-
-  input[type="checkbox"] {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border: 2px solid $border;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all $transition-base;
-    flex-shrink: 0;
-    margin-top: 2px;
-    position: relative;
-    background: $bg-primary;
-
-    &:hover {
-      border-color: $brand;
-    }
-
-    &:checked {
-      background: $brand;
-      border-color: $brand;
-
-      &::after {
-        content: "";
-        position: absolute;
-        left: 5px;
-        top: 2px;
-        width: 5px;
-        height: 9px;
-        border: solid $color-white;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
-      }
-    }
-
-    &:focus {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba($brand, 0.1);
-    }
+.onboarding-chip {
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
   }
 
   span {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 11px 12px;
+    border: 1px solid $border;
+    border-radius: 8px;
+    background: $color-white;
     color: $text-primary;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    user-select: none;
+    font-size: 14px;
+    font-weight: 750;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: background $transition-fast, border-color $transition-fast,
+      color $transition-fast, box-shadow $transition-fast;
   }
 
-  input[type="checkbox"]:checked ~ span {
-    color: $brand-ink;
-    font-weight: 500;
+  input:focus-visible + span {
+    box-shadow: 0 0 0 3px rgba($brand, 0.14);
+  }
+
+  input:checked + span {
+    border-color: rgba($brand, 0.45);
+    background: $coral-pale;
+    color: $brand-dark;
+  }
+
+  &:hover span {
+    border-color: rgba($brand, 0.35);
   }
 }
 
-// ============================================================================
-// Range Sliders
-// ============================================================================
-
 .onboarding-sliders {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-lg;
-  padding: $spacing-md;
-  background: $bg-soft;
-  border-radius: 12px;
+  display: grid;
+  gap: 16px;
+  margin-top: 10px;
+  padding: 16px;
   border: 1px solid $border;
+  border-radius: 8px;
+  background: $bg-light;
+
+  &--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .onboarding-slider {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-sm;
+  display: grid;
+  gap: 8px;
 }
 
 .onboarding-slider__label {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 
   span:first-child {
-    color: $text-primary;
-    font-size: 0.9375rem;
-    font-weight: 500;
+    color: $navy;
+    font-size: 14px;
+    font-weight: 780;
   }
 }
 
@@ -414,159 +502,204 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  background: $brand;
-  color: $color-white;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 600;
+  min-width: 31px;
+  height: 28px;
   padding: 0 8px;
+  border-radius: 8px;
+  background: $navy;
+  color: $color-white;
+  font-size: 13px;
+  font-weight: 850;
 }
 
 .onboarding-slider input[type="range"] {
   appearance: none;
   width: 100%;
   height: 8px;
-  border-radius: 4px;
-  background: $border;
+  border-radius: 999px;
   outline: none;
   cursor: pointer;
-  transition: all $transition-base;
 
   &::-webkit-slider-thumb {
     appearance: none;
     width: 20px;
     height: 20px;
-    border-radius: 50%;
-    background: $brand;
     border: 3px solid $color-white;
-    box-shadow: 0 2px 8px rgba($brand, 0.3);
-    cursor: pointer;
-    transition: all $transition-base;
-
-    &:hover {
-      transform: scale(1.15);
-      box-shadow: 0 3px 12px rgba($brand, 0.4);
-    }
+    border-radius: 50%;
+    background: $navy;
+    box-shadow: $shadow-sm;
   }
 
   &::-moz-range-thumb {
     width: 20px;
     height: 20px;
-    border-radius: 50%;
-    background: $brand;
     border: 3px solid $color-white;
-    box-shadow: 0 2px 8px rgba($brand, 0.3);
-    cursor: pointer;
-    transition: all $transition-base;
-
-    &:hover {
-      transform: scale(1.15);
-      box-shadow: 0 3px 12px rgba($brand, 0.4);
-    }
-  }
-
-  &:focus {
-    &::-webkit-slider-thumb {
-      box-shadow: 0 0 0 4px rgba($brand, 0.2);
-    }
-
-    &::-moz-range-thumb {
-      box-shadow: 0 0 0 4px rgba($brand, 0.2);
-    }
+    border-radius: 50%;
+    background: $navy;
+    box-shadow: $shadow-sm;
   }
 }
 
 .onboarding-slider__scale {
   display: flex;
   justify-content: space-between;
-  padding: 0 2px;
-  margin-top: -2px;
+  color: $text-muted;
+  font-size: 12px;
+  font-weight: 750;
+}
 
-  span {
-    font-size: 0.75rem;
-    color: $text-muted;
-    font-weight: 500;
+.onboarding-note {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba($color-secondary-light, 0.22);
+  border-radius: 8px;
+  background: rgba($color-secondary-light, 0.08);
+  color: $text-secondary;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: $color-secondary-dark;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
   }
 }
 
-// ============================================================================
-// Actions / Buttons
-// ============================================================================
+.onboarding-checkbox {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: flex-start;
+  color: $text-secondary;
+  font-size: 14px;
+  line-height: 1.45;
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    accent-color: $brand;
+  }
+}
+
+.onboarding-review {
+  display: grid;
+  gap: 20px;
+}
+
+.onboarding-review__intro {
+  padding: 18px;
+  border: 1px solid rgba($brand, 0.14);
+  border-radius: 8px;
+  background: rgba($coral-pale, 0.55);
+
+  h3 {
+    margin: 0;
+    color: $navy;
+    font-size: 18px;
+  }
+
+  p {
+    margin: 7px 0 0;
+    color: $text-secondary;
+    line-height: 1.6;
+  }
+}
+
+.onboarding-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.onboarding-summary__item {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: $color-white;
+
+  span {
+    display: block;
+    color: $text-muted;
+    font-size: 12px;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+
+  p {
+    margin: 7px 0 0;
+    color: $navy;
+    font-size: 14px;
+    font-weight: 750;
+    line-height: 1.45;
+    white-space: pre-wrap;
+  }
+}
 
 .onboarding-actions {
   display: flex;
-  align-items: center;
-  gap: $spacing-md;
-  padding-top: $spacing-lg;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 30px;
   border-top: 1px solid $border;
-  flex-wrap: wrap;
-
-  @media (max-width: $bp-sm) {
-    flex-direction: column;
-    align-items: stretch;
-  }
+  background: rgba($color-white, 0.94);
+  backdrop-filter: blur(12px);
 }
 
 .onboarding-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: $spacing-sm;
-  padding: 14px 32px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all $transition-base;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 850;
   text-decoration: none;
-  border: none;
-  font-family: inherit;
-  white-space: nowrap;
+  cursor: pointer;
+  transition: transform $transition-fast, box-shadow $transition-fast,
+    background $transition-fast, border-color $transition-fast;
 
-  &:focus {
-    outline: none;
+  svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
   }
 
   &--primary {
+    border: 0;
     background: linear-gradient(135deg, $brand 0%, $brand-dark 100%);
     color: $color-white;
-    box-shadow: 0 2px 8px rgba($brand, 0.2), 0 1px 2px rgba($brand, 0.1);
+    box-shadow: 0 12px 26px rgba($brand, 0.2);
 
     &:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba($brand, 0.3), 0 2px 4px rgba($brand, 0.15);
-    }
-
-    &:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    &:focus-visible {
-      box-shadow: 0 2px 8px rgba($brand, 0.2), 0 0 0 4px rgba($brand, 0.2);
+      box-shadow: 0 16px 34px rgba($brand, 0.26);
     }
   }
 
   &--ghost {
-    background: transparent;
-    color: $text-secondary;
-    border: 1.5px solid $border;
+    border: 1px solid $border;
+    background: $color-white;
+    color: $navy;
 
-    &:hover {
-      background: $bg-soft;
-      border-color: $ring;
-      color: $text-primary;
-    }
-
-    &:focus-visible {
-      box-shadow: 0 0 0 3px rgba($brand, 0.1);
+    &:hover:not(:disabled) {
+      border-color: rgba($brand, 0.32);
+      background: $bg-light;
     }
   }
 }
@@ -574,111 +707,207 @@
 .onboarding-btn__spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba($color-white, 0.3);
+  border: 2px solid rgba($color-white, 0.35);
   border-top-color: $color-white;
   border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  animation: onboarding-spin 0.7s linear infinite;
 }
 
-@keyframes spin {
+@keyframes onboarding-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-// ============================================================================
-// Success Message
-// ============================================================================
+.onboarding-complete {
+  max-width: 680px;
+  margin: 80px auto 0;
+  padding: 34px;
+  text-align: center;
 
-.onboarding-success {
-  display: flex;
+  h1 {
+    margin: 10px 0;
+    color: $navy;
+    font-family: $font-heading;
+    font-size: 36px;
+    line-height: 1.05;
+  }
+
+  p:not(.onboarding-kicker) {
+    max-width: 520px;
+    margin: 0 auto;
+    color: $text-secondary;
+    line-height: 1.65;
+  }
+}
+
+.onboarding-complete__mark {
+  display: inline-flex;
   align-items: center;
-  gap: $spacing-sm;
-  padding: 12px 20px;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 12px;
+  border-radius: 50%;
   background: $success-bg;
   color: $success;
-  border-radius: 10px;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  border: 1px solid rgba($success, 0.2);
-  animation: slideIn 0.3s ease-out;
-
-  @media (max-width: $bp-sm) {
-    width: 100%;
-    justify-content: center;
-  }
 
   svg {
-    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
   }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.onboarding-complete__actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 24px;
 }
 
-// ============================================================================
-// Responsive Adjustments
-// ============================================================================
-
-@media (max-width: $bp-sm) {
-  .onboarding-checkbox-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .onboarding-sliders {
-    padding: $spacing-md;
-  }
-}
-
-// ============================================================================
-// Accessibility & Focus States
-// ============================================================================
-
-*:focus-visible {
+.onboarding-wrapper :focus-visible {
   outline: 2px solid $brand;
   outline-offset: 2px;
 }
 
-// ============================================================================
-// Print Styles (Optional)
-// ============================================================================
-
-@media print {
-  .onboarding-wrapper {
-    background: $color-white;
+[dir="rtl"] {
+  .onboarding-step,
+  .onboarding-field__label,
+  .onboarding-review__intro,
+  .onboarding-summary__item {
+    text-align: right;
   }
 
-  .onboarding-header {
-    background: $color-white;
-    color: $color-black;
+  .onboarding-slider input[type="range"] {
+    direction: rtl;
+  }
+}
 
-    &::before {
+@media (max-width: $bp-lg) {
+  .onboarding-shell {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .onboarding-sliders--compact {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: $bp-md) {
+  .onboarding-wrapper {
+    padding: 18px 14px 42px;
+  }
+
+  .onboarding-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-rail {
+    position: static;
+  }
+
+  .onboarding-stepper {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scroll-snap-type: x proximity;
+  }
+
+  .onboarding-step {
+    grid-template-columns: 1fr;
+    flex: 0 0 104px;
+    min-width: 104px;
+    scroll-snap-align: start;
+
+    small {
       display: none;
     }
   }
 
-  .onboarding-header__title,
-  .onboarding-header__subtitle {
-    color: $color-black;
-  }
-
-  .onboarding-actions {
+  .onboarding-coach-note {
     display: none;
   }
 }
 
-// ============================================================================
-// RTL tweaks for sliders
-// ============================================================================
+@media (max-width: $bp-sm) {
+  .onboarding-rail {
+    padding: 18px;
 
-html[dir="rtl"] .onboarding-slider input[type="range"] {
-  direction: rtl;
+    h1 {
+      font-size: 28px;
+    }
+  }
+
+  .onboarding-stage {
+    min-height: 0;
+  }
+
+  .onboarding-stage__header,
+  .onboarding-stage__body {
+    padding-inline: 18px;
+  }
+
+  .onboarding-stage__header {
+    padding-top: 22px;
+
+    h2 {
+      font-size: 25px;
+    }
+  }
+
+  .onboarding-stepper {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .onboarding-step {
+    min-width: 0;
+    padding: 8px 4px;
+    justify-items: center;
+    gap: 7px;
+    text-align: center;
+  }
+
+  .onboarding-step__icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .onboarding-step strong {
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .onboarding-form__grid,
+  .onboarding-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-actions {
+    position: sticky;
+    bottom: 0;
+    padding: 14px 18px;
+  }
+
+  .onboarding-btn {
+    flex: 1;
+    min-width: 0;
+    padding-inline: 12px;
+  }
+
+  .onboarding-complete {
+    margin-top: 32px;
+    padding: 24px 18px;
+
+    h1 {
+      font-size: 30px;
+    }
+  }
+
+  .onboarding-complete__actions {
+    flex-direction: column;
+  }
 }

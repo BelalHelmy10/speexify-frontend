@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { useToast } from "@/components/ToastProvider";
 
 const PLACEMENT_VERSION = "speexify-placement-v1";
+const DRAFT_KEY = "speexifyPlacementDraft_v1";
 const WRITING_MIN = 140;
 const WRITING_TARGET = "180-260";
 const WRITING_MAX = 620;
@@ -376,93 +377,102 @@ const READING_PASSAGES = [
 const LISTENING_ITEMS = [
   {
     id: "l1",
-    title: "Project update",
-    audio:
-      "Hi Maya, quick update on the onboarding project. The design team finished the first screens, but engineering needs two extra days to connect the account setup flow. We can still show the client a working prototype on Friday, but we should call it a preview, not a final release.",
+    title: "Card replacement call",
+    audioSrc: "/audio/placement/card-replacement.wav",
+    duration: "45 sec",
+    sourceNote: "Real two-person call recording",
     questions: [
       {
         id: "l1q1",
-        prompt: "What caused the delay?",
+        prompt: "What did the caller lose?",
         options: [
-          "The client changed the deadline",
-          "Engineering needs more time",
-          "The design team rejected the screens",
-          "The prototype was cancelled",
+          "A debit card",
+          "A credit card",
+          "A checkbook",
+          "An account password",
         ],
         answer: 1,
       },
       {
         id: "l1q2",
-        prompt: "What should they call Friday's version?",
-        options: ["Final release", "Preview", "Training plan", "Invoice"],
-        answer: 1,
+        prompt: "When should the replacement arrive?",
+        options: ["Today", "Tomorrow morning", "In three to five business days", "Next month"],
+        answer: 2,
+      },
+      {
+        id: "l1q3",
+        prompt: "What does the agent ask near the end?",
+        options: [
+          "Whether the caller wants anything else",
+          "Whether the caller wants to open a loan",
+          "Whether the caller can visit a branch",
+          "Whether the caller knows the account balance",
+        ],
+        answer: 0,
       },
     ],
   },
   {
     id: "l2",
-    title: "Manager feedback",
-    audio:
-      "Your presentation was clear and the structure helped the audience follow the logic. The main thing to improve is how you handle questions. When someone challenged the data, you answered too quickly. Next time, pause, acknowledge the concern, and explain the source before defending the conclusion.",
+    title: "Balance check call",
+    audioSrc: "/audio/placement/balance-check.wav",
+    duration: "35 sec",
+    sourceNote: "Real two-person call recording",
     questions: [
       {
         id: "l2q1",
-        prompt: "What was positive about the presentation?",
-        options: ["The structure", "The length", "The jokes", "The slides only"],
-        answer: 0,
+        prompt: "Why does the caller contact the bank?",
+        options: [
+          "To replace a card",
+          "To check an account balance",
+          "To pay a bill",
+          "To schedule an appointment",
+        ],
+        answer: 1,
       },
       {
         id: "l2q2",
-        prompt: "What should the speaker do before defending a conclusion?",
-        options: [
-          "Ignore the question",
-          "Change the data",
-          "Acknowledge the concern",
-          "End the meeting",
-        ],
-        answer: 2,
+        prompt: "Which account does the caller ask about?",
+        options: ["Checking", "Savings", "Credit card", "Mortgage"],
+        answer: 1,
       },
       {
         id: "l2q3",
-        prompt: "The feedback is mainly about:",
-        options: ["pronunciation", "question handling", "grammar", "email style"],
+        prompt: "What balance does the agent give?",
+        options: ["$60", "$106", "$160", "$600"],
         answer: 1,
       },
     ],
   },
   {
     id: "l3",
-    title: "Negotiation context",
-    audio:
-      "The supplier's first offer is attractive, but there are two issues. The payment terms are shorter than usual, and the service-level agreement is vague. I suggest we accept the price in principle, but ask for thirty-day payment terms and clearer response-time commitments before we sign.",
+    title: "Bill payment call",
+    audioSrc: "/audio/placement/bill-payment.wav",
+    duration: "1 min 32 sec",
+    sourceNote: "Real two-person call recording with natural phone-line noise",
     questions: [
       {
         id: "l3q1",
-        prompt: "How does the speaker feel about the price?",
-        options: ["It is attractive", "It is unacceptable", "It is unclear", "It is illegal"],
+        prompt: "What does the caller want to do?",
+        options: ["Pay a bill", "Transfer money", "Reset a password", "Order checks"],
         answer: 0,
       },
       {
         id: "l3q2",
-        prompt: "What needs to be clearer?",
+        prompt: "What street address is given for the company?",
         options: [
-          "The office address",
-          "The response-time commitments",
-          "The supplier's logo",
-          "The meeting agenda",
+          "627 First Street",
+          "672 First Street",
+          "762 Main Street",
+          "276 Main Street",
         ],
         answer: 1,
       },
       {
         id: "l3q3",
-        prompt: "What is the speaker's recommended strategy?",
-        options: [
-          "Reject everything immediately",
-          "Accept the price but negotiate terms",
-          "Sign today without changes",
-          "Cancel the project",
-        ],
-        answer: 1,
+        prompt: "How much is the bill?",
+        options: ["$117", "$127", "$147", "$174"],
+        answer: 2,
       },
     ],
   },
@@ -679,6 +689,27 @@ function formatTime(seconds) {
   return `${mins}:${secs}`;
 }
 
+function safeObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function hasDraftProgress(draft) {
+  if (!draft || typeof draft !== "object") return false;
+  return (
+    Object.keys(safeObject(draft.coreAnswers)).length > 0 ||
+    Object.keys(safeObject(draft.readingAnswers)).length > 0 ||
+    Object.keys(safeObject(draft.listeningAnswers)).length > 0 ||
+    Object.keys(safeObject(draft.speakingChecks)).length > 0 ||
+    Number(draft.speakingSeconds || 0) > 0 ||
+    Boolean(String(draft.writing || "").trim())
+  );
+}
+
+function formatSavedAt(value) {
+  if (!value) return "Autosaves as you work";
+  return `Autosaved ${value.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+}
+
 export default function AssessmentPage() {
   const { toast, confirmModal } = useToast();
   const [coreAnswers, setCoreAnswers] = useState({});
@@ -691,38 +722,66 @@ export default function AssessmentPage() {
   const [saving, setSaving] = useState(false);
   const [last, setLast] = useState(null);
   const [result, setResult] = useState(null);
-  const [audioStatus, setAudioStatus] = useState("");
+  const [draftReady, setDraftReady] = useState(false);
+  const [autosaveEnabled, setAutosaveEnabled] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
   const autosaveTimer = useRef(null);
-  const draftKey = "speexifyPlacementDraft_v1";
   const wordCount = useMemo(() => countWords(writing), [writing]);
 
   useEffect(() => {
+    let active = true;
+
+    const applyDraft = (draft) => {
+      setCoreAnswers(safeObject(draft.coreAnswers));
+      setReadingAnswers(safeObject(draft.readingAnswers));
+      setListeningAnswers(safeObject(draft.listeningAnswers));
+      setSpeakingChecks(safeObject(draft.speakingChecks));
+      setSpeakingSeconds(Number(draft.speakingSeconds || 0));
+      setWriting(draft.writing || "");
+      if (draft.updatedAt) {
+        const savedAt = new Date(draft.updatedAt);
+        if (!Number.isNaN(savedAt.getTime())) setLastSavedAt(savedAt);
+      }
+    };
+
     (async () => {
+      let serverData = null;
       try {
         const { data } = await api.get("/me/assessment");
-        if (data) {
-          setLast(data);
-          if (data.text) setWriting(data.text);
-          if (data.reviewMeta?.placementResult) {
-            setResult(data.reviewMeta.placementResult);
-          }
-          return;
+        serverData = data || null;
+      } catch {}
+
+      let localDraft = null;
+      try {
+        const local = window.localStorage.getItem(DRAFT_KEY);
+        if (local) {
+          localDraft = JSON.parse(local);
         }
       } catch {}
 
-      try {
-        const local = window.localStorage.getItem(draftKey);
-        if (local) {
-          const parsed = JSON.parse(local);
-          setCoreAnswers(parsed.coreAnswers || {});
-          setReadingAnswers(parsed.readingAnswers || {});
-          setListeningAnswers(parsed.listeningAnswers || {});
-          setSpeakingChecks(parsed.speakingChecks || {});
-          setSpeakingSeconds(parsed.speakingSeconds || 0);
-          setWriting(parsed.writing || "");
+      if (!active) return;
+
+      if (localDraft && hasDraftProgress(localDraft)) {
+        applyDraft(localDraft);
+        if (serverData) setLast(serverData);
+        setAutosaveEnabled(true);
+      } else if (serverData) {
+        setLast(serverData);
+        if (serverData.text) setWriting(serverData.text);
+        if (serverData.reviewMeta?.placementResult) {
+          setResult(serverData.reviewMeta.placementResult);
         }
-      } catch {}
+        setAutosaveEnabled(false);
+      } else {
+        setAutosaveEnabled(true);
+      }
+
+      setDraftReady(true);
     })();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -737,28 +796,70 @@ export default function AssessmentPage() {
     if (speakingSeconds >= 180) setSpeakingActive(false);
   }, [speakingSeconds]);
 
+  const saveDraftNow = useCallback(() => {
+    if (!draftReady || !autosaveEnabled || typeof window === "undefined") return;
+
+    const savedAt = new Date();
+    const draft = {
+      placementVersion: PLACEMENT_VERSION,
+      coreAnswers,
+      readingAnswers,
+      listeningAnswers,
+      speakingChecks,
+      speakingSeconds,
+      writing,
+      updatedAt: savedAt.toISOString(),
+    };
+
+    try {
+      if (!hasDraftProgress(draft)) {
+        window.localStorage.removeItem(DRAFT_KEY);
+        setLastSavedAt(null);
+        return;
+      }
+
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      setLastSavedAt(savedAt);
+    } catch {}
+  }, [
+    autosaveEnabled,
+    coreAnswers,
+    draftReady,
+    listeningAnswers,
+    readingAnswers,
+    speakingChecks,
+    speakingSeconds,
+    writing,
+  ]);
+
   useEffect(() => {
+    if (!draftReady || !autosaveEnabled) return undefined;
     if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
-    autosaveTimer.current = window.setTimeout(() => {
-      try {
-        window.localStorage.setItem(
-          draftKey,
-          JSON.stringify({
-            coreAnswers,
-            readingAnswers,
-            listeningAnswers,
-            speakingChecks,
-            speakingSeconds,
-            writing,
-          })
-        );
-      } catch {}
-    }, 500);
+    autosaveTimer.current = window.setTimeout(saveDraftNow, 250);
 
     return () => {
       if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     };
-  }, [coreAnswers, readingAnswers, listeningAnswers, speakingChecks, speakingSeconds, writing]);
+  }, [autosaveEnabled, draftReady, saveDraftNow]);
+
+  useEffect(() => {
+    if (!draftReady || !autosaveEnabled) return undefined;
+
+    const flushDraft = () => saveDraftNow();
+    const flushHiddenDraft = () => {
+      if (document.visibilityState === "hidden") saveDraftNow();
+    };
+
+    window.addEventListener("beforeunload", flushDraft);
+    window.addEventListener("pagehide", flushDraft);
+    document.addEventListener("visibilitychange", flushHiddenDraft);
+
+    return () => {
+      window.removeEventListener("beforeunload", flushDraft);
+      window.removeEventListener("pagehide", flushDraft);
+      document.removeEventListener("visibilitychange", flushHiddenDraft);
+    };
+  }, [autosaveEnabled, draftReady, saveDraftNow]);
 
   const completion = useMemo(() => {
     const total =
@@ -777,22 +878,8 @@ export default function AssessmentPage() {
   }, [coreAnswers, readingAnswers, listeningAnswers, speakingChecks, wordCount]);
 
   const setAnswer = (setter, id, value) => {
+    setAutosaveEnabled(true);
     setter((current) => ({ ...current, [id]: Number(value) }));
-  };
-
-  const playListening = (item) => {
-    if (typeof window === "undefined" || !window.speechSynthesis) {
-      setAudioStatus("Audio playback is not available in this browser.");
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(item.audio);
-    utterance.lang = "en-US";
-    utterance.rate = 0.92;
-    utterance.pitch = 1;
-    utterance.onstart = () => setAudioStatus(`Playing: ${item.title}`);
-    utterance.onend = () => setAudioStatus("Audio finished. Answer from memory.");
-    window.speechSynthesis.speak(utterance);
   };
 
   const validate = async () => {
@@ -866,8 +953,10 @@ export default function AssessmentPage() {
       setResult(placementResult);
       setLast(data?.submission || { createdAt: new Date().toISOString() });
       try {
-        window.localStorage.removeItem(draftKey);
+        window.localStorage.removeItem(DRAFT_KEY);
       } catch {}
+      setLastSavedAt(null);
+      setAutosaveEnabled(false);
       toast.success(`Placement complete: ${placementResult.band.level}`);
     } catch (err) {
       toast.error(err?.response?.data?.error || "Failed to submit placement test");
@@ -888,8 +977,10 @@ export default function AssessmentPage() {
     setWriting("");
     setResult(null);
     try {
-      window.localStorage.removeItem(draftKey);
+      window.localStorage.removeItem(DRAFT_KEY);
     } catch {}
+    setLastSavedAt(null);
+    setAutosaveEnabled(true);
   };
 
   return (
@@ -911,6 +1002,7 @@ export default function AssessmentPage() {
             <span style={{ width: `${completion}%` }} />
           </div>
           <small>{completion}% complete</small>
+          <small className="placement-autosave">{formatSavedAt(lastSavedAt)}</small>
         </aside>
       </section>
 
@@ -1008,17 +1100,28 @@ export default function AssessmentPage() {
           <header>
             <span>Section 3</span>
             <h2>Listening</h2>
-            <p>Play each audio once or twice, then answer from memory.</p>
+            <p>
+              Play each real conversation once or twice, then answer from memory.
+              Expect natural pauses, repairs, accents, and phone-line texture.
+            </p>
           </header>
-          {audioStatus && <p className="placement-audio-status">{audioStatus}</p>}
           {LISTENING_ITEMS.map((item) => (
             <article className="placement-listening" key={item.id}>
-              <div>
-                <h3>{item.title}</h3>
-                <button type="button" onClick={() => playListening(item)}>
-                  Play audio
-                </button>
+              <div className="placement-listening-header">
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.sourceNote}</p>
+                </div>
+                <span>{item.duration}</span>
               </div>
+              <audio
+                className="placement-audio-player"
+                controls
+                preload="metadata"
+                src={item.audioSrc}
+              >
+                Your browser does not support embedded audio.
+              </audio>
               <div className="placement-question-grid">
                 {item.questions.map((question) => (
                   <fieldset className="placement-question" key={question.id}>
@@ -1064,13 +1167,21 @@ export default function AssessmentPage() {
             </div>
             <div className="placement-timer">
               <strong>{formatTime(speakingSeconds)}</strong>
-              <button type="button" onClick={() => setSpeakingActive((active) => !active)}>
+              <button
+                type="button"
+                className="placement-primary-button"
+                onClick={() => {
+                  setAutosaveEnabled(true);
+                  setSpeakingActive((active) => !active);
+                }}
+              >
                 {speakingActive ? "Pause" : "Start timer"}
               </button>
               <button
                 type="button"
                 className="placement-secondary-button"
                 onClick={() => {
+                  setAutosaveEnabled(true);
                   setSpeakingActive(false);
                   setSpeakingSeconds(0);
                 }}
@@ -1123,7 +1234,10 @@ export default function AssessmentPage() {
               id="placement-writing"
               rows={14}
               value={writing}
-              onChange={(e) => setWriting(e.target.value)}
+              onChange={(e) => {
+                setAutosaveEnabled(true);
+                setWriting(e.target.value);
+              }}
               placeholder="Write your response here..."
             />
           </label>

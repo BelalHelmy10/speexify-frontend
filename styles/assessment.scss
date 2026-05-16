@@ -69,6 +69,11 @@
   }
 }
 
+.placement-autosave {
+  margin-top: 6px;
+  color: $brand-dark !important;
+}
+
 .placement-progress {
   height: 8px;
   margin: 16px 0 10px;
@@ -282,38 +287,28 @@
   }
 }
 
-.placement-listening > div:first-child {
+.placement-listening-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
 
-  button {
+  span {
     flex: 0 0 auto;
-    padding: 10px 14px;
-    border: 1px solid rgba($brand, 0.2);
-    border-radius: 8px;
-    background: $coral-pale;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba($brand, 0.1);
     color: $brand-dark;
-    font: inherit;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
-    cursor: pointer;
-
-    &:hover {
-      border-color: $brand;
-    }
   }
 }
 
-.placement-audio-status {
-  margin: 0 0 14px;
-  padding: 12px 14px;
+.placement-audio-player {
+  width: 100%;
+  min-height: 44px;
   border-radius: 8px;
-  background: $bg-secondary;
-  color: $text-secondary;
-  font-size: 14px;
-  font-weight: 700;
+  color-scheme: light;
 }
 
 .placement-speaking-task {
@@ -558,7 +553,7 @@
     grid-template-columns: 1fr;
   }
 
-  .placement-listening > div:first-child {
+  .placement-listening-header {
     align-items: flex-start;
     flex-direction: column;
   }

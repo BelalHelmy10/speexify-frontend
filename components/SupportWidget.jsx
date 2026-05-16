@@ -227,7 +227,10 @@ export default function SupportWidget() {
 
   // Hide support widget in focused workspaces.
   const isHiddenWorkspace =
-    pathname?.startsWith("/classroom") || isFocusedWorkspacePath(pathname);
+    pathname?.startsWith("/classroom") ||
+    pathname === "/onboarding" ||
+    pathname === "/ar/onboarding" ||
+    isFocusedWorkspacePath(pathname);
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
