@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import { SessionIcon } from "./SessionDetailUI";
 
 /**
  * SessionSummary - Comprehensive view of everything that happened in a session
@@ -26,6 +27,7 @@ export default function SessionSummary({
   isTeacher,
   locale = "en",
   prefix = "",
+  embedded = false,
 }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -63,7 +65,9 @@ export default function SessionSummary({
   if (error || !summary) {
     return (
       <div className="session-summary session-summary--error">
-        <span className="session-summary__error-icon">⚠️</span>
+        <span className="session-summary__error-icon">
+          <SessionIcon name="alert" size={24} />
+        </span>
         <p>{error || "Unable to load session summary"}</p>
       </div>
     );
@@ -104,16 +108,17 @@ export default function SessionSummary({
 
   // Status badge config
   const statusConfig = {
-    scheduled: { label: "Scheduled", className: "scheduled", icon: "📅" },
-    completed: { label: "Completed", className: "completed", icon: "✓" },
-    canceled: { label: "Canceled", className: "canceled", icon: "✗" },
+    scheduled: { label: "Scheduled", className: "scheduled", icon: "calendar" },
+    completed: { label: "Completed", className: "completed", icon: "check" },
+    canceled: { label: "Canceled", className: "canceled", icon: "x" },
   };
 
   const status = statusConfig[session.status] || statusConfig.scheduled;
 
   return (
-    <div className="session-summary">
+    <div className={`session-summary${embedded ? " session-summary--embedded" : ""}`}>
       {/* Header */}
+      {!embedded && (
       <div className="session-summary__header">
         <div className="session-summary__title-row">
           <h2 className="session-summary__title">
@@ -122,7 +127,8 @@ export default function SessionSummary({
           <span
             className={`session-summary__status session-summary__status--${status.className}`}
           >
-            {status.icon} {status.label}
+            <SessionIcon name={status.icon} size={14} />
+            {status.label}
           </span>
         </div>
         <div className="session-summary__meta">
@@ -135,11 +141,14 @@ export default function SessionSummary({
           )}
         </div>
       </div>
+      )}
 
       {/* Attendance Section */}
       <section className="session-summary__section">
         <h3 className="session-summary__section-title">
-          <span className="session-summary__section-icon">📋</span>
+          <span className="session-summary__section-icon">
+            <SessionIcon name="attendance" size={18} />
+          </span>
           Attendance
         </h3>
         <div className="session-summary__attendance">
@@ -173,26 +182,18 @@ export default function SessionSummary({
           {participants && participants.length > 0 && (
             <div className="session-summary__participants">
               {participants.map((p) => {
-                const statusClass =
-                  p.status === "attended"
-                    ? "attended"
-                    : p.status === "no_show"
-                    ? "noshow"
-                    : p.status;
+                const statusMeta = participantStatusMeta(p.status);
                 return (
                   <div
                     key={p.id}
-                    className={`session-summary__participant session-summary__participant--${statusClass}`}
+                    className={`session-summary__participant session-summary__participant--${statusMeta.className}`}
                   >
                     <span className="session-summary__participant-name">
                       {p.name || p.email}
                     </span>
                     <span className="session-summary__participant-status">
-                      {p.status === "attended" && "✓"}
-                      {p.status === "no_show" && "✗"}
-                      {p.status === "excused" && "⚠"}
-                      {p.status === "canceled" && "—"}
-                      {p.status === "booked" && "○"}
+                      <SessionIcon name={statusMeta.icon} size={14} />
+                      {statusMeta.label}
                     </span>
                   </div>
                 );
@@ -205,7 +206,9 @@ export default function SessionSummary({
       {/* Resources Used Section */}
       <section className="session-summary__section">
         <h3 className="session-summary__section-title">
-          <span className="session-summary__section-icon">📚</span>
+          <span className="session-summary__section-icon">
+            <SessionIcon name="notes" size={18} />
+          </span>
           Materials Covered
         </h3>
         {resourcesUsed && resourcesUsed.length > 0 ? (
@@ -215,7 +218,9 @@ export default function SessionSummary({
                 key={resource.id || idx}
                 className="session-summary__resource"
               >
-                <span className="session-summary__resource-icon">📄</span>
+                <span className="session-summary__resource-icon">
+                  <SessionIcon name="file" size={16} />
+                </span>
                 <span className="session-summary__resource-title">
                   {resource.title || resource.id}
                 </span>
@@ -241,7 +246,9 @@ export default function SessionSummary({
       {isTeacher && (
         <section className="session-summary__section">
           <h3 className="session-summary__section-title">
-            <span className="session-summary__section-icon">📝</span>
+            <span className="session-summary__section-icon">
+              <SessionIcon name="notes" size={18} />
+            </span>
             Session Notes
           </h3>
           {teacherNotes ? (
@@ -260,7 +267,9 @@ export default function SessionSummary({
       {teacherFeedback && (
         <section className="session-summary__section">
           <h3 className="session-summary__section-title">
-            <span className="session-summary__section-icon">💬</span>
+            <span className="session-summary__section-icon">
+              <SessionIcon name="feedback" size={18} />
+            </span>
             Teacher Feedback
           </h3>
           <div className="session-summary__feedback">
@@ -297,7 +306,9 @@ export default function SessionSummary({
       {/* Learner Feedback Section */}
       <section className="session-summary__section">
         <h3 className="session-summary__section-title">
-          <span className="session-summary__section-icon">⭐</span>
+          <span className="session-summary__section-icon">
+            <SessionIcon name="star" size={18} />
+          </span>
           {isTeacher ? "Learner Ratings" : "Your Feedback"}
         </h3>
 
@@ -310,10 +321,7 @@ export default function SessionSummary({
                     {learnerFeedback.averageRating?.toFixed(1)}
                   </span>
                   <span className="session-summary__stars">
-                    {"★".repeat(Math.round(learnerFeedback.averageRating || 0))}
-                    {"☆".repeat(
-                      5 - Math.round(learnerFeedback.averageRating || 0)
-                    )}
+                    <RatingStars value={learnerFeedback.averageRating || 0} />
                   </span>
                   <span className="session-summary__rating-count">
                     ({learnerFeedback.count}{" "}
@@ -334,8 +342,7 @@ export default function SessionSummary({
                               {fb.learner?.name || "Learner"}
                             </span>
                             <span className="session-summary__feedback-rating">
-                              {"★".repeat(fb.rating)}
-                              {"☆".repeat(5 - fb.rating)}
+                              <RatingStars value={fb.rating} />
                             </span>
                           </div>
                           {fb.highlights && (
@@ -369,8 +376,7 @@ export default function SessionSummary({
                 <div className="session-summary__my-rating">
                   <span>Your rating: </span>
                   <span className="session-summary__stars">
-                    {"★".repeat(learnerFeedback.myFeedback.rating)}
-                    {"☆".repeat(5 - learnerFeedback.myFeedback.rating)}
+                    <RatingStars value={learnerFeedback.myFeedback.rating} />
                   </span>
                 </div>
                 {learnerFeedback.myFeedback.highlights && (
@@ -388,12 +394,44 @@ export default function SessionSummary({
               </div>
             ) : (
               <p className="session-summary__empty">
-                You haven't submitted feedback for this session yet.
+                You have not submitted feedback for this session yet.
               </p>
             )}
           </>
         )}
       </section>
     </div>
+  );
+}
+
+function participantStatusMeta(status) {
+  if (status === "attended") {
+    return { label: "Attended", className: "attended", icon: "check" };
+  }
+  if (status === "no_show") {
+    return { label: "No show", className: "noshow", icon: "x" };
+  }
+  if (status === "excused") {
+    return { label: "Excused", className: "excused", icon: "alert" };
+  }
+  if (status === "canceled") {
+    return { label: "Canceled", className: "canceled", icon: "x" };
+  }
+  return { label: "Enrolled", className: "booked", icon: "user" };
+}
+
+function RatingStars({ value }) {
+  const rounded = Math.max(0, Math.min(5, Math.round(Number(value) || 0)));
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <SessionIcon
+          key={index}
+          name="star"
+          size={15}
+          className={index < rounded ? "is-filled" : ""}
+        />
+      ))}
+    </>
   );
 }

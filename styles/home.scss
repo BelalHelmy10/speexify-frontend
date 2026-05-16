@@ -191,11 +191,11 @@ html.home-client-ready #home-ssr-fallback {
 // HERO
 // ========================================
 .home-hero {
-  padding-top: 4rem;
   position: relative;
-  min-height: 90vh;
+  min-height: clamp(720px, calc(100svh - 112px), 820px);
+  padding: clamp(64px, 7vh, 88px) 0 clamp(64px, 7vh, 88px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
 
   @media (max-width: 768px) {
     padding: 60px 0 40px;

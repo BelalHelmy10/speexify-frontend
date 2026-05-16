@@ -230,6 +230,8 @@ export default function SupportWidget() {
     pathname?.startsWith("/classroom") ||
     pathname === "/onboarding" ||
     pathname === "/ar/onboarding" ||
+    pathname?.startsWith("/dashboard/sessions/") ||
+    pathname?.startsWith("/ar/dashboard/sessions/") ||
     isFocusedWorkspacePath(pathname);
 
   const [open, setOpen] = useState(false);

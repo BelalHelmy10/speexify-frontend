@@ -2,6 +2,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  ClipboardCheck,
+  UserRound,
+  X,
+} from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
 
@@ -96,10 +104,10 @@ export default function AttendancePanel({
 
   // Status options
   const statusOptions = [
-    { value: "booked", label: "Enrolled", icon: "📋", color: "#6b7280" },
-    { value: "attended", label: "Attended", icon: "✓", color: "#10b981" },
-    { value: "no_show", label: "No Show", icon: "✗", color: "#ef4444" },
-    { value: "excused", label: "Excused", icon: "⚠", color: "#f59e0b" },
+    { value: "booked", label: "Enrolled", Icon: UserRound, color: "#64748b" },
+    { value: "attended", label: "Attended", Icon: Check, color: "#0f9f7a" },
+    { value: "no_show", label: "No show", Icon: X, color: "#d94b4b" },
+    { value: "excused", label: "Excused", Icon: AlertTriangle, color: "#b7791f" },
   ];
 
   const getStatusConfig = (status) =>
@@ -117,10 +125,14 @@ export default function AttendancePanel({
     // Read-only view for learners
     return (
       <div className="attendance-panel attendance-panel--readonly">
-        <h3 className="attendance-panel__title">📋 Attendance</h3>
+        <h3 className="attendance-panel__title">
+          <ClipboardCheck size={18} aria-hidden />
+          Attendance
+        </h3>
         <div className="attendance-panel__list">
           {activeParticipants.map((p) => {
             const config = getStatusConfig(p.status);
+            const Icon = config.Icon;
             return (
               <div
                 key={p.userId || p.user?.id}
@@ -133,7 +145,8 @@ export default function AttendancePanel({
                   className="attendance-panel__status"
                   style={{ color: config.color }}
                 >
-                  {config.icon} {config.label}
+                  <Icon size={15} aria-hidden />
+                  {config.label}
                 </span>
               </div>
             );
@@ -146,7 +159,10 @@ export default function AttendancePanel({
   return (
     <div className="attendance-panel">
       <div className="attendance-panel__header">
-        <h3 className="attendance-panel__title">📋 Mark Attendance</h3>
+        <h3 className="attendance-panel__title">
+          <ClipboardCheck size={18} aria-hidden />
+          Mark attendance
+        </h3>
         {canMarkAttendance && activeParticipants.length > 1 && (
           <button
             type="button"
@@ -154,20 +170,23 @@ export default function AttendancePanel({
             onClick={markAllAttended}
             disabled={saving}
           >
-            ✓ Mark All Attended
+            <CheckCircle2 size={15} aria-hidden />
+            Mark all attended
           </button>
         )}
       </div>
 
       {!sessionStarted && (
         <div className="attendance-panel__notice">
-          ⏰ Attendance can be marked once the session starts.
+          <AlertTriangle size={16} aria-hidden />
+          Attendance can be marked once the session starts.
         </div>
       )}
 
       {sessionStatus === "canceled" && (
         <div className="attendance-panel__notice attendance-panel__notice--warning">
-          ⚠ This session has been canceled.
+          <AlertTriangle size={16} aria-hidden />
+          This session has been canceled.
         </div>
       )}
 
@@ -181,11 +200,14 @@ export default function AttendancePanel({
             const userId = p.userId || p.user?.id;
             const currentStatus = p.status;
             const config = getStatusConfig(currentStatus);
+            const StatusIcon = config.Icon;
 
             return (
               <div key={userId} className="attendance-panel__item">
                 <div className="attendance-panel__participant">
-                  <span className="attendance-panel__avatar">👤</span>
+                  <span className="attendance-panel__avatar" aria-hidden>
+                    <UserRound size={17} />
+                  </span>
                   <div className="attendance-panel__info">
                     <span className="attendance-panel__name">
                       {p.user?.name || p.user?.email || "Participant"}
@@ -202,40 +224,35 @@ export default function AttendancePanel({
                   <div className="attendance-panel__controls">
                     {statusOptions
                       .filter((opt) => opt.value !== "booked")
-                      .map((opt) => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          className={`attendance-panel__btn ${
-                            currentStatus === opt.value
-                              ? "attendance-panel__btn--active"
-                              : ""
-                          }`}
-                          style={{
-                            "--btn-color": opt.color,
-                            borderColor:
+                      .map((opt) => {
+                        const Icon = opt.Icon;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            className={`attendance-panel__btn ${
                               currentStatus === opt.value
-                                ? opt.color
-                                : undefined,
-                            backgroundColor:
-                              currentStatus === opt.value
-                                ? `${opt.color}15`
-                                : undefined,
-                          }}
-                          onClick={() => handleStatusChange(userId, opt.value)}
-                          disabled={saving}
-                          title={opt.label}
-                        >
-                          {opt.icon}
-                        </button>
-                      ))}
+                                ? "attendance-panel__btn--active"
+                                : ""
+                            }`}
+                            style={{ "--btn-color": opt.color }}
+                            onClick={() => handleStatusChange(userId, opt.value)}
+                            disabled={saving}
+                            title={opt.label}
+                          >
+                            <Icon size={15} aria-hidden />
+                            <span>{opt.label}</span>
+                          </button>
+                        );
+                      })}
                   </div>
                 ) : (
                   <span
                     className="attendance-panel__status-badge"
                     style={{ color: config.color }}
                   >
-                    {config.icon} {config.label}
+                    <StatusIcon size={15} aria-hidden />
+                    {config.label}
                   </span>
                 )}
               </div>
@@ -257,7 +274,10 @@ export default function AttendancePanel({
               <span className="attendance-panel__name">
                 {p.user?.name || p.user?.email || "Participant"}
               </span>
-              <span className="attendance-panel__status-badge">✗ Canceled</span>
+              <span className="attendance-panel__status-badge">
+                <X size={15} aria-hidden />
+                Canceled
+              </span>
             </div>
           ))}
         </div>

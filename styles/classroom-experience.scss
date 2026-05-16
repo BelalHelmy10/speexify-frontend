@@ -373,9 +373,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 .learner-feedback {
   background: white;
-  border-radius: $classroom-border-radius-lg;
-  padding: 1.5rem;
-  max-width: 500px;
+  border: 1px solid rgba($classroom-gray-200, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 2rem);
+  max-width: none;
+  overflow: hidden;
   width: 100%;
 
   &--loading {
@@ -383,6 +388,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 3rem;
     min-height: 200px;
     color: $classroom-gray-500;
   }
@@ -398,73 +404,90 @@
   }
 
   &__header {
+    border-bottom: 1px solid rgba($classroom-gray-200, 0.8);
+    flex-shrink: 0;
+    padding: 1.5rem 1.75rem 1.125rem;
     text-align: center;
-    margin-bottom: 1.5rem;
     position: relative;
   }
 
   &__title {
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
+    font-weight: 800;
     color: $classroom-gray-800;
-    margin: 0 0 0.5rem;
+    line-height: 1.08;
+    margin: 0 2rem 0.45rem;
   }
 
   &__subtitle {
     color: $classroom-gray-600;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
     margin: 0;
 
     strong {
       color: $classroom-gray-800;
+      font-weight: 700;
     }
   }
 
   &__date {
     display: block;
-    margin-top: 0.25rem;
-    font-size: 0.8rem;
+    margin-top: 0.35rem;
+    font-size: 0.84rem;
     color: $classroom-gray-500;
   }
 
   &__close {
     position: absolute;
-    top: -0.5rem;
-    right: -0.5rem;
-    width: 2rem;
-    height: 2rem;
+    top: 1rem;
+    right: 1rem;
+    width: 2.35rem;
+    height: 2.35rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: $classroom-gray-100;
-    border: none;
-    border-radius: 50%;
+    background: white;
+    border: 1px solid rgba($classroom-gray-200, 0.95);
+    border-radius: 8px;
     cursor: pointer;
     color: $classroom-gray-500;
-    transition: all 0.2s;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+      transform 0.2s ease;
 
     &:hover {
-      background: $classroom-gray-200;
+      background: $classroom-gray-50;
+      border-color: rgba($classroom-gray-300, 0.9);
       color: $classroom-gray-700;
+      transform: translateY(-1px);
     }
   }
 
   &__form {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.05rem;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.25rem 1.75rem 0;
+    scrollbar-color: rgba($classroom-gray-400, 0.55) transparent;
+    scrollbar-width: thin;
   }
 
   &__rating {
+    background: rgba($classroom-primary, 0.04);
+    border: 1px solid rgba($classroom-primary, 0.12);
+    border-radius: 8px;
+    padding: 1rem;
     text-align: center;
   }
 
   &__label {
     display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 0.95rem;
+    font-weight: 800;
     color: $classroom-gray-700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.55rem;
 
     .required {
       color: $classroom-danger;
@@ -475,33 +498,46 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.25rem;
+    flex-wrap: wrap;
+    gap: 0.35rem;
   }
 
   &__star {
-    font-size: 2rem;
-    background: none;
-    border: none;
+    align-items: center;
+    background: white;
+    border: 1px solid rgba($classroom-gray-200, 0.95);
+    border-radius: 8px;
+    color: rgba($classroom-gray-400, 0.8);
     cursor: pointer;
-    color: $classroom-gray-300;
-    padding: 0.25rem;
-    transition: transform 0.1s, color 0.2s;
+    display: inline-flex;
+    height: 2.75rem;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.18s ease, border-color 0.18s ease,
+      color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    width: 2.75rem;
 
     &:hover {
-      transform: scale(1.1);
+      border-color: rgba($classroom-primary, 0.3);
+      box-shadow: 0 8px 18px rgba($classroom-primary, 0.12);
+      transform: translateY(-1px);
     }
 
     &--active {
-      color: #fbbf24;
+      background: rgba(255, 248, 235, 0.95);
+      border-color: rgba(245, 158, 11, 0.32);
+      color: #f59e0b;
     }
   }
 
   &__rating-label {
-    margin-left: 0.75rem;
-    font-size: 0.875rem;
-    color: $classroom-gray-600;
-    min-width: 80px;
-    text-align: left;
+    color: $classroom-gray-700;
+    flex-basis: 100%;
+    font-size: 0.92rem;
+    font-weight: 700;
+    margin-top: 0.3rem;
+    min-width: 0;
+    text-align: center;
   }
 
   &__field {
@@ -512,52 +548,66 @@
   &__optional {
     font-weight: normal;
     color: $classroom-gray-400;
-    margin-left: 0.25rem;
+    margin-left: 0.35rem;
   }
 
   &__textarea {
     width: 100%;
-    padding: 0.75rem;
-    border: 1px solid $classroom-gray-200;
-    border-radius: $classroom-border-radius;
+    min-height: 6.75rem;
+    padding: 0.95rem 1rem;
+    border: 1px solid rgba($classroom-gray-200, 0.95);
+    border-radius: 8px;
     font-family: inherit;
-    font-size: 0.875rem;
+    font-size: 0.95rem;
     line-height: 1.5;
     resize: vertical;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease,
+      background 0.2s ease;
 
     &:focus {
       outline: none;
       border-color: $classroom-primary;
       box-shadow: 0 0 0 3px rgba($classroom-primary, 0.1);
+      background: white;
     }
 
     &::placeholder {
-      color: $classroom-gray-400;
+      color: rgba($classroom-gray-500, 0.72);
     }
   }
 
   &__actions {
+    background: white;
+    border-top: 1px solid rgba($classroom-gray-200, 0.78);
     display: flex;
-    gap: 0.75rem;
+    flex-shrink: 0;
+    gap: 0.85rem;
     justify-content: flex-end;
-    margin-top: 0.5rem;
+    margin: 0 -1.75rem;
+    padding: 1rem 1.75rem 1.25rem;
+    position: sticky;
+    bottom: 0;
   }
 
   &__btn {
-    padding: 0.625rem 1.25rem;
-    border-radius: $classroom-border-radius;
-    font-weight: 500;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    font-size: 0.95rem;
+    font-weight: 800;
+    min-height: 3rem;
+    padding: 0.75rem 1.35rem;
+    transition: background 0.2s ease, border-color 0.2s ease,
+      color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 
     &--primary {
       background: $classroom-primary;
       color: white;
-      border: none;
+      border: 1px solid $classroom-primary;
+      box-shadow: 0 12px 24px rgba($classroom-primary, 0.2);
 
       &:hover:not(:disabled) {
         background: $classroom-primary-light;
+        transform: translateY(-1px);
       }
 
       &:disabled {
@@ -569,19 +619,24 @@
     &--secondary {
       background: white;
       color: $classroom-gray-600;
-      border: 1px solid $classroom-gray-300;
+      border: 1px solid rgba($classroom-gray-300, 0.9);
 
       &:hover:not(:disabled) {
         background: $classroom-gray-50;
+        border-color: rgba($classroom-gray-400, 0.85);
       }
     }
   }
 
   &__update-note {
-    font-size: 0.75rem;
+    align-items: flex-start;
     color: $classroom-gray-500;
-    text-align: center;
-    margin-top: 0.5rem;
+    display: flex;
+    font-size: 0.82rem;
+    gap: 0.5rem;
+    line-height: 1.45;
+    margin: 0;
+    padding: 0 0 1.25rem;
   }
 }
 
@@ -589,18 +644,74 @@
 .learner-feedback-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 1rem;
-  z-index: 1000;
+  overflow-y: auto;
+  padding: clamp(0.75rem, 3dvh, 2rem);
+  z-index: 100000;
 }
 
 .learner-feedback-modal {
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: $classroom-shadow-lg;
+  margin: auto 0;
+  max-width: 640px;
+  width: min(100%, 640px);
+}
+
+@media (max-width: 640px) {
+  .learner-feedback {
+    max-height: calc(100dvh - 1rem);
+
+    &__header {
+      padding: 1.15rem 1rem 0.95rem;
+    }
+
+    &__title {
+      font-size: 1.35rem;
+      margin-inline: 2.25rem;
+    }
+
+    &__close {
+      right: 0.75rem;
+      top: 0.75rem;
+    }
+
+    &__form {
+      gap: 0.9rem;
+      padding: 1rem 1rem 0;
+    }
+
+    &__rating {
+      padding: 0.85rem;
+    }
+
+    &__star {
+      height: 2.45rem;
+      width: 2.45rem;
+    }
+
+    &__textarea {
+      min-height: 5.75rem;
+    }
+
+    &__actions {
+      display: grid;
+      gap: 0.65rem;
+      grid-template-columns: 1fr;
+      margin-inline: -1rem;
+      padding: 0.85rem 1rem 1rem;
+    }
+
+    &__btn {
+      width: 100%;
+    }
+  }
+
+  .learner-feedback-modal-overlay {
+    padding: 0.5rem;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

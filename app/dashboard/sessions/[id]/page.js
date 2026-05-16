@@ -1,50 +1,64 @@
 // app/dashboard/sessions/[id]/page.js
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
 import "@/styles/session-detail.scss";
 import { getDictionary, t } from "@/app/i18n";
 import { useToast } from "@/components/ToastProvider";
+import useAuth from "@/hooks/useAuth";
 import { getSafeExternalUrl } from "@/utils/url";
-import AttendancePanel from "./AttendancePanel";
+import { LearnerFeedbackModal } from "./LearnerFeedbackForm";
+import SessionDetailLayout from "./SessionDetailLayout";
+import {
+  buildGoogleCalendarUrl,
+  formatDuration,
+  formatHeroDate,
+  getJoinWindow,
+} from "./sessionDetailUtils";
 
 export default function SessionDetailPage() {
   const router = useRouter();
   const { id } = useParams();
   const pathname = usePathname();
+  const { user, checking } = useAuth();
 
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const prefix = locale === "ar" ? "/ar" : "";
   const dict = getDictionary(locale, "session");
-
   const { toast, confirmModal } = useToast();
 
   const [session, setSession] = useState(null);
-  const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"
+  const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [hasLearnerFeedback, setHasLearnerFeedback] = useState(false);
 
-  // Helper: get translation with fallback (prevents __key__ display)
-  const txt = (key, fallback) => {
-    const result = t(dict, key);
-    // If translation returns the key format (__key__) or is empty, use fallback
-    if (
-      !result ||
-      result === key ||
-      result.startsWith("__") ||
-      result.endsWith("__")
-    ) {
-      return fallback;
-    }
-    return result;
-  };
+  const txt = useCallback(
+    (key, fallback) => {
+      const result = t(dict, key);
+      if (
+        !result ||
+        result === key ||
+        result.startsWith("__") ||
+        result.endsWith("__")
+      ) {
+        return fallback;
+      }
+      return result;
+    },
+    [dict]
+  );
 
-  const loadSession = async () => {
+  const dashboardHref = `${prefix}/dashboard`;
+  const progressHref = `${prefix}/dashboard/progress`;
+  const classroomHref = `${prefix}/classroom/${id}`;
+
+  const loadSession = useCallback(async () => {
     if (!id) return;
-
     try {
       setStatus("loading");
       const { data } = await api.get(`/sessions/${id}`);
@@ -58,105 +72,123 @@ export default function SessionDetailPage() {
       );
       setStatus("error");
     }
-  };
+  }, [id, txt]);
 
-  useEffect(() => {
+  const checkLearnerFeedback = useCallback(async () => {
     if (!id) return;
-    loadSession();
+    try {
+      const { data } = await api.get(`/sessions/${id}/learner-feedback`);
+      setHasLearnerFeedback(Boolean(data?.feedback));
+    } catch {
+      setHasLearnerFeedback(false);
+    }
   }, [id]);
 
-  const handleBack = () => {
-    router.back();
-  };
+  useEffect(() => {
+    if (!checking && !user) {
+      router.replace(
+        `${prefix}/login?next=${encodeURIComponent(pathname || `${prefix}/dashboard/sessions/${id}`)}`
+      );
+    }
+  }, [checking, user, router, prefix, pathname, id]);
 
-  const formatDateTime = (value) => {
-    if (!value) return txt("datetime_na", "N/A");
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return String(value);
-    return d.toLocaleString(locale === "ar" ? "ar" : undefined, {
-      dateStyle: "full",
-      timeStyle: "short",
-    });
-  };
+  useEffect(() => {
+    if (!id || checking || !user) return;
+    loadSession();
+  }, [id, checking, user, loadSession]);
 
-  // ─────────────────────────────────────
-  // LOADING STATE
-  // ─────────────────────────────────────
-  if (status === "loading") {
-    return (
-      <div className="page-session-detail">
-        <div className="page-session-detail__inner container-narrow">
-          <button
-            onClick={handleBack}
-            className="btn btn--ghost page-session-detail__back"
-          >
-            {txt("back_btn", "← Back")}
-          </button>
+  useEffect(() => {
+    if (!session?.isLearner || session.status !== "completed") return;
+    checkLearnerFeedback();
+  }, [session, checkLearnerFeedback]);
 
-          <div className="session-detail-card session-detail-card--state">
-            <header className="session-detail-header">
-              <div>
-                <h1 className="session-detail-title">
-                  {txt("loading_title", "Loading...")}
-                </h1>
-                <p className="session-detail-subtitle">
-                  {txt(
-                    "loading_subtitle",
-                    "Please wait while we load the session details."
-                  )}
-                </p>
-              </div>
-              <span className="session-detail-status session-detail-status--loading">
-                {txt("loading_badge", "Loading")}
-              </span>
-            </header>
-          </div>
-        </div>
+  const formatDateTime = useCallback(
+    (value) => {
+      if (!value) return txt("datetime_na", "N/A");
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleString(locale === "ar" ? "ar" : undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    },
+    [locale, txt]
+  );
+
+  const formatOpensTime = useCallback(
+    (date) => {
+      if (!date) return "";
+      return date.toLocaleTimeString(locale === "ar" ? "ar" : undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    },
+    [locale]
+  );
+
+  const pageShell = (children) => (
+    <div className="page-session-detail">
+      <div className="page-session-detail__inner container-narrow">
+        {children}
       </div>
+    </div>
+  );
+
+  if (checking || (status === "loading" && !session)) {
+    return pageShell(
+      <>
+        <div className="sd-skeleton" style={{ minHeight: 280, marginBottom: 24 }} />
+        <div className="sd-skeleton" style={{ minHeight: 420 }} />
+      </>
     );
   }
 
-  // ─────────────────────────────────────
-  // ERROR / NOT FOUND STATE
-  // ─────────────────────────────────────
   if (status === "error" || !session) {
-    return (
-      <div className="page-session-detail">
-        <div className="page-session-detail__inner container-narrow">
-          <button
-            onClick={handleBack}
-            className="btn btn--ghost page-session-detail__back"
-          >
-            {txt("back_btn", "← Back")}
-          </button>
-
-          <div className="session-detail-card session-detail-card--state">
-            <header className="session-detail-header">
-              <div>
-                <h1 className="session-detail-title">
-                  {txt("error_title", "Session Not Found")}
-                </h1>
-                <p className="session-detail-subtitle">
-                  {txt("error_subtitle", "We couldn't find this session.")}
-                </p>
-              </div>
-              <span className="session-detail-status session-detail-status--error">
+    return pageShell(
+      <>
+        <div className="page-session-detail__topbar">
+          <nav className="sd-breadcrumbs" aria-label="Breadcrumb">
+            <Link href={dashboardHref}>{txt("back_dashboard", "Dashboard")}</Link>
+            <span className="sd-breadcrumbs__sep" aria-hidden>
+              /
+            </span>
+            <span className="sd-breadcrumbs__current">
+              {txt("error_title", "Session")}
+            </span>
+          </nav>
+          <Link href={dashboardHref} className="page-session-detail__back">
+            {String(txt("back_btn", "Back")).replace(/^[\s←→‹›-]+/, "")}
+          </Link>
+        </div>
+        <header className="sd-hero sd-hero--canceled">
+          <div className="sd-hero__inner">
+            <div>
+              <h1 className="sd-hero__title">
+                {txt("error_title", "Session Not Found")}
+              </h1>
+              <p className="sd-hero__subtitle">
+                {txt("error_subtitle", "We couldn't find this session.")}
+              </p>
+            </div>
+            <div className="sd-hero__status-wrap">
+              <span className="sd-status sd-status--canceled">
+                <span className="sd-status__dot" aria-hidden />
                 {txt("error_badge", "Error")}
               </span>
-            </header>
-
-            <p className="session-detail-error">
-              {error || txt("error_fallback", "Could not load session.")}
-            </p>
+            </div>
           </div>
-        </div>
-      </div>
+        </header>
+        <p className="session-detail-error" style={{ marginTop: 24 }}>
+          {error || txt("error_fallback", "Could not load session.")}
+        </p>
+      </>
     );
   }
 
-  // ─────────────────────────────────────
-  // NORMAL STATE
-  // ─────────────────────────────────────
   const {
     id: sessionId,
     title,
@@ -172,7 +204,7 @@ export default function SessionDetailPage() {
     capacity,
     participantCount,
     participants,
-    learners, // ✅ Use learners array from backend (has full user data)
+    learners,
     isLearner,
     isTeacher: sessionIsTeacher,
     isAdmin: sessionIsAdmin,
@@ -180,14 +212,31 @@ export default function SessionDetailPage() {
   } = session;
 
   const isGroup = String(type || "").toUpperCase() === "GROUP";
+  const durationStr = formatDuration(startAt, endAt);
+  const joinWindow = getJoinWindow(session);
+  const timezone =
+    user?.timezone ||
+    Intl.DateTimeFormat().resolvedOptions().timeZone ||
+    "UTC";
 
-  // ✅ FIX: Use `learners` array first (has name/email), fallback to participants
+  const statusConfig = {
+    scheduled: {
+      label: txt("status_scheduled", "Scheduled"),
+      className: "session-detail-status--scheduled",
+    },
+    completed: {
+      label: txt("status_completed", "Completed"),
+      className: "session-detail-status--completed",
+    },
+    canceled: {
+      label: txt("status_canceled", "Canceled"),
+      className: "session-detail-status--canceled",
+    },
+  };
+  const currentStatus = statusConfig[sessionStatus] || statusConfig.scheduled;
+
   const learnersList = (() => {
-    // Prefer learners array (backend provides this with full user data)
-    if (Array.isArray(learners) && learners.length > 0) {
-      return learners;
-    }
-    // Fallback to participants if learners not available
+    if (Array.isArray(learners) && learners.length > 0) return learners;
     if (Array.isArray(participants) && participants.length > 0) {
       return participants.map((p) => ({
         id: p.userId || p.id,
@@ -199,20 +248,12 @@ export default function SessionDetailPage() {
     return [];
   })();
 
-  const activeParticipants = learnersList.filter(
-    (l) => l.status !== "canceled"
-  );
-
-  // ✅ Transform learners for AttendancePanel format
+  const activeParticipants = learnersList.filter((l) => l.status !== "canceled");
   const attendanceParticipants = learnersList.map((l) => ({
     userId: l.id,
     status: l.status || "booked",
     attendedAt: l.attendedAt || null,
-    user: {
-      id: l.id,
-      name: l.name,
-      email: l.email,
-    },
+    user: { id: l.id, name: l.name, email: l.email },
   }));
 
   const learnerLabel = isGroup
@@ -221,9 +262,26 @@ export default function SessionDetailPage() {
 
   const canCancelOrLeave = !!(sessionIsAdmin || sessionIsTeacher || isLearner);
   const canReschedule = !!(sessionIsAdmin || sessionIsTeacher);
-
-  // Only show actions if session is not already canceled/completed
   const showActions = sessionStatus === "scheduled" && canCancelOrLeave;
+  const canComplete =
+    (sessionIsTeacher || sessionIsAdmin) &&
+    sessionStatus === "scheduled" &&
+    joinWindow.start &&
+    joinWindow.now >= joinWindow.start;
+
+  const isTerminal =
+    sessionStatus === "completed" || sessionStatus === "canceled";
+  const showSummary = isTerminal;
+
+  const hasExternal = !!(meetingUrl || joinUrl);
+  const calendarUrl = buildGoogleCalendarUrl({
+    title: title || "Speexify session",
+    startAt,
+    endAt,
+    details: teacher
+      ? `Teacher: ${teacher.name || teacher.email}`
+      : undefined,
+  });
 
   const cancelLabel =
     isGroup && !sessionIsTeacher && !sessionIsAdmin
@@ -237,16 +295,12 @@ export default function SessionDetailPage() {
 
   const handleCancelOrLeave = async () => {
     if (!canCancelOrLeave || busy) return;
-
     const ok = await confirmModal(cancelTitle);
     if (!ok) return;
-
     try {
       setBusy(true);
-
       const res = await api.post(`/sessions/${sessionId}/cancel`);
       const scope = res?.data?.scope;
-
       if (scope === "participant") {
         toast.success(txt("session_left_success", "You left the session."));
       } else if (scope === "session") {
@@ -254,11 +308,7 @@ export default function SessionDetailPage() {
       } else {
         toast.success(txt("success_saved", "Done."));
       }
-
-      const { data } = await api.get(`/sessions/${sessionId}`, {
-        params: { t: Date.now() },
-      });
-      setSession(data?.session || null);
+      await loadSession();
     } catch (e) {
       toast.error(
         e?.response?.data?.error || txt("generic_error", "Something went wrong")
@@ -268,323 +318,165 @@ export default function SessionDetailPage() {
     }
   };
 
-  const hasExternal = !!(meetingUrl || joinUrl);
-
-  // Status display config
-  const statusConfig = {
-    scheduled: {
-      label: "SCHEDULED",
-      className: "session-detail-status--scheduled",
-    },
-    completed: {
-      label: "COMPLETED",
-      className: "session-detail-status--completed",
-    },
-    canceled: {
-      label: "CANCELED",
-      className: "session-detail-status--canceled",
-    },
+  const handleComplete = async () => {
+    const ok = await confirmModal(
+      txt(
+        "session_complete_confirm",
+        "Mark this session as completed? Credits will be consumed."
+      )
+    );
+    if (!ok) return;
+    try {
+      setBusy(true);
+      await api.post(`/sessions/${sessionId}/complete`);
+      toast.success(
+        txt("session_completed_success", "Session marked as completed")
+      );
+      await loadSession();
+    } catch (e) {
+      toast.error(
+        e?.response?.data?.error || txt("generic_error", "Something went wrong")
+      );
+    } finally {
+      setBusy(false);
+    }
   };
-  const currentStatus = statusConfig[sessionStatus] || statusConfig.scheduled;
 
-  return (
-    <div className="page-session-detail">
-      <div className="page-session-detail__inner container-narrow">
-        <button
-          onClick={handleBack}
-          className="btn btn--ghost page-session-detail__back"
-        >
-          {txt("back_btn", "← Back")}
-        </button>
+  const sessionTitle = title || txt("normal_title_fallback", "Session");
 
-        <div className="session-detail-card">
-          <header className="session-detail-header">
-            <div>
-              <h1 className="session-detail-title">
-                {title || txt("normal_title_fallback", "Session")}
-              </h1>
-              <p className="session-detail-subtitle">
-                {txt(
-                  "normal_subtitle",
-                  "Overview of this lesson, participants, and feedback."
-                )}
-              </p>
-            </div>
+  const renderJoinAside = () => {
+    if (sessionStatus === "canceled") {
+      return (
+        <p className="sd-callout sd-callout--muted">
+          {txt("join_session_canceled", "This session was canceled.")}
+        </p>
+      );
+    }
 
-            <span
-              className={`session-detail-status ${currentStatus.className}`}
-            >
-              {currentStatus.label}
-            </span>
-          </header>
-
-          <div className="session-detail-grid">
-            {/* TIME SECTION */}
-            <section className="session-detail-section">
-              <h3 className="session-detail-section__title">
-                {txt("section_time_title", "Time")}
-              </h3>
-              <p className="session-detail-section__body">
-                <strong>{txt("time_start_label", "Start:")}</strong>{" "}
-                {formatDateTime(startAt)}
-                <br />
-                <strong>{txt("time_end_label", "End:")}</strong>{" "}
-                {formatDateTime(endAt)}
-              </p>
-            </section>
-
-            {/* TEACHER SECTION */}
-            <section className="session-detail-section">
-              <h3 className="session-detail-section__title">
-                {txt("section_teacher_title", "Teacher")}
-              </h3>
-              {teacher ? (
-                <p className="session-detail-section__body">
-                  {teacher.name || teacher.email}
-                  <br />
-                  <span className="session-detail-muted">{teacher.email}</span>
-                </p>
-              ) : (
-                <p className="session-detail-section__body">
-                  {txt("section_teacher_not_assigned", "No teacher assigned")}
-                </p>
-              )}
-            </section>
-
-            {/* LEARNERS SECTION */}
-            <section className="session-detail-section">
-              <h3 className="session-detail-section__title">{learnerLabel}</h3>
-
-              {!isGroup ? (
-                // ONE_ON_ONE: Show single learner
-                legacyLearner ? (
-                  <p className="session-detail-section__body">
-                    {legacyLearner.name || legacyLearner.email}
-                    <br />
-                    <span className="session-detail-muted">
-                      {legacyLearner.email}
-                    </span>
-                  </p>
-                ) : activeParticipants.length > 0 ? (
-                  <p className="session-detail-section__body">
-                    {activeParticipants[0].name ||
-                      activeParticipants[0].email ||
-                      "Learner"}
-                    <br />
-                    {activeParticipants[0].email && (
-                      <span className="session-detail-muted">
-                        {activeParticipants[0].email}
-                      </span>
-                    )}
-                  </p>
-                ) : (
-                  <p className="session-detail-section__body">
-                    {txt("section_learner_not_found", "No learner assigned")}
-                  </p>
-                )
-              ) : (
-                // GROUP: Show multiple learners
-                <div className="session-detail-section__body">
-                  {/* Participant count */}
-                  <div
-                    className="session-detail-muted"
-                    style={{ marginBottom: 8 }}
-                  >
-                    {txt("session_participants", "Participants")}:{" "}
-                    {typeof participantCount === "number"
-                      ? participantCount
-                      : activeParticipants.length}
-                    {typeof capacity === "number" ? ` / ${capacity}` : ""}
-                  </div>
-
-                  {activeParticipants.length > 0 ? (
-                    <ul style={{ margin: 0, paddingInlineStart: 18 }}>
-                      {activeParticipants.map((learner, idx) => {
-                        // ✅ FIX: Display name/email, not ID
-                        const displayName =
-                          learner.name || learner.email || `Learner ${idx + 1}`;
-                        const displayEmail = learner.email || "";
-
-                        return (
-                          <li
-                            key={learner.id || idx}
-                            style={{ marginBottom: 6 }}
-                          >
-                            <span>{displayName}</span>
-                            {displayEmail && displayEmail !== displayName && (
-                              <span className="session-detail-muted">
-                                {" "}
-                                — {displayEmail}
-                              </span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p>
-                      {txt("session_no_participants", "No participants yet.")}
-                    </p>
-                  )}
-                </div>
-              )}
-            </section>
-          </div>
-
-          {/* ✅ ATTENDANCE PANEL - For Teachers/Admins */}
-          {(sessionIsTeacher || sessionIsAdmin) &&
-            sessionStatus !== "canceled" && (
-              <section className="session-detail-section session-detail-section--wide">
-                <AttendancePanel
-                  sessionId={Number(sessionId)}
-                  participants={attendanceParticipants}
-                  isTeacher={sessionIsTeacher || sessionIsAdmin}
-                  sessionStatus={sessionStatus}
-                  sessionStartAt={startAt}
-                  onUpdate={loadSession}
-                />
-              </section>
-            )}
-
-          {/* JOIN SECTION */}
-          <section className="session-detail-section session-detail-section--wide">
-            <div className="session-detail-section__header">
-              <h3 className="session-detail-section__title">
-                {txt("join_title", "Join link")}
-              </h3>
-            </div>
-
-            <div className="session-detail-join-actions">
-              <Link
-                href={`/classroom/${sessionId}`}
-                className="btn btn--primary session-detail-join-btn"
+    if (sessionStatus === "completed") {
+      return (
+        <div className="sd-actions-stack">
+            <Link href={classroomHref} className="btn btn--ghost">
+              {txt("join_view_classroom", "View classroom")}
+            </Link>
+            {hasExternal && (
+              <a
+                href={getSafeExternalUrl(meetingUrl || joinUrl)}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn--ghost"
               >
-                {txt("join_open_classroom", "Open Speexify classroom")}
-              </Link>
+                {txt("join_external_link", "External meeting link")}
+              </a>
+            )}
+        </div>
+      );
+    }
 
-              {hasExternal && (
-                <a
-                  href={getSafeExternalUrl(meetingUrl || joinUrl)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn--ghost session-detail-join-btn"
-                >
-                  {txt("join_external_link", "Open external link")}
-                </a>
-              )}
-
-              {!hasExternal && (
-                <p className="session-detail-section__body">
-                  {txt(
-                    "join_no_meeting",
-                    "No external meeting link set; use the Speexify classroom above."
-                  )}
-                </p>
-              )}
-            </div>
-          </section>
-
-          {/* ACTIONS SECTION - Only show if session is scheduled */}
-          {showActions && (
-            <section className="session-detail-section session-detail-section--wide">
-              <div className="session-detail-section__header">
-                <h3 className="session-detail-section__title">
-                  {txt("actions_title", "Actions")}
-                </h3>
-              </div>
-
-              <div className="session-detail-join-actions">
-                <button
-                  className="btn btn--ghost btn--danger"
-                  onClick={handleCancelOrLeave}
-                  disabled={busy}
-                  title={cancelTitle}
-                >
-                  {busy ? txt("loading_badge", "Loading...") : cancelLabel}
-                </button>
-
-                {canReschedule && (
-                  <Link href={`${prefix}/calendar`} className="btn btn--ghost">
-                    {txt("session_reschedule", "Reschedule")}
-                  </Link>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* NOTES SECTION */}
-          <section className="session-detail-section session-detail-section--wide">
-            <div className="session-detail-section__header">
-              <h3 className="session-detail-section__title">
-                {txt("notes_title", "Notes / Homework")}
-              </h3>
-            </div>
-            <p className="session-detail-section__body">
-              {notes && notes.trim()
-                ? notes
-                : txt(
-                    "notes_empty",
-                    "No notes or homework have been added for this session yet."
-                  )}
-            </p>
-          </section>
-
-          {/* FEEDBACK SECTION */}
-          {teacherFeedback && (
-            <section className="session-detail-section session-detail-section--wide">
-              <div className="session-detail-section__header">
-                <h3 className="session-detail-section__title">
-                  {txt("feedback_title", "Teacher Feedback")}
-                </h3>
-                <p className="session-detail-section__hint">
-                  {txt(
-                    "feedback_hint",
-                    "Feedback from your teacher for this session."
-                  )}
-                </p>
-              </div>
-
-              <div className="session-detail-feedback-grid">
-                <div className="session-detail-feedback">
-                  <h4 className="session-detail-feedback__title">
-                    {txt("feedback_msg_title", "Message to Learner")}
-                  </h4>
-                  <p className="session-detail-feedback__body">
-                    {teacherFeedback.messageToLearner?.trim()
-                      ? teacherFeedback.messageToLearner
-                      : txt("feedback_msg_empty", "No message provided.")}
-                  </p>
-                </div>
-
-                <div className="session-detail-feedback">
-                  <h4 className="session-detail-feedback__title">
-                    {txt("feedback_comments_title", "Session Comments")}
-                  </h4>
-                  <p className="session-detail-feedback__body">
-                    {teacherFeedback.commentsOnSession?.trim()
-                      ? teacherFeedback.commentsOnSession
-                      : txt("feedback_comments_empty", "No comments provided.")}
-                  </p>
-                </div>
-
-                <div className="session-detail-feedback">
-                  <h4 className="session-detail-feedback__title">
-                    {txt("feedback_future_title", "Future Steps")}
-                  </h4>
-                  <p className="session-detail-feedback__body">
-                    {teacherFeedback.futureSteps?.trim()
-                      ? teacherFeedback.futureSteps
-                      : txt(
-                          "feedback_future_empty",
-                          "No future steps provided."
-                        )}
-                  </p>
-                </div>
-              </div>
-            </section>
+    if (joinWindow.canJoin) {
+      return (
+        <div className="sd-actions-stack">
+          <Link href={classroomHref} className="btn btn--primary">
+            {txt("join_classroom_now", "Join classroom now")}
+          </Link>
+          {hasExternal && (
+            <a
+              href={getSafeExternalUrl(meetingUrl || joinUrl)}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn--ghost"
+            >
+              {txt("join_external_link", "External meeting link")}
+            </a>
           )}
         </div>
+      );
+    }
+
+    return (
+      <div className="sd-actions-stack">
+        {calendarUrl && (
+          <a
+            href={calendarUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn--ghost"
+          >
+            {txt("add_to_calendar", "Add to calendar")}
+          </a>
+        )}
+        <Link href={classroomHref} className="btn btn--ghost">
+          {txt("join_open_classroom", "Open Speexify classroom")}
+        </Link>
       </div>
-    </div>
+    );
+  };
+
+  return pageShell(
+    <>
+      <SessionDetailLayout
+        txt={txt}
+        locale={locale}
+        prefix={prefix}
+        dashboardHref={dashboardHref}
+        progressHref={progressHref}
+        classroomHref={classroomHref}
+        sessionTitle={sessionTitle}
+        sessionStatus={sessionStatus}
+        statusConfig={currentStatus}
+        isGroup={isGroup}
+        durationStr={durationStr}
+        timezone={timezone}
+        startAt={startAt}
+        endAt={endAt}
+        teacher={teacher}
+        learnerLabel={learnerLabel}
+        legacyLearner={legacyLearner}
+        activeParticipants={activeParticipants}
+        participantCount={participantCount}
+        capacity={capacity}
+        attendanceParticipants={attendanceParticipants}
+        sessionId={sessionId}
+        sessionIsTeacher={sessionIsTeacher}
+        sessionIsAdmin={sessionIsAdmin}
+        isLearner={isLearner}
+        notes={notes}
+        teacherFeedback={teacherFeedback}
+        showSummary={showSummary}
+        showActions={showActions}
+        canComplete={canComplete}
+        canReschedule={canReschedule}
+        busy={busy}
+        cancelLabel={cancelLabel}
+        cancelTitle={cancelTitle}
+        hasExternal={hasExternal}
+        meetingUrl={meetingUrl}
+        joinUrl={joinUrl}
+        calendarUrl={calendarUrl}
+        joinWindow={joinWindow}
+        renderJoinAside={renderJoinAside}
+        onComplete={handleComplete}
+        onCancelOrLeave={handleCancelOrLeave}
+        onOpenFeedback={() => setShowFeedbackModal(true)}
+        hasLearnerFeedback={hasLearnerFeedback}
+        formatDateTime={formatDateTime}
+        formatHeroDate={formatHeroDate}
+        formatOpensTime={formatOpensTime}
+        loadSession={loadSession}
+      />
+
+      <LearnerFeedbackModal
+        isOpen={showFeedbackModal}
+        sessionId={Number(sessionId)}
+        sessionTitle={sessionTitle}
+        teacherName={teacher?.name}
+        sessionDate={startAt}
+        onSubmit={() => {
+          checkLearnerFeedback();
+          loadSession();
+        }}
+        onClose={() => setShowFeedbackModal(false)}
+      />
+    </>
   );
 }

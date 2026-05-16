@@ -1,12 +1,14 @@
 {
-  "back_btn": "← Back",
+  "back_btn": "Back",
+  "back_dashboard": "Dashboard",
+  "breadcrumb_sessions": "Sessions",
 
   "loading_title": "Loading session…",
-  "loading_subtitle": "We’re fetching the latest details for this session.",
+  "loading_subtitle": "We're fetching the latest details for this session.",
   "loading_badge": "Loading",
 
   "error_title": "Session not available",
-  "error_subtitle": "We couldn’t load this session right now.",
+  "error_subtitle": "We couldn't load this session right now.",
   "error_badge": "Error",
   "error_fallback": "Could not load session.",
   "generic_error": "Failed to load session details",
@@ -14,31 +16,82 @@
   "normal_title_fallback": "Session details",
   "normal_subtitle": "Overview of this lesson, participants, and feedback.",
 
+  "status_scheduled": "Scheduled",
+  "status_completed": "Completed",
+  "status_canceled": "Canceled",
+
+  "type_one_on_one": "1:1 Lesson",
+  "type_group": "Group lesson",
+
   "section_time_title": "Time",
   "time_start_label": "Start:",
   "time_end_label": "End:",
+  "time_duration_label": "Duration:",
+  "time_timezone_label": "Timezone:",
   "datetime_na": "N/A",
 
   "section_teacher_title": "Teacher",
-  "section_teacher_not_assigned": "Not assigned.",
+  "section_teacher_not_assigned": "No teacher assigned.",
 
   "section_learner_title": "Learner",
-  "section_learner_not_found": "Not found.",
+  "section_learners_title": "Learners",
+  "section_learner_not_found": "No learner assigned.",
 
-  "join_title": "Join link",
+  "session_participants": "Participants",
+  "session_no_participants": "No participants yet.",
+
+  "join_title": "Join",
+  "join_title_completed": "Classroom",
   "join_open_classroom": "Open Speexify classroom",
+  "join_classroom_now": "Join classroom now",
+  "join_view_classroom": "View classroom",
   "join_external_link": "External meeting link",
   "join_no_meeting": "No external meeting link set; use the Speexify classroom above.",
+  "join_opens_at": "Join opens {time} before the session starts.",
+  "join_session_ended": "This session has ended. You can review the summary below.",
+  "join_session_canceled": "This session was canceled.",
+  "join_not_yet": "Join is not available yet.",
+
+  "add_to_calendar": "Add to calendar",
+
+  "actions_title": "Actions",
+  "session_cancel": "Cancel session",
+  "session_leave": "Leave session",
+  "session_leave_title": "Leave this group session?",
+  "session_cancel_title": "Cancel this session?",
+  "session_reschedule": "Reschedule",
+  "session_left_success": "You left the session.",
+  "session_canceled_success": "Session canceled.",
+  "session_complete": "Mark as completed",
+  "session_complete_confirm": "Mark this session as completed? Credits will be consumed.",
+  "session_completed_success": "Session marked as completed.",
+  "success_saved": "Done.",
 
   "notes_title": "Notes / Homework",
   "notes_empty": "No notes or homework have been added for this session yet.",
+  "notes_empty_learner_hint": "Check back later or message your teacher if you expected homework here.",
 
   "feedback_title": "Teacher feedback",
   "feedback_hint": "Reflections from your teacher to help guide your next steps.",
+  "feedback_empty_title": "No teacher feedback yet",
+  "feedback_empty_body": "Your teacher hasn't shared feedback for this session yet.",
+  "feedback_add_teacher": "Add feedback",
+  "feedback_edit_teacher": "Edit feedback",
   "feedback_msg_title": "Message to the learner",
   "feedback_msg_empty": "No message provided.",
   "feedback_comments_title": "Comments on the session",
   "feedback_comments_empty": "No comments provided.",
   "feedback_future_title": "Future steps",
-  "feedback_future_empty": "No future steps added yet."
+  "feedback_future_empty": "No future steps added yet.",
+
+  "learner_rate_title": "Rate your session",
+  "learner_rate_body": "Share how your learning experience went.",
+  "learner_rate_btn": "Rate this session",
+  "learner_rate_edit": "Update your rating",
+
+  "summary_title": "Session summary",
+  "summary_subtitle": "Attendance, materials, and feedback from this lesson.",
+
+  "progress_link": "View your progress",
+  "progress_link_hint": "See how this session fits into your learning journey."
 }
