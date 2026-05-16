@@ -203,6 +203,10 @@
   @media (max-width: $bp-md) {
     margin-bottom: $space-7;
   }
+
+  &--pricing {
+    margin-bottom: $space-6;
+  }
 }
 
 .ecp-section-title {
@@ -225,47 +229,46 @@
 // HERO
 // ========================================
 .ecp-hero {
-  padding: 100px 0 80px;
+  padding: 56px 0 28px;
   position: relative;
-  min-height: 85vh;
+  min-height: auto;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
 
   @media (max-width: $bp-md) {
-    padding: 60px 0 40px;
-    min-height: auto;
+    padding: 40px 0 24px;
   }
 
   &__inner {
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 60px;
-    align-items: center;
+    grid-template-columns: minmax(0, 0.92fr) minmax(420px, 1.08fr);
+    gap: 44px;
+    align-items: start;
     position: relative;
     z-index: 1;
 
     @media (max-width: $bp-md) {
       grid-template-columns: 1fr;
-      gap: 40px;
+      gap: 24px;
     }
   }
 
   &__title {
     font-family: $font-heading;
-    font-size: clamp(48px, 6vw, 80px);
+    font-size: clamp(40px, 5vw, 64px);
     line-height: 1.05;
     letter-spacing: -0.03em;
-    margin: 0 0 24px;
+    margin: 0 0 18px;
     font-weight: 800;
     color: $ink;
     animation: fadeInUp 0.8s ease 0.1s backwards;
   }
 
   &__subtitle {
-    font-size: 19px;
+    font-size: 18px;
     line-height: 1.6;
     color: $muted;
-    margin: 0 0 32px;
+    margin: 0 0 24px;
     max-width: 540px;
     animation: fadeInUp 0.8s ease 0.2s backwards;
   }
@@ -278,7 +281,7 @@
   }
 
   &__note {
-    margin-top: 16px;
+    margin-top: 12px;
     padding: 12px 20px;
     background: rgba($accent, 0.05);
     border-left: 3px solid $accent;
@@ -294,6 +297,128 @@
   }
 }
 
+.ecp-hero-pricing {
+  align-self: stretch;
+  background:
+    linear-gradient(135deg, rgba($color-white, 0.98), rgba($bg-soft, 0.94)),
+    $card-bg;
+  border: 1px solid rgba($ink, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 18px 44px rgba($ink, 0.1);
+  padding: 24px;
+  animation: fadeInUp 0.8s ease 0.2s backwards;
+
+  &__eyebrow {
+    color: $accent-ink;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    color: $ink;
+    font-family: $font-heading;
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 850;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    margin: 0;
+
+    strong {
+      color: $accent-ink;
+      display: block;
+      font-weight: inherit;
+    }
+  }
+
+  &__copy {
+    color: $muted;
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 12px 0 18px;
+  }
+
+  &__list {
+    display: grid;
+    gap: 8px;
+    margin: 0 0 18px;
+  }
+
+  &__row {
+    align-items: center;
+    background: rgba($color-white, 0.78);
+    border: 1px solid rgba($ink, 0.08);
+    border-radius: 14px;
+    color: $ink;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 12px 14px;
+    text-decoration: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+
+    &:hover {
+      border-color: rgba($accent, 0.36);
+      box-shadow: 0 10px 22px rgba($accent, 0.1);
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    span {
+      min-width: 0;
+    }
+
+    strong,
+    small {
+      display: block;
+      white-space: nowrap;
+    }
+
+    strong {
+      color: $ink;
+      font-size: 15px;
+      font-weight: 800;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    small {
+      color: $muted;
+      font-size: 12px;
+      font-weight: 650;
+      margin-top: 3px;
+    }
+
+    > span:last-child {
+      text-align: right;
+
+      strong {
+        color: $accent-ink;
+      }
+    }
+  }
+
+  .ecp-btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  @media (max-width: $bp-sm) {
+    padding: 18px;
+
+    &__row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+
+      > span:last-child {
+        text-align: left;
+      }
+    }
+  }
+}
+
 // ========================================
 // TABS (Individual/Corporate)
 // ========================================
@@ -304,7 +429,7 @@
   border-radius: 999px;
   padding: 4px;
   gap: 4px;
-  margin: 24px 0;
+  margin: 18px 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
@@ -337,7 +462,7 @@
 .ecp-lesson-toggle {
   display: flex;
   gap: 16px;
-  margin: 32px 0 24px;
+  margin: 22px 0 16px;
   animation: fadeInUp 0.8s ease 0.3s backwards;
 
   @media (max-width: $bp-md) {
@@ -351,7 +476,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px 24px;
+  padding: 16px 18px;
   background: $card-bg;
   border: 2px solid $border;
   border-radius: 16px;
@@ -429,6 +554,8 @@
 // ========================================
 .ecp-pricing-section {
   position: relative;
+  padding-top: $space-5;
+  scroll-margin-top: 116px;
 }
 
 // ========================================

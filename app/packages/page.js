@@ -21,6 +21,8 @@ import { APP_ROUTES, routeHref } from "@/lib/routes";
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
 const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || "manual"; // "manual" | "paymob"
+const DEFAULT_COUNTRY_CODE = "EG";
+const DEFAULT_CURRENCY = getPricingRegion(DEFAULT_COUNTRY_CODE).currency;
 
 // Split features by newline/semicolon/comma and trim
 function parseFeatures(raw) {
@@ -48,6 +50,37 @@ function buildFeatureMatrix(plans, maxRows = 10) {
   }));
 }
 
+function getPlanPriceLabels(plan, countryCode, locale, dict) {
+  const resolvedCountry = countryCode || DEFAULT_COUNTRY_CODE;
+  const regionalPrice = calculatePackagePrice(plan, resolvedCountry);
+  const perSessionPrice = calculatePerSessionPrice(plan, resolvedCountry);
+
+  const totalLabel = (() => {
+    if (plan.priceType === "CUSTOM" || regionalPrice.isCustomPricing) {
+      return t(dict, "price_custom", "Custom Pricing");
+    }
+
+    if (regionalPrice.displayAmount > 0) {
+      return formatRegionalPrice(regionalPrice, locale);
+    }
+
+    return t(dict, "price_custom", "Custom Pricing");
+  })();
+
+  const perSessionLabel = (() => {
+    return perSessionPrice
+      ? formatRegionalPrice(perSessionPrice, locale)
+      : null;
+  })();
+
+  return {
+    regionalPrice,
+    perSessionPrice,
+    totalLabel,
+    perSessionLabel,
+  };
+}
+
 function Packages() {
   const pathname = usePathname();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
@@ -59,9 +92,8 @@ function Packages() {
   const [err, setErr] = useState("");
 
   // Regional pricing
-  const [currency, setCurrency] = useState("EGP");
-  const [countryCode, setCountryCode] = useState(null);
-  const [pricingReady, setPricingReady] = useState(false);
+  const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
+  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
 
   // Seats estimator for corporate
   const [seats, setSeats] = useState(15);
@@ -77,16 +109,15 @@ function Packages() {
   useEffect(() => {
     (async () => {
       const detectedCountry = await detectUserCountry();
-      setCountryCode(detectedCountry);
+      const resolvedCountry = detectedCountry || DEFAULT_COUNTRY_CODE;
+      setCountryCode(resolvedCountry);
 
-      const region = getPricingRegion(detectedCountry);
+      const region = getPricingRegion(resolvedCountry);
       setCurrency(region.currency);
-
-      setPricingReady(true);
 
       console.log(
         "🌍 Using pricing for country:",
-        detectedCountry || "DEFAULT"
+        resolvedCountry || "DEFAULT"
       );
       console.log("💱 Currency locked to pricing region:", region.currency);
     })();
@@ -108,6 +139,24 @@ function Packages() {
 
   const isIndividual = tab === AUD.INDIVIDUAL;
   const isOneOnOne = lessonType === LESSON_TYPE.ONE_ON_ONE;
+  const pricePreview = useMemo(() => {
+    const pricedPlans = plans.map((plan) => ({
+      plan,
+      ...getPlanPriceLabels(plan, countryCode, locale, dict),
+    }));
+    const plansWithPerSession = pricedPlans.filter(
+      (item) => item.perSessionPrice?.displayAmount > 0
+    );
+    const lowestPerSession = plansWithPerSession.reduce(
+      (best, item) =>
+        !best || item.perSessionPrice.displayAmount < best.perSessionPrice.displayAmount
+          ? item
+          : best,
+      null
+    );
+
+    return { pricedPlans, lowestPerSession };
+  }, [plans, countryCode, locale, dict]);
 
   // Section title/subtitle logic with translations
   const pricingTitle = isIndividual
@@ -236,13 +285,76 @@ function Packages() {
             )}
           </div>
 
-          <figure className="ecp-media ecp-hero__media">
-            <img
-              src="/images/english-coaching-in-action.avif"
-              alt={t(dict, "hero_media_alt", "English coaching in action")}
-              loading="eager"
-            />
-          </figure>
+          <aside className="ecp-hero-pricing" aria-label="Current package pricing">
+            <div className="ecp-hero-pricing__eyebrow">
+              {isIndividual
+                ? t(dict, "hero_pricing_eyebrow", "Prices visible upfront")
+                : t(dict, "hero_pricing_corp_eyebrow", "Team pricing")}
+            </div>
+            {isIndividual && pricePreview.lowestPerSession ? (
+              <>
+                <h2 className="ecp-hero-pricing__title">
+                  {t(dict, "hero_pricing_from", "From")}{" "}
+                  <strong>
+                    {pricePreview.lowestPerSession.perSessionLabel}/
+                    {t(dict, "label_per_session", "session")}
+                  </strong>
+                </h2>
+                <p className="ecp-hero-pricing__copy">
+                  {t(
+                    dict,
+                    "hero_pricing_copy",
+                    "Choose a package now. Details and full comparison are directly below."
+                  )}
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="ecp-hero-pricing__title">
+                  {t(dict, "hero_pricing_custom", "Custom team programs")}
+                </h2>
+                <p className="ecp-hero-pricing__copy">
+                  {t(
+                    dict,
+                    "hero_pricing_custom_copy",
+                    "See the program tiers now, then request a proposal for your team size."
+                  )}
+                </p>
+              </>
+            )}
+
+            <div className="ecp-hero-pricing__list">
+              {pricePreview.pricedPlans.map((item) => (
+                <a
+                  className="ecp-hero-pricing__row"
+                  href="#packages-pricing"
+                  key={item.plan.id || item.plan.title}
+                >
+                  <span>
+                    <strong>{item.plan.title}</strong>
+                    <small>
+                      {item.plan.sessionsPerPack
+                        ? `${item.plan.sessionsPerPack} ${t(dict, "label_sessions", "sessions")}`
+                        : t(dict, "hero_pricing_custom_scope", "Custom scope")}
+                    </small>
+                  </span>
+                  <span>
+                    <strong>{item.totalLabel}</strong>
+                    {item.perSessionLabel && (
+                      <small>
+                        {item.perSessionLabel}/
+                        {t(dict, "label_per_session", "session")}
+                      </small>
+                    )}
+                  </span>
+                </a>
+              ))}
+            </div>
+
+            <a className="ecp-btn ecp-btn--primary" href="#packages-pricing">
+              {t(dict, "hero_pricing_cta", "Compare packages")}
+            </a>
+          </aside>
         </div>
       </section>
 
@@ -267,9 +379,9 @@ function Packages() {
       )}
 
       {/* PRICING GRID */}
-      <section className="ecp__section ecp-pricing-section">
+      <section className="ecp__section ecp-pricing-section" id="packages-pricing">
         <div className="ecp__container">
-          <div className="ecp-section-header">
+          <div className="ecp-section-header ecp-section-header--pricing">
             <FadeIn as="h2" className="ecp-section-title">{pricingTitle}</FadeIn>
             <FadeIn as="p" className="ecp-section-subtitle" delay={0.1}>{pricingSubtitle}</FadeIn>
           </div>
@@ -284,7 +396,6 @@ function Packages() {
                 locale={locale}
                 currency={currency}
                 countryCode={countryCode}
-                pricingReady={pricingReady}
               />
             ))}
           </div>
@@ -558,12 +669,10 @@ function PricingCard({
   locale,
   currency,
   countryCode,
-  pricingReady,
 }) {
   const {
     title,
     description,
-    priceType,
     isPopular,
     sessionsPerPack,
     durationMin,
@@ -573,32 +682,12 @@ function PricingCard({
   const bullets = parseFeatures(plan.featuresRaw || "").slice(0, 8);
   const isCorp = audience === AUD.CORPORATE;
 
-  // Calculate regional pricing
-  const regionalPrice = calculatePackagePrice(plan, countryCode);
-  const perSessionPrice = calculatePerSessionPrice(plan, countryCode);
-
-  // Format total price label
-  const totalLabel = (() => {
-    if (!pricingReady) return "—";
-
-    if (priceType === "CUSTOM" || regionalPrice.isCustomPricing) {
-      return t(dict, "price_custom", "Custom Pricing");
-    }
-
-    if (regionalPrice.displayAmount > 0) {
-      return formatRegionalPrice(regionalPrice, locale);
-    }
-
-    return t(dict, "price_custom", "Custom Pricing");
-  })();
-
-  // Format per-session price label
-  const perSessionLabel = (() => {
-    if (!pricingReady) return "—";
-    return perSessionPrice
-      ? formatRegionalPrice(perSessionPrice, locale)
-      : null;
-  })();
+  const { totalLabel, perSessionLabel } = getPlanPriceLabels(
+    plan,
+    countryCode,
+    locale,
+    dict
+  );
 
   // inside function PricingCard({ plan, ... })
   const paymentRoute = PAYMENT_MODE === "paymob" ? APP_ROUTES.checkout : APP_ROUTES.manualPayment;

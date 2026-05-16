@@ -2,8 +2,16 @@
   "title_step1": "إنشاء حساب",
   "title_step2": "تأكيد البريد الإلكتروني",
 
-  "subtitle_step1": "ابدأ بحسابك المجاني",
+  "subtitle_step1": "انضم باستخدام Google أو البريد الإلكتروني. لا تحتاج إلى بطاقة.",
   "subtitle_step2_prefix": "أرسلنا رمز التحقق إلى",
+
+  "form_aria_label": "إنشاء حساب Speexify",
+  "register_eyebrow": "ابدأ التحدث أسرع",
+  "friendly_note": "أنشئ حسابك الآن. احجز التدريب فقط عندما تكون جاهزًا.",
+  "google_button_label": "المتابعة باستخدام Google",
+  "card_badge": "حساب مجاني",
+  "card_timing": "يستغرق 30 ثانية",
+  "privacy_note": "لا توجد حاجة إلى دفع. سنستخدم بريدك فقط للتحقق وتحديثات الحساب.",
 
   "step1_label": "البريد الإلكتروني",
   "step2_label": "التأكيد",

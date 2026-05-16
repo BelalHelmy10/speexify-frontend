@@ -835,3 +835,253 @@
     box-shadow: 0 0 0 4px $border-focus;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Simple, friendly register pass
+.auth-page--register {
+  min-height: calc(100vh - 76px);
+  padding: 48px 20px;
+  overflow: visible;
+  background:
+    linear-gradient(180deg, rgba($coral-pale, 0.86) 0%, $bg-primary 68%),
+    $bg-primary;
+
+  &::before {
+    background:
+      linear-gradient(135deg, rgba($brand, 0.08), transparent 38%),
+      linear-gradient(180deg, transparent 0%, rgba($color-secondary-light, 0.07) 100%);
+    background-size: auto;
+  }
+}
+
+.auth-page--register .auth-register-container {
+  max-width: 468px;
+}
+
+.auth-page--register .auth-register-card {
+  max-width: none;
+  box-sizing: border-box;
+  padding: 34px;
+  border: 1px solid rgba($brand, 0.14);
+  border-radius: 22px;
+  background: rgba($color-white, 0.96);
+  box-shadow:
+    0 24px 60px rgba($navy, 0.1),
+    0 1px 0 rgba($color-white, 0.8) inset;
+}
+
+.auth-page--register .auth-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: $coral-pale;
+  color: $text-secondary;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+
+  span:first-child,
+  span:last-child {
+    color: $brand-dark;
+  }
+}
+
+.auth-page--register .auth-register-eyebrow {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: $brand-dark;
+  text-transform: none;
+}
+
+.auth-page--register .auth-header {
+  margin-bottom: 18px;
+  text-align: center;
+
+  h1 {
+    margin: 0 0 8px;
+    font-family: $font-heading;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: 0;
+    color: $navy;
+  }
+
+  p {
+    color: $text-secondary;
+  }
+}
+
+.auth-page--register .auth-register-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding: 13px 14px;
+  border: 1px solid rgba($brand, 0.12);
+  border-radius: 14px;
+  background: rgba($coral-pale, 0.72);
+  color: $text-secondary;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    color: $brand;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+}
+
+.auth-page--register .progress-steps {
+  justify-content: center;
+  margin-bottom: 24px;
+  padding: 0 18px;
+}
+
+.auth-page--register .step {
+  align-items: center;
+}
+
+.auth-page--register .step-circle {
+  width: 38px;
+  height: 38px;
+  font-size: 14px;
+}
+
+.auth-page--register .step-line {
+  width: 56px;
+  margin: 0 8px 24px;
+}
+
+.auth-page--register .input-wrapper input,
+.auth-page--register .auth-form input:not(.input-wrapper input),
+.auth-page--register .btn-primary {
+  border-radius: 12px;
+}
+
+.auth-page--register .btn-primary {
+  background: linear-gradient(135deg, $brand 0%, $brand-dark 100%);
+  box-shadow:
+    0 14px 32px rgba($brand, 0.18),
+    0 1px 0 rgba($color-white, 0.16) inset;
+
+  &:hover:not(:disabled) {
+    box-shadow:
+      0 18px 38px rgba($brand, 0.24),
+      0 1px 0 rgba($color-white, 0.16) inset;
+  }
+}
+
+.auth-page--register .auth-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba($navy, 0.08);
+}
+
+.auth-page--register .auth-privacy-note {
+  max-width: 300px;
+  margin: 0;
+  color: $text-muted;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.auth-page--register .auth-switch-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin: 0;
+  color: $text-secondary;
+  line-height: 1.35;
+
+  .link-primary {
+    font-weight: 800;
+  }
+}
+
+.google-button-localized {
+  position: relative;
+  min-height: 42px;
+  overflow: hidden;
+  border: 1px solid $border;
+  border-radius: 12px;
+  background: $color-white;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:hover {
+    border-color: rgba($navy, 0.2);
+    box-shadow: $shadow-sm;
+  }
+}
+
+.google-button-localized__label {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 16px;
+  color: $text-primary;
+  font-size: 14px;
+  font-weight: 700;
+  pointer-events: none;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+  }
+}
+
+.google-button-localized__native {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0.01;
+  overflow: hidden;
+
+  > div,
+  iframe {
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+[dir="rtl"] .auth-page--register .auth-header {
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .auth-page--register {
+    padding: 28px 16px;
+  }
+
+  .auth-page--register .auth-register-card {
+    padding: 28px 22px;
+  }
+
+  .auth-page--register .auth-header h1 {
+    font-size: 29px;
+  }
+}

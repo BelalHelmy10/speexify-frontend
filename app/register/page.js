@@ -18,7 +18,6 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
-import BrandLogo from "@/components/brand/BrandLogo";
 
 function RegisterInner({ dict, locale }) {
   const [step, setStep] = useState(1);
@@ -114,18 +113,19 @@ function RegisterInner({ dict, locale }) {
   };
 
   return (
-    <main className="auth-page">
-      <div className="auth-container">
-        <section className="auth-card">
-          <div className="auth-brand">
-                        <BrandLogo
-              context="auth"
-              href={routeHref(APP_ROUTES.home, locale)}
-              ariaLabel="Speexify"
-            />
+    <main className="auth-page auth-page--register">
+      <div className="auth-container auth-register-container">
+        <section
+          className="auth-card auth-register-card"
+          aria-label={t(dict, "form_aria_label")}
+        >
+          <div className="auth-card-meta">
+            <span>{t(dict, "card_badge")}</span>
+            <span>{t(dict, "card_timing")}</span>
           </div>
 
           <header className="auth-header">
+            <p className="auth-register-eyebrow">{t(dict, "register_eyebrow")}</p>
             <h1>
               {step === 1 ? t(dict, "title_step1") : t(dict, "title_step2")}
             </h1>
@@ -135,6 +135,17 @@ function RegisterInner({ dict, locale }) {
                 : `${t(dict, "subtitle_step2_prefix")} ${email}`}
             </p>
           </header>
+
+          <div className="auth-register-note">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                d="M3.25 9.5a6.75 6.75 0 1111.87 4.4l1.13 2.66a.75.75 0 01-.98.98l-2.66-1.13A6.75 6.75 0 013.25 9.5zm6.75-3a.75.75 0 00-.75.75V9H7.5a.75.75 0 000 1.5h1.75v1.75a.75.75 0 001.5 0V10.5h1.75a.75.75 0 000-1.5h-1.75V7.25A.75.75 0 0010 6.5z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <p>{t(dict, "friendly_note")}</p>
+          </div>
 
           <div className="progress-steps">
             <div className={`step ${step >= 1 ? "active" : ""}`}>
@@ -187,6 +198,9 @@ function RegisterInner({ dict, locale }) {
                 <GoogleButton
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
+                  localeOverride={locale}
+                  label={t(dict, "google_button_label")}
+                  text="signup_with"
                 />
               </div>
 
@@ -251,7 +265,8 @@ function RegisterInner({ dict, locale }) {
               </form>
 
               <footer className="auth-footer">
-                <p>
+                <p className="auth-privacy-note">{t(dict, "privacy_note")}</p>
+                <p className="auth-switch-link">
                   {t(dict, "already_have_account")}{" "}
                   <Link href={loginPath} className="link-primary">
                     {t(dict, "link_sign_in")}
@@ -454,7 +469,8 @@ function RegisterInner({ dict, locale }) {
               </div>
 
               <footer className="auth-footer">
-                <p>
+                <p className="auth-privacy-note">{t(dict, "privacy_note")}</p>
+                <p className="auth-switch-link">
                   {t(dict, "already_have_account")}{" "}
                   <Link href={loginPath} className="link-primary">
                     {t(dict, "link_sign_in")}

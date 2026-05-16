@@ -2,8 +2,16 @@
   "title_step1": "Create account",
   "title_step2": "Verify your email",
 
-  "subtitle_step1": "Get started with your free account",
+  "subtitle_step1": "Join with Google or email. No card required.",
   "subtitle_step2_prefix": "We sent a code to",
+
+  "form_aria_label": "Create your Speexify account",
+  "register_eyebrow": "Start speaking sooner",
+  "friendly_note": "Create your account now. Book coaching only when you're ready.",
+  "google_button_label": "Continue with Google",
+  "card_badge": "Free account",
+  "card_timing": "Takes 30 seconds",
+  "privacy_note": "No payment required. We'll only use your email for verification and account updates.",
 
   "step1_label": "Email",
   "step2_label": "Verify",
