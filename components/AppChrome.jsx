@@ -52,7 +52,9 @@ export default function AppChrome({ children }) {
   const focusedWorkspace = isFocusedWorkspace(pathname);
   const appPath = isAppPath(pathname);
   const showSiteChrome = !focusedWorkspace;
-  const homePath = normalizeLocalizedPath(pathname) === "/";
+  const normalizedPath = normalizeLocalizedPath(pathname);
+  const hideMobileSupportFab =
+    normalizedPath === "/" || normalizedPath === "/why-speexify";
 
   return (
     <>
@@ -70,7 +72,7 @@ export default function AppChrome({ children }) {
         <main>{children}</main>
       </Suspense>
       {showSiteChrome && <Footer />}
-      {showSiteChrome && <SupportWidget hideMobileFab={homePath} />}
+      {showSiteChrome && <SupportWidget hideMobileFab={hideMobileSupportFab} />}
       {showSiteChrome && <ScrollToTop />}
     </>
   );

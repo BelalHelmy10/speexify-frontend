@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Speexify - Personalized language and communication coaching";
+export const alt = "Speexify — Where Ambition Meets Fluency";
 export const size = {
   width: 1200,
   height: 630,
@@ -44,7 +44,7 @@ export default function OpenGraphImage() {
               fontWeight: 700,
             }}
           >
-            Live coaching
+            Unleash your voice
           </span>
         </div>
 
@@ -58,7 +58,7 @@ export default function OpenGraphImage() {
               fontWeight: 900,
             }}
           >
-            Personalized language and communication coaching
+            Your English should be as sharp as your ambition
           </div>
           <div
             style={{
@@ -68,7 +68,7 @@ export default function OpenGraphImage() {
               color: "rgba(248,250,252,0.86)",
             }}
           >
-            Speak with more fluency, clarity, and confidence at work.
+            1-on-1 coaching that turns what you already know into real confidence.
           </div>
         </div>
       </div>

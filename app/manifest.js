@@ -1,14 +1,14 @@
 // app/manifest.js
 export default function manifest() {
   return {
-    name: "Speexify - Language & Communication Coaching",
+    name: "Speexify — Where Ambition Meets Fluency",
     short_name: "Speexify",
     description:
-      "Personalized language and communication coaching for teams and professionals",
+      "1-on-1 English coaching that turns what you already know into real confidence",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#2563EB", // Brand blue
+    theme_color: "#f25c2e", // Brand coral
     orientation: "portrait-primary",
     icons: [
       {

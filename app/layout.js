@@ -4,7 +4,7 @@ import "@/lib/sentry";
 import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../styles/calendar.scss";
-import { Inter, Outfit } from "next/font/google";
+import { Inter, Outfit, Cairo } from "next/font/google";
 import { headers } from "next/headers";
 
 import Providers from "@/components/Providers";
@@ -29,25 +29,31 @@ const outfit = Outfit({
   display: "swap",
 });
 
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  variable: "--font-cairo",
+  display: "swap",
+});
+
 export const metadata = {
   metadataBase: new URL("https://speexify.com"),
 
   // Basic SEO
   title: {
-    default: "Speexify — Personalized Language & Communication Coaching",
+    default: "Speexify — Where Ambition Meets Fluency",
     template: "%s — Speexify",
   },
   description:
-    "Personalized language and communication coaching for teams and professionals. Improve your speaking skills, communication confidence, and professional presence with expert guidance.",
+    "1-on-1 English coaching that turns what you already know into real confidence. For interviews, meetings, and every moment that matters.",
   keywords: [
-    "language coaching",
-    "communication coaching",
-    "speech training",
-    "professional communication",
-    "team communication",
-    "public speaking",
-    "language learning",
-    "business communication",
+    "English coaching Egypt",
+    "1-on-1 English coaching",
+    "English speaking confidence",
+    "interview English coaching",
+    "professional English training",
+    "business English Egypt",
+    "English fluency coaching",
+    "Speexify",
   ],
 
   // Authors and creators
@@ -60,16 +66,16 @@ export const metadata = {
     type: "website",
     locale: "en_US",
     url: "https://speexify.com",
-    title: "Speexify — Personalized Language & Communication Coaching",
+    title: "Speexify — Where Ambition Meets Fluency",
     description:
-      "Personalized language and communication coaching for teams and professionals.",
+      "1-on-1 English coaching that turns what you already know into real confidence.",
     siteName: "Speexify",
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Speexify - Language and Communication Coaching",
+        alt: "Speexify — Where Ambition Meets Fluency",
       },
     ],
   },
@@ -77,9 +83,9 @@ export const metadata = {
   // Twitter Card
   twitter: {
     card: "summary_large_image",
-    title: "Speexify — Personalized Language & Communication Coaching",
+    title: "Speexify — Where Ambition Meets Fluency",
     description:
-      "Personalized language and communication coaching for teams and professionals.",
+      "1-on-1 English coaching that turns what you already know into real confidence.",
     creator: "@speexify",
     images: ["/twitter-image"],
   },
@@ -126,7 +132,7 @@ export default async function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 
         {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#2563EB" />
+        <meta name="theme-color" content="#f25c2e" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -140,7 +146,7 @@ export default async function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className={`${inter.variable} ${outfit.variable}`}>
+      <body className={`${inter.variable} ${outfit.variable} ${cairo.variable}`}>
         <LocaleShell>
           <ClientProviders>
             <Providers>

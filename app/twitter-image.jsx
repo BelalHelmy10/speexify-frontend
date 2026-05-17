@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Speexify - Live coaching for professional communication";
+export const alt = "Speexify — Where Ambition Meets Fluency";
 export const size = {
   width: 1200,
   height: 675,
@@ -50,7 +50,7 @@ export default function TwitterImage() {
               fontWeight: 900,
             }}
           >
-            Speak better English where it matters most
+            Your English should be as sharp as your ambition
           </div>
           <div
             style={{
@@ -60,8 +60,8 @@ export default function TwitterImage() {
               color: "rgba(248,250,252,0.86)",
             }}
           >
-            Live coaching for professionals, teams, presentations, meetings,
-            and everyday confidence.
+            1-on-1 coaching that turns what you already know into real
+            confidence. Unleash your voice.
           </div>
         </div>
       </div>

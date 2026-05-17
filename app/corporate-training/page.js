@@ -7,14 +7,18 @@ import Link from "next/link";
 import api from "@/lib/api";
 import "@/styles/corporate.scss";
 import { getDictionary, t } from "@/app/i18n";
-import FadeIn from "@/components/FadeIn";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
+
+function Reveal({ children, as: Component = "div", delay: _delay, ...props }) {
+  return <Component {...props}>{children}</Component>;
+}
 
 function CorporateTraining({ dict, locale }) {
   const formRef = useRef(null);
 
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState("");
+  const [statusTone, setStatusTone] = useState("");
   const [form, setForm] = useState({
     company: "",
     contactName: "",
@@ -34,9 +38,11 @@ function CorporateTraining({ dict, locale }) {
   const submit = async (e) => {
     e.preventDefault();
     setStatus("");
+    setStatusTone("");
 
     if (!form.company || !form.email || !form.agree) {
       setStatus(t(dict, "status_required"));
+      setStatusTone("error");
       return;
     }
 
@@ -54,6 +60,7 @@ function CorporateTraining({ dict, locale }) {
       });
 
       setStatus(t(dict, "status_sent"));
+      setStatusTone("success");
       formRef.current?.reset();
       setForm((f) => ({ ...f, message: "", agree: false }));
     } catch (_err) {
@@ -63,6 +70,7 @@ function CorporateTraining({ dict, locale }) {
       );
       window.location.href = `mailto:hello@speexify.com?subject=${subject}&body=${body}`;
       setStatus(t(dict, "status_email_fallback"));
+      setStatusTone("info");
     } finally {
       setSending(false);
     }
@@ -79,7 +87,7 @@ function CorporateTraining({ dict, locale }) {
 
         <div className="spx-corp__container spx-corp-hero__inner">
           <div className="spx-corp-hero__copy">
-            <FadeIn as="div" className="spx-corp-hero__badge" delay={0.1}>
+            <Reveal as="div" className="spx-corp-hero__badge" delay={0.1}>
               <span className="spx-corp-hero__badge-icon" aria-hidden="true">
                 <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
                   <rect x="1" y="5" width="13" height="9" rx="1" stroke="currentColor" strokeWidth="1.5" />
@@ -88,20 +96,20 @@ function CorporateTraining({ dict, locale }) {
                 </svg>
               </span>
               <span>{t(dict, "hero_badge")}</span>
-            </FadeIn>
+            </Reveal>
 
-            <FadeIn as="h1" className="spx-corp-hero__title" delay={0.2}>
+            <Reveal as="h1" className="spx-corp-hero__title" delay={0.2}>
               {t(dict, "hero_title_main")}
               <span className="spx-corp-hero__title-accent">
                 {t(dict, "hero_title_accent")}
               </span>
-            </FadeIn>
+            </Reveal>
 
-            <FadeIn as="p" className="spx-corp-hero__subtitle" delay={0.3}>
+            <Reveal as="p" className="spx-corp-hero__subtitle" delay={0.3}>
               {t(dict, "hero_subtitle")}
-            </FadeIn>
+            </Reveal>
 
-            <FadeIn as="div" className="spx-corp-hero__actions" delay={0.4}>
+            <Reveal as="div" className="spx-corp-hero__actions" delay={0.4}>
               <a
                 href="#rfp"
                 className="spx-corp-btn spx-corp-btn--primary spx-corp-btn--shine"
@@ -130,13 +138,13 @@ function CorporateTraining({ dict, locale }) {
               >
                 {t(dict, "hero_cta_secondary")}
               </Link>
-            </FadeIn>
+            </Reveal>
 
-            <FadeIn as="div" className="spx-corp-hero__features" aria-label="Key features" delay={0.6}>
+            <Reveal as="div" className="spx-corp-hero__features" aria-label="Key features" delay={0.6}>
               <HeroFeature>{t(dict, "hero_feature_coach")}</HeroFeature>
               <HeroFeature>{t(dict, "hero_feature_flex")}</HeroFeature>
               <HeroFeature>{t(dict, "hero_feature_reporting")}</HeroFeature>
-            </FadeIn>
+            </Reveal>
           </div>
 
           <figure className="spx-corp-media spx-corp-hero__media">
@@ -146,6 +154,14 @@ function CorporateTraining({ dict, locale }) {
               alt="Team practicing communication"
               loading="eager"
             />
+            <div className="spx-corp-hero__insight spx-corp-hero__insight--score">
+              <span>Team confidence</span>
+              <strong>+32%</strong>
+            </div>
+            <div className="spx-corp-hero__insight spx-corp-hero__insight--pulse">
+              <span></span>
+              Live cohort plan
+            </div>
             <div className="spx-corp-hero__media-badge">
               <span className="spx-corp-hero__media-badge-icon" aria-hidden="true">
                 <svg width="18" height="14" viewBox="0 0 18 14" fill="none" aria-hidden="true">
@@ -164,13 +180,12 @@ function CorporateTraining({ dict, locale }) {
       {/* LOGOS */}
       <section className="spx-corp__section spx-corp-logos">
         <div className="spx-corp__container">
-          <FadeIn as="p" className="spx-corp-logos__title">{t(dict, "logos_title")}</FadeIn>
+          <Reveal as="p" className="spx-corp-logos__title">{t(dict, "logos_title")}</Reveal>
           <div className="spx-corp-logos__row">
-            <Logo src="/logos/slack.svg" alt="Slack" />
-            <Logo src="/logos/notion.svg" alt="Notion" />
-            <Logo src="/logos/zoom.svg" alt="Zoom" />
-            <Logo src="/logos/hubspot.svg" alt="HubSpot" />
-            <Logo src="/logos/ibm.svg" alt="IBM" />
+            <ProofSignal label="Sales teams" value="Client calls" />
+            <ProofSignal label="Customer success" value="Renewal conversations" />
+            <ProofSignal label="Engineering" value="Stakeholder updates" />
+            <ProofSignal label="Leadership" value="Board-ready reporting" />
           </div>
         </div>
       </section>
@@ -325,6 +340,11 @@ function CorporateTraining({ dict, locale }) {
               />
               <div className="spx-corp-reporting__overlay"></div>
             </figure>
+            <div className="spx-corp-reporting__proof">
+              <span><strong>75%</strong> completion view</span>
+              <span><strong>4</strong> risk signals</span>
+              <span><strong>QBR</strong> ready summaries</span>
+            </div>
           </div>
         </div>
       </section>
@@ -343,6 +363,7 @@ function CorporateTraining({ dict, locale }) {
               role={t(dict, "testi1_role")}
               avatar="/images/head-of-cs.avif"
               rating={5}
+              outcome="ROI clear in 6 weeks"
             />
             <Testi
               quote={t(dict, "testi2_quote")}
@@ -350,6 +371,7 @@ function CorporateTraining({ dict, locale }) {
               role={t(dict, "testi2_role")}
               avatar="/images/l&d-manager.avif"
               rating={5}
+              outcome="Stakeholder confidence"
             />
             <Testi
               quote={t(dict, "testi3_quote")}
@@ -357,6 +379,7 @@ function CorporateTraining({ dict, locale }) {
               role={t(dict, "testi3_role")}
               avatar="/images/global-ops.avif"
               rating={5}
+              outcome="Pilot expanded"
             />
           </div>
         </div>
@@ -366,11 +389,19 @@ function CorporateTraining({ dict, locale }) {
       <section id="rfp" className="spx-corp__section spx-corp-rfp">
         <div className="spx-corp__container">
           <div className="spx-corp-rfp__card">
-            <SectionHead
-              title={t(dict, "rfp_title")}
-              subtitle={t(dict, "rfp_subtitle")}
-            />
-            <form ref={formRef} onSubmit={submit} className="spx-corp-form">
+            <aside className="spx-corp-rfp__trust">
+              <span className="spx-corp-rfp__eyebrow">Proposal request</span>
+              <h2>{t(dict, "rfp_title")}</h2>
+              <p>{t(dict, "rfp_subtitle")}</p>
+              <ul>
+                <li>Response within one business day</li>
+                <li>Program recommendation by team size</li>
+                <li>Security and roster questions handled early</li>
+              </ul>
+            </aside>
+
+            <div className="spx-corp-rfp__form-panel">
+            <form ref={formRef} onSubmit={submit} className={`spx-corp-form ${statusTone === "error" ? "has-error" : ""}`}>
               <div className="spx-corp-form__row spx-corp-form__row--2">
                 <Field label={t(dict, "field_company")}>
                   <input
@@ -477,9 +508,10 @@ function CorporateTraining({ dict, locale }) {
                     ? t(dict, "sending")
                     : t(dict, "btn_request_proposal")}
                 </button>
-                {status && <span className="spx-corp-status">{status}</span>}
+                {status && <span className={`spx-corp-status ${statusTone}`}>{status}</span>}
               </div>
             </form>
+            </div>
           </div>
         </div>
       </section>
@@ -498,6 +530,11 @@ function CorporateTraining({ dict, locale }) {
           <div className="spx-corp-cta__content">
             <h2 className="spx-corp-cta__title">{t(dict, "cta_title")}</h2>
             <p className="spx-corp-cta__subtitle">{t(dict, "cta_subtitle")}</p>
+            <div className="spx-corp-cta__proof">
+              <span>Proposal</span>
+              <span>Coach matching</span>
+              <span>Reporting plan</span>
+            </div>
           </div>
           <div className="spx-corp-cta__actions">
             <a
@@ -545,10 +582,11 @@ function HeroFeature({ children }) {
   );
 }
 
-function Logo({ src, alt }) {
+function ProofSignal({ label, value }) {
   return (
     <div className="spx-corp-logos__item">
-      <img src={src} alt={alt} loading="lazy" />
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
@@ -556,8 +594,8 @@ function Logo({ src, alt }) {
 function SectionHead({ title, subtitle }) {
   return (
     <div className="spx-corp-section-head">
-      <FadeIn as="h2" className="spx-corp-section-title">{title}</FadeIn>
-      <FadeIn as="p" className="spx-corp-section-sub" delay={0.1}>{subtitle}</FadeIn>
+      <Reveal as="h2" className="spx-corp-section-title">{title}</Reveal>
+      <Reveal as="p" className="spx-corp-section-sub" delay={0.1}>{subtitle}</Reveal>
     </div>
   );
 }
@@ -641,7 +679,7 @@ function Plan({
   );
 }
 
-function Testi({ quote, by, role, avatar, rating }) {
+function Testi({ quote, by, role, avatar, rating, outcome }) {
   return (
     <div className="spx-corp-card spx-corp-testi">
       <div className="spx-corp-testi__header">
@@ -662,6 +700,7 @@ function Testi({ quote, by, role, avatar, rating }) {
           ))}
         </div>
       </div>
+      <span className="spx-corp-testi__outcome">{outcome}</span>
       <blockquote className="spx-corp-testi__quote">
         {quote}
       </blockquote>

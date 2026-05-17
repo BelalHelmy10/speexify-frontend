@@ -5,11 +5,11 @@ export const landingPages = {
     en: {
       path: "/english-speaking-coach-egypt",
       eyebrow: "English speaking coach in Egypt",
-      title: "Speak English with a real coach, not another passive course.",
+      title: "Your English should match your ambition. We make sure it does.",
       subtitle:
-        "Speexify gives learners in Egypt live 1-on-1 English speaking coaching focused on confidence, fluency, pronunciation, and real conversations.",
-      primaryCta: "Start speaking",
-      secondaryCta: "View packages",
+        "1-on-1 coaching with expert coaches who turn what you already know into real confidence — for interviews, meetings, and every moment that matters.",
+      primaryCta: "Claim your spot",
+      secondaryCta: "See what's inside",
       proof: ["Live 1-on-1 sessions", "Arabic-aware coaching", "Clear speaking goals"],
       sections: [
         {
@@ -157,11 +157,11 @@ export const landingPages = {
     en: {
       path: "/online-english-conversation-practice",
       eyebrow: "Online English conversation practice",
-      title: "Practice English conversation online with structure and feedback.",
+      title: "Stop practising alone. Start speaking with someone who gets it.",
       subtitle:
-        "Speexify gives you live conversation practice with a coach who corrects, guides, and helps you speak naturally.",
-      primaryCta: "Practice online",
-      secondaryCta: "Compare packages",
+        "Live conversation practice with a coach who corrects, guides, and helps you sound like yourself — in English.",
+      primaryCta: "Claim your spot",
+      secondaryCta: "See what's inside",
       proof: ["Real conversations", "Coach feedback", "Flexible online sessions"],
       sections: [
         {

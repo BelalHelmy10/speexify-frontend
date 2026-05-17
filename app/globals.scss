@@ -24,6 +24,11 @@ body {
 body.rtl {
   direction: rtl;
   text-align: right;
+  font-family: var(--font-cairo), system-ui, -apple-system, sans-serif;
+}
+
+html[lang="ar"] body {
+  font-family: var(--font-cairo), system-ui, -apple-system, sans-serif;
 }
 
 main {

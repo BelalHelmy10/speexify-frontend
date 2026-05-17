@@ -15,25 +15,26 @@ export const seoPages = {
   home: {
     path: "",
     arPath: "/ar",
-    title: "Speexify - 1-on-1 English Speaking Coaching for Professionals",
-    arTitle: "Speexify - تدريب إنجليزي فردي للمحترفين",
+    title: "Speexify — Where Ambition Meets Fluency | 1-on-1 English Coaching",
+    arTitle: "Speexify — أطلق صوتك | تدريب إنجليزي فردي",
     description:
-      "Speexify helps professionals and teams speak English with more fluency, clarity, and confidence through live personalized coaching.",
+      "1-on-1 English coaching that turns what you already know into real confidence. For interviews, meetings, and every moment that matters.",
     arDescription:
-      "تساعد Speexify المحترفين والفرق على التحدث بالإنجليزية بطلاقة ووضوح وثقة أكبر من خلال تدريب مباشر ومخصص.",
+      "تدريب إنجليزي فردي يحول ما تعرفه بالفعل إلى ثقة حقيقية — للمقابلات والاجتماعات وكل لحظة مهمة.",
     keywords: [
       "Speexify",
-      "English coaching",
-      "communication coaching",
-      "business English",
-      "professional English training",
+      "English coaching Egypt",
+      "1-on-1 English coaching",
+      "English speaking confidence",
+      "interview English coaching",
+      "business English Egypt",
     ],
     arKeywords: [
       "Speexify",
-      "تدريب انجليزي",
+      "تدريب انجليزي مصر",
       "تدريب محادثة انجليزي",
-      "انجليزي للأعمال",
-      "تدريب تواصل مهني",
+      "ثقة في التحدث بالانجليزية",
+      "تدريب انجليزي للمقابلات",
     ],
   },
   about: {
@@ -341,7 +342,7 @@ export const organizationJsonLd = {
   url: SITE_URL,
   logo: absoluteUrl("/images/speexify-logo.png"),
   description:
-    "Personalized language and communication coaching for professionals and teams.",
+    "1-on-1 English coaching that turns what you already know into real confidence. Where ambition meets fluency.",
   sameAs: [
     "https://www.linkedin.com/company/speexify/",
     "https://www.facebook.com/profile.php?id=61560942134964",
