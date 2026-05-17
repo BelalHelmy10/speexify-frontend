@@ -25,6 +25,10 @@
     padding: 60px 0 32px;
     margin-top: 80px;
   }
+
+  @media (max-width: 760px) {
+    padding-bottom: calc(112px + var(--spx-safe-bottom));
+  }
 }
 
 // FOOTER TOP
