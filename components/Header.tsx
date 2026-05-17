@@ -194,6 +194,17 @@ export default function Header() {
   }, [open]);
 
   useEffect(() => {
+    if (!open) return undefined;
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  useEffect(() => {
     if (!accountOpen) return undefined;
 
     function onPointerDown(event) {
@@ -530,6 +541,7 @@ export default function Header() {
           className={"spx-nav-toggle" + (open ? " spx-is-open" : "")}
           aria-label="Toggle menu"
           aria-expanded={open ? "true" : "false"}
+          aria-controls="spx-mobile-menu"
           onClick={() => setOpen((v) => !v)}
         >
           <span className="spx-toggle-box">
@@ -544,10 +556,14 @@ export default function Header() {
 
       {/* Mobile drawer */}
       <div
+        id="spx-mobile-menu"
         className={"spx-mobile-drawer" + (open ? " spx-is-open" : "")}
         aria-hidden={!open}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) setOpen(false);
+        }}
       >
-        <div className="spx-mobile-drawer-inner">
+        <nav className="spx-mobile-drawer-inner" aria-label="Mobile navigation">
           <ul className="spx-mobile-list">
             {links.map((item, idx) => {
               const href = localizeHref(item.to, locale);
@@ -771,7 +787,7 @@ export default function Header() {
               <LanguageSwitcher locale={locale} pathname={pathname} />
             </li>
           </ul>
-        </div>
+        </nav>
       </div>
     </header>
   );

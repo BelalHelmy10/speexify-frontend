@@ -110,6 +110,17 @@
   }
 }
 
+@media (max-width: 980px) {
+
+  body.spx-mobile-menu-open .sw-fab,
+  body.spx-mobile-menu-open .sw-panel {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px) scale(0.96);
+    visibility: hidden;
+  }
+}
+
 @keyframes sw-badge-pulse {
 
   0%,
