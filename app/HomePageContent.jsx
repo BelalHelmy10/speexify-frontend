@@ -115,20 +115,6 @@ function Home({ locale = "en" }) {
               </Link>
             </FadeIn>
 
-            <FadeIn as="div" className="home-hero__stats" delay={0.6}>
-              <div className="home-hero__stat">
-                <div className="home-hero__stat-num">{t(dict, "hero_stat1_num")}</div>
-                <div className="home-hero__stat-label">{t(dict, "hero_stat1_label")}</div>
-              </div>
-              <div className="home-hero__stat">
-                <div className="home-hero__stat-num">{t(dict, "hero_stat2_num")}</div>
-                <div className="home-hero__stat-label">{t(dict, "hero_stat2_label")}</div>
-              </div>
-              <div className="home-hero__stat">
-                <div className="home-hero__stat-num">{t(dict, "hero_stat3_num")}</div>
-                <div className="home-hero__stat-label">{t(dict, "hero_stat3_label")}</div>
-              </div>
-            </FadeIn>
           </div>
 
           <div className="home-hero__media">
@@ -167,6 +153,21 @@ function Home({ locale = "en" }) {
               </div>
             </div>
           </div>
+
+          <FadeIn as="div" className="home-hero__stats" delay={0.6}>
+            <div className="home-hero__stat">
+              <div className="home-hero__stat-num">{t(dict, "hero_stat1_num")}</div>
+              <div className="home-hero__stat-label">{t(dict, "hero_stat1_label")}</div>
+            </div>
+            <div className="home-hero__stat">
+              <div className="home-hero__stat-num">{t(dict, "hero_stat2_num")}</div>
+              <div className="home-hero__stat-label">{t(dict, "hero_stat2_label")}</div>
+            </div>
+            <div className="home-hero__stat">
+              <div className="home-hero__stat-num">{t(dict, "hero_stat3_num")}</div>
+              <div className="home-hero__stat-label">{t(dict, "hero_stat3_label")}</div>
+            </div>
+          </FadeIn>
         </div>
       </section>
 
