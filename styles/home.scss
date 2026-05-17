@@ -1601,11 +1601,13 @@ html.home-client-ready #home-ssr-fallback {
 // ========================================
 .home-compare {
   padding: 120px 0;
-  background: $navy;
+  background:
+    linear-gradient(180deg, $bg-primary 0%, $bg-soft 100%);
+  border-top: 1px solid rgba($navy, 0.08);
+  border-bottom: 1px solid rgba($navy, 0.08);
   position: relative;
   overflow: hidden;
 
-  // Soft glow top
   &::before {
     content: '';
     position: absolute;
@@ -1613,16 +1615,16 @@ html.home-client-ready #home-ssr-fallback {
     right: -80px;
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba($coral, 0.07) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba($coral, 0.12) 0%, transparent 65%);
     pointer-events: none;
   }
 
   .home-section-title {
-    color: $color-white;
+    color: $navy;
   }
 
   .home-section-subtitle {
-    color: rgba($color-white, 0.5);
+    color: $muted;
   }
 
   .home-features__eyebrow {
@@ -1638,14 +1640,15 @@ html.home-client-ready #home-ssr-fallback {
     border-collapse: separate;
     border-spacing: 0;
     margin-top: 56px;
-    border-radius: 20px;
+    border-radius: 8px;
     overflow: hidden;
-    background: rgba($color-white, 0.03);
-    border: 1px solid rgba($color-white, 0.07);
+    background: $color-white;
+    border: 1px solid rgba($navy, 0.1);
+    box-shadow: 0 20px 50px rgba($navy, 0.06);
   }
 
   &__head-row {
-    background: rgba($color-white, 0.04);
+    background: rgba($bg-soft, 0.8);
   }
 
   &__th {
@@ -1654,14 +1657,14 @@ html.home-client-ready #home-ssr-fallback {
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: rgba($color-white, 0.5);
+    color: rgba($navy, 0.52);
     text-align: left;
-    border-bottom: 1px solid rgba($color-white, 0.06);
+    border-bottom: 1px solid rgba($navy, 0.08);
 
     &--speexify {
       color: $coral;
       border-bottom-color: rgba($coral, 0.25);
-      background: rgba($coral, 0.07);
+      background: rgba($coral, 0.08);
       border-top-color: $coral;
     }
   }
@@ -1670,30 +1673,30 @@ html.home-client-ready #home-ssr-fallback {
     transition: background 0.2s ease;
 
     &:hover {
-      background: rgba($color-white, 0.028);
+      background: rgba($coral, 0.035);
     }
 
     &:not(:last-child) td {
-      border-bottom: 1px solid rgba($color-white, 0.05);
+      border-bottom: 1px solid rgba($navy, 0.07);
     }
   }
 
   &__td {
     padding: 18px 28px;
-    color: rgba($color-white, 0.65);
+    color: rgba($navy, 0.62);
     font-size: 15px;
     vertical-align: middle;
 
     &--feature {
-      color: rgba($color-white, 0.85);
+      color: $navy;
       font-weight: 600;
     }
 
     &--speexify {
-      background: rgba($coral, 0.05);
-      border-left: 2px solid rgba($coral, 0.35);
-      border-right: 2px solid rgba($coral, 0.35);
-      color: $color-white;
+      background: rgba($coral, 0.06);
+      border-left: 2px solid rgba($coral, 0.28);
+      border-right: 2px solid rgba($coral, 0.28);
+      color: $navy;
     }
   }
 
@@ -1710,7 +1713,7 @@ html.home-client-ready #home-ssr-fallback {
     }
 
     &--no {
-      color: rgba($color-white, 0.25);
+      color: rgba($navy, 0.32);
     }
 
     &--partial {
@@ -1924,12 +1927,13 @@ html.home-client-ready #home-ssr-fallback {
 // ========================================
 .home-spx-coaches {
   padding: 112px 0;
-  background: $navy;
-  border-top: none;
+  background:
+    linear-gradient(180deg, $bg-soft 0%, $bg-primary 100%);
+  border-top: 1px solid rgba($navy, 0.08);
+  border-bottom: 1px solid rgba($navy, 0.08);
   position: relative;
   overflow: hidden;
 
-  // Subtle coral glow top-left
   &::before {
     content: '';
     position: absolute;
@@ -1937,17 +1941,16 @@ html.home-client-ready #home-ssr-fallback {
     left: -80px;
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba($coral, 0.08) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba($coral, 0.11) 0%, transparent 65%);
     pointer-events: none;
   }
 
-  // Section header text on dark bg
   .home-section-title {
-    color: $color-white !important;
+    color: $navy !important;
   }
 
   .home-section-subtitle {
-    color: rgba($color-white, 0.55) !important;
+    color: $muted !important;
   }
 
   .home-features__eyebrow {
@@ -1964,8 +1967,8 @@ html.home-client-ready #home-ssr-fallback {
     gap: 0 clamp(34px, 6vw, 76px);
     position: relative;
     z-index: 1;
-    border-top: 1px solid rgba($color-white, 0.12);
-    border-bottom: 1px solid rgba($color-white, 0.12);
+    border-top: 1px solid rgba($navy, 0.12);
+    border-bottom: 1px solid rgba($navy, 0.12);
 
     @media (max-width: 900px) {
       grid-template-columns: 1fr;
@@ -2003,7 +2006,7 @@ html.home-client-ready #home-ssr-fallback {
       gap: 28px;
       padding: 40px 0;
       padding-right: clamp(24px, 5vw, 64px);
-      border-right: 1px solid rgba($color-white, 0.12);
+      border-right: 1px solid rgba($navy, 0.12);
 
       .home-spx-coaches__avatar-wrap {
         width: min(100%, 420px);
@@ -2027,7 +2030,7 @@ html.home-client-ready #home-ssr-fallback {
     }
 
     &:not(:first-child) {
-      border-bottom: 1px solid rgba($color-white, 0.12);
+      border-bottom: 1px solid rgba($navy, 0.12);
 
       &:last-child {
         border-bottom: 0;
@@ -2043,7 +2046,7 @@ html.home-client-ready #home-ssr-fallback {
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.14em;
-    color: rgba($color-white, 0.34);
+    color: rgba($navy, 0.32);
   }
 
   &__avatar-wrap {
@@ -2056,12 +2059,12 @@ html.home-client-ready #home-ssr-fallback {
     height: 116px;
     border-radius: 4px;
     object-fit: cover;
-    border: 1px solid rgba($color-white, 0.14);
-    box-shadow: 0 8px 24px rgba($color-black, 0.3);
+    border: 1px solid rgba($navy, 0.12);
+    box-shadow: 0 14px 34px rgba($navy, 0.12);
     transition: transform 0.4s ease;
     position: relative;
     z-index: 1;
-    background: $navy-muted;
+    background: $bg-soft;
   }
 
   &__avatar-ring {
@@ -2080,7 +2083,7 @@ html.home-client-ready #home-ssr-fallback {
       font-size: 26px;
       font-weight: 850;
       letter-spacing: 0;
-      color: $color-white;
+      color: $navy;
     }
   }
 
@@ -2094,14 +2097,14 @@ html.home-client-ready #home-ssr-fallback {
 
   &__bio {
     margin: 0;
-    color: rgba($color-white, 0.5);
+    color: $muted;
     line-height: 1.65;
     font-size: 15px;
   }
 
   &__note {
     text-align: center;
-    color: rgba($color-white, 0.35);
+    color: rgba($navy, 0.48);
     margin: 48px 0 0;
     font-size: 15px;
     font-style: italic;
@@ -2121,7 +2124,7 @@ html.home-client-ready #home-ssr-fallback {
       padding: 28px 0;
       padding-right: 0;
       border-right: 0;
-      border-bottom: 1px solid rgba($color-white, 0.12);
+      border-bottom: 1px solid rgba($navy, 0.12);
     }
 
     &__card:first-child .home-spx-coaches__avatar-wrap {
