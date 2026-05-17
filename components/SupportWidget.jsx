@@ -222,7 +222,7 @@ const ImageLightbox = memo(({ imageUrl, fileName, onClose }) => {
 
 ImageLightbox.displayName = "ImageLightbox";
 
-export default function SupportWidget() {
+export default function SupportWidget({ hideMobileFab = false }) {
   const pathname = usePathname();
 
   // Hide support widget in focused workspaces.
@@ -823,7 +823,7 @@ export default function SupportWidget() {
     <>
       {/* FIXED: FAB Button with proper toggle */}
       <button
-        className="sw-fab"
+        className={`sw-fab${hideMobileFab ? " sw-fab--hide-mobile" : ""}`}
         onClick={toggleWidget}
         aria-label={open ? "Close support" : "Contact support"}
       >

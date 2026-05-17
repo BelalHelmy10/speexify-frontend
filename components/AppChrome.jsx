@@ -52,6 +52,7 @@ export default function AppChrome({ children }) {
   const focusedWorkspace = isFocusedWorkspace(pathname);
   const appPath = isAppPath(pathname);
   const showSiteChrome = !focusedWorkspace;
+  const homePath = normalizeLocalizedPath(pathname) === "/";
 
   return (
     <>
@@ -69,7 +70,7 @@ export default function AppChrome({ children }) {
         <main>{children}</main>
       </Suspense>
       {showSiteChrome && <Footer />}
-      {showSiteChrome && <SupportWidget />}
+      {showSiteChrome && <SupportWidget hideMobileFab={homePath} />}
       {showSiteChrome && <ScrollToTop />}
     </>
   );

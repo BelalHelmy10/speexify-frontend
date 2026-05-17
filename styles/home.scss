@@ -1723,43 +1723,73 @@ html.home-client-ready #home-ssr-fallback {
 // CURRICULUM
 // ========================================
 .home-spx-curriculum {
-  padding: 100px 0;
-  background: $bg-primary;
+  padding: 112px 0;
+  background:
+    linear-gradient(180deg, $bg-primary 0%, $bg 100%);
+  counter-reset: curriculum;
 
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
+  .home-section-header {
+    text-align: left;
+    max-width: 760px;
+    margin-left: 0;
 
-    @media (max-width: 980px) {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    @media (max-width: 560px) {
-      grid-template-columns: 1fr;
+    @media (max-width: 700px) {
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
     }
   }
 
+  .home-section-subtitle {
+    margin-left: 0;
+
+    @media (max-width: 700px) {
+      margin-left: auto;
+    }
+  }
+
+  &__grid {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid rgba($navy, 0.14);
+    border-bottom: 1px solid rgba($navy, 0.14);
+  }
+
   &__card {
-    border: 1px solid $ring;
-    border-radius: 20px;
-    overflow: hidden;
-    background: $card-bg;
+    counter-increment: curriculum;
+    border: 0;
+    border-radius: 0;
+    border-bottom: 1px solid rgba($navy, 0.12);
+    overflow: visible;
+    background: transparent;
     display: grid;
-    grid-template-rows: auto 1fr;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    grid-template-columns: 72px minmax(170px, 280px) minmax(0, 1fr);
+    gap: clamp(20px, 4vw, 52px);
+    align-items: center;
+    min-height: 190px;
+    padding: 26px 0;
+    transition: background 0.3s ease, padding 0.3s ease;
     position: relative;
 
+    &:last-child {
+      border-bottom: 0;
+    }
+
     &:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba($color-black, 0.1);
+      background: rgba($color-white, 0.56);
+      padding-left: 18px;
+      padding-right: 18px;
 
       .home-spx-curriculum__thumb img {
-        transform: scale(1.1);
+        transform: scale(1.06);
       }
 
       .home-spx-curriculum__overlay {
-        opacity: 0.3;
+        opacity: 0.16;
+      }
+
+      .home-spx-curriculum__index {
+        color: $coral;
       }
     }
 
@@ -1780,10 +1810,29 @@ html.home-client-ready #home-ssr-fallback {
     }
   }
 
+  &__index {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    font-family: $font-heading;
+    font-size: 64px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0;
+    color: rgba($navy, 0.18);
+    transition: color 0.3s ease;
+
+    &::before {
+      content: counter(curriculum, decimal-leading-zero);
+    }
+  }
+
   &__thumb {
     position: relative;
     overflow: hidden;
-    height: 180px;
+    height: 136px;
+    border-radius: 999px;
+    box-shadow: 0 14px 32px rgba($navy, 0.12);
 
     img {
       display: block;
@@ -1802,32 +1851,79 @@ html.home-client-ready #home-ssr-fallback {
   }
 
   &__content {
-    padding: 20px;
+    padding: 0;
 
     h3 {
-      margin: 0 0 10px;
-      font-size: 20px;
-      font-weight: 700;
+      margin: 0 0 12px;
+      font-family: $font-heading;
+      font-size: 34px;
+      font-weight: 850;
+      line-height: 1.05;
+      letter-spacing: 0;
+      color: $navy;
     }
 
     p {
       margin: 0;
       color: $muted;
-      line-height: 1.6;
+      line-height: 1.7;
+      font-size: 16px;
+      max-width: 560px;
     }
   }
 
   &__more {
-    text-align: center;
+    text-align: left;
     margin-top: 48px;
+  }
+
+  @media (max-width: 760px) {
+    padding: 80px 0;
+
+    &__card {
+      grid-template-columns: 56px 1fr;
+      gap: 16px 20px;
+      min-height: auto;
+      padding: 22px 0;
+
+      &:hover {
+        padding-left: 0;
+        padding-right: 0;
+      }
+    }
+
+    &__thumb {
+      grid-column: 2;
+      height: 176px;
+      border-radius: 18px;
+    }
+
+    &__content {
+      grid-column: 2;
+
+      h3 {
+        font-size: 26px;
+      }
+    }
+
+    &__index {
+      grid-row: 1 / span 2;
+      align-items: flex-start;
+      padding-top: 4px;
+      font-size: 36px;
+    }
+
+    &__more {
+      text-align: center;
+    }
   }
 }
 
 // ========================================
-// COACHES — DARK NAVY SECTION
+// COACHES - EDITORIAL ROSTER
 // ========================================
 .home-spx-coaches {
-  padding: 100px 0;
+  padding: 112px 0;
   background: $navy;
   border-top: none;
   position: relative;
@@ -1864,10 +1960,12 @@ html.home-client-ready #home-ssr-fallback {
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 28px;
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+    gap: 0 clamp(34px, 6vw, 76px);
     position: relative;
     z-index: 1;
+    border-top: 1px solid rgba($color-white, 0.12);
+    border-bottom: 1px solid rgba($color-white, 0.12);
 
     @media (max-width: 900px) {
       grid-template-columns: 1fr;
@@ -1875,43 +1973,90 @@ html.home-client-ready #home-ssr-fallback {
   }
 
   &__card {
-    background: $navy-mid;
-    border: 1px solid rgba($color-white, 0.06);
-    border-radius: 20px;
-    padding: 36px 32px;
-    display: flex;
-    flex-direction: column;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 32px 0;
+    position: relative;
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 20px;
     align-items: center;
-    text-align: center;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    transition: opacity 0.3s ease;
 
     &:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 24px 48px rgba($color-black, 0.4), 0 0 0 1px rgba($coral, 0.15);
-      background: $navy-muted;
+      opacity: 0.92;
 
       .home-spx-coaches__avatar-ring {
         opacity: 1;
-        animation: pulse-ring 1.5s ease-out infinite;
       }
 
       .home-spx-coaches__avatar {
         transform: scale(1.05);
       }
     }
+
+    &:first-child {
+      grid-row: span 2;
+      grid-template-columns: 1fr;
+      gap: 28px;
+      padding: 40px 0;
+      padding-right: clamp(24px, 5vw, 64px);
+      border-right: 1px solid rgba($color-white, 0.12);
+
+      .home-spx-coaches__avatar-wrap {
+        width: min(100%, 420px);
+      }
+
+      .home-spx-coaches__avatar {
+        width: 100%;
+        height: clamp(320px, 44vw, 520px);
+        border-radius: 4px;
+      }
+
+      .home-spx-coaches__info h3 {
+        font-size: 52px;
+        letter-spacing: 0;
+      }
+
+      .home-spx-coaches__bio {
+        max-width: 520px;
+        font-size: 17px;
+      }
+    }
+
+    &:not(:first-child) {
+      border-bottom: 1px solid rgba($color-white, 0.12);
+
+      &:last-child {
+        border-bottom: 0;
+      }
+    }
+  }
+
+  &__index {
+    position: absolute;
+    top: 34px;
+    right: 0;
+    font-family: $font-heading;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: rgba($color-white, 0.34);
   }
 
   &__avatar-wrap {
     position: relative;
-    margin-bottom: 20px;
+    margin-bottom: 0;
   }
 
   &__avatar {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
+    width: 92px;
+    height: 116px;
+    border-radius: 4px;
     object-fit: cover;
-    border: 3px solid rgba($color-white, 0.1);
+    border: 1px solid rgba($color-white, 0.14);
     box-shadow: 0 8px 24px rgba($color-black, 0.3);
     transition: transform 0.4s ease;
     position: relative;
@@ -1921,9 +2066,9 @@ html.home-client-ready #home-ssr-fallback {
 
   &__avatar-ring {
     position: absolute;
-    inset: -5px;
-    border-radius: 50%;
-    border: 2px solid $coral;
+    inset: -7px;
+    border-radius: 6px;
+    border: 1px solid rgba($coral, 0.8);
     opacity: 0;
     transition: opacity 0.3s ease;
   }
@@ -1931,8 +2076,10 @@ html.home-client-ready #home-ssr-fallback {
   &__info {
     h3 {
       margin: 0 0 6px;
-      font-size: 20px;
-      font-weight: 700;
+      font-family: $font-heading;
+      font-size: 26px;
+      font-weight: 850;
+      letter-spacing: 0;
       color: $color-white;
     }
   }
@@ -1961,37 +2108,81 @@ html.home-client-ready #home-ssr-fallback {
     position: relative;
     z-index: 1;
   }
+
+  @media (max-width: 900px) {
+    &__grid {
+      gap: 0;
+    }
+
+    &__card,
+    &__card:first-child {
+      grid-template-columns: 86px 1fr;
+      gap: 18px;
+      padding: 28px 0;
+      padding-right: 0;
+      border-right: 0;
+      border-bottom: 1px solid rgba($color-white, 0.12);
+    }
+
+    &__card:first-child .home-spx-coaches__avatar-wrap {
+      width: auto;
+    }
+
+    &__card:first-child .home-spx-coaches__avatar,
+    &__avatar {
+      width: 86px;
+      height: 108px;
+      border-radius: 4px;
+    }
+
+    &__card:first-child .home-spx-coaches__info h3,
+    &__info h3 {
+      font-size: 24px;
+    }
+
+    &__index {
+      display: none;
+    }
+  }
 }
 
 // ========================================
-// CASE STUDIES
+// CASE STUDIES - IMPACT LEDGER
 // ========================================
 .home-spx-cases {
-  padding: 100px 0;
-  background: $bg-primary;
+  padding: 112px 0;
+  background: $ink;
+  color: $color-white;
+
+  .home-section-title {
+    color: $color-white;
+  }
+
+  .home-section-subtitle {
+    color: rgba($color-white, 0.58);
+  }
 
   &__grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
-
-    @media (max-width: 900px) {
-      grid-template-columns: 1fr;
-    }
+    display: block;
+    border-top: 1px solid rgba($color-white, 0.14);
   }
 
   &__card {
-    border: 1px solid $ring;
-    border-radius: 20px;
-    padding: 32px;
-    background: linear-gradient(135deg, $bg-primary 0%, $bg-soft 100%);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 0;
+    border-bottom: 1px solid rgba($color-white, 0.14);
+    border-radius: 0;
+    padding: 34px 0;
+    background: transparent;
+    display: grid;
+    grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) minmax(140px, 210px);
+    gap: clamp(22px, 4vw, 54px);
+    align-items: center;
+    transition: padding 0.3s ease, background 0.3s ease;
 
     &:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba($coral, 0.15);
-      border-color: rgba($coral, 0.3);
-      background: $bg-primary;
+      padding-left: 18px;
+      padding-right: 18px;
+      background: rgba($color-white, 0.04);
 
       .home-spx-cases__metric-num {
         color: $coral;
@@ -2000,15 +2191,12 @@ html.home-client-ready #home-ssr-fallback {
   }
 
   &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 24px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid $ring;
+    display: contents;
   }
 
   &__logo {
+    grid-column: 1;
+
     img {
       height: 32px;
       width: auto;
@@ -2016,6 +2204,7 @@ html.home-client-ready #home-ssr-fallback {
       filter: grayscale(1);
       opacity: 0.7;
       transition: all 0.3s ease;
+      filter: grayscale(1) brightness(0) invert(1);
     }
   }
 
@@ -2026,40 +2215,77 @@ html.home-client-ready #home-ssr-fallback {
 
   &__metric {
     text-align: right;
+    grid-column: 3;
   }
 
   &__metric-num {
-    font-size: 32px;
+    font-family: $font-heading;
+    font-size: 56px;
     font-weight: 800;
-    color: $brand-ink;
+    letter-spacing: 0;
+    color: $color-white;
     transition: all 0.4s ease;
   }
 
   &__metric-label {
     font-size: 13px;
-    color: $muted;
+    color: rgba($color-white, 0.48);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
   &__content {
+    grid-column: 2;
+
     h3 {
       margin: 0 0 12px;
-      font-size: 20px;
-      font-weight: 700;
+      font-family: $font-heading;
+      font-size: 34px;
+      font-weight: 850;
+      letter-spacing: 0;
+      color: $color-white;
     }
 
     p {
       margin: 0;
-      color: $muted;
-      line-height: 1.6;
+      color: rgba($color-white, 0.62);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+  }
+
+  @media (max-width: 760px) {
+    padding: 96px 0 104px;
+
+    &__card {
+      grid-template-columns: 1fr;
+      gap: 18px;
+      border-radius: 0;
+
+      &:hover {
+        padding-left: 0;
+        padding-right: 0;
+      }
+    }
+
+    &__metric-num {
+      font-size: 48px;
+    }
+
+    &__content h3 {
+      font-size: 28px;
+    }
+
+    &__metric {
+      grid-column: auto;
+      text-align: left;
     }
   }
 }
 
 // ========================================
-// TESTIMONIALS — SCROLL SNAP CAROUSEL
+// TESTIMONIALS - SCROLL SNAP CAROUSEL
 // ========================================
 .home-testimonials {
   padding: 100px 0;
@@ -2175,23 +2401,23 @@ html.home-client-ready #home-ssr-fallback {
 }
 
 .home-quote {
-  background: $card-bg;
-  border: 1px solid $ring;
-  border-radius: 20px;
-  padding: 32px;
+  background: transparent;
+  border: 0;
+  border-left: 3px solid rgba($coral, 0.34);
+  border-radius: 0;
+  padding: 8px 36px 8px 28px;
   color: $ink;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: border-color 0.3s ease, transform 0.3s ease;
   position: relative;
 
   // Carousel card sizing
-  min-width: min(380px, 85vw);
+  min-width: min(520px, 86vw);
   scroll-snap-align: start;
   flex-shrink: 0;
 
   &:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 36px rgba($coral, 0.12);
-    border-color: rgba($coral, 0.25);
+    transform: translateY(-3px);
+    border-color: $coral;
   }
 
   &__top {
@@ -2221,8 +2447,10 @@ html.home-client-ready #home-ssr-fallback {
 
   blockquote {
     margin: 0 0 20px;
-    font-size: 17px;
-    line-height: 1.6;
+    font-family: $font-heading;
+    font-size: 32px;
+    line-height: 1.26;
+    letter-spacing: 0;
   }
 
   figcaption {
@@ -2247,41 +2475,60 @@ html.home-client-ready #home-ssr-fallback {
 // FAQ
 // ========================================
 .home-spx-faq {
-  padding: 100px 0;
-  background: $surface;
+  padding: 112px 0;
+  background: $bg-primary;
   border-top: 1px solid $ring;
   border-bottom: 1px solid $ring;
+  counter-reset: faq;
 
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+  .home-section-header {
+    text-align: left;
+    max-width: 760px;
+    margin-left: 0;
 
-    @media (max-width: 900px) {
-      grid-template-columns: 1fr;
+    @media (max-width: 700px) {
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
     }
   }
 
+  .home-section-subtitle {
+    margin-left: 0;
+
+    @media (max-width: 700px) {
+      margin-left: auto;
+    }
+  }
+
+  &__grid {
+    display: block;
+    border-top: 1px solid rgba($navy, 0.14);
+  }
+
   &__item {
-    background: $card-bg;
-    border: 1px solid $ring;
-    border-radius: 16px;
-    padding: 24px;
-    transition: all 0.3s ease;
+    counter-increment: faq;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba($navy, 0.14);
+    border-radius: 0;
+    padding: 0;
+    transition: background 0.3s ease;
 
     &:hover {
-      border-color: rgba($brand, 0.3);
-      box-shadow: 0 4px 12px rgba($brand, 0.1);
+      background: rgba($color-white, 0.58);
     }
 
     summary {
       cursor: pointer;
-      font-weight: 700;
-      font-size: 17px;
+      font-family: $font-heading;
+      font-weight: 800;
+      font-size: 28px;
+      letter-spacing: 0;
       outline: none;
       list-style: none;
       position: relative;
-      padding-right: 32px;
+      padding: 28px 64px 28px 72px;
       transition: color 0.3s ease;
 
       &::-webkit-details-marker {
@@ -2294,6 +2541,18 @@ html.home-client-ready #home-ssr-fallback {
 
       &:hover {
         color: $brand;
+      }
+
+      &::before {
+        content: counter(faq, decimal-leading-zero);
+        position: absolute;
+        left: 0;
+        top: 34px;
+        font-family: $font-main;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        color: rgba($navy, 0.32);
       }
     }
 
@@ -2322,9 +2581,26 @@ html.home-client-ready #home-ssr-fallback {
     }
 
     p {
-      margin: 20px 0 0;
+      margin: -8px 64px 30px 72px;
       color: $muted;
-      line-height: 1.6;
+      line-height: 1.7;
+      font-size: 16px;
+      max-width: 720px;
+    }
+
+    @media (max-width: 640px) {
+      summary {
+        font-size: 24px;
+        padding: 22px 44px 22px 48px;
+
+        &::before {
+          top: 27px;
+        }
+      }
+
+      p {
+        margin: -4px 44px 24px 48px;
+      }
     }
   }
 }

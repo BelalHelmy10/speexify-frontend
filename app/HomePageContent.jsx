@@ -218,8 +218,8 @@ function Home({ locale = "en" }) {
       <section className="home-spx-curriculum">
         <div className="home-container">
           <div className="home-section-header">
-            <FadeIn as="h2" className="home-section-title">{t(dict, "curr_title")}</FadeIn>
-            <FadeIn as="p" className="home-section-subtitle" delay={0.1}>{t(dict, "curr_subtitle")}</FadeIn>
+            <FadeIn as="h2" className="home-section-title" blur={false}>{t(dict, "curr_title")}</FadeIn>
+            <FadeIn as="p" className="home-section-subtitle" delay={0.1} blur={false}>{t(dict, "curr_subtitle")}</FadeIn>
           </div>
 
           <div className="home-spx-curriculum__grid">
@@ -712,6 +712,7 @@ function CurriculumCard({ title, desc, img, color }) {
     <article
       className={`home-spx-curriculum__card home-spx-curriculum__card--${color}`}
     >
+      <span className="home-spx-curriculum__index" aria-hidden="true"></span>
       <div className="home-spx-curriculum__thumb">
         <Image src={img} alt="" width={800} height={600} style={{ objectFit: "cover" }} />
         <div className="home-spx-curriculum__overlay"></div>
@@ -726,7 +727,10 @@ function CurriculumCard({ title, desc, img, color }) {
 
 function CoachCard({ name, role, bio, img, index = 0 }) {
   return (
-    <div className="home-spx-coaches__card" data-reveal style={{ "--reveal-delay": index * 120 }}>
+    <div className="home-spx-coaches__card">
+      <span className="home-spx-coaches__index" aria-hidden="true">
+        0{index + 1}
+      </span>
       <div className="home-spx-coaches__avatar-wrap">
         <Image className="home-spx-coaches__avatar" src={img} alt={name} width={150} height={150} style={{ objectFit: "cover" }} />
         <div className="home-spx-coaches__avatar-ring"></div>
@@ -806,10 +810,10 @@ function TestimonialsCarousel({ dict }) {
       <div className="home-container">
         <div className="home-testimonials__header-row">
           <div className="home-testimonials__header">
-            <FadeIn as="h2" className="home-section-title">
+            <FadeIn as="h2" className="home-section-title" blur={false}>
               {t(dict, "testimonials_title")}
             </FadeIn>
-            <FadeIn as="p" className="home-section-subtitle" delay={0.1}>
+            <FadeIn as="p" className="home-section-subtitle" delay={0.1} blur={false}>
               {t(dict, "testimonials_subtitle")}
             </FadeIn>
           </div>
