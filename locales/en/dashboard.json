@@ -125,5 +125,15 @@
   "session_starts_in": "Starts in",
   "session_canceled_success": "The session has been canceled successfully.",
   "success_saved": "Done.",
-  "session_left_success": "You left the session."
+  "session_left_success": "You left the session.",
+
+  "feedback_title": "Teacher feedback",
+  "feedback_count_one": "1 note",
+  "feedback_count_other": "{count} notes",
+  "feedback_new_badge": "New",
+  "feedback_empty_title": "No feedback yet",
+  "feedback_empty_body": "Once your teacher leaves feedback, it will appear here.",
+  "feedback_from_teacher": "From {name}",
+  "feedback_read_more": "Read more",
+  "feedback_view_all": "View all feedback"
 }

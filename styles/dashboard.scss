@@ -1334,5 +1334,586 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   FEEDBACK PANEL — Learner Dashboard
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dashboard .panel--feedback {
+  background: linear-gradient(135deg, $card-bg 0%, #fdf8f6 100%);
+  border: 1px solid rgba($coral, 0.12);
+
+  &::before {
+    background: linear-gradient(90deg, $coral 0%, $coral-light 100%);
+    opacity: 1;
+  }
+
+  .panel__head {
+    margin-bottom: 16px;
+  }
+}
+
+.dashboard .panel--feedback-empty {
+  &::before {
+    opacity: 0.6;
+  }
+}
+
+.dashboard .panel--feedback-loading {
+  &::before {
+    background: linear-gradient(90deg, $border 0%, $ring 100%);
+  }
+}
+
+// ── Highlight card (latest feedback) ──
+.feedback-highlight {
+  padding: 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, $color-white 0%, $coral-pale 100%);
+  border: 1px solid rgba($coral, 0.14);
+  box-shadow: 0 4px 16px rgba($coral, 0.08);
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: -30%;
+    right: -8%;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: rgba($coral, 0.04);
+    pointer-events: none;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, $coral 0%, $coral-dark 100%);
+    color: $color-white;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba($coral, 0.22);
+    position: relative;
+    z-index: 1;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__teacher {
+    font-size: 13px;
+    font-weight: 600;
+    color: $coral-dark;
+  }
+
+  &__date {
+    font-size: 12px;
+    color: $text-muted;
+  }
+
+  &__title {
+    margin: 0 0 8px;
+    font-size: 17px;
+    font-weight: 700;
+    color: $navy;
+    letter-spacing: -0.01em;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__preview {
+    margin: 0 0 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: $text-secondary;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__actions {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// ── Mini list of older feedback ──
+.feedback-mini-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.feedback-mini-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: $color-white;
+  border: 1px solid rgba($border, 0.6);
+  text-decoration: none !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    transform: translateX(4px);
+    border-color: rgba($coral, 0.3);
+    box-shadow: 0 4px 12px rgba($coral, 0.08);
+
+    svg {
+      transform: translateX(2px);
+    }
+  }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: $coral;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba($coral, 0.12);
+  }
+
+  &__content {
+    flex: 1;
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__date {
+    font-size: 12px;
+    color: $text-muted;
+  }
+
+  svg {
+    flex-shrink: 0;
+    color: $text-muted;
+    transition: transform 0.2s ease;
+  }
+}
+
+// ── Empty state inside panel ──
+.feedback-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  text-align: center;
+  color: $text-muted;
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, $coral-pale 0%, $color-white 100%);
+    color: $coral;
+    margin-bottom: 14px;
+    border: 1px solid rgba($coral, 0.12);
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  p {
+    margin: 0 0 4px;
+    font-size: 15px;
+    color: $text-secondary;
+    font-weight: 500;
+  }
+
+  &__sub {
+    font-size: 13px !important;
+    color: $text-muted !important;
+    font-weight: 400 !important;
+    max-width: 280px;
+  }
+
+  &--compact {
+    padding: 24px 16px;
+  }
+}
+
+// ── Skeleton loading ──
+.feedback-skeleton {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, $surface 25%, $color-white 50%, $surface 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FEEDBACK HISTORY PAGE — /dashboard/feedback
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-feedback {
+  animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  padding-top: 2.5rem;
+  padding-bottom: 3rem;
+
+  &__inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  &__back {
+    margin-bottom: 20px;
+    color: $text-secondary;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, $coral-pale 0%, $color-white 100%);
+    color: $coral-dark;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    border: 1px solid rgba($coral, 0.15);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: $font-heading;
+    font-size: clamp(28px, 3.5vw, 40px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: $ink;
+  }
+
+  &__subtitle {
+    margin: 6px 0 0;
+    font-size: 15px;
+    color: $text-secondary;
+    font-weight: 400;
+  }
+
+  &__header-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    color: $coral;
+    background: linear-gradient(135deg, $coral-pale 0%, $color-white 100%);
+    border: 1px solid rgba($coral, 0.14);
+    box-shadow: 0 8px 24px rgba($coral, 0.12);
+    flex-shrink: 0;
+
+    svg {
+      width: 32px;
+      height: 32px;
+    }
+  }
+
+  &__alert {
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: $error-bg;
+    color: $error;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    border: 1px solid rgba($error, 0.12);
+  }
+
+  &__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 20px;
+    color: $text-muted;
+    gap: 14px;
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 20px;
+    text-align: center;
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      font-weight: 700;
+      color: $text-primary;
+    }
+
+    p {
+      margin: 0 0 20px;
+      font-size: 14px;
+      color: $text-secondary;
+      max-width: 320px;
+    }
+  }
+
+  &__empty-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 24px;
+    background: linear-gradient(135deg, $coral-pale 0%, $color-white 100%);
+    color: $coral;
+    margin-bottom: 20px;
+    border: 1px solid rgba($coral, 0.12);
+    box-shadow: 0 8px 24px rgba($coral, 0.08);
+
+    svg {
+      width: 36px;
+      height: 36px;
+    }
+  }
+}
+
+// ── Feedback cards ──
+.fb-list {
+  display: grid;
+  gap: 20px;
+}
+
+.fb-card {
+  padding: 24px;
+  border-radius: 18px;
+  background: $card-bg;
+  border: 1px solid rgba($border, 0.7);
+  box-shadow: 0 1px 3px rgba($color-black, 0.03), 0 10px 40px rgba($color-black, 0.04);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, $coral 0%, $coral-light 50%, $color-secondary-light 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba($color-black, 0.05), 0 20px 60px rgba($color-black, 0.08);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  &__meta {
+    flex: 1;
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__teacher {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  &__date {
+    font-size: 12px;
+    color: $text-muted;
+  }
+
+  &__link {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  &__title {
+    margin: 0 0 16px;
+    font-size: 18px;
+    font-weight: 700;
+    color: $navy;
+    letter-spacing: -0.01em;
+  }
+
+  &__body {
+    display: grid;
+    gap: 16px;
+  }
+
+  &__section {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, $bg-soft 0%, $surface 100%);
+    border: 1px solid rgba($border, 0.5);
+
+    h5 {
+      margin: 0 0 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: $text-muted;
+    }
+
+    p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.6;
+      color: $text-secondary;
+    }
+  }
+
+  &__section-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &--message {
+      background: linear-gradient(135deg, $coral-pale 0%, $color-white 100%);
+      color: $coral;
+      border: 1px solid rgba($coral, 0.12);
+    }
+
+    &--comments {
+      background: linear-gradient(135deg, $blue-50 0%, $color-white 100%);
+      color: $blue-800;
+      border: 1px solid rgba($blue-600, 0.12);
+    }
+
+    &--steps {
+      background: linear-gradient(135deg, rgba($color-secondary-light, 0.12) 0%, $color-white 100%);
+      color: $color-secondary-dark;
+      border: 1px solid rgba($color-secondary-light, 0.2);
+    }
+  }
+}
+
+// ── Teacher avatar ──
+.fb-teacher-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, $coral 0%, $coral-dark 100%);
+  color: $color-white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid rgba($coral, 0.15);
+  box-shadow: 0 2px 8px rgba($coral, 0.15);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+// ── Load more ──
+.fb-load-more {
+  margin-top: 8px;
+}
+
+// ── Spinner ──
+.feedback-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba($coral, 0.15);
+  border-top-color: $coral;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+
+  &--sm {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    END OF ADDITIONS
    ═══════════════════════════════════════════════════════════════════════════ */

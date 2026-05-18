@@ -74,6 +74,9 @@ import arWhySpeexify from "@/locales/ar/why-speexify.json";
 import enPayment from "@/locales/en/payment.json";
 import arPayment from "@/locales/ar/payment.json";
 
+import enFeedback from "@/locales/en/feedback.json";
+import arFeedback from "@/locales/ar/feedback.json";
+
 const dictionaries = {
   en: {
     home: enHome,
@@ -102,6 +105,7 @@ const dictionaries = {
     "why-speexify": enWhySpeexify,
     payment: enPayment,
     "payment-result": enPayment,
+    feedback: enFeedback,
   },
   ar: {
     home: arHome,
@@ -130,6 +134,7 @@ const dictionaries = {
     "why-speexify": arWhySpeexify,
     payment: arPayment,
     "payment-result": arPayment,
+    feedback: arFeedback,
   },
 };
 

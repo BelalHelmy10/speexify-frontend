@@ -13,6 +13,7 @@ import SessionRow from "./components/SessionRow";
 import DashboardModal from "./components/DashboardModal";
 import DashboardKpiCard from "./components/DashboardKpiCard";
 import ImpersonationBanner from "./components/ImpersonationBanner";
+import LearnerFeedbackPanel from "./components/LearnerFeedbackPanel";
 
 const canJoin = (startAt, endAt, windowMins = 15) => {
   const now = new Date();
@@ -1050,6 +1051,11 @@ function DashboardInner({ dict, prefix }) {
               </>
             )}
           </div>
+        )}
+
+        {/* Feedback panel - show for learners or when impersonating a learner */}
+        {showLearnerContent && (
+          <LearnerFeedbackPanel dict={dict} prefix={prefix} timezone={timezone} />
         )}
 
         {/* Teacher panel - show for teachers or when impersonating a teacher */}

@@ -125,5 +125,15 @@
   "session_starts_in": "تبدأ خلال",
   "session_canceled_success": "تم إلغاء الجلسة بنجاح.",
   "success_saved": "تم.",
-  "session_left_success": "تمت مغادرة الجلسة."
+  "session_left_success": "تمت مغادرة الجلسة.",
+
+  "feedback_title": "ملاحظات المدرّس",
+  "feedback_count_one": "ملاحظة واحدة",
+  "feedback_count_other": "{count} ملاحظة",
+  "feedback_new_badge": "جديد",
+  "feedback_empty_title": "لا توجد ملاحظات بعد",
+  "feedback_empty_body": "عندما يترك مدرّسك ملاحظات، ستظهر هنا.",
+  "feedback_from_teacher": "من {name}",
+  "feedback_read_more": "اقرأ المزيد",
+  "feedback_view_all": "عرض كل الملاحظات"
 }
