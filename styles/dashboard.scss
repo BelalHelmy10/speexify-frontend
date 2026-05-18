@@ -1917,3 +1917,265 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    END OF ADDITIONS
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AWWWARDS LAYOUT SYSTEM — Two-column SaaS dashboard
+   Award-winning: sessions main column + contextual sticky aside
+   Replaces the single-column container-narrow (760 px) stack
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ── Container expansion (overrides container-narrow) ──────────────────────
+.dashboard {
+  max-width: 1300px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(16px, 3vw, 40px);
+  padding-right: clamp(16px, 3vw, 40px);
+}
+
+// ── Dashboard header – right-side meta ────────────────────────────────────
+.dashboard .dashboard__header {
+  align-items: center;
+}
+
+.dashboard .dashboard__header-meta {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dashboard .dashboard__date {
+  font-size: 13px;
+  font-weight: 500;
+  color: $text-muted;
+  letter-spacing: 0.01em;
+}
+
+.dashboard .dashboard__role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background: linear-gradient(135deg, $blue-50 0%, $gray-100 100%);
+  color: $blue-800;
+  border: 1px solid rgba($blue-600, 0.18);
+
+  &--teacher {
+    background: linear-gradient(135deg, rgba($color-secondary-light, 0.12) 0%, $color-white 100%);
+    color: $color-secondary-dark;
+    border-color: rgba($color-secondary-light, 0.22);
+  }
+
+  &--learner {
+    background: linear-gradient(135deg, $coral-pale 0%, $color-white 100%);
+    color: $coral-dark;
+    border-color: rgba($coral, 0.18);
+  }
+
+  &--admin {
+    background: linear-gradient(135deg, rgba($calendar-secondary, 0.1) 0%, $color-white 100%);
+    color: $calendar-secondary;
+    border-color: rgba($calendar-secondary, 0.2);
+  }
+}
+
+// ── Quick navigation pill bar ─────────────────────────────────────────────
+.dashboard .dashboard__quicknav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 5px;
+  background: rgba($card-bg, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba($border, 0.72);
+  border-radius: 14px;
+  width: fit-content;
+  flex-wrap: wrap;
+
+  a,
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 15px;
+    border-radius: 9px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: $text-secondary;
+    text-decoration: none !important;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+    line-height: 1;
+
+    svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      opacity: 0.6;
+      transition: opacity 0.22s;
+    }
+
+    &:hover {
+      background: rgba($brand, 0.08);
+      color: $brand;
+
+      svg {
+        opacity: 1;
+      }
+    }
+
+    &.is-active {
+      background: $card-bg;
+      color: $text-primary;
+      font-weight: 600;
+      box-shadow:
+        0 1px 3px rgba($color-black, 0.08),
+        0 4px 14px rgba($color-black, 0.04);
+
+      svg {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+// ── KPI row (replaces .grid-3 inside dashboard) ───────────────────────────
+.dashboard .dashboard__kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+
+  .card--kpi {
+    animation: panelSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+
+    &:nth-child(1) { animation-delay: 0.06s; }
+    &:nth-child(2) { animation-delay: 0.12s; }
+    &:nth-child(3) { animation-delay: 0.18s; }
+  }
+}
+
+// ── Two-column body grid ───────────────────────────────────────────────────
+.dashboard .dashboard__body {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  grid-template-areas: "main aside";
+  gap: 20px;
+  align-items: start;
+}
+
+// ── Main column (sessions) — visual left ──────────────────────────────────
+.dashboard .dashboard__main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+
+  > .panel {
+    animation: panelSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+
+    &:nth-child(1) { animation-delay: 0.28s; }
+    &:nth-child(2) { animation-delay: 0.38s; }
+  }
+}
+
+// ── Aside column (plan / teacher / feedback) — visual right, sticky ───────
+.dashboard .dashboard__aside {
+  grid-area: aside;
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+
+  // Remove default stacking margin between panels
+  .panel + .panel {
+    margin-top: 0 !important;
+  }
+
+  // Slightly more compact in the narrow column
+  .panel {
+    padding: 20px;
+  }
+
+  > * {
+    animation: panelSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+
+    &:nth-child(1) { animation-delay: 0.14s; }
+    &:nth-child(2) { animation-delay: 0.20s; }
+    &:nth-child(3) { animation-delay: 0.26s; }
+    &:nth-child(4) { animation-delay: 0.32s; }
+    &:nth-child(5) { animation-delay: 0.38s; }
+  }
+}
+
+// ── Panel slide-up entrance animation ─────────────────────────────────────
+@keyframes panelSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ── Responsive: collapse to single column ─────────────────────────────────
+@media (max-width: 1024px) {
+  .dashboard .dashboard__body {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard .dashboard__body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "main"
+      "aside";
+  }
+
+  .dashboard .dashboard__aside {
+    position: static;
+  }
+}
+
+@media (max-width: 580px) {
+  .dashboard .dashboard__kpis {
+    grid-template-columns: 1fr 1fr;
+
+    .card--kpi:nth-child(3) {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .dashboard .dashboard__quicknav a,
+  .dashboard .dashboard__quicknav button {
+    padding: 7px 11px;
+    font-size: 12.5px;
+
+    svg {
+      display: none;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   END OF AWWWARDS LAYOUT SYSTEM
+   ═══════════════════════════════════════════════════════════════════════════ */
