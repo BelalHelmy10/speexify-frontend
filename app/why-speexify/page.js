@@ -188,8 +188,8 @@ export default function WhySpeexifyPage() {
 
                     <div className="why__contrast-table">
                         <div className="why__contrast-header">
-                            <div className="why__contrast-col why__contrast-col--them">Others</div>
-                            <div className="why__contrast-col why__contrast-col--us">Speexify</div>
+                            <div className="why__contrast-col why__contrast-col--them">{t(dict, "contrast_col_them")}</div>
+                            <div className="why__contrast-col why__contrast-col--us">{t(dict, "contrast_col_us")}</div>
                         </div>
                         {contrastConfig.map((row, idx) => (
                             <div className="why__contrast-row" key={idx}>

@@ -1117,6 +1117,7 @@ export default function ClassroomShell({
         learnerName={learnerName}
         setShowParticipantList={setShowParticipantList}
         wsStatus={classroomChannel?.status}
+        startedAt={session?.startedAt || session?.startAt}
       />
 
       {/* Main Content - Desktop only (hidden on mobile where MobileClassroomLayout is used) */}

@@ -442,7 +442,7 @@ export default function AboutPage() {
           <div className="cta-blob cta-blob-3"></div>
 
           <div className="cta-inner">
-            <div className="cta-eyebrow">✦ {t(dict, "cta_primary")}</div>
+            <div className="cta-eyebrow">✦ {t(dict, "cta_eyebrow")}</div>
             <h2 className="cta-title">{t(dict, "cta_title")}</h2>
             <p className="cta-sub">{t(dict, "cta_text")}</p>
             <p className="cta-email">

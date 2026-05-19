@@ -1,35 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GraduationCap, UserRound, Users, Wifi, WifiOff } from "lucide-react";
 
 /* ─── Elapsed Timer ────────────────────────────────────────────────────── */
-/* ─── Elapsed Timer (counts from page mount) ──────────────────────── */
-function useElapsedTime() {
+function parseTimestampMs(value) {
+  if (!value) return null;
+
+  const timestamp =
+    value instanceof Date ? value.getTime() : new Date(value).getTime();
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function formatElapsedTime(totalSeconds) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n) => String(n).padStart(2, "0");
+
+  return hours > 0
+    ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+    : `${pad(minutes)}:${pad(seconds)}`;
+}
+
+function useElapsedTime(startedAt) {
+  const startMs = useMemo(() => parseTimestampMs(startedAt), [startedAt]);
   const [elapsed, setElapsed] = useState("00:00");
 
   useEffect(() => {
-    const mountTime = Date.now();
-
     const tick = () => {
-      const diff = Math.max(0, Date.now() - mountTime);
-      const totalSeconds = Math.floor(diff / 1000);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
+      if (!startMs) {
+        setElapsed("00:00");
+        return;
+      }
 
-      const pad = (n) => String(n).padStart(2, "0");
-      setElapsed(
-        hours > 0
-          ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
-          : `${pad(minutes)}:${pad(seconds)}`
-      );
+      const diff = Math.max(0, Date.now() - startMs);
+      const totalSeconds = Math.floor(diff / 1000);
+      setElapsed(formatElapsedTime(totalSeconds));
     };
 
     tick();
     const intervalId = setInterval(tick, 1000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [startMs]);
 
   return elapsed;
 }
@@ -56,8 +69,9 @@ export default function ClassroomHeaderBar({
   learnerName,
   setShowParticipantList,
   wsStatus,
+  startedAt,
 }) {
-  const elapsed = useElapsedTime();
+  const elapsed = useElapsedTime(startedAt);
   const wsInfo = WS_STATUS_MAP[wsStatus] || WS_STATUS_MAP.idle;
 
   return (
