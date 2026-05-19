@@ -95,14 +95,18 @@ function LoginInner({ dict }) {
       await refresh();
       redirectAfterLogin();
     } catch (err) {
-      console.error(err);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[login] Google sign-in failed", err?.message || err);
+      }
       setRedirecting(false);
       setMsg(err?.message || t(dict, "alert_google_failed"));
     }
   };
 
   const handleGoogleError = (err) => {
-    console.error(err);
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[login] Google sign-in was not completed", err);
+    }
     setMsg(t(dict, "alert_google_failed"));
   };
 
