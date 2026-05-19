@@ -124,10 +124,26 @@ function Packages() {
   }, []);
 
   // Get current plans based on selection
-  const plans = useMemo(() => {
+  const rawPlans = useMemo(() => {
     if (tab === AUD.CORPORATE) return corporatePlans;
     return lessonType === LESSON_TYPE.ONE_ON_ONE ? oneOnOnePlans : groupPlans;
   }, [tab, lessonType]);
+
+  // Localize display strings while keeping the English title as the backend identifier.
+  const plans = useMemo(() => {
+    return rawPlans.map((p) => {
+      const localizedTitle = dict[`plan_${p.id}_title`];
+      const localizedDesc = dict[`plan_${p.id}_desc`];
+      const localizedFeatures = dict[`plan_${p.id}_features`];
+      return {
+        ...p,
+        _backendTitle: p.title,
+        title: localizedTitle || p.title,
+        description: localizedDesc || p.description,
+        featuresRaw: localizedFeatures || p.featuresRaw,
+      };
+    });
+  }, [rawPlans, dict]);
 
   const matrix = useMemo(() => buildFeatureMatrix(plans), [plans]);
 
@@ -691,7 +707,9 @@ function PricingCard({
 
   // inside function PricingCard({ plan, ... })
   const paymentRoute = PAYMENT_MODE === "paymob" ? APP_ROUTES.checkout : APP_ROUTES.manualPayment;
-  const target = `${routeHref(paymentRoute, locale)}?plan=${encodeURIComponent(plan.title)}&cc=${encodeURIComponent(
+  // Always use the English backend title in URLs so checkout lookups stay stable across locales.
+  const urlTitle = plan._backendTitle || plan.title;
+  const target = `${routeHref(paymentRoute, locale)}?plan=${encodeURIComponent(urlTitle)}&cc=${encodeURIComponent(
       countryCode || ""
     )}&cur=${encodeURIComponent(currency || "")}`;
 

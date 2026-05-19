@@ -131,7 +131,12 @@ function LanguageSwitcher({ locale, pathname }) {
 ------------------------------------------------------------------ */
 
 export default function Header() {
-  const { user, checking, logout: authLogout } = useAuth();
+  const {
+    user,
+    checking,
+    hasSessionCookie,
+    logout: authLogout,
+  } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
@@ -230,7 +235,10 @@ export default function Header() {
     };
   }, [accountOpen]);
 
-  const baseLogoTo = checking ? APP_ROUTES.home : user ? APP_ROUTES.dashboard : APP_ROUTES.home;
+  const authPending = checking && hasSessionCookie && !user;
+  const loggedOutReady = !user && !authPending;
+
+  const baseLogoTo = user ? APP_ROUTES.dashboard : APP_ROUTES.home;
   const logoTo = localizeHref(baseLogoTo, locale);
 
   const handleLogout = async () => {
@@ -287,7 +295,7 @@ export default function Header() {
   ];
 
   const links =
-    checking || !user
+    !user
       ? loggedOut
       : user.role === "admin"
         ? admin
@@ -338,38 +346,7 @@ export default function Header() {
     : [];
 
   const RightCTA = () =>
-    checking ? (
-      <span className="spx-nav-status">
-        <span className="spx-status-pulse"></span>
-        <span className="spx-status-text">Checking…</span>
-      </span>
-    ) : !user ? (
-      <Link
-        href={localizeHref(APP_ROUTES.login, locale)}
-        className="spx-nav-cta"
-        onClick={() => setOpen(false)}
-      >
-        <span className="spx-cta-bg"></span>
-        <span className="spx-cta-content">
-          <span className="spx-cta-text">{t(navDict, "login")}</span>
-          <svg
-            className="spx-cta-arrow"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <path
-              d="M6 12L10 8L6 4"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      </Link>
-    ) : (
+    user ? (
       <div
         className={`spx-account-menu${accountOpen ? " spx-is-open" : ""}${isActive("/profile") || isActive("/settings") ? " spx-is-active" : ""
           }`}
@@ -442,6 +419,40 @@ export default function Header() {
           </div>
         )}
       </div>
+    ) : authPending ? (
+      <span className="spx-auth-placeholder" aria-hidden="true">
+        <span className="spx-auth-placeholder__avatar" />
+        <span className="spx-auth-placeholder__lines">
+          <span />
+          <span />
+        </span>
+      </span>
+    ) : (
+      <Link
+        href={localizeHref(APP_ROUTES.login, locale)}
+        className="spx-nav-cta"
+        onClick={() => setOpen(false)}
+      >
+        <span className="spx-cta-bg"></span>
+        <span className="spx-cta-content">
+          <span className="spx-cta-text">{t(navDict, "login")}</span>
+          <svg
+            className="spx-cta-arrow"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <path
+              d="M6 12L10 8L6 4"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </Link>
     );
 
   if (isFocusedWorkspace) return null;
@@ -484,7 +495,7 @@ export default function Header() {
               );
             })}
 
-            {!checking && !user && (
+            {loggedOutReady && (
               <li
                 className="spx-nav-item spx-nav-item-special"
                 style={itemIndexStyle(links.length)}
@@ -514,7 +525,7 @@ export default function Header() {
             </li>
 
             {/* Digital Clock (only when logged in) */}
-            {!checking && user && (
+            {user && (
               <li
                 className="spx-nav-item spx-nav-item-clock"
                 style={itemIndexStyle(links.length + 0.75)}
@@ -524,7 +535,7 @@ export default function Header() {
             )}
 
             {/* Desktop notifications bell (only when logged in) */}
-            {!checking && user && (
+            {user && (
               <li
                 className="spx-nav-item spx-nav-item-notif"
                 style={itemIndexStyle(links.length + 0.5)}
@@ -605,7 +616,7 @@ export default function Header() {
               );
             })}
 
-            {!checking && !user && (
+            {loggedOutReady && (
               <>
                 <li
                   className="spx-mobile-item"
@@ -674,7 +685,7 @@ export default function Header() {
               </>
             )}
 
-            {!checking && user && (
+            {user && (
               <>
                 <li
                   className="spx-mobile-item spx-mobile-account"
@@ -781,7 +792,7 @@ export default function Header() {
             <li
               className="spx-mobile-item spx-mobile-item-lang"
               style={itemIndexStyle(
-                links.length + (!checking && user ? accountLinks.length + 3 : 2)
+                links.length + (user ? accountLinks.length + 3 : 2)
               )}
             >
               <LanguageSwitcher locale={locale} pathname={pathname} />

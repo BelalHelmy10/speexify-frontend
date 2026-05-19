@@ -526,9 +526,9 @@ function Home({ locale = "en" }) {
 
 function FeaturesSection({ dict }) {
   const scenarios = [
-    "Try explaining a complex idea.",
-    "Disagree politely in a meeting.",
-    "Tell a story under pressure.",
+    "The meeting you've been avoiding.",
+    "The interview next Tuesday.",
+    "The call you usually mute.",
   ];
 
   const bars = [
@@ -562,10 +562,10 @@ function FeaturesSection({ dict }) {
           <path d="M13 14.5v4M9.5 18.5h7" />
         </svg>
       ),
-      title: t(dict, "feature2_title") || "Outcome-obsessed",
+      title: t(dict, "feature2_title") || "We measure the meeting, not the streak.",
       text:
         t(dict, "feature2_text") ||
-        "Every session has a clear goal. Every coach measures your progress against real communication benchmarks.",
+        "No vanity streaks. No daily-goal guilt. We track the meeting you led. The interview you landed. The call you stopped dreading.",
     },
     {
       num: t(dict, "bento_num_03"),
@@ -587,10 +587,10 @@ function FeaturesSection({ dict }) {
           <path d="M9.5 15l2.5 2.5 5-5" />
         </svg>
       ),
-      title: t(dict, "feature3_title") || "Flexible & measurable",
+      title: t(dict, "feature3_title") || "Show up when you can.",
       text:
         t(dict, "feature3_text") ||
-        "Book sessions around your life. Get a progress report after every coaching block.",
+        "Sessions when you're ready, not when a course tells you to be ready. Reschedule. Pause. Come back. Your spot stays.",
     },
     {
       num: t(dict, "bento_num_04"),
@@ -610,10 +610,10 @@ function FeaturesSection({ dict }) {
           <path d="M14 3.5L6 14.5h7l-1 8 8-11h-7l2-8Z" />
         </svg>
       ),
-      title: t(dict, "feature4_title") || "Built for you",
+      title: t(dict, "feature4_title") || "Built around you, not a syllabus.",
       text:
         t(dict, "feature4_text") ||
-        "Your curriculum adapts to your industry, goals, and gaps — not a generic syllabus.",
+        "Prepping for an interview next week? Leading your first meeting in English next month? Your practice plan starts from your real life — not a textbook.",
     },
   ];
 
@@ -627,9 +627,9 @@ function FeaturesSection({ dict }) {
           <FadeIn as="h2" className="home-section-title home-features__title">
             {t(dict, "features_title") || (
               <>
-                Everything you need
+                It's not a course.
                 <br />
-                to speak with power
+                It's a practice ground.
               </>
             )}
           </FadeIn>
@@ -639,7 +639,7 @@ function FeaturesSection({ dict }) {
             delay={0.1}
           >
             {t(dict, "features_subtitle") ||
-              "Not a language app. A real-world communication system built around how confident professionals actually speak."}
+              "You've already tried the apps. You've already sat through the classrooms. They taught you the language. Speexify is where you finally use it."}
           </FadeIn>
         </div>
 
@@ -675,12 +675,11 @@ function FeaturesSection({ dict }) {
                   </svg>
                 </div>
                 <h3 className="home-bento__title">
-                  {t(dict, "feature1_title") ||
-                    "Real conversations, not drills"}
+                  {t(dict, "feature1_title") || "Reps, not lessons."}
                 </h3>
                 <p className="home-bento__text">
                   {t(dict, "feature1_text") ||
-                    "Every session is a live, unscripted conversation with a native-level coach. No textbooks. No repetition. Just authentic, measurable practice that sticks."}
+                    "Every session is a real conversation with a coach who knows your goals, your work, your voice. No drills. No scripts. No 'repeat after me.' Just the reps you actually need."}
                 </p>
               </div>
 
@@ -1169,28 +1168,28 @@ function HowItWorksSection({ dict, locale }) {
     {
       num: "01",
       label: t(dict, "how_step1_label"),
-      title: t(dict, "how_step1_title") || "Set your goals",
+      title: t(dict, "how_step1_title") || "Tell us what you need to say.",
       text:
         t(dict, "how_step1_text") ||
-        "Tell us about your English ambitions — job interviews, presentations, travel or daily confidence.",
+        "A short call. We listen for what you actually need — at work, in interviews, in life. Then we shape your practice plan around it.",
       img: "/images/how-step1.png",
     },
     {
       num: t(dict, "bento_num_02"),
       label: t(dict, "how_step2_label"),
-      title: t(dict, "how_step2_title") || "Get matched instantly",
+      title: t(dict, "how_step2_title") || "Meet your coach.",
       text:
         t(dict, "how_step2_text") ||
-        "We pair you with a vetted native-level coach whose expertise fits your exact goal.",
+        "We pair you with a coach who fits your goals, your industry, your voice. Not random. Chosen.",
       img: "/images/how-step2.png",
     },
     {
       num: t(dict, "bento_num_03"),
       label: t(dict, "how_step3_label"),
-      title: t(dict, "how_step3_title") || "Start speaking. Measure progress.",
+      title: t(dict, "how_step3_title") || "Show up. Speak. Repeat.",
       text:
         t(dict, "how_step3_text") ||
-        "Live sessions, instant feedback, and a personalised progress tracker to feel every improvement.",
+        "Live sessions, one or two a week. Real conversations, every time. Within a month you'll hear the change. Soon after, so will everyone else.",
       img: "/images/how-step3.png",
     },
   ];
@@ -1200,10 +1199,10 @@ function HowItWorksSection({ dict, locale }) {
       <div className="home-container">
         <div className="home-section-header">
           <FadeIn as="h2" className="home-section-title">
-            {t(dict, "how_title") || "How Speexify works"}
+            {t(dict, "how_title") || "How it works"}
           </FadeIn>
           <FadeIn as="p" className="home-section-subtitle" delay={0.1}>
-            {t(dict, "how_subtitle") || "Three simple steps to real fluency."}
+            {t(dict, "how_subtitle") || "From your first session to sounding like yourself in another language."}
           </FadeIn>
         </div>
 
@@ -1251,7 +1250,7 @@ function HowItWorksSection({ dict, locale }) {
             className="spx-btn spx-btn--primary spx-btn--shine"
             href={routeHref(APP_ROUTES.register, locale)}
           >
-            <span>{t(dict, "how_cta_primary") || "Start for free"}</span>
+            <span>{t(dict, "how_cta_primary") || "Claim your spot"}</span>
             <svg
               className="spx-btn__arrow"
               width="16"
@@ -1273,7 +1272,7 @@ function HowItWorksSection({ dict, locale }) {
             className="spx-btn spx-btn--ghost-navy"
             href={routeHref(APP_ROUTES.contact, locale)}
           >
-            {t(dict, "how_cta_secondary") || "Talk to us"}
+            {t(dict, "how_cta_secondary") || "Ask us anything"}
           </Link>
         </div>
       </div>

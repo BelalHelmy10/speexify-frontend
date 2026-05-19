@@ -13,15 +13,22 @@ import api from "@/lib/api";
 
 const Ctx = createContext({
   user: null,
-  checking: true,
+  checking: false,
+  hasSessionCookie: false,
   setUser: () => {},
   refresh: async () => {},
   logout: async () => {},
 });
 
-export function AuthProvider({ children, initialUser = null }) {
+export function AuthProvider({
+  children,
+  initialUser = null,
+  hasSessionCookie = false,
+}) {
   const [user, setUser] = useState(initialUser);
-  const [checking, setChecking] = useState(!initialUser);
+  const [checking, setChecking] = useState(
+    Boolean(hasSessionCookie && !initialUser)
+  );
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -78,12 +85,19 @@ export function AuthProvider({ children, initialUser = null }) {
   }, []);
 
   useEffect(() => {
-    // If server passed an initial user we trust it; otherwise, fetch it.
-    if (!initialUser) refresh();
-  }, [initialUser, refresh]);
+    // Public pages without a session cookie should not block on /auth/me.
+    if (initialUser || !hasSessionCookie) {
+      setChecking(false);
+      return;
+    }
+
+    refresh();
+  }, [initialUser, hasSessionCookie, refresh]);
 
   return (
-    <Ctx.Provider value={{ user, checking, setUser, refresh, logout }}>
+    <Ctx.Provider
+      value={{ user, checking, hasSessionCookie, setUser, refresh, logout }}
+    >
       {children}
     </Ctx.Provider>
   );

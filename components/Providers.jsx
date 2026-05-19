@@ -9,7 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
  * - GoogleOAuthProvider: needed for @react-oauth/google
  * - AuthProvider: your app auth context
  */
-export default function Providers({ children, initialUser }) {
+export default function Providers({ children, initialUser, hasSessionCookie = false }) {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   if (!clientId) {
@@ -22,7 +22,9 @@ export default function Providers({ children, initialUser }) {
 
   return (
     <GoogleOAuthProvider clientId={clientId || "missing-client-id"}>
-      <AuthProvider initialUser={initialUser}>{children}</AuthProvider>
+      <AuthProvider initialUser={initialUser} hasSessionCookie={hasSessionCookie}>
+        {children}
+      </AuthProvider>
     </GoogleOAuthProvider>
   );
 }

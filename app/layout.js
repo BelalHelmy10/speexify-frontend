@@ -5,7 +5,7 @@ import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../styles/calendar.scss";
 import { Inter, Outfit, Cairo } from "next/font/google";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import Providers from "@/components/Providers";
 import ClientProviders from "./ClientProviders";
@@ -114,8 +114,10 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   const requestHeaders = await headers();
+  const cookieStore = await cookies();
   const locale = requestHeaders.get("x-speexify-locale") || "en";
   const isArabic = locale === "ar";
+  const hasSessionCookie = Boolean(cookieStore.get("speexify.sid")?.value);
 
   return (
     <html
@@ -149,7 +151,7 @@ export default async function RootLayout({ children }) {
       <body className={`${inter.variable} ${outfit.variable} ${cairo.variable}`}>
         <LocaleShell>
           <ClientProviders>
-            <Providers>
+            <Providers hasSessionCookie={hasSessionCookie}>
               <AppChrome>{children}</AppChrome>
             </Providers>
           </ClientProviders>

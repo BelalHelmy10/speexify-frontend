@@ -126,18 +126,18 @@ function IndividualInner({ dict, locale }) {
             <div className="hero-copy">
               <Reveal delay={0.1} className="hero-badge">
                 <span className="badge-signal" aria-hidden="true"></span>
-                {t(dict, "hero_badge") || "Live 1-on-1 English Coaching"}
+                {t(dict, "hero_badge") || "Private practice. One coach at a time."}
               </Reveal>
               <Reveal as="h1" delay={0.2} className="hero-title">
-                {t(dict, "hero_title_1") || "Speak English"}
+                {t(dict, "hero_title_1") || "Show up."}
                 <br />
-                {t(dict, "hero_title_2") || "with "}
-                <span className="accent">{t(dict, "hero_title_accent") || "real"}</span>
+                {t(dict, "hero_title_2") || ""}
+                <span className="accent">{t(dict, "hero_title_accent") || "Speak."}</span>
                 <br />
-                {t(dict, "hero_title_3") || " confidence"}
+                {t(dict, "hero_title_3") || "Repeat."}
               </Reveal>
               <Reveal as="p" delay={0.3} className="hero-sub">
-                {t(dict, "hero_subtitle") || "Expert-led live sessions that build fluency, precision, and presence — on your schedule, at your pace."}
+                {t(dict, "hero_subtitle") || "Private one-on-one sessions with a coach picked for you. Real conversations, every time. The reps you've been missing — booked when you're ready."}
               </Reveal>
               <Reveal delay={0.4} className="hero-cta">
                 <a href="#trial" className="btn btn-primary btn-lg">
@@ -156,7 +156,7 @@ function IndividualInner({ dict, locale }) {
             <div className="hero-visual">
               <div className="hero-toast">
                 <span className="toast-dot"></span>
-                Coach is listening
+                {t(dict, "hero_toast")}
               </div>
 
               <div className="sessions-card">
@@ -164,50 +164,50 @@ function IndividualInner({ dict, locale }) {
                   <span className="sc-dot r"></span>
                   <span className="sc-dot y"></span>
                   <span className="sc-dot g"></span>
-                  <span className="sc-title">Private coaching room</span>
+                  <span className="sc-title">{t(dict, "panel_title")}</span>
                 </div>
                 <div className="sc-body">
                   <div className="sess-row sess-row-live">
-                    <div className="sess-av av-coral">You</div>
+                    <div className="sess-av av-coral">●</div>
                     <div className="sess-info">
-                      <span className="sess-name">Live fluency sprint</span>
-                      <span className="sess-detail">Coach feedback · pronunciation focus</span>
+                      <span className="sess-name">{t(dict, "panel_row1_title")}</span>
+                      <span className="sess-detail">{t(dict, "panel_row1_detail")}</span>
                     </div>
-                    <span className="sess-badge sb-live"><span className="live-dot"></span> Live</span>
+                    <span className="sess-badge sb-live"><span className="live-dot"></span> {t(dict, "panel_badge_live")}</span>
                   </div>
                   <div className="sess-row">
-                    <div className="sess-av av-purple">C</div>
+                    <div className="sess-av av-purple">●</div>
                     <div className="sess-info">
-                      <span className="sess-name">Coach note</span>
-                      <span className="sess-detail">Slow the opening, land the keyword</span>
+                      <span className="sess-name">{t(dict, "panel_row2_title")}</span>
+                      <span className="sess-detail">{t(dict, "panel_row2_detail")}</span>
                     </div>
-                    <span className="sess-badge sb-done">Saved</span>
+                    <span className="sess-badge sb-done">{t(dict, "panel_badge_saved")}</span>
                   </div>
                   <div className="sess-row">
-                    <div className="sess-av av-teal">12</div>
+                    <div className="sess-av av-teal">●</div>
                     <div className="sess-info">
-                      <span className="sess-name">Next focus</span>
-                      <span className="sess-detail">Confident answers under pressure</span>
+                      <span className="sess-name">{t(dict, "panel_row3_title")}</span>
+                      <span className="sess-detail">{t(dict, "panel_row3_detail")}</span>
                     </div>
-                    <span className="sess-badge sb-time">Queued</span>
+                    <span className="sess-badge sb-time">{t(dict, "panel_badge_queued")}</span>
                   </div>
                   <div className="coach-note">
-                    <span>Instant correction</span>
-                    <p>“Try that again with a slower first sentence.”</p>
+                    <span>{t(dict, "panel_correction_label")}</span>
+                    <p>“{t(dict, "panel_correction_quote")}”</p>
                     <div className="typing-dots" aria-hidden="true">
                       <i></i><i></i><i></i>
                     </div>
                   </div>
                   <div className="sc-progress">
                     <div className="sc-prog-header">
-                      <span>Your progress</span>
-                      <span className="sc-prog-label">Session 7 / 12</span>
+                      <span>{t(dict, "panel_progress_label")}</span>
+                      <span className="sc-prog-label">{t(dict, "panel_progress_count")}</span>
                     </div>
                     <div className="sc-prog-track">
                       <div className="sc-prog-fill"></div>
                     </div>
                   </div>
-                  <div className="sc-feedback">⚡ Instant feedback after every session</div>
+                  <div className="sc-feedback">{t(dict, "panel_progress_feedback")}</div>
                 </div>
               </div>
             </div>
@@ -240,7 +240,7 @@ function IndividualInner({ dict, locale }) {
                 </svg>
               }
               metric={t(dict, "metric_1_value")}
-              label={t(dict, "metric_1_label") || "more speaking time than group classes"}
+              label={t(dict, "metric_1_label") || "more time talking than a group class"}
             />
             <MetricCard
               tone="gold"
@@ -250,7 +250,7 @@ function IndividualInner({ dict, locale }) {
                 </svg>
               }
               metric={t(dict, "metric_2_value")}
-              label={t(dict, "metric_2_label") || "average coach rating"}
+              label={t(dict, "metric_2_label") || "average rating from our members"}
             />
             <MetricCard
               tone="teal"
@@ -261,13 +261,13 @@ function IndividualInner({ dict, locale }) {
                 </svg>
               }
               metric={t(dict, "metric_3_value")}
-              label={t(dict, "metric_3_label") || "to noticeable confidence"}
+              label={t(dict, "metric_3_label") || "to a shift everyone notices"}
             />
           </div>
           <div className="proof-strip" aria-label="Individual training proof">
-            <span>Private coaching</span>
-            <span>Personal session notes</span>
-            <span>Flexible scheduling</span>
+            <span>{t(dict, "proof_chip1")}</span>
+            <span>{t(dict, "proof_chip2")}</span>
+            <span>{t(dict, "proof_chip3")}</span>
           </div>
         </div>
       </section>
@@ -278,16 +278,16 @@ function IndividualInner({ dict, locale }) {
       <section className="goals">
         <div className="container">
           <div className="section-header">
-            <div className="section-label">Your Path</div>
-            <Reveal as="h2" className="section-title">{t(dict, "goals_title") || "What do you want to unlock?"}</Reveal>
-            <Reveal as="p" delay={0.1} className="section-sub">{t(dict, "goals_subtitle") || "Every session is built around your real-world goals — not a generic curriculum."}</Reveal>
+            <div className="section-label">{t(dict, "section_goals_label")}</div>
+            <Reveal as="h2" className="section-title">{t(dict, "goals_title") || "What are you here to practice?"}</Reveal>
+            <Reveal as="p" delay={0.1} className="section-sub">{t(dict, "goals_subtitle") || "Pick the one that's actually pulling at you. Your coach builds the practice around it."}</Reveal>
           </div>
           <div className="goals-grid">
             <Goal
               cls="g1"
               icon="career"
               image={marketingImage("/images/Career & interviews.png")}
-              tag="Career"
+              tag={t(dict, "goal_1_title")}
               title={t(dict, "goal_1_title")}
               p={t(dict, "goal_1_p")}
             />
@@ -295,7 +295,7 @@ function IndividualInner({ dict, locale }) {
               cls="g2"
               icon="fluency"
               image={marketingImage("/images/Fluency & confidence.png")}
-              tag="Fluency"
+              tag={t(dict, "goal_2_title")}
               title={t(dict, "goal_2_title")}
               p={t(dict, "goal_2_p")}
             />
@@ -303,13 +303,13 @@ function IndividualInner({ dict, locale }) {
               cls="g3"
               icon="academic"
               image={marketingImage("/images/Exams & academics.png")}
-              tag="Academic"
+              tag={t(dict, "goal_3_title")}
               title={t(dict, "goal_3_title")}
               p={t(dict, "goal_3_p")}
             />
           </div>
           <div className="goals-cta">
-            <a href="#trial" className="btn btn-ghost">{t(dict, "goals_cta") || "Talk to a coach"}</a>
+            <a href="#trial" className="btn btn-ghost">{t(dict, "goals_cta") || "Tell us yours"}</a>
           </div>
         </div>
       </section>
@@ -320,9 +320,9 @@ function IndividualInner({ dict, locale }) {
       <section className="how">
         <div className="container">
           <div className="section-header">
-            <div className="section-label">The Process</div>
-            <Reveal as="h2" className="section-title">{t(dict, "how_title") || "How it works"}</Reveal>
-            <Reveal as="p" delay={0.1} className="section-sub">{t(dict, "how_subtitle") || "Three steps to a measurably better you."}</Reveal>
+            <div className="section-label">{t(dict, "section_how_label")}</div>
+            <Reveal as="h2" className="section-title">{t(dict, "how_title") || "How it works."}</Reveal>
+            <Reveal as="p" delay={0.1} className="section-sub">{t(dict, "how_subtitle") || "From your first session to sounding like yourself in another language."}</Reveal>
           </div>
           <div className="how-steps">
             <Step
@@ -359,19 +359,19 @@ function IndividualInner({ dict, locale }) {
           </div>
           <div className="curriculum-grid">
             <CurriculumGroup
-              title="Speak"
+              title={t(dict, "curr_group_speak")}
               items={[t(dict, "chip_everyday"), t(dict, "chip_pronunciation"), t(dict, "chip_social")]}
             />
             <CurriculumGroup
-              title="Work"
+              title={t(dict, "curr_group_work")}
               items={[t(dict, "chip_meetings"), t(dict, "chip_presentations"), t(dict, "chip_email")]}
             />
             <CurriculumGroup
-              title="Prepare"
+              title={t(dict, "curr_group_prepare")}
               items={[t(dict, "chip_interview"), t(dict, "chip_listening")]}
             />
             <CurriculumGroup
-              title="Polish"
+              title={t(dict, "curr_group_polish")}
               items={[t(dict, "chip_writing"), t(dict, "chip_vocab")]}
             />
           </div>
@@ -393,7 +393,7 @@ function IndividualInner({ dict, locale }) {
               <Testimonial
                 avatarCls="tav1"
                 avatarTxt="AM"
-                outcome="Meetings"
+                outcome={t(dict, "testi1_outcome")}
                 quote={t(dict, "testi1_quote")}
                 by={t(dict, "testi1_by")}
                 role={t(dict, "testi1_role")}
@@ -401,7 +401,7 @@ function IndividualInner({ dict, locale }) {
               <Testimonial
                 avatarCls="tav2"
                 avatarTxt="SR"
-                outcome="Career"
+                outcome={t(dict, "testi2_outcome")}
                 quote={t(dict, "testi2_quote")}
                 by={t(dict, "testi2_by")}
                 role={t(dict, "testi2_role")}
@@ -409,7 +409,7 @@ function IndividualInner({ dict, locale }) {
               <Testimonial
                 avatarCls="tav3"
                 avatarTxt="LK"
-                outcome="Exams"
+                outcome={t(dict, "testi3_outcome")}
                 quote={t(dict, "testi3_quote")}
                 by={t(dict, "testi3_by")}
                 role={t(dict, "testi3_role")}
@@ -432,20 +432,20 @@ function IndividualInner({ dict, locale }) {
 
           <div className="trial-card">
             <aside className="trial-proof">
-              <span className="trial-proof-kicker">Free starter session</span>
-              <h3>Know exactly what to improve before you pay.</h3>
-              <p>We review your goal, place your level, and recommend the fastest session path for your speaking confidence.</p>
+              <span className="trial-proof-kicker">{t(dict, "trial_proof_kicker")}</span>
+              <h3>{t(dict, "trial_proof_title")}</h3>
+              <p>{t(dict, "trial_proof_body")}</p>
               <ul>
-                <li>Reply within one business day</li>
-                <li>No commitment before the starter call</li>
-                <li>Private plan built around your schedule</li>
+                <li>{t(dict, "trial_proof_bullet1")}</li>
+                <li>{t(dict, "trial_proof_bullet2")}</li>
+                <li>{t(dict, "trial_proof_bullet3")}</li>
               </ul>
             </aside>
 
             <div className="trial-form-panel">
               <div className="trial-head">
-                <Reveal as="h2" className="trial-title">{t(dict, "trial_title") || "Request your session"}</Reveal>
-                <Reveal as="p" delay={0.1} className="trial-sub">{t(dict, "trial_subtitle") || "Book your free starter session."}</Reveal>
+                <Reveal as="h2" className="trial-title">{t(dict, "trial_title") || "Tell us about you."}</Reveal>
+                <Reveal as="p" delay={0.1} className="trial-sub">{t(dict, "trial_subtitle") || "One of us will be back within a business day to set the time."}</Reveal>
               </div>
 
             <form ref={formRef} onSubmit={submit} className={statusTone === "error" ? "form-has-error" : ""}>
@@ -482,7 +482,7 @@ function IndividualInner({ dict, locale }) {
                     value={form.timezone}
                     onChange={onChange}
                   >
-                    <option value="" disabled>Select your timezone...</option>
+                    <option value="" disabled>{t(dict, "timezone_placeholder_text")}</option>
                     {getSupportedTimezones().map(({ value, label }) => (
                       <option key={value} value={value}>{label}</option>
                     ))}

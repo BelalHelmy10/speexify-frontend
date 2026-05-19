@@ -874,6 +874,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  text-decoration: none;
 
   margin-bottom: 20px;
   transition: all $sw-transition;
@@ -882,6 +883,21 @@
     border-color: $sw-primary;
     color: $sw-primary;
     transform: translateY(-1px);
+  }
+}
+
+.sw-support-actions {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+
+  .sw-my-chats-btn {
+    margin-bottom: 0;
+  }
+
+  .sw-secondary-action {
+    width: 100%;
+    text-decoration: none;
   }
 }
 

@@ -23,8 +23,8 @@ function CorporateTraining({ dict, locale }) {
     company: "",
     contactName: "",
     email: "",
-    size: "10–50",
-    timeframe: "This month",
+    size: "10-50",
+    timeframe: "this-month",
     goals: "",
     message: "",
     agree: false,
@@ -151,16 +151,16 @@ function CorporateTraining({ dict, locale }) {
             <div className="spx-corp-hero__media-glow"></div>
             <img
               src="/images/team-practicing-communication.avif"
-              alt="Team practicing communication"
+              alt={t(dict, "hero_image_alt") || "Team practicing communication"}
               loading="eager"
             />
             <div className="spx-corp-hero__insight spx-corp-hero__insight--score">
-              <span>Team confidence</span>
-              <strong>+32%</strong>
+              <span>{t(dict, "hero_insight_score_label")}</span>
+              <strong>{t(dict, "hero_insight_score_value")}</strong>
             </div>
             <div className="spx-corp-hero__insight spx-corp-hero__insight--pulse">
               <span></span>
-              Live cohort plan
+              {t(dict, "hero_insight_pulse")}
             </div>
             <div className="spx-corp-hero__media-badge">
               <span className="spx-corp-hero__media-badge-icon" aria-hidden="true">
@@ -182,10 +182,10 @@ function CorporateTraining({ dict, locale }) {
         <div className="spx-corp__container">
           <Reveal as="p" className="spx-corp-logos__title">{t(dict, "logos_title")}</Reveal>
           <div className="spx-corp-logos__row">
-            <ProofSignal label="Sales teams" value="Client calls" />
-            <ProofSignal label="Customer success" value="Renewal conversations" />
-            <ProofSignal label="Engineering" value="Stakeholder updates" />
-            <ProofSignal label="Leadership" value="Board-ready reporting" />
+            <ProofSignal label={t(dict, "proof_signal_1_label")} value={t(dict, "proof_signal_1_value")} />
+            <ProofSignal label={t(dict, "proof_signal_2_label")} value={t(dict, "proof_signal_2_value")} />
+            <ProofSignal label={t(dict, "proof_signal_3_label")} value={t(dict, "proof_signal_3_value")} />
+            <ProofSignal label={t(dict, "proof_signal_4_label")} value={t(dict, "proof_signal_4_value")} />
           </div>
         </div>
       </section>
@@ -335,15 +335,15 @@ function CorporateTraining({ dict, locale }) {
             <figure className="spx-corp-media spx-corp-reporting__media">
               <img
                 src="/images/reporting-preview.avif"
-                alt="Reporting preview"
+                alt={t(dict, "reporting_image_alt") || "Reporting preview"}
                 loading="lazy"
               />
               <div className="spx-corp-reporting__overlay"></div>
             </figure>
             <div className="spx-corp-reporting__proof">
-              <span><strong>75%</strong> completion view</span>
-              <span><strong>4</strong> risk signals</span>
-              <span><strong>QBR</strong> ready summaries</span>
+              <span>{t(dict, "reporting_proof_1")}</span>
+              <span>{t(dict, "reporting_proof_2")}</span>
+              <span>{t(dict, "reporting_proof_3")}</span>
             </div>
           </div>
         </div>
@@ -363,7 +363,7 @@ function CorporateTraining({ dict, locale }) {
               role={t(dict, "testi1_role")}
               avatar="/images/head-of-cs.avif"
               rating={5}
-              outcome="ROI clear in 6 weeks"
+              outcome={t(dict, "testi1_outcome")}
             />
             <Testi
               quote={t(dict, "testi2_quote")}
@@ -371,7 +371,7 @@ function CorporateTraining({ dict, locale }) {
               role={t(dict, "testi2_role")}
               avatar="/images/l&d-manager.avif"
               rating={5}
-              outcome="Stakeholder confidence"
+              outcome={t(dict, "testi2_outcome")}
             />
             <Testi
               quote={t(dict, "testi3_quote")}
@@ -379,7 +379,7 @@ function CorporateTraining({ dict, locale }) {
               role={t(dict, "testi3_role")}
               avatar="/images/global-ops.avif"
               rating={5}
-              outcome="Pilot expanded"
+              outcome={t(dict, "testi3_outcome")}
             />
           </div>
         </div>
@@ -390,13 +390,13 @@ function CorporateTraining({ dict, locale }) {
         <div className="spx-corp__container">
           <div className="spx-corp-rfp__card">
             <aside className="spx-corp-rfp__trust">
-              <span className="spx-corp-rfp__eyebrow">Proposal request</span>
+              <span className="spx-corp-rfp__eyebrow">{t(dict, "rfp_eyebrow")}</span>
               <h2>{t(dict, "rfp_title")}</h2>
               <p>{t(dict, "rfp_subtitle")}</p>
               <ul>
-                <li>Response within one business day</li>
-                <li>Program recommendation by team size</li>
-                <li>Security and roster questions handled early</li>
+                <li>{t(dict, "rfp_aside_b1")}</li>
+                <li>{t(dict, "rfp_aside_b2")}</li>
+                <li>{t(dict, "rfp_aside_b3")}</li>
               </ul>
             </aside>
 
@@ -441,10 +441,10 @@ function CorporateTraining({ dict, locale }) {
                     value={form.size}
                     onChange={onChange}
                   >
-                    <option>5–10</option>
-                    <option>10–50</option>
-                    <option>50–200</option>
-                    <option>200+</option>
+                    <option value="5-10">{t(dict, "size_5_10")}</option>
+                    <option value="10-50">{t(dict, "size_10_50")}</option>
+                    <option value="50-200">{t(dict, "size_50_200")}</option>
+                    <option value="200+">{t(dict, "size_200_plus")}</option>
                   </select>
                 </Field>
                 <Field label={t(dict, "field_timeframe")}>
@@ -454,9 +454,9 @@ function CorporateTraining({ dict, locale }) {
                     value={form.timeframe}
                     onChange={onChange}
                   >
-                    <option>This month</option>
-                    <option>Next 2–3 months</option>
-                    <option>This quarter</option>
+                    <option value="this-month">{t(dict, "timeframe_this_month")}</option>
+                    <option value="2-3-months">{t(dict, "timeframe_2_3_months")}</option>
+                    <option value="this-quarter">{t(dict, "timeframe_this_quarter")}</option>
                   </select>
                 </Field>
               </div>
@@ -531,9 +531,9 @@ function CorporateTraining({ dict, locale }) {
             <h2 className="spx-corp-cta__title">{t(dict, "cta_title")}</h2>
             <p className="spx-corp-cta__subtitle">{t(dict, "cta_subtitle")}</p>
             <div className="spx-corp-cta__proof">
-              <span>Proposal</span>
-              <span>Coach matching</span>
-              <span>Reporting plan</span>
+              <span>{t(dict, "cta_proof_1")}</span>
+              <span>{t(dict, "cta_proof_2")}</span>
+              <span>{t(dict, "cta_proof_3")}</span>
             </div>
           </div>
           <div className="spx-corp-cta__actions">

@@ -383,6 +383,49 @@
   z-index: 20;
 }
 
+.spx-auth-placeholder {
+  grid-column: 3;
+  justify-self: end;
+  min-height: 42px;
+  min-width: 132px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 9px 4px 4px;
+  border: 1px solid rgba($ink, 0.08);
+  border-radius: 12px;
+  background: rgba($color-white, 0.84);
+  box-shadow: 0 4px 12px rgba($ink, 0.06);
+
+  &__avatar {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    border-radius: 10px;
+    background: rgba($ink, 0.1);
+  }
+
+  &__lines {
+    display: grid;
+    gap: 5px;
+
+    span {
+      display: block;
+      height: 7px;
+      border-radius: 99px;
+      background: rgba($ink, 0.1);
+
+      &:first-child {
+        width: 70px;
+      }
+
+      &:last-child {
+        width: 44px;
+      }
+    }
+  }
+}
+
 .spx-account-trigger {
   min-height: 42px;
   display: inline-flex;
@@ -1114,7 +1157,8 @@
   .spx-nav,
   .spx-nav-cta,
   .spx-account-menu,
-  .spx-nav-status {
+  .spx-nav-status,
+  .spx-auth-placeholder {
     display: none !important;
   }
 
@@ -1597,6 +1641,7 @@
   .spx-nav-toggle,
   .spx-mobile-drawer,
   .spx-account-menu,
+  .spx-auth-placeholder,
   .spx-nav-cta {
     display: none !important;
   }
