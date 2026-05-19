@@ -11,6 +11,9 @@ import { getDictionary, t } from "@/app/i18n";
 import { getSupportedTimezones } from "../../lib/timezones";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 
+const MARKETING_IMAGE_VERSION = "20260519";
+const marketingImage = (src) => `${src}?v=${MARKETING_IMAGE_VERSION}`;
+
 function Reveal({ children, as: Component = "div", delay: _delay, blur: _blur, ...props }) {
   return <Component {...props}>{children}</Component>;
 }
@@ -283,24 +286,7 @@ function IndividualInner({ dict, locale }) {
             <Goal
               cls="g1"
               icon="career"
-              visual={
-                <div className="ui-visual">
-                  <div className="ui-grid"></div>
-                  <div className="glow-accent lime"></div>
-                  <div className="ui-chart-box">
-                    <div className="ui-chart-header">
-                      <span className="ui-chart-title">Confidence</span>
-                      <span className="ui-chart-badge">+42%</span>
-                    </div>
-                    <div className="ui-chart-bars">
-                      <div className="bar" style={{ height: "40%" }}></div>
-                      <div className="bar" style={{ height: "55%" }}></div>
-                      <div className="bar" style={{ height: "35%" }}></div>
-                      <div className="bar active" style={{ height: "90%" }}></div>
-                    </div>
-                  </div>
-                </div>
-              }
+              image={marketingImage("/images/Career & interviews.png")}
               tag="Career"
               title={t(dict, "goal_1_title")}
               p={t(dict, "goal_1_p")}
@@ -308,27 +294,7 @@ function IndividualInner({ dict, locale }) {
             <Goal
               cls="g2"
               icon="fluency"
-              visual={
-                <div className="ui-visual">
-                  <div className="ui-grid"></div>
-                  <div className="glow-accent coral"></div>
-                  <div className="ui-audio-box">
-                    <div className="ui-play-btn">
-                      <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style={{ marginLeft: 2 }}>
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
-                    <div className="ui-wave-bars">
-                      <div className="wave" style={{ height: "40%" }}></div>
-                      <div className="wave" style={{ height: "70%" }}></div>
-                      <div className="wave active" style={{ height: "100%" }}></div>
-                      <div className="wave active" style={{ height: "60%" }}></div>
-                      <div className="wave" style={{ height: "30%" }}></div>
-                      <div className="wave" style={{ height: "80%" }}></div>
-                    </div>
-                  </div>
-                </div>
-              }
+              image={marketingImage("/images/Fluency & confidence.png")}
               tag="Fluency"
               title={t(dict, "goal_2_title")}
               p={t(dict, "goal_2_p")}
@@ -336,17 +302,7 @@ function IndividualInner({ dict, locale }) {
             <Goal
               cls="g3"
               icon="academic"
-              visual={
-                <div className="ui-visual">
-                  <div className="ui-grid"></div>
-                  <div className="glow-accent violet"></div>
-                  <div className="ui-score-box">
-                    <div className="ui-score-ring"></div>
-                    <div className="ui-score-val">8.5</div>
-                    <div className="ui-score-lbl">IELTS Target</div>
-                  </div>
-                </div>
-              }
+              image={marketingImage("/images/Exams & academics.png")}
               tag="Academic"
               title={t(dict, "goal_3_title")}
               p={t(dict, "goal_3_p")}
@@ -668,11 +624,17 @@ function MetricCard({ tone, icon, metric, label }) {
   );
 }
 
-function Goal({ cls, icon, visual, tag, title, p }) {
+function Goal({ cls, icon, image, tag, title, p }) {
   return (
     <div className={`goal-card ${cls}`}>
       <div className="goal-img-wrap">
-        {visual}
+        <img
+          className="goal-img"
+          src={image}
+          alt={title || ""}
+          loading="lazy"
+          decoding="async"
+        />
       </div>
       <div className="goal-body">
         <div className="goal-tag">
