@@ -344,7 +344,9 @@ export default function ClassroomShell({
   const lastContentScrollSentAtRef = useRef(0);
   const contentScrollRafPendingRef = useRef(false);
 
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  // Chat defaults to closed; a red unread dot announces new messages.
+  // The classroom should feel calm by default — chat is opt-in.
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
   // ✅ Mobile responsive: detect screen width and manage tab state
@@ -453,7 +455,8 @@ export default function ClassroomShell({
   ----------------------------------------------------------- */
   const { raisedHands, isHandRaised, toggleHand, lowerHand } = useClassroomRaiseHand(
     classroomChannel,
-    userName
+    userName,
+    { isTeacher }
   );
 
   /* -----------------------------------------------------------
@@ -1673,6 +1676,8 @@ export default function ClassroomShell({
               />
               <ClassroomRaiseHandOverlay
                 raisedHands={raisedHands}
+                isTeacher={isTeacher}
+                onLowerHand={lowerHand}
               />
               <ClassroomCaptionsOverlay captions={captions} />
             </div>
@@ -1690,8 +1695,8 @@ export default function ClassroomShell({
                 <span className="cr-chat-toggle__label">
                   <MessageSquare size={14} /> Chat
                   {chatUnreadCount > 0 && !isChatOpen && (
-                    <span className="cr-chat-toggle__unread">
-                      {chatUnreadCount}
+                    <span className="cr-chat-toggle__unread" aria-label={`${chatUnreadCount} unread`}>
+                      {chatUnreadCount > 9 ? "9+" : chatUnreadCount}
                     </span>
                   )}
                 </span>
@@ -1883,6 +1888,8 @@ export default function ClassroomShell({
               />
               <ClassroomRaiseHandOverlay
                 raisedHands={raisedHands}
+                isTeacher={isTeacher}
+                onLowerHand={lowerHand}
               />
               <ClassroomCaptionsOverlay captions={captions} />
             </>

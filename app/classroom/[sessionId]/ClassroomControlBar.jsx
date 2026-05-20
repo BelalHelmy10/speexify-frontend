@@ -187,15 +187,30 @@ export default function ClassroomControlBar({
         )}
 
         <button
-          className="cr-controls__btn cr-controls__btn--ghost"
+          className={
+            "cr-controls__btn cr-controls__btn--ghost" +
+            (!isChatOpen && chatUnreadCount > 0 ? " cr-controls__btn--has-unread" : "")
+          }
           onClick={() => setIsChatOpen(!isChatOpen)}
+          aria-label={
+            !isChatOpen && chatUnreadCount > 0
+              ? `Show chat, ${chatUnreadCount} unread`
+              : isChatOpen
+                ? "Hide chat"
+                : "Show chat"
+          }
         >
-          <span className="cr-controls__btn-icon"><MessageSquare size={16} /></span>
+          <span className="cr-controls__btn-icon cr-controls__btn-icon--dot-host">
+            <MessageSquare size={16} />
+            {!isChatOpen && chatUnreadCount > 0 && (
+              <span className="cr-controls__btn-dot" aria-hidden="true" />
+            )}
+          </span>
           <span className="cr-controls__btn-label">
             {isChatOpen
               ? "Hide Chat"
               : chatUnreadCount > 0
-                ? `Show Chat (${chatUnreadCount})`
+                ? `Show Chat (${chatUnreadCount > 9 ? "9+" : chatUnreadCount})`
                 : "Show Chat"}
           </span>
         </button>

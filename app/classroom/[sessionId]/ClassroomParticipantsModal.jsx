@@ -97,7 +97,11 @@ export default function ClassroomParticipantsModal({
   const liveParticipants = Array.isArray(videoParticipants)
     ? videoParticipants.filter((participant) => participant?.id)
     : [];
-  const raisedHandNames = new Set(raisedHands.map(normalizeName));
+  const raisedHandNames = new Set(
+    raisedHands.map((entry) =>
+      normalizeName(typeof entry === "string" ? entry : entry.userName)
+    )
+  );
   const usedLiveParticipantIds = new Set();
 
   const learnerRows = safeLearners.map((learner, idx) => {

@@ -911,11 +911,15 @@ body.classroom-active {
 }
 
 // ─── Video Container ────────────────────────────────────────────────────────
+// The container takes the rest of the left panel after the chat. We keep
+// a sensible min-height so it never collapses, but no max-height on
+// desktop — the adaptive tile grid handles arbitrary aspect ratios and
+// fills whatever space we give it. Mobile still constrains the height
+// because the tabbed mobile layout shows video as its own screen.
 .cr-video-container {
   position: relative;
-  flex: 1;
-  min-height: 200px;
-  max-height: min(400px, 45vh);
+  flex: 1 1 auto;
+  min-height: 240px;
   border-radius: $cr-radius-lg;
   overflow: hidden;
   background: $cr-bg-primary;
@@ -923,7 +927,7 @@ body.classroom-active {
 
   @media (max-width: 900px) {
     min-height: 180px;
-    max-height: 280px;
+    max-height: 360px;
   }
 }
 
@@ -1438,18 +1442,26 @@ body.classroom-active {
 }
 
 // ─── Chat Container ─────────────────────────────────────────────────────────
+// Chat owns its height deliberately rather than fighting the video for
+// flex space. When open it claims a viewport-aware slab (clamp lets it
+// breathe on tall monitors and stay compact on laptops). The video
+// container above is `flex: 1 1 auto`, so it takes everything that's
+// left after chat + header + controls.
 .cr-chat-container {
   display: flex;
   flex-direction: column;
   margin-top: 0.5rem;
   min-height: 0;
-  flex: 1;
-  max-height: 300px;
-  transition: max-height $cr-transition-normal;
+  flex: 0 1 auto;
+  height: clamp(280px, 38vh, 440px);
+  max-height: clamp(280px, 38vh, 440px);
+  transition: height $cr-transition-normal, max-height $cr-transition-normal,
+    flex-basis $cr-transition-normal;
 
   &--collapsed {
+    height: 44px;
     max-height: 44px;
-    flex: none;
+    flex: 0 0 44px;
 
     .cr-chat {
       display: none;
@@ -1457,6 +1469,7 @@ body.classroom-active {
   }
 
   @media (max-width: 900px) {
+    height: 220px;
     max-height: 220px;
   }
 }
@@ -2565,8 +2578,8 @@ body.classroom-active {
   right: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  pointer-events: none;
+  gap: 6px;
+  pointer-events: auto;
   z-index: 50;
 }
 
@@ -2574,29 +2587,86 @@ body.classroom-active {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
-  background: rgba(30, 41, 59, 0.9);
-  border: 1px solid rgba(100, 116, 139, 0.4);
+  padding: 6px 12px;
+  background: rgba(30, 41, 59, 0.92);
+  border: 1px solid rgba($cr-accent-teacher, 0.4);
   border-radius: $cr-radius-full;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(8px);
-  animation: cr-fade-in 0.2s ease-out;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 0 12px rgba($cr-accent-teacher, 0.15);
+  backdrop-filter: blur(10px);
+  animation: cr-raise-hand-enter 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 
   &__icon {
-    font-size: 1.125rem;
+    font-size: 1rem;
     line-height: 1;
+    animation: cr-hand-pulse 2s ease-in-out infinite;
   }
 
   &__name {
     font-size: 0.75rem;
-    font-weight: 600;
-    color: white;
+    font-weight: 700;
+    color: $cr-text-primary;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__elapsed {
+    font-size: 0.625rem;
+    font-weight: 700;
+    font-family: $cr-font-mono;
+    color: $cr-accent-teacher;
+    letter-spacing: 0.04em;
+    opacity: 0.9;
+
+    &::before {
+      content: "·";
+      margin-right: 4px;
+      color: $cr-text-muted;
+    }
+  }
+
+  &__dismiss {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 2px;
+    padding: 0;
+    background: rgba($cr-text-muted, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: $cr-text-secondary;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: all $cr-transition-fast;
+
+    &:hover {
+      background: rgba($cr-accent-danger, 0.25);
+      color: $cr-accent-danger;
+    }
   }
 }
 
-@keyframes cr-fade-in {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes cr-raise-hand-enter {
+  from {
+    opacity: 0;
+    transform: translateX(12px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes cr-hand-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
 }
 
 // ─── Active button state ───────────────────────────────────────────
@@ -2727,6 +2797,256 @@ body.classroom-active {
   @media (max-width: 900px) {
     display: none;
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DEVICE CHECK — Pre-join animated checklist
+// ═══════════════════════════════════════════════════════════════════════════
+
+.cr-device-check {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 30%, rgba(20, 30, 50, 1) 0%, rgba(8, 12, 21, 1) 100%);
+  animation: cr-dc-fade-in 0.6s ease-out;
+  transition: opacity 0.5s ease, filter 0.5s ease;
+
+  &--exiting {
+    opacity: 0;
+    filter: blur(8px);
+  }
+
+  // ── Ambient orbs ──
+  &__orbs {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  &__orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.18;
+    animation: cr-dc-orb-drift 12s ease-in-out infinite alternate;
+
+    &--1 {
+      width: 320px;
+      height: 320px;
+      top: 15%;
+      left: 20%;
+      background: $cr-accent-primary;
+    }
+
+    &--2 {
+      width: 260px;
+      height: 260px;
+      bottom: 20%;
+      right: 15%;
+      background: $cr-accent-learner;
+      animation-delay: -6s;
+    }
+  }
+
+  // ── Card ──
+  &__card {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: min(380px, 92vw);
+    padding: 2rem 2rem 1.75rem;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: $cr-radius-xl;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(16px);
+    animation: cr-dc-card-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+  }
+
+  // ── Avatar ──
+  &__avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $cr-accent-primary, $cr-accent-learner);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 0.25rem;
+  }
+
+  &__eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: $cr-text-muted;
+  }
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: $cr-text-primary;
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: 0.8125rem;
+    color: $cr-text-secondary;
+    margin: 0 0 0.75rem;
+  }
+
+  // ── Check list ──
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.75rem;
+    background: rgba($cr-bg-secondary, 0.5);
+    border: 1px solid $cr-border-subtle;
+    border-radius: $cr-radius-md;
+    transition: all 0.3s ease;
+
+    &--ok {
+      border-color: rgba($cr-accent-success, 0.25);
+      background: rgba($cr-accent-success, 0.06);
+    }
+
+    &--fail {
+      border-color: rgba($cr-accent-danger, 0.3);
+      background: rgba($cr-accent-danger, 0.06);
+    }
+  }
+
+  &__item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+
+    .cr-device-check__item--pending & {
+      background: rgba($cr-text-muted, 0.15);
+      color: $cr-text-muted;
+    }
+
+    .cr-device-check__item--checking & {
+      background: rgba($cr-accent-primary, 0.15);
+      color: $cr-accent-primary;
+    }
+
+    .cr-device-check__item--ok & {
+      background: rgba($cr-accent-success, 0.18);
+      color: $cr-accent-success;
+    }
+
+    .cr-device-check__item--fail & {
+      background: rgba($cr-accent-danger, 0.18);
+      color: $cr-accent-danger;
+    }
+  }
+
+  &__item-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: $cr-text-primary;
+    flex: 1;
+  }
+
+  &__item-detail {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: $cr-text-muted;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+
+    .cr-device-check__item--ok & {
+      color: $cr-accent-success;
+    }
+
+    .cr-device-check__item--fail & {
+      color: $cr-accent-danger;
+    }
+  }
+
+  &__spinner {
+    animation: cr-dc-spin 0.8s linear infinite;
+  }
+
+  // ── Enter button ──
+  &__enter {
+    width: 100%;
+    padding: 0.625rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, $cr-accent-primary, darken($cr-accent-primary, 8%));
+    border: none;
+    border-radius: $cr-radius-md;
+    cursor: pointer;
+    transition: all $cr-transition-fast;
+    animation: cr-dc-fade-in 0.3s ease-out;
+
+    &:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+@keyframes cr-dc-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cr-dc-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cr-dc-orb-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(20px, -20px) scale(1.1); }
+}
+
+@keyframes cr-dc-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -31,6 +31,137 @@ const JITSI_DOMINANT_SPEAKER_CSS = `
   }
 `;
 
+// ─────────────────────────────────────────────────────────────
+// Teams-style adaptive tile grid
+//
+// We override Jitsi's internal tile sizing entirely. The iframe gets
+// a stylesheet that lays the tile container out as a CSS Grid whose
+// column count is supplied as a CSS variable (--spx-tile-cols). The
+// parent React tree computes the optimal column count from the live
+// participant count and container size, and writes the variable on
+// the iframe's <html> element. Result: tiles always fill the panel,
+// always pick the column count whose cell aspect ratio is closest to
+// 16:9, and recompute on every join, leave, and resize.
+// ─────────────────────────────────────────────────────────────
+const JITSI_TILE_GRID_STYLE_ID = "speexify-tile-grid-style";
+const JITSI_TILE_GRID_CSS = `
+  /* Make sure the filmstrip container fills the iframe in tile view */
+  .filmstrip.is-tile-view,
+  .filmstrip.tile-view,
+  div[class*="filmstrip"][class*="tile"] {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    inset: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Tile container becomes a CSS grid with our computed column count */
+  .tile-view .filmstrip__videos,
+  .is-tile-view .filmstrip__videos,
+  .filmstrip__videos.is-tile-view,
+  div[class*="tileViewContainer"],
+  div[class*="tile-view"] > div[class*="filmstrip"] {
+    display: grid !important;
+    grid-template-columns: repeat(var(--spx-tile-cols, 2), 1fr) !important;
+    grid-auto-rows: 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding: 10px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  /* Hide the stage video container in tile view — we don't use it */
+  .tile-view #largeVideoContainer,
+  .is-tile-view #largeVideoContainer,
+  #largeVideoContainer.tile-view-mode {
+    display: none !important;
+  }
+
+  /* Each tile fills its grid cell uniformly */
+  .tile-view .videocontainer,
+  .is-tile-view .videocontainer,
+  .tile-view #localVideoContainer,
+  .is-tile-view #localVideoContainer,
+  .tile-view span.videocontainer,
+  .is-tile-view span.videocontainer {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    background: #0f172a !important;
+  }
+
+  /* Video and avatar inside each tile fill the cell with cover-fit */
+  .tile-view .videocontainer video,
+  .is-tile-view .videocontainer video,
+  .tile-view .videocontainer .avatar-container,
+  .is-tile-view .videocontainer .avatar-container {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  /* Center the avatar circle within its tile regardless of cell size */
+  .tile-view .avatar-container,
+  .is-tile-view .avatar-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+`;
+
+/**
+ * Pick the column count for an adaptive tile grid in the Teams style.
+ *
+ * We try every cols ∈ [1, count], compute the resulting cell aspect
+ * (containerWidth/cols ÷ containerHeight/ceil(count/cols)), and score
+ * each candidate by how far it deviates from 16:9 — plus a small
+ * penalty per empty cell so 4 participants pick 2×2 instead of 3×2.
+ */
+function computeTileColumns(count, width, height) {
+  if (!Number.isFinite(count) || count <= 1) return 1;
+  if (!width || !height || width <= 0 || height <= 0) {
+    return Math.min(count, 2);
+  }
+
+  const TARGET_ASPECT = 16 / 9;
+  const EMPTY_CELL_PENALTY = 0.18;
+
+  let bestCols = 1;
+  let bestScore = Infinity;
+
+  for (let cols = 1; cols <= count; cols++) {
+    const rows = Math.ceil(count / cols);
+    const cellW = width / cols;
+    const cellH = height / rows;
+    if (cellW <= 0 || cellH <= 0) continue;
+
+    const aspect = cellW / cellH;
+    const aspectScore = Math.abs(Math.log(aspect / TARGET_ASPECT));
+    const emptyCells = cols * rows - count;
+    const score = aspectScore + emptyCells * EMPTY_CELL_PENALTY;
+
+    if (score < bestScore) {
+      bestScore = score;
+      bestCols = cols;
+    }
+  }
+
+  return bestCols;
+}
+
 export default function PrepVideoCall({
   roomId,
   userName,
@@ -217,6 +348,18 @@ export default function PrepVideoCall({
     return true;
   }, [getJitsiIframeDocument]);
 
+  const injectTileGridStyles = useCallback(() => {
+    const doc = getJitsiIframeDocument();
+    if (!doc?.head) return false;
+    if (doc.getElementById(JITSI_TILE_GRID_STYLE_ID)) return true;
+
+    const style = doc.createElement("style");
+    style.id = JITSI_TILE_GRID_STYLE_ID;
+    style.textContent = JITSI_TILE_GRID_CSS;
+    doc.head.appendChild(style);
+    return true;
+  }, [getJitsiIframeDocument]);
+
   const getAttributeSelectorValue = useCallback((value) => {
     return String(value || "")
       .replace(/\\/g, "\\\\")
@@ -323,6 +466,144 @@ export default function PrepVideoCall({
       return false;
     }
   }, []);
+
+  // ─────────────────────────────────────────────
+  // Teams-style adaptive grid lock
+  //
+  // Jitsi defaults to stage view in 1:1 (one big remote tile + a
+  // small floating self-view that gets clipped on narrow containers).
+  // We lock the conference in tile view so every participant — self
+  // included — is always visible as a uniform tile. A short debounce
+  // coalesces rapid join/leave bursts so we don't thrash the layout.
+  // ─────────────────────────────────────────────
+  const forceTileRafRef = useRef(null);
+  const forceTileTimeoutRef = useRef(null);
+
+  // Live remote-participant count drives the adaptive grid. Stored
+  // as React state (not just a ref) so the grid recompute effect
+  // fires when participants join or leave.
+  const [remoteParticipantCount, setRemoteParticipantCount] = useState(0);
+
+  const applyTileGridLayout = useCallback(() => {
+    const doc = getJitsiIframeDocument();
+    if (!doc?.documentElement) return;
+
+    const node = containerRef.current;
+    const rect = node?.getBoundingClientRect?.();
+    const width = rect?.width || node?.clientWidth || 0;
+    const height = rect?.height || node?.clientHeight || 0;
+
+    const totalParticipants = remoteParticipantCount + 1; // +1 for self
+    const cols = computeTileColumns(totalParticipants, width, height);
+
+    doc.documentElement.style.setProperty("--spx-tile-cols", String(cols));
+  }, [getJitsiIframeDocument, remoteParticipantCount]);
+
+  const forceTileViewNow = useCallback(() => {
+    const api = apiRef.current;
+    if (!api || typeof api.executeCommand !== "function") return;
+    try {
+      api.executeCommand("setTileView", true);
+    } catch {
+      // Older Jitsi builds expose `toggleTileView` only; try that as a
+      // fallback after checking current state to avoid flipping off.
+      try {
+        const maybePromise = api.isTileViewEnabled?.();
+        const apply = (enabled) => {
+          if (!enabled) {
+            api.executeCommand("toggleTileView");
+          }
+        };
+        if (maybePromise && typeof maybePromise.then === "function") {
+          maybePromise.then(apply).catch(() => apply(false));
+        } else {
+          apply(Boolean(maybePromise));
+        }
+      } catch {
+        // No tile-view API available; nothing we can do here.
+      }
+    }
+  }, []);
+
+  const scheduleForceTileView = useCallback(
+    (delayMs = 120) => {
+      if (forceTileTimeoutRef.current) {
+        clearTimeout(forceTileTimeoutRef.current);
+      }
+      forceTileTimeoutRef.current = setTimeout(() => {
+        forceTileTimeoutRef.current = null;
+        if (forceTileRafRef.current) {
+          cancelAnimationFrame(forceTileRafRef.current);
+        }
+        forceTileRafRef.current = requestAnimationFrame(() => {
+          forceTileRafRef.current = null;
+          forceTileViewNow();
+        });
+      }, Math.max(0, delayMs));
+    },
+    [forceTileViewNow]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (forceTileTimeoutRef.current) {
+        clearTimeout(forceTileTimeoutRef.current);
+        forceTileTimeoutRef.current = null;
+      }
+      if (forceTileRafRef.current) {
+        cancelAnimationFrame(forceTileRafRef.current);
+        forceTileRafRef.current = null;
+      }
+    };
+  }, []);
+
+  // When the container's width changes (panel resize, focus-mode switch,
+  // mobile rotation), nudge Jitsi to recompute the tile grid and re-run
+  // our Teams-style column picker. Without this, tiles can disappear or
+  // letterbox awkwardly mid-drag.
+  useEffect(() => {
+    if (!hasJoined) return;
+    if (typeof window === "undefined" || typeof ResizeObserver === "undefined")
+      return;
+    const node = containerRef.current;
+    if (!node) return;
+
+    let layoutRaf = null;
+    const requestLayout = () => {
+      if (layoutRaf) cancelAnimationFrame(layoutRaf);
+      layoutRaf = requestAnimationFrame(() => {
+        layoutRaf = null;
+        applyTileGridLayout();
+      });
+    };
+
+    let firstObservation = true;
+    const observer = new ResizeObserver(() => {
+      requestLayout();
+      // ResizeObserver fires once on attach; skip the force-tile on that.
+      if (firstObservation) {
+        firstObservation = false;
+        return;
+      }
+      scheduleForceTileView(200);
+    });
+    observer.observe(node);
+
+    // Apply the layout once on mount/hasJoined transition.
+    requestLayout();
+
+    return () => {
+      observer.disconnect();
+      if (layoutRaf) cancelAnimationFrame(layoutRaf);
+    };
+  }, [hasJoined, scheduleForceTileView, applyTileGridLayout]);
+
+  // Recompute the grid every time the remote participant count changes
+  // (the resize observer alone won't catch joins/leaves at constant width).
+  useEffect(() => {
+    if (!hasJoined) return;
+    applyTileGridLayout();
+  }, [hasJoined, remoteParticipantCount, applyTileGridLayout]);
 
   const normalizeJitsiParticipant = useCallback((participant) => {
     if (!participant || typeof participant !== "object") return null;
@@ -875,7 +1156,20 @@ export default function PrepVideoCall({
               .catch(() => { });
           }
           injectDominantSpeakerStyles();
+          injectTileGridStyles();
           publishModerationState();
+
+          // Lock the conference in tile view so the learner always sees
+          // themselves and every remote participant from the moment they
+          // join. Jitsi needs a short beat after join before it accepts
+          // layout commands cleanly.
+          scheduleForceTileView(150);
+          scheduleForceTileView(900);
+
+          // Apply the adaptive grid as soon as Jitsi has rendered.
+          // The grid effect below will re-apply on participant/size change.
+          window.setTimeout(() => applyTileGridLayout(), 200);
+          window.setTimeout(() => applyTileGridLayout(), 1000);
         });
 
         api.addListener("audioMuteStatusChanged", (status) => {
@@ -887,6 +1181,9 @@ export default function PrepVideoCall({
 
         api.addListener("participantJoined", (participant) => {
           updateParticipantDisplayName(participant);
+          // Recompute the grid so the new tile slots in cleanly.
+          scheduleForceTileView();
+          setRemoteParticipantCount(jitsiParticipantsRef.current.size);
         });
 
         api.addListener("participantLeft", (participant) => {
@@ -898,6 +1195,17 @@ export default function PrepVideoCall({
               clearDominantSpeaker();
             }
             publishModerationState();
+          }
+          // Re-tile so remaining participants fill the space.
+          scheduleForceTileView();
+          setRemoteParticipantCount(jitsiParticipantsRef.current.size);
+        });
+
+        // If anything (toolbar click, internal Jitsi state) flips us out
+        // of tile view, snap right back. Treat tile view as load-bearing.
+        api.addListener("tileViewChanged", (status) => {
+          if (status && status.enabled === false) {
+            scheduleForceTileView(50);
           }
         });
 
@@ -981,6 +1289,7 @@ export default function PrepVideoCall({
       apiRef.current = null;
       clearNetworkQuality();
       clearModerationState();
+      setRemoteParticipantCount(0);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, hasJoined]); // Jitsi mounts only after the custom prejoin lobby

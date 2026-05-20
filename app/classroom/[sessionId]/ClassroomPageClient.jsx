@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import ClassroomErrorBoundary from "./ClassroomErrorBoundary";
 import ClassroomShell from "./ClassroomShell";
+import ClassroomDeviceCheck from "./ClassroomDeviceCheck";
 
 export default function ClassroomPageClient({ sessionId, tracks, initialSession = null }) {
   const pathname = usePathname();
@@ -16,6 +17,7 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
   const [session, setSession] = useState(initialSession);
   const [status, setStatus] = useState(initialSession ? "ok" : "loading"); // "loading" | "ok" | "error"
   const [error, setError] = useState("");
+  const [deviceCheckDone, setDeviceCheckDone] = useState(false);
 
   // Add class to body when classroom is active (to hide site header/footer)
   useEffect(() => {
@@ -104,6 +106,29 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
           </Link>
         </div>
       </div>
+    );
+  }
+
+  // Determine if user is teacher (same logic as ClassroomShell)
+  const isTeacher =
+    session?.isTeacher === true ||
+    session?.role === "teacher" ||
+    session?.userType === "teacher" ||
+    (session?.currentUser && session.currentUser.role === "teacher");
+
+  // Learner device check gate — teachers skip straight into the classroom
+  if (!isTeacher && !deviceCheckDone) {
+    const learnerName =
+      session?.learnerName ||
+      session?.currentUser?.name ||
+      session?.currentUser?.fullName ||
+      "Learner";
+
+    return (
+      <ClassroomDeviceCheck
+        userName={learnerName}
+        onReady={() => setDeviceCheckDone(true)}
+      />
     );
   }
 
