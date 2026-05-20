@@ -21,10 +21,47 @@ const PRIVATE_ROUTES = [
   "/profile",
 ];
 
+const AUTH_ENTRY_ROUTES = ["/", "/login", "/register"];
+
 function isPrivate(pathname) {
   return PRIVATE_ROUTES.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
   );
+}
+
+function isAuthEntry(pathname) {
+  return AUTH_ENTRY_ROUTES.includes(pathname);
+}
+
+function getSafeNextPath(rawNext, fallbackPath) {
+  if (!rawNext) return fallbackPath;
+
+  const candidates = [rawNext];
+  try {
+    candidates.unshift(decodeURIComponent(rawNext));
+  } catch {
+    // URLSearchParams usually decodes already. Keep the raw candidate.
+  }
+
+  for (const candidate of candidates) {
+    if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
+      continue;
+    }
+
+    let candidateUrl;
+    try {
+      candidateUrl = new URL(candidate, "https://speexify.local");
+    } catch {
+      continue;
+    }
+
+    const basePath = candidateUrl.pathname.replace(/^\/ar(?:\/|$)/, "/");
+
+    if (basePath === "/") continue;
+    return `${candidateUrl.pathname}${candidateUrl.search}${candidateUrl.hash}`;
+  }
+
+  return fallbackPath;
 }
 
 function withCommonHeaders(response) {
@@ -48,6 +85,16 @@ export function middleware(req) {
   const isAuthed = !!token;
 
   const onPrivatePage = isPrivate(basePath);
+
+  // Logged-in users should never see the public home/login shell first.
+  // Redirect before React renders so the nav does not flash in logged-out mode.
+  if (isAuthed && isAuthEntry(basePath)) {
+    const dashboardPath = isArabic ? "/ar/dashboard" : "/dashboard";
+    const targetPath = getSafeNextPath(searchParams.get("next"), dashboardPath);
+    return withCommonHeaders(
+      NextResponse.redirect(new URL(targetPath, req.url))
+    );
+  }
 
   // Not logged in + private route -> redirect to login with ?next=...
   if (!isAuthed && onPrivatePage) {

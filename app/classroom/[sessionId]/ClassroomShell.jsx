@@ -22,7 +22,13 @@ import {
   ClassroomCaptionsOverlay,
   useClassroomCaptions,
 } from "./ClassroomCaptions";
+import {
+  ClassroomScreenShareBanner,
+  ClassroomScreenShareConfirmModal,
+  useClassroomScreenShare,
+} from "./ClassroomScreenShare";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
+import useAuth from "@/hooks/useAuth";
 import { formatCompactDuration, getSessionTiming } from "./classroomTime";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import api from "@/lib/api";
@@ -128,6 +134,10 @@ const CLASSROOM_FOCUS_MODES = new Set(Object.values(FOCUS_MODES));
 
 const MIN_SPLIT_PERCENT = 12;
 const MAX_SPLIT_PERCENT = 88;
+// While someone is sharing their screen, the resource viewer on the right
+// is hidden entirely and the Jitsi stage view fills the full classroom
+// width — same as Zoom / Teams when content is being shared.
+const SCREEN_SHARE_LEFT_PERCENT = 100;
 const PAGE_RECORDING_UNSUPPORTED_MESSAGE =
   "Recording is currently supported in Chrome and Edge";
 const PAGE_RECORDING_MIME_TYPES = [
@@ -431,6 +441,7 @@ export default function ClassroomShell({
   const [videoModeration, setVideoModeration] = useState({
     ready: false,
     participants: [],
+    screenShareEndpointId: null,
     actions: null,
   });
   const [networkQuality, setNetworkQuality] = useState(null);
@@ -531,6 +542,88 @@ export default function ClassroomShell({
     micMuted: localAudioMuted,
   });
 
+  /* -----------------------------------------------------------
+     Screen Sharing (cross-side state + UI gates)
+  ----------------------------------------------------------- */
+  const { user: authUser } = useAuth();
+  const localUserId = String(
+    authUser?._id ||
+      authUser?.id ||
+      session?.currentUser?._id ||
+      session?.currentUser?.id ||
+      userName ||
+      sessionId
+  );
+
+  const screenShare = useClassroomScreenShare(classroomChannel, {
+    userName,
+    userId: localUserId,
+    isTeacher,
+    isLocalSharing: isScreenShareActive,
+  });
+
+  const [showScreenShareConfirm, setShowScreenShareConfirm] = useState(false);
+
+  const requestStartScreenShare = useCallback(() => {
+    if (screenShare.isSomeoneSharing) return;
+    if (!isTeacher && !screenShare.teacherAllowsScreenShare) return;
+    setShowScreenShareConfirm(true);
+  }, [
+    screenShare.isSomeoneSharing,
+    screenShare.teacherAllowsScreenShare,
+    isTeacher,
+  ]);
+
+  const confirmStartScreenShare = useCallback(() => {
+    setShowScreenShareConfirm(false);
+    const action = videoModeration.actions?.startScreenShare;
+    if (typeof action === "function") {
+      action();
+    }
+  }, [videoModeration.actions]);
+
+  const stopScreenShare = useCallback(() => {
+    const action = videoModeration.actions?.stopScreenShare;
+    if (typeof action === "function") {
+      action();
+    }
+  }, [videoModeration.actions]);
+
+  // When *anyone* is sharing, pin Jitsi's screen-share endpoint (a
+  // separate participant Jitsi spawns to carry the desktop track —
+  // displayName like "Belal Helmy's screen"). Pinning that endpoint
+  // makes the actual screen content the large video on every side.
+  //
+  // Pinning the human participant would show their camera/avatar
+  // instead — which is the bug we saw in v1.
+  const lastPinnedRef = useRef(null);
+  useEffect(() => {
+    if (!videoModeration.ready) return;
+
+    const screenId = videoModeration.screenShareEndpointId || null;
+
+    if (screenShare.isSomeoneSharing) {
+      if (screenId && screenId !== lastPinnedRef.current) {
+        videoModeration.actions?.pinParticipant?.(screenId);
+        lastPinnedRef.current = screenId;
+      }
+      // If we don't have the endpoint id yet (it may arrive a tick
+      // after the WS broadcast), do nothing — when it lands, this
+      // effect re-runs because screenShareEndpointId changed.
+      return;
+    }
+
+    if (!screenShare.isSomeoneSharing && lastPinnedRef.current) {
+      videoModeration.actions?.unpinParticipant?.();
+      lastPinnedRef.current = null;
+    }
+  }, [
+    videoModeration.ready,
+    videoModeration.actions,
+    videoModeration.screenShareEndpointId,
+    screenShare.isSomeoneSharing,
+  ]);
+
   const [classroomStateLoaded, setClassroomStateLoaded] = useState(false);
   const [classroomStateSnapshot, setClassroomStateSnapshot] = useState(null);
   const classroomStateLoadedRef = useRef(false);
@@ -609,6 +702,7 @@ export default function ClassroomShell({
       participants: Array.isArray(nextState?.participants)
         ? nextState.participants
         : [],
+      screenShareEndpointId: nextState?.screenShareEndpointId || null,
       actions: nextState?.actions || null,
     });
   }, []);
@@ -787,7 +881,10 @@ export default function ClassroomShell({
   /* -----------------------------------------------------------
      Drag-to-resize logic
   ----------------------------------------------------------- */
-  const canResizePanels = isTeacher || !followTeacherLayout;
+  // While a screen share is active the layout is force-locked to the
+  // share split, so dragging the divider must be inert for both sides.
+  const canResizePanels =
+    !screenShare.isSomeoneSharing && (isTeacher || !followTeacherLayout);
 
   const updateCustomSplit = useCallback((nextSplit, { defer = true } = {}) => {
     if (nextSplit === null || nextSplit === undefined) return;
@@ -981,6 +1078,10 @@ export default function ClassroomShell({
   }, [isChatOpen]);
 
   const getSplitPercentage = () => {
+    // While sharing, the screen-share stage takes priority over the
+    // teacher/learner focus-mode + custom-drag selection.
+    if (screenShare.isSomeoneSharing) return SCREEN_SHARE_LEFT_PERCENT;
+
     if (customSplit !== null) return customSplit;
 
     return getFocusModeSplitPercentage(focusMode);
@@ -1642,6 +1743,19 @@ export default function ClassroomShell({
         remainingLabel={sessionTiming.remainingLabel}
       />
 
+      <ClassroomScreenShareBanner
+        visible={screenShare.isSomeoneSharing}
+        sharerName={screenShare.sharerName}
+        isLocalSharer={screenShare.isLocalSharer}
+        onStop={stopScreenShare}
+      />
+
+      <ClassroomScreenShareConfirmModal
+        isOpen={showScreenShareConfirm}
+        onConfirm={confirmStartScreenShare}
+        onCancel={() => setShowScreenShareConfirm(false)}
+      />
+
       {/* Late-Join Banner (learner only, when joining mid-session) */}
       {showLateJoinBanner && !isTeacher && (
         <ClassroomLateJoinBanner
@@ -1656,7 +1770,13 @@ export default function ClassroomShell({
       {/* Main Content - Desktop only (hidden on mobile where MobileClassroomLayout is used) */}
       {!isMobile && (
         <div
-          className={`cr-main ${isDragging ? "cr-main--dragging" : ""}`}
+          className={[
+            "cr-main",
+            isDragging ? "cr-main--dragging" : "",
+            screenShare.isSomeoneSharing ? "cr-main--screen-share" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
           ref={containerRef}
         >
           {/* Left Panel: Video + Chat */}
@@ -1673,6 +1793,7 @@ export default function ClassroomShell({
                 onModerationStateChange={handleVideoModerationChange}
                 onNetworkQualityChange={handleNetworkQualityChange}
                 onAudioMuteChange={handleAudioMuteChange}
+                suspendTileViewLock={screenShare.isSomeoneSharing}
               />
               <ClassroomRaiseHandOverlay
                 raisedHands={raisedHands}
@@ -1858,6 +1979,17 @@ export default function ClassroomShell({
         captionsPausedForMute={captionsPausedForMute}
         onExportPage={(format) => exportFnRef.current?.(format)}
         hasResource={Boolean(resource)}
+        screenShareIsLocalSharer={screenShare.isLocalSharer}
+        screenShareIsRemoteSharing={screenShare.isRemoteSharing}
+        screenShareBlockedByTeacher={
+          !isTeacher && !screenShare.teacherAllowsScreenShare
+        }
+        onRequestStartScreenShare={requestStartScreenShare}
+        onStopScreenShare={stopScreenShare}
+        teacherAllowsScreenShare={screenShare.teacherAllowsScreenShare}
+        onTeacherAllowsScreenShareChange={
+          screenShare.setTeacherAllowsScreenShare
+        }
       />
 
       {/* Mobile Layout (shown only on screens < 900px) */}
@@ -1885,6 +2017,7 @@ export default function ClassroomShell({
                 onModerationStateChange={handleVideoModerationChange}
                 onNetworkQualityChange={handleNetworkQualityChange}
                 onAudioMuteChange={handleAudioMuteChange}
+                suspendTileViewLock={screenShare.isSomeoneSharing}
               />
               <ClassroomRaiseHandOverlay
                 raisedHands={raisedHands}

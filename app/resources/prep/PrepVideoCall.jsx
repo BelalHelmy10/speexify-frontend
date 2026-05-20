@@ -120,6 +120,32 @@ const JITSI_TILE_GRID_CSS = `
     align-items: center !important;
     justify-content: center !important;
   }
+
+  /* ─── Stage view (active during screen sharing) ─────────────────── */
+  /* The large video container should fill the entire iframe, leaving
+     no Jitsi-side padding. The video element uses object-fit contain
+     so the full screen content is visible without cropping; black bars
+     are acceptable when aspect ratios disagree. These rules are no-ops
+     in tile view because Jitsi already hides #largeVideoContainer there. */
+  #largeVideoContainer,
+  #largeVideoWrapper,
+  .videocontainer#largeVideoContainer {
+    width: 100% !important;
+    height: 100% !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #largeVideo,
+  #largeVideoElementsContainer video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    background: #000 !important;
+  }
 `;
 
 /**
@@ -170,6 +196,7 @@ export default function PrepVideoCall({
   onModerationStateChange,
   onNetworkQualityChange,
   onAudioMuteChange,
+  suspendTileViewLock = false,
   locale = "en",
 }) {
   const containerRef = useRef(null);
@@ -484,6 +511,36 @@ export default function PrepVideoCall({
   // fires when participants join or leave.
   const [remoteParticipantCount, setRemoteParticipantCount] = useState(0);
 
+  // When someone shares their screen, Jitsi adds a *second* endpoint
+  // for the screen track whose displayName follows a known pattern
+  // (e.g. "Belal Helmy's screen", "Belal (Screen Sharing)"). We track
+  // its participantId so the classroom shell can pin THAT — not the
+  // human participant — when a remote share is active.
+  const screenShareEndpointIdRef = useRef(null);
+
+  const isScreenShareDisplayName = (displayName) => {
+    if (!displayName) return false;
+    const name = String(displayName);
+    return (
+      /'s screen\s*$/i.test(name) ||
+      /\(screen[^)]*\)/i.test(name) ||
+      /\(sharing\)/i.test(name) ||
+      /\(presenter\)/i.test(name) ||
+      /\bdesktop sharing\b/i.test(name)
+    );
+  };
+
+  const isScreenShareParticipant = (participant) => {
+    if (!participant) return false;
+    if (participant.videoType === "desktop") return true;
+    if (participant.role === "presenter") return true;
+    return isScreenShareDisplayName(
+      participant.displayName ||
+        participant.formattedDisplayName ||
+        participant.name
+    );
+  };
+
   const applyTileGridLayout = useCallback(() => {
     const doc = getJitsiIframeDocument();
     if (!doc?.documentElement) return;
@@ -525,6 +582,13 @@ export default function PrepVideoCall({
     }
   }, []);
 
+  // Keep a ref so the timer callback always reads the latest suspend flag,
+  // not whatever was captured at scheduling time.
+  const suspendTileViewLockRef = useRef(suspendTileViewLock);
+  useEffect(() => {
+    suspendTileViewLockRef.current = suspendTileViewLock;
+  }, [suspendTileViewLock]);
+
   const scheduleForceTileView = useCallback(
     (delayMs = 120) => {
       if (forceTileTimeoutRef.current) {
@@ -537,6 +601,11 @@ export default function PrepVideoCall({
         }
         forceTileRafRef.current = requestAnimationFrame(() => {
           forceTileRafRef.current = null;
+          // While someone is sharing their screen, we deliberately let
+          // Jitsi switch out of tile view into stage view (screen pinned
+          // large, others as filmstrip). The classroom shell drives this
+          // by setting `suspendTileViewLock` to true during a share.
+          if (suspendTileViewLockRef.current) return;
           forceTileViewNow();
         });
       }, Math.max(0, delayMs));
@@ -605,6 +674,34 @@ export default function PrepVideoCall({
     applyTileGridLayout();
   }, [hasJoined, remoteParticipantCount, applyTileGridLayout]);
 
+  // Switch between tile view (default) and stage view (screen-sharing).
+  useEffect(() => {
+    if (!hasJoined) return;
+    const api = apiRef.current;
+    if (!api || typeof api.executeCommand !== "function") return;
+
+    try {
+      api.executeCommand("setTileView", !suspendTileViewLock);
+    } catch {
+      // Older builds: fall back to toggle.
+      try {
+        const maybe = api.isTileViewEnabled?.();
+        const apply = (enabled) => {
+          if (Boolean(enabled) !== !suspendTileViewLock) {
+            api.executeCommand("toggleTileView");
+          }
+        };
+        if (maybe && typeof maybe.then === "function") {
+          maybe.then(apply).catch(() => { });
+        } else {
+          apply(Boolean(maybe));
+        }
+      } catch {
+        // No tile-view command available; nothing more to do.
+      }
+    }
+  }, [hasJoined, suspendTileViewLock]);
+
   const normalizeJitsiParticipant = useCallback((participant) => {
     if (!participant || typeof participant !== "object") return null;
     const id =
@@ -648,6 +745,7 @@ export default function PrepVideoCall({
     cb({
       ready: Boolean(api),
       participants: Array.from(jitsiParticipantsRef.current.values()),
+      screenShareEndpointId: screenShareEndpointIdRef.current,
       actions: {
         muteAll: () => executeJitsiCommand("muteEveryone"),
         muteParticipant: (participantId) =>
@@ -660,8 +758,18 @@ export default function PrepVideoCall({
           executeJitsiCommand("pinParticipant", participantId);
           return true;
         },
+        unpinParticipant: () => {
+          // Empty string is the documented way to clear the pin.
+          executeJitsiCommand("setLargeVideoParticipant", "");
+          executeJitsiCommand("pinParticipant", "");
+          return true;
+        },
         kickParticipant: (participantId) =>
           executeJitsiCommand("kickParticipant", participantId),
+        startScreenShare: () => executeJitsiCommand("toggleShareScreen"),
+        stopScreenShare: () => executeJitsiCommand("toggleShareScreen"),
+        setTileViewEnabled: (enabled) =>
+          executeJitsiCommand("setTileView", Boolean(enabled)),
       },
     });
   }, [executeJitsiCommand, normalizeJitsiParticipant]);
@@ -678,6 +786,21 @@ export default function PrepVideoCall({
 
   const updateParticipantDisplayName = useCallback(
     (participant) => {
+      // Screen-share endpoints aren't human participants — capture their
+      // id for pinning but keep them out of the moderation/grid maps.
+      if (isScreenShareParticipant(participant)) {
+        const id = participant?.participantId || participant?.id;
+        if (id) {
+          screenShareEndpointIdRef.current = String(id);
+          // Defensive: if they slipped into the human map earlier, evict.
+          if (jitsiParticipantsRef.current.delete(String(id))) {
+            setRemoteParticipantCount(jitsiParticipantsRef.current.size);
+          }
+          publishModerationState();
+        }
+        return;
+      }
+
       const normalized = normalizeJitsiParticipant(participant);
       if (!normalized) return;
 
@@ -1180,6 +1303,19 @@ export default function PrepVideoCall({
         });
 
         api.addListener("participantJoined", (participant) => {
+          const id = participant?.participantId || participant?.id;
+          // If this is a screen-share endpoint (a second Jitsi participant
+          // that Jitsi spawns to carry the desktop track), remember its ID
+          // for pinning and DON'T treat it as a human participant — it
+          // shouldn't count toward the grid or show in the moderation list.
+          if (isScreenShareParticipant(participant)) {
+            if (id) {
+              screenShareEndpointIdRef.current = String(id);
+              publishModerationState();
+            }
+            return;
+          }
+
           updateParticipantDisplayName(participant);
           // Recompute the grid so the new tile slots in cleanly.
           scheduleForceTileView();
@@ -1188,6 +1324,16 @@ export default function PrepVideoCall({
 
         api.addListener("participantLeft", (participant) => {
           const id = participant?.participantId || participant?.id;
+          // Screen endpoint left — clear the tracked id.
+          if (
+            id &&
+            String(id) === screenShareEndpointIdRef.current
+          ) {
+            screenShareEndpointIdRef.current = null;
+            publishModerationState();
+            return;
+          }
+
           if (id) {
             const normalizedId = String(id);
             jitsiParticipantsRef.current.delete(normalizedId);
@@ -1199,6 +1345,22 @@ export default function PrepVideoCall({
           // Re-tile so remaining participants fill the space.
           scheduleForceTileView();
           setRemoteParticipantCount(jitsiParticipantsRef.current.size);
+        });
+
+        // displayNameChange fires after the screen endpoint has settled
+        // into its final name — catch late-renames here too.
+        api.addListener("displayNameChange", (info) => {
+          if (!info) return;
+          const id = info.participantId || info.id;
+          if (!id) return;
+          if (isScreenShareDisplayName(info.displayname || info.displayName)) {
+            screenShareEndpointIdRef.current = String(id);
+            // Remove it from the human map if it slipped in earlier.
+            if (jitsiParticipantsRef.current.delete(String(id))) {
+              setRemoteParticipantCount(jitsiParticipantsRef.current.size);
+            }
+            publishModerationState();
+          }
         });
 
         // If anything (toolbar click, internal Jitsi state) flips us out

@@ -461,6 +461,8 @@ function DashboardInner({ dict, prefix }) {
   const nextLearnerJoinable =
     nextLearnerSession &&
     canJoin(nextLearnerSession.startAt, nextLearnerSession.endAt);
+  const pastArchiveHref = `${prefix}/dashboard/sessions/past`;
+  const pastArchiveCount = Math.max(Number(completedCount || 0), past.length);
   const latestFeedbackSession = past.find((s) => s.teacherFeedback);
   const teacherNeedsFeedbackSession = past.find(
     (s) =>
@@ -1320,7 +1322,7 @@ function DashboardInner({ dict, prefix }) {
             </div>
 
             <Link
-              href={`${prefix}/calendar`}
+              href={pastArchiveHref}
               className="btn btn--ghost btn--sm"
             >
               {t(dict, "past_view_all")}
@@ -1363,10 +1365,14 @@ function DashboardInner({ dict, prefix }) {
               {past.length >= 10 && (
                 <div className="panel__footer">
                   <Link
-                    href={`${prefix}/calendar`}
+                    href={pastArchiveHref}
                     className="btn btn--secondary btn--full dashboard-past__view-all"
                   >
-                    <span>View all {past.length} past sessions</span>
+                    <span>
+                      {t(dict, "past_archive_view_all_count", {
+                        count: pastArchiveCount,
+                      })}
+                    </span>
                     <svg
                       width="16"
                       height="16"

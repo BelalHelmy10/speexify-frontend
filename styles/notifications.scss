@@ -221,7 +221,6 @@
   overflow: auto;
   flex: 1;
   padding: 8px;
-  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -302,7 +301,7 @@
   align-items: flex-start;
   gap: 12px;
   padding: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 14px;
   border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.06);
   background: #fff;
@@ -578,6 +577,10 @@
 }
 
 .spx-notif__tabBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
@@ -666,12 +669,27 @@
   cursor: pointer;
   text-decoration: none;
   color: #1a1a1a;
+  transition: all 0.12s ease;
+}
+
+.spx-notif__cta:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+.spx-notif__cta:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .spx-notif__cta--primary {
   background: #0066ff;
   border-color: #0066ff;
   color: #fff;
+}
+
+.spx-notif__cta--primary:hover:not(:disabled) {
+  background: #0052cc;
+  border-color: #0052cc;
 }
 
 .spx-notif__cta--ghost {
@@ -699,7 +717,7 @@
 
 /* Full page */
 .spx-notif-page {
-  padding: 120px 16px 48px;
+  padding: 24px 16px 48px;
   min-height: 100vh;
 }
 
@@ -709,7 +727,7 @@
 }
 
 .spx-notif-page__header {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .spx-notif-page__header h1 {

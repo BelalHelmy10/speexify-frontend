@@ -173,8 +173,11 @@ export default function Header() {
     const onScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          const next = window.scrollY > 20;
-          setScrolled((prev) => (prev !== next ? next : prev));
+          const scrollY = window.scrollY || 0;
+          setScrolled((prev) => {
+            const next = prev ? scrollY > 8 : scrollY > 32;
+            return prev !== next ? next : prev;
+          });
           ticking = false;
         });
         ticking = true;

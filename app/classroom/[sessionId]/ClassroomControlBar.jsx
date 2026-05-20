@@ -3,6 +3,7 @@
 import { BookOpen, Circle, Download, MessageSquare, Square, Users } from "lucide-react";
 import { ClassroomRaiseHandButton } from "./ClassroomRaiseHand";
 import { ClassroomCaptionsButton } from "./ClassroomCaptions";
+import { ClassroomScreenShareButton } from "./ClassroomScreenShare";
 
 export default function ClassroomControlBar({
   isMobile,
@@ -38,6 +39,13 @@ export default function ClassroomControlBar({
   captionsPausedForMute,
   onExportPage,
   hasResource,
+  screenShareIsLocalSharer,
+  screenShareIsRemoteSharing,
+  screenShareBlockedByTeacher,
+  onRequestStartScreenShare,
+  onStopScreenShare,
+  teacherAllowsScreenShare,
+  onTeacherAllowsScreenShareChange,
 }) {
   if (isMobile) return null;
 
@@ -91,6 +99,14 @@ export default function ClassroomControlBar({
             </span>
           </button>
         )}
+
+        <ClassroomScreenShareButton
+          isLocalSharer={Boolean(screenShareIsLocalSharer)}
+          isRemoteSharing={Boolean(screenShareIsRemoteSharing)}
+          blockedByTeacher={Boolean(screenShareBlockedByTeacher)}
+          onRequestStart={onRequestStartScreenShare}
+          onStop={onStopScreenShare}
+        />
       </div>
 
       <div className="cr-controls__center">
@@ -162,6 +178,26 @@ export default function ClassroomControlBar({
             <span className="cr-controls__toggle-slider"></span>
             <span className="cr-controls__toggle-label">
               Learners follow layout
+            </span>
+          </label>
+        )}
+
+        {isTeacher && (
+          <label
+            className="cr-controls__toggle-wrapper"
+            title="Allow learners to share their screen with the class"
+          >
+            <input
+              type="checkbox"
+              className="cr-controls__toggle-input"
+              checked={Boolean(teacherAllowsScreenShare)}
+              onChange={(e) =>
+                onTeacherAllowsScreenShareChange?.(e.target.checked)
+              }
+            />
+            <span className="cr-controls__toggle-slider"></span>
+            <span className="cr-controls__toggle-label">
+              Learners can share screen
             </span>
           </label>
         )}

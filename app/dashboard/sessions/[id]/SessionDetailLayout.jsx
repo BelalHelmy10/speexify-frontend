@@ -8,12 +8,21 @@ import {
   AsideCard,
   Breadcrumbs,
   EmptyState,
-  HeroChip,
-  InfoTile,
   Panel,
-  PersonRow,
 } from "./SessionDetailUI";
 import { getSafeExternalUrl } from "@/utils/url";
+
+function getInitials(value = "") {
+  const s = String(value || "?").trim();
+  if (!s || s === "?") return "?";
+  if (s.includes("@")) return s[0].toUpperCase();
+  return s
+    .split(/\s+/)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 function StatusPill({ label, statusKey }) {
   return (
@@ -82,9 +91,26 @@ export default function SessionDetailLayout({
 }) {
   const heroDate = formatHeroDate(startAt, locale);
   const backLabel = cleanBackLabel(txt("back_btn", "Back"));
+  const statusKey = sessionStatus === "canceled" ? "canceled" : sessionStatus;
+
+  const fmtTime = (iso) => {
+    if (!iso) return "";
+    return new Date(iso).toLocaleTimeString(
+      locale === "ar" ? "ar-EG" : "en-US",
+      { hour: "numeric", minute: "2-digit" }
+    );
+  };
+
+  const startTime = fmtTime(startAt);
+  const endTime = fmtTime(endAt);
+
+  const primaryLearner =
+    legacyLearner ||
+    (activeParticipants.length > 0 ? activeParticipants[0] : null);
 
   return (
     <>
+      {/* ── Top bar ───────────────────────────────────────────── */}
       <div className="page-session-detail__topbar">
         <Breadcrumbs
           dashboardHref={dashboardHref}
@@ -97,138 +123,133 @@ export default function SessionDetailLayout({
         </Link>
       </div>
 
-      <header
-        className={`sd-hero sd-hero--${sessionStatus === "canceled" ? "canceled" : sessionStatus}`}
-      >
+      {/* ── Hero ──────────────────────────────────────────────── */}
+      <header className={`sd-hero sd-hero--${statusKey}`}>
         <div className="sd-hero__inner">
-          <div>
-            <div className="sd-hero__eyebrow">
-              <span className="sd-hero__type">
-                {isGroup
-                  ? txt("type_group", "Group lesson")
-                  : txt("type_one_on_one", "1:1 Lesson")}
-              </span>
-            </div>
-            <h1 className="sd-hero__title">{sessionTitle}</h1>
-            <p className="sd-hero__subtitle">
-              {txt(
-                "normal_subtitle",
-                "Overview of this lesson, participants, and feedback."
-              )}
-            </p>
-            <div className="sd-hero__chips">
-              {heroDate && <HeroChip icon="calendar">{heroDate}</HeroChip>}
-              {durationStr && (
-                <HeroChip icon="clock">{durationStr}</HeroChip>
-              )}
-              <HeroChip icon="clock">{timezone}</HeroChip>
-            </div>
+          {/* Meta row: type chip + status pill */}
+          <div className="sd-hero__meta-row">
+            <span className="sd-hero__type">
+              {isGroup
+                ? txt("type_group", "Group lesson")
+                : txt("type_one_on_one", "1:1 Lesson")}
+            </span>
+            <StatusPill label={statusConfig.label} statusKey={statusKey} />
           </div>
-          <div className="sd-hero__status-wrap">
-            <StatusPill
-              label={statusConfig.label}
-              statusKey={
-                sessionStatus === "canceled" ? "canceled" : sessionStatus
-              }
-            />
+
+          {/* Title */}
+          <h1 className="sd-hero__title">{sessionTitle}</h1>
+
+          {/* Time strip */}
+          <div className="sd-hero__time-strip">
+            {heroDate && (
+              <span className="sd-hero__time-item">{heroDate}</span>
+            )}
+            {(startTime || endTime) && (
+              <>
+                <span className="sd-hero__time-sep" aria-hidden>·</span>
+                <span className="sd-hero__time-item sd-hero__time-item--range">
+                  {startTime}
+                  {endTime && (
+                    <>
+                      {" "}
+                      <span className="sd-hero__arrow" aria-hidden>→</span>
+                      {" "}
+                      {endTime}
+                    </>
+                  )}
+                </span>
+              </>
+            )}
+            {durationStr && (
+              <>
+                <span className="sd-hero__time-sep" aria-hidden>·</span>
+                <span className="sd-hero__time-item">{durationStr}</span>
+              </>
+            )}
+            {timezone && (
+              <>
+                <span className="sd-hero__time-sep" aria-hidden>·</span>
+                <span className="sd-hero__time-item sd-hero__time-item--tz">
+                  {timezone}
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Participants */}
+          <div className="sd-hero__people">
+            {teacher && (
+              <div className="sd-hero__person-card">
+                <div className="sd-hero__person-avatar">
+                  {getInitials(teacher.name || teacher.email)}
+                </div>
+                <div className="sd-hero__person-info">
+                  <span className="sd-hero__person-name">
+                    {teacher.name || teacher.email}
+                  </span>
+                  <span className="sd-hero__person-role">
+                    {txt("section_teacher_title", "Teacher")}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {!isGroup && primaryLearner && teacher && (
+              <div className="sd-hero__people-sep" aria-hidden>×</div>
+            )}
+
+            {!isGroup && primaryLearner && (
+              <div className="sd-hero__person-card">
+                <div className="sd-hero__person-avatar sd-hero__person-avatar--learner">
+                  {getInitials(
+                    primaryLearner.name || primaryLearner.email
+                  )}
+                </div>
+                <div className="sd-hero__person-info">
+                  <span className="sd-hero__person-name">
+                    {primaryLearner.name || primaryLearner.email}
+                  </span>
+                  <span className="sd-hero__person-role">
+                    {txt("section_learner_title", "Learner")}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {isGroup && (
+              <div className="sd-hero__person-card">
+                <div className="sd-hero__person-avatar sd-hero__person-avatar--group">
+                  {typeof participantCount === "number"
+                    ? participantCount
+                    : activeParticipants.length}
+                </div>
+                <div className="sd-hero__person-info">
+                  <span className="sd-hero__person-name">
+                    {typeof participantCount === "number"
+                      ? participantCount
+                      : activeParticipants.length}
+                    {" "}
+                    {txt("session_participants", "Participants")}
+                    {typeof capacity === "number" ? ` / ${capacity}` : ""}
+                  </span>
+                  <span className="sd-hero__person-role">
+                    {txt("type_group", "Group session")}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
+      {/* ── Main layout ───────────────────────────────────────── */}
       <div className="sd-layout">
         <div className="sd-main">
-          <div className="sd-tiles">
-            <InfoTile icon="calendar" label={txt("section_time_title", "Time")}>
-              <div className="sd-time-list">
-                <div className="sd-time-row">
-                  <span>{txt("time_start_label", "Start:").replace(":", "")}</span>
-                  <strong>{formatDateTime(startAt)}</strong>
-                </div>
-                <div className="sd-time-row">
-                  <span>{txt("time_end_label", "End:").replace(":", "")}</span>
-                  <strong>{formatDateTime(endAt)}</strong>
-                </div>
-              </div>
-              {durationStr && (
-                <span className="sd-tile__meta">
-                  {txt("time_duration_label", "Duration:")} {durationStr}
-                </span>
-              )}
-            </InfoTile>
 
-            <InfoTile
-              icon="teacher"
-              label={txt("section_teacher_title", "Teacher")}
-            >
-              {teacher ? (
-                <PersonRow
-                  name={teacher.name || teacher.email}
-                  email={teacher.email}
-                  role="Teacher"
-                />
-              ) : (
-                <span className="session-detail-muted">
-                  {txt("section_teacher_not_assigned", "No teacher assigned")}
-                </span>
-              )}
-            </InfoTile>
-
-            <InfoTile icon="learners" label={learnerLabel}>
-              {!isGroup ? (
-                legacyLearner ? (
-                  <PersonRow
-                    name={legacyLearner.name || legacyLearner.email}
-                    email={legacyLearner.email}
-                    role="Learner"
-                  />
-                ) : activeParticipants.length > 0 ? (
-                  <PersonRow
-                    name={
-                      activeParticipants[0].name ||
-                      activeParticipants[0].email
-                    }
-                    email={activeParticipants[0].email}
-                    role="Learner"
-                  />
-                ) : (
-                  <span className="session-detail-muted">
-                    {txt("section_learner_not_found", "No learner assigned")}
-                  </span>
-                )
-              ) : (
-                <>
-                  <span className="sd-tile__meta">
-                    {txt("session_participants", "Participants")}:{" "}
-                    {typeof participantCount === "number"
-                      ? participantCount
-                      : activeParticipants.length}
-                    {typeof capacity === "number" ? ` / ${capacity}` : ""}
-                  </span>
-                  {activeParticipants.length > 0 ? (
-                    <ul className="sd-learners-list">
-                      {activeParticipants.map((learner, idx) => (
-                        <li key={learner.id || idx}>
-                          {learner.name || learner.email}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="session-detail-muted">
-                      {txt("session_no_participants", "No participants yet.")}
-                    </span>
-                  )}
-                </>
-              )}
-            </InfoTile>
-          </div>
-
+          {/* Attendance — teacher/admin only */}
           {(sessionIsTeacher || sessionIsAdmin) &&
             sessionStatus !== "canceled" && (
-              <Panel
-                icon="learners"
-                title="Attendance"
-                variant="subtle"
-              >
+              <Panel icon="learners" title="Attendance" variant="subtle">
                 <AttendancePanel
                   sessionId={Number(sessionId)}
                   participants={attendanceParticipants}
@@ -240,6 +261,7 @@ export default function SessionDetailLayout({
               </Panel>
             )}
 
+          {/* Notes / Homework */}
           <Panel
             icon="notes"
             title={txt("notes_title", "Notes / Homework")}
@@ -270,6 +292,7 @@ export default function SessionDetailLayout({
             )}
           </Panel>
 
+          {/* Teacher Feedback */}
           {teacherFeedback ? (
             <Panel
               icon="feedback"
@@ -279,30 +302,41 @@ export default function SessionDetailLayout({
                 "Reflections from your teacher to help guide your next steps."
               )}
             >
-              <div className="sd-feedback-grid">
-                <article className="sd-feedback-card">
+              <div className="sd-feedback-layout">
+                <article className="sd-feedback-card sd-feedback-card--featured">
                   <h4>{txt("feedback_msg_title", "Message to the learner")}</h4>
                   <p>
                     {teacherFeedback.messageToLearner?.trim() ||
                       txt("feedback_msg_empty", "No message provided.")}
                   </p>
                 </article>
-                <article className="sd-feedback-card">
-                  <h4>
-                    {txt("feedback_comments_title", "Comments on the session")}
-                  </h4>
-                  <p>
-                    {teacherFeedback.commentsOnSession?.trim() ||
-                      txt("feedback_comments_empty", "No comments provided.")}
-                  </p>
-                </article>
-                <article className="sd-feedback-card">
-                  <h4>{txt("feedback_future_title", "Future steps")}</h4>
-                  <p>
-                    {teacherFeedback.futureSteps?.trim() ||
-                      txt("feedback_future_empty", "No future steps added yet.")}
-                  </p>
-                </article>
+                <div className="sd-feedback-sub">
+                  <article className="sd-feedback-card">
+                    <h4>
+                      {txt(
+                        "feedback_comments_title",
+                        "Comments on the session"
+                      )}
+                    </h4>
+                    <p>
+                      {teacherFeedback.commentsOnSession?.trim() ||
+                        txt(
+                          "feedback_comments_empty",
+                          "No comments provided."
+                        )}
+                    </p>
+                  </article>
+                  <article className="sd-feedback-card">
+                    <h4>{txt("feedback_future_title", "Future steps")}</h4>
+                    <p>
+                      {teacherFeedback.futureSteps?.trim() ||
+                        txt(
+                          "feedback_future_empty",
+                          "No future steps added yet."
+                        )}
+                    </p>
+                  </article>
+                </div>
               </div>
               {(sessionIsTeacher || sessionIsAdmin) && (
                 <Link
@@ -322,7 +356,10 @@ export default function SessionDetailLayout({
               >
                 <EmptyState
                   icon="feedback"
-                  title={txt("feedback_empty_title", "No teacher feedback yet")}
+                  title={txt(
+                    "feedback_empty_title",
+                    "No teacher feedback yet"
+                  )}
                   body={
                     isLearner
                       ? txt(
@@ -349,6 +386,7 @@ export default function SessionDetailLayout({
             )
           )}
 
+          {/* Session Summary */}
           {showSummary && (
             <Panel
               icon="sparkles"
@@ -369,6 +407,7 @@ export default function SessionDetailLayout({
           )}
         </div>
 
+        {/* ── Sidebar ─────────────────────────────────────────── */}
         <aside className="sd-aside">
           <AsideCard
             variant="join"

@@ -109,8 +109,19 @@ export function AsideCard({
 }
 
 export function PersonRow({ name, email, role }) {
+  const raw = name || email || "?";
+  const initials = raw
+    .split(/\s+/)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
     <div className="sd-person">
+      <div className="sd-person__avatar" aria-hidden>
+        {initials}
+      </div>
       <div className="sd-person__info">
         <span className="sd-person__name">{name || email}</span>
         {email && name && <span className="sd-person__email">{email}</span>}
