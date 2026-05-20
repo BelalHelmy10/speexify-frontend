@@ -1,9 +1,18 @@
 "use client";
 
-import { BookOpen, Circle, Download, MessageSquare, Square, Users } from "lucide-react";
+import {
+  BookOpen,
+  Circle,
+  Download,
+  MessageSquare,
+  RotateCcw,
+  Square,
+  Users,
+} from "lucide-react";
 import { ClassroomRaiseHandButton } from "./ClassroomRaiseHand";
 import { ClassroomCaptionsButton } from "./ClassroomCaptions";
 import { ClassroomScreenShareButton } from "./ClassroomScreenShare";
+import ClassroomHostMenu from "./ClassroomHostMenu";
 
 export default function ClassroomControlBar({
   isMobile,
@@ -64,14 +73,17 @@ export default function ClassroomControlBar({
 
         {isTeacher && (
           <button
-            className="cr-controls__btn cr-controls__btn--secondary"
+            className="cr-controls__btn cr-controls__btn--secondary cr-controls__btn--icon-only"
             onClick={isPageRecording ? stopPageRecording : startPageRecording}
+            title={isPageRecording ? "Stop recording" : "Record class"}
+            aria-label={isPageRecording ? "Stop recording" : "Record class"}
           >
             <span className="cr-controls__btn-icon">
-              {isPageRecording ? <Square size={16} fill="currentColor" /> : <Circle size={16} fill="#ef4444" />}
-            </span>
-            <span className="cr-controls__btn-label">
-              {isPageRecording ? "Stop recording" : "Record class"}
+              {isPageRecording ? (
+                <Square size={16} fill="currentColor" />
+              ) : (
+                <Circle size={16} fill="#ef4444" />
+              )}
             </span>
           </button>
         )}
@@ -133,11 +145,14 @@ export default function ClassroomControlBar({
 
         {customSplit !== null && (
           <button
-            className="cr-controls__reset"
+            className="cr-controls__btn cr-controls__btn--ghost cr-controls__btn--icon-only"
             onClick={() => setCustomSplit(null)}
             title="Reset to preset layout"
+            aria-label="Reset to preset layout"
           >
-            Reset
+            <span className="cr-controls__btn-icon">
+              <RotateCcw size={16} />
+            </span>
           </button>
         )}
       </div>
@@ -147,6 +162,7 @@ export default function ClassroomControlBar({
           enabled={captionsEnabled}
           supported={captionsSupported}
           onToggle={onToggleCaptions}
+          iconOnly
         />
         {captionsEnabled && captionsPausedForMute && (
           <span
@@ -158,48 +174,24 @@ export default function ClassroomControlBar({
         )}
         {hasResource && onExportPage && (
           <button
-            className="cr-controls__btn cr-controls__btn--export"
+            className="cr-controls__btn cr-controls__btn--export cr-controls__btn--icon-only"
             onClick={() => onExportPage("png")}
             title="Save annotated page as PNG"
+            aria-label="Save annotated page as PNG"
           >
-            <span className="cr-controls__btn-icon"><Download size={16} /></span>
-            <span className="cr-controls__btn-label">Save page</span>
+            <span className="cr-controls__btn-icon">
+              <Download size={16} />
+            </span>
           </button>
         )}
         <ClassroomRaiseHandButton isHandRaised={isHandRaised} onToggleHand={toggleHand} />
         {isTeacher && (
-          <label className="cr-controls__toggle-wrapper">
-            <input
-              type="checkbox"
-              className="cr-controls__toggle-input"
-              checked={teacherAllowsFollowing}
-              onChange={(e) => onTeacherAllowsFollowingChange(e.target.checked)}
-            />
-            <span className="cr-controls__toggle-slider"></span>
-            <span className="cr-controls__toggle-label">
-              Learners follow layout
-            </span>
-          </label>
-        )}
-
-        {isTeacher && (
-          <label
-            className="cr-controls__toggle-wrapper"
-            title="Allow learners to share their screen with the class"
-          >
-            <input
-              type="checkbox"
-              className="cr-controls__toggle-input"
-              checked={Boolean(teacherAllowsScreenShare)}
-              onChange={(e) =>
-                onTeacherAllowsScreenShareChange?.(e.target.checked)
-              }
-            />
-            <span className="cr-controls__toggle-slider"></span>
-            <span className="cr-controls__toggle-label">
-              Learners can share screen
-            </span>
-          </label>
+          <ClassroomHostMenu
+            teacherAllowsFollowing={teacherAllowsFollowing}
+            onTeacherAllowsFollowingChange={onTeacherAllowsFollowingChange}
+            teacherAllowsScreenShare={teacherAllowsScreenShare}
+            onTeacherAllowsScreenShareChange={onTeacherAllowsScreenShareChange}
+          />
         )}
 
         {!isTeacher && (

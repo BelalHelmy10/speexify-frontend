@@ -2117,6 +2117,12 @@ body.classroom-active {
       @media (max-width: 640px) {
         display: none;
       }
+
+      &--collapsible {
+        @media (max-width: 900px) {
+          display: none;
+        }
+      }
     }
 
     &--primary {
@@ -2132,6 +2138,18 @@ body.classroom-active {
       }
     }
 
+    &--secondary {
+      background: $cr-bg-tertiary;
+      color: $cr-text-secondary;
+      border-color: $cr-border-default;
+
+      &:hover {
+        background: $cr-bg-elevated;
+        color: $cr-text-primary;
+        border-color: $cr-border-strong;
+      }
+    }
+
     &--ghost {
       background: transparent;
       color: $cr-text-secondary;
@@ -2141,6 +2159,95 @@ body.classroom-active {
         background: $cr-bg-tertiary;
         color: $cr-text-primary;
         border-color: $cr-border-strong;
+      }
+    }
+
+    &--active {
+      color: $cr-accent-primary;
+      border-color: rgba($cr-accent-primary, 0.45);
+      background: rgba($cr-accent-primary, 0.1);
+    }
+
+    &--export {
+      background: transparent;
+      color: $cr-text-secondary;
+      border-color: $cr-border-default;
+
+      &:hover {
+        background: $cr-bg-tertiary;
+        color: $cr-text-primary;
+        border-color: $cr-border-strong;
+      }
+    }
+
+    &--danger {
+      background: rgba($cr-accent-danger, 0.15);
+      color: #fecaca;
+      border-color: rgba($cr-accent-danger, 0.45);
+
+      &:hover {
+        background: rgba($cr-accent-danger, 0.25);
+        border-color: rgba($cr-accent-danger, 0.6);
+      }
+    }
+
+    // Icon-only variant: always compact, label hidden.
+    // Tooltips restore meaning on hover.
+    &--icon-only {
+      padding: 0.42rem;
+      min-width: 36px;
+      justify-content: center;
+      position: relative;
+
+      @media (max-width: 768px) {
+        min-width: 32px;
+        padding: 0.34rem;
+      }
+
+      // Premium tooltip on hover
+      &::after {
+        content: attr(title);
+        position: absolute;
+        bottom: calc(100% + 10px);
+        left: 50%;
+        transform: translateX(-50%) translateY(4px);
+        z-index: 200;
+        padding: 0.35rem 0.65rem;
+        background: rgba(15, 23, 42, 0.95);
+        color: $cr-text-primary;
+        font-size: 0.7rem;
+        font-weight: 600;
+        white-space: nowrap;
+        border-radius: $cr-radius-md;
+        border: 1px solid rgba(100, 116, 139, 0.35);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      // Tooltip caret
+      &::before {
+        content: "";
+        position: absolute;
+        bottom: calc(100% + 4px);
+        left: 50%;
+        transform: translateX(-50%) translateY(4px);
+        z-index: 200;
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid rgba(15, 23, 42, 0.95);
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      &:hover::after,
+      &:hover::before {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
       }
     }
   }
@@ -2192,6 +2299,103 @@ body.classroom-active {
       color: $cr-text-primary;
       border-color: $cr-border-default;
     }
+  }
+}
+
+// ─── Host Controls Popover ────────────────────────────────────────────────
+.cr-host-menu {
+  position: relative;
+
+  &__trigger {
+    position: relative;
+  }
+
+  // Active indicator on the gear icon
+  &__trigger.cr-controls__btn--active {
+    color: $cr-accent-primary;
+    border-color: rgba($cr-accent-primary, 0.45);
+    background: rgba($cr-accent-primary, 0.1);
+  }
+
+  &__panel {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: 0;
+    z-index: 250;
+    width: 280px;
+    padding: 0.75rem;
+    background: linear-gradient(180deg,
+        rgba(17, 24, 39, 0.98) 0%,
+        rgba(10, 15, 26, 0.98) 100%);
+    border: 1px solid $cr-border-default;
+    border-radius: $cr-radius-lg;
+    box-shadow:
+      0 20px 50px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    backdrop-filter: blur(16px);
+    animation: cr-host-menu-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  &__header {
+    padding: 0.25rem 0.5rem 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $cr-text-muted;
+    border-bottom: 1px solid $cr-border-subtle;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 0.5rem;
+    border-radius: $cr-radius-md;
+    cursor: pointer;
+    transition: background $cr-transition-fast;
+    user-select: none;
+
+    &:hover {
+      background: rgba($cr-bg-elevated, 0.5);
+    }
+  }
+
+  &__row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  &__row-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: $cr-text-primary;
+  }
+
+  &__row-desc {
+    font-size: 0.6875rem;
+    line-height: 1.35;
+    color: $cr-text-secondary;
+  }
+
+  &__switch {
+    flex-shrink: 0;
+  }
+}
+
+@keyframes cr-host-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

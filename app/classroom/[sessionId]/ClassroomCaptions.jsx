@@ -55,18 +55,18 @@ export function ClassroomCaptionsOverlay({ captions }) {
 }
 
 /* ─── Toggle Button for the Control Bar ───────────────────────────────── */
-export function ClassroomCaptionsButton({ enabled, supported, onToggle }) {
+export function ClassroomCaptionsButton({ enabled, supported, onToggle, iconOnly = false }) {
   if (!supported) {
     return (
       <button
         type="button"
-        className="cr-controls__btn cr-controls__btn--ghost"
+        className={`cr-controls__btn cr-controls__btn--ghost${iconOnly ? " cr-controls__btn--icon-only" : ""}`}
         disabled
         aria-label="Live captions are not supported in this browser"
         title="Live captions are not supported in this browser. Try Chrome or Edge."
       >
         <span className="cr-controls__btn-icon"><CaptionsOff size={16} /></span>
-        <span className="cr-controls__btn-label">Captions</span>
+        {!iconOnly && <span className="cr-controls__btn-label">Captions</span>}
       </button>
     );
   }
@@ -76,7 +76,8 @@ export function ClassroomCaptionsButton({ enabled, supported, onToggle }) {
       type="button"
       className={
         "cr-controls__btn cr-controls__btn--ghost" +
-        (enabled ? " cr-controls__btn--active" : "")
+        (enabled ? " cr-controls__btn--active" : "") +
+        (iconOnly ? " cr-controls__btn--icon-only" : "")
       }
       onClick={onToggle}
       aria-pressed={enabled}
@@ -86,9 +87,11 @@ export function ClassroomCaptionsButton({ enabled, supported, onToggle }) {
       <span className="cr-controls__btn-icon">
         {enabled ? <Captions size={16} /> : <CaptionsOff size={16} />}
       </span>
-      <span className="cr-controls__btn-label">
-        {enabled ? "Captions on" : "Captions"}
-      </span>
+      {!iconOnly && (
+        <span className="cr-controls__btn-label">
+          {enabled ? "Captions on" : "Captions"}
+        </span>
+      )}
     </button>
   );
 }
