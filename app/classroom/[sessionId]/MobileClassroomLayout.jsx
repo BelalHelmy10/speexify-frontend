@@ -3,6 +3,8 @@
 
 import {
     BookOpen,
+    Captions,
+    CaptionsOff,
     FileText,
     Hand,
     MessageSquare,
@@ -27,6 +29,9 @@ export default function MobileClassroomLayout({
     hasResource = false,
     isHandRaised,
     toggleHand,
+    captionsEnabled = false,
+    captionsSupported = false,
+    onToggleCaptions,
 }) {
     const shouldShowVideoPip = activeTab !== "video";
 
@@ -72,6 +77,18 @@ export default function MobileClassroomLayout({
                 >
                     <Hand size={20} />
                 </button>
+
+                {/* Captions toggle (always visible if supported) */}
+                {captionsSupported && (
+                    <button
+                        className={`cr-mobile-quick-actions__btn ${captionsEnabled ? "cr-controls__btn--active" : ""}`}
+                        onClick={onToggleCaptions}
+                        aria-label={captionsEnabled ? "Turn captions off" : "Turn captions on"}
+                        aria-pressed={captionsEnabled}
+                    >
+                        {captionsEnabled ? <Captions size={20} /> : <CaptionsOff size={20} />}
+                    </button>
+                )}
 
                 {/* Resource picker (teacher only, not on video tab) */}
                 {isTeacher && activeTab !== "video" && (

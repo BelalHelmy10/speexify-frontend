@@ -13,7 +13,15 @@ import ClassroomParticipantsModal from "./ClassroomParticipantsModal";
 import ClassroomLeaveConfirmModal from "./ClassroomLeaveConfirmModal";
 import ClassroomConnectionBanner from "./ClassroomConnectionBanner";
 import ClassroomTimeWarning from "./ClassroomTimeWarning";
+import ClassroomWaitingRoom from "./ClassroomWaitingRoom";
+import ClassroomLobbyPanel from "./ClassroomLobbyPanel";
+import ClassroomLateJoinBanner from "./ClassroomLateJoinBanner";
+import { useClassroomLobby } from "./useClassroomLobby";
 import { ClassroomRaiseHandOverlay, useClassroomRaiseHand } from "./ClassroomRaiseHand";
+import {
+  ClassroomCaptionsOverlay,
+  useClassroomCaptions,
+} from "./ClassroomCaptions";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { formatCompactDuration, getSessionTiming } from "./classroomTime";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
@@ -323,6 +331,8 @@ export default function ClassroomShell({
   const pendingSplitRef = useRef(customSplit);
   const splitDragRafRef = useRef(null);
   const activePointerIdRef = useRef(null);
+  const dragStartSplitRef = useRef(null);   // panel width when drag began
+  const dividerRef = useRef(null);           // divider element for transform preview
   const selectedResourceIdRef = useRef(selectedResourceId);
 
   // ✅ Layout sync throttling (teacher -> learners)
@@ -411,6 +421,7 @@ export default function ClassroomShell({
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showParticipantList, setShowParticipantList] = useState(false);
+  const exportFnRef = useRef(null);
   const [isClassroomLocked, setIsClassroomLocked] = useState(() =>
     Boolean(session?.classroomState?.moderation?.locked)
   );
@@ -420,6 +431,7 @@ export default function ClassroomShell({
     participants: [],
     actions: null,
   });
+  const [networkQuality, setNetworkQuality] = useState(null);
 
   /* -----------------------------------------------------------
      Realtime sync (classroom channel) - MUST be before resize handlers
@@ -443,6 +455,78 @@ export default function ClassroomShell({
     classroomChannel,
     userName
   );
+
+  /* -----------------------------------------------------------
+     Lobby / Waiting Room (group sessions)
+  ----------------------------------------------------------- */
+  const lobby = useClassroomLobby({
+    sessionId,
+    isTeacher,
+    classroomChannel,
+    userName,
+  });
+
+  /* -----------------------------------------------------------
+     Late-Join Experience — show catch-up banner for learners
+     who join after the session has started
+  ----------------------------------------------------------- */
+  const [showLateJoinBanner, setShowLateJoinBanner] = useState(false);
+  const [lateJoinMessages, setLateJoinMessages] = useState([]);
+  const lateJoinCheckedRef = useRef(false);
+
+  useEffect(() => {
+    if (isTeacher || lateJoinCheckedRef.current) return;
+    lateJoinCheckedRef.current = true;
+
+    // Only show if session has started and learner is joining > 1 min late
+    const elapsedMin = Math.floor((sessionTiming.elapsedSeconds || 0) / 60);
+    if (!sessionTiming.hasStarted || elapsedMin < 1) return;
+
+    setShowLateJoinBanner(true);
+
+    // Fetch last 5 chat messages for context
+    api
+      .get(`/sessions/${sessionId}/chat/messages`, { params: { limit: 5 } })
+      .then((res) => {
+        const msgs = (res.data?.messages || [])
+          .filter((m) => !m.isDeleted && m.type !== "system")
+          .slice(-5)
+          .map((m) => ({
+            id: m.id,
+            senderName: m.senderName || m.sender || "Someone",
+            text:
+              (m.text || m.content || "").length > 80
+                ? (m.text || m.content || "").slice(0, 80) + "…"
+                : m.text || m.content || "",
+          }));
+        setLateJoinMessages(msgs);
+      })
+      .catch(() => {});
+  }, [isTeacher, sessionId, sessionTiming.hasStarted, sessionTiming.elapsedSeconds]);
+
+  /* -----------------------------------------------------------
+     Live Captions (browser SpeechRecognition + WS broadcast)
+     - Each participant transcribes their own mic locally.
+     - Final and interim results are streamed over the classroom WS.
+     - Auto-pauses when the user is muted so we never broadcast
+       silently.
+  ----------------------------------------------------------- */
+  const [localAudioMuted, setLocalAudioMuted] = useState(true);
+  const handleAudioMuteChange = useCallback((muted) => {
+    setLocalAudioMuted(Boolean(muted));
+  }, []);
+
+  const {
+    captions,
+    enabled: captionsEnabled,
+    supported: captionsSupported,
+    toggle: toggleCaptions,
+    pausedForMute: captionsPausedForMute,
+  } = useClassroomCaptions(classroomChannel, userName, {
+    locale,
+    storageKey: `classroom_captions_${sessionId}`,
+    micMuted: localAudioMuted,
+  });
 
   const [classroomStateLoaded, setClassroomStateLoaded] = useState(false);
   const [classroomStateSnapshot, setClassroomStateSnapshot] = useState(null);
@@ -524,6 +608,10 @@ export default function ClassroomShell({
         : [],
       actions: nextState?.actions || null,
     });
+  }, []);
+
+  const handleNetworkQualityChange = useCallback((nextQuality) => {
+    setNetworkQuality(nextQuality || null);
   }, []);
 
   const runVideoModerationAction = useCallback(
@@ -763,11 +851,22 @@ export default function ClassroomShell({
     if (splitDragRafRef.current) {
       cancelAnimationFrame(splitDragRafRef.current);
       splitDragRafRef.current = null;
-      setCustomSplit(pendingSplitRef.current);
+    }
+
+    // Reset divider transform
+    const divEl = dividerRef.current;
+    if (divEl) divEl.style.transform = '';
+
+    // Commit the final width from the preview — spring transition kicks in via CSS
+    const finalSplit = pendingSplitRef.current;
+    if (finalSplit !== null && finalSplit !== undefined) {
+      customSplitRef.current = finalSplit;
+      setCustomSplit(finalSplit);
     }
 
     setIsDragging(false);
     activePointerIdRef.current = null;
+    dragStartSplitRef.current = null;
     // ✅ Immediately broadcast final position on drag end for snappier sync
     commitCurrentSplitLayout();
   }, [commitCurrentSplitLayout]);
@@ -784,10 +883,14 @@ export default function ClassroomShell({
           e.currentTarget.setPointerCapture(e.pointerId);
         } catch (_) { }
       }
-      updateSplitFromClientX(e.clientX);
+
+      // Freeze panels at current width; only divider moves during drag
+      const currentSplit = customSplitRef.current ?? getFocusModeSplitPercentage(focusMode);
+      dragStartSplitRef.current = currentSplit;
+      pendingSplitRef.current = currentSplit;
       setIsDragging(true);
     },
-    [canResizePanels, updateSplitFromClientX]
+    [canResizePanels, focusMode]
   );
 
   const handlePointerMove = useCallback(
@@ -796,9 +899,27 @@ export default function ClassroomShell({
       if (e.pointerId !== activePointerIdRef.current) return;
 
       e.preventDefault();
-      updateSplitFromClientX(e.clientX);
+
+      // Compute target split but don't commit to panels
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const nextSplit = clampSplitPercent(
+        ((e.clientX - rect.left) / rect.width) * 100
+      );
+      if (nextSplit === null) return;
+
+      pendingSplitRef.current = nextSplit;
+
+      // Move divider visually via transform (no panel relayout)
+      const divEl = dividerRef.current;
+      if (divEl) {
+        const startSplit = dragStartSplitRef.current ?? nextSplit;
+        const deltaPercent = nextSplit - startSplit;
+        const deltaPx = (deltaPercent / 100) * rect.width;
+        divEl.style.transform = `translateX(${deltaPx}px)`;
+      }
     },
-    [isDragging, updateSplitFromClientX]
+    [isDragging]
   );
 
   const handlePointerUp = useCallback(
@@ -1451,8 +1572,46 @@ export default function ClassroomShell({
     ? `${participantCount}${capacity ? `/${capacity}` : ""}`
     : "";
 
+  // ─── Waiting Room: block classroom until admitted ───
+  if (lobby.isInWaitingRoom || lobby.isDenied) {
+    return (
+      <ClassroomWaitingRoom
+        sessionId={sessionId}
+        sessionInfo={{
+          teacherName,
+          sessionTitle: headerTitle,
+          startTime: session?.startAt,
+          participantCount,
+          capacity,
+        }}
+        userName={userName}
+        status={lobby.isDenied ? "denied" : "waiting"}
+        wsConnected={classroomChannel?.ready || false}
+        onRetry={lobby.retryJoin}
+        onLeave={() => {
+          if (typeof window !== "undefined") {
+            window.location.href = prefix || "/dashboard";
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <div className="cr-shell">
+      {/* Lobby Panel (teacher only, for admitting waiting learners) */}
+      {isTeacher && (
+        <ClassroomLobbyPanel
+          waitingLearners={lobby.waitingLearners}
+          onAdmit={lobby.admitLearner}
+          onDeny={lobby.denyLearner}
+          onAdmitAll={lobby.admitAll}
+          isOpen={lobby.isLobbyPanelOpen}
+          onToggle={lobby.togglePanel}
+          onClose={lobby.closePanel}
+        />
+      )}
+
       {/* Header */}
       <ClassroomHeaderBar
         prefix={prefix}
@@ -1466,6 +1625,7 @@ export default function ClassroomShell({
         learnerName={learnerName}
         setShowParticipantList={setShowParticipantList}
         wsStatus={classroomChannel?.status}
+        networkQuality={networkQuality}
         sessionTiming={sessionTiming}
       />
 
@@ -1478,6 +1638,17 @@ export default function ClassroomShell({
         warningLevel={isTeacher ? sessionTiming.warningLevel : null}
         remainingLabel={sessionTiming.remainingLabel}
       />
+
+      {/* Late-Join Banner (learner only, when joining mid-session) */}
+      {showLateJoinBanner && !isTeacher && (
+        <ClassroomLateJoinBanner
+          elapsedMinutes={Math.floor((sessionTiming.elapsedSeconds || 0) / 60)}
+          currentResourceTitle={resource?.title || resource?.name || null}
+          recentMessages={lateJoinMessages}
+          onDismiss={() => setShowLateJoinBanner(false)}
+          onOpenChat={() => setIsChatOpen(true)}
+        />
+      )}
 
       {/* Main Content - Desktop only (hidden on mobile where MobileClassroomLayout is used) */}
       {!isMobile && (
@@ -1497,10 +1668,13 @@ export default function ClassroomShell({
                 isTeacher={isTeacher}
                 onScreenShareStreamChange={handleScreenShareStreamChange}
                 onModerationStateChange={handleVideoModerationChange}
+                onNetworkQualityChange={handleNetworkQualityChange}
+                onAudioMuteChange={handleAudioMuteChange}
               />
               <ClassroomRaiseHandOverlay
                 raisedHands={raisedHands}
               />
+              <ClassroomCaptionsOverlay captions={captions} />
             </div>
 
             <div
@@ -1545,6 +1719,7 @@ export default function ClassroomShell({
 
           {/* Drag Handle */}
           <div
+            ref={dividerRef}
             className={[
               "cr-divider",
               isDragging ? "cr-divider--active" : "",
@@ -1614,6 +1789,7 @@ export default function ClassroomShell({
                   initialAudioState={classroomStateSnapshot?.audio || null}
                   initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
                   onClassroomStateChange={persistClassroomState}
+                  onExportReady={(fn) => { exportFnRef.current = fn; }}
                   className="cr-prep-shell-fullsize"
                 />
               ) : (
@@ -1671,6 +1847,12 @@ export default function ClassroomShell({
         chatUnreadCount={chatUnreadCount}
         isHandRaised={isHandRaised}
         toggleHand={toggleHand}
+        captionsEnabled={captionsEnabled}
+        captionsSupported={captionsSupported}
+        onToggleCaptions={toggleCaptions}
+        captionsPausedForMute={captionsPausedForMute}
+        onExportPage={(format) => exportFnRef.current?.(format)}
+        hasResource={Boolean(resource)}
       />
 
       {/* Mobile Layout (shown only on screens < 900px) */}
@@ -1685,6 +1867,9 @@ export default function ClassroomShell({
           hasResource={!!resource}
           isHandRaised={isHandRaised}
           toggleHand={toggleHand}
+          captionsEnabled={captionsEnabled}
+          captionsSupported={captionsSupported}
+          onToggleCaptions={toggleCaptions}
           videoComponent={
             <>
               <PrepVideoCall
@@ -1693,10 +1878,13 @@ export default function ClassroomShell({
                 isTeacher={isTeacher}
                 onScreenShareStreamChange={handleScreenShareStreamChange}
                 onModerationStateChange={handleVideoModerationChange}
+                onNetworkQualityChange={handleNetworkQualityChange}
+                onAudioMuteChange={handleAudioMuteChange}
               />
               <ClassroomRaiseHandOverlay
                 raisedHands={raisedHands}
               />
+              <ClassroomCaptionsOverlay captions={captions} />
             </>
           }
           contentComponent={
@@ -1734,6 +1922,7 @@ export default function ClassroomShell({
                 initialAudioState={classroomStateSnapshot?.audio || null}
                 initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
                 onClassroomStateChange={persistClassroomState}
+                onExportReady={(fn) => { exportFnRef.current = fn; }}
               />
             ) : (
               <div className="cr-placeholder">

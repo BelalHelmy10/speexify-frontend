@@ -115,6 +115,7 @@ export default function PrepShell({
   initialAudioState = null,
   initialPdfScroll = null,
   onClassroomStateChange,
+  onExportReady,
 }) {
   const dict = getDictionary(locale, "resources");
   const prefix = locale === "ar" ? "/ar" : "";
@@ -1251,6 +1252,11 @@ export default function PrepShell({
     }
   }
 
+  // Expose export to parent (e.g. ClassroomShell control bar)
+  useEffect(() => {
+    if (onExportReady) onExportReady(handleExport);
+  });
+
   // REDRAW: render all strokes (normalized) onto canvas (legacy bitmap)
   function redrawCanvasFromStrokes(strokesToDraw) {
     const canvas = canvasRef.current;
@@ -1454,7 +1460,13 @@ export default function PrepShell({
     });
   }
 
+  const lastPointerBroadcastRef = useRef(0);
   function broadcastPointer(normalizedPosOrNull) {
+    // Throttle pointer broadcasts to ~30/sec for efficient WS usage
+    const now = performance.now();
+    if (normalizedPosOrNull && now - lastPointerBroadcastRef.current < 33) return;
+    lastPointerBroadcastRef.current = now;
+
     broadcastPrepPointer(normalizedPosOrNull, {
       channelReady,
       sendOnChannel,
@@ -2103,6 +2115,13 @@ export default function PrepShell({
       dragState,
       draw,
       tool,
+      isPdf,
+      pdfCurrentPage,
+      isTeacher,
+      myUserId,
+      setTeacherPointerByPage,
+      setLearnerPointersByPage,
+      broadcastPointer,
     });
   }
 

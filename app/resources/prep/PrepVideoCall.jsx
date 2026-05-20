@@ -15,12 +15,30 @@ import {
   Wifi,
 } from "lucide-react";
 
+const JITSI_DOMINANT_SPEAKER_STYLE_ID = "speexify-dominant-speaker-style";
+const JITSI_DOMINANT_SPEAKER_CSS = `
+  .videocontainer.dominant-speaker,
+  .dominant-speaker .videocontainer,
+  .dominant-speaker,
+  .dominant-speaker-indicator,
+  .dominant-speaker-indicator__indicator,
+  .spx-active-speaker {
+    outline: 2px solid rgba(45, 212, 191, 0.94) !important;
+    box-shadow:
+      0 0 0 2px rgba(20, 184, 166, 0.28),
+      0 0 24px rgba(20, 184, 166, 0.34) !important;
+    border-radius: 12px !important;
+  }
+`;
+
 export default function PrepVideoCall({
   roomId,
   userName,
   isTeacher,
   onScreenShareStreamChange,
   onModerationStateChange,
+  onNetworkQualityChange,
+  onAudioMuteChange,
   locale = "en",
 }) {
   const containerRef = useRef(null);
@@ -41,13 +59,13 @@ export default function PrepVideoCall({
   const [selectedAudioOutputId, setSelectedAudioOutputId] = useState("");
   const [micLevel, setMicLevel] = useState(0);
   const [sessionAudioMuted, setSessionAudioMuted] = useState(true);
-  const [micMonitorUnavailable, setMicMonitorUnavailable] = useState(false);
   const [networkStatus, setNetworkStatus] = useState({
     state: "checking",
     label: "Checking network",
     detail: "Measuring connection quality...",
     latency: null,
   });
+  const [activeSpeakerName, setActiveSpeakerName] = useState("");
   const [isTestingSpeaker, setIsTestingSpeaker] = useState(false);
   const previewVideoRef = useRef(null);
   const previewStreamRef = useRef(null);
@@ -56,8 +74,10 @@ export default function PrepVideoCall({
   const speakerTestRef = useRef(null);
   const speakerTestTimeoutRef = useRef(null);
   const moderationCbRef = useRef(onModerationStateChange);
+  const networkQualityCbRef = useRef(onNetworkQualityChange);
   const jitsiParticipantsRef = useRef(new Map());
   const localParticipantIdRef = useRef(null);
+  const activeSpeakerIdRef = useRef(null);
 
   // ─────────────────────────────────────────────
   // Page recording is handled by ClassroomShell
@@ -70,6 +90,226 @@ export default function PrepVideoCall({
   useEffect(() => {
     moderationCbRef.current = onModerationStateChange;
   }, [onModerationStateChange]);
+
+  useEffect(() => {
+    networkQualityCbRef.current = onNetworkQualityChange;
+  }, [onNetworkQualityChange]);
+
+  const getFirstFiniteNumber = useCallback((...values) => {
+    for (const value of values) {
+      const num = Number(value);
+      if (Number.isFinite(num)) return num;
+    }
+    return null;
+  }, []);
+
+  const normalizeConnectionQuality = useCallback(
+    (payload = {}) => {
+      const quality = getFirstFiniteNumber(
+        payload.connectionQuality,
+        payload.quality,
+        payload.score,
+        payload.value
+      );
+      const latencyMs = getFirstFiniteNumber(
+        payload.jvbRTT,
+        payload.p2pRTT,
+        payload.rtt,
+        payload.latency,
+        payload.stats?.jvbRTT,
+        payload.stats?.p2pRTT,
+        payload.statistics?.jvbRTT,
+        payload.statistics?.p2pRTT
+      );
+
+      if (quality === null && latencyMs === null) return null;
+
+      const normalizedQuality =
+        quality === null ? null : Math.max(0, Math.min(100, quality));
+
+      let level = "unknown";
+      let label = "Checking";
+      if (normalizedQuality !== null) {
+        if (normalizedQuality >= 85) {
+          level = "excellent";
+          label = "Excellent";
+        } else if (normalizedQuality >= 65) {
+          level = "good";
+          label = "Good";
+        } else if (normalizedQuality >= 35) {
+          level = "fair";
+          label = "Fair";
+        } else {
+          level = "poor";
+          label = "Poor";
+        }
+      } else if (latencyMs !== null) {
+        if (latencyMs <= 90) {
+          level = "excellent";
+          label = "Excellent";
+        } else if (latencyMs <= 180) {
+          level = "good";
+          label = "Good";
+        } else if (latencyMs <= 350) {
+          level = "fair";
+          label = "Fair";
+        } else {
+          level = "poor";
+          label = "Poor";
+        }
+      }
+
+      return {
+        level,
+        label,
+        quality: normalizedQuality,
+        latencyMs: latencyMs === null ? null : Math.round(latencyMs),
+      };
+    },
+    [getFirstFiniteNumber]
+  );
+
+  const publishNetworkQuality = useCallback(
+    (payload) => {
+      const cb = networkQualityCbRef.current;
+      if (typeof cb !== "function") return;
+
+      const participantId =
+        payload?.participantId || payload?.id || payload?.endpointId || null;
+      if (
+        participantId &&
+        localParticipantIdRef.current &&
+        String(participantId) !== localParticipantIdRef.current
+      ) {
+        return;
+      }
+
+      cb(normalizeConnectionQuality(payload));
+    },
+    [normalizeConnectionQuality]
+  );
+
+  const clearNetworkQuality = useCallback(() => {
+    const cb = networkQualityCbRef.current;
+    if (typeof cb === "function") cb(null);
+  }, []);
+
+  const getJitsiIframeDocument = useCallback(() => {
+    try {
+      const iframe =
+        apiRef.current?.getIFrame?.() ||
+        containerRef.current?.querySelector?.("iframe");
+      return iframe?.contentDocument || iframe?.contentWindow?.document || null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const injectDominantSpeakerStyles = useCallback(() => {
+    const doc = getJitsiIframeDocument();
+    if (!doc?.head) return false;
+    if (doc.getElementById(JITSI_DOMINANT_SPEAKER_STYLE_ID)) return true;
+
+    const style = doc.createElement("style");
+    style.id = JITSI_DOMINANT_SPEAKER_STYLE_ID;
+    style.textContent = JITSI_DOMINANT_SPEAKER_CSS;
+    doc.head.appendChild(style);
+    return true;
+  }, [getJitsiIframeDocument]);
+
+  const getAttributeSelectorValue = useCallback((value) => {
+    return String(value || "")
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"');
+  }, []);
+
+  const markDominantSpeakerTile = useCallback(
+    (participantId) => {
+      const doc = getJitsiIframeDocument();
+      if (!doc) return false;
+
+      injectDominantSpeakerStyles();
+      doc
+        .querySelectorAll(".spx-active-speaker")
+        .forEach((node) => node.classList.remove("spx-active-speaker"));
+
+      if (!participantId) return true;
+
+      const escapedId = getAttributeSelectorValue(participantId);
+      const selectors = [
+        `[data-participant-id="${escapedId}"]`,
+        `[data-participantid="${escapedId}"]`,
+        `[data-endpoint-id="${escapedId}"]`,
+        `[participantid="${escapedId}"]`,
+        `[id="${escapedId}"]`,
+        `[id="participant_${escapedId}"]`,
+        `[data-testid="participant_${escapedId}"]`,
+        `[id*="${escapedId}"]`,
+        `[data-testid*="${escapedId}"]`,
+      ];
+
+      let target = null;
+      for (const selector of selectors) {
+        target = doc.querySelector(selector);
+        if (target) break;
+      }
+
+      const tile =
+        target?.closest?.(
+          ".videocontainer, .filmstrip__tile, [class*='tile'], [class*='participant'], [class*='video-container']"
+        ) || target;
+      tile?.classList?.add("spx-active-speaker");
+      return Boolean(tile);
+    },
+    [getAttributeSelectorValue, getJitsiIframeDocument, injectDominantSpeakerStyles]
+  );
+
+  const getDominantSpeakerId = useCallback((payload) => {
+    if (typeof payload === "string") return payload || null;
+    if (!payload || typeof payload !== "object") return null;
+    return (
+      payload.id ||
+      payload.participantId ||
+      payload.participantID ||
+      payload.endpointId ||
+      null
+    );
+  }, []);
+
+  const getSpeakerDisplayName = useCallback(
+    (speakerId) => {
+      if (!speakerId) return "";
+      const normalizedSpeakerId = String(speakerId);
+      if (
+        localParticipantIdRef.current &&
+        normalizedSpeakerId === localParticipantIdRef.current
+      ) {
+        return userName || (isTeacher ? "Teacher" : "You");
+      }
+
+      return (
+        jitsiParticipantsRef.current.get(normalizedSpeakerId)?.displayName ||
+        "Speaking"
+      );
+    },
+    [isTeacher, userName]
+  );
+
+  const clearDominantSpeaker = useCallback(() => {
+    activeSpeakerIdRef.current = null;
+    setActiveSpeakerName("");
+    markDominantSpeakerTile(null);
+  }, [markDominantSpeakerTile]);
+
+  const handleDominantSpeakerChanged = useCallback(
+    (payload) => {
+      const speakerId = getDominantSpeakerId(payload);
+      activeSpeakerIdRef.current = speakerId ? String(speakerId) : null;
+      setActiveSpeakerName(getSpeakerDisplayName(speakerId));
+      markDominantSpeakerTile(speakerId);
+    },
+    [getDominantSpeakerId, getSpeakerDisplayName, markDominantSpeakerTile]
+  );
 
   const executeJitsiCommand = useCallback((command, ...args) => {
     const api = apiRef.current;
@@ -152,7 +392,22 @@ export default function PrepVideoCall({
     if (typeof cb === "function") {
       cb({ ready: false, participants: [], actions: null });
     }
-  }, []);
+    clearDominantSpeaker();
+  }, [clearDominantSpeaker]);
+
+  const updateParticipantDisplayName = useCallback(
+    (participant) => {
+      const normalized = normalizeJitsiParticipant(participant);
+      if (!normalized) return;
+
+      jitsiParticipantsRef.current.set(normalized.id, normalized);
+      if (activeSpeakerIdRef.current === normalized.id) {
+        setActiveSpeakerName(getSpeakerDisplayName(normalized.id));
+      }
+      publishModerationState();
+    },
+    [getSpeakerDisplayName, normalizeJitsiParticipant, publishModerationState]
+  );
 
   const stopMicMeter = useCallback(() => {
     if (micMeterRafRef.current) {
@@ -266,23 +521,6 @@ export default function PrepVideoCall({
 
     return { audio, video };
   }, [joinVideoMuted, selectedAudioInputId, selectedVideoInputId]);
-
-  const buildAudioMonitorConstraints = useCallback(() => {
-    const audio = selectedAudioInputId
-      ? {
-          deviceId: { exact: selectedAudioInputId },
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        }
-      : {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        };
-
-    return { audio, video: false };
-  }, [selectedAudioInputId]);
 
   const runNetworkCheck = useCallback(async () => {
     if (typeof window === "undefined") return;
@@ -480,61 +718,23 @@ export default function PrepVideoCall({
     };
   }, [stopPreviewStream, stopSpeakerTest]);
 
-  useEffect(() => {
-    if (!hasJoined || sessionAudioMuted) {
-      stopPreviewStream();
-      setMicMonitorUnavailable(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function startSessionMicMonitor() {
-      if (typeof navigator === "undefined" || !navigator.mediaDevices) {
-        setMicMonitorUnavailable(true);
-        setMicLevel(0);
-        return;
-      }
-
-      try {
-        setMicMonitorUnavailable(false);
-        const stream = await navigator.mediaDevices.getUserMedia(
-          buildAudioMonitorConstraints()
-        );
-
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
-        stopPreviewStream();
-        previewStreamRef.current = stream;
-        startMicMeter(stream);
-      } catch {
-        setMicMonitorUnavailable(true);
-        setMicLevel(0);
-      }
-    }
-
-    startSessionMicMonitor();
-
-    return () => {
-      cancelled = true;
-      stopPreviewStream();
-    };
-  }, [
-    buildAudioMonitorConstraints,
-    hasJoined,
-    sessionAudioMuted,
-    startMicMeter,
-    stopPreviewStream,
-  ]);
-
   // keep callback stable
   const screenShareCbRef = useRef(onScreenShareStreamChange);
   useEffect(() => {
     screenShareCbRef.current = onScreenShareStreamChange;
   }, [onScreenShareStreamChange]);
+
+  const audioMuteCbRef = useRef(onAudioMuteChange);
+  useEffect(() => {
+    audioMuteCbRef.current = onAudioMuteChange;
+  }, [onAudioMuteChange]);
+
+  // Bubble the initial mute state to parent whenever it changes locally
+  // (covers the prejoin → joined transition where joinAudioMuted seeds state).
+  useEffect(() => {
+    const cb = audioMuteCbRef.current;
+    if (typeof cb === "function") cb(sessionAudioMuted);
+  }, [sessionAudioMuted]);
 
   const isMediaStreamLike = (value) =>
     !!value &&
@@ -674,37 +874,56 @@ export default function PrepVideoCall({
               .then((muted) => setSessionAudioMuted(Boolean(muted)))
               .catch(() => { });
           }
+          injectDominantSpeakerStyles();
           publishModerationState();
         });
 
         api.addListener("audioMuteStatusChanged", (status) => {
-          setSessionAudioMuted(Boolean(status?.muted));
+          const muted = Boolean(status?.muted);
+          setSessionAudioMuted(muted);
+          const cb = audioMuteCbRef.current;
+          if (typeof cb === "function") cb(muted);
         });
 
         api.addListener("participantJoined", (participant) => {
-          const normalized = normalizeJitsiParticipant(participant);
-          if (normalized) {
-            jitsiParticipantsRef.current.set(normalized.id, normalized);
-            publishModerationState();
-          }
+          updateParticipantDisplayName(participant);
         });
 
         api.addListener("participantLeft", (participant) => {
           const id = participant?.participantId || participant?.id;
           if (id) {
-            jitsiParticipantsRef.current.delete(String(id));
+            const normalizedId = String(id);
+            jitsiParticipantsRef.current.delete(normalizedId);
+            if (activeSpeakerIdRef.current === normalizedId) {
+              clearDominantSpeaker();
+            }
             publishModerationState();
           }
         });
 
         api.addListener("displayNameChange", (participant) => {
-          const normalized = normalizeJitsiParticipant(participant);
-          if (normalized) {
-            jitsiParticipantsRef.current.set(normalized.id, normalized);
-            publishModerationState();
-          }
+          updateParticipantDisplayName(participant);
         });
 
+        const handleDominantSpeakerEvent = (payload) => {
+          handleDominantSpeakerChanged(payload);
+        };
+        if (typeof api.on === "function") {
+          api.on("dominantSpeakerChanged", handleDominantSpeakerEvent);
+        } else {
+          api.addListener("dominantSpeakerChanged", handleDominantSpeakerEvent);
+        }
+
+        const handleConnectionQualityChanged = (payload) => {
+          publishNetworkQuality(payload);
+        };
+        if (typeof api.on === "function") {
+          api.on("connectionQualityChanged", handleConnectionQualityChanged);
+        } else {
+          api.addListener("connectionQualityChanged", handleConnectionQualityChanged);
+        }
+
+        injectDominantSpeakerStyles();
         api.addListener("errorOccurred", (e) => {
           console.error("Jitsi error:", e);
           if (e?.error?.name === "conference.connectionError") {
@@ -737,6 +956,7 @@ export default function PrepVideoCall({
         publishModerationState();
       } catch (err) {
         console.error("Failed to initialize Jitsi:", err);
+        clearNetworkQuality();
         clearModerationState();
         if (!cancelled) {
           setError(t(dict, "classroom_video_error_generic"));
@@ -759,6 +979,7 @@ export default function PrepVideoCall({
         console.warn("Error disposing Jitsi API:", e);
       }
       apiRef.current = null;
+      clearNetworkQuality();
       clearModerationState();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -939,7 +1160,14 @@ export default function PrepVideoCall({
   }
 
   return (
-    <div className="cr-video">
+    <div
+      className={[
+        "cr-video",
+        activeSpeakerName ? "cr-video--active-speaker" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {isLoading && !error && (
         <div className="cr-video__loading">
           <div className="cr-video__spinner" />
@@ -971,24 +1199,13 @@ export default function PrepVideoCall({
         }}
       />
 
-      {!sessionAudioMuted && !micMonitorUnavailable && (
-        <div
-          className="cr-video__mic-status"
-          title="Live microphone level"
-          aria-label="Live microphone level"
-        >
-          <Mic size={14} />
-          <span className="cr-video__mic-bars" aria-hidden="true">
-            {[0.18, 0.38, 0.62, 0.84].map((threshold) => (
-              <span
-                key={threshold}
-                className={micLevel >= threshold ? "is-active" : ""}
-              />
-            ))}
-          </span>
-          <span className="cr-video__mic-label">Mic</span>
+      {activeSpeakerName && (
+        <div className="cr-video__speaker-indicator" aria-live="polite">
+          <span className="cr-video__speaker-dot" aria-hidden="true" />
+          <span>Speaking: {activeSpeakerName}</span>
         </div>
       )}
+
     </div>
   );
 }

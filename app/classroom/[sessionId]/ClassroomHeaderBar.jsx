@@ -12,6 +12,14 @@ const WS_STATUS_MAP = {
   idle: { color: "var(--cr-text-muted, #64748b)", label: "Idle" },
 };
 
+function getNetworkQualityText(networkQuality) {
+  if (!networkQuality?.label) return "";
+  if (Number.isFinite(Number(networkQuality.latencyMs))) {
+    return `${networkQuality.label} · ${Math.round(Number(networkQuality.latencyMs))}ms`;
+  }
+  return networkQuality.label;
+}
+
 export default function ClassroomHeaderBar({
   prefix,
   setShowLeaveConfirm,
@@ -24,10 +32,23 @@ export default function ClassroomHeaderBar({
   learnerName,
   setShowParticipantList,
   wsStatus,
+  networkQuality,
   sessionTiming,
 }) {
   const timing = sessionTiming || {};
   const wsInfo = WS_STATUS_MAP[wsStatus] || WS_STATUS_MAP.idle;
+  const networkQualityText = getNetworkQualityText(networkQuality);
+  const networkQualityLevel = networkQuality?.level || "unknown";
+  const networkQualityTitle = networkQualityText
+    ? [
+      `Video network: ${networkQualityText}`,
+      Number.isFinite(Number(networkQuality?.quality))
+        ? `Quality ${Math.round(Number(networkQuality.quality))}%`
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" · ")
+    : "";
   const countdownWarningLevel = isTeacher ? timing.warningLevel : null;
   const endsInClassName = [
     "cr-header__timer",
@@ -95,6 +116,17 @@ export default function ClassroomHeaderBar({
             <Wifi size={14} style={{ color: wsInfo.color }} />
           )}
         </span>
+
+        {networkQualityText && (
+          <span
+            className={`cr-header__network-quality cr-header__network-quality--${networkQualityLevel}`}
+            title={networkQualityTitle}
+            aria-label={networkQualityTitle || `Video network: ${networkQualityText}`}
+          >
+            <span className="cr-header__network-quality-dot" />
+            {networkQualityText}
+          </span>
+        )}
 
         <span
           className="cr-header__role-badge"

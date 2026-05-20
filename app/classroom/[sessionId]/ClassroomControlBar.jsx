@@ -1,7 +1,8 @@
 "use client";
 
-import { BookOpen, Circle, MessageSquare, Square, Users } from "lucide-react";
+import { BookOpen, Circle, Download, MessageSquare, Square, Users } from "lucide-react";
 import { ClassroomRaiseHandButton } from "./ClassroomRaiseHand";
+import { ClassroomCaptionsButton } from "./ClassroomCaptions";
 
 export default function ClassroomControlBar({
   isMobile,
@@ -31,6 +32,12 @@ export default function ClassroomControlBar({
   chatUnreadCount,
   isHandRaised,
   toggleHand,
+  captionsEnabled,
+  captionsSupported,
+  onToggleCaptions,
+  captionsPausedForMute,
+  onExportPage,
+  hasResource,
 }) {
   if (isMobile) return null;
 
@@ -120,6 +127,29 @@ export default function ClassroomControlBar({
       </div>
 
       <div className="cr-controls__right">
+        <ClassroomCaptionsButton
+          enabled={captionsEnabled}
+          supported={captionsSupported}
+          onToggle={onToggleCaptions}
+        />
+        {captionsEnabled && captionsPausedForMute && (
+          <span
+            className="cr-controls__caption-hint"
+            title="Captions resume when you unmute"
+          >
+            Captions paused (muted)
+          </span>
+        )}
+        {hasResource && onExportPage && (
+          <button
+            className="cr-controls__btn cr-controls__btn--export"
+            onClick={() => onExportPage("png")}
+            title="Save annotated page as PNG"
+          >
+            <span className="cr-controls__btn-icon"><Download size={16} /></span>
+            <span className="cr-controls__btn-label">Save page</span>
+          </button>
+        )}
         <ClassroomRaiseHandButton isHandRaised={isHandRaised} onToggleHand={toggleHand} />
         {isTeacher && (
           <label className="cr-controls__toggle-wrapper">
