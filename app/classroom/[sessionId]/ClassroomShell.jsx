@@ -26,7 +26,7 @@ import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
 import { formatCompactDuration, getSessionTiming } from "./classroomTime";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import api from "@/lib/api";
-import { Video, Scale, FileText, MessageSquare, BookOpen, Monitor } from "lucide-react";
+import { MessageCircle, BookOpenText, Target, MessageSquare, BookOpen, Monitor } from "lucide-react";
 
 /* -----------------------------------------------------------
    Utility: Safely generate a display name
@@ -108,15 +108,15 @@ const FOCUS_MODES = {
 };
 
 const focusModeLabel = {
-  [FOCUS_MODES.BALANCED]: "Balanced",
-  [FOCUS_MODES.VIDEO]: "Video Focus",
-  [FOCUS_MODES.CONTENT]: "Content Focus",
+  [FOCUS_MODES.VIDEO]: "Conversation",
+  [FOCUS_MODES.BALANCED]: "Reading",
+  [FOCUS_MODES.CONTENT]: "Drilling",
 };
 
 const focusModeIcon = {
-  [FOCUS_MODES.BALANCED]: <Scale size={20} />,
-  [FOCUS_MODES.VIDEO]: <Video size={20} />,
-  [FOCUS_MODES.CONTENT]: <FileText size={20} />,
+  [FOCUS_MODES.VIDEO]: <MessageCircle size={20} />,
+  [FOCUS_MODES.BALANCED]: <BookOpenText size={20} />,
+  [FOCUS_MODES.CONTENT]: <Target size={20} />,
 };
 
 const FOCUS_MODE_ORDER = [
@@ -1999,6 +1999,7 @@ export default function ClassroomShell({
         setShowLeaveConfirm={setShowLeaveConfirm}
         prefix={prefix}
         summary={leaveSummary}
+        isTeacher={isTeacher}
       />
     </div>
   );

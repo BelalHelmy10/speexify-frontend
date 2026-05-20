@@ -1,65 +1,72 @@
 "use client";
 
-import { BookOpen, CalendarClock, Clock3, Timer, Users } from "lucide-react";
+import { BookOpen, CalendarClock, Clock3, LogOut, Timer, Users } from "lucide-react";
 
 export default function ClassroomLeaveConfirmModal({
   show,
   setShowLeaveConfirm,
   prefix,
   summary,
+  isTeacher,
 }) {
   if (!show) return null;
+
+  const hasEnded = summary?.statusLabel?.includes("Over") || summary?.statusLabel === "Time is up";
 
   return (
     <div className="cr-modal-overlay" onClick={() => setShowLeaveConfirm(false)}>
       <div className="cr-modal cr-modal--small" onClick={(e) => e.stopPropagation()}>
         <div className="cr-modal__header">
-          <h2 className="cr-modal__title">Leave classroom?</h2>
+          <h2 className="cr-modal__title">
+            <LogOut size={18} />
+            Leave classroom?
+          </h2>
         </div>
         <div className="cr-modal__body">
-          <p>
-            Are you sure you want to leave this live session? Any ongoing
-            conversation and screen sharing will stop.
+          {summary?.elapsedLabel && (
+            <div className="cr-leave-elapsed">
+              <Timer size={20} />
+              <div className="cr-leave-elapsed__text">
+                <span className="cr-leave-elapsed__time">{summary.elapsedLabel}</span>
+                <span className="cr-leave-elapsed__label">in this session</span>
+              </div>
+            </div>
+          )}
+
+          <p className="cr-leave-notice">
+            {hasEnded
+              ? "The scheduled session time has ended."
+              : isTeacher
+                ? "The session will continue without you. Learners will remain connected but won\u2019t receive further guidance until you return."
+                : "The session will continue without you. Your teacher and other participants will remain connected."}
           </p>
 
           {summary && (
             <section className="cr-leave-summary" aria-label="Session summary">
-              <div className="cr-leave-summary__header">
-                <div>
-                  <span className="cr-leave-summary__eyebrow">Session summary</span>
-                  <strong>{summary.statusLabel}</strong>
-                </div>
-              </div>
-
               <div className="cr-leave-summary__grid">
                 <div className="cr-leave-summary__item">
-                  <Timer size={16} />
-                  <span>Elapsed</span>
-                  <strong>{summary.elapsedLabel}</strong>
-                </div>
-                <div className="cr-leave-summary__item">
-                  <Clock3 size={16} />
+                  <Clock3 size={14} />
                   <span>Scheduled</span>
                   <strong>{summary.scheduledLabel}</strong>
                 </div>
                 <div className="cr-leave-summary__item">
-                  <Users size={16} />
+                  <Users size={14} />
                   <span>Participants</span>
                   <strong>{summary.participantLabel}</strong>
                 </div>
                 <div className="cr-leave-summary__item">
-                  <BookOpen size={16} />
+                  <BookOpen size={14} />
                   <span>Resource</span>
                   <strong>{summary.resourceLabel}</strong>
                 </div>
+                {summary.statusLabel && (
+                  <div className="cr-leave-summary__item">
+                    <CalendarClock size={14} />
+                    <span>Status</span>
+                    <strong>{summary.statusLabel}</strong>
+                  </div>
+                )}
               </div>
-
-              {summary.endLabel && (
-                <div className="cr-leave-summary__end">
-                  <CalendarClock size={16} />
-                  <span>{summary.endLabel}</span>
-                </div>
-              )}
             </section>
           )}
         </div>
@@ -69,10 +76,10 @@ export default function ClassroomLeaveConfirmModal({
             className="cr-button cr-button--ghost"
             onClick={() => setShowLeaveConfirm(false)}
           >
-            Cancel
+            Stay in session
           </button>
           <a href={`${prefix}/dashboard`} className="cr-button cr-button--danger">
-            Yes, leave
+            Leave session
           </a>
         </div>
       </div>
