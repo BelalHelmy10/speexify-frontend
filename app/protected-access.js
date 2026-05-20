@@ -83,7 +83,9 @@ export async function requireClassroomPageAccess({
   locale = "en",
   nextPath = "/dashboard",
 } = {}) {
-  const result = await getServerApiJson(`sessions/${encodeURIComponent(sessionId)}`);
+  const result = await getServerApiJson(
+    `sessions/${encodeURIComponent(sessionId)}?classroomJoin=1`
+  );
 
   if (result.status === 401 || result.status === 403) {
     if (result.status === 401) loginRedirect(locale, nextPath);
@@ -92,6 +94,13 @@ export async function requireClassroomPageAccess({
 
   if (result.status === 404) {
     return null;
+  }
+
+  if (result.status === 423) {
+    return {
+      classroomLocked: true,
+      error: result.data?.error || "This classroom is locked.",
+    };
   }
 
   if (!result.ok) {

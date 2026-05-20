@@ -20,6 +20,7 @@ export default function PrepVideoCall({
   userName,
   isTeacher,
   onScreenShareStreamChange,
+  onModerationStateChange,
   locale = "en",
 }) {
   const containerRef = useRef(null);
@@ -54,6 +55,9 @@ export default function PrepVideoCall({
   const micMeterRafRef = useRef(null);
   const speakerTestRef = useRef(null);
   const speakerTestTimeoutRef = useRef(null);
+  const moderationCbRef = useRef(onModerationStateChange);
+  const jitsiParticipantsRef = useRef(new Map());
+  const localParticipantIdRef = useRef(null);
 
   // ─────────────────────────────────────────────
   // Page recording is handled by ClassroomShell
@@ -62,6 +66,93 @@ export default function PrepVideoCall({
 
 
   const dict = getDictionary(locale, "classroom");
+
+  useEffect(() => {
+    moderationCbRef.current = onModerationStateChange;
+  }, [onModerationStateChange]);
+
+  const executeJitsiCommand = useCallback((command, ...args) => {
+    const api = apiRef.current;
+    if (!api || typeof api.executeCommand !== "function") return false;
+
+    try {
+      api.executeCommand(command, ...args);
+      return true;
+    } catch (err) {
+      console.warn(`Jitsi command failed: ${command}`, err);
+      return false;
+    }
+  }, []);
+
+  const normalizeJitsiParticipant = useCallback((participant) => {
+    if (!participant || typeof participant !== "object") return null;
+    const id =
+      participant.participantId ||
+      participant.id ||
+      participant.jid ||
+      participant.endpointId ||
+      null;
+    if (!id || id === localParticipantIdRef.current) return null;
+
+    const displayName =
+      participant.displayName ||
+      participant.formattedDisplayName ||
+      participant.name ||
+      "Participant";
+
+    return {
+      id: String(id),
+      displayName,
+      avatarUrl: participant.avatarURL || participant.avatarUrl || "",
+    };
+  }, []);
+
+  const publishModerationState = useCallback(() => {
+    const cb = moderationCbRef.current;
+    if (typeof cb !== "function") return;
+
+    const api = apiRef.current;
+    if (api && typeof api.getParticipantsInfo === "function") {
+      try {
+        const info = api.getParticipantsInfo() || [];
+        info.forEach((participant) => {
+          const normalized = normalizeJitsiParticipant(participant);
+          if (normalized) jitsiParticipantsRef.current.set(normalized.id, normalized);
+        });
+      } catch (err) {
+        console.warn("Failed to read Jitsi participants", err);
+      }
+    }
+
+    cb({
+      ready: Boolean(api),
+      participants: Array.from(jitsiParticipantsRef.current.values()),
+      actions: {
+        muteAll: () => executeJitsiCommand("muteEveryone"),
+        muteParticipant: (participantId) =>
+          executeJitsiCommand("muteParticipant", participantId, "audio"),
+        pinParticipant: (participantId) => {
+          const pinned =
+            executeJitsiCommand("setLargeVideoParticipant", participantId) ||
+            executeJitsiCommand("pinParticipant", participantId);
+          if (!pinned) return false;
+          executeJitsiCommand("pinParticipant", participantId);
+          return true;
+        },
+        kickParticipant: (participantId) =>
+          executeJitsiCommand("kickParticipant", participantId),
+      },
+    });
+  }, [executeJitsiCommand, normalizeJitsiParticipant]);
+
+  const clearModerationState = useCallback(() => {
+    jitsiParticipantsRef.current = new Map();
+    localParticipantIdRef.current = null;
+    const cb = moderationCbRef.current;
+    if (typeof cb === "function") {
+      cb({ ready: false, participants: [], actions: null });
+    }
+  }, []);
 
   const stopMicMeter = useCallback(() => {
     if (micMeterRafRef.current) {
@@ -571,16 +662,47 @@ export default function PrepVideoCall({
 
         api.addListener("videoConferenceJoined", () => {
           setError(null);
+          try {
+            const localId = api.getCurrentUserID?.();
+            if (localId) localParticipantIdRef.current = String(localId);
+          } catch {
+            // Ignore local participant lookup failures.
+          }
           const audioMutedPromise = api.isAudioMuted?.();
           if (typeof audioMutedPromise?.then === "function") {
             audioMutedPromise
               .then((muted) => setSessionAudioMuted(Boolean(muted)))
               .catch(() => { });
           }
+          publishModerationState();
         });
 
         api.addListener("audioMuteStatusChanged", (status) => {
           setSessionAudioMuted(Boolean(status?.muted));
+        });
+
+        api.addListener("participantJoined", (participant) => {
+          const normalized = normalizeJitsiParticipant(participant);
+          if (normalized) {
+            jitsiParticipantsRef.current.set(normalized.id, normalized);
+            publishModerationState();
+          }
+        });
+
+        api.addListener("participantLeft", (participant) => {
+          const id = participant?.participantId || participant?.id;
+          if (id) {
+            jitsiParticipantsRef.current.delete(String(id));
+            publishModerationState();
+          }
+        });
+
+        api.addListener("displayNameChange", (participant) => {
+          const normalized = normalizeJitsiParticipant(participant);
+          if (normalized) {
+            jitsiParticipantsRef.current.set(normalized.id, normalized);
+            publishModerationState();
+          }
         });
 
         api.addListener("errorOccurred", (e) => {
@@ -612,8 +734,10 @@ export default function PrepVideoCall({
             });
           }
         });
+        publishModerationState();
       } catch (err) {
         console.error("Failed to initialize Jitsi:", err);
+        clearModerationState();
         if (!cancelled) {
           setError(t(dict, "classroom_video_error_generic"));
           setIsLoading(false);
@@ -635,6 +759,7 @@ export default function PrepVideoCall({
         console.warn("Error disposing Jitsi API:", e);
       }
       apiRef.current = null;
+      clearModerationState();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, hasJoined]); // Jitsi mounts only after the custom prejoin lobby

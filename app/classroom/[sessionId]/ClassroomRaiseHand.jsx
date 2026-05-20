@@ -72,12 +72,39 @@ export function useClassroomRaiseHand(classroomChannel, userName) {
     });
   }, [ready, send, userName, isHandRaised]);
 
+  const lowerHand = useCallback(
+    (targetUserName = userName) => {
+      if (!ready || !targetUserName) return;
+
+      setRaisedHands((prev) => {
+        const next = new Set(prev);
+        next.delete(targetUserName);
+        return next;
+      });
+
+      if (targetUserName === userName) {
+        setIsHandRaised(false);
+      }
+
+      send({
+        type: "RAISE_HAND",
+        isRaised: false,
+        userName: targetUserName,
+      });
+    },
+    [ready, send, userName]
+  );
+
   // Receive from others
   useEffect(() => {
     if (!ready) return;
 
     const unsub = subscribe((msg) => {
       if (msg?.type === "RAISE_HAND" && msg.userName) {
+        if (msg.userName === userName) {
+          setIsHandRaised(Boolean(msg.isRaised));
+        }
+
         setRaisedHands((prev) => {
           const next = new Set(prev);
           if (msg.isRaised) next.add(msg.userName);
@@ -88,11 +115,12 @@ export function useClassroomRaiseHand(classroomChannel, userName) {
     });
 
     return unsub;
-  }, [ready, subscribe]);
+  }, [ready, subscribe, userName]);
 
   return { 
     raisedHands: Array.from(raisedHands), 
     isHandRaised, 
-    toggleHand 
+    toggleHand,
+    lowerHand,
   };
 }

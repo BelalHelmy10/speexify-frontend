@@ -25,9 +25,24 @@ function createTempId() {
     .slice(2)}`;
 }
 
+function isLearnerChatMessage(message = {}) {
+  const type = message.type || "message";
+  const role = String(message.role || message.senderRole || "").toLowerCase();
+  return type === "message" && role === "learner";
+}
+
+function getClientCanDelete(
+  message = {},
+  { isTeacher = false, fallbackCanDelete = false } = {}
+) {
+  if (message.isDeleted || message.deletedAt) return false;
+  if (isTeacher && isLearnerChatMessage(message)) return true;
+  return Boolean(message.canDelete ?? fallbackCanDelete);
+}
+
 function normalizeMessage(
   message = {},
-  { fallbackMine = false, fallbackCanDelete = false } = {}
+  { fallbackMine = false, fallbackCanDelete = false, isTeacher = false } = {}
 ) {
   const isDeleted = Boolean(message.isDeleted || message.deletedAt);
 
@@ -53,9 +68,10 @@ function normalizeMessage(
       typeof message.isMine === "boolean" ? message.isMine : fallbackMine,
     isDeleted,
     deletedAt: message.deletedAt || null,
-    canDelete: isDeleted
-      ? false
-      : Boolean(message.canDelete ?? fallbackCanDelete),
+    canDelete: getClientCanDelete(message, {
+      isTeacher,
+      fallbackCanDelete,
+    }),
     deliveryStatus: message.deliveryStatus || "sent",
     error: message.error || "",
   };
@@ -121,6 +137,7 @@ export default function ClassroomChat({
       const normalized = normalizeMessage(message, {
         fallbackMine,
         fallbackCanDelete,
+        isTeacher,
       });
       const isKnown = knownMessageIdsRef.current.has(normalized.id);
       knownMessageIdsRef.current.add(normalized.id);
@@ -158,12 +175,12 @@ export default function ClassroomChat({
 
       return normalized;
     },
-    [isOpen, onUnreadCountChange]
+    [isOpen, isTeacher, onUnreadCountChange]
   );
 
   const replaceMessage = useCallback(
     (oldId, message, options = {}) => {
-      const normalized = normalizeMessage(message, options);
+      const normalized = normalizeMessage(message, { ...options, isTeacher });
       knownMessageIdsRef.current.delete(oldId);
       knownMessageIdsRef.current.add(normalized.id);
 
@@ -182,7 +199,7 @@ export default function ClassroomChat({
 
       return normalized;
     },
-    []
+    [isTeacher]
   );
 
   const broadcastChatMessage = useCallback(
@@ -239,7 +256,7 @@ export default function ClassroomChat({
         params: { limit: CHAT_HISTORY_LIMIT },
       });
       const normalized = (res.data?.messages || []).map((message) =>
-        normalizeMessage(message)
+        normalizeMessage(message, { isTeacher })
       );
 
       setMessages((prev) => {
@@ -274,7 +291,7 @@ export default function ClassroomChat({
     } finally {
       setIsLoadingHistory(false);
     }
-  }, [sessionId]);
+  }, [isTeacher, sessionId]);
 
   const loadEarlierMessages = useCallback(async () => {
     if (!sessionId || !nextBefore || isLoadingMore) return;
@@ -287,7 +304,7 @@ export default function ClassroomChat({
         params: { limit: CHAT_HISTORY_LIMIT, before: nextBefore },
       });
       const olderMessages = (res.data?.messages || []).map((message) =>
-        normalizeMessage(message)
+        normalizeMessage(message, { isTeacher })
       );
 
       setMessages((prev) => {
@@ -311,7 +328,7 @@ export default function ClassroomChat({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, nextBefore, sessionId]);
+  }, [isLoadingMore, isTeacher, nextBefore, sessionId]);
 
   useEffect(() => {
     hasAnnouncedJoinRef.current = false;
@@ -395,7 +412,6 @@ export default function ClassroomChat({
           appendOrMergeMessage(incoming, {
             countAsUnread: true,
             fallbackMine: false,
-            fallbackCanDelete: isTeacher,
           });
           break;
         }

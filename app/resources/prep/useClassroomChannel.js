@@ -99,6 +99,8 @@ function isPromiseLike(value) {
 export function useClassroomChannel(roomId) {
   const [ready, setReady] = useState(false);
   const [status, setStatus] = useState("idle");
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
+  const [reconnectFailed, setReconnectFailed] = useState(false);
 
   const wsRef = useRef(null);
   const handlersRef = useRef([]);
@@ -305,6 +307,7 @@ export function useClassroomChannel(roomId) {
       }
 
       closingRef.current = false;
+      setReconnectFailed(false);
       setStatus(retryAttemptRef.current > 0 ? "reconnecting" : "connecting");
       setReady(false);
 
@@ -324,8 +327,9 @@ export function useClassroomChannel(roomId) {
 
         if (!urls.length) {
           console.error("[Classroom WS] No WebSocket URLs available!");
-          setStatus("error");
+          setStatus("closed");
           setReady(false);
+          setReconnectFailed(true);
           return;
         }
 
@@ -383,6 +387,8 @@ export function useClassroomChannel(roomId) {
 
           opened = true;
           retryAttemptRef.current = 0;
+          setReconnectAttempt(0);
+          setReconnectFailed(false);
           currentUrlIndexRef.current = normalizedIndex;
           setReady(true);
           setStatus("ready");
@@ -471,9 +477,11 @@ export function useClassroomChannel(roomId) {
 
           const attempt = retryAttemptRef.current + 1;
           retryAttemptRef.current = attempt;
+          setReconnectAttempt(attempt);
 
           if (attempt > MAX_RECONNECT_ATTEMPTS) {
             setStatus("closed");
+            setReconnectFailed(true);
             return;
           }
 
@@ -502,14 +510,28 @@ export function useClassroomChannel(roomId) {
     ]
   );
 
+  const retryNow = useCallback(() => {
+    if (!roomId || typeof window === "undefined") return;
+
+    retryAttemptRef.current = 0;
+    setReconnectAttempt(0);
+    setReconnectFailed(false);
+    currentUrlIndexRef.current = 0;
+    connect(0);
+  }, [roomId, connect]);
+
   useEffect(() => {
     if (!roomId) {
       setReady(false);
       setStatus("idle");
+      setReconnectAttempt(0);
+      setReconnectFailed(false);
       return;
     }
 
     retryAttemptRef.current = 0;
+    setReconnectAttempt(0);
+    setReconnectFailed(false);
     currentUrlIndexRef.current = 0;
     connect(0);
 
@@ -546,6 +568,8 @@ export function useClassroomChannel(roomId) {
       wsRef.current = null;
       setReady(false);
       setStatus("closed");
+      setReconnectAttempt(0);
+      setReconnectFailed(false);
     };
   }, [roomId, connect, clearReconnectTimeout, stopHeartbeat]);
 
@@ -619,5 +643,9 @@ export function useClassroomChannel(roomId) {
     subscribe,
     status,
     isReconnecting,
+    reconnectAttempt,
+    maxReconnectAttempts: MAX_RECONNECT_ATTEMPTS,
+    reconnectFailed,
+    retryNow,
   };
 }

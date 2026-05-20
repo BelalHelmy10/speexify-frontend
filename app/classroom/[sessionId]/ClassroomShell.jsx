@@ -11,8 +11,11 @@ import ClassroomControlBar from "./ClassroomControlBar";
 import ClassroomResourcePickerModal from "./ClassroomResourcePickerModal";
 import ClassroomParticipantsModal from "./ClassroomParticipantsModal";
 import ClassroomLeaveConfirmModal from "./ClassroomLeaveConfirmModal";
+import ClassroomConnectionBanner from "./ClassroomConnectionBanner";
+import ClassroomTimeWarning from "./ClassroomTimeWarning";
 import { ClassroomRaiseHandOverlay, useClassroomRaiseHand } from "./ClassroomRaiseHand";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
+import { formatCompactDuration, getSessionTiming } from "./classroomTime";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import api from "@/lib/api";
 import { Video, Scale, FileText, MessageSquare, BookOpen, Monitor } from "lucide-react";
@@ -117,6 +120,67 @@ const CLASSROOM_FOCUS_MODES = new Set(Object.values(FOCUS_MODES));
 
 const MIN_SPLIT_PERCENT = 12;
 const MAX_SPLIT_PERCENT = 88;
+const PAGE_RECORDING_UNSUPPORTED_MESSAGE =
+  "Recording is currently supported in Chrome and Edge";
+const PAGE_RECORDING_MIME_TYPES = [
+  "video/webm;codecs=vp9,opus",
+  "video/webm;codecs=vp8,opus",
+  "video/webm;codecs=h264,opus",
+  "video/webm",
+];
+
+function getBrowserBrands() {
+  if (typeof navigator === "undefined") return [];
+  return Array.isArray(navigator.userAgentData?.brands)
+    ? navigator.userAgentData.brands.map((brand) => brand.brand || "")
+    : [];
+}
+
+function getPageRecordingSupport() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return { supported: false, reason: "unknown" };
+  }
+
+  const ua = navigator.userAgent || "";
+  const brands = getBrowserBrands();
+  const hasBrand = (pattern) => brands.some((brand) => pattern.test(brand));
+  const isEdge = /\bEdg\//.test(ua) || hasBrand(/Microsoft Edge/i);
+  const isFirefox = /Firefox|FxiOS/i.test(ua) || hasBrand(/Firefox/i);
+  const isSafari =
+    /Safari/i.test(ua) &&
+    !/Chrome|CriOS|Chromium|Edg|OPR|Opera|Firefox|FxiOS|Android/i.test(ua);
+  const isChrome =
+    !isEdge &&
+    !isFirefox &&
+    !isSafari &&
+    (/Chrome|CriOS|Chromium/i.test(ua) || hasBrand(/Google Chrome|Chromium/i));
+  const hasRecordingApis =
+    typeof navigator.mediaDevices?.getDisplayMedia === "function" &&
+    typeof navigator.mediaDevices?.getUserMedia === "function" &&
+    typeof window.MediaRecorder === "function";
+
+  if (!hasRecordingApis) {
+    return { supported: false, reason: "missing-api" };
+  }
+
+  if (isSafari) return { supported: false, reason: "safari" };
+  if (isFirefox) return { supported: false, reason: "firefox" };
+  if (!isChrome && !isEdge) return { supported: false, reason: "browser" };
+
+  return { supported: true, reason: isEdge ? "edge" : "chrome" };
+}
+
+function pickSupportedPageRecordingMime() {
+  if (typeof window === "undefined" || typeof window.MediaRecorder !== "function") {
+    return null;
+  }
+
+  return (
+    PAGE_RECORDING_MIME_TYPES.find((type) =>
+      window.MediaRecorder.isTypeSupported(type)
+    ) || null
+  );
+}
 
 function clampSplitPercent(value) {
   const num = Number(value);
@@ -130,6 +194,29 @@ function clampScrollNorm(value) {
   return Math.min(1, Math.max(0, num));
 }
 
+function getContentScrollForResource(contentScroll, resourceId) {
+  if (!resourceId || !contentScroll || typeof contentScroll !== "object") {
+    return null;
+  }
+
+  if (contentScroll.resourceId !== resourceId) return null;
+
+  const scrollNorm = clampScrollNorm(contentScroll.scrollNorm);
+  return scrollNorm === null ? null : { scrollNorm };
+}
+
+function getFocusModeSplitPercentage(mode) {
+  switch (mode) {
+    case FOCUS_MODES.VIDEO:
+      return 55;
+    case FOCUS_MODES.CONTENT:
+      return 28;
+    case FOCUS_MODES.BALANCED:
+    default:
+      return 38;
+  }
+}
+
 function mergeClassroomStatePatch(current, patch) {
   return {
     ...(current || {}),
@@ -140,7 +227,21 @@ function mergeClassroomStatePatch(current, patch) {
     contentScroll: patch?.contentScroll || current?.contentScroll,
     pdfScroll: patch?.pdfScroll || current?.pdfScroll,
     audio: patch?.audio || current?.audio,
+    moderation: patch?.moderation
+      ? { ...(current?.moderation || {}), ...patch.moderation }
+      : current?.moderation,
   };
+}
+
+function formatSessionEndLabel(endMs) {
+  if (!endMs) return "";
+
+  const time = new Date(endMs).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return `Scheduled end ${time}`;
 }
 
 /* -----------------------------------------------------------
@@ -170,6 +271,25 @@ export default function ClassroomShell({
     (session?.currentUser && session.currentUser.role === "teacher");
 
   const userName = isTeacher ? teacherName : learnerName;
+  const sessionStartedAt = session?.startedAt || session?.startAt;
+
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const intervalId = setInterval(() => setNowMs(Date.now()), 1000);
+    setNowMs(Date.now());
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const sessionTiming = useMemo(
+    () =>
+      getSessionTiming({
+        startedAt: sessionStartedAt,
+        endAt: session?.endAt,
+        nowMs,
+      }),
+    [sessionStartedAt, session?.endAt, nowMs]
+  );
 
   /* -----------------------------------------------------------
      Resources
@@ -202,6 +322,8 @@ export default function ClassroomShell({
   const customSplitRef = useRef(customSplit);
   const pendingSplitRef = useRef(customSplit);
   const splitDragRafRef = useRef(null);
+  const activePointerIdRef = useRef(null);
+  const selectedResourceIdRef = useRef(selectedResourceId);
 
   // ✅ Layout sync throttling (teacher -> learners)
   const lastLayoutSentAtRef = useRef(0);
@@ -289,20 +411,35 @@ export default function ClassroomShell({
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showParticipantList, setShowParticipantList] = useState(false);
+  const [isClassroomLocked, setIsClassroomLocked] = useState(() =>
+    Boolean(session?.classroomState?.moderation?.locked)
+  );
+  const [moderationNotice, setModerationNotice] = useState("");
+  const [videoModeration, setVideoModeration] = useState({
+    ready: false,
+    participants: [],
+    actions: null,
+  });
 
   /* -----------------------------------------------------------
-     Realtime sync (classroom channel) - MUST be before handleMouseUp
-     which uses ready and send
+     Realtime sync (classroom channel) - MUST be before resize handlers
+     which use ready and send
   ----------------------------------------------------------- */
   const classroomChannel = useClassroomChannel(String(sessionId));
   const ready = classroomChannel?.ready ?? false;
   const send = classroomChannel?.send ?? (() => { });
   const subscribe = classroomChannel?.subscribe ?? (() => () => { });
 
+  const handleHardRejoin = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  }, []);
+
   /* -----------------------------------------------------------
      Raise Hand
   ----------------------------------------------------------- */
-  const { raisedHands, isHandRaised, toggleHand } = useClassroomRaiseHand(
+  const { raisedHands, isHandRaised, toggleHand, lowerHand } = useClassroomRaiseHand(
     classroomChannel,
     userName
   );
@@ -339,8 +476,9 @@ export default function ClassroomShell({
 
   const persistClassroomState = useCallback(
     (patch, options = {}) => {
-      if (!isTeacher || !sessionId || !classroomStateLoadedRef.current) return;
+      if (!isTeacher || !sessionId) return;
       if (!patch || typeof patch !== "object") return;
+      if (!classroomStateLoadedRef.current && !patch.moderation) return;
 
       pendingClassroomStatePatchRef.current = mergeClassroomStatePatch(
         pendingClassroomStatePatchRef.current,
@@ -378,18 +516,85 @@ export default function ClassroomShell({
     };
   }, [flushClassroomStatePatch]);
 
+  const handleVideoModerationChange = useCallback((nextState) => {
+    setVideoModeration({
+      ready: Boolean(nextState?.ready),
+      participants: Array.isArray(nextState?.participants)
+        ? nextState.participants
+        : [],
+      actions: nextState?.actions || null,
+    });
+  }, []);
+
+  const runVideoModerationAction = useCallback(
+    (actionName, ...args) => {
+      const action = videoModeration.actions?.[actionName];
+      if (typeof action !== "function") {
+        setModerationNotice("Video controls are still connecting.");
+        return false;
+      }
+
+      const ok = action(...args);
+      if (!ok) {
+        setModerationNotice("That video control is not available yet.");
+        return false;
+      }
+
+      setModerationNotice("");
+      return true;
+    },
+    [videoModeration.actions]
+  );
+
+  const handleToggleClassroomLock = useCallback(
+    (locked) => {
+      if (!isTeacher) return;
+      const nextLocked = Boolean(locked);
+      setIsClassroomLocked(nextLocked);
+      setModerationNotice(
+        nextLocked
+          ? "Classroom locked. Late joins are now blocked."
+          : "Classroom unlocked. Learners can join again."
+      );
+
+      if (ready) {
+        send({
+          type: "CLASSROOM_LOCK",
+          locked: nextLocked,
+        });
+      }
+
+      persistClassroomState(
+        {
+          moderation: {
+            locked: nextLocked,
+          },
+        },
+        { immediate: true }
+      );
+    },
+    [isTeacher, persistClassroomState, ready, send]
+  );
+
   useEffect(() => {
     customSplitRef.current = customSplit;
     pendingSplitRef.current = customSplit;
   }, [customSplit]);
 
-  const applyPersistedContentScroll = useCallback((scrollNorm) => {
+  useEffect(() => {
+    selectedResourceIdRef.current = selectedResourceId;
+  }, [selectedResourceId]);
+
+  const applyPersistedContentScroll = useCallback((scrollNorm, resourceId) => {
+    if (!resourceId) return;
     const norm = clampScrollNorm(scrollNorm);
     if (norm === null) return;
 
-    pendingContentScrollNormRef.current = norm;
+    pendingContentScrollNormRef.current = { resourceId, scrollNorm: norm };
 
     requestAnimationFrame(() => {
+      if (selectedResourceIdRef.current !== resourceId) return;
+
       const el = contentScrollRef.current;
       if (!el) return;
 
@@ -402,7 +607,7 @@ export default function ClassroomShell({
   useEffect(() => {
     const pending = pendingContentScrollNormRef.current;
     if (pending === null || pending === undefined) return;
-    applyPersistedContentScroll(pending);
+    applyPersistedContentScroll(pending.scrollNorm, pending.resourceId);
   }, [applyPersistedContentScroll, selectedResourceId, isMobile, mobileActiveTab]);
 
   useEffect(() => {
@@ -418,12 +623,14 @@ export default function ClassroomShell({
 
         const state = data?.state && typeof data.state === "object" ? data.state : {};
         setClassroomStateSnapshot(state);
+        setIsClassroomLocked(Boolean(state.moderation?.locked));
 
         const savedResourceId =
           state.resourceId && resourcesById[state.resourceId]
             ? state.resourceId
             : null;
 
+        selectedResourceIdRef.current = savedResourceId;
         setSelectedResourceId(savedResourceId);
 
         if (typeof window !== "undefined") {
@@ -454,8 +661,15 @@ export default function ClassroomShell({
           setTeacherAllowsFollowing(!!layout.teacherAllowsFollowing);
         }
 
-        if (state.contentScroll?.scrollNorm !== undefined) {
-          applyPersistedContentScroll(state.contentScroll.scrollNorm);
+        const savedContentScroll = getContentScrollForResource(
+          state.contentScroll,
+          savedResourceId
+        );
+        if (savedContentScroll) {
+          applyPersistedContentScroll(
+            savedContentScroll.scrollNorm,
+            savedResourceId
+          );
         }
       } catch (err) {
         console.warn("Failed to load classroom state:", err);
@@ -482,54 +696,47 @@ export default function ClassroomShell({
   /* -----------------------------------------------------------
      Drag-to-resize logic
   ----------------------------------------------------------- */
-  const handleMouseDown = useCallback(
-    (e) => {
-      // ✅ Learners can drag only if they turned follow OFF
-      if (!isTeacher && followTeacherLayout) return;
+  const canResizePanels = isTeacher || !followTeacherLayout;
 
-      e.preventDefault();
-      setIsDragging(true);
-    },
-    [isTeacher, followTeacherLayout]
-  );
+  const updateCustomSplit = useCallback((nextSplit, { defer = true } = {}) => {
+    if (nextSplit === null || nextSplit === undefined) return;
+    const roundedSplit = Math.round(nextSplit * 10) / 10;
+    if (!Number.isFinite(roundedSplit)) return;
 
-  const handleMouseMove = useCallback(
-    (e) => {
-      if (!isDragging || !containerRef.current) return;
+    customSplitRef.current = roundedSplit;
+    pendingSplitRef.current = roundedSplit;
 
-      // ✅ If learner is following, ignore local resizing
-      if (!isTeacher && followTeacherLayout) return;
-
-      const container = containerRef.current;
-      const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const percentage = Math.min(
-        Math.max((x / rect.width) * 100, MIN_SPLIT_PERCENT),
-        MAX_SPLIT_PERCENT
-      );
-      const nextSplit = Math.round(percentage * 10) / 10;
-
-      customSplitRef.current = nextSplit;
-      pendingSplitRef.current = nextSplit;
-
-      if (splitDragRafRef.current) return;
-      splitDragRafRef.current = requestAnimationFrame(() => {
+    if (!defer) {
+      if (splitDragRafRef.current) {
+        cancelAnimationFrame(splitDragRafRef.current);
         splitDragRafRef.current = null;
-        setCustomSplit(pendingSplitRef.current);
-      });
-    },
-    [isDragging, isTeacher, followTeacherLayout]
-  );
-
-  const handleMouseUp = useCallback(() => {
-    if (splitDragRafRef.current) {
-      cancelAnimationFrame(splitDragRafRef.current);
-      splitDragRafRef.current = null;
-      setCustomSplit(pendingSplitRef.current);
+      }
+      setCustomSplit(roundedSplit);
+      return;
     }
 
-    setIsDragging(false);
-    // ✅ Immediately broadcast final position on drag end for snappier sync
+    if (splitDragRafRef.current) return;
+    splitDragRafRef.current = requestAnimationFrame(() => {
+      splitDragRafRef.current = null;
+      setCustomSplit(pendingSplitRef.current);
+    });
+  }, []);
+
+  const updateSplitFromClientX = useCallback(
+    (clientX) => {
+      if (!canResizePanels || !containerRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const nextSplit = clampSplitPercent(
+        ((clientX - rect.left) / rect.width) * 100
+      );
+
+      updateCustomSplit(nextSplit);
+    },
+    [canResizePanels, updateCustomSplit]
+  );
+
+  const commitCurrentSplitLayout = useCallback(() => {
     if (isTeacher && ready) {
       send({
         type: "LAYOUT_STATE",
@@ -552,21 +759,98 @@ export default function ClassroomShell({
     }
   }, [isTeacher, ready, send, focusMode, teacherAllowsFollowing, persistClassroomState]);
 
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
+  const finishResize = useCallback(() => {
+    if (splitDragRafRef.current) {
+      cancelAnimationFrame(splitDragRafRef.current);
+      splitDragRafRef.current = null;
+      setCustomSplit(pendingSplitRef.current);
     }
 
+    setIsDragging(false);
+    activePointerIdRef.current = null;
+    // ✅ Immediately broadcast final position on drag end for snappier sync
+    commitCurrentSplitLayout();
+  }, [commitCurrentSplitLayout]);
+
+  const handlePointerDown = useCallback(
+    (e) => {
+      if (!canResizePanels) return;
+      if (e.button !== undefined && e.button !== 0) return;
+
+      e.preventDefault();
+      activePointerIdRef.current = e.pointerId;
+      if (e.currentTarget?.setPointerCapture && e.pointerId !== undefined) {
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        } catch (_) { }
+      }
+      updateSplitFromClientX(e.clientX);
+      setIsDragging(true);
+    },
+    [canResizePanels, updateSplitFromClientX]
+  );
+
+  const handlePointerMove = useCallback(
+    (e) => {
+      if (!isDragging || activePointerIdRef.current === null) return;
+      if (e.pointerId !== activePointerIdRef.current) return;
+
+      e.preventDefault();
+      updateSplitFromClientX(e.clientX);
+    },
+    [isDragging, updateSplitFromClientX]
+  );
+
+  const handlePointerUp = useCallback(
+    (e) => {
+      if (activePointerIdRef.current === null) return;
+      if (e.pointerId !== activePointerIdRef.current) return;
+
+      finishResize();
+    },
+    [finishResize]
+  );
+
+  const handleDividerKeyDown = useCallback(
+    (e) => {
+      if (!canResizePanels) return;
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+
+      e.preventDefault();
+      const currentSplit =
+        customSplitRef.current ?? getFocusModeSplitPercentage(focusMode);
+      const step = e.shiftKey ? 5 : 2;
+      const direction = e.key === "ArrowLeft" ? -1 : 1;
+      const nextSplit = clampSplitPercent(currentSplit + direction * step);
+      updateCustomSplit(nextSplit, { defer: false });
+      commitCurrentSplitLayout();
+    },
+    [canResizePanels, commitCurrentSplitLayout, focusMode, updateCustomSplit]
+  );
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const listenerOptions = { passive: false };
+    document.addEventListener("pointermove", handlePointerMove, listenerOptions);
+    document.addEventListener("pointerup", handlePointerUp);
+    document.addEventListener("pointercancel", handlePointerUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", handlePointerUp);
+      document.removeEventListener("pointercancel", handlePointerUp);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging, handlePointerMove, handlePointerUp]);
+
+  useEffect(() => {
+    if (canResizePanels || !isDragging) return;
+    finishResize();
+  }, [canResizePanels, finishResize, isDragging]);
 
   useEffect(() => {
     if (isChatOpen) setChatUnreadCount(0);
@@ -575,15 +859,7 @@ export default function ClassroomShell({
   const getSplitPercentage = () => {
     if (customSplit !== null) return customSplit;
 
-    switch (focusMode) {
-      case FOCUS_MODES.VIDEO:
-        return 55;
-      case FOCUS_MODES.CONTENT:
-        return 28;
-      case FOCUS_MODES.BALANCED:
-      default:
-        return 38;
-    }
+    return getFocusModeSplitPercentage(focusMode);
   };
 
   const leftPanelWidth = getSplitPercentage();
@@ -675,19 +951,22 @@ export default function ClassroomShell({
           target.scrollHeight - target.clientHeight
         );
         const scrollNorm = target.scrollTop / maxScroll;
+        const resourceId = selectedResourceIdRef.current;
+        if (!resourceId) return;
 
         lastContentScrollSentAtRef.current = Date.now();
 
         if (ready) {
           send({
             type: "CONTENT_SCROLL",
+            resourceId,
             scrollNorm,
           });
         }
 
         persistClassroomState(
           {
-            contentScroll: { scrollNorm },
+            contentScroll: { resourceId, scrollNorm },
           },
           { delay: 1500 }
         );
@@ -704,8 +983,15 @@ export default function ClassroomShell({
     const unsub = subscribe((msg) => {
       if (!msg) return;
 
+      if (msg.type === "CLASSROOM_LOCK") {
+        setIsClassroomLocked(Boolean(msg.locked));
+        return;
+      }
+
       // ✅ Learner: follow teacher content scroll (PDF + any resource)
       if (msg.type === "CONTENT_SCROLL" && !isTeacher) {
+        if (msg.resourceId !== selectedResourceIdRef.current) return;
+
         const norm = Math.min(1, Math.max(0, Number(msg.scrollNorm) || 0));
 
         // ✅ Apply immediately for snappier sync (removed setTimeout)
@@ -779,6 +1065,7 @@ export default function ClassroomShell({
       if (msg.type === "SET_RESOURCE") {
         const { resourceId } = msg;
         if (resourceId && resourcesById[resourceId]) {
+          selectedResourceIdRef.current = resourceId;
           setSelectedResourceId(resourceId);
           if (typeof window !== "undefined") {
             try {
@@ -844,10 +1131,16 @@ export default function ClassroomShell({
 
     const all = Object.values(resourcesById || {});
     if (all.length && all[0]?._id) {
-      setSelectedResourceId(all[0]._id);
+      const firstResourceId = all[0]._id;
+      selectedResourceIdRef.current = firstResourceId;
+      setSelectedResourceId(firstResourceId);
       persistClassroomState(
         {
-          resourceId: all[0]._id,
+          resourceId: firstResourceId,
+          contentScroll: {
+            resourceId: firstResourceId,
+            scrollNorm: 0,
+          },
         },
         { immediate: true }
       );
@@ -867,6 +1160,49 @@ export default function ClassroomShell({
     ? resourcesById[selectedResourceId]
     : null;
   const viewer = resource ? getViewerInfo(resource) : null;
+  const leaveSummary = useMemo(() => {
+    const overBySeconds =
+      sessionTiming.endMs && nowMs > sessionTiming.endMs
+        ? Math.floor((nowMs - sessionTiming.endMs) / 1000)
+        : 0;
+    const participantLabel = isGroup
+      ? `${participantCount}${capacity ? `/${capacity}` : ""}`
+      : participantCount === 1
+        ? "1 learner"
+        : `${participantCount || 1} learners`;
+    const resourceLabel =
+      resource?.title || resource?.name || "No resource selected";
+
+    let statusLabel = "No scheduled end";
+    if (sessionTiming.endMs) {
+      statusLabel = sessionTiming.hasEnded
+        ? overBySeconds > 0
+          ? `Over by ${formatCompactDuration(overBySeconds)}`
+          : "Time is up"
+        : `Ends in ${sessionTiming.remainingLabel}`;
+    }
+
+    return {
+      statusLabel,
+      elapsedLabel: sessionTiming.elapsedLabel,
+      scheduledLabel: sessionTiming.scheduledLabel || "Open-ended",
+      participantLabel,
+      resourceLabel,
+      endLabel: formatSessionEndLabel(sessionTiming.endMs),
+    };
+  }, [
+    capacity,
+    isGroup,
+    nowMs,
+    participantCount,
+    resource?.name,
+    resource?.title,
+    sessionTiming.elapsedLabel,
+    sessionTiming.endMs,
+    sessionTiming.hasEnded,
+    sessionTiming.remainingLabel,
+    sessionTiming.scheduledLabel,
+  ]);
   const hasScreenShareStream =
     !!(screenShareStream && typeof screenShareStream.getTracks === "function");
 
@@ -887,6 +1223,7 @@ export default function ClassroomShell({
 
   // ✅ Track resource usage when teacher changes resource
   const handleChangeResourceId = async (newId) => {
+    selectedResourceIdRef.current = newId;
     setSelectedResourceId(newId);
     setIsPickerOpen(false);
 
@@ -923,7 +1260,7 @@ export default function ClassroomShell({
       persistClassroomState(
         {
           resourceId: newId || null,
-          contentScroll: { scrollNorm: 0 },
+          contentScroll: { resourceId: newId || null, scrollNorm: 0 },
         },
         { immediate: true }
       );
@@ -968,30 +1305,34 @@ export default function ClassroomShell({
   const pageStreamRef = useRef(null);
   const pageChunksRef = useRef([]);
 
-  function pickSupportedMime() {
-    const types = [
-      "video/webm;codecs=vp9,opus",
-      "video/webm;codecs=vp8,opus",
-      "video/webm",
-    ];
-    for (const t of types) {
-      if (window.MediaRecorder?.isTypeSupported(t)) return t;
-    }
-    return "video/webm";
-  }
-
   async function startPageRecording() {
+    let displayStream = null;
+    let micStream = null;
+    let audioContext = null;
+
     try {
       setPageRecError(null);
       setPageRecWarning(null);
 
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+      const support = getPageRecordingSupport();
+      if (!support.supported) {
+        setPageRecError(PAGE_RECORDING_UNSUPPORTED_MESSAGE);
+        return;
+      }
+
+      const mimeType = pickSupportedPageRecordingMime();
+      if (!mimeType) {
+        setPageRecError(PAGE_RECORDING_UNSUPPORTED_MESSAGE);
+        return;
+      }
+
+      displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: 30 },
         audio: true, // tab/system audio
         preferCurrentTab: true,
       });
 
-      const micStream = await navigator.mediaDevices.getUserMedia({
+      micStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -1000,7 +1341,7 @@ export default function ClassroomShell({
       });
 
       // ✅ SOLUTION: Use Web Audio API to properly mix audio sources
-      const audioContext = new AudioContext();
+      audioContext = new AudioContext();
       const baseLatency = Number(audioContext.baseLatency || 0);
       if (baseLatency > 0.03) {
         setPageRecWarning(
@@ -1032,7 +1373,7 @@ export default function ClassroomShell({
       pageChunksRef.current = [];
 
       const recorder = new MediaRecorder(mixedStream, {
-        mimeType: pickSupportedMime(),
+        mimeType,
       });
 
       pageRecorderRef.current = recorder;
@@ -1066,7 +1407,15 @@ export default function ClassroomShell({
       setIsPageRecording(true);
     } catch (err) {
       console.error("Page recording failed:", err);
-      setPageRecError("Failed to start recording");
+      displayStream?.getTracks().forEach((track) => track.stop());
+      micStream?.getTracks().forEach((track) => track.stop());
+      audioContext?.close();
+      const support = getPageRecordingSupport();
+      setPageRecError(
+        support.supported
+          ? "Recording could not start. Check screen and microphone permissions, then try again."
+          : PAGE_RECORDING_UNSUPPORTED_MESSAGE
+      );
       setPageRecWarning(null);
     }
   }
@@ -1117,7 +1466,17 @@ export default function ClassroomShell({
         learnerName={learnerName}
         setShowParticipantList={setShowParticipantList}
         wsStatus={classroomChannel?.status}
-        startedAt={session?.startedAt || session?.startAt}
+        sessionTiming={sessionTiming}
+      />
+
+      <ClassroomConnectionBanner
+        channel={classroomChannel}
+        onRejoin={handleHardRejoin}
+      />
+
+      <ClassroomTimeWarning
+        warningLevel={isTeacher ? sessionTiming.warningLevel : null}
+        remainingLabel={sessionTiming.remainingLabel}
       />
 
       {/* Main Content - Desktop only (hidden on mobile where MobileClassroomLayout is used) */}
@@ -1137,6 +1496,7 @@ export default function ClassroomShell({
                 userName={userName}
                 isTeacher={isTeacher}
                 onScreenShareStreamChange={handleScreenShareStreamChange}
+                onModerationStateChange={handleVideoModerationChange}
               />
               <ClassroomRaiseHandOverlay
                 raisedHands={raisedHands}
@@ -1185,16 +1545,27 @@ export default function ClassroomShell({
 
           {/* Drag Handle */}
           <div
-            className={`cr-divider ${isDragging ? "cr-divider--active" : ""}`}
-            onMouseDown={
-              isTeacher || (!isTeacher && !followTeacherLayout)
-                ? handleMouseDown
-                : undefined
-            }
+            className={[
+              "cr-divider",
+              isDragging ? "cr-divider--active" : "",
+              !canResizePanels ? "cr-divider--disabled" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onKeyDown={handleDividerKeyDown}
             role="separator"
             aria-orientation="vertical"
             aria-label="Resize panels"
-            aria-disabled={isTeacher ? false : followTeacherLayout}
+            aria-disabled={!canResizePanels}
+            aria-valuemin={MIN_SPLIT_PERCENT}
+            aria-valuemax={MAX_SPLIT_PERCENT}
+            aria-valuenow={Math.round(leftPanelWidth)}
+            aria-valuetext={`Left panel ${Math.round(leftPanelWidth)} percent`}
+            tabIndex={canResizePanels ? 0 : -1}
           >
             <div className="cr-divider__handle">
               <span></span>
@@ -1277,6 +1648,7 @@ export default function ClassroomShell({
         isTeacher={isTeacher}
         setIsPickerOpen={setIsPickerOpen}
         isPageRecording={isPageRecording}
+        pageRecError={pageRecError}
         pageRecWarning={pageRecWarning}
         stopPageRecording={stopPageRecording}
         startPageRecording={startPageRecording}
@@ -1308,6 +1680,7 @@ export default function ClassroomShell({
           onTabChange={setMobileActiveTab}
           isTeacher={isTeacher}
           onOpenPicker={() => setIsPickerOpen(true)}
+          onOpenParticipants={() => setShowParticipantList(true)}
           chatUnreadCount={chatUnreadCount}
           hasResource={!!resource}
           isHandRaised={isHandRaised}
@@ -1319,6 +1692,7 @@ export default function ClassroomShell({
                 userName={userName}
                 isTeacher={isTeacher}
                 onScreenShareStreamChange={handleScreenShareStreamChange}
+                onModerationStateChange={handleVideoModerationChange}
               />
               <ClassroomRaiseHandOverlay
                 raisedHands={raisedHands}
@@ -1411,12 +1785,31 @@ export default function ClassroomShell({
         teacherName={teacherName}
         learners={learners}
         buildDisplayName={buildDisplayName}
+        isTeacher={isTeacher}
+        raisedHands={raisedHands}
+        videoParticipants={videoModeration.participants}
+        videoControlsReady={videoModeration.ready}
+        isClassroomLocked={isClassroomLocked}
+        moderationNotice={moderationNotice}
+        onMuteAll={() => runVideoModerationAction("muteAll")}
+        onMuteParticipant={(participantId) =>
+          runVideoModerationAction("muteParticipant", participantId)
+        }
+        onPinParticipant={(participantId) =>
+          runVideoModerationAction("pinParticipant", participantId)
+        }
+        onRemoveParticipant={(participantId) =>
+          runVideoModerationAction("kickParticipant", participantId)
+        }
+        onLowerHand={lowerHand}
+        onToggleClassroomLock={handleToggleClassroomLock}
       />
 
       <ClassroomLeaveConfirmModal
         show={showLeaveConfirm}
         setShowLeaveConfirm={setShowLeaveConfirm}
         prefix={prefix}
+        summary={leaveSummary}
       />
     </div>
   );

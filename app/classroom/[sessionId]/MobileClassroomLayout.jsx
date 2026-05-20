@@ -1,7 +1,14 @@
 // app/classroom/[sessionId]/MobileClassroomLayout.jsx
 "use client";
 
-import { BookOpen, FileText, Hand, MessageSquare, Video } from "lucide-react";
+import {
+    BookOpen,
+    FileText,
+    Hand,
+    MessageSquare,
+    Users,
+    Video,
+} from "lucide-react";
 
 /**
  * Mobile-specific tabbed layout for classroom
@@ -15,6 +22,7 @@ export default function MobileClassroomLayout({
     chatComponent,
     isTeacher,
     onOpenPicker,
+    onOpenParticipants,
     chatUnreadCount = 0,
     hasResource = false,
     isHandRaised,
@@ -75,6 +83,16 @@ export default function MobileClassroomLayout({
                         <BookOpen size={20} />
                     </button>
                 )}
+
+                {isTeacher && (
+                    <button
+                        className="cr-mobile-quick-actions__btn"
+                        onClick={onOpenParticipants}
+                        aria-label="Open teacher controls"
+                    >
+                        <Users size={20} />
+                    </button>
+                )}
             </div>
 
             {/* Bottom tab bar */}
@@ -83,7 +101,7 @@ export default function MobileClassroomLayout({
                     className={`cr-mobile-tabs__tab ${activeTab === "video" ? "cr-mobile-tabs__tab--active" : ""
                         }`}
                     onClick={() => onTabChange("video")}
-                    aria-selected={activeTab === "video"}
+                    aria-current={activeTab === "video" ? "page" : undefined}
                 >
                     <span className="cr-mobile-tabs__tab-icon">
                         <Video size={22} />
@@ -95,7 +113,7 @@ export default function MobileClassroomLayout({
                     className={`cr-mobile-tabs__tab ${activeTab === "content" ? "cr-mobile-tabs__tab--active" : ""
                         }`}
                     onClick={() => onTabChange("content")}
-                    aria-selected={activeTab === "content"}
+                    aria-current={activeTab === "content" ? "page" : undefined}
                 >
                     <span className="cr-mobile-tabs__tab-icon">
                         <FileText size={22} />
@@ -109,7 +127,7 @@ export default function MobileClassroomLayout({
                     className={`cr-mobile-tabs__tab ${activeTab === "chat" ? "cr-mobile-tabs__tab--active" : ""
                         }`}
                     onClick={() => onTabChange("chat")}
-                    aria-selected={activeTab === "chat"}
+                    aria-current={activeTab === "chat" ? "page" : undefined}
                 >
                     <span className="cr-mobile-tabs__tab-icon">
                         <MessageSquare size={22} />

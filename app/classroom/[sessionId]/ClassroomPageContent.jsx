@@ -123,6 +123,24 @@ export default async function ClassroomPageContent({ params, locale = "en" }) {
     nextPath: `${prefix}/classroom/${sessionId}`,
   });
 
+  if (session?.classroomLocked) {
+    return (
+      <div className="cr-error-screen">
+        <div className="cr-error-screen__content">
+          <span className="cr-error-screen__icon">Locked</span>
+          <h1 className="cr-error-screen__title">Classroom locked</h1>
+          <p className="cr-error-screen__text">
+            {session.error ||
+              "The teacher has locked this classroom and late joins are closed."}
+          </p>
+          <a href={dashboardHref} className="cr-error-screen__btn">
+            ← Back to dashboard
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   if (!session) {
     return (
       <div className="cr-error-screen">

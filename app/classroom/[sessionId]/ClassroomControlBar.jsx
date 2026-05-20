@@ -8,6 +8,7 @@ export default function ClassroomControlBar({
   isTeacher,
   setIsPickerOpen,
   isPageRecording,
+  pageRecError,
   pageRecWarning,
   stopPageRecording,
   startPageRecording,
@@ -66,14 +67,20 @@ export default function ClassroomControlBar({
           </span>
         )}
 
-        {isGroup && (
+        {isTeacher && pageRecError && (
+          <span className="cr-controls__recording-notice" role="status">
+            {pageRecError}
+          </span>
+        )}
+
+        {(isTeacher || isGroup) && (
           <button
             className="cr-controls__btn cr-controls__btn--secondary"
             onClick={() => setShowParticipantList(true)}
           >
             <span className="cr-controls__btn-icon"><Users size={16} /></span>
             <span className="cr-controls__btn-label">
-              Participants ({participantCount})
+              {isTeacher ? "Controls" : `Participants (${participantCount})`}
             </span>
           </button>
         )}

@@ -150,6 +150,31 @@ body.classroom-active {
       box-shadow: 0 8px 24px rgba($cr-accent-primary, 0.3);
     }
   }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  &__actions &__btn {
+    margin-top: 0;
+  }
+
+  &__btn--ghost {
+    color: $cr-text-secondary;
+    background: transparent;
+    border: 1px solid $cr-border-default;
+
+    &:hover {
+      color: $cr-text-primary;
+      background: $cr-bg-tertiary;
+      border-color: $cr-border-strong;
+      box-shadow: none;
+    }
+  }
 }
 
 // ─── Shell Container ────────────────────────────────────────────────────────
@@ -280,6 +305,33 @@ body.classroom-active {
     animation: cr-pulse-dot 2s infinite ease-in-out;
   }
 
+  &__timer--ends {
+    color: $cr-text-secondary;
+
+    .cr-header__timer-dot {
+      background: $cr-accent-teacher;
+      box-shadow: 0 0 6px rgba($cr-accent-teacher, 0.45);
+    }
+  }
+
+  &__timer--soft {
+    color: #fbbf24;
+    border-color: rgba($cr-accent-teacher, 0.45);
+    background: rgba($cr-accent-teacher, 0.14);
+  }
+
+  &__timer--hard,
+  &__timer--ended {
+    color: #fecaca;
+    border-color: rgba($cr-accent-danger, 0.5);
+    background: rgba($cr-accent-danger, 0.16);
+
+    .cr-header__timer-dot {
+      background: $cr-accent-danger;
+      box-shadow: 0 0 8px rgba($cr-accent-danger, 0.55);
+    }
+  }
+
   &__ws-status {
     display: flex;
     align-items: center;
@@ -367,6 +419,171 @@ body.classroom-active {
   }
 }
 
+.cr-time-warning {
+  position: absolute;
+  top: calc(#{$cr-header-height} + 0.75rem);
+  left: 50%;
+  z-index: 140;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.625rem 0.875rem;
+  color: $cr-text-primary;
+  background: rgba($cr-bg-secondary, 0.96);
+  border: 1px solid rgba($cr-accent-teacher, 0.45);
+  border-radius: $cr-radius-lg;
+  box-shadow: 0 16px 34px rgba($cr-bg-primary-dark, 0.28);
+  transform: translateX(-50%);
+
+  strong,
+  span {
+    min-width: 0;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+  }
+
+  strong {
+    flex: 0 0 auto;
+    color: #fbbf24;
+  }
+
+  span {
+    color: $cr-text-secondary;
+  }
+
+  &--hard {
+    border-color: rgba($cr-accent-danger, 0.55);
+    background: rgba(69, 10, 10, 0.96);
+
+    strong {
+      color: #fecaca;
+    }
+
+    span {
+      color: #fee2e2;
+    }
+  }
+
+  @media (max-width: 900px) {
+    top: calc(44px + var(--spx-safe-top) + 0.5rem);
+    width: calc(100% - 1rem);
+    padding: 0.55rem 0.75rem;
+  }
+
+  @media (max-width: 640px) {
+    top: calc(40px + var(--spx-safe-top) + 0.5rem);
+    align-items: flex-start;
+
+    strong,
+    span {
+      font-size: 0.75rem;
+    }
+  }
+}
+
+.cr-connection-banner {
+  position: sticky;
+  top: $cr-header-height;
+  z-index: 135;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+  padding: 0.65rem 1.5rem;
+  color: $cr-text-primary;
+  background: rgba($cr-bg-secondary, 0.97);
+  border-bottom: 1px solid rgba($cr-accent-teacher, 0.42);
+  box-shadow: 0 10px 28px rgba($cr-bg-primary-dark, 0.24);
+
+  &__content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 1.35;
+
+    svg {
+      flex: 0 0 auto;
+      color: #fbbf24;
+      animation: cr-spin 1.2s linear infinite;
+    }
+  }
+
+  &__btn {
+    flex: 0 0 auto;
+    padding: 0.42rem 0.85rem;
+    color: $cr-text-primary;
+    background: rgba($cr-accent-primary, 0.18);
+    border: 1px solid rgba($cr-accent-primary, 0.45);
+    border-radius: $cr-radius-full;
+    font-family: $cr-font-sans;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background $cr-transition-fast, border-color $cr-transition-fast;
+
+    &:hover {
+      background: rgba($cr-accent-primary, 0.28);
+      border-color: rgba($cr-accent-primary, 0.72);
+    }
+
+    &--danger {
+      background: rgba($cr-accent-danger, 0.18);
+      border-color: rgba($cr-accent-danger, 0.5);
+
+      &:hover {
+        background: rgba($cr-accent-danger, 0.28);
+        border-color: rgba($cr-accent-danger, 0.72);
+      }
+    }
+  }
+
+  &--failed {
+    border-bottom-color: rgba($cr-accent-danger, 0.52);
+
+    .cr-connection-banner__content svg {
+      color: #fecaca;
+      animation: none;
+    }
+  }
+
+  @media (max-width: 900px) {
+    top: calc(44px + var(--spx-safe-top));
+    align-items: flex-start;
+    padding: 0.6rem calc(0.75rem + var(--spx-safe-right)) 0.6rem calc(0.75rem + var(--spx-safe-left));
+  }
+
+  @media (max-width: 640px) {
+    top: calc(40px + var(--spx-safe-top));
+    flex-direction: column;
+    gap: 0.6rem;
+
+    &__content {
+      font-size: 0.8125rem;
+    }
+
+    &__btn {
+      width: 100%;
+    }
+  }
+}
+
+.cr-connection-banner + .cr-time-warning {
+  top: calc(#{$cr-header-height} + 3.75rem);
+
+  @media (max-width: 900px) {
+    top: calc(44px + var(--spx-safe-top) + 3.75rem);
+  }
+
+  @media (max-width: 640px) {
+    top: calc(40px + var(--spx-safe-top) + 5.8rem);
+  }
+}
+
 // ─── Main Content Area ──────────────────────────────────────────────────────
 .cr-main {
   flex: 1;
@@ -450,6 +667,7 @@ body.classroom-active {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  touch-action: none;
 
   &::before {
     content: "";
@@ -464,9 +682,15 @@ body.classroom-active {
   }
 
   &:hover::before,
+  &:focus-visible::before,
   &--active::before {
     width: 5px;
     background: $cr-accent-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($cr-accent-primary, 0.7);
+    outline-offset: 4px;
   }
 
   &::after {
@@ -477,6 +701,16 @@ body.classroom-active {
 
   @media (max-width: 900px) {
     display: none;
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+
+    &::before {
+      background: $cr-border-subtle;
+      width: 2px;
+    }
   }
 
   &__handle {
@@ -494,9 +728,15 @@ body.classroom-active {
     transition: opacity $cr-transition-fast, transform $cr-transition-fast;
 
     .cr-divider:hover &,
+    .cr-divider:focus-visible &,
     .cr-divider--active & {
       opacity: 1;
       transform: scale(1.03);
+    }
+
+    .cr-divider--disabled & {
+      opacity: 0;
+      transform: none;
     }
 
     span {
@@ -1732,6 +1972,22 @@ body.classroom-active {
     font-size: 0.6875rem;
     font-weight: 800;
     white-space: nowrap;
+  }
+
+  &__recording-notice {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    max-width: min(34vw, 360px);
+    padding: 0.25rem 0.75rem;
+    border: 1px solid rgba($cr-accent-danger, 0.35);
+    border-radius: $cr-radius-full;
+    background: rgba($cr-accent-danger, 0.1);
+    color: #fecaca;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: normal;
   }
 
   &__reset {

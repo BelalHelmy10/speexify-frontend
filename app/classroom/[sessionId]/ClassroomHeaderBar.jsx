@@ -1,51 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { GraduationCap, UserRound, Users, Wifi, WifiOff } from "lucide-react";
-
-/* ─── Elapsed Timer ────────────────────────────────────────────────────── */
-function parseTimestampMs(value) {
-  if (!value) return null;
-
-  const timestamp =
-    value instanceof Date ? value.getTime() : new Date(value).getTime();
-  return Number.isFinite(timestamp) ? timestamp : null;
-}
-
-function formatElapsedTime(totalSeconds) {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  const pad = (n) => String(n).padStart(2, "0");
-
-  return hours > 0
-    ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
-    : `${pad(minutes)}:${pad(seconds)}`;
-}
-
-function useElapsedTime(startedAt) {
-  const startMs = useMemo(() => parseTimestampMs(startedAt), [startedAt]);
-  const [elapsed, setElapsed] = useState("00:00");
-
-  useEffect(() => {
-    const tick = () => {
-      if (!startMs) {
-        setElapsed("00:00");
-        return;
-      }
-
-      const diff = Math.max(0, Date.now() - startMs);
-      const totalSeconds = Math.floor(diff / 1000);
-      setElapsed(formatElapsedTime(totalSeconds));
-    };
-
-    tick();
-    const intervalId = setInterval(tick, 1000);
-    return () => clearInterval(intervalId);
-  }, [startMs]);
-
-  return elapsed;
-}
 
 /* ─── Connection Status Dot ───────────────────────────────────────────── */
 const WS_STATUS_MAP = {
@@ -69,10 +24,19 @@ export default function ClassroomHeaderBar({
   learnerName,
   setShowParticipantList,
   wsStatus,
-  startedAt,
+  sessionTiming,
 }) {
-  const elapsed = useElapsedTime(startedAt);
+  const timing = sessionTiming || {};
   const wsInfo = WS_STATUS_MAP[wsStatus] || WS_STATUS_MAP.idle;
+  const countdownWarningLevel = isTeacher ? timing.warningLevel : null;
+  const endsInClassName = [
+    "cr-header__timer",
+    "cr-header__timer--ends",
+    countdownWarningLevel ? `cr-header__timer--${countdownWarningLevel}` : "",
+    timing.hasEnded ? "cr-header__timer--ended" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <header className="cr-header">
@@ -98,10 +62,20 @@ export default function ClassroomHeaderBar({
         </div>
 
         {/* Session elapsed timer */}
-        {elapsed && (
+        {timing.elapsedLabel && (
           <div className="cr-header__timer" title="Session elapsed time">
             <span className="cr-header__timer-dot" />
-            {elapsed}
+            {timing.elapsedLabel}
+          </div>
+        )}
+
+        {timing.endMs && (
+          <div
+            className={endsInClassName}
+            title="Session ends in"
+          >
+            <span className="cr-header__timer-dot" />
+            {timing.hasEnded ? "Ended" : `Ends in ${timing.remainingLabel}`}
           </div>
         )}
       </div>
