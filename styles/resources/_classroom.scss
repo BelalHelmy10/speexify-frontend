@@ -2269,9 +2269,10 @@ body.classroom-active {
   &__recording-notice {
     display: inline-flex;
     align-items: center;
+    gap: 0.4rem;
     min-height: 28px;
     max-width: min(34vw, 360px);
-    padding: 0.2rem 0.6rem;
+    padding: 0.2rem 0.4rem 0.2rem 0.6rem;
     border: 1px solid rgba($cr-accent-danger, 0.35);
     border-radius: $cr-radius-full;
     background: rgba($cr-accent-danger, 0.1);
@@ -2280,6 +2281,24 @@ body.classroom-active {
     font-weight: 700;
     line-height: 1.25;
     white-space: normal;
+
+    &-dismiss {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      color: #fecaca;
+      cursor: pointer;
+      opacity: 0.7;
+
+      &:hover { opacity: 1; }
+    }
   }
 
   &__reset {

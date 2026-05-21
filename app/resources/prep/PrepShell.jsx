@@ -1032,16 +1032,19 @@ export default function PrepShell({
     const audioEl = audioRef.current;
     if (!audioEl) return;
 
-    // Fix #21: Separate handlers for ended and pause
     const handleEnded = () => {
       setIsAudioPlaying(false);
-      // Audio track finished completely
+      if (isTeacher) {
+        sendAudioState({ playing: false, time: audioEl.currentTime || 0 });
+      }
     };
 
     const handlePause = () => {
-      // Only update state if not seeking (paused explicitly)
       if (!audioEl.seeking) {
         setIsAudioPlaying(false);
+        if (isTeacher) {
+          sendAudioState({ playing: false, time: audioEl.currentTime || 0 });
+        }
       }
     };
 
@@ -1052,7 +1055,7 @@ export default function PrepShell({
       audioEl.removeEventListener("ended", handleEnded);
       audioEl.removeEventListener("pause", handlePause);
     };
-  }, [resource._id]);
+  }, [resource._id, isTeacher, sendAudioState]);
 
   // ✅ Teacher: periodically broadcast audio state while playing (keeps learners in sync)
   useEffect(() => {
@@ -1066,6 +1069,27 @@ export default function PrepShell({
       if (el.paused) return;
       sendAudioState({ time: el.currentTime || 0, playing: true });
     }, 750);
+
+    return () => clearInterval(id);
+  }, [isTeacher, channelReady, sendOnChannel, isAudioPlaying, sendAudioState]);
+
+  // ✅ Teacher: after a pause, send a few follow-up "paused" pings so a single
+  // dropped packet doesn't leave learners playing while the teacher is stopped.
+  useEffect(() => {
+    if (!isTeacher) return;
+    if (!channelReady || !sendOnChannel) return;
+    if (isAudioPlaying) return;
+
+    let count = 0;
+    const id = setInterval(() => {
+      const el = audioRef.current;
+      if (!el || !el.paused) {
+        clearInterval(id);
+        return;
+      }
+      sendAudioState({ time: el.currentTime || 0, playing: false });
+      if (++count >= 3) clearInterval(id);
+    }, 400);
 
     return () => clearInterval(id);
   }, [isTeacher, channelReady, sendOnChannel, isAudioPlaying, sendAudioState]);

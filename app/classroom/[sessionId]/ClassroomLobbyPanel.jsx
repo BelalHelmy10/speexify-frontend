@@ -1,7 +1,7 @@
 // app/classroom/[sessionId]/ClassroomLobbyPanel.jsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   UserCheck,
   UserX,
@@ -38,6 +38,18 @@ export default function ClassroomLobbyPanel({
   const [admittingIds, setAdmittingIds] = useState(new Set());
   const [denyingIds, setDenyingIds] = useState(new Set());
   const [isAdmittingAll, setIsAdmittingAll] = useState(false);
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(e) {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        (onClose || onToggle)?.();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, onClose, onToggle]);
 
   const handleAdmit = useCallback(
     async (learnerId) => {
@@ -107,7 +119,7 @@ export default function ClassroomLobbyPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="cr-lobby-panel" role="dialog" aria-label="Waiting room lobby">
+    <div ref={panelRef} className="cr-lobby-panel" role="dialog" aria-label="Waiting room lobby">
       {/* Header */}
       <header className="cr-lobby-panel__header">
         <div className="cr-lobby-panel__header-left">

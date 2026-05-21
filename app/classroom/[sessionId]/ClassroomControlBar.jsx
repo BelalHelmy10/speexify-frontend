@@ -8,6 +8,7 @@ import {
   RotateCcw,
   Square,
   Users,
+  X,
 } from "lucide-react";
 import { ClassroomRaiseHandButton } from "./ClassroomRaiseHand";
 import { ClassroomCaptionsButton } from "./ClassroomCaptions";
@@ -20,6 +21,7 @@ export default function ClassroomControlBar({
   setIsPickerOpen,
   isPageRecording,
   pageRecError,
+  clearPageRecError,
   pageRecWarning,
   stopPageRecording,
   startPageRecording,
@@ -97,6 +99,14 @@ export default function ClassroomControlBar({
         {isTeacher && pageRecError && (
           <span className="cr-controls__recording-notice" role="status">
             {pageRecError}
+            <button
+              type="button"
+              className="cr-controls__recording-notice-dismiss"
+              onClick={clearPageRecError}
+              aria-label="Dismiss recording error"
+            >
+              <X size={12} />
+            </button>
           </span>
         )}
 

@@ -1526,6 +1526,12 @@ export default function ClassroomShell({
   const [pageRecError, setPageRecError] = useState(null);
   const [pageRecWarning, setPageRecWarning] = useState(null);
 
+  useEffect(() => {
+    if (!pageRecError) return;
+    const t = setTimeout(() => setPageRecError(null), 6000);
+    return () => clearTimeout(t);
+  }, [pageRecError]);
+
   const pageRecorderRef = useRef(null);
   const pageStreamRef = useRef(null);
   const pageChunksRef = useRef([]);
@@ -1951,6 +1957,7 @@ export default function ClassroomShell({
         setIsPickerOpen={setIsPickerOpen}
         isPageRecording={isPageRecording}
         pageRecError={pageRecError}
+        clearPageRecError={() => setPageRecError(null)}
         pageRecWarning={pageRecWarning}
         stopPageRecording={stopPageRecording}
         startPageRecording={startPageRecording}
