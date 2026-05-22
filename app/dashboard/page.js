@@ -250,7 +250,9 @@ function DashboardInner({ dict, prefix }) {
   useEffect(() => {
     if (checking) return;
     if (!user) {
-      router.replace(`${prefix}/login`);
+      api.post("/auth/logout").catch(() => {}).finally(() => {
+        window.location.replace(`${prefix}/login`);
+      });
       return;
     }
 
