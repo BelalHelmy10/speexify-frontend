@@ -250,7 +250,7 @@ function DashboardInner({ dict, prefix }) {
   useEffect(() => {
     if (checking) return;
     if (!user) {
-      setStatus(t(dict, "status_not_auth"));
+      router.replace(`${prefix}/login`);
       return;
     }
 
