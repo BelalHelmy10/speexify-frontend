@@ -328,6 +328,367 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   GAMIFIED PLAN CARD
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dashboard .plan-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(150deg, $color-white 0%, $coral-pale 100%);
+  border: 1px solid rgba($coral, 0.1);
+  box-shadow:
+    0 1px 3px rgba($color-black, 0.04),
+    0 12px 32px rgba($coral, 0.07),
+    0 4px 12px rgba($color-black, 0.04);
+  padding: 0;
+
+  // subtle coral shimmer at top-right
+  &::before {
+    content: "";
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(ellipse at center, rgba($coral, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  > * { position: relative; z-index: 1; }
+}
+
+// ── Header block ──────────────────────────────────────────────────────────────
+.dashboard .plan-card__top {
+  padding: 1.5rem 1.5rem 1.125rem;
+  border-bottom: 1px solid rgba($coral, 0.08);
+}
+
+.dashboard .plan-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba($coral, 0.1);
+  color: $coral-dark;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: 1px solid rgba($coral, 0.18);
+  margin-bottom: 0.75rem;
+
+  svg { opacity: 0.75; }
+}
+
+.dashboard .plan-card__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: $navy;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.5rem;
+  line-height: 1.1;
+}
+
+.dashboard .plan-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dashboard .plan-card__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: $text-muted;
+
+  svg { opacity: 0.55; flex-shrink: 0; }
+}
+
+// ── Sessions counter + XP bar ─────────────────────────────────────────────────
+.dashboard .plan-xp-block {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba($coral, 0.08);
+
+  &__counter {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    flex-shrink: 0;
+  }
+
+  &__num {
+    font-size: 2.75rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    background: linear-gradient(135deg, $coral 0%, $coral-light 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  &__lbl {
+    font-size: 11px;
+    font-weight: 600;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1.4;
+  }
+
+  &__bar-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.dashboard .plan-xp-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba($coral, 0.1);
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+
+  &__fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, $coral 0%, $coral-light 100%);
+    box-shadow: 0 0 8px rgba($coral, 0.35);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 4px;
+  }
+
+  &__legend {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: $text-muted;
+    font-weight: 500;
+  }
+}
+
+// ── Quests section ────────────────────────────────────────────────────────────
+.dashboard .plan-quests {
+  padding: 1.125rem 1.5rem 0.875rem;
+  border-bottom: 1px solid rgba($coral, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #b45309;
+    margin-bottom: 0.25rem;
+
+    svg { color: #d97706; }
+  }
+}
+
+.dashboard .plan-quest {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  background: $color-white;
+  border: 1px solid rgba($border, 0.7);
+  text-decoration: none !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 4px rgba($color-black, 0.04);
+
+  &:hover {
+    background: $color-white;
+    border-color: rgba($coral, 0.35);
+    transform: translateX(3px);
+    box-shadow: 0 4px 16px rgba($coral, 0.1);
+
+    .plan-quest__arrow {
+      transform: translateX(4px);
+      color: $coral;
+    }
+  }
+
+  &__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    &--profile {
+      background: linear-gradient(135deg, $coral-pale 0%, rgba($coral, 0.06) 100%);
+      color: $coral;
+      border: 1px solid rgba($coral, 0.15);
+    }
+
+    &--brain {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.06) 100%);
+      color: #7c3aed;
+      border: 1px solid rgba(139, 92, 246, 0.15);
+    }
+  }
+
+  &__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: $text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__sub {
+    font-size: 11.5px;
+    color: $text-muted;
+    font-weight: 400;
+  }
+
+  &__arrow {
+    flex-shrink: 0;
+    color: rgba($text-muted, 0.6);
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
+  }
+}
+
+// ── Completed action ghost links ───────────────────────────────────────────────
+.dashboard .plan-done-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem 0.25rem;
+}
+
+.dashboard .plan-done-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-muted;
+  text-decoration: none !important;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba($border, 0.7);
+  transition: all 0.18s ease;
+  background: $color-white;
+
+  svg { color: #16a34a; }
+
+  &:hover {
+    color: $text-secondary;
+    border-color: rgba($coral, 0.25);
+  }
+}
+
+// ── Footer ────────────────────────────────────────────────────────────────────
+.dashboard .plan-card__footer {
+  padding: 0.875rem 1.5rem 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dashboard .plan-card__explore {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-muted;
+  text-decoration: none !important;
+  transition: all 0.18s ease;
+
+  svg { transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  &:hover {
+    color: $coral;
+    svg { transform: translateX(3px); }
+  }
+}
+
+// ── Empty state ────────────────────────────────────────────────────────────────
+.dashboard .plan-card__empty {
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.dashboard .plan-card__empty-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: $coral-pale;
+  border: 1px solid rgba($coral, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $coral;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard .plan-card__empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0;
+}
+
+.dashboard .plan-card__empty-sub {
+  font-size: 12.5px;
+  color: $text-muted;
+  margin: 0 0 0.75rem;
+  max-width: 220px;
+}
+
+.dashboard .plan-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.55rem 1.125rem;
+  border-radius: 999px;
+  background: $coral;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba($coral, 0.3);
+
+  &:hover {
+    background: $coral-dark;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba($coral, 0.4);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    KPI Cards
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -1348,6 +1709,62 @@
 
   .panel__head {
     margin-bottom: 16px;
+  }
+
+  // ── Count: strip the blobby pill, replace with a slick inline tally ──
+  .session-count {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: $text-muted;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+    opacity: 0.75;
+
+    &::before {
+      content: "·";
+      margin-right: 5px;
+      font-size: 14px;
+      vertical-align: -1px;
+      opacity: 0.5;
+    }
+  }
+
+  // ── "View all" link: no border box, just a refined text arrow ──
+  .btn--ghost.btn--sm {
+    border: none;
+    background: none;
+    color: $coral;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 2px 0;
+    border-radius: 0;
+    letter-spacing: 0.01em;
+    gap: 5px;
+    box-shadow: none;
+
+    svg {
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: none;
+      color: $coral-dark;
+      box-shadow: none;
+      transform: none;
+
+      svg {
+        transform: translateX(4px);
+      }
+    }
+
+    &:active {
+      transform: none;
+    }
   }
 }
 

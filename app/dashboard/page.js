@@ -971,161 +971,130 @@ function DashboardInner({ dict, prefix }) {
 
         {/* Plan / packages panel – learners only (or impersonating learner) */}
         {showLearnerContent && (
-          <div className="panel panel--featured">
-            <div className="panel__badge">{t(dict, "plan_badge")}</div>
+          <div className="plan-card">
 
             {activePacks.length === 0 ? (
-              <div className="empty-state">
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-                <p>{t(dict, "plan_no_active")}</p>
-                <p style={{ opacity: 0.8, marginTop: 4 }}>
-                  {t(dict, "plan_no_active_body")}
-                </p>
-                <div className="button-row">
-                  <Link
-                    href={`${prefix}/packages`}
-                    className="btn btn--primary"
-                  >
-                    {t(dict, "plan_browse_packages")}
-                  </Link>
+              /* ── No active pack ── */
+              <div className="plan-card__empty">
+                <div className="plan-card__empty-icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+                  </svg>
                 </div>
+                <p className="plan-card__empty-title">{t(dict, "plan_no_active")}</p>
+                <p className="plan-card__empty-sub">{t(dict, "plan_no_active_body")}</p>
+                <Link href={`${prefix}/packages`} className="plan-card__cta">
+                  {t(dict, "plan_browse_packages")}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </Link>
               </div>
             ) : (
               <>
-                <h3 className="next-session__title">
-                  {primaryPack?.title || t(dict, "plan_default_title")}
-                </h3>
-                <div className="next-session__time" style={{ marginTop: 6 }}>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  {primaryPack?.minutesPerSession
-                    ? `${primaryPack.minutesPerSession} min / session`
-                    : t(dict, "plan_flexible_duration")}
-                  {expiryLabel
-                    ? ` · ${t(dict, "plan_expires_label")} ${expiryLabel}`
-                    : ""}
-                </div>
-
-                <div className="progress" style={{ margin: "16px 0 8px" }}>
-                  <div
-                    className="progress__bar"
-                    style={{
-                      height: 8,
-                      borderRadius: 999,
-                      background: "var(--surface-3, #eef1f4)",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${progressPct}%`,
-                        height: "100%",
-                        borderRadius: 999,
-                        background:
-                          "linear-gradient(90deg, rgba(58,123,213,1) 0%, rgba(58,213,180,1) 100%)",
-                        transition: "width .3s ease",
-                      }}
-                    />
-                  </div>
-                  <div
-                    className="progress__label"
-                    style={{ fontSize: 12, marginTop: 6, opacity: 0.8 }}
-                  >
-                    {t(dict, "plan_progress_label", {
-                      remaining: remainingSessions,
-                      total: totalSessions,
-                    })}
+                {/* ── Header ── */}
+                <div className="plan-card__top">
+                  <span className="plan-card__badge">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    {t(dict, "plan_badge") || "Your Plan"}
+                  </span>
+                  <h3 className="plan-card__title">
+                    {primaryPack?.title || t(dict, "plan_default_title")}
+                  </h3>
+                  <div className="plan-card__meta">
+                    {primaryPack?.minutesPerSession && (
+                      <span className="plan-card__meta-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        {primaryPack.minutesPerSession} min / session
+                      </span>
+                    )}
+                    {expiryLabel && (
+                      <span className="plan-card__meta-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Expires {expiryLabel}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {pendingActionsCount > 0 && !isImpersonating && (
-                  <div className="alert-badge">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-                    </svg>
-                    {pendingActionsCount === 2
-                      ? t(dict, "actions_two")
-                      : t(dict, "actions_one")}
+                {/* ── Sessions counter + XP bar ── */}
+                <div className="plan-xp-block">
+                  <div className="plan-xp-block__counter">
+                    <span className="plan-xp-block__num">{remainingSessions}</span>
+                    <span className="plan-xp-block__lbl">sessions<br/>remaining</span>
+                  </div>
+                  <div className="plan-xp-block__bar-wrap">
+                    <div className="plan-xp-bar">
+                      <div
+                        className="plan-xp-bar__fill"
+                        style={{ width: `${totalSessions > 0 ? Math.round((usedSessions / totalSessions) * 100) : 0}%` }}
+                      />
+                    </div>
+                    <div className="plan-xp-bar__legend">
+                      <span>{usedSessions} used</span>
+                      <span>{totalSessions} total</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Quests (incomplete actions) ── */}
+                {(!onbComplete || !assComplete) && !isImpersonating && (
+                  <div className="plan-quests">
+                    <div className="plan-quests__header">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                      {pendingActionsCount} {pendingActionsCount === 1 ? "Quest" : "Quests"} available
+                    </div>
+
+                    {!onbComplete && (
+                      <Link href={`${prefix}/onboarding`} className="plan-quest">
+                        <div className="plan-quest__icon plan-quest__icon--profile" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div className="plan-quest__body">
+                          <span className="plan-quest__name">{t(dict, "onboarding_complete") || "Complete onboarding form"}</span>
+                          <span className="plan-quest__sub">Tell us your goals &amp; schedule</span>
+                        </div>
+                        <svg className="plan-quest__arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                      </Link>
+                    )}
+
+                    {!assComplete && (
+                      <Link href={`${prefix}/assessment`} className="plan-quest">
+                        <div className="plan-quest__icon plan-quest__icon--brain" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                        </div>
+                        <div className="plan-quest__body">
+                          <span className="plan-quest__name">{t(dict, "assessment_take") || "Take written assessment"}</span>
+                          <span className="plan-quest__sub">Unlock your personalised path</span>
+                        </div>
+                        <svg className="plan-quest__arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                      </Link>
+                    )}
                   </div>
                 )}
 
-                <div
-                  className="button-row"
-                  style={{ gap: 12, flexWrap: "wrap" }}
-                >
-                  <Link
-                    href={`${prefix}/onboarding`}
-                    className={`btn ${onbComplete ? "btn--ghost" : "btn--primary btn--pulse"
-                      }`}
-                  >
-                    {!onbComplete && (
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 8v4m0 4h.01" />
-                      </svg>
+                {/* ── Completed action ghost links ── */}
+                {(onbComplete || assComplete) && (
+                  <div className="plan-done-links">
+                    {onbComplete && (
+                      <Link href={`${prefix}/onboarding`} className="plan-done-link">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                        {t(dict, "onboarding_view")}
+                      </Link>
                     )}
-                    {onbComplete
-                      ? t(dict, "onboarding_view")
-                      : t(dict, "onboarding_complete")}
-                  </Link>
-
-                  <Link
-                    href={`${prefix}/assessment`}
-                    className={`btn ${assComplete ? "btn--ghost" : "btn--primary btn--pulse"
-                      }`}
-                  >
-                    {!assComplete && (
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 8v4m0 4h.01" />
-                      </svg>
+                    {assComplete && (
+                      <Link href={`${prefix}/assessment`} className="plan-done-link">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                        {t(dict, "assessment_view")}
+                      </Link>
                     )}
-                    {assComplete
-                      ? t(dict, "assessment_view")
-                      : t(dict, "assessment_take")}
-                  </Link>
+                  </div>
+                )}
 
-                  <Link href={`${prefix}/packages`} className="btn btn--ghost">
+                {/* ── Footer ── */}
+                <div className="plan-card__footer">
+                  <Link href={`${prefix}/packages`} className="plan-card__explore">
                     {t(dict, "view_all_plans")}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   </Link>
                 </div>
               </>
