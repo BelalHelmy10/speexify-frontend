@@ -229,50 +229,8 @@ function Home({ locale = "en" }) {
         </div>
       </section>
 
-      {/* ===== SOCIAL PROOF ===== */}
-      <section className="home-proof">
-        <div className="home-container">
-          <FadeIn as="p" className="home-proof__title">
-            {t(dict, "proof_title")}
-          </FadeIn>
-          <div className="home-proof__scroller">
-            <div className="home-proof__logos">
-              {/* Set 1 */}
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={`set1-${i}`} className="home-proof__logo-wrap">
-                  <Image
-                    src={`/images/logo-${
-                      ["amazon", "cocacola", "tesla", "allianz", "indeed"][
-                        i - 1
-                      ]
-                    }.svg`}
-                    alt={t(dict, "proof_logo_alt")}
-                    className="home-logo"
-                    width={140}
-                    height={50}
-                  />
-                </div>
-              ))}
-              {/* Set 2 (Duplicate for loop) */}
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={`set2-${i}`} className="home-proof__logo-wrap">
-                  <Image
-                    src={`/images/logo-${
-                      ["amazon", "cocacola", "tesla", "allianz", "indeed"][
-                        i - 1
-                      ]
-                    }.svg`}
-                    alt={t(dict, "proof_logo_alt")}
-                    className="home-logo"
-                    width={140}
-                    height={50}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ===== LIVE SESSION DEMO ===== */}
+      <LiveSessionDemo />
 
       {/* ===== FEATURES ===== */}
       <FeaturesSection dict={dict} />
@@ -375,46 +333,15 @@ function Home({ locale = "en" }) {
             />
           </div>
 
-          <p className="home-spx-coaches__note">{t(dict, "coaches_note")}</p>
+
         </div>
       </section>
 
       {/* ===== COMPARISON TABLE ===== */}
       <ComparisonSection dict={dict} />
 
-      {/* ===== CASE STUDIES ===== */}
-      <section className="home-spx-cases">
-        <div className="home-container">
-          <div className="home-section-header">
-            <h2 className="home-section-title">{t(dict, "cases_title")}</h2>
-            <p className="home-section-subtitle">{t(dict, "cases_subtitle")}</p>
-          </div>
-
-          <div className="home-spx-cases__grid">
-            <CaseCard
-              logo="/images/logo-indeed.svg"
-              title={t(dict, "case1_title")}
-              text={t(dict, "case1_text")}
-              metric={t(dict, "case1_metric")}
-              metricLabel={t(dict, "case1_metric_label")}
-            />
-            <CaseCard
-              logo="/images/logo-amazon.svg"
-              title={t(dict, "case2_title")}
-              text={t(dict, "case2_text")}
-              metric={t(dict, "case2_metric")}
-              metricLabel={t(dict, "case2_metric_label")}
-            />
-            <CaseCard
-              logo="/images/logo-allianz.svg"
-              title={t(dict, "case3_title")}
-              text={t(dict, "case3_text")}
-              metric={t(dict, "case3_metric")}
-              metricLabel={t(dict, "case3_metric_label")}
-            />
-          </div>
-        </div>
-      </section>
+      {/* ===== TRANSFORMATION DEMO ===== */}
+      <TransformationDemo dict={dict} locale={locale} />
 
       {/* ===== TESTIMONIALS ===== */}
       <TestimonialsCarousel dict={dict} />
@@ -959,29 +886,170 @@ function CoachCard({ name, role, bio, img, index = 0 }) {
   );
 }
 
-function CaseCard({ logo, title, text, metric, metricLabel }) {
+function TransformationDemo({ dict, locale }) {
+  const [scene, setScene] = React.useState(0);
+  const totalScenes = 3;
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setScene((s) => (s + 1) % totalScenes);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const scenes = [
+    {
+      before: t(dict, "shift1_before"),
+      after: t(dict, "shift1_after"),
+      label: t(dict, "shift1_label"),
+      desc: t(dict, "shift1_desc"),
+      icon: "mic",
+    },
+    {
+      before: t(dict, "shift2_before"),
+      after: t(dict, "shift2_after"),
+      label: t(dict, "shift2_label"),
+      desc: t(dict, "shift2_desc"),
+      icon: "type",
+    },
+    {
+      before: t(dict, "shift3_before"),
+      after: t(dict, "shift3_after"),
+      label: t(dict, "shift3_label"),
+      desc: t(dict, "shift3_desc"),
+      icon: "meter",
+    },
+  ];
+
+  const current = scenes[scene];
+
   return (
-    <div className="home-spx-cases__card">
-      <div className="home-spx-cases__header">
-        <div className="home-spx-cases__logo">
-          <Image
-            src={logo}
-            alt=""
-            width={100}
-            height={40}
-            style={{ objectFit: "contain" }}
-          />
+    <section className="home-shift">
+      <div className="home-container">
+        <div className="home-section-header">
+          <FadeIn as="h2" className="home-section-title" blur={false}>
+            {t(dict, "shift_title")}
+          </FadeIn>
+          <FadeIn as="p" className="home-section-subtitle" delay={0.1} blur={false}>
+            {t(dict, "shift_subtitle")}
+          </FadeIn>
         </div>
-        <div className="home-spx-cases__metric">
-          <div className="home-spx-cases__metric-num">{metric}</div>
-          <div className="home-spx-cases__metric-label">{metricLabel}</div>
+
+        <div className="home-shift__stage" data-scene={scene}>
+          {/* Animated visual */}
+          <div className="home-shift__visual">
+            <div className="home-shift__window">
+              <div className="home-shift__chrome">
+                <span className="home-shift__chrome-dot" />
+                <span className="home-shift__chrome-dot" />
+                <span className="home-shift__chrome-dot" />
+                <span className="home-shift__chrome-url">{t(dict, "shift_window_label")}</span>
+              </div>
+              <div className="home-shift__body">
+                <div className="home-shift__avatar-row">
+                  <div className="home-shift__avatar" aria-hidden="true">
+                    {current.icon === "mic" ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="22" />
+                      </svg>
+                    ) : current.icon === "type" ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                        <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10" />
+                      </svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 3v18h18" />
+                        <path d="M18 9l-4 4-3-3-3 3" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="home-shift__meta">
+                    <strong>{current.label}</strong>
+                    <span>{t(dict, "shift_live_tag")}</span>
+                  </div>
+                </div>
+
+                {/* Before / After animated text */}
+                <div className="home-shift__chat">
+                  <div className={`home-shift__bubble home-shift__bubble--before${scene === 0 ? " is-active" : ""}`}>
+                    <span className="home-shift__tag">{t(dict, "shift_tag_before")}</span>
+                    <p>{scenes[0].before}</p>
+                  </div>
+                  <div className={`home-shift__bubble home-shift__bubble--after${scene === 0 ? " is-active" : ""}`}>
+                    <span className="home-shift__tag home-shift__tag--after">{t(dict, "shift_tag_after")}</span>
+                    <p>{scenes[0].after}</p>
+                  </div>
+                </div>
+
+                <div className="home-shift__chat">
+                  <div className={`home-shift__bubble home-shift__bubble--before${scene === 1 ? " is-active" : ""}`}>
+                    <span className="home-shift__tag">{t(dict, "shift_tag_before")}</span>
+                    <p>{scenes[1].before}</p>
+                  </div>
+                  <div className={`home-shift__bubble home-shift__bubble--after${scene === 1 ? " is-active" : ""}`}>
+                    <span className="home-shift__tag home-shift__tag--after">{t(dict, "shift_tag_after")}</span>
+                    <p>{scenes[1].after}</p>
+                  </div>
+                </div>
+
+                <div className="home-shift__chat">
+                  <div className={`home-shift__bubble home-shift__bubble--before${scene === 2 ? " is-active" : ""}`}>
+                    <span className="home-shift__tag">{t(dict, "shift_tag_before")}</span>
+                    <p>{scenes[2].before}</p>
+                  </div>
+                  <div className={`home-shift__bubble home-shift__bubble--after${scene === 2 ? " is-active" : ""}`}>
+                    <span className="home-shift__tag home-shift__tag--after">{t(dict, "shift_tag_after")}</span>
+                    <p>{scenes[2].after}</p>
+                  </div>
+                </div>
+
+                {/* Animated wave / meter */}
+                <div className="home-shift__wave" aria-hidden="true">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="home-shift__wave-bar"
+                      style={{ "--bar-i": i }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Story caption */}
+          <div className="home-shift__caption">
+            <h3 className="home-shift__title">{current.desc}</h3>
+            <div className="home-shift__dots">
+              {scenes.map((_, i) => (
+                <button
+                  key={i}
+                  className={`home-shift__dot${scene === i ? " home-shift__dot--active" : ""}`}
+                  onClick={() => setScene(i)}
+                  aria-label={`${t(dict, "shift_slide")} ${i + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="home-shift__cta">
+          <Link
+            className="spx-btn spx-btn--primary spx-btn--shine"
+            href={routeHref(APP_ROUTES.register, locale)}
+          >
+            <span>{t(dict, "shift_cta")}</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
         </div>
       </div>
-      <div className="home-spx-cases__content">
-        <h3>{title}</h3>
-        <p>{text}</p>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -1005,16 +1073,25 @@ function TestimonialsCarousel({ dict }) {
       author: t(dict, "testi3_author"),
       role: t(dict, "testi3_role"),
     },
+    {
+      quote: t(dict, "testi4_quote"),
+      author: t(dict, "testi4_author"),
+      role: t(dict, "testi4_role"),
+    },
   ];
 
   const scroll = (dir) => {
     if (!trackRef.current) return;
-    const cardWidth =
-      trackRef.current.querySelector(".home-quote")?.offsetWidth || 400;
-    trackRef.current.scrollBy({
-      left: dir * (cardWidth + 24),
+    const track = trackRef.current;
+    const cardWidth = track.querySelector(".home-quote")?.offsetWidth || 400;
+    const gap = 24;
+    const currentIdx = Math.round(track.scrollLeft / (cardWidth + gap));
+    const next = (currentIdx + dir + testimonials.length) % testimonials.length;
+    track.scrollTo({
+      left: next * (cardWidth + gap),
       behavior: "smooth",
     });
+    setActive(next);
   };
 
   // Update active dot on scroll
@@ -1213,7 +1290,11 @@ function HowItWorksSection({ dict, locale }) {
                 <div
                   className={`home-spx-how__rail-dot${activeStep === i ? " is-active" : activeStep > i ? " is-done" : ""}`}
                 >
-                  {activeStep > i ? "✓" : s.num}
+                  {activeStep > i ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : s.num}
                 </div>
                 {i < steps.length - 1 && (
                   <div
@@ -1360,10 +1441,294 @@ function ProductDemoSection({ dict }) {
                   <span className="home-demo__session-time">24:07</span>
                 </div>
                 <div className="home-demo__session-feedback">
-                  ✓ {t(dict, "demo_session_feedback")}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  {t(dict, "demo_session_feedback")}
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================
+   Hero Cinema (choreographed 20s loop)
+   ============================ */
+function HeroCinema() {
+  const wave = [
+    { h: 40, d: "0s" },
+    { h: 72, d: "0.11s" },
+    { h: 55, d: "0.24s" },
+    { h: 88, d: "0.06s" },
+    { h: 62, d: "0.38s" },
+    { h: 45, d: "0.19s" },
+    { h: 92, d: "0.30s" },
+    { h: 58, d: "0.13s" },
+  ];
+
+  return (
+    <div className="home-hcine" role="img" aria-label="Animated preview of a live Speexify coaching session">
+      {/* Chrome */}
+      <div className="home-hcine__chrome" aria-hidden="true">
+        <div className="home-hcine__dots">
+          <span className="home-hcine__dot home-hcine__dot--r" />
+          <span className="home-hcine__dot home-hcine__dot--y" />
+          <span className="home-hcine__dot home-hcine__dot--g" />
+        </div>
+        <span className="home-hcine__url">speexify.com/session</span>
+        <span className="home-hcine__timer">24:07</span>
+      </div>
+
+      {/* Body */}
+      <div className="home-hcine__body">
+
+        {/* Coach row */}
+        <div className="home-hcine__coach" aria-hidden="true">
+          <div className="home-hcine__avatar">SJ</div>
+          <div className="home-hcine__coach-info">
+            <strong>Sarah Johnson</strong>
+            <span>English Communication Coach</span>
+          </div>
+          <div className="home-hcine__live">
+            <span className="home-hcine__live-dot" />
+            LIVE
+          </div>
+        </div>
+
+        <hr className="home-hcine__sep" aria-hidden="true" />
+
+        {/* Student message */}
+        <div className="home-hcine__msg" aria-hidden="true">
+          <span className="home-hcine__from">You</span>
+          <div className="home-hcine__bubble">
+            I work in this company{" "}
+            <mark className="home-hcine__err">since</mark> five years.
+          </div>
+        </div>
+
+        {/* Waveform */}
+        <div className="home-hcine__wave" aria-hidden="true">
+          {wave.map((b, i) => (
+            <span
+              key={i}
+              className="home-hcine__wave-bar"
+              style={{ "--bh": `${b.h}%`, "--bd": b.d }}
+            />
+          ))}
+        </div>
+
+        {/* Correction */}
+        <div className="home-hcine__correction" aria-hidden="true">
+          <div className="home-hcine__correction-tag">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <path d="M1 7.5L6.5 2l1.5 1.5L2.5 9H1V7.5ZM6 3l1-1 1.5 1.5-1 1L6 3Z" fill="currentColor" />
+            </svg>
+            Correction
+          </div>
+          <div className="home-hcine__swap">
+            <span className="home-hcine__old">since</span>
+            <span className="home-hcine__arr">→</span>
+            <span className="home-hcine__new">for</span>
+          </div>
+          <p className="home-hcine__corrected">
+            &ldquo;I have worked at this company for five years.&rdquo;
+          </p>
+        </div>
+
+        {/* Coach note */}
+        <div className="home-hcine__note" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Great — that&apos;s the present perfect. Keep that pattern.
+        </div>
+
+        {/* Progress */}
+        <div className="home-hcine__progress" aria-hidden="true">
+          <div className="home-hcine__progress-row">
+            <span>Your sessions</span>
+            <span className="home-hcine__progress-count">Session 7 of 12</span>
+          </div>
+          <div className="home-hcine__progress-track">
+            <div className="home-hcine__progress-fill" />
+          </div>
+        </div>
+
+      </div>
+
+      {/* Floating badges */}
+      <div className="home-hcine__float home-hcine__float--a" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <line x1="10" y1="9" x2="8" y2="9" />
+        </svg>
+        Note saved
+      </div>
+      <div className="home-hcine__float home-hcine__float--b" aria-hidden="true">
+        <span className="home-hcine__float-plus">+1</span> correction
+      </div>
+    </div>
+  );
+}
+
+/* ============================
+   Live Session Demo
+   ============================ */
+function LiveSessionDemo() {
+  const waveBars = [
+    { h: 30, d: "0s" }, { h: 55, d: "0.12s" }, { h: 70, d: "0.28s" },
+    { h: 45, d: "0.08s" }, { h: 85, d: "0.42s" }, { h: 60, d: "0.18s" },
+    { h: 95, d: "0.55s" }, { h: 50, d: "0.32s" }, { h: 75, d: "0.22s" },
+    { h: 40, d: "0.48s" }, { h: 65, d: "0.15s" }, { h: 80, d: "0.38s" },
+    { h: 35, d: "0.06s" }, { h: 50, d: "0.25s" },
+  ];
+
+  return (
+    <section className="home-live-demo">
+      <div className="home-live-demo__glow" aria-hidden="true" />
+
+      <div className="home-container">
+        <div className="home-live-demo__header">
+          <span className="home-live-demo__eyebrow">
+            <span className="home-live-demo__eyebrow-dot" aria-hidden="true" />
+            Live session
+          </span>
+          <h2 className="home-live-demo__heading">
+            See exactly what happens
+            <br />
+            inside a Speexify session.
+          </h2>
+        </div>
+
+        <div className="home-live-demo__scene">
+          {/* Main window */}
+          <div
+            className="home-live-demo__window"
+            role="img"
+            aria-label="Animated preview of a live Speexify coaching session"
+          >
+            {/* Browser chrome */}
+            <div className="home-live-demo__chrome" aria-hidden="true">
+              <div className="home-live-demo__chrome-dots">
+                <span className="home-live-demo__dot home-live-demo__dot--red" />
+                <span className="home-live-demo__dot home-live-demo__dot--yellow" />
+                <span className="home-live-demo__dot home-live-demo__dot--green" />
+              </div>
+              <div className="home-live-demo__chrome-url">
+                speexify.com/session
+              </div>
+              <div className="home-live-demo__chrome-timer">24:07</div>
+            </div>
+
+            {/* Session body */}
+            <div className="home-live-demo__body">
+              {/* Coach row */}
+              <div className="home-live-demo__coach-row">
+                <div className="home-live-demo__coach-avatar">SJ</div>
+                <div className="home-live-demo__coach-meta">
+                  <strong>Sarah Johnson</strong>
+                  <span>English Communication Coach</span>
+                </div>
+                <div className="home-live-demo__live">
+                  <span
+                    className="home-live-demo__live-dot"
+                    aria-hidden="true"
+                  />
+                  LIVE
+                </div>
+              </div>
+
+              <hr className="home-live-demo__sep" aria-hidden="true" />
+
+              {/* Student message */}
+              <div className="home-live-demo__student-msg">
+                <span className="home-live-demo__from">You</span>
+                <div className="home-live-demo__bubble">
+                  I work in this company{" "}
+                  <mark className="home-live-demo__err">since</mark> five years.
+                </div>
+              </div>
+
+              {/* Waveform */}
+              <div className="home-live-demo__wave" aria-hidden="true">
+                {waveBars.map((bar, i) => (
+                  <span
+                    key={i}
+                    className="home-live-demo__wave-bar"
+                    style={{
+                      "--bar-h": `${bar.h}%`,
+                      "--bar-delay": bar.d,
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Correction */}
+              <div className="home-live-demo__correction">
+                <div className="home-live-demo__correction-tag">
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 11 11"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M1 8.5L7 2.5l1.5 1.5L2.5 10H1V8.5ZM6.5 3.5l1-1 1.5 1.5-1 1-1.5-1.5Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Correction
+                </div>
+                <div className="home-live-demo__swap">
+                  <span className="home-live-demo__old">since</span>
+                  <span className="home-live-demo__arr" aria-hidden="true">
+                    →
+                  </span>
+                  <span className="home-live-demo__new">for</span>
+                </div>
+                <p className="home-live-demo__corrected">
+                  &ldquo;I have worked at this company for five years.&rdquo;
+                </p>
+              </div>
+
+              {/* Coach note */}
+              <div className="home-live-demo__note">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Great — that&apos;s the present perfect. Keep that pattern.
+              </div>
+            </div>
+          </div>
+
+          {/* Floating badges */}
+          <div
+            className="home-live-demo__float home-live-demo__float--a"
+            aria-hidden="true"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <line x1="10" y1="9" x2="8" y2="9" />
+            </svg>
+            Session note saved
+          </div>
+          <div
+            className="home-live-demo__float home-live-demo__float--b"
+            aria-hidden="true"
+          >
+            <span className="home-live-demo__float-num">+1</span> correction
+            logged
           </div>
         </div>
       </div>
@@ -1418,14 +1783,21 @@ function ComparisonSection({ dict }) {
     if (type === "yes") {
       return (
         <span className="home-compare__icon home-compare__icon--yes">
-          ✓ {t(dict, "compare_yes")}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {t(dict, "compare_yes")}
         </span>
       );
     }
     if (type === "no") {
       return (
         <span className="home-compare__icon home-compare__icon--no">
-          ✕ {t(dict, "compare_no")}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+          {t(dict, "compare_no")}
         </span>
       );
     }

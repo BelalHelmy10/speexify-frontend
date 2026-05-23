@@ -244,6 +244,203 @@
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
+   KIDS NAV ITEM
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@keyframes spx-kids-word-hop {
+  0%,
+  78%,
+  100% {
+    transform: translateY(0);
+  }
+  82% {
+    transform: translateY(-4px);
+  }
+  86% {
+    transform: translateY(1px);
+  }
+  90% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes spx-kids-square-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-10deg);
+  }
+  45% {
+    transform: translate3d(4px, -3px, 0) rotate(12deg);
+  }
+}
+
+@keyframes spx-kids-dot-jump {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate3d(-18px, 12px, 0) scale(0.62);
+  }
+  16%,
+  72% {
+    opacity: 0.9;
+  }
+  38% {
+    opacity: 1;
+    transform: translate3d(4px, -8px, 0) scale(1);
+  }
+  70% {
+    opacity: 0.9;
+    transform: translate3d(24px, 7px, 0) scale(0.78);
+  }
+}
+
+@keyframes spx-kids-dash-peek {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate3d(-7px, 8px, 0) rotate(-7deg) scaleX(0.65);
+  }
+  24%,
+  74% {
+    opacity: 0.95;
+  }
+  46% {
+    transform: translate3d(2px, 0, 0) rotate(6deg) scaleX(1);
+  }
+}
+
+.spx-nav-link--kids {
+  isolation: isolate;
+  color: $ink;
+  border: 1px solid rgba($color-secondary-light, 0.22);
+  border-radius: 13px;
+  padding: 8px 14px;
+  font-weight: 800;
+  letter-spacing: 0;
+  overflow: visible;
+  background: rgba($color-white, 0.78);
+  box-shadow: 0 4px 14px rgba($ink, 0.05);
+
+  .spx-link-bg {
+    opacity: 1;
+    border-radius: 13px;
+    background:
+      linear-gradient(135deg, rgba($coral-pale, 0.96), rgba($color-secondary-light, 0.1)),
+      rgba($color-white, 0.84);
+  }
+
+  .spx-link-text {
+    color: $ink;
+    z-index: 2;
+  }
+
+  .spx-kids-word {
+    display: inline-block;
+    transform-origin: 50% 100%;
+    animation: spx-kids-word-hop 4.8s ease-in-out infinite;
+  }
+
+  &:hover {
+    color: $brand;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba($ink, 0.08);
+
+    .spx-link-bg {
+      background:
+        linear-gradient(135deg, rgba($coral-pale, 1), rgba($color-secondary-light, 0.16)),
+        $color-white;
+    }
+  }
+
+  &.spx-is-active {
+    color: $brand;
+    border-color: rgba($brand, 0.26);
+
+    .spx-link-bg {
+      background:
+        linear-gradient(135deg, rgba($coral-pale, 1), rgba($color-tertiary-light, 0.18)),
+        $color-white;
+    }
+  }
+}
+
+.spx-kids-shapes {
+  position: absolute;
+  inset: -5px -8px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.spx-kids-shape {
+  position: absolute;
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba($ink, 0.12));
+}
+
+.spx-kids-shape--square {
+  top: 3px;
+  left: 7px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid $coral;
+  border-radius: 2px;
+  animation: spx-kids-square-float 3.9s ease-in-out infinite;
+}
+
+.spx-kids-shape--dot {
+  top: 3px;
+  right: 16px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: $color-secondary-light;
+  animation: spx-kids-dot-jump 4.8s ease-in-out infinite;
+}
+
+.spx-kids-shape--dash {
+  right: 9px;
+  bottom: 1px;
+  width: 16px;
+  height: 4px;
+  border-radius: 999px;
+  background: $color-tertiary-light;
+  animation: spx-kids-dash-peek 4.8s ease-in-out infinite 0.35s;
+}
+
+.spx-mobile-link--kids {
+  border: 1px solid rgba($color-secondary-light, 0.24);
+  background:
+    linear-gradient(135deg, rgba($coral-pale, 0.95), rgba($color-secondary-light, 0.12)),
+    $color-white;
+
+  .spx-mobile-link-bg {
+    display: none !important;
+  }
+
+  .spx-mobile-link-text {
+    color: $ink;
+    font-weight: 800;
+  }
+
+  .spx-mobile-link-arrow {
+    color: rgba($brand, 0.72);
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  &:hover,
+  &.spx-is-active {
+    background:
+      linear-gradient(135deg, rgba($coral-pale, 1), rgba($color-tertiary-light, 0.18)),
+      $color-white;
+
+    .spx-mobile-link-text {
+      color: $brand;
+    }
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
    CTA BUTTON
    ──────────────────────────────────────────────────────────────────────────── */
 

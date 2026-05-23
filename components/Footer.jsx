@@ -140,6 +140,30 @@ function Footer() {
                   </Link>
                 </li>
                 <li>
+                  <Link
+                    href={hrefFor(APP_ROUTES.kidsTraining)}
+                    className="nav-col-link"
+                  >
+                    <span>{$t("kidsTraining")}</span>
+                    <svg
+                      className="link-arrow"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M2.91666 7H11.0833M11.0833 7L7.58333 3.5M11.0833 7L7.58333 10.5"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </Link>
+                </li>
+                <li>
                   <Link href={hrefFor(APP_ROUTES.packages)} className="nav-col-link">
                     <span>{$t("packages")}</span>
                     <svg

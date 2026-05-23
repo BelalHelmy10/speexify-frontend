@@ -268,6 +268,7 @@ export default function Header() {
     { to: APP_ROUTES.home, label: t(navDict, "home") },
     { to: APP_ROUTES.individualTraining, label: t(navDict, "individual") },
     { to: APP_ROUTES.corporateTraining, label: t(navDict, "corporate") },
+    { to: APP_ROUTES.kidsTraining, label: t(navDict, "kids") },
     { to: APP_ROUTES.packages, label: t(navDict, "packages") },
     { to: APP_ROUTES.about, label: t(navDict, "about") },
     { to: APP_ROUTES.contact, label: t(navDict, "contact") },
@@ -477,6 +478,7 @@ export default function Header() {
           <ul className="spx-nav-list">
             {links.map((item, idx) => {
               const href = localizeHref(item.to, locale);
+              const isKids = !user && item.to === APP_ROUTES.kidsTraining;
               return (
                 <li
                   key={item.to}
@@ -487,12 +489,26 @@ export default function Header() {
                     href={href}
                     className={
                       "spx-nav-link" +
+                      (isKids ? " spx-nav-link--kids" : "") +
                       (isActive(item.to) ? " spx-is-active" : "")
                     }
                     onClick={() => setOpen(false)}
                   >
                     <span className="spx-link-bg"></span>
-                    <span className="spx-link-text">{item.label}</span>
+                    {isKids && (
+                      <span className="spx-kids-shapes" aria-hidden="true">
+                        <span className="spx-kids-shape spx-kids-shape--square"></span>
+                        <span className="spx-kids-shape spx-kids-shape--dot"></span>
+                        <span className="spx-kids-shape spx-kids-shape--dash"></span>
+                      </span>
+                    )}
+                    <span className="spx-link-text">
+                      {isKids ? (
+                        <span className="spx-kids-word">{item.label}</span>
+                      ) : (
+                        item.label
+                      )}
+                    </span>
                   </Link>
                 </li>
               );
@@ -591,6 +607,7 @@ export default function Header() {
                     href={href}
                     className={
                       "spx-mobile-link" +
+                      (item.to === APP_ROUTES.kidsTraining ? " spx-mobile-link--kids" : "") +
                       (isActive(item.to) ? " spx-is-active" : "")
                     }
                     onClick={() => setOpen(false)}
