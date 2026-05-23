@@ -232,7 +232,7 @@ $k-ring:    #ede5d8;
 // ─── HERO ─────────────────────────────────────────────────────────────────────
 .kids-hero {
   position: relative;
-  padding: clamp(48px, 5vw, 72px) 0 clamp(80px, 10vw, 120px);
+  padding: clamp(28px, 3vw, 44px) 0 clamp(72px, 8vw, 104px);
   overflow: hidden;
 
   &__bg {
@@ -457,6 +457,16 @@ $k-ring:    #ede5d8;
     align-items: center;
     justify-content: center;
     background: linear-gradient(160deg, $k-surface 0%, $k-ring 100%);
+  }
+
+  &__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 45%;
+    display: block;
   }
 
   &__img-label {
@@ -1708,6 +1718,19 @@ $k-ring:    #ede5d8;
     overflow: hidden;
   }
 
+  &__img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.45s ease;
+
+    .kids-ages__card:hover & {
+      transform: scale(1.035);
+    }
+  }
+
   &__img-label {
     font-size: 0.68rem;
     color: $k-muted;
@@ -1771,11 +1794,44 @@ $k-ring:    #ede5d8;
   }
 }
 
-// ─── WHY IT WORKS (bento) ─────────────────────────────────────────────────────
+// ─── WHY IT WORKS (award-winning bento) ─────────────────────────────────────────
+
+@keyframes kids-why-doodle-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  33%      { transform: translate3d(4px, -6px, 0) rotate(8deg); }
+  66%      { transform: translate3d(-3px, 3px, 0) rotate(-6deg); }
+}
+
+@keyframes kids-why-doodle-spin {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); opacity: 0.6; }
+  50%      { transform: translate3d(2px, -4px, 0) rotate(180deg) scale(1.15); opacity: 1; }
+}
+
+@keyframes kids-why-doodle-bounce {
+  0%, 100% { transform: translateY(0) scaleX(1); opacity: 0.5; }
+  50%      { transform: translateY(-8px) scaleX(1.1); opacity: 0.9; }
+}
+
+@keyframes kids-why-img-heart {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-6px) scale(1.15); }
+}
+
+@keyframes kids-why-img-dot {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50%      { transform: scale(1.4); opacity: 1; }
+}
+
+@keyframes kids-why-card-enter {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .kids-why {
   padding: clamp(80px, 12vw, 140px) 0 calc(clamp(80px, 12vw, 140px) + 40px);
   background: $k-navy;
   position: relative;
+  overflow: hidden;
 
   &::after {
     content: "";
@@ -1788,8 +1844,47 @@ $k-ring:    #ede5d8;
     clip-path: ellipse(55% 100% at 50% 100%);
   }
 
+  // ── Floating doodles ──
+  &__doodle {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
+
+    &--star {
+      top: 10%;
+      left: 6%;
+      color: rgba($k-coral, 0.35);
+      animation: kids-why-doodle-spin 5s ease-in-out infinite;
+    }
+
+    &--zigzag {
+      top: 18%;
+      right: 8%;
+      color: rgba($k-teal, 0.3);
+      animation: kids-why-doodle-bounce 3.5s ease-in-out infinite;
+    }
+
+    &--circle {
+      bottom: 22%;
+      left: 4%;
+      color: rgba($k-gold, 0.25);
+      animation: kids-why-doodle-float 6s ease-in-out infinite;
+    }
+
+    &--spiral {
+      bottom: 30%;
+      right: 5%;
+      color: rgba($k-coral, 0.2);
+      animation: kids-why-doodle-spin 7s ease-in-out infinite reverse;
+    }
+
+    @media (max-width: 640px) { display: none; }
+  }
+
   &__header {
     margin-bottom: clamp(40px, 5vw, 60px);
+    position: relative;
+    z-index: 2;
   }
 
   &__eyebrow {
@@ -1812,65 +1907,164 @@ $k-ring:    #ede5d8;
     max-width: 600px;
   }
 
+  // ── Bento grid (clean 2-column) ──
   &__bento {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    grid-template-rows: auto auto;
-    gap: 14px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
+    gap: 20px;
+    position: relative;
+    z-index: 2;
 
-    @media (max-width: 1000px) { grid-template-columns: 1fr 1fr; }
-    @media (max-width: 640px)  { grid-template-columns: 1fr; }
+    @media (max-width: 640px) { grid-template-columns: 1fr; gap: 14px; }
   }
 
+  // ── Card base ──
   &__card {
-    border-radius: 16px;
-    padding: 28px 24px;
-    background: rgba($k-bg, 0.04);
-    border: 1px solid rgba($k-bg, 0.07);
+    border-radius: 24px;
+    padding: 32px 28px;
+    background: rgba($k-bg, 0.035);
+    border: 1px solid rgba($k-bg, 0.08);
     position: relative;
-    transition: background 0.25s ease;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 0.3s ease,
+                box-shadow 0.3s ease;
+    overflow: hidden;
 
-    &:hover { background: rgba($k-bg, 0.07); }
+    // Subtle top accent line
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 28px;
+      right: 28px;
+      height: 3px;
+      border-radius: 0 0 3px 3px;
+      background: rgba($k-bg, 0.06);
+      transition: background 0.3s ease;
+    }
 
-    &--lg {
+    &:hover {
+      transform: translateY(-6px);
+      background: rgba($k-bg, 0.055);
+      box-shadow: 0 20px 50px rgba($k-navy, 0.35);
+
+      &::before { background: rgba($k-coral, 0.4); }
+    }
+
+    // Entrance animation
+    &[data-reveal] {
+      opacity: 0;
+      animation: kids-why-card-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    // ── Grid placement ──
+    // 01: Large image card, left column, spans rows 1-2
+    &:nth-child(1) {
       grid-column: 1;
       grid-row: 1 / 3;
+      padding-bottom: 28px;
 
-      @media (max-width: 1000px) {
-        grid-column: 1 / 3;
+      @media (max-width: 640px) {
+        grid-column: 1;
         grid-row: auto;
       }
     }
 
-    &--wide {
-      grid-column: 2 / 4;
+    // 02: Top right
+    &:nth-child(2) {
+      grid-column: 2;
+      grid-row: 1;
+      @media (max-width: 640px) { grid-column: 1; }
+    }
 
-      @media (max-width: 1000px) { grid-column: 1 / 3; }
+    // 03: Middle right
+    &:nth-child(3) {
+      grid-column: 2;
+      grid-row: 2;
+      @media (max-width: 640px) { grid-column: 1; }
+    }
+
+    // 04: Row 3 left
+    &:nth-child(4) {
+      grid-column: 1;
+      grid-row: 3;
+      @media (max-width: 640px) { grid-column: 1; }
+    }
+
+    // 05: Row 3 right
+    &:nth-child(5) {
+      grid-column: 2;
+      grid-row: 3;
+      @media (max-width: 640px) { grid-column: 1; }
+    }
+
+    // 06: Full-width bottom banner
+    &:nth-child(6) {
+      grid-column: 1 / 3;
+      grid-row: 4;
+      @media (max-width: 640px) { grid-column: 1; }
     }
 
     &--dark {
-      background: rgba($k-coral, 0.07);
-      border-color: rgba($k-coral, 0.14);
+      background: linear-gradient(145deg, rgba($k-coral, 0.1), rgba($k-coral, 0.04));
+      border-color: rgba($k-coral, 0.18);
 
-      .kids-why__card-title { color: lighten($k-coral, 22%); }
+      &::before { background: rgba($k-coral, 0.35); }
 
-      &:hover { background: rgba($k-coral, 0.1); }
+      .kids-why__card-title { color: lighten($k-coral, 18%); }
+      .kids-why__card-text  { color: rgba($k-bg, 0.55); }
+      .kids-why__num        { color: rgba($k-coral, 0.35); }
+
+      &:hover {
+        background: linear-gradient(145deg, rgba($k-coral, 0.14), rgba($k-coral, 0.06));
+        box-shadow: 0 20px 50px rgba($k-coral, 0.18);
+      }
     }
   }
 
+  // ── Card icon ──
+  &__card-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease;
+
+    .kids-why__card:hover & { transform: scale(1.08) rotate(-3deg); }
+
+    &--coral {
+      background: rgba($k-coral, 0.12);
+      color: lighten($k-coral, 12%);
+    }
+
+    &--teal {
+      background: rgba($k-teal, 0.12);
+      color: lighten($k-teal, 10%);
+    }
+
+    &--gold {
+      background: rgba($k-gold, 0.12);
+      color: lighten($k-gold, 10%);
+    }
+  }
+
+  // ── Typography ──
   &__num {
     display: inline-block;
-    font-size: 0.68rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-weight: 800;
     letter-spacing: 0.08em;
-    color: rgba($k-bg, 0.22);
-    margin-bottom: 20px;
+    color: rgba($k-bg, 0.18);
+    margin-bottom: 14px;
     font-variant-numeric: tabular-nums;
   }
 
   &__card-title {
     font-family: $font-heading;
-    font-size: 1.05rem;
+    font-size: clamp(1.05rem, 1.3vw, 1.2rem);
     font-weight: 700;
     letter-spacing: -0.02em;
     color: $k-bg;
@@ -1879,38 +2073,93 @@ $k-ring:    #ede5d8;
   }
 
   &__card-text {
-    font-size: 0.86rem;
+    font-size: 0.88rem;
     line-height: 1.72;
-    color: rgba($k-bg, 0.46);
+    color: rgba($k-bg, 0.42);
+    margin: 0;
   }
 
+  // ── Image (fixed & award-winning) ──
   &__card-img {
-    margin-top: 24px;
-    height: 140px;
-    border-radius: 10px;
+    margin-top: 28px;
+    height: 220px;
+    border-radius: 18px;
     background: rgba($k-bg, 0.04);
-    border: 1px solid rgba($k-bg, 0.06);
+    border: 1px solid rgba($k-bg, 0.08);
+    overflow: visible;
+    position: relative;
+
+    @media (max-width: 640px) { height: 180px; }
   }
 
+  &__img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: 50% 40%;
+    border-radius: 18px;
+    opacity: 0.95;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+
+    .kids-why__card:hover & {
+      opacity: 1;
+      transform: scale(1.03);
+    }
+  }
+
+  // Playful doodles on the image
+  &__img-doodle {
+    position: absolute;
+    pointer-events: none;
+    z-index: 3;
+
+    &--heart {
+      top: -10px;
+      right: 16px;
+      color: rgba($k-coral, 0.65);
+      animation: kids-why-img-heart 2.5s ease-in-out infinite;
+      filter: drop-shadow(0 2px 4px rgba($k-navy, 0.3));
+    }
+
+    &--dot {
+      bottom: -6px;
+      left: 20px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba($k-teal, 0.6);
+      animation: kids-why-img-dot 2s ease-in-out infinite;
+      filter: drop-shadow(0 2px 4px rgba($k-navy, 0.3));
+    }
+  }
+
+  // ── Stat ──
   &__stat {
     margin-top: 24px;
     display: flex;
     align-items: baseline;
-    gap: 10px;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 14px;
+    background: rgba($k-teal, 0.06);
+    border: 1px solid rgba($k-teal, 0.12);
+    width: fit-content;
   }
 
   &__stat-num {
     font-family: $font-heading;
-    font-size: 2.4rem;
+    font-size: 2.2rem;
     font-weight: 800;
     letter-spacing: -0.04em;
-    color: $k-teal;
+    color: lighten($k-teal, 8%);
     line-height: 1;
   }
 
   &__stat-label {
-    font-size: 0.78rem;
-    color: rgba($k-bg, 0.38);
+    font-size: 0.8rem;
+    color: rgba($k-bg, 0.35);
+    font-weight: 600;
   }
 }
 
@@ -2125,23 +2374,31 @@ $k-ring:    #ede5d8;
     margin: 0;
   }
 
-  &__img-placeholder {
+  &__image-wrap {
     width: 100%;
     aspect-ratio: 16 / 9;
-    border-radius: 12px;
+    border-radius: 16px;
     background: rgba($k-bg, 0.07);
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 18px 36px rgba($k-navy, 0.16);
 
     .kids-sessions__card--group & { background: $k-surface; }
+  }
 
-    span {
-      font-size: 0.68rem;
-      opacity: 0.3;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
+  &__img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.45s ease;
+  }
+
+  &__card:hover &__img {
+    transform: scale(1.035);
   }
 
   &__list {
@@ -2365,37 +2622,28 @@ $k-ring:    #ede5d8;
     padding-bottom: 24px;
   }
 
-  &__img-placeholder {
+  &__image-wrap {
     aspect-ratio: 4 / 4;
     background: $k-surface;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    padding-bottom: 20px;
     position: relative;
     border-bottom: 3px solid $k-coral;
-
-    &::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -58%);
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: $k-ring;
-    }
+    overflow: hidden;
   }
 
-  &__initials {
-    position: relative;
-    z-index: 1;
-    font-family: $font-heading;
-    font-size: 0.76rem;
-    font-weight: 700;
-    color: $k-muted;
-    letter-spacing: 0.04em;
+  &__img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.45s ease;
+  }
+
+  &__card:hover &__img {
+    transform: scale(1.035);
   }
 
   &__name {

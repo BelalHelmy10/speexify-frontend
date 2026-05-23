@@ -497,9 +497,18 @@ export default function Header() {
                     <span className="spx-link-bg"></span>
                     {isKids && (
                       <span className="spx-kids-shapes" aria-hidden="true">
-                        <span className="spx-kids-shape spx-kids-shape--square"></span>
-                        <span className="spx-kids-shape spx-kids-shape--dot"></span>
-                        <span className="spx-kids-shape spx-kids-shape--dash"></span>
+                        {/* Sparkle doodle — top left */}
+                        <svg className="spx-kids-doodle spx-kids-doodle--sparkle" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                          <path d="M10 1.5 C10.3 5.5, 8 8, 4.5 8.5 C8 9, 10.3 11.5, 10 15.5 C9.7 11.5, 12 9, 15.5 8.5 C12 8, 9.7 5.5, 10 1.5Z" fill="currentColor" />
+                        </svg>
+                        {/* Spiral doodle — top right, hides behind text */}
+                        <svg className="spx-kids-doodle spx-kids-doodle--spiral" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                          <path d="M12 5 C16 5, 18 8, 18 11.5 C18 15, 15.5 17.5, 12 17.5 C9.5 17.5, 8 16, 8 14.5 C8 13, 9.5 11.5, 12 11.5 C13.5 11.5, 14.5 12.3, 14.5 13.3 C14.5 14.3, 13.5 15, 12 15" />
+                        </svg>
+                        {/* Zigzag doodle — bottom */}
+                        <svg className="spx-kids-doodle spx-kids-doodle--zigzag" width="22" height="10" viewBox="0 0 24 10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M2 5 L5 1.5 L8 8.5 L11 1.5 L14 8.5 L17 1.5 L20 5" />
+                        </svg>
                       </span>
                     )}
                     <span className="spx-link-text">
