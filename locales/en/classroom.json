@@ -1,0 +1,6 @@
+{
+  "classroom_video_connecting": "Connecting to video…",
+  "classroom_video_error_generic": "Something went wrong with the video. Please try again.",
+  "classroom_video_error_connection": "Connection error. Check your network and retry.",
+  "classroom_video_retry": "Retry"
+}

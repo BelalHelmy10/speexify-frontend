@@ -329,6 +329,13 @@
     }
   }
 
+  /* LinkedIn has a 2-layer SVG (outer square + inner "in").
+     On hover, match the outer square to the button background
+     so only the white inner "in" remains visible. */
+  &[href*="linkedin.com"]:hover svg path:first-child {
+    fill: $brand;
+  }
+
   &:active {
     transform: translateY(0);
   }
