@@ -1,15 +1,15 @@
 {
-  "loading_text": "جارٍ التحميل...",
+  "loading_text": "بيتحمّل...",
 
-  "error_title_not_found": "لم يتم العثور على الباقة",
-  "error_message_not_found": "لم نتمكّن من العثور على الباقة التي اخترتها.",
-  "error_button_view_packages": "عرض جميع الباقات",
+  "error_title_not_found": "مقدرناش نلاقي الباقة",
+  "error_message_not_found": "مقدرناش نلاقي الباقة اللي اختارتها.",
+  "error_button_view_packages": "شوف كل الباقات",
 
   "header_title": "الدفع",
-  "header_logged_in_as": "مسجّل الدخول باسم",
+  "header_logged_in_as": "مسجّل دخول باسم",
 
-  "warning_title_login_required": "يتطلّب تسجيل الدخول",
-  "warning_body_login_required": "سيُطلب منك تسجيل الدخول قبل إتمام عملية الدفع.",
+  "warning_title_login_required": "محتاج تسجيل دخول",
+  "warning_body_login_required": "هيطلبوا منك تسجيل الدخول قبل ما تكمل الدفع.",
 
   "details_label_sessions": "عدد الجلسات:",
   "details_label_duration": "مدة كل جلسة:",
@@ -27,30 +27,30 @@
   "customer_title_billing_info": "بيانات الفاتورة",
   "customer_label_name": "الاسم:",
   "customer_value_name_missing": "غير مذكور",
-  "customer_label_email": "البريد الإلكتروني:",
+  "customer_label_email": "الإيميل:",
 
-  "pay_button_processing": "جارٍ المعالجة...",
+  "pay_button_processing": "بيتعامل...",
   "pay_button_label_with_amount": "ادفع {amount} جنيه مصري",
 
   "security_note": "🔒 الدفع مؤمّن عبر بوابة Paymob",
 
-  "back_to_packages": "← العودة إلى الباقات",
+  "back_to_packages": "← رجوع للباقات",
 
-  "confirm_login_message": "يجب تسجيل الدخول للمتابعة في عملية الدفع. هل تريد الانتقال إلى صفحة تسجيل الدخول؟",
-  "toast_payment_failed": "فشلت عملية الدفع. يرجى المحاولة مرة أخرى.",
-  "toast_already_subscribed": "لديك بالفعل باقة نشطة لهذا البرنامج. يرجى استخدام الجلسات المتبقية أو التواصل مع الدعم إذا كنت ترغب في تغيير الباقة.",
-  "low_bandwidth_note": "تم اكتشاف اتصال منخفض السرعة. سنستخدم وضعًا أخف لتقليل أخطاء الدفع.",
-  "recovery_title": "تم اكتشاف محاولة دفع غير مكتملة",
-  "recovery_message": "الطلب {orderId} ما زال معلقًا أو فشل سابقًا. يمكنك إعادة فتح صفحة الدفع لنفس الطلب بأمان.",
-  "recovery_button": "استكمال الدفع",
-  "recovery_button_processing": "جارٍ فتح صفحة الدفع...",
+  "confirm_login_message": "لازم تسجّل دخول عشان تكمل الدفع. عايز تروح لصفحة تسجيل الدخول؟",
+  "toast_payment_failed": "الدفع فشل. حاول تاني.",
+  "toast_already_subscribed": "عندك بالفعل باقة نشطة للبرنامج ده. لو سمحت استخدم الجلسات المتبقية أو كلم الدعم لو عايز تغيّر الباقة.",
+  "low_bandwidth_note": "اتكتشف اتصال بطيء. هنستخدم وضع أخف عشان نقلل أخطاء الدفع.",
+  "recovery_title": "اتكتشف محاولة دفع مش مكتملة",
+  "recovery_message": "الطلب {orderId} لسه معلق أو فشل قبل كده. تقدر تفتح صفحة الدفع لنفس الطلب بأمان.",
+  "recovery_button": "اكمل الدفع",
+  "recovery_button_processing": "بيتفتح صفحة الدفع...",
   "pricing_label_package_price": "سعر الباقة",
   "pricing_label_egp_equivalent": "القيمة المكافئة بالجنيه المصري (للدفع)",
-  "exchange_note_regional": "يتم عرض السعر بعملة {displayCurrency} لمنطقة {region}. تتم معالجة الدفع بالجنيه المصري.",
+  "exchange_note_regional": "بنعرض السعر بعملة {displayCurrency} لمنطقة {region}. بيتم معالجة الدفع بالجنيه المصري.",
   "pay_button_label": "ادفع",
   "discount_placeholder": "كود الخصم",
-  "discount_apply": "تطبيق",
-  "discount_applied": "تم تطبيق الخصم: {percent}٪",
-  "discount_toast_applied": "تم تطبيق خصم {percent}٪",
-  "discount_toast_invalid": "كود خصم غير صالح"
+  "discount_apply": "طبّق",
+  "discount_applied": "اتطبق الخصم: {percent}٪",
+  "discount_toast_applied": "اتطبق خصم {percent}٪",
+  "discount_toast_invalid": "كود خصم مش صالح"
 }

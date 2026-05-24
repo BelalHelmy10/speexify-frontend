@@ -41,7 +41,7 @@ function Footer() {
               href={hrefFor(APP_ROUTES.home)}
               ariaLabel={
                 locale === "ar"
-                  ? "العودة إلى الصفحة الرئيسية"
+                  ? "رجوع للصفحة الرئيسية"
                   : "Go to homepage"
               }
             />

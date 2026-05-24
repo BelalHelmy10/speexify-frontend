@@ -20,6 +20,8 @@ const Ctx = createContext({
   logout: async () => {},
 });
 
+const AUTH_REFRESH_TIMEOUT_MS = 45000;
+
 export function AuthProvider({
   children,
   initialUser = null,
@@ -45,7 +47,9 @@ export function AuthProvider({
   const refresh = useCallback(async () => {
     safeSet(() => setChecking(true));
     try {
-      const { data } = await api.get("/auth/me");
+      const { data } = await api.get("/auth/me", {
+        timeout: AUTH_REFRESH_TIMEOUT_MS,
+      });
 
       // When impersonating, backend returns { user: impersonatedUser, admin: realAdmin }
       // Preserve the admin info for permission checks

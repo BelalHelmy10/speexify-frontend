@@ -1,54 +1,54 @@
 {
-  "title_step1": "إنشاء حساب",
-  "title_step2": "تأكيد البريد الإلكتروني",
+  "title_step1": "افتح حساب",
+  "title_step2": "تأكيد الإيميل",
 
-  "subtitle_step1": "انضم باستخدام Google أو البريد الإلكتروني. لا تحتاج إلى بطاقة.",
-  "subtitle_step2_prefix": "أرسلنا رمز التحقق إلى",
+  "subtitle_step1": "انضم باستخدام Google أو الإيميل. مش محتاج بطاقة.",
+  "subtitle_step2_prefix": "ابعنالك رمز التحقق لـ",
 
   "form_aria_label": "إنشاء حساب Speexify",
   "register_eyebrow": "ابدأ التحدث أسرع",
-  "friendly_note": "أنشئ حسابك الآن. احجز التدريب فقط عندما تكون جاهزًا.",
-  "google_button_label": "المتابعة باستخدام Google",
+  "friendly_note": "افتح حسابك دلوقتي. احجز التدريب لما تكون جاهز.",
+  "google_button_label": "كمل باستخدام Google",
   "card_badge": "حساب مجاني",
-  "card_timing": "يستغرق 30 ثانية",
-  "privacy_note": "لا توجد حاجة إلى دفع. سنستخدم بريدك فقط للتحقق وتحديثات الحساب.",
+  "card_timing": "بياخد 30 ثانية",
+  "privacy_note": "مش محتاج تدفع. هنستخدم إيميلك بس للتحقق وتحديثات الحساب.",
 
-  "step1_label": "البريد الإلكتروني",
+  "step1_label": "الإيميل",
   "step2_label": "التأكيد",
 
-  "social_cta": "أو أكمل باستخدام البريد الإلكتروني",
+  "social_cta": "أو كمل باستخدام الإيميل",
 
-  "label_email": "عنوان البريد الإلكتروني",
+  "label_email": "عنوان الإيميل",
   "placeholder_email": "name@example.com",
 
   "label_code": "رمز التحقق",
-  "code_hint": "أدخل الرمز المكوَّن من 6 أرقام المرسَل إلى بريدك",
+  "code_hint": "اكتب الرمز اللي من 6 أرقام اللي اتبعت لإيميلك",
 
-  "label_name": "الاسم الكامل",
+  "label_name": "الاسم",
   "optional": "(اختياري)",
   "placeholder_name": "الاسم هنا",
 
-  "label_password": "كلمة المرور",
-  "password_hint": "يجب أن تكون 6 أحرف على الأقل",
+  "label_password": "الباسورد",
+  "password_hint": "لازم تكون 6 أحرف على الأقل",
 
-  "btn_continue": "متابعة",
-  "btn_sending_code": "جارٍ إرسال الرمز...",
-  "btn_create_account": "إنشاء حساب",
-  "btn_creating_account": "جارٍ إنشاء الحساب...",
-  "btn_resend": "إعادة إرسال الرمز",
-  "btn_resend_with_timer": "إعادة إرسال الرمز",
-  "btn_change_email": "تغيير البريد الإلكتروني",
+  "btn_continue": "كمل",
+  "btn_sending_code": "بيتبعت الرمز...",
+  "btn_create_account": "افتح حساب",
+  "btn_creating_account": "بيتفتح الحساب...",
+  "btn_resend": "ابعت الرمز تاني",
+  "btn_resend_with_timer": "ابعت الرمز تاني",
+  "btn_change_email": "غيّر الإيميل",
 
-  "already_have_account": "لديك حساب بالفعل؟",
-  "link_sign_in": "تسجيل الدخول",
+  "already_have_account": "عندك حساب بالفعل؟",
+  "link_sign_in": "سجّل دخول",
 
-  "msg_code_sent_prefix": "تم إرسال رمز التحقق إلى",
-  "msg_send_failed": "تعذّر إرسال رمز التحقق",
-  "msg_register_failed": "فشل إنشاء الحساب",
-  "msg_google_no_credential": "لم يُرجع Google بيانات تسجيل",
-  "msg_google_failed": "فشل تسجيل الدخول عبر Google",
-  "msg_register_success": "تم إنشاء الحساب بنجاح! سيتم تحويلك...",
+  "msg_code_sent_prefix": "اتبعت رمز التحقق لـ",
+  "msg_send_failed": "مقدرناش نبعت رمز التحقق",
+  "msg_register_failed": "فتح الحساب فشل",
+  "msg_google_no_credential": "Google مردّهاش بيانات تسجيل",
+  "msg_google_failed": "تسجيل الدخول عبر Google فشل",
+  "msg_register_success": "اتفتح الحساب بنجاح! هيتم تحويلك...",
 
-  "alert_success_icon_label": "نجاح",
-  "alert_error_icon_label": "خطأ"
+  "alert_success_icon_label": "تمام",
+  "alert_error_icon_label": "مشكلة"
 }

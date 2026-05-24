@@ -93,13 +93,13 @@ export function fmtTime(ts, locale = "en") {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return locale === "ar" ? "الآن" : "Just now";
+    if (diffMins < 1) return locale === "ar" ? "دلوقتي" : "Just now";
     if (diffMins < 60)
-      return locale === "ar" ? `منذ ${diffMins} دقيقة` : `${diffMins}m ago`;
+      return locale === "ar" ? `من ${diffMins} دقيقة` : `${diffMins}m ago`;
     if (diffHours < 24)
-      return locale === "ar" ? `منذ ${diffHours} ساعة` : `${diffHours}h ago`;
+      return locale === "ar" ? `من ${diffHours} ساعة` : `${diffHours}h ago`;
     if (diffDays < 7)
-      return locale === "ar" ? `منذ ${diffDays} يوم` : `${diffDays}d ago`;
+      return locale === "ar" ? `من ${diffDays} يوم` : `${diffDays}d ago`;
 
     return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
       month: "short",
@@ -124,10 +124,10 @@ export function getDateGroupLabel(dateInput, locale = "en") {
   const target = startOfDay(date);
   const diffDays = Math.round((today - target) / 86400000);
 
-  if (diffDays === 0) return locale === "ar" ? "اليوم" : "Today";
-  if (diffDays === 1) return locale === "ar" ? "أمس" : "Yesterday";
-  if (diffDays < 7) return locale === "ar" ? "هذا الأسبوع" : "This week";
-  return locale === "ar" ? "سابقاً" : "Earlier";
+  if (diffDays === 0) return locale === "ar" ? "النهارده" : "Today";
+  if (diffDays === 1) return locale === "ar" ? "مبارح" : "Yesterday";
+  if (diffDays < 7) return locale === "ar" ? "الأسبوع ده" : "This week";
+  return locale === "ar" ? "قبل كده" : "Earlier";
 }
 
 /**
@@ -238,29 +238,29 @@ export function copy(locale) {
   const ar = {
     title: "الإشعارات",
     all: "الكل",
-    unread: "غير المقروء",
-    markAllRead: "تحديد الكل كمقروء",
-    close: "إغلاق",
+    unread: "اللي مش مقروء",
+    markAllRead: "حدد الكل مقروء",
+    close: "قفل",
     settings: "الإعدادات",
-    loading: "جار التحميل...",
-    empty: "لا توجد إشعارات",
-    emptyUnread: "لا توجد إشعارات جديدة",
-    refresh: "تحديث",
-    clearRead: "حذف المقروء",
-    loadMore: "تحميل المزيد",
-    viewAll: "عرض الكل",
-    delete: "حذف",
+    loading: "بيتحمّل...",
+    empty: "مفيش إشعارات",
+    emptyUnread: "مفيش إشعارات جديدة",
+    refresh: "حدّث",
+    clearRead: "امسح المقروء",
+    loadMore: "حمّل المزيد",
+    viewAll: "شوف الكل",
+    delete: "امسح",
     dismiss: "تجاهل",
-    join: "انضم للحصة",
-    open: "فتح",
-    retry: "إعادة المحاولة",
-    confirmClear: "حذف جميع الإشعارات المقروءة؟ لا يمكن التراجع لاحقاً.",
+    join: "انضم للجلسة",
+    open: "افتح",
+    retry: "حاول تاني",
+    confirmClear: "امسح كل الإشعارات المقروءة؟ مفيش تراجع بعدين.",
     undo: "تراجع",
-    deleted: "تم حذف الإشعار",
-    cleared: "تم حذف الإشعارات المقروءة",
+    deleted: "الإشعار اتمسح",
+    cleared: "الإشعارات المقروءة اتمسحت",
     newNotification: "إشعار جديد",
-    channelInApp: "داخل التطبيق",
-    channelEmail: "بريد",
+    channelInApp: "جوّا التطبيق",
+    channelEmail: "إيميل",
   };
 
   return locale === "ar" ? ar : en;

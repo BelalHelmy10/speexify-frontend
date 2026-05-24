@@ -1,28 +1,28 @@
 {
-  "title": "مرحبًا بعودتك",
-  "subtitle": "سجّل الدخول للمتابعة إلى حسابك",
+  "title": "أهلاً بيك تاني",
+  "subtitle": "سجّل دخول عشان تكمل لحسابك",
 
-  "social_divider": "أو أكمل باستخدام البريد الإلكتروني",
+  "social_divider": "أو كمل باستخدام الإيميل",
 
-  "label_email": "عنوان البريد الإلكتروني",
+  "label_email": "عنوان الإيميل",
   "placeholder_email": "name@example.com",
 
-  "label_password": "كلمة المرور",
-  "placeholder_password": "أدخل كلمة المرور",
+  "label_password": "الباسورد",
+  "placeholder_password": "اكتب الباسورد",
 
-  "forgot_password": "هل نسيت كلمة المرور؟",
+  "forgot_password": "نسيت الباسورد؟",
 
-  "btn_sign_in": "تسجيل الدخول",
-  "btn_signing_in": "جارٍ تسجيل الدخول...",
+  "btn_sign_in": "سجّل دخول",
+  "btn_signing_in": "بيتسجل الدخول...",
 
-  "no_account": "ليس لديك حساب؟",
-  "link_create_account": "إنشاء حساب",
+  "no_account": "مش عندك حساب؟",
+  "link_create_account": "افتح حساب",
 
-  "alert_login_failed": "فشل تسجيل الدخول",
-  "alert_google_no_credential": "لم يُرجع Google بيانات تسجيل",
-  "alert_google_failed": "فشل تسجيل الدخول عبر Google",
+  "alert_login_failed": "تسجيل الدخول فشل",
+  "alert_google_no_credential": "Google مردّهاش بيانات تسجيل",
+  "alert_google_failed": "تسجيل الدخول عبر Google فشل",
 
   "user_fallback_name": "المستخدم",
-  "btn_sign_out": "تسجيل الخروج",
-  "google_button_aria": "متابعة باستخدام جوجل"
+  "btn_sign_out": "اطلع",
+  "google_button_aria": "كمل باستخدام جوجل"
 }
