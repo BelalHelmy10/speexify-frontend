@@ -916,6 +916,7 @@ export default function SupportWidget({ hideMobileFab = false }) {
     <>
       {/* FIXED: FAB Button with proper toggle */}
       <button
+        type="button"
         className={`sw-fab${hideMobileFab ? " sw-fab--hide-mobile" : ""}`}
         onClick={toggleWidget}
         aria-label={open ? "Close support" : "Contact support"}

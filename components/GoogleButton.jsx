@@ -9,7 +9,7 @@ import { getDictionary, t } from "@/app/i18n";
 /**
  * Responsive, i18n-aware Google button:
  * - Measures its container width
- * - Clamps it into Google's preferred range (300–400px)
+ * - Clamps it so the native Google iframe stays inside narrow cards
  * - Uses current locale (/ar -> ar, otherwise en)
  */
 export default function GoogleButton({
@@ -26,7 +26,7 @@ export default function GoogleButton({
   const pathname = usePathname();
   const routeLocale = pathname?.startsWith("/ar") ? "ar" : "en";
   const locale = localeOverride || routeLocale;
-  const googleLocale = locale === "ar" ? "ar" : "en_US";
+  const googleLocale = locale === "ar" ? "ar" : "en";
   const hasLocalLabel = Boolean(label);
 
   // i18n (login section)
@@ -48,8 +48,8 @@ export default function GoogleButton({
       if (!containerRef.current) return;
       const w = containerRef.current.getBoundingClientRect().width;
 
-      // Clamp to 300–400 so the Google button looks good
-      const clamped = Math.min(400, Math.max(300, Math.round(w)));
+      // Keep the native Google iframe inside narrow mobile cards.
+      const clamped = Math.min(400, Math.max(200, Math.round(w)));
       setButtonWidth(clamped);
     }
 
@@ -96,7 +96,7 @@ export default function GoogleButton({
           }
         >
           <GoogleLogin
-            key={`${googleLocale}-${buttonWidth}`}
+            key={googleLocale}
             useOneTap={false}
             ux_mode="popup"
             onSuccess={handleSuccess}

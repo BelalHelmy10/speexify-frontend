@@ -1819,7 +1819,7 @@ function ComparisonSection({ dict }) {
           <h2 className="home-section-title">{t(dict, "compare_title")}</h2>
           <p className="home-section-subtitle">{t(dict, "compare_subtitle")}</p>
         </div>
-        <div style={{ overflowX: "auto" }}>
+        <div className="home-compare__tablewrap">
           <table className="home-compare__table">
             <thead>
               <tr className="home-compare__head-row">

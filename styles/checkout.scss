@@ -102,6 +102,7 @@
 
   // Login Warning Banner
   &__warning {
+    position: relative;
     background-color: $yellow-50;
     border: 1px solid $yellow-200;
     border-radius: 0.5rem;
@@ -122,6 +123,7 @@
 
     &-text {
       flex: 1;
+      min-width: 0;
 
       h3 {
         font-size: 0.875rem;
@@ -134,6 +136,55 @@
         font-size: 0.875rem;
         color: $yellow-700;
         margin: 0;
+        word-break: break-word;
+      }
+    }
+
+    &-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    &-secondary {
+      background: none;
+      border: 1px solid $yellow-200;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.9rem;
+      color: $yellow-800;
+      font-size: 0.875rem;
+      cursor: pointer;
+      min-height: var(--spx-touch-target, 44px);
+      transition: background 0.2s, border-color 0.2s;
+
+      &:hover {
+        background: $yellow-200;
+        border-color: $yellow-400;
+      }
+    }
+
+    &-dismiss {
+      position: absolute;
+      top: 0.4rem;
+      right: 0.6rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: $yellow-700;
+      font-size: 1.25rem;
+      line-height: 1;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+
+      &:hover {
+        background: $yellow-200;
+        color: $yellow-800;
       }
     }
   }
@@ -391,6 +442,114 @@
       border-top-color: $color-white;
       border-radius: 50%;
       animation: spin 1s linear infinite;
+    }
+  }
+
+  // Mismatch warning surfaced inside the confirmation card when the
+  // backend's charge amount disagrees with what the user saw on the
+  // page. Forces an explicit acknowledgment before the user can proceed.
+  &__confirm-mismatch {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: $error-bg;
+    border: 1px solid $error;
+    border-radius: $radius;
+
+    &-title {
+      font-weight: 700;
+      color: $error;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    &-body {
+      margin: 0 0 0.75rem;
+      font-size: 0.875rem;
+      color: $text-primary;
+      line-height: 1.5;
+    }
+
+    &-ack {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      font-size: 0.875rem;
+      color: $text-primary;
+      cursor: pointer;
+      line-height: 1.4;
+
+      input[type="checkbox"] {
+        margin-top: 0.2rem;
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  // Confirmation card — shown after creating the Paymob intent so the
+  // user can review the exact EGP amount before being redirected.
+  &__confirm {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: $card-bg;
+    border: 1px solid $border;
+    border-radius: $radius-card;
+    box-shadow: $shadow-md;
+
+    &-title {
+      margin: 0 0 1rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: $text-primary;
+    }
+
+    &-amount {
+      padding: 1rem;
+      background: $bg-soft;
+      border-radius: $radius;
+      text-align: center;
+
+      &-label {
+        font-size: 0.875rem;
+        color: $text-secondary;
+        margin-bottom: 0.5rem;
+      }
+
+      &-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: $brand;
+      }
+    }
+
+    &-note {
+      margin: 1rem 0 0;
+      font-size: 0.875rem;
+      color: $text-secondary;
+      line-height: 1.5;
+    }
+
+    &-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    &-cancel {
+      background: none;
+      border: 1px solid $border;
+      border-radius: $radius;
+      padding: 0.75rem 1rem;
+      color: $text-secondary;
+      cursor: pointer;
+      font-size: 0.9375rem;
+      min-height: var(--spx-touch-target, 44px);
+      transition: background 0.2s, border-color 0.2s;
+
+      &:hover {
+        background: $bg-soft;
+        border-color: $text-secondary;
+      }
     }
   }
 

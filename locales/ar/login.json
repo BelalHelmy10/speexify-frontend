@@ -24,5 +24,6 @@
 
   "user_fallback_name": "المستخدم",
   "btn_sign_out": "اطلع",
-  "google_button_aria": "كمل باستخدام جوجل"
+  "google_button_aria": "كمل باستخدام جوجل",
+  "google_button_label": "كمل باستخدام Google"
 }

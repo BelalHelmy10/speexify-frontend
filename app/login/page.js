@@ -19,6 +19,34 @@ import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 import BrandLogo from "@/components/brand/BrandLogo";
 
+function getSafeNextPath(rawNext, fallbackPath) {
+  if (!rawNext) return fallbackPath;
+
+  const candidates = [rawNext];
+  try {
+    candidates.unshift(decodeURIComponent(rawNext));
+  } catch {
+    // URLSearchParams normally decodes already.
+  }
+
+  for (const candidate of candidates) {
+    if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
+      continue;
+    }
+
+    try {
+      const url = new URL(candidate, "https://speexify.local");
+      if (url.origin !== "https://speexify.local") continue;
+      if (url.pathname === "/" || url.pathname === "/ar") continue;
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      // Keep checking remaining candidates.
+    }
+  }
+
+  return fallbackPath;
+}
+
 function LoginInner({ dict }) {
   const [form, setForm] = useState({ email: "", password: "" });
   const [msg, setMsg] = useState("");
@@ -36,10 +64,12 @@ function LoginInner({ dict }) {
   const { user, checking, refresh } = useAuth();
 
   const redirectAfterLogin = useCallback(() => {
+    const fallbackPath = routeHref(APP_ROUTES.dashboard, locale);
+
     // 1) Try ?next= from URL
     const next = params.get("next");
     if (next) {
-      window.location.href = decodeURIComponent(next);
+      window.location.href = getSafeNextPath(next, fallbackPath);
       return;
     }
 
@@ -48,13 +78,13 @@ function LoginInner({ dict }) {
       const stored = window.sessionStorage.getItem("post_login_redirect");
       if (stored) {
         window.sessionStorage.removeItem("post_login_redirect");
-        window.location.href = stored;
+        window.location.href = getSafeNextPath(stored, fallbackPath);
         return;
       }
     }
 
     // 3) Final fallback: locale-aware dashboard
-    router.replace(routeHref(APP_ROUTES.dashboard, locale));
+    router.replace(fallbackPath);
     router.refresh();
   }, [params, router, locale]);
 
@@ -148,6 +178,8 @@ function LoginInner({ dict }) {
                 <GoogleButton
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
+                  localeOverride={locale}
+                  label={t(dict, "google_button_label")}
                 />
               </div>
 

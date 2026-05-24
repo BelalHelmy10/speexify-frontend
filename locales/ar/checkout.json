@@ -39,11 +39,15 @@
   "confirm_login_message": "لازم تسجّل دخول عشان تكمل الدفع. عايز تروح لصفحة تسجيل الدخول؟",
   "toast_payment_failed": "الدفع فشل. حاول تاني.",
   "toast_already_subscribed": "عندك بالفعل باقة نشطة للبرنامج ده. لو سمحت استخدم الجلسات المتبقية أو كلم الدعم لو عايز تغيّر الباقة.",
+  "error_package_not_synced": "الباقة دي لسه مش متاحة للدفع. لو سمحت كلم الدعم.",
   "low_bandwidth_note": "اتكتشف اتصال بطيء. هنستخدم وضع أخف عشان نقلل أخطاء الدفع.",
   "recovery_title": "اتكتشف محاولة دفع مش مكتملة",
   "recovery_message": "الطلب {orderId} لسه معلق أو فشل قبل كده. تقدر تفتح صفحة الدفع لنفس الطلب بأمان.",
   "recovery_button": "اكمل الدفع",
   "recovery_button_processing": "بيتفتح صفحة الدفع...",
+  "recovery_dismiss_aria": "إخفاء تنبيه الدفع غير المكتمل",
+  "recovery_start_fresh": "ابدأ دفع جديد",
+  "recovery_retry_failed": "مقدرناش نكمل الدفع القديم. ابدأ دفع جديد من تحت.",
   "pricing_label_package_price": "سعر الباقة",
   "pricing_label_egp_equivalent": "القيمة المكافئة بالجنيه المصري (للدفع)",
   "exchange_note_regional": "بنعرض السعر بعملة {displayCurrency} لمنطقة {region}. بيتم معالجة الدفع بالجنيه المصري.",
@@ -52,5 +56,26 @@
   "discount_apply": "طبّق",
   "discount_applied": "اتطبق الخصم: {percent}٪",
   "discount_toast_applied": "اتطبق خصم {percent}٪",
-  "discount_toast_invalid": "كود خصم مش صالح"
+  "discount_toast_invalid": "كود خصم مش صالح",
+
+  "geo_loading": "بنحدد منطقتك عشان نعرض السعر الصح...",
+  "geo_failed_note": "مقدرناش نحدد منطقتك. هنعرض أسعار مصر.",
+
+  "pay_button_review": "راجع الدفع",
+  "pay_button_review_with_amount": "راجع {amount}",
+
+  "confirm_title": "أكّد الدفع",
+  "confirm_charge_amount_label": "المبلغ اللي هيتخصم",
+  "confirm_currency_note": "الأسعار معروضة بعملة {currency}، لكن Paymob بيعالج الدفع بالجنيه المصري. المبلغ اللي فوق هو اللي هيتخصم من كارتك.",
+  "confirm_btn_proceed": "كمّل إلى Paymob",
+  "confirm_btn_cancel": "إلغاء",
+
+  "confirm_mismatch_title": "السعر مش زي اللي ظهر لك",
+  "confirm_mismatch_body": "الموقع عرض {expected}، بس نظام الدفع هيخصم {actual}. ده غالباً معناه إن كتالوج الأسعار عندنا أحدث من اللي في الباك إند. تقدر تكمل، أو تلغي وتكلم الدعم.",
+  "confirm_mismatch_acknowledge": "أنا فاهم إن هيتخصم مني {amount}",
+
+  "price_mismatch_title": "السعر اتغيّر",
+  "price_mismatch_message": "السعر اللي كان على الشاشة {shown}، بس المبلغ الحالي {actual}. لو سمحت راجع قبل ما تكمل.",
+  "price_mismatch_continue": "استخدم السعر الجديد",
+  "price_mismatch_cancel": "إلغاء"
 }

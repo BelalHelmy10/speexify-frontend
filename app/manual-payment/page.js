@@ -12,13 +12,17 @@ import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 function findPlanByTitle(title) {
   if (!title) return null;
+  // Exact-match only. Fuzzy matching was removed because it could silently
+  // load the wrong plan when titles share a prefix or word.
   const decoded = decodeURIComponent(title).trim().toLowerCase();
   const all = [...oneOnOnePlans, ...groupPlans];
-  return (
-    all.find((p) => p.title.toLowerCase() === decoded) ||
-    all.find((p) => p.title.toLowerCase().includes(decoded)) ||
-    all.find((p) => decoded.includes(p.title.toLowerCase()))
-  );
+  return all.find((p) => p.title.toLowerCase() === decoded) || null;
+}
+
+function findPlanById(planId) {
+  if (!planId) return null;
+  const all = [...oneOnOnePlans, ...groupPlans];
+  return all.find((p) => p.id === planId) || null;
 }
 
 function CopyRow({ label, value, hint }) {
@@ -89,8 +93,12 @@ export default function ManualPaymentPage() {
 
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
 
+  const planId = searchParams.get("planId");
   const planTitle = searchParams.get("plan");
-  const plan = useMemo(() => findPlanByTitle(planTitle), [planTitle]);
+  const plan = useMemo(
+    () => findPlanById(planId) || findPlanByTitle(planTitle),
+    [planId, planTitle]
+  );
 
   // passed from /packages in the "next" target
   const cc = searchParams.get("cc"); // countryCode

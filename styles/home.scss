@@ -2438,16 +2438,30 @@ html.home-client-ready #home-ssr-fallback {
     background: $coral;
   }
 
+  &__tablewrap {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
+    border-radius: 12px;
+    margin-top: 56px;
+  }
+
   &__table {
     width: 100%;
+    min-width: 680px;
     border-collapse: separate;
     border-spacing: 0;
-    margin-top: 56px;
     border-radius: 12px;
     overflow: hidden;
     background: #141824;
     border: 1px solid rgba($color-white, 0.08);
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+
+    @media (max-width: 480px) {
+      min-width: 560px;
+    }
   }
 
   &__head-row {
@@ -2463,6 +2477,11 @@ html.home-client-ready #home-ssr-fallback {
     color: rgba($color-white, 0.45);
     text-align: left;
     border-bottom: 1px solid rgba($color-white, 0.08);
+
+    @media (max-width: 480px) {
+      padding: 16px 18px;
+      font-size: 12px;
+    }
 
     &--speexify {
       color: $coral;
@@ -2488,6 +2507,11 @@ html.home-client-ready #home-ssr-fallback {
     color: rgba($color-white, 0.62);
     font-size: 15px;
     vertical-align: middle;
+
+    @media (max-width: 480px) {
+      padding: 16px 18px;
+      font-size: 14px;
+    }
 
     &--feature {
       color: rgba($color-white, 0.9);

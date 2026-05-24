@@ -12,7 +12,13 @@ import { getSupportedTimezones } from "../../lib/timezones";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 const MARKETING_IMAGE_VERSION = "20260519";
-const marketingImage = (src) => `${src}?v=${MARKETING_IMAGE_VERSION}`;
+const marketingImage = (src) => {
+  const encodedPath = src
+    .split("/")
+    .map((segment, index) => (index === 0 ? segment : encodeURIComponent(segment)))
+    .join("/");
+  return `${encodedPath}?v=${MARKETING_IMAGE_VERSION}`;
+};
 
 function Reveal({ children, as: Component = "div", delay: _delay, blur: _blur, ...props }) {
   return <Component {...props}>{children}</Component>;

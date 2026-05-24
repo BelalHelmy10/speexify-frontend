@@ -6,6 +6,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-height: var(--spx-touch-target, 44px);
   padding: 10px 16px;
   border-radius: $radius;
   font-family: var(--font-body, #{$font-main});

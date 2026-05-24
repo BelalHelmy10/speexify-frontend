@@ -39,11 +39,15 @@
   "confirm_login_message": "Please log in to continue with checkout. Redirect to login page?",
   "toast_payment_failed": "Payment failed. Please try again.",
   "toast_already_subscribed": "You already have an active package for this plan.",
+  "error_package_not_synced": "This package is not available for payment yet. Please contact support.",
   "low_bandwidth_note": "Low-bandwidth mode detected. We are using lighter network behavior to reduce failures.",
   "recovery_title": "Unfinished payment detected",
   "recovery_message": "Order {orderId} is still pending or failed. You can safely reopen checkout for this order.",
   "recovery_button": "Resume payment",
   "recovery_button_processing": "Opening checkout...",
+  "recovery_dismiss_aria": "Dismiss unfinished payment notice",
+  "recovery_start_fresh": "Start a fresh payment",
+  "recovery_retry_failed": "We couldn't resume that payment. Start a fresh checkout below.",
   "pricing_label_package_price": "Package Price",
   "pricing_label_egp_equivalent": "EGP Equivalent (for payment)",
   "exchange_note_regional": "Price shown in {displayCurrency} for {region}. Payment processed in EGP.",
@@ -52,5 +56,26 @@
   "discount_apply": "Apply",
   "discount_applied": "Discount applied: {percent}%",
   "discount_toast_applied": "-{percent}% applied",
-  "discount_toast_invalid": "Invalid discount code"
+  "discount_toast_invalid": "Invalid discount code",
+
+  "geo_loading": "Detecting your region to show the right price...",
+  "geo_failed_note": "We could not detect your region. Showing Egypt pricing.",
+
+  "pay_button_review": "Review payment",
+  "pay_button_review_with_amount": "Review {amount}",
+
+  "confirm_title": "Confirm your payment",
+  "confirm_charge_amount_label": "Amount to be charged",
+  "confirm_currency_note": "Prices on the site are shown in {currency}, but Paymob processes payments in EGP. The amount above is what your card will be charged.",
+  "confirm_btn_proceed": "Continue to Paymob",
+  "confirm_btn_cancel": "Cancel",
+
+  "confirm_mismatch_title": "Price does not match what you saw",
+  "confirm_mismatch_body": "The website showed {expected}, but the payment system will charge {actual}. This usually means our pricing catalog is ahead of the backend. You can continue, or cancel and contact support.",
+  "confirm_mismatch_acknowledge": "I understand I will be charged {amount}",
+
+  "price_mismatch_title": "Price has changed",
+  "price_mismatch_message": "The amount on screen was {shown}, but the current charge is {actual}. Please review before continuing.",
+  "price_mismatch_continue": "Use updated price",
+  "price_mismatch_cancel": "Cancel"
 }

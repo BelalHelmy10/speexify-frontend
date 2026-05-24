@@ -34,7 +34,7 @@ function ForgotPasswordInner({ dict }) {
     setMsg("");
     setBusy(true);
     try {
-      await api.post("/api/auth/password/reset/start", { email });
+      await api.post("/auth/password/reset/start", { email });
       setStep(2);
 
       // clear any previous timer before starting a new one
@@ -64,7 +64,7 @@ function ForgotPasswordInner({ dict }) {
     setMsg("");
     setBusy(true);
     try {
-      await api.post("/api/auth/password/reset/complete", {
+      await api.post("/auth/password/reset/complete", {
         email,
         code,
         newPassword,
@@ -116,7 +116,7 @@ function ForgotPasswordInner({ dict }) {
               />
             </div>
 
-            <button className="btn-primary" disabled={busy}>
+            <button type="submit" className="btn-primary" disabled={busy}>
               {busy ? t(dict, "btn_sending") : t(dict, "btn_send_code")}
             </button>
           </form>
@@ -159,7 +159,7 @@ function ForgotPasswordInner({ dict }) {
               />
             </div>
 
-            <button className="btn-primary" disabled={busy}>
+            <button type="submit" className="btn-primary" disabled={busy}>
               {busy ? t(dict, "btn_updating") : t(dict, "btn_reset")}
             </button>
 

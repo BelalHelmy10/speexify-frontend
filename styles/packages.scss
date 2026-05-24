@@ -970,19 +970,34 @@
   }
 
   &__tablewrap {
+    width: 100%;
+    max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
     border-radius: 12px;
   }
 
   &__table {
     width: 100%;
+    min-width: 640px;
     border-collapse: collapse;
+
+    @media (max-width: 480px) {
+      min-width: 540px;
+    }
 
     th,
     td {
       border-top: 1px solid $border;
       padding: 16px;
       text-align: left;
+
+      @media (max-width: 480px) {
+        padding: 14px 12px;
+        font-size: 14px;
+      }
     }
 
     thead th {

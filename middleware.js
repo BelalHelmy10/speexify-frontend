@@ -2,6 +2,11 @@
 import { NextResponse } from "next/server";
 
 const TOKEN_COOKIE = "speexify.sid"; // session cookie name
+const rawApiBase =
+  process.env.BACKEND_API_BASE ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5050";
+const apiBase = rawApiBase.replace(/\/+$/, "").replace(/\/api$/, "");
 
 // Any route in here requires an authenticated session
 const PRIVATE_ROUTES = [
@@ -11,7 +16,6 @@ const PRIVATE_ROUTES = [
   "/admin",
   "/classroom",
   "/resources",
-  "/assessment",
   "/onboarding",
   "/manual-payment",
 
@@ -31,6 +35,10 @@ function isPrivate(pathname) {
 
 function isAuthEntry(pathname) {
   return AUTH_ENTRY_ROUTES.includes(pathname);
+}
+
+function isAdminRoute(pathname) {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
 function getSafeNextPath(rawNext, fallbackPath) {
@@ -72,7 +80,29 @@ function withCommonHeaders(response) {
   return response;
 }
 
-export function middleware(req) {
+async function getSessionUser(req) {
+  const cookieHeader = req.headers.get("cookie");
+  if (!cookieHeader) return null;
+
+  try {
+    const response = await fetch(`${apiBase}/api/auth/me`, {
+      method: "GET",
+      headers: {
+        cookie: cookieHeader,
+        "cache-control": "no-store",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data?.user || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function middleware(req) {
   const url = req.nextUrl.clone();
   const pathname = url.pathname;
   const searchParams = url.searchParams;
@@ -82,9 +112,12 @@ export function middleware(req) {
   const basePath = isArabic ? pathname.replace(/^\/ar/, "") || "/" : pathname;
 
   const token = req.cookies.get(TOKEN_COOKIE)?.value;
-  const isAuthed = !!token;
-
   const onPrivatePage = isPrivate(basePath);
+  const onAdminPage = isAdminRoute(basePath);
+  const needsAuthState =
+    Boolean(token) && (onPrivatePage || isAuthEntry(basePath));
+  const sessionUser = needsAuthState ? await getSessionUser(req) : null;
+  const isAuthed = Boolean(sessionUser);
 
   // Logged-in users should never see the public home/login shell first.
   // Redirect before React renders so the nav does not flash in logged-out mode.
@@ -110,6 +143,13 @@ export function middleware(req) {
     dest.searchParams.set("next", originalPathWithQuery);
 
     return withCommonHeaders(NextResponse.redirect(dest));
+  }
+
+  if (isAuthed && onAdminPage && sessionUser?.role !== "admin") {
+    const dashboardPath = isArabic ? "/ar/dashboard" : "/dashboard";
+    return withCommonHeaders(
+      NextResponse.redirect(new URL(dashboardPath, req.url))
+    );
   }
 
   // Otherwise allow through

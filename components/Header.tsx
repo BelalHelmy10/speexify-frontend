@@ -577,6 +577,7 @@ export default function Header() {
         <RightCTA />
 
         <button
+          type="button"
           className={"spx-nav-toggle" + (open ? " spx-is-open" : "")}
           aria-label="Toggle menu"
           aria-expanded={open ? "true" : "false"}

@@ -129,7 +129,17 @@ textarea {
     .calx-filter-btn,
     .calx-toolbar-support,
     .sw-send-btn,
-    .sw-attach-btn) {
+    .sw-attach-btn,
+    .auth-page .btn-primary,
+    .auth-page .password-toggle,
+    .newsletter-btn,
+    .social-link,
+    .google-button-localized) {
+    min-height: var(--spx-touch-target);
+  }
+
+  :where(.auth-page input,
+    .newsletter-input) {
     min-height: var(--spx-touch-target);
   }
 }

@@ -24,5 +24,6 @@
 
   "user_fallback_name": "User",
   "btn_sign_out": "Sign out",
-  "google_button_aria": "Continue with Google"
+  "google_button_aria": "Continue with Google",
+  "google_button_label": "Continue with Google"
 }

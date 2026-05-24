@@ -707,11 +707,14 @@ function PricingCard({
 
   // inside function PricingCard({ plan, ... })
   const paymentRoute = PAYMENT_MODE === "paymob" ? APP_ROUTES.checkout : APP_ROUTES.manualPayment;
-  // Always use the English backend title in URLs so checkout lookups stay stable across locales.
+  // Pass planId (stable, locale-independent identifier) plus the English
+  // backend title as a fallback for backward compatibility.
   const urlTitle = plan._backendTitle || plan.title;
-  const target = `${routeHref(paymentRoute, locale)}?plan=${encodeURIComponent(urlTitle)}&cc=${encodeURIComponent(
-      countryCode || ""
-    )}&cur=${encodeURIComponent(currency || "")}`;
+  const target = `${routeHref(paymentRoute, locale)}?planId=${encodeURIComponent(
+    plan.id
+  )}&plan=${encodeURIComponent(urlTitle)}&cc=${encodeURIComponent(
+    countryCode || ""
+  )}&cur=${encodeURIComponent(currency || "")}`;
 
   return (
     <div className={`ecp-card ecp-card--plan ${isPopular ? "is-popular" : ""}`}>

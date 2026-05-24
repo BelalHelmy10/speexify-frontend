@@ -1,4 +1,11 @@
 // app/admin/packages/page.js
+//
+// NOTE on field naming:
+// The API fields `priceUSD` and `startingAtUSD` actually carry EGP values.
+// The UI is now labeled "Price (EGP)" / "Starting At (EGP)" to match
+// reality. A future backend migration should rename these columns to
+// `priceEGP` and `startingAtEGP`. See lib/payment-contract.js for the
+// full pricing data model.
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -6,6 +13,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { useToast, useConfirm } from "@/components/ToastProvider";
+import { oneOnOnePlans, groupPlans } from "@/lib/plans";
 import "@/styles/admin.scss";
 
 const normAudience = (v) => String(v || "INDIVIDUAL").toUpperCase();
@@ -109,6 +117,139 @@ export default function AdminPackagesPage() {
       setItems((rows) => rows.filter((r) => r.id !== id));
     } catch (e) {
       toast.error(e?.response?.data?.error || "Failed to delete");
+    }
+  }
+
+  // Sync prices, sessions, and duration from lib/plans.js (the brand
+  // catalog / source of truth) into the backend DB. Matches by title.
+  // Skips any plan with no matching backend record.
+  //
+  // Verbose by design — every step is logged to console and surfaced
+  // in a result modal so any failure is obvious.
+  const [syncing, setSyncing] = useState(false);
+  const [syncReport, setSyncReport] = useState(null);
+
+  async function syncPricesFromPlans() {
+    const ok = await confirmModal(
+      "Update backend prices to match lib/plans.js? This overwrites priceUSD, sessionsPerPack, and durationMin for every matching package."
+    );
+    if (!ok) return;
+
+    setSyncing(true);
+    // eslint-disable-next-line no-console
+    console.log("[admin sync] starting…");
+
+    try {
+      const { data } = await api.get("/admin/packages");
+      const backendPkgs = Array.isArray(data) ? data : [];
+      // eslint-disable-next-line no-console
+      console.log(`[admin sync] backend returned ${backendPkgs.length} packages`, backendPkgs);
+
+      const allLocalPlans = [...oneOnOnePlans, ...groupPlans];
+      const rows = [];
+
+      for (const local of allLocalPlans) {
+        const match = backendPkgs.find(
+          (p) =>
+            String(p.title || "").trim().toLowerCase() ===
+            local.title.trim().toLowerCase()
+        );
+
+        if (!match) {
+          rows.push({
+            title: local.title,
+            status: "missing",
+            note: "Not found on backend — create it via + New Package",
+            before: null,
+            after: { priceUSD: local.priceEGP },
+          });
+          continue;
+        }
+
+        const before = {
+          priceUSD: match.priceUSD ?? null,
+          sessionsPerPack: match.sessionsPerPack ?? null,
+          durationMin: match.durationMin ?? null,
+        };
+        const desired = {
+          priceUSD: local.priceEGP,
+          sessionsPerPack: local.sessionsPerPack,
+          durationMin: local.durationMin,
+        };
+
+        const patch = {};
+        for (const key of Object.keys(desired)) {
+          if ((before[key] ?? null) !== (desired[key] ?? null)) {
+            patch[key] = desired[key];
+          }
+        }
+
+        if (Object.keys(patch).length === 0) {
+          rows.push({
+            title: local.title,
+            id: match.id,
+            status: "unchanged",
+            note: "Already in sync",
+            before,
+            after: before,
+          });
+          continue;
+        }
+
+        try {
+          // eslint-disable-next-line no-console
+          console.log(`[admin sync] PATCH /admin/packages/${match.id}`, patch);
+          const patchRes = await api.patch(`/admin/packages/${match.id}`, patch);
+          // eslint-disable-next-line no-console
+          console.log(`[admin sync] PATCH result for "${local.title}"`, patchRes?.data);
+          rows.push({
+            title: local.title,
+            id: match.id,
+            status: "updated",
+            note: Object.entries(patch).map(([k, v]) => `${k}: ${before[k]} → ${v}`).join(", "),
+            before,
+            after: { ...before, ...patch },
+          });
+        } catch (e) {
+          const msg = e?.response?.data?.error || e?.response?.data?.message || e?.message || "unknown";
+          // eslint-disable-next-line no-console
+          console.error(`[admin sync] FAILED for "${local.title}":`, e);
+          rows.push({
+            title: local.title,
+            id: match.id,
+            status: "failed",
+            note: msg,
+            before,
+            after: null,
+          });
+        }
+      }
+
+      const updated = rows.filter((r) => r.status === "updated").length;
+      const unchanged = rows.filter((r) => r.status === "unchanged").length;
+      const missing = rows.filter((r) => r.status === "missing").length;
+      const failed = rows.filter((r) => r.status === "failed").length;
+
+      // eslint-disable-next-line no-console
+      console.table(rows);
+
+      setSyncReport({ rows, updated, unchanged, missing, failed });
+
+      if (failed > 0) {
+        toast.error(`Sync finished with ${failed} failures. See report below.`);
+      } else if (updated === 0 && missing === 0) {
+        toast.success("All packages already in sync.");
+      } else {
+        toast.success(`Synced ${updated} package(s).${missing ? ` ${missing} missing on backend.` : ""}`);
+      }
+
+      await load();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[admin sync] crashed:", e);
+      toast.error(e?.response?.data?.error || e?.message || "Sync failed");
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -228,6 +369,14 @@ export default function AdminPackagesPage() {
             ← Back to Admin
           </Link>
           <button
+            className="adm-btn-secondary"
+            onClick={syncPricesFromPlans}
+            disabled={syncing}
+            title="Update backend prices, session counts, and duration to match lib/plans.js"
+          >
+            {syncing ? "Syncing…" : "Sync from plans.js"}
+          </button>
+          <button
             className="adm-btn-primary"
             onClick={() => setCreateOpen(true)}
           >
@@ -235,6 +384,75 @@ export default function AdminPackagesPage() {
           </button>
         </div>
       </div>
+
+      {syncReport && (
+        <section
+          className="adm-admin-card"
+          style={{
+            borderLeft: `4px solid ${syncReport.failed > 0 ? "#ef4444" : "#22c55e"}`,
+            marginBottom: 16,
+          }}
+        >
+          <div className="adm-admin-card__header" style={{ alignItems: "center" }}>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ margin: 0, fontSize: 16 }}>
+                Sync report — {syncReport.updated} updated · {syncReport.unchanged} already in sync ·{" "}
+                {syncReport.missing} missing on backend ·{" "}
+                {syncReport.failed} failed
+              </h3>
+              <p style={{ margin: "4px 0 0", fontSize: 13, opacity: 0.7 }}>
+                Full details also printed to the browser console.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="adm-btn-secondary"
+              onClick={() => setSyncReport(null)}
+            >
+              Close
+            </button>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ textAlign: "left", borderBottom: "1px solid #e8e0d5" }}>
+                  <th style={{ padding: "8px 12px" }}>Plan</th>
+                  <th style={{ padding: "8px 12px" }}>Status</th>
+                  <th style={{ padding: "8px 12px" }}>Before (price/sessions/duration)</th>
+                  <th style={{ padding: "8px 12px" }}>After</th>
+                  <th style={{ padding: "8px 12px" }}>Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                {syncReport.rows.map((row) => (
+                  <tr key={row.title} style={{ borderBottom: "1px solid #f5f0ea" }}>
+                    <td style={{ padding: "8px 12px", fontWeight: 600 }}>{row.title}</td>
+                    <td
+                      style={{
+                        padding: "8px 12px",
+                        color:
+                          row.status === "updated" ? "#15803d"
+                            : row.status === "failed" ? "#b91c1c"
+                            : row.status === "missing" ? "#b45309"
+                            : "#5a6a7a",
+                      }}
+                    >
+                      {row.status}
+                    </td>
+                    <td style={{ padding: "8px 12px", fontFamily: "monospace" }}>
+                      {row.before ? `${row.before.priceUSD} / ${row.before.sessionsPerPack} / ${row.before.durationMin}` : "—"}
+                    </td>
+                    <td style={{ padding: "8px 12px", fontFamily: "monospace" }}>
+                      {row.after ? `${row.after.priceUSD} / ${row.after.sessionsPerPack} / ${row.after.durationMin}` : "—"}
+                    </td>
+                    <td style={{ padding: "8px 12px", color: "#5a6a7a" }}>{row.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section className="adm-admin-card">
         <div className="adm-admin-card__header">
@@ -331,8 +549,8 @@ export default function AdminPackagesPage() {
                   <th>Title</th>
                   <th>Audience</th>
                   <th>Price Type</th>
-                  <th>Price ($)</th>
-                  <th>Starting At ($)</th>
+                  <th>Price (EGP)</th>
+                  <th>Starting At (EGP)</th>
                   <th>Sessions</th>
                   <th>Duration (min)</th>
                   <th>Sort</th>
@@ -655,7 +873,7 @@ export default function AdminPackagesPage() {
                   </div>
 
                   <div className="adm-form-field">
-                    <label className="adm-form-label">Price ($)</label>
+                    <label className="adm-form-label">Price (EGP)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -668,12 +886,12 @@ export default function AdminPackagesPage() {
                           priceUSD: e.target.value,
                         }))
                       }
-                      placeholder="e.g. 99"
+                      placeholder="e.g. 1100"
                     />
                   </div>
 
                   <div className="adm-form-field">
-                    <label className="adm-form-label">Starting At ($)</label>
+                    <label className="adm-form-label">Starting At (EGP)</label>
                     <input
                       type="number"
                       step="0.01"
