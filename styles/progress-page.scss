@@ -290,6 +290,11 @@
   background: var(--metric-color, $coral);
 }
 
+[dir="rtl"] .learning-progress__metric-dot {
+  right: auto;
+  left: 18px;
+}
+
 .learning-progress__metric--coral {
   --metric-color: #{$coral};
 }

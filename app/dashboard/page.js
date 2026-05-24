@@ -110,7 +110,7 @@ function DashboardNextAction({ action }) {
   );
 }
 
-function DashboardInner({ dict, prefix }) {
+function DashboardInner({ dict, navDict, locale, prefix }) {
   const { toast, confirmModal } = useToast();
   const router = useRouter();
 
@@ -784,10 +784,10 @@ function DashboardInner({ dict, prefix }) {
               dateTime={new Date().toISOString().slice(0, 10)}
             >
               <span className="dashboard__date-weekday">
-                {new Date().toLocaleDateString(undefined, { weekday: "long" })}
+                {new Date().toLocaleDateString(locale === "ar" ? "ar" : "en", { weekday: "long" })}
               </span>
               <span className="dashboard__date-main">
-                {new Date().toLocaleDateString(undefined, { month: "long", day: "numeric" })}
+                {new Date().toLocaleDateString(locale === "ar" ? "ar" : "en", { month: "long", day: "numeric" })}
               </span>
             </time>
             {isTeacher && (
@@ -795,7 +795,7 @@ function DashboardInner({ dict, prefix }) {
                 <svg className="dashboard__role-icon" width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
                 </svg>
-                Teacher
+                {t(navDict, "role_teacher")}
               </span>
             )}
             {isLearner && (
@@ -803,7 +803,7 @@ function DashboardInner({ dict, prefix }) {
                 <svg className="dashboard__role-icon" width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
-                Learner
+                {t(navDict, "role_learner")}
               </span>
             )}
             {isAdmin && (
@@ -811,7 +811,7 @@ function DashboardInner({ dict, prefix }) {
                 <svg className="dashboard__role-icon" width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                Admin
+                {t(navDict, "role_admin")}
               </span>
             )}
           </div>
@@ -822,33 +822,33 @@ function DashboardInner({ dict, prefix }) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
             </svg>
-            Overview
+            {t(dict, "quicknav_overview")}
           </Link>
           <Link href={`${prefix}/calendar`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            Calendar
+            {t(dict, "quicknav_calendar")}
           </Link>
           {showLearnerContent && (
             <Link href={`${prefix}/dashboard/progress`}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M3 3v18h18" /><path d="M7 15l4-4 4 3 5-7" />
               </svg>
-              My Progress
+              {t(dict, "quicknav_progress")}
             </Link>
           )}
           <Link href={`${prefix}/resources`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
             </svg>
-            Resources
+            {t(dict, "quicknav_resources")}
           </Link>
           <Link href={`${prefix}/dashboard/notifications`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
-            Notifications
+            {t(dict, "quicknav_notifications")}
           </Link>
         </nav>
 
@@ -1280,7 +1280,7 @@ function DashboardInner({ dict, prefix }) {
                     href={`${prefix}/calendar`}
                     className="btn btn--secondary btn--full"
                   >
-                    View all sessions in calendar →
+                    {t(dict, "upcoming_view_all_calendar")}
                   </Link>
                 </div>
               )}
@@ -1422,5 +1422,6 @@ export default function DashboardPage() {
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const prefix = locale === "ar" ? "/ar" : "";
   const dict = getDictionary(locale, "dashboard");
-  return <DashboardInner dict={dict} prefix={prefix} />;
+  const navDict = getDictionary(locale, "nav");
+  return <DashboardInner dict={dict} navDict={navDict} locale={locale} prefix={prefix} />;
 }

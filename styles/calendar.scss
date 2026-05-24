@@ -713,6 +713,7 @@
   justify-content: center;
   min-width: 0;
   text-align: center;
+  padding: 0 5%;
 }
 
 .calx-toolbar__right {
@@ -1524,13 +1525,16 @@
 
   .rbc-time-gutter .rbc-timeslot-group {
     min-height: 60px;
-    padding: 4px 8px 0 0;
+    padding: 0 8px;
     border-bottom: 1px solid $border;
     color: $text-secondary;
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.04em;
     text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .rbc-timeslot-group,

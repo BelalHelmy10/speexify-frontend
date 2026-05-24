@@ -2481,6 +2481,20 @@
   }
 }
 
+[dir="rtl"] .dashboard .dashboard__header-meta {
+  margin-left: 0;
+  margin-right: auto;
+  align-items: flex-start;
+}
+
+[dir="rtl"] .dashboard .dashboard__date {
+  align-items: flex-start;
+}
+
+[dir="rtl"] .dashboard .dashboard__role-badge {
+  flex-direction: row-reverse;
+}
+
 // ── Quick navigation pill bar ─────────────────────────────────────────────
 .dashboard .dashboard__quicknav {
   display: flex;

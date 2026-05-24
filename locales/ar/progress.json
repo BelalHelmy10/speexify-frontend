@@ -60,5 +60,42 @@
   "timeline_empty_title": "مفيش نشاط لسه",
   "timeline_empty": "نشاطك الشهري هيتظهر هنا.",
   "timeline_col_month": "الشهر",
-  "timeline_col_completed": "الجلسات اللي خلصت"
+  "timeline_col_completed": "الجلسات اللي خلصت",
+
+  "unit_minutes": "د",
+  "unit_hours": "س",
+  "unit_hours_minutes": "{hours}س {mins}د",
+  "unit_weeks": "أس",
+
+  "skill_fluency_practice": "تمرين الطلاقة",
+  "skill_consistency": "الاستمرارية",
+  "skill_feedback_loop": "دائرة الملاحظات",
+  "skill_course_progress": "تقدّم المسار",
+
+  "source_fluency_practice": "بناءً على وقت التحدث المنجز",
+  "source_consistency": "بناءً على الحضور والجلسات المنجزة",
+  "source_feedback_loop": "بناءً على الجلسات اللي فيها ملاحظات المدرّب",
+  "source_course_progress": "بناءً على استخدام الباقة النشطة",
+
+  "achievement_momentum_builder": "باني الزخم",
+  "achievement_first_session": "أول جلسة",
+  "achievement_five_hours_practiced": "خمس ساعات تدريب",
+  "achievement_reliable_learner": "متدرب منتظم",
+  "achievement_halfway_there": "نصّ الطريق",
+
+  "desc_momentum_builder": "أكمل جلسات على مدار 3 أسابيع تعليم متتالية",
+  "desc_first_session": "أكمل أول جلسة تدريب مباشرة",
+  "desc_feedback_loop": "استلم ملاحظات المدرّب في 3 جلسات منجزة",
+  "desc_five_hours_practiced": "وصل لـ 300 دقيقة تدريب تحدث موجّه",
+  "desc_reliable_learner": "حافظ على حضور كامل بعد 3 جلسات منجزة على الأقل",
+  "desc_halfway_there": "استخدم نصّ باقتك التعليمية النشطة على الأقل",
+
+  "progress_label": "التقدّم",
+  "achievement_done": "تم",
+  "with_teacher": "مع",
+
+  "mission_start_timeline": "ابدأ خطّك الزمني للتقدم",
+  "mission_start_timeline_desc": "أكمل أول جلسة تدريب عشان تفتح الإنجازات والاستمرارية وسجلّ الملاحظات.",
+  "next_action_choose_package": "اختار باقتك التعليمية اللي جاي",
+  "next_action_add_credits": "ضيف جلسات عشان مسارك التعليمي يفضل شغّال."
 }

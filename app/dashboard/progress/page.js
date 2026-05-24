@@ -20,12 +20,18 @@ function clampPercent(value) {
   return Math.max(0, Math.min(100, Math.round(numeric)));
 }
 
-function formatDuration(minutes) {
+function formatDuration(minutes, dict) {
   const total = Math.max(0, Math.round(Number(minutes || 0)));
-  if (total < 60) return `${total} min`;
+  const minLabel = copy(dict, "unit_minutes", "min");
+  const hLabel = copy(dict, "unit_hours", "h");
+  if (total < 60) return `${total} ${minLabel}`;
   const hours = Math.floor(total / 60);
   const mins = total % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  if (mins > 0) {
+    const hmTemplate = copy(dict, "unit_hours_minutes", "{hours}h {mins}m");
+    return hmTemplate.replace("{hours}", hours).replace("{mins}", mins);
+  }
+  return `${hours} ${hLabel}`;
 }
 
 function formatDate(value, locale, options) {
@@ -60,12 +66,118 @@ export default function ProgressPage() {
   const dict = getDictionary(locale, "progress");
   const genericError = copy(dict, "error_generic", "Failed to load progress");
 
+  const skillLabelMap = {
+    "Fluency practice": "skill_fluency_practice",
+    "Consistency": "skill_consistency",
+    "Feedback loop": "skill_feedback_loop",
+    "Course progress": "skill_course_progress",
+  };
+
+  const skillSourceMap = {
+    "Based on completed speaking time": "source_fluency_practice",
+    "Based on attendance and completed sessions": "source_consistency",
+    "Based on sessions with teacher feedback": "source_feedback_loop",
+    "Based on active package usage": "source_course_progress",
+  };
+
+  const achievementTitleMap = {
+    "Momentum builder": "achievement_momentum_builder",
+    "First session": "achievement_first_session",
+    "Feedback loop": "achievement_feedback_loop",
+    "Five hours practiced": "achievement_five_hours_practiced",
+    "Reliable learner": "achievement_reliable_learner",
+    "Halfway there": "achievement_halfway_there",
+  };
+
+  const achievementDescMap = {
+    "Complete sessions across 3 consecutive learning weeks": "desc_momentum_builder",
+    "Complete your first live coaching session": "desc_first_session",
+    "Receive teacher feedback on 3 completed sessions": "desc_feedback_loop",
+    "Reach 300 minutes of guided speaking practice": "desc_five_hours_practiced",
+    "Keep perfect attendance after at least 3 completed sessions": "desc_reliable_learner",
+    "Use at least half of your active learning package": "desc_halfway_there",
+  };
+
+  const missionTitleMap = {
+    "Start your progress timeline": "mission_start_timeline",
+    "Choose your next learning package": "next_action_choose_package",
+  };
+
+  const missionDescMap = {
+    "Complete your first coaching session to unlock milestones, streaks, and feedback history.": "mission_start_timeline_desc",
+    "Add session credits to keep your learning path active.": "next_action_add_credits",
+  };
+
+  const courseTitleMap = {
+    "Learning package": "course_default",
+  };
+
+  const milestoneLabelMap = {
+    "First session completed": "first_milestone",
+  };
+
+  function localizeSkillLabel(label) {
+    const key = skillLabelMap[label];
+    if (!key) return label;
+    const translated = t(dict, key);
+    return translated === `__${key}__` ? label : translated;
+  }
+
+  function localizeSkillSource(source) {
+    const key = skillSourceMap[source];
+    if (!key) return source;
+    const translated = t(dict, key);
+    return translated === `__${key}__` ? source : translated;
+  }
+
+  function localizeAchievementTitle(title) {
+    const key = achievementTitleMap[title];
+    if (!key) return title;
+    const translated = t(dict, key);
+    return translated === `__${key}__` ? title : translated;
+  }
+
+  function localizeAchievementDescription(desc) {
+    const key = achievementDescMap[desc];
+    if (!key) return desc;
+    const translated = t(dict, key);
+    return translated === `__${key}__` ? desc : translated;
+  }
+
+  function localizeMissionTitle(title) {
+    const key = missionTitleMap[title];
+    if (!key) return title;
+    const translated = t(dict, key);
+    return translated === `__${key}__` ? title : translated;
+  }
+
+  function localizeMissionDescription(desc) {
+    const key = missionDescMap[desc];
+    if (!key) return desc;
+    const translated = t(dict, key);
+    return translated === `__${key}__` ? desc : translated;
+  }
+
+  function localizeCourseTitle(title) {
+    const key = courseTitleMap[title];
+    if (!key) return title;
+    const translated = t(dict, key);
+    return translated === `__${key}__` ? title : translated;
+  }
+
+  function localizeMilestoneLabel(label) {
+    const key = milestoneLabelMap[label];
+    if (!key) return label;
+    const translated = t(dict, key);
+    return translated === `__${key}__` ? label : translated;
+  }
+
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState("");
 
   const numberFormat = useMemo(
-    () => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US"),
+    () => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", { numberingSystem: "latn" }),
     [locale]
   );
 
@@ -105,6 +217,7 @@ export default function ProgressPage() {
       <ProgressState
         title={copy(dict, "page_title", "Learning progress")}
         text={copy(dict, "subtitle_loading", "Loading your progress...")}
+        dict={dict}
       />
     );
   }
@@ -118,6 +231,7 @@ export default function ProgressPage() {
           "subtitle_not_logged_in",
           "You need to be logged in to view this page."
         )}
+        dict={dict}
       />
     );
   }
@@ -130,6 +244,7 @@ export default function ProgressPage() {
         error={error}
         actionHref={localizeHref("/dashboard", prefix)}
         actionLabel={copy(dict, "back_to_dashboard", "Back to dashboard")}
+        dict={dict}
       />
     );
   }
@@ -163,18 +278,18 @@ export default function ProgressPage() {
     },
     {
       label: copy(dict, "summary_total_time_label", "Speaking time"),
-      value: formatDuration(summary.totalMinutes || 0),
+      value: formatDuration(summary.totalMinutes || 0, dict),
       meta: copy(
         dict,
         "metric_minutes_meta",
         "{duration} this month",
-        { duration: formatDuration(summary.minutesThisMonth || 0) }
+        { duration: formatDuration(summary.minutesThisMonth || 0, dict) }
       ),
       tone: "sage",
     },
     {
       label: copy(dict, "metric_streak_label", "Learning streak"),
-      value: `${numberFormat.format(summary.currentStreak || 0)}w`,
+      value: `${numberFormat.format(summary.currentStreak || 0)}${copy(dict, "unit_weeks", "w")}`,
       meta: copy(
         dict,
         "metric_streak_meta",
@@ -219,9 +334,9 @@ export default function ProgressPage() {
                 href={localizeHref(nextAction.href, prefix)}
                 className="learning-progress__primary-link"
               >
-                {nextAction.label}
+                {localizeMissionTitle(nextAction.label)}
               </Link>
-              <span>{nextAction.description}</span>
+              <span>{localizeMissionDescription(nextAction.description)}</span>
             </div>
           )}
         </div>
@@ -229,14 +344,14 @@ export default function ProgressPage() {
         <div
           className="learning-progress__score"
           style={{ "--ring-progress": `${coursePercent}%` }}
-          aria-label={`Course progress ${coursePercent}%`}
+          aria-label={`${copy(dict, "course_progress_label", "course progress")} ${coursePercent}%`}
         >
           <div className="learning-progress__score-ring">
             <strong>{coursePercent}%</strong>
             <span>{copy(dict, "course_progress_label", "course progress")}</span>
           </div>
           <div className="learning-progress__score-meta">
-            <strong>{course.title || copy(dict, "course_default", "Learning package")}</strong>
+            <strong>{localizeCourseTitle(course.title) || copy(dict, "course_default", "Learning package")}</strong>
             <span>
               {numberFormat.format(course.usedSessions || 0)} /{" "}
               {numberFormat.format(course.totalSessions || 0)}{" "}
@@ -246,7 +361,7 @@ export default function ProgressPage() {
         </div>
       </section>
 
-      <section className="learning-progress__metrics" aria-label="Progress summary">
+      <section className="learning-progress__metrics" aria-label={copy(dict, "progress_label", "Progress")}>
         {metricCards.map((metric) => (
           <MetricCard key={metric.label} metric={metric} />
         ))}
@@ -257,7 +372,7 @@ export default function ProgressPage() {
           <p className="learning-progress__section-kicker">
             {copy(dict, "course_section_kicker", "Current path")}
           </p>
-          <h2>{course.title || copy(dict, "course_default", "Learning package")}</h2>
+          <h2>{localizeCourseTitle(course.title) || copy(dict, "course_default", "Learning package")}</h2>
           <p>
             {course.hasActivePackage
               ? copy(
@@ -279,7 +394,7 @@ export default function ProgressPage() {
           </div>
           <div className="learning-progress__milestone">
             <span>{copy(dict, "next_milestone", "Next milestone")}</span>
-            <strong>{nextMilestone.label || copy(dict, "first_milestone", "First session")}</strong>
+            <strong>{localizeMilestoneLabel(nextMilestone.label) || copy(dict, "first_milestone", "First session")}</strong>
             <div className="learning-progress__mini-bar">
               <span style={{ width: `${milestonePercent}%` }} />
             </div>
@@ -328,10 +443,10 @@ export default function ProgressPage() {
           <section className="learning-progress__panel learning-progress__panel--mission">
             <PanelHeader
               kicker={copy(dict, "mission_kicker", "Next mission")}
-              title={missions[0]?.title || nextAction.label || copy(dict, "mission_title", "Keep moving")}
+              title={localizeMissionTitle(missions[0]?.title) || localizeMissionTitle(nextAction.label) || copy(dict, "mission_title", "Keep moving")}
               subtitle={
-                missions[0]?.description ||
-                nextAction.description ||
+                localizeMissionDescription(missions[0]?.description) ||
+                localizeMissionDescription(nextAction.description) ||
                 copy(dict, "mission_subtitle", "Your next best action will appear here.")
               }
             />
@@ -371,7 +486,14 @@ export default function ProgressPage() {
             />
             <div className="learning-progress__skills">
               {skills.map((skill) => (
-                <SkillBar key={skill.key} skill={skill} />
+                <SkillBar
+                  key={skill.key}
+                  skill={{
+                    ...skill,
+                    label: localizeSkillLabel(skill.label),
+                    source: localizeSkillSource(skill.source),
+                  }}
+                />
               ))}
             </div>
           </section>
@@ -385,8 +507,13 @@ export default function ProgressPage() {
               {achievements.map((achievement) => (
                 <AchievementCard
                   key={achievement.key}
-                  achievement={achievement}
+                  achievement={{
+                    ...achievement,
+                    title: localizeAchievementTitle(achievement.title),
+                    description: localizeAchievementDescription(achievement.description),
+                  }}
                   numberFormat={numberFormat}
+                  dict={dict}
                 />
               ))}
             </div>
@@ -436,11 +563,11 @@ export default function ProgressPage() {
   );
 }
 
-function ProgressState({ title, text, error, actionHref, actionLabel }) {
+function ProgressState({ title, text, error, actionHref, actionLabel, dict }) {
   return (
     <main className="container page-dashboard learning-progress learning-progress--state">
       <section className="learning-progress__state-card">
-        <p className="learning-progress__eyebrow">Progress</p>
+        <p className="learning-progress__eyebrow">{copy(dict, "progress_label", "Progress")}</p>
         <h1>{title}</h1>
         <p>{text}</p>
         {error && <div className="learning-progress__error">{error}</div>}
@@ -493,7 +620,7 @@ function JourneyItem({ item, index, locale, prefix, dict }) {
             <h3>{item.title}</h3>
             <p>
               {dateLabel}
-              {item.teacherName ? ` with ${item.teacherName}` : ""}
+              {item.teacherName ? ` ${copy(dict, "with_teacher", "with")} ${item.teacherName}` : ""}
             </p>
           </div>
           <Link href={localizeHref(item.href, prefix)}>
@@ -501,7 +628,7 @@ function JourneyItem({ item, index, locale, prefix, dict }) {
           </Link>
         </div>
         <div className="learning-progress__chips">
-          <span>{formatDuration(item.durationMinutes)}</span>
+          <span>{formatDuration(item.durationMinutes, dict)}</span>
           <span>
             {item.materialsCount || 0} {copy(dict, "materials_label", "materials")}
           </span>
@@ -542,7 +669,7 @@ function SkillBar({ skill }) {
   );
 }
 
-function AchievementCard({ achievement, numberFormat }) {
+function AchievementCard({ achievement, numberFormat, dict }) {
   const progress = Number(achievement.progress || 0);
   const target = Number(achievement.target || 1);
   const percent = target > 0 ? clampPercent((progress / target) * 100) : 0;
@@ -554,7 +681,7 @@ function AchievementCard({ achievement, numberFormat }) {
       }`}
     >
       <span className="learning-progress__badge-status">
-        {achievement.earned ? "Done" : `${percent}%`}
+        {achievement.earned ? copy(dict, "achievement_done", "Done") : `${percent}%`}
       </span>
       <h3>{achievement.title}</h3>
       <p>{achievement.description}</p>

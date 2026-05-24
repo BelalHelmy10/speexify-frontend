@@ -78,6 +78,12 @@
   "assessment_take": "أدِّ التقييم الكتابي",
   "view_all_plans": "شوف كل الخطط",
 
+  "quicknav_overview": "نظرة عامة",
+  "quicknav_calendar": "التقويم",
+  "quicknav_progress": "تقدمي",
+  "quicknav_resources": "الموارد",
+  "quicknav_notifications": "الإشعارات",
+
   "teaching_badge": "التدريس",
   "teaching_title": "أقرب جلسة هتدرّسها",
   "teaching_none": "مفيش جلسات تدريس جاية.",
@@ -85,6 +91,7 @@
 
   "upcoming_title": "الجلسات اللي جاي",
   "upcoming_open_calendar": "افتح التقويم",
+  "upcoming_view_all_calendar": "شوف كل الجلسات في التقويم →",
   "upcoming_none": "مفيش جلسات جاية.",
 
   "past_title": "الجلسات اللي فاتت",

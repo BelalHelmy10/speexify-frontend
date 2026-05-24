@@ -78,6 +78,12 @@
   "assessment_take": "Take written assessment",
   "view_all_plans": "View all plans",
 
+  "quicknav_overview": "Overview",
+  "quicknav_calendar": "Calendar",
+  "quicknav_progress": "My Progress",
+  "quicknav_resources": "Resources",
+  "quicknav_notifications": "Notifications",
+
   "teaching_badge": "Teaching",
   "teaching_title": "Next session to teach",
   "teaching_none": "No upcoming teaching sessions.",
@@ -85,6 +91,7 @@
 
   "upcoming_title": "Upcoming sessions",
   "upcoming_open_calendar": "Open calendar",
+  "upcoming_view_all_calendar": "View all sessions in calendar →",
   "upcoming_none": "No upcoming sessions.",
 
   "past_title": "Past sessions",

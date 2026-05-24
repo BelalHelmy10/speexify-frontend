@@ -60,5 +60,42 @@
   "timeline_empty_title": "No activity yet",
   "timeline_empty": "Your monthly activity will appear here.",
   "timeline_col_month": "Month",
-  "timeline_col_completed": "Completed sessions"
+  "timeline_col_completed": "Completed sessions",
+
+  "unit_minutes": "min",
+  "unit_hours": "h",
+  "unit_hours_minutes": "{hours}h {mins}m",
+  "unit_weeks": "w",
+
+  "skill_fluency_practice": "Fluency practice",
+  "skill_consistency": "Consistency",
+  "skill_feedback_loop": "Feedback loop",
+  "skill_course_progress": "Course progress",
+
+  "source_fluency_practice": "Based on completed speaking time",
+  "source_consistency": "Based on attendance and completed sessions",
+  "source_feedback_loop": "Based on sessions with teacher feedback",
+  "source_course_progress": "Based on active package usage",
+
+  "achievement_momentum_builder": "Momentum builder",
+  "achievement_first_session": "First session",
+  "achievement_five_hours_practiced": "Five hours practiced",
+  "achievement_reliable_learner": "Reliable learner",
+  "achievement_halfway_there": "Halfway there",
+
+  "desc_momentum_builder": "Complete sessions across 3 consecutive learning weeks",
+  "desc_first_session": "Complete your first live coaching session",
+  "desc_feedback_loop": "Receive teacher feedback on 3 completed sessions",
+  "desc_five_hours_practiced": "Reach 300 minutes of guided speaking practice",
+  "desc_reliable_learner": "Keep perfect attendance after at least 3 completed sessions",
+  "desc_halfway_there": "Use at least half of your active learning package",
+
+  "progress_label": "Progress",
+  "achievement_done": "Done",
+  "with_teacher": "with",
+
+  "mission_start_timeline": "Start your progress timeline",
+  "mission_start_timeline_desc": "Complete your first coaching session to unlock milestones, streaks, and feedback history.",
+  "next_action_choose_package": "Choose your next learning package",
+  "next_action_add_credits": "Add session credits to keep your learning path active."
 }
