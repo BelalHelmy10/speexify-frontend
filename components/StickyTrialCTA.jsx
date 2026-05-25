@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
@@ -56,9 +56,33 @@ export default function StickyTrialCTA() {
   // Ephemeral dismiss — local state only, no storage.
   // Reappears on any reload or navigation.
   const [dismissed, setDismissed] = useState(false);
+  const [footerInView, setFooterInView] = useState(false);
+
+  useEffect(() => {
+    const updateFooterState = () => {
+      const footer = document.querySelector(".site-footer-wrapper");
+      if (!footer) {
+        setFooterInView(false);
+        return;
+      }
+
+      const rect = footer.getBoundingClientRect();
+      setFooterInView(rect.top < window.innerHeight - 48 && rect.bottom > 120);
+    };
+
+    updateFooterState();
+    window.addEventListener("scroll", updateFooterState, { passive: true });
+    window.addEventListener("resize", updateFooterState);
+
+    return () => {
+      window.removeEventListener("scroll", updateFooterState);
+      window.removeEventListener("resize", updateFooterState);
+    };
+  }, [pathname]);
 
   if (shouldSuppress(pathname)) return null;
   if (dismissed) return null;
+  if (footerInView) return null;
 
   const copy =
     locale === "ar"

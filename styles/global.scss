@@ -14,7 +14,7 @@
 @use "./brand";
 @use "./header"; // <= add this line (resolves to _header.scss)
 @use "./auth";
-@use "./footer";
+@use "./_footer.scss";
 @use "./sticky-trial-cta";
 @use "./admin.scss";
 @use "./dashboard.scss";

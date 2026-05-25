@@ -7,7 +7,7 @@
 // - Optional footer (on by default)
 // ─────────────────────────────────────────────────────────────────────────────
 import Header from "@/components/Header";
-import Header from "@/components/Footer";
+import Footer from "@/components/Footer";
 
 export default function Layout({ children, withFooter = true }) {
   return (

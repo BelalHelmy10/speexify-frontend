@@ -8,6 +8,7 @@ import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
 export default function ScrollToTop() {
     const pathname = usePathname();
     const [isVisible, setIsVisible] = useState(false);
+    const [footerInView, setFooterInView] = useState(false);
     const isFocusedWorkspace = isFocusedWorkspacePath(pathname);
 
     useEffect(() => {
@@ -23,6 +24,28 @@ export default function ScrollToTop() {
         return () => window.removeEventListener("scroll", toggleVisibility);
     }, []);
 
+    useEffect(() => {
+        const updateFooterState = () => {
+            const footer = document.querySelector(".site-footer-wrapper");
+            if (!footer) {
+                setFooterInView(false);
+                return;
+            }
+
+            const rect = footer.getBoundingClientRect();
+            setFooterInView(rect.top < window.innerHeight - 48 && rect.bottom > 120);
+        };
+
+        updateFooterState();
+        window.addEventListener("scroll", updateFooterState, { passive: true });
+        window.addEventListener("resize", updateFooterState);
+
+        return () => {
+            window.removeEventListener("scroll", updateFooterState);
+            window.removeEventListener("resize", updateFooterState);
+        };
+    }, [pathname]);
+
     const scrollToTop = () => {
         window.scrollTo({
             top: 0,
@@ -30,7 +53,7 @@ export default function ScrollToTop() {
         });
     };
 
-    if (isFocusedWorkspace || !isVisible) return null;
+    if (isFocusedWorkspace || !isVisible || footerInView) return null;
 
     return (
         <button

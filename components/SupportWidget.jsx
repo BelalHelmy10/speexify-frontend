@@ -245,6 +245,7 @@ export default function SupportWidget({ hideMobileFab = false }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [footerInView, setFooterInView] = useState(false);
 
   const [tickets, setTickets] = useState([]);
   const [activeTicket, setActiveTicket] = useState(null);
@@ -899,6 +900,32 @@ export default function SupportWidget({ hideMobileFab = false }) {
     }
   }, [open, view, category]);
 
+  useEffect(() => {
+    const footer = document.querySelector(".site-footer-wrapper");
+
+    if (!footer) {
+      setFooterInView(false);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setFooterInView(entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: "0px 0px -96px 0px",
+        threshold: 0.02,
+      }
+    );
+
+    observer.observe(footer);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [pathname]);
+
   const showBack = activeTicket || category || view === "list";
   const realtimeSupportActive = Boolean(user && activeTicket);
   const supportStatusLabel = realtimeSupportActive
@@ -906,6 +933,7 @@ export default function SupportWidget({ hideMobileFab = false }) {
       ? "Online"
       : "Connecting"
     : "Ready";
+  const hideClosedFabForFooter = footerInView && !open;
 
   // Don't render support widget in focused workspaces.
   if (isHiddenWorkspace) {
@@ -915,26 +943,28 @@ export default function SupportWidget({ hideMobileFab = false }) {
   return (
     <>
       {/* FIXED: FAB Button with proper toggle */}
-      <button
-        type="button"
-        className={`sw-fab${hideMobileFab ? " sw-fab--hide-mobile" : ""}`}
-        onClick={toggleWidget}
-        aria-label={open ? "Close support" : "Contact support"}
-      >
-        <span className="sw-fab__icon">
-          {open ? (
-            <X size={20} />
-          ) : (
-            <SpeexifyLogoMark className="sw-logo-mark sw-logo-mark--fab" />
-          )}
-        </span>
-        {!open && <span className="sw-fab__label">Help</span>}
-        {!open && unreadCount > 0 && (
-          <span className="sw-fab__badge">
-            {unreadCount > 9 ? "9+" : unreadCount}
+      {!hideClosedFabForFooter && (
+        <button
+          type="button"
+          className={`sw-fab${hideMobileFab ? " sw-fab--hide-mobile" : ""}`}
+          onClick={toggleWidget}
+          aria-label={open ? "Close support" : "Contact support"}
+        >
+          <span className="sw-fab__icon">
+            {open ? (
+              <X size={20} />
+            ) : (
+              <SpeexifyLogoMark className="sw-logo-mark sw-logo-mark--fab" />
+            )}
           </span>
-        )}
-      </button>
+          {!open && <span className="sw-fab__label">Help</span>}
+          {!open && unreadCount > 0 && (
+            <span className="sw-fab__badge">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* FIXED: Widget Panel with proper positioning */}
       {open && (
