@@ -338,7 +338,7 @@ export default function NotificationsPanel({
       );
 
     const first = focusables()[0];
-    first?.focus();
+    first?.focus({ preventScroll: true });
 
     const onKeyDown = (e) => {
       if (e.key !== "Tab") return;

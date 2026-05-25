@@ -1,7 +1,7 @@
 // src/components/NotificationsBell.jsx
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Bell } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
@@ -29,7 +29,12 @@ export default function NotificationsBell({ locale = "en" }) {
 
   const [open, setOpen] = useState(false);
   const [polledUnreadCount, setPolledUnreadCount] = useState(0);
-  const [panelStyle, setPanelStyle] = useState({});
+  const [panelStyle, setPanelStyle] = useState({
+    position: "fixed",
+    top: -9999,
+    left: -9999,
+    zIndex: 9999999,
+  });
 
   const panelRef = useRef(null);
   const btnRef = useRef(null);
@@ -69,7 +74,7 @@ export default function NotificationsBell({ locale = "en" }) {
     },
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open && isMobile) document.body.style.overflow = "hidden";
 
     if (open && !isMobile) {
