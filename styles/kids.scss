@@ -606,27 +606,16 @@ $k-ring:    #ede5d8;
   &__item {
     position: relative;
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    min-height: 116px;
+    align-items: center;
+    gap: 14px;
+    min-height: 124px;
     padding: 18px;
     border-radius: 18px;
     background:
       radial-gradient(circle at 100% 0%, rgba($k-coral, 0.08), transparent 40%),
       $k-bg;
     overflow: hidden;
-
-    &::after {
-      content: "";
-      position: absolute;
-      right: 12px;
-      bottom: 12px;
-      width: 34px;
-      height: 9px;
-      border-radius: 999px;
-      background: rgba($k-coral, 0.16);
-      transform: rotate(-8deg);
-    }
+    color: $k-coral; // drives the doodle stroke via currentColor
 
     h2 {
       font-family: $font-heading;
@@ -645,69 +634,65 @@ $k-ring:    #ede5d8;
     }
 
     &--teal {
+      color: $k-teal;
       background:
         radial-gradient(circle at 100% 0%, rgba($k-teal, 0.12), transparent 42%),
         $k-bg;
 
-      .kids-trust__icon,
-      &::after {
-        background: rgba($k-teal, 0.16);
-      }
-
-      .kids-trust__icon span {
-        background: $k-teal;
+      .kids-trust__doodle {
+        background: rgba($k-teal, 0.14);
       }
     }
 
     &--gold {
+      color: $k-gold;
       background:
         radial-gradient(circle at 100% 0%, rgba($k-gold, 0.12), transparent 42%),
         $k-bg;
 
-      .kids-trust__icon,
-      &::after {
+      .kids-trust__doodle {
         background: rgba($k-gold, 0.16);
-      }
-
-      .kids-trust__icon span {
-        background: $k-gold;
       }
     }
 
     &--navy {
+      color: $k-navy;
       background:
         radial-gradient(circle at 100% 0%, rgba($k-navy, 0.08), transparent 42%),
         $k-bg;
 
-      .kids-trust__icon,
-      &::after {
+      .kids-trust__doodle {
         background: rgba($k-navy, 0.08);
-      }
-
-      .kids-trust__icon span {
-        background: $k-navy;
       }
     }
   }
 
-  &__icon {
-    width: 34px;
-    height: 34px;
-    flex: 0 0 34px;
-    border-radius: 12px 12px 12px 4px;
+  &__doodle {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 64px;
+    border-radius: 16px 16px 16px 6px;
     background: rgba($k-coral, 0.13);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transform: rotate(-5deg);
+    transform: rotate(-4deg);
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 
-    span {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      background: $k-coral;
-      box-shadow: 8px 8px 0 rgba($k-white, 0.9);
+    svg {
+      width: 44px;
+      height: 44px;
+      display: block;
     }
+  }
+
+  &__item:hover &__doodle {
+    transform: rotate(-2deg) scale(1.04);
+  }
+
+  &__body {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 }
 

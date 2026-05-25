@@ -424,7 +424,6 @@ export default function KidsPageContent() {
       <KidsCoaches locale={locale} />
       <KidsFAQ locale={locale} />
       <KidsCTA locale={locale} />
-      <KidsStickyCTA locale={locale} />
     </main>
   );
 }
@@ -561,6 +560,84 @@ const TRUST_ITEMS = [
   },
 ];
 
+function KidsTrustDoodle({ tone }) {
+  const s = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2.1,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+  };
+
+  if (tone === "teal") {
+    // Open notebook with squiggle "parent notes" + a heart sticker
+    return (
+      <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+        <g {...s}>
+          <path d="M12 11h28a2 2 0 0 1 2 2v28a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V13a2 2 0 0 1 2-2Z" />
+          <circle cx="16" cy="17" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="16" cy="24" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="16" cy="31" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="16" cy="38" r="1.1" fill="currentColor" stroke="none" />
+          <path d="M21 18c2-1 4 1 6 0s4-1 6 0" />
+          <path d="M21 25c2-1 4 1 6 0s4-1 5 0" />
+          <path d="M21 32c2-1 4 1 6 0" />
+          <path d="M30 36c0-1.6 2-2.4 3-1 1-1.4 3-.6 3 1 0 2-3 4-3 4s-3-2-3-4Z" />
+        </g>
+      </svg>
+    );
+  }
+
+  if (tone === "gold") {
+    // Wobbly star + sparkles — "the gift / the freebie"
+    return (
+      <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+        <g {...s}>
+          <path d="M26 10 L 30 21 L 41 21 L 32 28 L 35 39 L 26 32 L 17 39 L 20 28 L 11 21 L 22 21 Z" />
+          <path d="M44 12v3.5M44 12v-3.5M44 12h3.5M44 12h-3.5" />
+          <path d="M9 41v2.5M9 41v-2.5M9 41h2.5M9 41h-2.5" />
+          <path d="M45 35v2.5M45 35v-2.5M45 35h2.5M45 35h-2.5" />
+        </g>
+      </svg>
+    );
+  }
+
+  if (tone === "navy") {
+    // Relaxed face with closed-eye smile + breath waves — "no pressure"
+    return (
+      <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+        <g {...s}>
+          <path d="M11 28c0-8 7-15 15-15s15 7 15 15-7 15-15 15-15-7-15-15Z" />
+          <path d="M17 25c1.6-1.6 4.4-1.6 6 0" />
+          <path d="M29 25c1.6-1.6 4.4-1.6 6 0" />
+          <path d="M20 33c2 2 8 2 10 0" />
+          <path d="M14 8c1.6 1.4 4 1.4 5.5 0" />
+          <path d="M22 6c1.6 1.4 4 1.4 5.5 0" />
+          <path d="M30 8c1.6 1.4 4 1.4 5.5 0" />
+        </g>
+      </svg>
+    );
+  }
+
+  // coral (default) — coach face with whistle + check badge
+  return (
+    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+      <g {...s}>
+        <path d="M10 22c0-7 6-13 13-13s13 6 13 13-6 13-13 13-13-6-13-13Z" />
+        <path d="M18 11c1-2 4-2.5 6-1.5" />
+        <circle cx="19" cy="20" r="1.3" fill="currentColor" stroke="none" />
+        <circle cx="27" cy="20" r="1.3" fill="currentColor" stroke="none" />
+        <path d="M18 25c1.5 2 7 2 9 0" />
+        <path d="M33 30c3 3 5 6.5 5 10" />
+        <rect x="35" y="40" width="9" height="5" rx="1.6" />
+        <path d="M44 41v3" />
+        <circle cx="41" cy="14" r="6" />
+        <path d="M38.5 14l2 2 3-4" />
+      </g>
+    </svg>
+  );
+}
+
 function KidsTrustStrip({ locale }) {
   const pageCopy = getKidsCopy(locale);
   const items = pageCopy?.trustItems || TRUST_ITEMS;
@@ -577,10 +654,10 @@ function KidsTrustStrip({ locale }) {
               key={item.title}
               className={`kids-trust__item kids-trust__item--${item.tone}`}
             >
-              <span className="kids-trust__icon" aria-hidden="true">
-                <span />
+              <span className="kids-trust__doodle" aria-hidden="true">
+                <KidsTrustDoodle tone={item.tone} />
               </span>
-              <div>
+              <div className="kids-trust__body">
                 <h2>{item.title}</h2>
                 <p>{item.text}</p>
               </div>

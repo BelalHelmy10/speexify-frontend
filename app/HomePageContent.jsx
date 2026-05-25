@@ -344,7 +344,7 @@ function Home({ locale = "en" }) {
       <TransformationDemo dict={dict} locale={locale} />
 
       {/* ===== TESTIMONIALS ===== */}
-      <TestimonialsCarousel dict={dict} />
+      <TestimonialsCarousel dict={dict} locale={locale} />
 
       {/* ===== FAQ ===== */}
       <section className="home-spx-faq">
@@ -1053,7 +1053,7 @@ function TransformationDemo({ dict, locale }) {
   );
 }
 
-function TestimonialsCarousel({ dict }) {
+function TestimonialsCarousel({ dict, locale = "en" }) {
   const trackRef = useRef(null);
   const [active, setActive] = React.useState(0);
 
@@ -1184,6 +1184,17 @@ function TestimonialsCarousel({ dict }) {
               rating={5}
             />
           ))}
+        </div>
+
+        <div className="home-testimonials__cta">
+          <Link
+            href={routeHref(APP_ROUTES.memberStories, locale)}
+          >
+            <span>Read their full stories</span>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
         </div>
 
         <div

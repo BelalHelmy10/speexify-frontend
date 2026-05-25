@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import SupportWidget from "@/components/SupportWidget";
 import ScrollToTop from "@/components/ScrollToTop";
 import SmoothScroll from "@/components/SmoothScroll";
+import StickyTrialCTA from "@/components/StickyTrialCTA";
 import { normalizeLocalizedPath } from "@/lib/chromeRoutes";
 
 const APP_PATH_PREFIXES = [
@@ -74,6 +75,7 @@ export default function AppChrome({ children }) {
       {showSiteChrome && <Footer />}
       {showSiteChrome && <SupportWidget hideMobileFab={hideMobileSupportFab} />}
       {showSiteChrome && <ScrollToTop />}
+      {showSiteChrome && <StickyTrialCTA />}
     </>
   );
 }

@@ -80,6 +80,9 @@ import arFeedback from "@/locales/ar/feedback.json";
 import enClassroom from "@/locales/en/classroom.json";
 import arClassroom from "@/locales/ar/classroom.json";
 
+import enMemberStories from "@/locales/en/member-stories.json";
+import arMemberStories from "@/locales/ar/member-stories.json";
+
 const dictionaries = {
   en: {
     home: enHome,
@@ -110,6 +113,7 @@ const dictionaries = {
     "payment-result": enPayment,
     feedback: enFeedback,
     classroom: enClassroom,
+    "member-stories": enMemberStories,
   },
   ar: {
     home: arHome,
@@ -140,6 +144,7 @@ const dictionaries = {
     "payment-result": arPayment,
     feedback: arFeedback,
     classroom: arClassroom,
+    "member-stories": arMemberStories,
   },
 };
 

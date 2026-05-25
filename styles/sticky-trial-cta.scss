@@ -1,0 +1,254 @@
+// ============================================================================
+// SITE-WIDE STICKY "BOOK FREE TRIAL" CTA
+// Mirrors the kids-page treatment, but rendered on every public page.
+// Mobile: edge-to-edge pill at the bottom (full width minus 14px gutter).
+// Desktop: floating pill anchored to the bottom-LEFT corner so it doesn't
+//          collide with the SupportWidget FAB on the bottom-right.
+// ============================================================================
+
+@use "variables" as *;
+
+$stc-dot-teal: #2d9e8f;
+$stc-dot-coral: $coral;
+$stc-dot-gold: #d4890a;
+
+.spx-trial-cta {
+  position: fixed;
+  z-index: 9996;
+
+  // Mobile default — full width pill across the bottom
+  left: 14px;
+  right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+
+  // Desktop — sits BESIDE the ScrollToTop button (to its right) on the same
+  // baseline. ScrollToTop is fixed at left:32px / bottom:32px / 48px wide
+  // in both LTR and RTL (it has no RTL override), so this anchors here too.
+  @media (min-width: 900px) {
+    left: 88px;          // 32 (scroll-top left) + 48 (scroll-top width) + 8 gap
+    right: auto;
+    bottom: 32px;        // same baseline as scroll-top
+    max-width: 380px;
+  }
+}
+
+// ---- Pill (the link) ----
+.spx-trial-cta__pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 10px 12px 10px 18px;
+  border-radius: 22px;
+  background: rgba(#fff, 0.97);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba($navy, 0.10);
+  box-shadow:
+    0 18px 46px rgba($navy, 0.18),
+    0 0 0 1px rgba(#fff, 0.65) inset;
+  text-decoration: none !important;
+  color: $navy;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    padding 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    gap 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &,
+  &:hover,
+  &:focus,
+  &:focus-visible,
+  &:active,
+  &:visited {
+    text-decoration: none !important;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 22px 56px rgba($navy, 0.22),
+      0 0 0 1px rgba(#fff, 0.7) inset;
+  }
+
+  // No underline on any descendant text either
+  strong,
+  small,
+  b {
+    text-decoration: none !important;
+  }
+}
+
+// ---- Expandable wrapper (dots + copy) ----
+// On mobile / default: always visible (treats wrapper as a transparent group).
+// On desktop: collapsed to zero width by default, expands on pill hover/focus.
+.spx-trial-cta__expandable {
+  display: inline-flex;
+  align-items: center;
+  gap: 0; // dots' margin-right handles internal spacing
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+// ---- 3-dot brand mark (teal / coral / gold) ----
+.spx-trial-cta__dots {
+  position: relative;
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: $stc-dot-teal;
+  box-shadow:
+    16px -6px 0 $stc-dot-coral,
+    30px 6px 0 $stc-dot-gold;
+  margin-right: 34px; // make space for the two shadow-projected dots
+}
+
+// ---- Copy block ----
+.spx-trial-cta__copy {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+
+  strong {
+    font-family: $font-heading;
+    font-size: 0.98rem;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: $navy;
+  }
+
+  small {
+    color: $color-muted;
+    font-size: 0.74rem;
+    line-height: 1.2;
+    margin-top: 3px;
+  }
+}
+
+// ---- Primary button ----
+.spx-trial-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 128px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: $coral;
+  color: #fff;
+  font-family: $font-heading;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba($coral, 0.32);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.spx-trial-cta__pill:hover .spx-trial-cta__btn {
+  background: $coral-dark;
+  box-shadow: 0 14px 32px rgba($coral, 0.38);
+}
+
+// ---- Dismiss button (small × in corner) ----
+.spx-trial-cta__close {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba($navy, 0.14);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: $navy;
+  box-shadow: 0 4px 12px rgba($navy, 0.14);
+  transition: transform 0.2s ease, background 0.2s ease;
+  padding: 0;
+
+  &:hover {
+    transform: scale(1.08);
+    background: #f7f2ec;
+  }
+}
+
+// ---- Very narrow phones (≤520px) — compact: drop the sub-line ----
+@media (max-width: 520px) {
+  .spx-trial-cta {
+    left: 12px;
+    right: 12px;
+  }
+  .spx-trial-cta__pill {
+    gap: 10px;
+    padding: 8px 10px 8px 14px;
+    min-height: 58px;
+    border-radius: 18px;
+  }
+  .spx-trial-cta__copy small {
+    display: none;
+  }
+  .spx-trial-cta__dots {
+    margin-right: 28px;
+  }
+  .spx-trial-cta__btn {
+    min-width: 110px;
+    min-height: 40px;
+    font-size: 0.85rem;
+    padding: 0 14px;
+  }
+}
+
+// ---- Hide while mobile menu is open (avoid stacking on the overlay) ----
+body.spx-mobile-menu-open .spx-trial-cta {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(24px) !important;
+}
+
+// ---- Print: never ----
+@media print {
+  .spx-trial-cta {
+    display: none !important;
+  }
+}
+
+// ============================================================================
+// RTL (Arabic)
+// ============================================================================
+html[lang="ar"] {
+  // Desktop position is intentionally the same as LTR — both ScrollToTop and
+  // this CTA live on the left side of the viewport regardless of language,
+  // so the visual "beside the button" relationship is preserved in Arabic too.
+
+  // Pill content still needs to flip for natural Arabic reading order.
+  .spx-trial-cta__pill {
+    flex-direction: row-reverse;
+  }
+
+  // Flip the dot shadows so the 3-dot cluster reads right-to-left
+  .spx-trial-cta__dots {
+    margin-right: 0;
+    margin-left: 34px;
+    box-shadow:
+      -16px -6px 0 $stc-dot-coral,
+      -30px 6px 0 $stc-dot-gold;
+  }
+
+  // Close button moves to top-LEFT of the pill in RTL
+  .spx-trial-cta__close {
+    right: auto;
+    left: -10px;
+  }
+
+  @media (max-width: 520px) {
+    .spx-trial-cta__dots {
+      margin-right: 0;
+      margin-left: 28px;
+    }
+  }
+}

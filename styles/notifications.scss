@@ -605,6 +605,11 @@
 
 .spx-notif__itemWrap {
   outline: none;
+  margin-bottom: 8px;
+}
+
+.spx-notif__itemWrap:last-child {
+  margin-bottom: 0;
 }
 
 .spx-notif__itemWrap:focus-visible .spx-notif__item {
