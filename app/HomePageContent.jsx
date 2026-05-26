@@ -540,7 +540,7 @@ function FeaturesSection({ dict }) {
       title: t(dict, "feature4_title") || "Built around you, not a syllabus.",
       text:
         t(dict, "feature4_text") ||
-        "Prepping for an interview next week? Leading your first meeting in English next month? Your practice plan starts from your real life — not a textbook.",
+        "Prepping for an interview next week? Leading your first meeting in English next month? Your practice plan starts from your real life, not a textbook.",
     },
   ];
 
@@ -1259,7 +1259,7 @@ function HowItWorksSection({ dict, locale }) {
       title: t(dict, "how_step1_title") || "Tell us what you need to say.",
       text:
         t(dict, "how_step1_text") ||
-        "A short call. We listen for what you actually need — at work, in interviews, in life. Then we shape your practice plan around it.",
+        "A short call. We listen for what you actually need: at work, in interviews, in life. Then we shape your practice plan around it.",
       img: "/images/how-step1.png",
     },
     {
@@ -1555,7 +1555,7 @@ function HeroCinema() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          Great — that&apos;s the present perfect. Keep that pattern.
+          Great. That&apos;s the present perfect. Keep that pattern.
         </div>
 
         {/* Progress */}
@@ -1715,7 +1715,7 @@ function LiveSessionDemo() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                Great — that&apos;s the present perfect. Keep that pattern.
+                Great. That&apos;s the present perfect. Keep that pattern.
               </div>
             </div>
           </div>

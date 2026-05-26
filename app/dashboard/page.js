@@ -1149,7 +1149,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                     </svg>
                     {fmtInTz(teachSummary.nextTeach.startAt, timezone)}
                     {teachSummary.nextTeach.endAt
-                      ? ` — ${fmtInTz(teachSummary.nextTeach.endAt, timezone)}`
+                      ? ` – ${fmtInTz(teachSummary.nextTeach.endAt, timezone)}`
                       : ""}
                   </div>
                   <div className="next-session__learner">
@@ -1165,7 +1165,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                     {teachSummary.nextTeach.user?.name
-                      ? `${teachSummary.nextTeach.user.name} — ${teachSummary.nextTeach.user.email}`
+                      ? `${teachSummary.nextTeach.user.name} · ${teachSummary.nextTeach.user.email}`
                       : teachSummary.nextTeach.user?.email || "—"}
                   </div>
                 </div>

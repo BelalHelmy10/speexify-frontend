@@ -460,7 +460,7 @@ function KidsHero({ locale }) {
 
           <p className="kids-hero__sub">
             {copy?.sub ||
-              "One-on-one coaching that builds real confidence — not just test scores. Live sessions. Real coaches. The kind of progress that shows at school, at home, and everywhere in between."}
+              "One-on-one coaching that builds real confidence, not just test scores. Live sessions. Real coaches. The kind of progress that shows at school, at home, and everywhere in between."}
           </p>
 
           <div className="kids-hero__cta">
@@ -800,7 +800,7 @@ function KidsProblem({ locale }) {
             <h2 className="kids-problem__title">
               {copy?.titleLineOne || "They study English every day."}
               <br />
-              {copy?.titleLineTwo || "But ask them to speak it — and they freeze."}
+              {copy?.titleLineTwo || "But ask them to speak it, and they freeze."}
             </h2>
             <p className="kids-problem__body">
               {copy?.bodyOne ||
@@ -808,7 +808,7 @@ function KidsProblem({ locale }) {
             </p>
             <p className="kids-problem__body">
               {copy?.bodyTwo ||
-                "That's not a language problem. That's a practice problem. And Speexify is where it gets solved — one real conversation at a time."}
+                "That's not a language problem. That's a practice problem. And Speexify is where it gets solved, one real conversation at a time."}
             </p>
           </div>
 
@@ -1143,7 +1143,7 @@ function KidsAgeGroups({ locale }) {
           </h2>
           <p className="kids-ages__sub">
             {copy?.sub ||
-              "Different ages need different approaches. We build each session around where your child is — not where a textbook says they should be."}
+              "Different ages need different approaches. We build each session around where your child is, not where a textbook says they should be."}
           </p>
         </div>
 
@@ -1196,7 +1196,7 @@ const whyCards = [
   {
     num: "01",
     title: "Coaches trained for children, not adults.",
-    text: "Our kids coaches know child psychology, attention spans, and how to make English feel like discovery — not homework.",
+    text: "Our kids coaches know child psychology, attention spans, and how to make English feel like discovery, not homework.",
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -1259,7 +1259,7 @@ const whyCards = [
   {
     num: "06",
     title: "Built around your child.",
-    text: "Preparing for an international school? Studying abroad? We build the plan from your child's real life — not a textbook.",
+    text: "Preparing for an international school? Studying abroad? We build the plan from your child's real life, not a textbook.",
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -1415,7 +1415,7 @@ const HOW_STEPS = [
     num: "01",
     label: "Tell us about your child",
     title: "Tell us about your child.",
-    text: "A short call. We listen for what they need — at school, with friends, for their future. Then we shape a practice plan around that.",
+    text: "A short call. We listen for what they need: at school, with friends, for their future. Then we shape a practice plan around that.",
   },
   {
     num: "02",
@@ -1557,7 +1557,7 @@ function KidsSessionTypes({ locale }) {
             </div>
             <ul className="kids-sessions__list">
               {(copy?.groupList || [
-                "Small groups — 4 to 6 kids maximum",
+                "Small groups, 4 to 6 kids maximum",
                 "Age-matched peers",
                 "Fixed weekly schedule",
                 "Shared goals, individual growth",
@@ -1610,7 +1610,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "My son had a school presentation he was terrified of. We did three practice sessions. He got full marks. But more than that — he walked in without the fear.",
+      "My son had a school presentation he was terrified of. We did three practice sessions. He got full marks. But more than that, he walked in without the fear.",
     author: "Ahmed M.",
     role: "Father of a 13-year-old",
     metric: "3 sessions",
@@ -1618,7 +1618,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "We tried apps, we tried tutors. Nothing worked like this. The coach felt like she actually cared about Layla specifically — not just teaching English in general.",
+      "We tried apps, we tried tutors. Nothing worked like this. The coach felt like she actually cared about Layla specifically, not just teaching English in general.",
     author: "Mona K.",
     role: "Mother of an 11-year-old",
     metric: "1 month",
@@ -1690,14 +1690,14 @@ const COACHES = [
   {
     name: "Karim A.",
     role: "Teen Coach · Ages 12–18",
-    bio: "Former school counsellor turned language coach. Helps teenagers find their voice — in English and beyond.",
+    bio: "Former school counsellor turned language coach. Helps teenagers find their voice, in English and beyond.",
     image: "/images/Kids%20Karim.jpg",
     alt: "Middle Eastern male teen English coach in a premium library portrait",
   },
   {
     name: "Leila S.",
     role: "Group Session Coach",
-    bio: "Specialises in group dynamics. Runs sessions where every child feels seen — not just the loudest ones.",
+    bio: "Specialises in group dynamics. Runs sessions where every child feels seen, not just the loudest ones.",
     image: "/images/Kids%20Leila.jpg",
     alt: "Middle Eastern female group-session English coach in a premium classroom portrait",
   },
@@ -1719,7 +1719,7 @@ function KidsCoaches({ locale }) {
           </h2>
           <p className="kids-coaches__sub">
             {copy?.sub ||
-              "Every Speexify kids coach has worked with children before. Not just in language teaching — in real classrooms, real schools, real pressure situations."}
+              "Every Speexify kids coach has worked with children before. Not just in language teaching, but in real classrooms, real schools, real pressure situations."}
           </p>
         </div>
 
@@ -1757,7 +1757,7 @@ function KidsCoaches({ locale }) {
 const FAQS = [
   {
     q: "What age does my child need to be?",
-    a: "We work with kids from 6 to 18. Each age group has coaches trained specifically for that stage — Young Explorers (6–10), Rising Stars (11–14), and Future Leaders (15–18).",
+    a: "We work with kids from 6 to 18. Each age group has coaches trained specifically for that stage: Young Explorers (6–10), Rising Stars (11–14), and Future Leaders (15–18).",
   },
   {
     q: "What if my child is shy or hesitant to speak?",
@@ -1773,7 +1773,7 @@ const FAQS = [
   },
   {
     q: "Is this different from a regular English tutor?",
-    a: "Very. Tutors teach. Coaches practice. Our sessions are not about grammar drills or homework help — they are about building the confidence to actually use the language in the real world.",
+    a: "Very. Tutors teach. Coaches practice. Our sessions are not about grammar drills or homework help. They are about building the confidence to actually use the language in the real world.",
   },
 ];
 
@@ -1843,7 +1843,7 @@ function KidsCTA({ locale }) {
           </h2>
           <p className="kids-cta__sub">
             {copy?.sub ||
-              "Book a free trial session. No commitment. See for yourself what a real coach — and a child who has been given a place to practice — can do."}
+              "Book a free trial session. No commitment. See for yourself what a real coach, and a child who has been given a place to practice, can do."}
           </p>
           <div className="kids-cta__buttons">
             <Link

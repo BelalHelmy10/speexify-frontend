@@ -56,7 +56,7 @@ export default function ClassroomLateJoinBanner({
           </div>
           <div className="cr-late-join__headline">
             <strong>Class started {elapsedLabel} ago</strong>
-            <span>— catch up on what's been covered</span>
+            <span>· catch up on what's been covered</span>
           </div>
         </div>
 

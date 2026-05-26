@@ -146,7 +146,7 @@ export default function SessionRow({
                 <polyline points="12 6 12 12 16 14" />
               </svg>
               {fmtInTz(s.startAt, timezone)}
-              {s.endAt ? ` — ${fmtInTz(s.endAt, timezone)}` : ""}
+              {s.endAt ? ` – ${fmtInTz(s.endAt, timezone)}` : ""}
             </span>
 
             {isGroup && (

@@ -143,7 +143,7 @@ function IndividualInner({ dict, locale }) {
                 {t(dict, "hero_title_3") || "Repeat."}
               </Reveal>
               <Reveal as="p" delay={0.3} className="hero-sub">
-                {t(dict, "hero_subtitle") || "Private one-on-one sessions with a coach picked for you. Real conversations, every time. The reps you've been missing — booked when you're ready."}
+                {t(dict, "hero_subtitle") || "Private one-on-one sessions with a coach picked for you. Real conversations, every time. The reps you've been missing, booked when you're ready."}
               </Reveal>
               <Reveal delay={0.4} className="hero-cta">
                 <a href="#trial" className="btn btn-primary btn-lg">

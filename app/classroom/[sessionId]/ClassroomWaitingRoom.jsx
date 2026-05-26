@@ -167,7 +167,7 @@ export default function ClassroomWaitingRoom({
           }`}
         >
           {wsConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
-          <span>{wsConnected ? "Connected — listening for approval" : "Reconnecting…"}</span>
+          <span>{wsConnected ? "Connected. Listening for approval" : "Reconnecting…"}</span>
         </div>
 
         {/* Identity badge */}

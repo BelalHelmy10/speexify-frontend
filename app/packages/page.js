@@ -206,7 +206,7 @@ function Packages() {
               {t(
                 dict,
                 "hero_subtitle",
-                "Choose the format that works for you—private one-on-one sessions or collaborative group learning. Flexible plans, real results."
+                "Choose the format that works for you: private one-on-one sessions, or collaborative group learning. Flexible plans, real results."
               )}
             </FadeIn>
 
@@ -492,7 +492,7 @@ function Packages() {
               desc={t(
                 dict,
                 "how_step1_desc",
-                "Select the package that matches your goals—private coaching or group learning."
+                "Select the package that matches your goals: private coaching, or group learning."
               )}
             />
             <Step

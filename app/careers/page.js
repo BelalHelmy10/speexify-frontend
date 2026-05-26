@@ -105,7 +105,7 @@ function Careers({ dict }) {
     }
     const mail = "careers@speexify.com";
     const subject = encodeURIComponent(
-      `Application — ${job.title} (ID: ${job.id})`
+      `Application: ${job.title} (ID: ${job.id})`
     );
     const body = encodeURIComponent(
       `Hi Speexify team,

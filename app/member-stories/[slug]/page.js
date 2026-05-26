@@ -149,7 +149,7 @@ export default function MemberStoryDetailPage() {
             {t(dict, `${k}_pull_quote`)}
           </blockquote>
           <cite className="ms__pull-cite">
-            — {t(dict, `${k}_name`)}, {t(dict, `${k}_role`)}
+            {t(dict, `${k}_name`)}, {t(dict, `${k}_role`)}
           </cite>
         </div>
       </section>

@@ -159,7 +159,7 @@ export default function AdminPackagesPage() {
           rows.push({
             title: local.title,
             status: "missing",
-            note: "Not found on backend — create it via + New Package",
+            note: "Not found on backend. Create it via + New Package",
             before: null,
             after: { priceUSD: local.priceEGP },
           });
@@ -396,7 +396,7 @@ export default function AdminPackagesPage() {
           <div className="adm-admin-card__header" style={{ alignItems: "center" }}>
             <div style={{ flex: 1 }}>
               <h3 style={{ margin: 0, fontSize: 16 }}>
-                Sync report — {syncReport.updated} updated · {syncReport.unchanged} already in sync ·{" "}
+                Sync report: {syncReport.updated} updated · {syncReport.unchanged} already in sync ·{" "}
                 {syncReport.missing} missing on backend ·{" "}
                 {syncReport.failed} failed
               </h3>

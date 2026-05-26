@@ -206,7 +206,7 @@ export default function ClassroomDeviceCheck({ userName = "Learner", onReady }) 
         <h1 className="cr-device-check__title">{userName}</h1>
         <p className="cr-device-check__subtitle">
           {allDone
-            ? "All set — entering classroom…"
+            ? "All set. Entering classroom…"
             : "Let's check your devices"}
         </p>
 

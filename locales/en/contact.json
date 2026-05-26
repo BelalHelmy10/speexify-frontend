@@ -2,7 +2,7 @@
   "hero_badge": "Let's talk",
   "hero_title_prefix": "Your voice",
   "hero_title_accent": " starts here",
-  "hero_subtitle": "Whether you're an individual ready to stop holding back, or a company that needs its team to communicate with authority — we'd love to hear from you.",
+  "hero_subtitle": "Whether you're an individual ready to stop holding back, or a company that needs its team to communicate with authority, we'd love to hear from you.",
   "hero_cta_primary": "Book a call",
   "hero_cta_secondary": "Send a message",
   "form_card_title": "Send us a message",
@@ -77,6 +77,6 @@
   "faq_3_a": "We specialize in English, with custom programs available for specific needs.",
   "form_support_line_prefix": "Prefer email? Reach us at",
   "map_point_egypt": "🇪🇬 Egypt (HQ)",
-  "map_iframe_title": "Map — New Cairo, Fifth Settlement, Egypt",
+  "map_iframe_title": "Map: New Cairo, Fifth Settlement, Egypt",
   "map_iframe_aria": "Interactive map centered on Fifth Settlement, New Cairo, Egypt"
 }

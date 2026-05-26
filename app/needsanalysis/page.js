@@ -273,7 +273,7 @@ export default function NeedsAnalysisPage() {
 
     // Header
     lines.push("═".repeat(60));
-    lines.push(`NEEDS ANALYSIS — ${clientName.toUpperCase()}`);
+    lines.push(`NEEDS ANALYSIS: ${clientName.toUpperCase()}`);
     lines.push("═".repeat(60));
     lines.push("");
 

@@ -82,7 +82,7 @@ export function ClassroomCaptionsButton({ enabled, supported, onToggle, iconOnly
       onClick={onToggle}
       aria-pressed={enabled}
       aria-label={enabled ? "Turn captions off" : "Turn captions on"}
-      title={enabled ? "Captions on — click to turn off" : "Turn captions on"}
+      title={enabled ? "Captions on. Click to turn off" : "Turn captions on"}
     >
       <span className="cr-controls__btn-icon">
         {enabled ? <Captions size={16} /> : <CaptionsOff size={16} />}

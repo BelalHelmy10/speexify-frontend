@@ -66,7 +66,7 @@
   "plans_view_corp": "See team plans",
 
   "reporting_title": "Reporting your CEO will actually read.",
-  "reporting_subtitle": "Monthly summaries. Attendance. Real milestones. The things that show up in a QBR — not the things that fill a streak counter. SSO and roster sync if you need them.",
+  "reporting_subtitle": "Monthly summaries. Attendance. Real milestones. The things that show up in a QBR, not the things that fill a streak counter. SSO and roster sync if you need them.",
   "reporting_b1": "Progress and participation by team",
   "reporting_b2": "Trends and risk flags",
   "reporting_b3": "QBR-ready summaries",
@@ -77,7 +77,7 @@
   "testis_title": "Leaders, recently.",
   "testis_subtitle": "Quiet shifts that changed something measurable.",
   "testi1_outcome": "ROI clear in 6 weeks",
-  "testi1_quote": "Our CS team used to schedule renewal calls around the most senior person available. Now they run them themselves. We saw it on the calls before we saw it in the numbers — but the numbers came too.",
+  "testi1_quote": "Our CS team used to schedule renewal calls around the most senior person available. Now they run them themselves. We saw it on the calls before we saw it in the numbers. But the numbers came too.",
   "testi1_by": "Sarah K.",
   "testi1_role": "Head of Customer Success, SaaS",
   "testi2_outcome": "Stakeholder confidence",
@@ -104,7 +104,7 @@
   "field_goals": "What outcomes matter most?",
   "field_notes": "Anything else we should know?",
   "placeholder_goals": "e.g., the meetings, calls, or moments that matter most",
-  "placeholder_notes": "Optional — anything else you want us to know",
+  "placeholder_notes": "Optional: anything else you want us to know",
 
   "size_5_10": "5–10 people",
   "size_10_50": "10–50 people",
