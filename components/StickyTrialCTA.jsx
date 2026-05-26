@@ -57,14 +57,11 @@ export default function StickyTrialCTA() {
   // Reappears on any reload or navigation.
   const [dismissed, setDismissed] = useState(false);
   const [footerInView, setFooterInView] = useState(false);
-  const [scrolledEnough, setScrolledEnough] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const lastPointerType = useRef(null);
 
   useEffect(() => {
     const updateVisibilityState = () => {
-      setScrolledEnough(window.scrollY > 320);
-
       const footer = document.querySelector(".site-footer-wrapper");
       if (!footer) {
         setFooterInView(false);
@@ -87,7 +84,6 @@ export default function StickyTrialCTA() {
 
   if (shouldSuppress(pathname)) return null;
   if (dismissed) return null;
-  if (!scrolledEnough) return null;
   if (footerInView) return null;
 
   const copy =
@@ -142,9 +138,29 @@ export default function StickyTrialCTA() {
         onFocus={() => setExpanded(true)}
         onBlur={() => setExpanded(false)}
       >
-        <b className="spx-trial-cta__btn">{copy.cta}</b>
+        <b className="spx-trial-cta__btn">
+          <span className="spx-trial-cta__btn-label">{copy.cta}</span>
+          <svg
+            className="spx-trial-cta__arrow"
+            viewBox="0 0 18 18"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              d="M3.5 9h10M9.5 5l4 4-4 4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="spx-trial-cta__btn-sheen" aria-hidden="true" />
+        </b>
         <span className="spx-trial-cta__expandable" aria-hidden="true">
-          <span className="spx-trial-cta__dots" />
+          <span className="spx-trial-cta__live" aria-hidden="true">
+            <span className="spx-trial-cta__live-dot" />
+          </span>
           <span className="spx-trial-cta__copy">
             <strong>{copy.title}</strong>
             <small>{copy.sub}</small>
