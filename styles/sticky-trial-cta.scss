@@ -1,9 +1,6 @@
 // ============================================================================
 // SITE-WIDE STICKY "BOOK FREE TRIAL" CTA
-// Mirrors the kids-page treatment, but rendered on every public page.
-// Mobile: edge-to-edge pill at the bottom (full width minus 14px gutter).
-// Desktop: floating pill anchored to the bottom-LEFT corner so it doesn't
-//          collide with the SupportWidget FAB on the bottom-right.
+// Compact by default, with a glass detail tail that expands on hover/focus/tap.
 // ============================================================================
 
 @use "variables" as *;
@@ -13,48 +10,50 @@ $stc-dot-coral: $coral;
 $stc-dot-gold: #d4890a;
 
 .spx-trial-cta {
+  --stc-shift-x: -50%;
+
   position: fixed;
   z-index: 9996;
-
-  // Mobile default — full width pill across the bottom
-  left: 14px;
-  right: 14px;
+  left: 50%;
+  right: auto;
   bottom: calc(14px + env(safe-area-inset-bottom));
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  transform: translateX(var(--stc-shift-x));
 
   // Desktop — sits BESIDE the ScrollToTop button (to its right) on the same
   // baseline. ScrollToTop is fixed at left:32px / bottom:32px / 48px wide
   // in both LTR and RTL (it has no RTL override), so this anchors here too.
   @media (min-width: 900px) {
+    --stc-shift-x: 0;
+
     left: 88px;          // 32 (scroll-top left) + 48 (scroll-top width) + 8 gap
-    right: auto;
     bottom: 32px;        // same baseline as scroll-top
-    max-width: 380px;
   }
 }
 
 // ---- Pill (the link) ----
 .spx-trial-cta__pill {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 14px;
-  min-height: 64px;
-  padding: 10px 12px 10px 18px;
-  border-radius: 22px;
-  background: rgba(#fff, 0.97);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba($navy, 0.10);
+  max-width: 100%;
+  min-height: 52px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(#fff, 0.9);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba($navy, 0.09);
   box-shadow:
-    0 18px 46px rgba($navy, 0.18),
-    0 0 0 1px rgba(#fff, 0.65) inset;
+    0 16px 42px rgba($navy, 0.14),
+    0 0 0 1px rgba(#fff, 0.78) inset;
   text-decoration: none !important;
   color: $navy;
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease,
-    padding 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    gap 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    background 0.25s ease;
 
   &,
   &:hover,
@@ -65,11 +64,13 @@ $stc-dot-gold: #d4890a;
     text-decoration: none !important;
   }
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
     transform: translateY(-2px);
+    background: rgba(#fff, 0.97);
     box-shadow:
-      0 22px 56px rgba($navy, 0.22),
-      0 0 0 1px rgba(#fff, 0.7) inset;
+      0 22px 54px rgba($navy, 0.18),
+      0 0 0 1px rgba(#fff, 0.84) inset;
   }
 
   // No underline on any descendant text either
@@ -81,50 +82,76 @@ $stc-dot-gold: #d4890a;
 }
 
 // ---- Expandable wrapper (dots + copy) ----
-// On mobile / default: always visible (treats wrapper as a transparent group).
-// On desktop: collapsed to zero width by default, expands on pill hover/focus.
 .spx-trial-cta__expandable {
   display: inline-flex;
   align-items: center;
-  gap: 0; // dots' margin-right handles internal spacing
-  flex: 1 1 auto;
+  max-width: 0;
   min-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateX(-8px);
+  transition:
+    max-width 0.46s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.22s ease,
+    transform 0.34s ease,
+    margin-inline-start 0.46s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.spx-trial-cta:hover .spx-trial-cta__expandable,
+.spx-trial-cta:focus-within .spx-trial-cta__expandable,
+.spx-trial-cta.is-expanded .spx-trial-cta__expandable {
+  max-width: 290px;
+  margin-inline-start: 12px;
+  opacity: 1;
+  transform: translateX(0);
 }
 
 // ---- 3-dot brand mark (teal / coral / gold) ----
 .spx-trial-cta__dots {
   position: relative;
-  flex: 0 0 12px;
-  width: 12px;
-  height: 12px;
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: $stc-dot-teal;
   box-shadow:
-    16px -6px 0 $stc-dot-coral,
-    30px 6px 0 $stc-dot-gold;
-  margin-right: 34px; // make space for the two shadow-projected dots
+    14px -5px 0 $stc-dot-coral,
+    26px 5px 0 $stc-dot-gold;
+  margin-inline-end: 30px; // make space for the two shadow-projected dots
 }
 
 // ---- Copy block ----
 .spx-trial-cta__copy {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 9px;
   min-width: 0;
+  white-space: nowrap;
 
   strong {
     font-family: $font-heading;
-    font-size: 0.98rem;
+    font-size: 0.9rem;
     line-height: 1.1;
     letter-spacing: -0.02em;
     color: $navy;
   }
 
   small {
+    position: relative;
     color: $color-muted;
-    font-size: 0.74rem;
+    font-size: 0.76rem;
     line-height: 1.2;
-    margin-top: 3px;
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 3px;
+      height: 3px;
+      margin: 0 9px 2px 0;
+      border-radius: 50%;
+      background: rgba($navy, 0.28);
+    }
   }
 }
 
@@ -133,33 +160,40 @@ $stc-dot-gold: #d4890a;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 128px;
+  gap: 8px;
   min-height: 44px;
-  padding: 0 18px;
-  border-radius: 14px;
+  padding: 0 22px;
+  border-radius: 999px;
   background: $coral;
   color: #fff;
   font-family: $font-heading;
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0;
   white-space: nowrap;
-  box-shadow: 0 10px 24px rgba($coral, 0.32);
+  box-shadow: 0 10px 28px rgba($coral, 0.34);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+
+  &::after {
+    content: "›";
+    font-size: 1.25rem;
+    line-height: 1;
+    transform: translateY(-1px);
+  }
 }
 
 .spx-trial-cta__pill:hover .spx-trial-cta__btn {
   background: $coral-dark;
-  box-shadow: 0 14px 32px rgba($coral, 0.38);
+  box-shadow: 0 14px 34px rgba($coral, 0.4);
 }
 
 // ---- Dismiss button (small × in corner) ----
 .spx-trial-cta__close {
   position: absolute;
-  top: -10px;
-  right: -10px;
-  width: 26px;
-  height: 26px;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: #fff;
   border: 1px solid rgba($navy, 0.14);
@@ -177,29 +211,39 @@ $stc-dot-gold: #d4890a;
   }
 }
 
-// ---- Very narrow phones (≤520px) — compact: drop the sub-line ----
+// ---- Very narrow phones (≤520px) — expand into a tight two-line detail ----
 @media (max-width: 520px) {
-  .spx-trial-cta {
-    left: 12px;
-    right: 12px;
-  }
   .spx-trial-cta__pill {
-    gap: 10px;
-    padding: 8px 10px 8px 14px;
-    min-height: 58px;
-    border-radius: 18px;
+    min-height: 50px;
+    padding: 5px;
   }
-  .spx-trial-cta__copy small {
-    display: none;
+  .spx-trial-cta:hover .spx-trial-cta__expandable,
+  .spx-trial-cta:focus-within .spx-trial-cta__expandable,
+  .spx-trial-cta.is-expanded .spx-trial-cta__expandable {
+    max-width: calc(100vw - 188px);
+    margin-inline-start: 9px;
   }
-  .spx-trial-cta__dots {
-    margin-right: 28px;
+  .spx-trial-cta__copy {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      font-size: 0.78rem;
+    }
+
+    small {
+      font-size: 0.66rem;
+
+      &::before {
+        display: none;
+      }
+    }
   }
   .spx-trial-cta__btn {
-    min-width: 110px;
     min-height: 40px;
     font-size: 0.85rem;
-    padding: 0 14px;
+    padding: 0 16px;
   }
 }
 
@@ -207,7 +251,7 @@ $stc-dot-gold: #d4890a;
 body.spx-mobile-menu-open .spx-trial-cta {
   opacity: 0 !important;
   pointer-events: none !important;
-  transform: translateY(24px) !important;
+  transform: translateX(var(--stc-shift-x)) translateY(24px) !important;
 }
 
 // ---- Print: never ----
@@ -221,34 +265,21 @@ body.spx-mobile-menu-open .spx-trial-cta {
 // RTL (Arabic)
 // ============================================================================
 html[lang="ar"] {
-  // Desktop position is intentionally the same as LTR — both ScrollToTop and
-  // this CTA live on the left side of the viewport regardless of language,
-  // so the visual "beside the button" relationship is preserved in Arabic too.
-
-  // Pill content still needs to flip for natural Arabic reading order.
-  .spx-trial-cta__pill {
-    flex-direction: row-reverse;
-  }
-
   // Flip the dot shadows so the 3-dot cluster reads right-to-left
   .spx-trial-cta__dots {
-    margin-right: 0;
-    margin-left: 34px;
+    margin-inline-end: 30px;
     box-shadow:
-      -16px -6px 0 $stc-dot-coral,
-      -30px 6px 0 $stc-dot-gold;
+      -14px -5px 0 $stc-dot-coral,
+      -26px 5px 0 $stc-dot-gold;
+  }
+
+  .spx-trial-cta__btn::after {
+    content: "‹";
   }
 
   // Close button moves to top-LEFT of the pill in RTL
   .spx-trial-cta__close {
     right: auto;
-    left: -10px;
-  }
-
-  @media (max-width: 520px) {
-    .spx-trial-cta__dots {
-      margin-right: 0;
-      margin-left: 28px;
-    }
+    left: -8px;
   }
 }

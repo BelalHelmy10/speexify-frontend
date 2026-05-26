@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
@@ -57,9 +57,14 @@ export default function StickyTrialCTA() {
   // Reappears on any reload or navigation.
   const [dismissed, setDismissed] = useState(false);
   const [footerInView, setFooterInView] = useState(false);
+  const [scrolledEnough, setScrolledEnough] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const lastPointerType = useRef(null);
 
   useEffect(() => {
-    const updateFooterState = () => {
+    const updateVisibilityState = () => {
+      setScrolledEnough(window.scrollY > 320);
+
       const footer = document.querySelector(".site-footer-wrapper");
       if (!footer) {
         setFooterInView(false);
@@ -70,18 +75,19 @@ export default function StickyTrialCTA() {
       setFooterInView(rect.top < window.innerHeight - 48 && rect.bottom > 120);
     };
 
-    updateFooterState();
-    window.addEventListener("scroll", updateFooterState, { passive: true });
-    window.addEventListener("resize", updateFooterState);
+    updateVisibilityState();
+    window.addEventListener("scroll", updateVisibilityState, { passive: true });
+    window.addEventListener("resize", updateVisibilityState);
 
     return () => {
-      window.removeEventListener("scroll", updateFooterState);
-      window.removeEventListener("resize", updateFooterState);
+      window.removeEventListener("scroll", updateVisibilityState);
+      window.removeEventListener("resize", updateVisibilityState);
     };
   }, [pathname]);
 
   if (shouldSuppress(pathname)) return null;
   if (dismissed) return null;
+  if (!scrolledEnough) return null;
   if (footerInView) return null;
 
   const copy =
@@ -101,13 +107,42 @@ export default function StickyTrialCTA() {
           dismiss: "Dismiss",
         };
 
+  const handleClick = (event) => {
+    const canHover =
+      typeof window !== "undefined" &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const pointerCanHover = canHover && lastPointerType.current !== "touch";
+
+    if (!pointerCanHover && !expanded) {
+      event.preventDefault();
+      setExpanded(true);
+      window.setTimeout(() => setExpanded(false), 3200);
+    }
+  };
+
   return (
-    <div className="spx-trial-cta is-visible">
+    <div
+      className={`spx-trial-cta is-visible${expanded ? " is-expanded" : ""}`}
+      onPointerEnter={(event) => {
+        lastPointerType.current = event.pointerType;
+        if (event.pointerType !== "touch") setExpanded(true);
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType !== "touch") setExpanded(false);
+      }}
+    >
       <Link
         href={routeHref(APP_ROUTES.register, locale)}
         className="spx-trial-cta__pill"
         aria-label={copy.aria}
+        onClick={handleClick}
+        onPointerDown={(event) => {
+          lastPointerType.current = event.pointerType;
+        }}
+        onFocus={() => setExpanded(true)}
+        onBlur={() => setExpanded(false)}
       >
+        <b className="spx-trial-cta__btn">{copy.cta}</b>
         <span className="spx-trial-cta__expandable" aria-hidden="true">
           <span className="spx-trial-cta__dots" />
           <span className="spx-trial-cta__copy">
@@ -115,7 +150,6 @@ export default function StickyTrialCTA() {
             <small>{copy.sub}</small>
           </span>
         </span>
-        <b className="spx-trial-cta__btn">{copy.cta}</b>
       </Link>
       <button
         type="button"
