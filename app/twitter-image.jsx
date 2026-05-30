@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
+import { BRAND_DESCRIPTION, BRAND_SITE_TITLE } from "@/lib/brand";
 
-export const alt = "Speexify — Where Ambition Meets Fluency";
+export const alt = BRAND_SITE_TITLE;
 export const size = {
   width: 1200,
   height: 675,
@@ -50,7 +51,7 @@ export default function TwitterImage() {
               fontWeight: 900,
             }}
           >
-            Your English should be as sharp as your ambition
+            English speaking coaching for real career moments
           </div>
           <div
             style={{
@@ -60,8 +61,7 @@ export default function TwitterImage() {
               color: "rgba(248,250,252,0.86)",
             }}
           >
-            1-on-1 coaching that turns what you already know into real
-            confidence. Unleash your voice.
+            {BRAND_DESCRIPTION}
           </div>
         </div>
       </div>

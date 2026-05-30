@@ -34,6 +34,12 @@ const SOCIAL_LINKS = [
     icon: FacebookIcon,
   },
   {
+    href: "https://www.instagram.com/speexify_/",
+    labelKey: "ariaInstagram",
+    name: "Instagram",
+    icon: InstagramIcon,
+  },
+  {
     href: "https://www.youtube.com/@Speexify",
     labelKey: "ariaYouTube",
     name: "YouTube",
@@ -431,6 +437,27 @@ function FacebookIcon() {
         d="M13.6 19v-6.6h2.22l.33-2.7H13.6V8c0-.78.22-1.3 1.36-1.3h1.45V4.28c-.25-.03-1.12-.1-2.13-.1-2.1 0-3.55 1.28-3.55 3.65v2.04H8.5v2.7h2.23V19z"
         fill="#fff"
       />
+    </svg>
+  );
+}
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="24" height="24" rx="5" fill="#000" />
+      <path
+        d="M8.45 5.25h7.1c2.02 0 3.2 1.18 3.2 3.2v7.1c0 2.02-1.18 3.2-3.2 3.2h-7.1c-2.02 0-3.2-1.18-3.2-3.2v-7.1c0-2.02 1.18-3.2 3.2-3.2z"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="1.7"
+      />
+      <path
+        d="M12 9.05a2.95 2.95 0 1 1 0 5.9 2.95 2.95 0 0 1 0-5.9z"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="1.7"
+      />
+      <path d="M16.35 7.85a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z" fill="#fff" />
     </svg>
   );
 }

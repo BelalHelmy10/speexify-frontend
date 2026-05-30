@@ -12,6 +12,11 @@ import ClientProviders from "./ClientProviders";
 import LocaleShell from "./LocaleShell";
 import AppChrome from "@/components/AppChrome";
 import { organizationJsonLd, websiteJsonLd } from "./seo";
+import {
+  BRAND_DESCRIPTION,
+  BRAND_NAME,
+  BRAND_SITE_TITLE,
+} from "@/lib/brand";
 
 const googleSiteVerification =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
@@ -40,42 +45,41 @@ export const metadata = {
 
   // Basic SEO
   title: {
-    default: "Speexify — Where Ambition Meets Fluency",
+    default: BRAND_SITE_TITLE,
     template: "%s — Speexify",
   },
-  description:
-    "1-on-1 English coaching that turns what you already know into real confidence. For interviews, meetings, and every moment that matters.",
+  description: BRAND_DESCRIPTION,
   keywords: [
+    "English speaking coaching",
     "English coaching Egypt",
     "1-on-1 English coaching",
     "English speaking confidence",
     "interview English coaching",
+    "career English coaching",
     "professional English training",
     "business English Egypt",
-    "English fluency coaching",
     "Speexify",
   ],
 
   // Authors and creators
-  authors: [{ name: "Speexify" }],
-  creator: "Speexify",
-  publisher: "Speexify",
+  authors: [{ name: BRAND_NAME }],
+  creator: BRAND_NAME,
+  publisher: BRAND_NAME,
 
   // Open Graph (Facebook, LinkedIn, WhatsApp)
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "https://speexify.com",
-    title: "Speexify — Where Ambition Meets Fluency",
-    description:
-      "1-on-1 English coaching that turns what you already know into real confidence.",
-    siteName: "Speexify",
+    title: BRAND_SITE_TITLE,
+    description: BRAND_DESCRIPTION,
+    siteName: BRAND_NAME,
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Speexify — Where Ambition Meets Fluency",
+        alt: BRAND_SITE_TITLE,
       },
     ],
   },
@@ -83,9 +87,8 @@ export const metadata = {
   // Twitter Card
   twitter: {
     card: "summary_large_image",
-    title: "Speexify — Where Ambition Meets Fluency",
-    description:
-      "1-on-1 English coaching that turns what you already know into real confidence.",
+    title: BRAND_SITE_TITLE,
+    description: BRAND_DESCRIPTION,
     creator: "@speexify",
     images: ["/twitter-image"],
   },

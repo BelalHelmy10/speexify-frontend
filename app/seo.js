@@ -1,5 +1,12 @@
+import {
+  BRAND_CATEGORY,
+  BRAND_DESCRIPTION,
+  BRAND_SITE_TITLE,
+} from "@/lib/brand";
+
 export const SITE_URL = "https://speexify.com";
 export const SITE_NAME = "Speexify";
+
 const DEFAULT_OG_IMAGE = "/opengraph-image";
 const DEFAULT_TWITTER_IMAGE = "/twitter-image";
 
@@ -15,14 +22,14 @@ export const seoPages = {
   home: {
     path: "",
     arPath: "/ar",
-    title: "Speexify — Where Ambition Meets Fluency | 1-on-1 English Coaching",
-    arTitle: "Speexify — أطلق صوتك | تدريب إنجليزي فردي",
-    description:
-      "1-on-1 English coaching that turns what you already know into real confidence. For interviews, meetings, and every moment that matters.",
+    title: `${BRAND_SITE_TITLE} | ${BRAND_CATEGORY}`,
+    arTitle: "Speexify — تكلّمها. لا تدرسها. | تدريب تحدث إنجليزي",
+    description: BRAND_DESCRIPTION,
     arDescription:
       "تدريب إنجليزي فردي يحول ما تعرفه بالفعل إلى ثقة حقيقية — للمقابلات والاجتماعات وكل لحظة مهمة.",
     keywords: [
       "Speexify",
+      "English speaking coaching",
       "English coaching Egypt",
       "1-on-1 English coaching",
       "English speaking confidence",
@@ -43,9 +50,9 @@ export const seoPages = {
     title: "About Speexify",
     arTitle: "عن Speexify",
     description:
-      "Learn about Speexify, our coaching philosophy, our team, and how we help learners build real communication confidence.",
+      "Learn about Speexify, our coaching philosophy, our team, and how we help members build real communication confidence.",
     arDescription:
-      "تعرف على Speexify وفلسفتنا في التدريب وفريقنا وكيف نساعد المتعلمين على بناء ثقة حقيقية في التواصل.",
+      "تعرف على Speexify وفلسفتنا في التدريب وفريقنا وكيف نساعد الأعضاء على بناء ثقة حقيقية في التواصل.",
     keywords: ["about Speexify", "language coaching team", "English coaches"],
   },
   individual: {
@@ -54,10 +61,10 @@ export const seoPages = {
     title: "1-on-1 English Speaking Coaching for Professionals",
     arTitle: "تدريب محادثة إنجليزية فردي للمحترفين",
     description:
-      "Personalized one-on-one English coaching for career growth, interviews, presentations, travel, and everyday fluency.",
+      "Personalized one-on-one English coaching for career growth, interviews, presentations, travel, and real everyday conversations.",
     arDescription:
-      "تدريب إنجليزي فردي مخصص للتطور المهني والمقابلات والعروض والسفر والطلاقة اليومية.",
-    keywords: ["individual English coaching", "one-on-one English lessons", "English speaking coach"],
+      "تدريب إنجليزي فردي مخصص للتطور المهني والمقابلات والعروض والسفر والمحادثات اليومية الواقعية.",
+    keywords: ["individual English coaching", "one-on-one English sessions", "English speaking coach"],
   },
   corporate: {
     path: "/corporate-training",
@@ -90,7 +97,7 @@ export const seoPages = {
       "See why Speexify focuses on live coaching, practical speaking confidence, measurable progress, and real-world communication outcomes.",
     arDescription:
       "اكتشف لماذا تركز Speexify على التدريب المباشر والثقة العملية في التحدث والتقدم القابل للقياس ونتائج التواصل الواقعية.",
-    keywords: ["why Speexify", "English fluency coaching", "communication confidence"],
+    keywords: ["why Speexify", "English speaking coaching", "communication confidence"],
   },
   contact: {
     path: "/contact",
@@ -164,9 +171,9 @@ export const seoPages = {
     title: "English Speaking Guides for Professionals",
     arTitle: "أدلة التحدث بالإنجليزية للمحترفين",
     description:
-      "Step-by-step Speexify guides for choosing English coaching, improving spoken fluency, preparing presentations, and building workplace confidence.",
+      "Step-by-step Speexify guides for choosing English coaching, improving spoken confidence, preparing presentations, and building workplace confidence.",
     arDescription:
-      "أدلة عملية من Speexify لاختيار تدريب الإنجليزية وتحسين الطلاقة والتحضير للعروض وبناء الثقة في العمل.",
+      "أدلة عملية من Speexify لاختيار تدريب الإنجليزية وتحسين الثقة في التحدث والتحضير للعروض وبناء الثقة في العمل.",
     keywords: ["English speaking guides", "business English guide", "presentation English guide"],
   },
   helpCenter: {
@@ -186,9 +193,9 @@ export const seoPages = {
     title: "English Speaking Coach in Egypt",
     arTitle: "مدرب محادثة إنجليزية في مصر",
     description:
-      "Work with a Speexify English speaking coach in Egypt through live 1-on-1 sessions focused on fluency, confidence, and real conversations.",
+      "Work with a Speexify English speaking coach in Egypt through live 1-on-1 sessions focused on confidence and real conversations.",
     arDescription:
-      "تدرّب مع مدرب محادثة إنجليزية في مصر من Speexify من خلال جلسات مباشرة فردية تركز على الطلاقة والثقة والمحادثات الواقعية.",
+      "تدرّب مع مدرب محادثة إنجليزية في مصر من Speexify من خلال جلسات مباشرة فردية تركز على الثقة والمحادثات الواقعية.",
     keywords: ["English speaking coach Egypt", "English conversation coach Egypt", "English coach Cairo"],
     arKeywords: ["مدرب محادثة انجليزي في مصر", "كورس محادثة انجليزي", "تدريب انجليزي اونلاين مصر"],
   },
@@ -231,9 +238,9 @@ export const seoPages = {
     title: "Corporate English Training in Egypt",
     arTitle: "تدريب إنجليزي للشركات في مصر",
     description:
-      "Corporate English training in Egypt for teams that need measurable speaking confidence, workplace fluency, and practical communication outcomes.",
+      "Corporate English training in Egypt for teams that need measurable speaking confidence and practical communication outcomes.",
     arDescription:
-      "تدريب إنجليزي للشركات في مصر للفرق التي تحتاج إلى ثقة قابلة للقياس في التحدث وطلاقة عملية ونتائج تواصل واضحة.",
+      "تدريب إنجليزي للشركات في مصر للفرق التي تحتاج إلى ثقة قابلة للقياس في التحدث ونتائج تواصل واضحة.",
     keywords: ["corporate English training Egypt", "business English Egypt", "English training companies Egypt"],
   },
 };
@@ -342,7 +349,7 @@ export const organizationJsonLd = {
   url: SITE_URL,
   logo: absoluteUrl("/images/speexify-logo.png"),
   description:
-    "1-on-1 English coaching that turns what you already know into real confidence. Where ambition meets fluency.",
+    BRAND_DESCRIPTION,
   sameAs: [
     "https://www.linkedin.com/company/speexify/",
     "https://www.facebook.com/profile.php?id=61560942134964",
