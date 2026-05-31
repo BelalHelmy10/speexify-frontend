@@ -1,5 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ClipboardCheck } from "lucide-react";
+
 export default function AdminUserManagementSection({
   usersAdmin,
   usersBusy,
@@ -18,6 +22,9 @@ export default function AdminUserManagementSection({
   onOpenPackages,
   onOpenAttendance,
 }) {
+  const pathname = usePathname();
+  const prefix = pathname?.startsWith("/ar") ? "/ar" : "";
+
   return (
     <section className="adm-admin-card">
       <div className="adm-admin-card__header">
@@ -226,6 +233,15 @@ export default function AdminUserManagementSection({
                           />
                         </svg>
                       </button>
+                      {u.role === "learner" && (
+                        <Link
+                          className="adm-btn-action"
+                          href={`${prefix}/admin/intake?userId=${u.id}`}
+                          title="View Intake"
+                        >
+                          <ClipboardCheck size={16} aria-hidden="true" />
+                        </Link>
+                      )}
                       <button className="adm-btn-action" onClick={() => onOpenPackages(u)} title="View Packages">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                           <path
