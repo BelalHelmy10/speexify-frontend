@@ -662,7 +662,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
             title: actionSessionTitle(latestFeedbackSession),
           }),
           primary: {
-            href: `${prefix}/dashboard/sessions/${latestFeedbackSession.id}`,
+            href: `${prefix}/dashboard/sessions/${latestFeedbackSession.id}/feedback`,
             label: t(dict, "next_action_cta_feedback"),
           },
           secondary: [

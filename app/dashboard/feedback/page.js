@@ -7,6 +7,7 @@ import api from "@/lib/api";
 import { fmtInTz } from "@/utils/date";
 import { getDictionary, t } from "@/app/i18n";
 import useAuth from "@/hooks/useAuth";
+import { stripRichFeedbackPayload } from "@/lib/feedbackReport";
 
 function FeedbackIcon({ size = 24 }) {
   return (
@@ -79,8 +80,9 @@ function TeacherAvatar({ name, url }) {
 
 function FeedbackCard({ item, timezone, prefix, dict }) {
   const fb = item.feedback;
+  const commentsOnSession = stripRichFeedbackPayload(fb.commentsOnSession || "");
   const hasMessage = !!fb.messageToLearner?.trim();
-  const hasComments = !!fb.commentsOnSession?.trim();
+  const hasComments = !!commentsOnSession;
   const hasSteps = !!fb.futureSteps?.trim();
 
   return (
@@ -96,7 +98,7 @@ function FeedbackCard({ item, timezone, prefix, dict }) {
           </span>
         </div>
         <Link
-          href={`${prefix}/dashboard/sessions/${item.id}`}
+          href={`${prefix}/dashboard/sessions/${item.id}/feedback`}
           className="btn btn--ghost btn--sm fb-card__link"
         >
           {t(dict, "session_label") || "Session"}
@@ -125,7 +127,7 @@ function FeedbackCard({ item, timezone, prefix, dict }) {
             </div>
             <div>
               <h5>{t(dict, "comments_title") || "Comments on session"}</h5>
-              <p>{fb.commentsOnSession}</p>
+              <p>{commentsOnSession}</p>
             </div>
           </div>
         )}

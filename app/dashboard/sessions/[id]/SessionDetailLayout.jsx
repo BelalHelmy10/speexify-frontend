@@ -11,6 +11,7 @@ import {
   Panel,
 } from "./SessionDetailUI";
 import { getSafeExternalUrl } from "@/utils/url";
+import { stripRichFeedbackPayload } from "@/lib/feedbackReport";
 
 function getInitials(value = "") {
   const s = String(value || "?").trim();
@@ -92,6 +93,9 @@ export default function SessionDetailLayout({
   const heroDate = formatHeroDate(startAt, locale);
   const backLabel = cleanBackLabel(txt("back_btn", "Back"));
   const statusKey = sessionStatus === "canceled" ? "canceled" : sessionStatus;
+  const feedbackComments = stripRichFeedbackPayload(
+    teacherFeedback?.commentsOnSession || ""
+  );
 
   const fmtTime = (iso) => {
     if (!iso) return "";
@@ -319,7 +323,7 @@ export default function SessionDetailLayout({
                       )}
                     </h4>
                     <p>
-                      {teacherFeedback.commentsOnSession?.trim() ||
+                      {feedbackComments ||
                         txt(
                           "feedback_comments_empty",
                           "No comments provided."

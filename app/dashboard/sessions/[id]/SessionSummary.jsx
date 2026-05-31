@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { SessionIcon } from "./SessionDetailUI";
+import { stripRichFeedbackPayload } from "@/lib/feedbackReport";
 
 /**
  * SessionSummary - Comprehensive view of everything that happened in a session
@@ -82,6 +83,9 @@ export default function SessionSummary({
     teacherFeedback,
     learnerFeedback,
   } = summary;
+  const feedbackComments = stripRichFeedbackPayload(
+    teacherFeedback?.commentsOnSession || ""
+  );
 
   // Format date
   const sessionDate = session.startAt
@@ -279,10 +283,10 @@ export default function SessionSummary({
                 <p>{teacherFeedback.messageToLearner}</p>
               </div>
             )}
-            {teacherFeedback.commentsOnSession && (
+            {feedbackComments && (
               <div className="session-summary__feedback-item">
                 <h4>Session Comments</h4>
-                <p>{teacherFeedback.commentsOnSession}</p>
+                <p>{feedbackComments}</p>
               </div>
             )}
             {teacherFeedback.futureSteps && (
