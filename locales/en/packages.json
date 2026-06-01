@@ -1,13 +1,13 @@
 {
   "hero_title": "Start practicing.",
-  "hero_subtitle": "One-on-one sessions with a coach, or small-group practice with members at your level. Sessions in packs, paid upfront. You keep your spot.",
+  "hero_subtitle": "One-on-one sessions with a coach, or small-group practice with members at your band. Sessions in packs, paid upfront. You keep your spot.",
 
   "tab_individual": "For yourself",
   "tab_corporate": "For your team",
-  "lesson_one_on_one_title": "One-on-one",
-  "lesson_one_on_one_sub": "Just you and a coach",
-  "lesson_group_title": "Small group",
-  "lesson_group_sub": "Practice with 2–5 others",
+  "mode_one_on_one_title": "One-on-one",
+  "mode_one_on_one_sub": "Just you and a coach",
+  "mode_group_title": "Small group",
+  "mode_group_sub": "Practice with 2–5 others",
 
   "note_1on1_strong": "60-minute sessions",
   "note_1on1_rest": "Just you and your coach. Every minute on what you need.",
@@ -108,7 +108,7 @@
   "plan_1on1-48_features": "A dedicated coach;Bi-weekly strategy sessions;In-depth progress assessments;Career conversation coaching;Networking practice;Library access (kept for life);Priority support",
 
   "plan_group-4_title": "Group Starter",
-  "plan_group-4_desc": "Try the group practice ground. Four sessions in a small, level-matched cohort.",
+  "plan_group-4_desc": "Try the group practice ground. Four sessions in a small, band-matched cohort.",
   "plan_group-4_features": "Small groups (2–5 members);Members matched at a similar place;Real conversations, in a group;Group practice scenarios;Shared notes after each session",
 
   "plan_group-12_title": "Group Professional",
@@ -121,7 +121,7 @@
 
   "plan_group-48_title": "Group Master",
   "plan_group-48_desc": "Deep group practice for the long haul. A cohort that grows together.",
-  "plan_group-48_features": "Small groups (2–5 members);A dedicated cohort, long-term;Specialist workshops;Guest speaker sessions;Community access;End-of-program certificate (optional);Alumni network (kept for life);Ongoing coach support",
+  "plan_group-48_features": "Small groups (2–5 members);A dedicated cohort, long-term;Specialist workshops;Guest speaker sessions;Community access;End-of-program completion summary (optional);Alumni network (kept for life);Ongoing coach support",
 
   "plan_corp-pilot_title": "Pilot",
   "plan_corp-pilot_desc": "A small cohort. Before-and-after measures. A clear answer before you commit further.",
@@ -133,9 +133,9 @@
 
   "plan_corp-enterprise_title": "Enterprise",
   "plan_corp-enterprise_desc": "Full rollout. A Success Manager you'll know by name. Executive reporting. Compliance, sorted.",
-  "plan_corp-enterprise_features": "50+ members;Rollout across locations;A dedicated Success Manager;Executive-level reporting;API and HRIS integration;Security and compliance, reviewed upfront;Tailored reporting;Quarterly business reviews;Priority support;ROI analysis",
+  "plan_corp-enterprise_features": "50+ members;Rollout across locations;A dedicated Success Manager;Executive reporting;API and HRIS integration;Security and compliance, reviewed upfront;Tailored reporting;Quarterly business reviews;Priority support;ROI analysis",
 
   "plan_global-enterprise_title": "Global Enterprise",
   "plan_global-enterprise_desc": "Speexify, deployed across regions. A Success Director, executive reporting, and the integrations your operation needs.",
-  "plan_global-enterprise_features": "100+ members;Deployment across regions;Multilingual support, around the clock;A dedicated Success Director;Advanced analytics;Integrations with your HRIS, LMS, SSO;GDPR and SOC2 compliance;ROI and performance benchmarking;Annual partnership review;Tailored workshops for executives"
+  "plan_global-enterprise_features": "100+ members;Deployment across regions;Multilingual support, around the clock;A dedicated Success Director;Deeper analytics;Integrations with your HRIS, LMS, SSO;GDPR and SOC2 compliance;ROI and performance benchmarking;Annual partnership review;Tailored workshops for executives"
 }

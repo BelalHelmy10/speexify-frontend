@@ -112,7 +112,7 @@ const LOCAL_COPY = {
     requiredGoal: "Add one clear goal before continuing.",
     completeTitle: "Your coaching brief is ready.",
     completeBody:
-      "We saved your setup. The next best step is the placement test so your coach can match the plan to your current level.",
+      "We saved your setup. The next best step is the placement test so your coach can match the plan to your current band.",
     placementCta: "Start placement test",
     dashboardCta: "Go to dashboard",
     reviewTitle: "Review your brief",
@@ -152,7 +152,7 @@ const LOCAL_COPY = {
         label: "Style",
         title: "How do you learn best?",
         description:
-          "This helps us tune the lesson style without repeating the placement test.",
+          "This helps us tune the session style without repeating the placement test.",
       },
       {
         id: "review",
@@ -811,14 +811,14 @@ export default function OnboardingPage() {
                     min={1}
                     max={10}
                     marks={["1", "3", "5", "7", "10"]}
-                    style={getSliderBackground(answers.confidence[skill], 1, 10, "#2d9e8f")}
+                    style={getSliderBackground(answers.confidence[skill], 1, 10, "#0f766e")}
                     onChange={(value) => handleNestedRange("confidence", skill, value)}
                   />
                 ))}
               </div>
             </div>
 
-            <Field id="level" label={t(dict, "field_level_label")} hint={t(dict, "field_level_hint")}>
+            <Field id="level" label={t(dict, "field_band_label")} hint={t(dict, "field_band_hint")}>
               <div className="onboarding-field__select-wrapper">
                 <select
                   id="level"
@@ -826,13 +826,13 @@ export default function OnboardingPage() {
                   value={answers.levelSelfEval}
                   onChange={(e) => updateAnswer({ levelSelfEval: e.target.value })}
                 >
-                  <option value="">{t(dict, "field_level_placeholder")}</option>
-                  <option value="A1">{t(dict, "level_a1")}</option>
-                  <option value="A2">{t(dict, "level_a2")}</option>
-                  <option value="B1">{t(dict, "level_b1")}</option>
-                  <option value="B2">{t(dict, "level_b2")}</option>
-                  <option value="C1">{t(dict, "level_c1")}</option>
-                  <option value="C2">{t(dict, "level_c2")}</option>
+                  <option value="">{t(dict, "field_band_placeholder")}</option>
+                  <option value="A1">{t(dict, "band_a1")}</option>
+                  <option value="A2">{t(dict, "band_a2")}</option>
+                  <option value="B1">{t(dict, "band_b1")}</option>
+                  <option value="B2">{t(dict, "band_b2")}</option>
+                  <option value="C1">{t(dict, "band_c1")}</option>
+                  <option value="C2">{t(dict, "band_c2")}</option>
                 </select>
                 {renderSelectIcon()}
               </div>

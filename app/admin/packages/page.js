@@ -389,7 +389,7 @@ export default function AdminPackagesPage() {
         <section
           className="adm-admin-card"
           style={{
-            borderLeft: `4px solid ${syncReport.failed > 0 ? "#ef4444" : "#22c55e"}`,
+            borderLeft: `4px solid ${syncReport.failed > 0 ? "#ef4444" : "#15803d"}`,
             marginBottom: 16,
           }}
         >

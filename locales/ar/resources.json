@@ -20,7 +20,7 @@
   "resources_btn_open_prep": "افتح في غرفة التحضير",
   "resources_field_track": "المسار",
   "resources_field_book": "الكتاب",
-  "resources_field_level": "المستوى",
+  "resources_field_band": "النطاق",
   "resources_field_unit": "الوحدة",
   "resources_field_resources": "الموارد",
   "resources_resources_hint": "اختار وحدة ومواردها عشان تعرضها أو تفتحها في غرفة التحضير.",
@@ -28,7 +28,7 @@
   "resources_preview_no_resource_title": "مفيش مورد مختار",
   "resources_preview_no_resource_text": "اختار وحدة عشان تصفّح مواردها، وبعدين اختار مورد عشان تعرضه هنا.",
   "resources_meta_kind": "{kind}",
-  "resources_meta_cefr": "CEFR {level}",
+  "resources_meta_cefr_band": "CEFR {band}",
   "resources_meta_source": "المصدر: {sourceType}",
   "resources_tag": "{tag}",
   "resources_btn_choose_resource_first": "اختار مورد أولاً",
@@ -69,7 +69,7 @@
 
   "label_track": "المسار",
   "label_book": "الكتاب",
-  "label_level": "المستوى",
+  "label_band": "النطاق",
   "label_unit": "الوحدة",
   "label_resources": "الموارد في الوحدة دي",
 
@@ -79,7 +79,7 @@
   "preview_empty_title": "مفيش مورد مختار",
   "preview_empty_body": "استخدم الفلاتر على الشمال عشان تختار المسار والكتاب والمستوى والوحدة والمورد.",
 
-  "label_cefr": "CEFR {level}",
+  "label_cefr_band": "CEFR {band}",
   "label_source": "المصدر: {source}",
 
   "btn_open_prep": "افتح في غرفة التحضير",

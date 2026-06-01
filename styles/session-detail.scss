@@ -54,8 +54,8 @@
 }
 
 @keyframes sdPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(#22c55e, 0.5); }
-  55%       { box-shadow: 0 0 0 5px rgba(#22c55e, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(#15803d, 0.5); }
+  55%       { box-shadow: 0 0 0 5px rgba(#15803d, 0); }
 }
 
 @keyframes sdShimmer {
@@ -130,7 +130,7 @@
   /* Status-specific glow tints */
   &--scheduled::before {
     background:
-      radial-gradient(ellipse 55% 65% at 95% -5%, rgba(#22c55e, 0.28) 0%, transparent 55%),
+      radial-gradient(ellipse 55% 65% at 95% -5%, rgba(#15803d, 0.28) 0%, transparent 55%),
       radial-gradient(ellipse 45% 55% at 5% 105%, rgba($coral, 0.12) 0%, transparent 55%);
   }
 
@@ -322,9 +322,9 @@
 /* Status pill overrides inside dark hero */
 .sd-hero .sd-status {
   &--scheduled {
-    background: rgba(#22c55e, 0.2);
+    background: rgba(#15803d, 0.2);
     color: rgba($color-white, 0.95);
-    border-color: rgba(#22c55e, 0.45);
+    border-color: rgba(#15803d, 0.45);
     .sd-status__dot { animation: sdPulse 1.8s ease-in-out infinite; }
   }
   &--completed {
@@ -362,9 +362,9 @@
   }
 
   &--scheduled {
-    background: rgba(#22c55e, 0.12);
+    background: rgba(#15803d, 0.12);
     color: #15803d;
-    border-color: rgba(#22c55e, 0.3);
+    border-color: rgba(#15803d, 0.3);
     .sd-status__dot { animation: sdPulse 1.8s ease-in-out infinite; }
   }
   &--completed { background: rgba(#0ea5e9, 0.12); color: #0369a1; border-color: rgba(#0ea5e9, 0.3); }

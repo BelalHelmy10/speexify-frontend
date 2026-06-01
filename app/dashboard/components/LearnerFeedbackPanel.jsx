@@ -126,7 +126,7 @@ export default function LearnerFeedbackPanel({ dict, prefix, timezone }) {
           </div>
           <div className="feedback-highlight__meta">
             <span className="feedback-highlight__teacher">
-              {dict?.from_teacher?.replace("{name}", latest.teacher?.name || "Your teacher") || `From ${latest.teacher?.name || "Your teacher"}`}
+              {dict?.from_coach?.replace("{name}", latest.teacher?.name || "Your coach") || `From ${latest.teacher?.name || "Your coach"}`}
             </span>
             <span className="feedback-highlight__date">
               {latest.startAt ? fmtInTz(latest.startAt, timezone) : ""}

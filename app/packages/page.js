@@ -241,10 +241,10 @@ function Packages() {
                   <span className="ecp-lesson-icon">👤</span>
                   <span className="ecp-lesson-text">
                     <strong>
-                      {t(dict, "lesson_one_on_one_title", "One-on-One")}
+                      {t(dict, "mode_one_on_one_title", "One-on-One")}
                     </strong>
                     <small>
-                      {t(dict, "lesson_one_on_one_sub", "Private sessions")}
+                      {t(dict, "mode_one_on_one_sub", "Private sessions")}
                     </small>
                   </span>
                 </button>
@@ -255,8 +255,8 @@ function Packages() {
                 >
                   <span className="ecp-lesson-icon">👥</span>
                   <span className="ecp-lesson-text">
-                    <strong>{t(dict, "lesson_group_title", "Group")}</strong>
-                    <small>{t(dict, "lesson_group_sub", "2-5 learners")}</small>
+                    <strong>{t(dict, "mode_group_title", "Group")}</strong>
+                    <small>{t(dict, "mode_group_sub", "2-5 members")}</small>
                   </span>
                 </button>
               </div>
@@ -510,7 +510,7 @@ function Packages() {
               desc={t(
                 dict,
                 "how_step3_desc",
-                "Practical lessons, actionable feedback, and measurable progress from day one."
+                "Practical sessions, actionable feedback, and measurable progress from day one."
               )}
             />
           </div>
@@ -582,7 +582,7 @@ function Packages() {
               q={t(
                 dict,
                 "faq1_q",
-                "Can I switch between One-on-One and Group lessons?"
+                "Can I switch between one-on-one and group sessions?"
               )}
               a={t(
                 dict,
@@ -607,7 +607,7 @@ function Packages() {
               a={t(
                 dict,
                 "faq3_a",
-                "We match learners with similar proficiency levels and learning goals to ensure productive, balanced sessions."
+                "We match members with similar practice bands and learning goals to ensure productive, balanced sessions."
               )}
             />
             <Faq

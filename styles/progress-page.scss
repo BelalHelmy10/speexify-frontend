@@ -563,9 +563,9 @@
   }
 
   .is-positive {
-    border-color: rgba(45, 158, 143, 0.3);
+    border-color: rgba(15, 118, 110, 0.3);
     color: $color-secondary-dark;
-    background: rgba(45, 158, 143, 0.09);
+    background: rgba(15, 118, 110, 0.09);
   }
 }
 
@@ -662,8 +662,8 @@
 
 .learning-progress__badge--earned {
   opacity: 1;
-  border-color: rgba(45, 158, 143, 0.28);
-  background: rgba(45, 158, 143, 0.08);
+  border-color: rgba(15, 118, 110, 0.28);
+  background: rgba(15, 118, 110, 0.08);
 }
 
 .learning-progress__badge-status {
@@ -679,7 +679,7 @@
 }
 
 .learning-progress__badge--earned .learning-progress__badge-status {
-  background: rgba(45, 158, 143, 0.14);
+  background: rgba(15, 118, 110, 0.14);
   color: $color-secondary-dark;
 }
 

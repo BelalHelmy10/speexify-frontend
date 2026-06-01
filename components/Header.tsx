@@ -260,7 +260,7 @@ export default function Header() {
 
   const roleLabel = (role) => {
     if (role === "admin") return navText("role_admin", "Admin");
-    if (role === "teacher") return navText("role_teacher", "Teacher");
+    if (role === "teacher") return navText("role_coach", "Coach");
     return navText("role_learner", "Learner");
   };
 
@@ -603,6 +603,7 @@ export default function Header() {
           if (event.target === event.currentTarget) setOpen(false);
         }}
       >
+        {open ? (
         <nav className="spx-mobile-drawer-inner" aria-label="Mobile navigation">
           <ul className="spx-mobile-list">
             {links.map((item, idx) => {
@@ -829,6 +830,7 @@ export default function Header() {
             </li>
           </ul>
         </nav>
+        ) : null}
       </div>
     </header>
   );

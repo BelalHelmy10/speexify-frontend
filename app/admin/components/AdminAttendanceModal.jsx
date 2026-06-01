@@ -63,7 +63,7 @@ function RateArc({ rate }) {
   const circ = Math.PI * r; // half-circle = πr
   const pct = Math.min(100, Math.max(0, Number(rate) || 0));
   const dash = (pct / 100) * circ;
-  const color = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
+  const color = pct >= 80 ? "#15803d" : pct >= 50 ? "#f59e0b" : "#ef4444";
 
   return (
     <svg width="96" height="54" viewBox="0 0 96 54" className="att-arc" aria-hidden="true">
@@ -106,7 +106,7 @@ function StatCard({ value, label, tone, icon }) {
 // ── Monthly card ──────────────────────────────────────────────────────────────
 function MonthCard({ m }) {
   const rate = m.attendanceRate ?? 0;
-  const color = rate >= 80 ? "#22c55e" : rate >= 50 ? "#f59e0b" : "#ef4444";
+  const color = rate >= 80 ? "#15803d" : rate >= 50 ? "#f59e0b" : "#ef4444";
 
   return (
     <div className="att-month">

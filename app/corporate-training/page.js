@@ -403,8 +403,9 @@ function CorporateTraining({ dict, locale }) {
             <div className="spx-corp-rfp__form-panel">
             <form ref={formRef} onSubmit={submit} className={`spx-corp-form ${statusTone === "error" ? "has-error" : ""}`}>
               <div className="spx-corp-form__row spx-corp-form__row--2">
-                <Field label={t(dict, "field_company")}>
+                <Field label={t(dict, "field_company")} htmlFor="corporate-company">
                   <input
+                    id="corporate-company"
                     className="spx-corp-input"
                     name="company"
                     value={form.company}
@@ -412,8 +413,9 @@ function CorporateTraining({ dict, locale }) {
                     required
                   />
                 </Field>
-                <Field label={t(dict, "field_contact_name")}>
+                <Field label={t(dict, "field_contact_name")} htmlFor="corporate-contact-name">
                   <input
+                    id="corporate-contact-name"
                     className="spx-corp-input"
                     name="contactName"
                     value={form.contactName}
@@ -423,8 +425,9 @@ function CorporateTraining({ dict, locale }) {
               </div>
 
               <div className="spx-corp-form__row spx-corp-form__row--3">
-                <Field label={t(dict, "field_email")}>
+                <Field label={t(dict, "field_email")} htmlFor="corporate-email">
                   <input
+                    id="corporate-email"
                     className="spx-corp-input"
                     type="email"
                     name="email"
@@ -434,8 +437,9 @@ function CorporateTraining({ dict, locale }) {
                     autoComplete="email"
                   />
                 </Field>
-                <Field label={t(dict, "field_team_size")}>
+                <Field label={t(dict, "field_team_size")} htmlFor="corporate-size">
                   <select
+                    id="corporate-size"
                     className="spx-corp-select"
                     name="size"
                     value={form.size}
@@ -447,8 +451,9 @@ function CorporateTraining({ dict, locale }) {
                     <option value="200+">{t(dict, "size_200_plus")}</option>
                   </select>
                 </Field>
-                <Field label={t(dict, "field_timeframe")}>
+                <Field label={t(dict, "field_timeframe")} htmlFor="corporate-timeframe">
                   <select
+                    id="corporate-timeframe"
                     className="spx-corp-select"
                     name="timeframe"
                     value={form.timeframe}
@@ -462,8 +467,9 @@ function CorporateTraining({ dict, locale }) {
               </div>
 
               <div className="spx-corp-form__row spx-corp-form__row--2">
-                <Field label={t(dict, "field_goals")}>
+                <Field label={t(dict, "field_goals")} htmlFor="corporate-goals">
                   <input
+                    id="corporate-goals"
                     className="spx-corp-input"
                     name="goals"
                     placeholder={t(dict, "placeholder_goals")}
@@ -471,8 +477,9 @@ function CorporateTraining({ dict, locale }) {
                     onChange={onChange}
                   />
                 </Field>
-                <Field label={t(dict, "field_notes")}>
+                <Field label={t(dict, "field_notes")} htmlFor="corporate-message">
                   <input
+                    id="corporate-message"
                     className="spx-corp-input"
                     name="message"
                     placeholder={t(dict, "placeholder_notes")}
@@ -484,6 +491,7 @@ function CorporateTraining({ dict, locale }) {
 
               <label className="spx-corp-check">
                 <input
+                  id="corporate-agree"
                   type="checkbox"
                   name="agree"
                   checked={form.agree}
@@ -600,10 +608,10 @@ function SectionHead({ title, subtitle }) {
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, htmlFor, children }) {
   return (
     <div className="spx-corp-field">
-      <label className="spx-corp-label">{label}</label>
+      <label className="spx-corp-label" htmlFor={htmlFor}>{label}</label>
       {children}
     </div>
   );
@@ -691,6 +699,7 @@ function Testi({ quote, by, role, avatar, rating, outcome }) {
         />
         <div
           className="spx-corp-testi__stars"
+          role="img"
           aria-label={`${rating} out of 5 stars`}
         >
           {[...Array(rating)].map((_, i) => (

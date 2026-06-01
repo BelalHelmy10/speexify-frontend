@@ -1103,7 +1103,7 @@ const AGE_GROUPS = [
     tagline: "Finding their voice at school.",
     mod: "teal",
     image: "/images/Kids%20Rising%20Stars.jpg",
-    alt: "Middle Eastern pre-teen student presenting in a modern classroom",
+    alt: "Middle Eastern pre-teen member presenting in a modern classroom",
     focus: [
       "School presentations",
       "Social confidence",
@@ -1196,7 +1196,7 @@ const whyCards = [
   {
     num: "01",
     title: "Coaches trained for children, not adults.",
-    text: "Our kids coaches know child psychology, attention spans, and how to make English feel like discovery, not homework.",
+    text: "Our kids coaches know child psychology, attention spans, and how to make English feel like discovery, not between-session drills.",
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -1773,7 +1773,7 @@ const FAQS = [
   },
   {
     q: "Is this different from a regular English tutor?",
-    a: "Very. Tutors teach. Coaches practice. Our sessions are not about grammar drills or homework help. They are about building the confidence to actually use the language in the real world.",
+    a: "Very. Tutors teach. Coaches practice. Our sessions are not about grammar drills or between-session worksheet help. They are about building the confidence to actually use the language in the real world.",
   },
 ];
 

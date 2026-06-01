@@ -249,7 +249,7 @@
         inset: 0;
         background:
             radial-gradient(ellipse 70% 60% at 75% -5%, rgba(242, 92, 46, .12) 0%, transparent 55%),
-            radial-gradient(ellipse 50% 40% at -5% 80%, rgba(45, 158, 143, .08) 0%, transparent 50%),
+            radial-gradient(ellipse 50% 40% at -5% 80%, rgba(15, 118, 110, .08) 0%, transparent 50%),
             var(--individual-bg);
     }
 
@@ -367,7 +367,7 @@
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
-        animation: fadeUp .7s .4s both;
+        animation: none;
     }
 
     /* ─── RIGHT SIDE: sessions dashboard ─── */
@@ -425,7 +425,7 @@
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: #22c55e;
+        background: #15803d;
         animation: pulse 2s ease-in-out infinite;
     }
 
@@ -639,7 +639,7 @@
         margin-top: 14px;
         padding: 14px;
         border-radius: 14px;
-        background: linear-gradient(135deg, rgba(242, 92, 46, .09), rgba(45, 158, 143, .08));
+        background: linear-gradient(135deg, rgba(242, 92, 46, .09), rgba(15, 118, 110, .08));
         border: 1px solid rgba(13, 27, 42, .08);
         position: relative;
     }
@@ -1167,7 +1167,7 @@
         left: calc(16.666% + 24px);
         right: calc(16.666% + 24px);
         height: 2px;
-        background: linear-gradient(90deg, var(--individual-coral) 0%, rgba(45, 158, 143, .34) 100%);
+        background: linear-gradient(90deg, var(--individual-coral) 0%, rgba(15, 118, 110, .34) 100%);
     }
 
     .how-step {
@@ -1502,7 +1502,7 @@
     }
 
     .tav3 {
-        background: #0D9488;
+        background: #0f766e;
     }
 
     .testi-stars {
@@ -2186,7 +2186,7 @@
             right: auto;
             width: 2px;
             height: auto;
-            background: linear-gradient(180deg, var(--individual-coral), rgba(45, 158, 143, .34));
+            background: linear-gradient(180deg, var(--individual-coral), rgba(15, 118, 110, .34));
         }
 
         .how-step {

@@ -29,7 +29,7 @@ $navy-muted: #2c5478;
 
 // ── Aliases (keep all existing variable names working)
 $primary: $coral;
-$secondary: #2d9e8f;
+$secondary: #0f766e;
 $color-primary: $coral;
 $color-primary-dark: $coral-dark;
 $color-primary-light: $coral-light;
@@ -49,8 +49,8 @@ $color-primary-ink: $coral-dark;
 // COLORS - Secondary & Tertiary
 // Sage (growth/progress) + Amber (knowledge/value)
 // ===========================================
-$color-secondary-light: #2d9e8f;
-$color-secondary-dark: #1f7d71;
+$color-secondary-light: #0f766e;
+$color-secondary-dark: #115e59;
 
 $color-tertiary-light: #eeba52;
 $color-tertiary-dark: #d4890a;
@@ -66,7 +66,7 @@ $color-grey-light: #fefcfa;
 $color-grey-light-2: #f5f0ea;
 
 $color-dark-grey: #5a6a7a;
-$color-dark-grey-2: #8a9bae;
+$color-dark-grey-2: #5a6a7a;
 $color-dark-grey-3: #1a3a5c;
 
 $color-muted: #5a6a7a;
@@ -98,7 +98,7 @@ $text-dark: $navy;
 $text-light: #5a6a7a;
 $text-primary: $navy;
 $text-secondary: #5a6a7a;
-$text-muted: #8a9bae;
+$text-muted: #5a6a7a;
 
 $ink: $navy;
 $muted: #5a6a7a;
@@ -108,7 +108,7 @@ $muted: #5a6a7a;
 // ===========================================
 $error: #ef4444;
 $error-bg: #fef2f2;
-$success: #22c55e;
+$success: #15803d;
 $success-bg: #f0fdf4;
 
 // ===========================================
@@ -217,8 +217,8 @@ $radius-card: 20px;
   --text: #0d1b2a;
   --muted: #5a6a7a;
   --border: #e8e0d5;
-  --ok: #2d9e8f;
-  --good: #22c55e;
+  --ok: #0f766e;
+  --good: #15803d;
   --warn: #d4890a;
   --bad: #ef4444;
 
@@ -247,7 +247,7 @@ $radius-card: 20px;
 
   --admin-primary: #f25c2e;
   --admin-primary-dark: #d94b1f;
-  --admin-success: #22c55e;
+  --admin-success: #15803d;
   --admin-success-dark: #15803d;
   --admin-accent: #f37550;
   --admin-accent-dark: #f25c2e;
@@ -271,11 +271,11 @@ $radius-card: 20px;
   --settings-border: rgba(232, 224, 213, 0.25);
   --settings-text: #0d1b2a;
   --settings-text-light: #5a6a7a;
-  --settings-text-muted: #8a9bae;
+  --settings-text-muted: #5a6a7a;
 
   --settings-primary: #f25c2e;
   --settings-primary-dark: #d94b1f;
-  --settings-success: #22c55e;
+  --settings-success: #15803d;
   --settings-warning: #d4890a;
   --settings-danger: #ef4444;
 
@@ -365,7 +365,7 @@ $payment-gray-600: #5a6a7a;
 $payment-gray-900: $navy;
 $payment-green-50: #f0fdf4;
 $payment-green-100: #dcfce7;
-$payment-green-600: #22c55e;
+$payment-green-600: #15803d;
 $payment-red-50: #fef2f2;
 $payment-red-100: #fee2e2;
 $payment-red-600: #ef4444;
@@ -377,7 +377,7 @@ $payment-red-600: #ef4444;
 // Sessions page
 $sessions-primary: #f25c2e;
 $sessions-primary-dark: #d94b1f;
-$sessions-success: #22c55e;
+$sessions-success: #15803d;
 $sessions-warning: #d4890a;
 $sessions-danger: #ef4444;
 $sessions-gray-50: #fefcfa;
@@ -385,7 +385,7 @@ $sessions-gray-100: #f5f0ea;
 $sessions-gray-200: #e8e0d5;
 $sessions-gray-300: #d4c9bb;
 $sessions-gray-400: #b8a99a;
-$sessions-gray-500: #8a9bae;
+$sessions-gray-500: #5a6a7a;
 $sessions-gray-600: #5a6a7a;
 $sessions-gray-700: #3d4f5f;
 $sessions-gray-800: #1a3a5c;
@@ -403,7 +403,7 @@ $sessions-shadow-lg:
 // Classroom experience page
 $classroom-primary: #f25c2e;
 $classroom-primary-light: #f37550;
-$classroom-success: #22c55e;
+$classroom-success: #15803d;
 $classroom-warning: #d4890a;
 $classroom-danger: #ef4444;
 $classroom-gray-50: #fefcfa;
@@ -411,7 +411,7 @@ $classroom-gray-100: #f5f0ea;
 $classroom-gray-200: #e8e0d5;
 $classroom-gray-300: #d4c9bb;
 $classroom-gray-400: #b8a99a;
-$classroom-gray-500: #8a9bae;
+$classroom-gray-500: #5a6a7a;
 $classroom-gray-600: #5a6a7a;
 $classroom-gray-700: #3d4f5f;
 $classroom-gray-800: #1a3a5c;
@@ -426,16 +426,16 @@ $classroom-shadow-lg: 0 10px 15px -3px rgba(13, 27, 42, 0.09);
 $asp-primary: #f25c2e;
 $asp-primary-hover: #d94b1f;
 $asp-primary-active: #b83d18;
-$asp-success: #22c55e;
+$asp-success: #15803d;
 $asp-danger: #ef4444;
 $asp-warning: #d4890a;
-$asp-info: #2d9e8f;
+$asp-info: #0f766e;
 $asp-bg: #fefcfa;
 $asp-surface: #ffffff;
 $asp-border: #e8e0d5;
 $asp-text: #0d1b2a;
 $asp-text-secondary: #5a6a7a;
-$asp-text-light: #8a9bae;
+$asp-text-light: #5a6a7a;
 $asp-shadow-sm: 0 1px 2px rgba(13, 27, 42, 0.05);
 $asp-shadow:
   0 4px 6px -1px rgba(13, 27, 42, 0.08),
@@ -477,11 +477,11 @@ $policy-border-radius: 8px;
 $policy-header-height: 80px;
 
 // Calendar availability layer
-$availability-primary: #2d9e8f;
-$availability-secondary: #1f7d71;
+$availability-primary: #0f766e;
+$availability-secondary: #115e59;
 $availability-light: #f0faf9;
 $availability-border: #86d9d2;
-$availability-text: #1f7d71;
+$availability-text: #115e59;
 $availability-text-dark: #155d55;
 
 // Support widget
@@ -519,11 +519,11 @@ $cr-bg-tertiary: #1e293b;
 $cr-bg-elevated: #1f2937;
 $cr-bg-surface: #151d2e;
 $cr-accent-teacher: #d4890a;
-$cr-accent-learner: #2d9e8f;
+$cr-accent-learner: #0f766e;
 $cr-accent-primary: #f25c2e;
 $cr-accent-primary-light: #f37550;
 $cr-accent-primary-lighter: #f47d5a;
-$cr-accent-success: #22c55e;
+$cr-accent-success: #15803d;
 $cr-accent-danger: #ef4444;
 $cr-accent-danger-light: #f26262;
 $cr-accent-purple: #a855f7;
@@ -572,7 +572,7 @@ $cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --why-bg-light: #fefcfa;
   --why-bg-white: #ffffff;
   --why-border-light: #e8e0d5;
-  --why-success: #22c55e;
+  --why-success: #15803d;
   --why-danger: #ef4444;
 
   --na-bg: #0b0c10;
@@ -606,7 +606,7 @@ $cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --individual-radius: 20px;
   --individual-tone-coral: #f25c2e;
   --individual-tone-gold: #d4890a;
-  --individual-tone-teal: #2d9e8f;
+  --individual-tone-teal: #0f766e;
 
   --tone-coral-color: #f25c2e;
   --tone-coral-bg: rgba(242, 92, 46, 0.1);
@@ -614,22 +614,22 @@ $cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --tone-coral-shadow-15: rgba(242, 92, 46, 0.15);
   --tone-coral-shadow-18: rgba(242, 92, 46, 0.18);
 
-  --tone-blue-color: #2d9e8f;
-  --tone-blue-bg: rgba(45, 158, 143, 0.1);
-  --tone-blue-shadow-14: rgba(45, 158, 143, 0.14);
-  --tone-blue-shadow-15: rgba(45, 158, 143, 0.15);
-  --tone-blue-shadow-18: rgba(45, 158, 143, 0.18);
+  --tone-blue-color: #0f766e;
+  --tone-blue-bg: rgba(15, 118, 110, 0.1);
+  --tone-blue-shadow-14: rgba(15, 118, 110, 0.14);
+  --tone-blue-shadow-15: rgba(15, 118, 110, 0.15);
+  --tone-blue-shadow-18: rgba(15, 118, 110, 0.18);
 
   --tone-gold-color: #d4890a;
   --tone-gold-bg: rgba(212, 137, 10, 0.1);
   --tone-gold-shadow-15: rgba(212, 137, 10, 0.15);
   --tone-gold-shadow-18: rgba(212, 137, 10, 0.18);
 
-  --tone-teal-color: #2d9e8f;
-  --tone-teal-bg: rgba(45, 158, 143, 0.1);
-  --tone-teal-shadow-14: rgba(45, 158, 143, 0.14);
-  --tone-teal-shadow-15: rgba(45, 158, 143, 0.15);
-  --tone-teal-shadow-18: rgba(45, 158, 143, 0.18);
+  --tone-teal-color: #0f766e;
+  --tone-teal-bg: rgba(15, 118, 110, 0.1);
+  --tone-teal-shadow-14: rgba(15, 118, 110, 0.14);
+  --tone-teal-shadow-15: rgba(15, 118, 110, 0.15);
+  --tone-teal-shadow-18: rgba(15, 118, 110, 0.18);
 
   --home-tone-coral-bg-soft: #fdf0eb;
   --home-tone-coral-bg: #fdf0eb;
@@ -637,13 +637,13 @@ $cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --home-tone-coral-border-22: rgba(242, 92, 46, 0.22);
 
   --home-tone-blue-bg: #f0faf9;
-  --home-tone-blue-border-22: rgba(45, 158, 143, 0.22);
+  --home-tone-blue-border-22: rgba(15, 118, 110, 0.22);
 
   --home-tone-gold-bg: #fdf8ec;
   --home-tone-gold-border-22: rgba(212, 137, 10, 0.22);
 
   --home-tone-teal-bg: #f0faf9;
-  --home-tone-teal-border-22: rgba(45, 158, 143, 0.22);
+  --home-tone-teal-border-22: rgba(15, 118, 110, 0.22);
 }
 
 // ===========================================

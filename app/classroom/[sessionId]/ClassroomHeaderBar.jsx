@@ -16,8 +16,8 @@ const WS_STATUS_MAP = {
 /* ─── Signal strength bars (3-bar) ────────────────────────────────────── */
 const LEVEL_TO_BARS = { excellent: 3, good: 3, fair: 2, poor: 1, unknown: 0 };
 const LEVEL_TO_COLOR = {
-  excellent: "var(--cr-accent-success, #22c55e)",
-  good: "var(--cr-accent-success, #22c55e)",
+  excellent: "var(--cr-accent-success, #15803d)",
+  good: "var(--cr-accent-success, #15803d)",
   fair: "var(--cr-accent-teacher, #f59e0b)",
   poor: "var(--cr-accent-danger, #ef4444)",
   unknown: "var(--cr-text-muted, #64748b)",

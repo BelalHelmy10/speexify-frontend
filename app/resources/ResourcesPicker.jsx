@@ -576,7 +576,7 @@ export default function ResourcesPicker({ tracks, locale = "en", access = null }
             {/* Book Level */}
             <div className="resources-picker__field">
               <label className="resources-picker__label">
-                {t(dict, "resources_field_level")}
+                {t(dict, "resources_field_band")}
               </label>
               <div className="resources-picker__control">
                 <select
@@ -688,8 +688,8 @@ export default function ResourcesPicker({ tracks, locale = "en", access = null }
                       {resource.kind && <span>{resource.kind}</span>}
                       {resource.cecrLevel && (
                         <span>
-                          {t(dict, "resources_meta_cefr", {
-                            level: resource.cecrLevel,
+                          {t(dict, "resources_meta_cefr_band", {
+                            band: resource.cecrLevel,
                           })}
                         </span>
                       )}
@@ -772,8 +772,8 @@ export default function ResourcesPicker({ tracks, locale = "en", access = null }
               )}
               {selectedResource.cecrLevel && (
                 <span className="resources-chip resources-chip--success">
-                  {t(dict, "resources_meta_cefr", {
-                    level: selectedResource.cecrLevel,
+                  {t(dict, "resources_meta_cefr_band", {
+                    band: selectedResource.cecrLevel,
                   })}
                 </span>
               )}

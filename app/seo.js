@@ -77,6 +77,30 @@ export const seoPages = {
       "برامج تدريب على الإنجليزية والتواصل للفرق والمديرين والأدوار التي تتعامل مع العملاء والتواصل في بيئات العمل العالمية.",
     keywords: ["corporate English training", "business communication training", "team English coaching"],
   },
+  kids: {
+    path: "/kids",
+    arPath: "/ar/kids",
+    title: "English Speaking Coaching for Kids",
+    arTitle: "تدريب محادثة إنجليزية للأطفال",
+    description:
+      "Playful, confidence-first English speaking coaching for kids and teens, built around live practice, age-fit sessions, and real conversation.",
+    arDescription:
+      "تدريب محادثة إنجليزية للأطفال والمراهقين يركز على الثقة والممارسة المباشرة وجلسات مناسبة للسن ومحادثات حقيقية.",
+    keywords: ["English coaching for kids", "kids English speaking practice", "English confidence for children"],
+    arKeywords: ["تدريب انجليزي للأطفال", "محادثة انجليزي للأطفال", "ثقة الأطفال في التحدث بالانجليزية"],
+  },
+  memberStories: {
+    path: "/member-stories",
+    arPath: "/ar/member-stories",
+    title: "Member Stories",
+    arTitle: "قصص الأعضاء",
+    description:
+      "Read Speexify member stories and see how live English coaching turns real-world speaking moments into measurable confidence.",
+    arDescription:
+      "اقرأ قصص أعضاء Speexify وشوف كيف يحوّل التدريب المباشر لحظات التحدث الواقعية إلى ثقة واضحة.",
+    keywords: ["Speexify member stories", "English coaching success stories", "speaking confidence stories"],
+    arKeywords: ["قصص أعضاء Speexify", "قصص نجاح تدريب انجليزي", "ثقة في التحدث بالانجليزية"],
+  },
   packages: {
     path: "/packages",
     arPath: "/ar/packages",

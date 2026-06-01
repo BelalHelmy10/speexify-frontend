@@ -59,7 +59,7 @@ function IndividualInner({ dict, locale }) {
     name: "",
     email: "",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    level: t(dict, "level_a2"),
+    level: t(dict, "band_a2"),
     goal: t(dict, "goal_confidence"),
     availability: t(dict, "availability_weekdays"),
     message: "",
@@ -97,7 +97,7 @@ function IndividualInner({ dict, locale }) {
         role: "Individual",
         topic: "Individual Session Request",
         budget: "",
-        message: `Level: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone}\nAvailability: ${form.availability}\n\n${form.message || ""}`,
+        message: `Band: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone}\nAvailability: ${form.availability}\n\n${form.message || ""}`,
       });
       setStatus(t(dict, "status_sent"));
       setStatusTone("success");
@@ -106,7 +106,7 @@ function IndividualInner({ dict, locale }) {
     } catch (_err) {
       const subject = encodeURIComponent(`[Individual] ${form.goal}`);
       const body = encodeURIComponent(
-        `Name: ${form.name}\nEmail: ${form.email}\nLevel: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone}\nAvailability: ${form.availability}\n\n${form.message}`
+        `Name: ${form.name}\nEmail: ${form.email}\nBand: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone}\nAvailability: ${form.availability}\n\n${form.message}`
       );
       window.location.href = `mailto:hello@speexify.com?subject=${subject}&body=${body}`;
       setStatus(t(dict, "status_email_fallback"));
@@ -457,8 +457,9 @@ function IndividualInner({ dict, locale }) {
             <form ref={formRef} onSubmit={submit} className={statusTone === "error" ? "form-has-error" : ""}>
               <div className="form-row">
                 <div className="form-field">
-                  <label className="form-label">{t(dict, "field_name")}</label>
+                  <label className="form-label" htmlFor="individual-name">{t(dict, "field_name")}</label>
                   <input
+                    id="individual-name"
                     className="form-input"
                     name="name"
                     value={form.name}
@@ -467,8 +468,9 @@ function IndividualInner({ dict, locale }) {
                   />
                 </div>
                 <div className="form-field">
-                  <label className="form-label">{t(dict, "field_email")}</label>
+                  <label className="form-label" htmlFor="individual-email">{t(dict, "field_email")}</label>
                   <input
+                    id="individual-email"
                     className="form-input"
                     type="email"
                     name="email"
@@ -481,8 +483,9 @@ function IndividualInner({ dict, locale }) {
 
               <div className="form-row">
                 <div className="form-field">
-                  <label className="form-label">{t(dict, "field_timezone")}</label>
+                  <label className="form-label" htmlFor="individual-timezone">{t(dict, "field_timezone")}</label>
                   <select
+                    id="individual-timezone"
                     className="form-select"
                     name="timezone"
                     value={form.timezone}
@@ -495,26 +498,28 @@ function IndividualInner({ dict, locale }) {
                   </select>
                 </div>
                 <div className="form-field">
-                  <label className="form-label">{t(dict, "field_level")}</label>
+                  <label className="form-label" htmlFor="individual-level">{t(dict, "field_band")}</label>
                   <select
+                    id="individual-level"
                     className="form-select"
                     name="level"
                     value={form.level}
                     onChange={onChange}
                   >
-                    <option>{t(dict, "level_a2")}</option>
-                    <option>{t(dict, "level_b1")}</option>
-                    <option>{t(dict, "level_b2")}</option>
-                    <option>{t(dict, "level_c1")}</option>
-                    <option>{t(dict, "level_c2")}</option>
+                    <option>{t(dict, "band_a2")}</option>
+                    <option>{t(dict, "band_b1")}</option>
+                    <option>{t(dict, "band_b2")}</option>
+                    <option>{t(dict, "band_c1")}</option>
+                    <option>{t(dict, "band_c2")}</option>
                   </select>
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-field">
-                  <label className="form-label">{t(dict, "field_availability")}</label>
+                  <label className="form-label" htmlFor="individual-availability">{t(dict, "field_availability")}</label>
                   <select
+                    id="individual-availability"
                     className="form-select"
                     name="availability"
                     value={form.availability}
@@ -526,8 +531,9 @@ function IndividualInner({ dict, locale }) {
                   </select>
                 </div>
                 <div className="form-field">
-                  <label className="form-label">{t(dict, "field_goal")}</label>
+                  <label className="form-label" htmlFor="individual-goal">{t(dict, "field_goal")}</label>
                   <select
+                    id="individual-goal"
                     className="form-select"
                     name="goal"
                     value={form.goal}
@@ -544,8 +550,9 @@ function IndividualInner({ dict, locale }) {
 
               <div className="form-row full">
                 <div className="form-field">
-                  <label className="form-label">{t(dict, "field_message")}</label>
+                  <label className="form-label" htmlFor="individual-message">{t(dict, "field_message")}</label>
                   <input
+                    id="individual-message"
                     className="form-input"
                     name="message"
                     placeholder={t(dict, "message_placeholder")}
@@ -557,6 +564,7 @@ function IndividualInner({ dict, locale }) {
 
               <label className="form-checkbox">
                 <input
+                  id="individual-agree"
                   type="checkbox"
                   name="agree"
                   checked={form.agree}
@@ -685,7 +693,7 @@ function Testimonial({ avatarCls, avatarTxt, outcome, quote, by, role }) {
       <div className="testi-head">
         <div className={`testi-av ${avatarCls}`}>{avatarTxt}</div>
         <span className="testi-outcome">{outcome}</span>
-        <div className="testi-stars" aria-label="5 out of 5 stars">
+        <div className="testi-stars" role="img" aria-label="5 out of 5 stars">
           {Array.from({ length: 5 }).map((_, idx) => (
             <svg
               key={idx}
@@ -709,9 +717,9 @@ function Testimonial({ avatarCls, avatarTxt, outcome, quote, by, role }) {
 }
 
 // Keep original locale detection so Arabic stays Arabic
-export default function IndividualPage() {
+export default function IndividualPage({ forcedLocale } = {}) {
   const pathname = usePathname();
-  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const locale = forcedLocale || (pathname?.startsWith("/ar") ? "ar" : "en");
   const dict = getDictionary(locale, "individual");
 
   return <IndividualInner dict={dict} locale={locale} />;

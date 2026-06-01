@@ -5,6 +5,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { useToast } from "@/components/ToastProvider";
+import useAuth from "@/hooks/useAuth";
 
 const PLACEMENT_VERSION = "speexify-placement-v1";
 const DRAFT_KEY = "speexifyPlacementDraft_v1";
@@ -712,6 +713,7 @@ function formatSavedAt(value) {
 
 export default function AssessmentPage() {
   const { toast, confirmModal } = useToast();
+  const { hasSessionCookie } = useAuth();
   const [coreAnswers, setCoreAnswers] = useState({});
   const [readingAnswers, setReadingAnswers] = useState({});
   const [listeningAnswers, setListeningAnswers] = useState({});
@@ -746,10 +748,12 @@ export default function AssessmentPage() {
 
     (async () => {
       let serverData = null;
-      try {
-        const { data } = await api.get("/me/assessment");
-        serverData = data || null;
-      } catch {}
+      if (hasSessionCookie) {
+        try {
+          const { data } = await api.get("/me/assessment");
+          serverData = data || null;
+        } catch {}
+      }
 
       let localDraft = null;
       try {
@@ -782,7 +786,7 @@ export default function AssessmentPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [hasSessionCookie]);
 
   useEffect(() => {
     if (!speakingActive) return undefined;
@@ -998,7 +1002,14 @@ export default function AssessmentPage() {
         <aside className="placement-status">
           <span>Estimated time</span>
           <strong>45-60 min</strong>
-          <div className="placement-progress" aria-label={`${completion}% complete`}>
+          <div
+            className="placement-progress"
+            role="progressbar"
+            aria-label={`${completion}% complete`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={completion}
+          >
             <span style={{ width: `${completion}%` }} />
           </div>
           <small>{completion}% complete</small>
@@ -1195,6 +1206,7 @@ export default function AssessmentPage() {
               <fieldset className="placement-speaking-check" key={check.id}>
                 <legend>{check.label}</legend>
                 <select
+                  aria-label={check.label}
                   value={speakingChecks[check.id] ?? ""}
                   onChange={(e) => setAnswer(setSpeakingChecks, check.id, e.target.value)}
                 >

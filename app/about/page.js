@@ -419,7 +419,7 @@ export default function AboutPage() {
               const name = t(dict, item.nameKey);
               return (
                 <blockquote className="quote-card" key={`${item.quoteKey}-${idx}`}>
-                  <div className="quote-stars" aria-label="5 out of 5 stars">★★★★★</div>
+                  <div className="quote-stars" role="img" aria-label="5 out of 5 stars">★★★★★</div>
                   <p className="quote-text">&ldquo;{t(dict, item.quoteKey)}&rdquo;</p>
                   <footer className="quote-footer">
                     <div className="quote-avatar">{getInitials(name)}</div>

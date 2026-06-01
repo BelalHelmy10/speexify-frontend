@@ -438,6 +438,7 @@ export default function NeedsAnalysisPage() {
                   <input
                     className="naSimple__range"
                     type="range"
+                    aria-label={`Confidence score: ${s.label}`}
                     min={0}
                     max={10}
                     step={1}

@@ -30,8 +30,8 @@
   "time_timezone_label": "المنطقة الزمنية:",
   "datetime_na": "غير متوفر",
 
-  "section_teacher_title": "المدرّب",
-  "section_teacher_not_assigned": "مفيش مدرّب متعيّن لسه.",
+  "section_coach_title": "المدرّب",
+  "section_coach_not_assigned": "مفيش مدرّب متعيّن لسه.",
 
   "section_learner_title": "المتدرب",
   "section_learners_title": "المتدربين",
@@ -67,16 +67,16 @@
   "session_completed_success": "اتحدّد إن الجلسة خلصت.",
   "success_saved": "تمام.",
 
-  "notes_title": "الملاحظات / الواجب",
-  "notes_empty": "مضافش ملاحظات أو واجب للجلسة دي لسه.",
-  "notes_empty_learner_hint": "ارجع تاني أو كلم المدرّب لو كنت مستني واجب هنا.",
+  "notes_title": "الملاحظات / التمرين",
+  "notes_empty": "مضافش ملاحظات أو تمرين للجلسة دي لسه.",
+  "notes_empty_learner_hint": "ارجع تاني أو كلم المدرّب لو كنت مستني تمرين هنا.",
 
   "feedback_title": "ملاحظات من المدرّب",
   "feedback_hint": "ملاحظات من المدرّب عشان تساعدك في خطواتك اللي جاي.",
   "feedback_empty_title": "مفيش ملاحظات لسه",
   "feedback_empty_body": "المدرّب مشاركش ملاحظات للجلسة دي لسه.",
-  "feedback_add_teacher": "ضيف ملاحظات",
-  "feedback_edit_teacher": "غيّر الملاحظات",
+  "feedback_add_coach": "ضيف ملاحظات",
+  "feedback_edit_coach": "غيّر الملاحظات",
   "feedback_msg_title": "رسالة للمتدرب",
   "feedback_msg_empty": "مفيش رسالة.",
   "feedback_comments_title": "ملاحظات على الجلسة",

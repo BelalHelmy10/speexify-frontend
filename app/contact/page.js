@@ -221,7 +221,7 @@ function Contact() {
                     <label htmlFor="role">{t(dict, "form_role_label")}</label>
                     <select id="role" name="role" value={form.role} onChange={onChange}>
                       <option value="INDIVIDUAL">{t(dict, "form_role_option_individual")}</option>
-                      <option value="TEACHER">{t(dict, "form_role_option_teacher")}</option>
+                      <option value="TEACHER">{t(dict, "form_role_option_coach")}</option>
                       <option value="COMPANY">{t(dict, "form_role_option_company")}</option>
                     </select>
                   </div>

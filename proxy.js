@@ -1,7 +1,8 @@
-// middleware.js
+// proxy.js
 import { NextResponse } from "next/server";
 
 const TOKEN_COOKIE = "speexify.sid"; // session cookie name
+const VALID_MEMBER_STORY_SLUGS = new Set(["sara", "ahmed", "yara"]);
 const rawApiBase =
   process.env.BACKEND_API_BASE ||
   process.env.NEXT_PUBLIC_API_URL ||
@@ -39,6 +40,20 @@ function isAuthEntry(pathname) {
 
 function isAdminRoute(pathname) {
   return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
+function getInvalidMemberStorySlug(pathname) {
+  const match = pathname.match(/^\/member-stories\/([^/]+)$/);
+  if (!match) return null;
+
+  let slug = match[1];
+  try {
+    slug = decodeURIComponent(slug);
+  } catch {
+    return match[1];
+  }
+
+  return VALID_MEMBER_STORY_SLUGS.has(slug) ? null : slug;
 }
 
 function getSafeNextPath(rawNext, fallbackPath) {
@@ -102,7 +117,7 @@ async function getSessionUser(req) {
   }
 }
 
-export async function middleware(req) {
+export async function proxy(req) {
   const url = req.nextUrl.clone();
   const pathname = url.pathname;
   const searchParams = url.searchParams;
@@ -110,6 +125,18 @@ export async function middleware(req) {
   const isArabic = pathname === "/ar" || pathname.startsWith("/ar/");
   // Normalize to EN-style base path ("/dashboard", "/login", etc.)
   const basePath = isArabic ? pathname.replace(/^\/ar/, "") || "/" : pathname;
+  const invalidMemberStorySlug = getInvalidMemberStorySlug(basePath);
+
+  if (invalidMemberStorySlug) {
+    return withCommonHeaders(
+      new NextResponse("Page not found", {
+        status: 404,
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+        },
+      })
+    );
+  }
 
   const token = req.cookies.get(TOKEN_COOKIE)?.value;
   const onPrivatePage = isPrivate(basePath);
@@ -170,6 +197,7 @@ export const config = {
     "/", // home
     "/login",
     "/register",
+    "/member-stories/:path*",
     "/dashboard/:path*",
     "/calendar/:path*",
     "/settings/:path*",
@@ -189,6 +217,7 @@ export const config = {
     "/ar/:path*",
     "/ar/login",
     "/ar/register",
+    "/ar/member-stories/:path*",
     "/ar/dashboard/:path*",
     "/ar/calendar/:path*",
     "/ar/settings/:path*",

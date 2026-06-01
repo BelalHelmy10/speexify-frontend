@@ -14,14 +14,14 @@
   "generic_error": "Failed to load session details",
 
   "normal_title_fallback": "Session details",
-  "normal_subtitle": "Overview of this lesson, participants, and feedback.",
+  "normal_subtitle": "Overview of this session, participants, and feedback.",
 
   "status_scheduled": "Scheduled",
   "status_completed": "Completed",
   "status_canceled": "Canceled",
 
-  "type_one_on_one": "1:1 Lesson",
-  "type_group": "Group lesson",
+  "type_one_on_one": "1:1 Session",
+  "type_group": "Group session",
 
   "section_time_title": "Time",
   "time_start_label": "Start:",
@@ -30,8 +30,8 @@
   "time_timezone_label": "Timezone:",
   "datetime_na": "N/A",
 
-  "section_teacher_title": "Teacher",
-  "section_teacher_not_assigned": "No teacher assigned.",
+  "section_coach_title": "Coach",
+  "section_coach_not_assigned": "No coach assigned.",
 
   "section_learner_title": "Learner",
   "section_learners_title": "Learners",
@@ -67,16 +67,16 @@
   "session_completed_success": "Session marked as completed.",
   "success_saved": "Done.",
 
-  "notes_title": "Notes / Homework",
-  "notes_empty": "No notes or homework have been added for this session yet.",
-  "notes_empty_learner_hint": "Check back later or message your teacher if you expected homework here.",
+  "notes_title": "Notes / Practice",
+  "notes_empty": "No notes or practice have been added for this session yet.",
+  "notes_empty_learner_hint": "Check back later or message your coach if you expected practice here.",
 
-  "feedback_title": "Teacher feedback",
-  "feedback_hint": "Reflections from your teacher to help guide your next steps.",
-  "feedback_empty_title": "No teacher feedback yet",
-  "feedback_empty_body": "Your teacher hasn't shared feedback for this session yet.",
-  "feedback_add_teacher": "Add feedback",
-  "feedback_edit_teacher": "Edit feedback",
+  "feedback_title": "Coach feedback",
+  "feedback_hint": "Reflections from your coach to help guide your next steps.",
+  "feedback_empty_title": "No coach feedback yet",
+  "feedback_empty_body": "Your coach hasn't shared feedback for this session yet.",
+  "feedback_add_coach": "Add feedback",
+  "feedback_edit_coach": "Edit feedback",
   "feedback_msg_title": "Message to the learner",
   "feedback_msg_empty": "No message provided.",
   "feedback_comments_title": "Comments on the session",
@@ -90,7 +90,7 @@
   "learner_rate_edit": "Update your rating",
 
   "summary_title": "Session summary",
-  "summary_subtitle": "Attendance, materials, and feedback from this lesson.",
+  "summary_subtitle": "Attendance, materials, and feedback from this session.",
 
   "progress_link": "View your progress",
   "progress_link_hint": "See how this session fits into your learning journey."

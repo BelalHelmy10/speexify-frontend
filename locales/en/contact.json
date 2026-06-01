@@ -15,7 +15,7 @@
   "form_phone_placeholder": "(optional)",
   "form_role_label": "I'm a…",
   "form_role_option_individual": "Learner",
-  "form_role_option_teacher": "Coach / Teacher",
+  "form_role_option_coach": "Coach",
   "form_role_option_company": "Company / HR",
   "form_topic_label": "What can we help with?",
   "form_topic_option_general": "General question",

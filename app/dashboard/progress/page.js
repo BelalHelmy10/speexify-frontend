@@ -620,7 +620,7 @@ function JourneyItem({ item, index, locale, prefix, dict }) {
             <h3>{item.title}</h3>
             <p>
               {dateLabel}
-              {item.teacherName ? ` ${copy(dict, "with_teacher", "with")} ${item.teacherName}` : ""}
+              {item.teacherName ? ` ${copy(dict, "with_coach", "with")} ${item.teacherName}` : ""}
             </p>
           </div>
           <Link href={localizeHref(item.href, prefix)}>

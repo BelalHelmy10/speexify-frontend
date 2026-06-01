@@ -82,13 +82,13 @@
   "skill_vocabulary": "Vocabulary",
 
   "field_challenges_label": "What do you find most difficult?",
-  "field_challenges_hint": "Be specific. This guides our first lessons.",
+  "field_challenges_hint": "Be specific. This guides our first sessions.",
   "field_challenges_placeholder": "e.g., understanding fast speech; organizing ideas in writing; accurate grammar in emails...",
 
   "field_learning_styles_label": "Preferred learning style",
   "field_learning_styles_hint": "Select all that apply",
 
-  "learning_structured_grammar": "Structured grammar-focused lessons",
+  "learning_structured_grammar": "Structured grammar-focused sessions",
   "learning_interactive_speaking": "Interactive speaking & conversation",
   "learning_task_project": "Task / project-based learning",
   "learning_listening_video": "Listening & video-based practice",
@@ -96,17 +96,17 @@
   "learning_self_paced": "Self-paced study with feedback",
 
   "section_self_title": "Self-Assessment",
-  "section_self_hint": "Optional but helpful for placement and lesson planning.",
+  "section_self_hint": "Optional but helpful for placement and session planning.",
 
-  "field_level_label": "Current Level",
-  "field_level_hint": "Self-assessment (CEFR)",
-  "field_level_placeholder": "Select your level...",
-  "level_a1": "A1 (Beginner)",
-  "level_a2": "A2 (Elementary)",
-  "level_b1": "B1 (Intermediate)",
-  "level_b2": "B2 (Upper Intermediate)",
-  "level_c1": "C1 (Advanced)",
-  "level_c2": "C2 (Near-native)",
+  "field_band_label": "Current Band",
+  "field_band_hint": "Self-assessment (CEFR)",
+  "field_band_placeholder": "Select your band...",
+  "band_a1": "A1 · just starting",
+  "band_a2": "A2 · building basics",
+  "band_b1": "B1 · getting independent",
+  "band_b2": "B2 · confident in familiar moments",
+  "band_c1": "C1 · confident in complex moments",
+  "band_c2": "C2 · highly fluent",
 
   "field_confidence_label": "Confidence by skill",
   "field_confidence_hint": "1 = Low confidence, 10 = Very confident",

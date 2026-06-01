@@ -91,7 +91,7 @@ function FeedbackCard({ item, timezone, prefix, dict }) {
         <TeacherAvatar name={item.teacher?.name} url={item.teacher?.avatarUrl} />
         <div className="fb-card__meta">
           <span className="fb-card__teacher">
-            {t(dict, "from_teacher")?.replace("{name}", item.teacher?.name || "Your teacher")}
+            {t(dict, "from_coach")?.replace("{name}", item.teacher?.name || "Your coach")}
           </span>
           <span className="fb-card__date">
             {item.startAt ? fmtInTz(item.startAt, timezone) : ""}

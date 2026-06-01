@@ -5,7 +5,7 @@ $k-navy:    #0d1b2a;
 $k-navy-mid:#1a3a5c;
 $k-coral:   #f25c2e;
 $k-coral-d: #d94b1f;
-$k-teal:    #2d9e8f;
+$k-teal:    #0f766e;
 $k-gold:    #d4890a;
 $k-bg:      #fefcfa;
 $k-surface: #f5f0ea;
@@ -528,7 +528,7 @@ $k-ring:    #ede5d8;
       left: -28px;
       animation: kids-float 3.6s ease-in-out infinite;
 
-      svg { color: #22c55e; }
+      svg { color: #15803d; }
 
       // Pull the chip in from the edge so it stays fully on-screen on phones
       @media (max-width: 900px) {
@@ -571,7 +571,7 @@ $k-ring:    #ede5d8;
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #22c55e;
+    background: #15803d;
     animation: kdemo-live-dot 1.5s ease-in-out infinite;
   }
 }
@@ -954,10 +954,10 @@ $k-ring:    #ede5d8;
     font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.04em;
-    color: rgba($k-bg, 0.65);
+    color: rgba($k-bg, 0.82);
     white-space: nowrap;
 
-    &:nth-child(odd) { color: rgba($k-coral, 0.8); }
+    &:nth-child(odd) { color: #f5b6a0; }
   }
 
   &__sep {
@@ -1197,7 +1197,7 @@ $k-ring:    #ede5d8;
     flex: 1;
     text-align: center;
     font-size: 0.7rem;
-    color: rgba($k-bg, 0.28);
+    color: rgba($k-bg, 0.82);
     background: rgba($k-bg, 0.05);
     padding: 3px 10px;
     border-radius: 4px;
@@ -1206,7 +1206,7 @@ $k-ring:    #ede5d8;
   &__timer {
     font-size: 0.7rem;
     font-weight: 600;
-    color: rgba($k-bg, 0.35);
+    color: rgba($k-bg, 0.82);
     font-variant-numeric: tabular-nums;
   }
 
@@ -1246,7 +1246,7 @@ $k-ring:    #ede5d8;
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #22c55e;
+    background: #15803d;
     border: 2px solid #111827;
     animation: kdemo-live-dot 1.4s ease-in-out infinite;
   }
@@ -1270,7 +1270,7 @@ $k-ring:    #ede5d8;
     font-size: 0.6rem;
     font-weight: 700;
     letter-spacing: 0.1em;
-    color: #22c55e;
+    color: #15803d;
     background: rgba(34, 197, 94, 0.1);
     border: 1px solid rgba(34, 197, 94, 0.22);
     padding: 3px 8px;

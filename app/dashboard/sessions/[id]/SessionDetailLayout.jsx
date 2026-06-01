@@ -192,7 +192,7 @@ export default function SessionDetailLayout({
                     {teacher.name || teacher.email}
                   </span>
                   <span className="sd-hero__person-role">
-                    {txt("section_teacher_title", "Teacher")}
+                    {txt("section_coach_title", "Coach")}
                   </span>
                 </div>
               </div>
@@ -348,7 +348,7 @@ export default function SessionDetailLayout({
                   className="btn btn--ghost"
                   style={{ marginTop: 16 }}
                 >
-                  {txt("feedback_edit_teacher", "Edit feedback")}
+                  {txt("feedback_edit_coach", "Edit feedback")}
                 </Link>
               )}
             </Panel>
@@ -356,7 +356,7 @@ export default function SessionDetailLayout({
             sessionStatus !== "canceled" && (
               <Panel
                 icon="feedback"
-                title={txt("feedback_empty_title", "No teacher feedback yet")}
+                title={txt("feedback_empty_title", "No coach feedback yet")}
               >
                 <EmptyState
                   icon="feedback"
@@ -381,7 +381,7 @@ export default function SessionDetailLayout({
                         href={`${prefix}/dashboard/sessions/${sessionId}/feedback`}
                         className="btn btn--primary"
                       >
-                        {txt("feedback_add_teacher", "Add feedback")}
+                        {txt("feedback_add_coach", "Add feedback")}
                       </Link>
                     )
                   }

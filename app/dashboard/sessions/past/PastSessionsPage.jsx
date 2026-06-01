@@ -166,7 +166,7 @@ function getPeopleSummary(session, isTeacher, dict) {
   }
 
   const teacherName = session?.teacher?.name || session?.teacher?.email;
-  return teacherName || text(dict, "past_archive_no_teacher", "Teacher details pending");
+  return teacherName || text(dict, "past_archive_no_coach", "Coach details pending");
 }
 
 function getSearchText(session) {
@@ -251,7 +251,7 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
     ? isGroup
       ? text(dict, "past_archive_learners", "Learners")
       : text(dict, "past_archive_learner", "Learner")
-    : text(dict, "past_archive_teacher", "Teacher");
+    : text(dict, "past_archive_coach", "Coach");
 
   return (
     <article className={`past-session-card past-session-card--${status}`}>

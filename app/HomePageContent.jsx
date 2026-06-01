@@ -13,14 +13,6 @@ const MARKETING_IMAGE_VERSION = "20260519";
 const marketingImage = (src) => `${src}?v=${MARKETING_IMAGE_VERSION}`;
 
 export default function HomePageContent({ locale = "en" }) {
-  useEffect(() => {
-    document.documentElement.classList.add("home-client-ready");
-
-    return () => {
-      document.documentElement.classList.remove("home-client-ready");
-    };
-  }, []);
-
   return <Home locale={locale} />;
 }
 
@@ -773,6 +765,7 @@ function Quote({ quote, author, role, rating }) {
       <div className="home-quote__top">
         <div
           className="home-quote__stars"
+          role="img"
           aria-label={`${rating} out of 5 stars`}
         >
           {Array.from({ length: rating }).map((_, i) => (
@@ -1174,7 +1167,12 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
           </div>
         </div>
 
-        <div className="home-testimonials__track" ref={trackRef}>
+        <div
+          className="home-testimonials__track"
+          ref={trackRef}
+          tabIndex={0}
+          aria-label={t(dict, "testimonials_title")}
+        >
           {testimonials.map((t_, i) => (
             <Quote
               key={i}
@@ -1512,7 +1510,7 @@ function HeroCinema() {
 
         <hr className="home-hcine__sep" aria-hidden="true" />
 
-        {/* Student message */}
+        {/* Member message */}
         <div className="home-hcine__msg" aria-hidden="true">
           <span className="home-hcine__from">You</span>
           <div className="home-hcine__bubble">
@@ -1658,7 +1656,7 @@ function LiveSessionDemo() {
 
               <hr className="home-live-demo__sep" aria-hidden="true" />
 
-              {/* Student message */}
+              {/* Member message */}
               <div className="home-live-demo__student-msg">
                 <span className="home-live-demo__from">You</span>
                 <div className="home-live-demo__bubble">

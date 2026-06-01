@@ -28,7 +28,7 @@ export const PEN_COLORS = [
   "#fbbf24",
   "#60a5fa",
   "#f97316",
-  "#22c55e",
+  "#15803d",
   "#ef4444",
   "#a855f7",
   "#ec4899",
@@ -40,7 +40,7 @@ export const PEN_COLORS = [
 export const POINTER_COLORS = [
   "#ef4444",
   "#3b82f6",
-  "#22c55e",
+  "#15803d",
   "#f97316",
   "#a855f7",
   "#06b6d4",

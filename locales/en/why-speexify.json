@@ -38,7 +38,7 @@
   "how_point2_title": "Sessions that respond to you.",
   "how_point2_text": "Real conversations, not scripts. The session adjusts to where you actually are, not where a textbook says you should be.",
   "how_point3_title": "Notes after every session.",
-  "how_point3_text": "What you practiced. What got better. What's next. A record of your reps, not a certificate of completion.",
+  "how_point3_text": "What you practiced. What got better. What's next. A record of your reps, not a generic completion summary.",
   "how_point4_title": "Built around your week.",
   "how_point4_text": "Book when you're ready. Reschedule when life happens. Your spot stays. No penalties.",
 
@@ -52,7 +52,7 @@
   "contrast_row2_us": "Built around your actual conversations",
   "contrast_row3_them": "Grammar drills",
   "contrast_row3_us": "Reps from session one",
-  "contrast_row4_them": "Progress = levels finished",
+  "contrast_row4_them": "Progress = units finished",
   "contrast_row4_us": "Progress = meetings led",
   "contrast_row5_them": "One teacher, every student",
   "contrast_row5_us": "One coach, picked for you",
