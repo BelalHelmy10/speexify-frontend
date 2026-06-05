@@ -49,9 +49,7 @@
   overflow: hidden;
   border: 1px solid rgba($color-white, 0.12);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba($brand, 0.18), transparent 38%),
-    linear-gradient(135deg, $navy 0%, #102b45 54%, $navy-mid 100%);
+  background: $navy;
   box-shadow: 0 24px 70px rgba($navy, 0.18);
 
   &::before {
