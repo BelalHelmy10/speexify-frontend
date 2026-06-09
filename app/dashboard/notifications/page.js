@@ -8,13 +8,15 @@ import NotificationsPanel from "@/components/notifications/NotificationsPanel";
 import { copy } from "@/lib/notifications";
 
 export default function NotificationsPage() {
-  const { user, checking } = useAuth();
+  const { user, status: authStatus } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const t = copy(locale);
 
-  if (!checking && !user) {
+  // Only redirect when the session is *confirmed* invalid — not while we're
+  // still checking or when the backend was briefly unreachable.
+  if (authStatus === "unauthenticated") {
     router.replace("/login?next=/dashboard/notifications");
     return null;
   }

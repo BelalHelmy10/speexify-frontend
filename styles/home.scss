@@ -62,6 +62,16 @@
   }
 }
 
+@keyframes homeSpeechBloom {
+  0%, 100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.045);
+  }
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);
@@ -402,7 +412,41 @@
   }
 
   &__badge-icon {
-    font-size: 16px;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+
+    svg {
+      display: block;
+      overflow: visible;
+    }
+  }
+
+  &__speech-burst {
+    transform-origin: 50% 50%;
+  }
+
+  &__speech-bubble,
+  &__speech-wave,
+  &__speech-accent {
+    vector-effect: non-scaling-stroke;
+  }
+
+  &__speech-accent {
+    opacity: 0.64;
+  }
+
+  &__badge:hover &__speech-burst {
+    animation: homeSpeechBloom 1.6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__badge:hover &__speech-burst {
+      animation: none;
+    }
   }
 
   &__title {
@@ -960,34 +1004,294 @@
   }
 }
 
+// ── Floating proof badges — hover micro-cinema ──────────────
+// Each pill springs open a little on hover to play a looping
+// clip that proves its own claim. Animations are paused until
+// hover (clean start + zero idle cost) and fully disabled under
+// prefers-reduced-motion.
+@keyframes fb-eq {
+  0%, 100% { transform: scaleY(0.28); }
+  50%      { transform: scaleY(1); }
+}
+@keyframes fb-live-ring {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+@keyframes fb-wave {
+  0%, 100% { transform: scaleY(0.5); background: rgba($coral, 0.28); }
+  10%      { transform: scaleY(1);   background: $coral; }
+  24%      { transform: scaleY(0.5); background: rgba($coral, 0.28); }
+}
+@keyframes fb-scan {
+  0%   { left: -2%;  opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { left: 102%; opacity: 0; }
+}
+@keyframes fb-check {
+  0%, 58% { stroke-dashoffset: 20; opacity: 0; }
+  76%     { stroke-dashoffset: 0;  opacity: 1; }
+  92%     { stroke-dashoffset: 0;  opacity: 1; }
+  100%    { stroke-dashoffset: 0;  opacity: 0; }
+}
+@keyframes fb-charge {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba($coral, 0)); }
+  50%      { filter: drop-shadow(0 0 5px rgba($coral, 0.55)); }
+}
+
 .home-float-badge {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
   padding: 10px 16px;
   background: rgba($color-white, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 999px;
   box-shadow: 0 8px 24px rgba($color-black, 0.1);
   border: 1px solid rgba($color-white, 0.5);
+  transition:
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s ease,
+    border-color 0.5s ease;
+  will-change: transform;
 
   @media (max-width: 768px) {
-    gap: 6px;
     padding: 8px 12px;
   }
 
+  &:hover {
+    transform: translateY(-3px);
+  }
+
   &__icon {
-    font-size: 18px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    color: $ink;
+    transition:
+      color 0.35s ease,
+      transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+
+    @media (max-width: 768px) {
+      margin-right: 6px;
+    }
+  }
+
+  // Live broadcast dot — blooms + pulses a ring on hover
+  &__dot {
+    position: absolute;
+    top: -1px;
+    right: -2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: $coral;
+    opacity: 0;
+    transform: scale(0);
+    transition:
+      opacity 0.3s ease,
+      transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: $coral;
+    }
   }
 
   &__text {
     font-size: 14px;
     font-weight: 600;
     color: $ink;
+    white-space: nowrap;
 
     @media (max-width: 768px) {
       font-size: 13px;
     }
+  }
+
+  // Content-sized spring reveal (grid 0fr → 1fr)
+  &__reveal {
+    display: grid;
+    grid-template-columns: 0fr;
+    transition: grid-template-columns 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  &__reveal-inner {
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 0;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition:
+      opacity 0.35s ease 0.06s,
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.06s,
+      padding-left 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  &:hover &__reveal {
+    grid-template-columns: 1fr;
+  }
+
+  &:hover &__reveal-inner {
+    opacity: 1;
+    transform: none;
+    padding-left: 9px;
+  }
+
+  // Equalizer — the coach's live voice
+  &__eq {
+    display: flex;
+    align-items: center;
+    gap: 2.5px;
+    height: 15px;
+
+    i {
+      display: block;
+      width: 2.5px;
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(180deg, $coral-light, $coral);
+      transform: scaleY(0.28);
+      animation: fb-eq 0.9s ease-in-out infinite;
+      animation-play-state: paused;
+      animation-delay: calc(var(--i) * -0.16s);
+    }
+  }
+
+  &:hover &__eq i {
+    animation-play-state: running;
+  }
+
+  // Waveform + sweeping scan line — real-time analysis
+  &__wave {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 2.5px;
+    height: 15px;
+    padding: 0 1px;
+
+    i {
+      display: block;
+      width: 2.5px;
+      height: 100%;
+      border-radius: 2px;
+      background: rgba($coral, 0.28);
+      transform: scaleY(0.5);
+      animation: fb-wave 2s linear infinite;
+      animation-play-state: paused;
+      animation-delay: calc(var(--i) * 0.34s);
+    }
+  }
+
+  &__scan {
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    left: 0;
+    width: 1.5px;
+    border-radius: 2px;
+    background: $coral;
+    box-shadow: 0 0 6px rgba($coral, 0.9);
+    opacity: 0;
+    animation: fb-scan 2s linear infinite;
+    animation-play-state: paused;
+  }
+
+  &:hover &__wave i,
+  &:hover &__scan {
+    animation-play-state: running;
+  }
+
+  // Checkmark draws itself — the feedback landed
+  &__check {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    color: $secondary;
+
+    path {
+      stroke-dasharray: 20;
+      stroke-dashoffset: 20;
+      animation: fb-check 2s ease-in-out infinite;
+      animation-play-state: paused;
+    }
+  }
+
+  &:hover &__check path {
+    animation-play-state: running;
+  }
+
+  // ── Variant accents ──
+  &--live:hover {
+    box-shadow:
+      0 16px 32px rgba($navy, 0.16),
+      0 6px 18px rgba($coral, 0.22);
+    border-color: rgba($coral, 0.32);
+
+    .home-float-badge__icon {
+      color: $coral;
+    }
+
+    .home-float-badge__dot {
+      opacity: 1;
+      transform: scale(1);
+
+      &::after {
+        animation: fb-live-ring 1.5s ease-out infinite;
+      }
+    }
+  }
+
+  &--feedback:hover {
+    box-shadow:
+      0 16px 32px rgba($navy, 0.16),
+      0 6px 18px rgba($coral, 0.18);
+    border-color: rgba($coral, 0.3);
+
+    .home-float-badge__icon {
+      color: $coral;
+      transform: scale(1.08);
+      animation: fb-charge 1.6s ease-in-out infinite;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-float-badge,
+  .home-float-badge * {
+    animation: none !important;
+    transition: none !important;
+  }
+  .home-float-badge:hover {
+    transform: none;
+  }
+  .home-float-badge:hover .home-float-badge__reveal {
+    grid-template-columns: 1fr;
+  }
+  .home-float-badge:hover .home-float-badge__reveal-inner {
+    opacity: 1;
+    transform: none;
+    padding-left: 9px;
+  }
+  .home-float-badge--live:hover .home-float-badge__dot {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .home-float-badge__check path {
+    stroke-dashoffset: 0;
+  }
+  .home-float-badge__eq i,
+  .home-float-badge__wave i {
+    transform: scaleY(0.6);
   }
 }
 

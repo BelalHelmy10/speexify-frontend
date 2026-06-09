@@ -87,7 +87,7 @@ function getInitials(name, email) {
 }
 
 export default function AdminSupportInboxPage() {
-  const { user, checking } = useAuth();
+  const { user, status: authStatus, checking } = useAuth();
   const isAdmin = user?.role === "admin";
   const router = useRouter();
 
@@ -648,10 +648,12 @@ export default function AdminSupportInboxPage() {
 
   // Redirect if not admin
   useEffect(() => {
-    if (checking) return;
-    if (!user) router.push("/login");
+    // Don't bounce to login on a failed/in-flight check — only when the
+    // session is confirmed invalid.
+    if (authStatus === "checking" || authStatus === "error") return;
+    if (authStatus === "unauthenticated" || !user) router.push("/login");
     else if (!isAdmin) router.push("/dashboard");
-  }, [checking, user, isAdmin, router]);
+  }, [authStatus, user, isAdmin, router]);
 
   async function requestNotifications() {
     if (typeof Notification === "undefined") return;

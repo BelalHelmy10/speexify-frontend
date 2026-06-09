@@ -62,16 +62,34 @@ function Home({ locale = "en" }) {
             <FadeIn as="div" className="home-hero__badge" delay={0.1}>
               <span className="home-hero__badge-icon" aria-hidden="true">
                 <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 14 14"
+                  className="home-hero__speech-burst"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
                   fill="none"
                   aria-hidden="true"
                 >
                   <path
-                    d="M7 1v2.5M7 10.5V13M1 7h2.5M10.5 7H13M3.05 3.05l1.77 1.77M9.18 9.18l1.77 1.77M10.95 3.05L9.18 4.82M4.82 9.18l-1.77 1.77"
+                    className="home-hero__speech-bubble"
+                    d="M4.3 9.35c0-2.68 2.28-4.72 5.36-4.72h.68c3.08 0 5.36 2.04 5.36 4.72s-2.28 4.72-5.36 4.72h-.56l-3.43 1.56.66-2.38C5.36 12.42 4.3 11 4.3 9.35Z"
+                    fill="currentColor"
+                    fillOpacity="0.12"
                     stroke="currentColor"
-                    strokeWidth="1.6"
+                    strokeWidth="1.35"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    className="home-hero__speech-wave"
+                    d="M7.35 9.85v-1M10 11.05V7.7M12.65 10.2V8.5"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    className="home-hero__speech-accent"
+                    d="M2.9 8.55c.24-1.16.92-2.14 1.92-2.8M17.1 8.55c-.24-1.16-.92-2.14-1.92-2.8"
+                    stroke="currentColor"
+                    strokeWidth="1.35"
                     strokeLinecap="round"
                   />
                 </svg>
@@ -136,7 +154,7 @@ function Home({ locale = "en" }) {
                 sizes="(max-width: 768px) 92vw, (max-width: 1200px) 46vw, 620px"
               />
               <div className="home-media-card__float home-media-card__float--1">
-                <div className="home-float-badge">
+                <div className="home-float-badge home-float-badge--live">
                   <span className="home-float-badge__icon" aria-hidden="true">
                     <svg
                       width="16"
@@ -159,14 +177,26 @@ function Home({ locale = "en" }) {
                         strokeLinecap="round"
                       />
                     </svg>
+                    <span className="home-float-badge__dot"></span>
                   </span>
                   <span className="home-float-badge__text">
                     {t(dict, "float_live_coaching")}
                   </span>
+                  <span className="home-float-badge__reveal" aria-hidden="true">
+                    <span className="home-float-badge__reveal-inner">
+                      <span className="home-float-badge__eq">
+                        <i style={{ "--i": 0 }}></i>
+                        <i style={{ "--i": 1 }}></i>
+                        <i style={{ "--i": 2 }}></i>
+                        <i style={{ "--i": 3 }}></i>
+                        <i style={{ "--i": 4 }}></i>
+                      </span>
+                    </span>
+                  </span>
                 </div>
               </div>
               <div className="home-media-card__float home-media-card__float--2">
-                <div className="home-float-badge">
+                <div className="home-float-badge home-float-badge--feedback">
                   <span className="home-float-badge__icon" aria-hidden="true">
                     <svg
                       width="16"
@@ -186,6 +216,32 @@ function Home({ locale = "en" }) {
                   </span>
                   <span className="home-float-badge__text">
                     {t(dict, "float_instant_feedback")}
+                  </span>
+                  <span className="home-float-badge__reveal" aria-hidden="true">
+                    <span className="home-float-badge__reveal-inner">
+                      <span className="home-float-badge__wave">
+                        <i style={{ "--i": 0 }}></i>
+                        <i style={{ "--i": 1 }}></i>
+                        <i style={{ "--i": 2 }}></i>
+                        <i style={{ "--i": 3 }}></i>
+                        <i style={{ "--i": 4 }}></i>
+                        <span className="home-float-badge__scan"></span>
+                      </span>
+                      <svg
+                        className="home-float-badge__check"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M3.5 8.5L6.5 11.5L12.5 4.5"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
                   </span>
                 </div>
               </div>
@@ -546,9 +602,9 @@ function FeaturesSection({ dict }) {
           <FadeIn as="h2" className="home-section-title home-features__title">
             {t(dict, "features_title") || (
               <>
-                It's not a course.
+                It&apos;s not a course.
                 <br />
-                It's a practice ground.
+                It&apos;s a practice ground.
               </>
             )}
           </FadeIn>

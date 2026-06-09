@@ -119,7 +119,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
   const [status, setStatus] = useState(() => t(dict, "status_loading"));
   const [summary, setSummary] = useState(null);
-  const { user, checking, refresh } = useAuth();
+  const { user, status: authStatus, checking, refresh } = useAuth();
   // ...
 
   // ─────────────────────────────────────────────
@@ -248,8 +248,11 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
   }, [fetchSummary, fetchSessions, fetchPackages]);
 
   useEffect(() => {
-    if (checking) return;
-    if (!user) {
+    // Still verifying, or we simply couldn't reach the backend (e.g. it's
+    // cold-starting): do nothing. Never log the user out for a failed check —
+    // only redirect when the session is *confirmed* invalid.
+    if (authStatus === "checking" || authStatus === "error") return;
+    if (authStatus === "unauthenticated" || !user) {
       api.post("/auth/logout").catch(() => {}).finally(() => {
         window.location.replace(`${prefix}/login`);
       });
@@ -286,7 +289,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
       fetchAssessment();
     }
   }, [
-    checking,
+    authStatus,
     user,
     isAdmin,
     isLearner,
@@ -407,6 +410,21 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
       );
     }
   };
+
+  if (authStatus === "error" && !user) {
+    return (
+      <div className="loading-state">
+        <p>{t(dict, "status_unreachable")}</p>
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => refresh()}
+        >
+          {t(dict, "retry")}
+        </button>
+      </div>
+    );
+  }
 
   if (status) return <p className="loading-state">{status}</p>;
   if (!summary) return null;

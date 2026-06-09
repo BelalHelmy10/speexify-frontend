@@ -2,6 +2,8 @@
   "status_loading": "Loading…",
   "status_failed": "Failed to load dashboard",
   "status_not_auth": "Not authenticated",
+  "status_unreachable": "We couldn't reach the server. It may be waking up — please try again.",
+  "retry": "Retry",
 
   "title": "Dashboard",
   "subtitle": "Welcome back, {name}",

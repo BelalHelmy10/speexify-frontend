@@ -14,19 +14,40 @@ $stc-live: #2ecc8c;
   z-index: 9996;
   left: 50%;
   right: auto;
-  bottom: calc(14px + env(safe-area-inset-bottom));
+  bottom: calc(16px + env(safe-area-inset-bottom));
   width: max-content;
   max-width: calc(100vw - 32px);
-  transform: translateX(var(--stc-shift-x));
 
-  // Desktop — sits BESIDE the ScrollToTop button (to its right) on the same
-  // baseline. ScrollToTop is fixed at left:32px / bottom:32px / 48px wide
-  // in both LTR and RTL (it has no RTL override), so this anchors here too.
+  // Visibility is toggled by `.is-visible` (see StickyTrialCTA.jsx). Visible
+  // from the top; the hidden base state powers the slide-down near the footer.
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(var(--stc-shift-x)) translateY(20px) scale(0.97);
+  transition:
+    opacity 0.42s ease,
+    transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+
+  // Desktop — a centered "command pill" in neutral space. It never collides
+  // with the bottom-left ScrollToTop (left:32px) or the bottom-right
+  // SupportWidget FAB (right:24px).
   @media (min-width: 900px) {
-    --stc-shift-x: 0;
+    bottom: calc(28px + env(safe-area-inset-bottom));
+  }
+}
 
-    left: 88px;          // 32 (scroll-top left) + 48 (scroll-top width) + 8 gap
-    bottom: 32px;        // same baseline as scroll-top
+.spx-trial-cta.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(var(--stc-shift-x)) translateY(0) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spx-trial-cta {
+    transform: translateX(var(--stc-shift-x));
+    transition: opacity 0.3s ease;
+  }
+  .spx-trial-cta.is-visible {
+    transform: translateX(var(--stc-shift-x));
   }
 }
 
@@ -282,11 +303,14 @@ $stc-live: #2ecc8c;
   cursor: pointer;
   color: $navy;
   box-shadow: 0 4px 12px rgba($navy, 0.14);
-  transition: transform 0.2s ease, background 0.2s ease;
   padding: 0;
+  // Always visible — the way out is obvious, never hidden behind a hover.
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.2s ease;
 
   &:hover {
-    transform: scale(1.08);
+    transform: scale(1.12);
     background: #f7f2ec;
   }
 }

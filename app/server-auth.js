@@ -32,18 +32,33 @@ export async function getServerCookieHeader() {
 
 export async function fetchServerApi(path, options = {}) {
   const cookieHeader = await getServerCookieHeader();
+  const { timeoutMs, ...rest } = options;
 
-  return fetch(backendApiPath(path), {
-    ...options,
-    headers: {
-      cookie: cookieHeader,
-      "cache-control": "no-store, no-cache, must-revalidate",
-      pragma: "no-cache",
-      ...(options.headers || {}),
-    },
-    cache: "no-store",
-    next: { revalidate: 0 },
-  });
+  // Optional hard timeout so server rendering can't hang on a slow/cold backend.
+  let signal = rest.signal;
+  let timer = null;
+  if (timeoutMs && !signal) {
+    const controller = new AbortController();
+    signal = controller.signal;
+    timer = setTimeout(() => controller.abort(), timeoutMs);
+  }
+
+  try {
+    return await fetch(backendApiPath(path), {
+      ...rest,
+      signal,
+      headers: {
+        cookie: cookieHeader,
+        "cache-control": "no-store, no-cache, must-revalidate",
+        pragma: "no-cache",
+        ...(rest.headers || {}),
+      },
+      cache: "no-store",
+      next: { revalidate: 0 },
+    });
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 export async function getServerApiJson(path, options = {}) {
@@ -63,10 +78,11 @@ export async function getServerApiJson(path, options = {}) {
   };
 }
 
-export async function getServerUser() {
+export async function getServerUser(options = {}) {
   try {
     const res = await fetchServerApi("auth/me", {
       method: "GET",
+      ...options,
     });
 
     if (!res.ok) {

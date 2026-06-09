@@ -8,6 +8,7 @@ import { Inter, Outfit, Cairo } from "next/font/google";
 import { cookies, headers } from "next/headers";
 
 import Providers from "@/components/Providers";
+import { getServerUser } from "./server-auth";
 import ClientProviders from "./ClientProviders";
 import LocaleShell from "./LocaleShell";
 import AppChrome from "@/components/AppChrome";
@@ -126,6 +127,15 @@ export default async function RootLayout({ children }) {
   const isArabic = locale === "ar";
   const hasSessionCookie = Boolean(cookieStore.get("speexify.sid")?.value);
 
+  // When there's a session cookie, resolve the user on the server so the app
+  // renders already-authenticated and the client never has to block on an
+  // /auth/me round-trip. Bounded by a short timeout: if the backend is slow or
+  // cold-starting, we fall back to null and let the (resilient) client check
+  // take over instead of stalling the page.
+  const initialUser = hasSessionCookie
+    ? await getServerUser({ timeoutMs: 2500 })
+    : null;
+
   return (
     <html
       lang={isArabic ? "ar" : "en"}
@@ -158,7 +168,7 @@ export default async function RootLayout({ children }) {
       <body className={`${inter.variable} ${outfit.variable} ${cairo.variable}`}>
         <LocaleShell>
           <ClientProviders>
-            <Providers hasSessionCookie={hasSessionCookie}>
+            <Providers initialUser={initialUser} hasSessionCookie={hasSessionCookie}>
               <AppChrome>{children}</AppChrome>
             </Providers>
           </ClientProviders>

@@ -8,20 +8,21 @@ import { APP_ROUTES, routeHref } from "@/lib/routes";
 import { normalizeLocalizedPath } from "@/lib/chromeRoutes";
 
 /**
- * Site-wide floating "Book free trial" CTA.
+ * Site-wide floating "Book free trial" CTA — a centered glass "command pill".
  *
- * Visual: pill bar with three colored brand dots, two-line copy, primary button.
- * Mobile: full-width across the bottom (matches the kids page treatment).
- * Desktop: floating pill in the bottom-LEFT corner so it doesn't fight the
- * SupportWidget FAB which lives bottom-right.
+ * Visual: compact coral pill that expands on hover/focus/tap to reveal a live
+ * dot + two-line "First session free / No commitment" detail.
+ *
+ * Placement: bottom-CENTER on every breakpoint. Centered neutral space never
+ * collides with the bottom-left ScrollToTop button or the bottom-right
+ * SupportWidget FAB.
  *
  * Behavior:
- *  - Hidden on page load. Slides up after the user scrolls ~360px.
- *  - Hides again when the user is within ~220px of the bottom (so it doesn't
- *    obscure the page's own CTA section).
- *  - Dismiss button persists hidden for the rest of the tab session.
- *  - Suppressed entirely on app pages (dashboard, classroom, etc.) and on
- *    auth pages (login/register/forgot-password) where it has nothing to add.
+ *  - Visible from the very top of the page (no scroll required).
+ *  - Steps aside only when the footer's own CTA section is in view, so two
+ *    trial CTAs never stack.
+ *  - Dismiss (×) persists for the tab session via sessionStorage.
+ *  - Suppressed on app pages (dashboard, classroom, etc.) and auth pages.
  */
 
 const SUPPRESS_PREFIXES = [
@@ -53,38 +54,60 @@ export default function StickyTrialCTA() {
   const pathname = usePathname() || "/";
   const locale = pathname.startsWith("/ar") ? "ar" : "en";
 
-  // Ephemeral dismiss — local state only, no storage.
-  // Reappears on any reload or navigation.
+  // Dismiss persists for the tab session (sessionStorage), so a user who
+  // closes it isn't nagged again on every navigation. Resets in a new tab.
   const [dismissed, setDismissed] = useState(false);
-  const [footerInView, setFooterInView] = useState(false);
+  // "shown" = visible. Visible from the very top of the page; only hidden when
+  // the footer's own CTA section is in view (so two trial CTAs don't stack).
+  const [shown, setShown] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const lastPointerType = useRef(null);
 
   useEffect(() => {
-    const updateVisibilityState = () => {
+    try {
+      if (sessionStorage.getItem("spx-trial-cta-dismissed") === "1") {
+        setDismissed(true);
+      }
+    } catch {
+      /* sessionStorage unavailable — fall back to ephemeral dismiss */
+    }
+  }, []);
+
+  useEffect(() => {
+    const update = () => {
+      // Visible from the top — step aside only when the footer's own CTA
+      // section comes into view, to avoid stacking two trial CTAs.
+      let nearFooter = false;
       const footer = document.querySelector(".site-footer-wrapper");
-      if (!footer) {
-        setFooterInView(false);
-        return;
+      if (footer) {
+        const rect = footer.getBoundingClientRect();
+        nearFooter = rect.top < window.innerHeight - 48 && rect.bottom > 120;
       }
 
-      const rect = footer.getBoundingClientRect();
-      setFooterInView(rect.top < window.innerHeight - 48 && rect.bottom > 120);
+      setShown(!nearFooter);
     };
 
-    updateVisibilityState();
-    window.addEventListener("scroll", updateVisibilityState, { passive: true });
-    window.addEventListener("resize", updateVisibilityState);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
 
     return () => {
-      window.removeEventListener("scroll", updateVisibilityState);
-      window.removeEventListener("resize", updateVisibilityState);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
     };
   }, [pathname]);
 
+  const handleDismiss = () => {
+    setDismissed(true);
+    try {
+      sessionStorage.setItem("spx-trial-cta-dismissed", "1");
+    } catch {
+      /* ignore */
+    }
+  };
+
   if (shouldSuppress(pathname)) return null;
   if (dismissed) return null;
-  if (footerInView) return null;
 
   const copy =
     locale === "ar"
@@ -118,7 +141,7 @@ export default function StickyTrialCTA() {
 
   return (
     <div
-      className={`spx-trial-cta is-visible${expanded ? " is-expanded" : ""}`}
+      className={`spx-trial-cta${shown ? " is-visible" : ""}${expanded ? " is-expanded" : ""}`}
       onPointerEnter={(event) => {
         lastPointerType.current = event.pointerType;
         if (event.pointerType !== "touch") setExpanded(true);
@@ -171,7 +194,7 @@ export default function StickyTrialCTA() {
         type="button"
         className="spx-trial-cta__close"
         aria-label={copy.dismiss}
-        onClick={() => setDismissed(true)}
+        onClick={handleDismiss}
       >
         <X size={13} strokeWidth={2.4} aria-hidden="true" />
       </button>
