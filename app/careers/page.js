@@ -568,9 +568,9 @@ function JobModal({ job, onClose, onApply, dict }) {
   );
 }
 
-export default function CareersPage() {
+export default function CareersPage({ forcedLocale } = {}) {
   const pathname = usePathname();
-  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const locale = forcedLocale || (pathname?.startsWith("/ar") ? "ar" : "en");
   const dict = getDictionary(locale, "careers");
 
   return <Careers dict={dict} />;

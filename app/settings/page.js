@@ -33,7 +33,7 @@ import api from "@/lib/api";
 import "@/styles/settings.scss";
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "@/app/i18n";
-import { getSupportedTimezones } from "../../lib/timezones";
+import { getDefaultTimezones, getSupportedTimezones } from "../../lib/timezones";
 
 const DEFAULT_NOTIFICATION_PREFERENCES = {
   emailSessionReminders: true,
@@ -201,11 +201,16 @@ export default function SettingsPage() {
   const [calendarError, setCalendarError] = useState("");
   const [calendarSuccess, setCalendarSuccess] = useState("");
   const [copiedCalendarField, setCopiedCalendarField] = useState("");
+  const [timezoneOptions, setTimezoneOptions] = useState(getDefaultTimezones);
 
   const [privacyBusy, setPrivacyBusy] = useState("");
   const [privacyError, setPrivacyError] = useState("");
   const [privacySuccess, setPrivacySuccess] = useState("");
   const settingsReady = Boolean(me);
+
+  useEffect(() => {
+    setTimezoneOptions(getSupportedTimezones());
+  }, []);
 
   useEffect(() => {
     if (checking || !user) return;
@@ -694,7 +699,7 @@ export default function SettingsPage() {
                     }
                   >
                     <option value="">{copyText("timezone_default_option", "Use browser default")}</option>
-                    {getSupportedTimezones().map(({ value, label }) => (
+                    {timezoneOptions.map(({ value, label }) => (
                       <option key={value} value={value}>
                         {label}
                       </option>

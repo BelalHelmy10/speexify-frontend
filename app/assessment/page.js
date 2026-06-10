@@ -1128,7 +1128,7 @@ export default function AssessmentPage() {
               <audio
                 className="placement-audio-player"
                 controls
-                preload="metadata"
+                preload="none"
                 src={item.audioSrc}
               >
                 Your browser does not support embedded audio.

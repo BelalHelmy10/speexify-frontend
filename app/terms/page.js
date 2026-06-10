@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { getDictionary, t } from "@/app/i18n";
 import "@/styles/policy.scss";
 
-export default function TermsPage() {
+export default function TermsPage({ locale: forcedLocale } = {}) {
   const pathname = usePathname();
-  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const locale = forcedLocale || (pathname?.startsWith("/ar") ? "ar" : "en");
   const dict = useMemo(() => getDictionary(locale, "terms"), [locale]);
 
   const email = t(dict, "contact_email_value");

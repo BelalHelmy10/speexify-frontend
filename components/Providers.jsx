@@ -3,6 +3,7 @@
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "@/hooks/useAuth";
+import { getGoogleClientId } from "@/lib/googleAuth";
 
 /**
  * Central place for all client providers.
@@ -10,7 +11,7 @@ import { AuthProvider } from "@/hooks/useAuth";
  * - AuthProvider: your app auth context
  */
 export default function Providers({ children, initialUser, hasSessionCookie = false }) {
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const clientId = getGoogleClientId();
 
   if (!clientId) {
     // Don't crash the app; show a console hint in dev
@@ -20,8 +21,16 @@ export default function Providers({ children, initialUser, hasSessionCookie = fa
     );
   }
 
+  if (!clientId) {
+    return (
+      <AuthProvider initialUser={initialUser} hasSessionCookie={hasSessionCookie}>
+        {children}
+      </AuthProvider>
+    );
+  }
+
   return (
-    <GoogleOAuthProvider clientId={clientId || "missing-client-id"}>
+    <GoogleOAuthProvider clientId={clientId}>
       <AuthProvider initialUser={initialUser} hasSessionCookie={hasSessionCookie}>
         {children}
       </AuthProvider>

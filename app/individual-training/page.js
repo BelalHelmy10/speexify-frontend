@@ -8,7 +8,7 @@ import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 import "@/styles/individual.scss";
 import { getDictionary, t } from "@/app/i18n";
-import { getSupportedTimezones } from "../../lib/timezones";
+import { getDefaultTimezones, getSupportedTimezones } from "../../lib/timezones";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 const MARKETING_IMAGE_VERSION = "20260519";
@@ -55,16 +55,44 @@ function IndividualInner({ dict, locale }) {
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState("");
   const [statusTone, setStatusTone] = useState("");
+  const [timezoneOptions, setTimezoneOptions] = useState(getDefaultTimezones);
   const [form, setForm] = useState(() => ({
     name: "",
     email: "",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timezone: "",
     level: t(dict, "band_a2"),
     goal: t(dict, "goal_confidence"),
     availability: t(dict, "availability_weekdays"),
     message: "",
     agree: false,
   }));
+
+  useEffect(() => {
+    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const supportedTimezones = getSupportedTimezones();
+    const hasBrowserTimezone = supportedTimezones.some(
+      ({ value }) => value === browserTimezone,
+    );
+
+    setTimezoneOptions(
+      hasBrowserTimezone || !browserTimezone
+        ? supportedTimezones
+        : [
+            ...supportedTimezones,
+            {
+              value: browserTimezone,
+              label: browserTimezone.replace(/_/g, " "),
+            },
+          ].sort((a, b) => a.value.localeCompare(b.value)),
+    );
+
+    if (!browserTimezone) return;
+
+    setForm((f) => ({
+      ...f,
+      timezone: f.timezone || browserTimezone,
+    }));
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -492,7 +520,7 @@ function IndividualInner({ dict, locale }) {
                     onChange={onChange}
                   >
                     <option value="" disabled>{t(dict, "timezone_placeholder_text")}</option>
-                    {getSupportedTimezones().map(({ value, label }) => (
+                    {timezoneOptions.map(({ value, label }) => (
                       <option key={value} value={value}>{label}</option>
                     ))}
                   </select>

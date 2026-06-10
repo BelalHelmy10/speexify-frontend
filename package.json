@@ -43,8 +43,9 @@
     "i18n:check": "node scripts/checkLocales.js",
     "i18n:check:strict": "node scripts/checkLocales.js --strict",
     "qa:responsive": "node scripts/responsiveQa.mjs",
+    "qa:public-routes": "node scripts/checkPublicRoutes.mjs --start-server",
     "typecheck": "./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/next typegen .",
-    "ci:check": "npm run lint && npm run typecheck && npm run build"
+    "ci:check": "npm run lint && npm run typecheck && npm run build && npm run qa:public-routes"
   },
   "extends": [
     "next/core-web-vitals"

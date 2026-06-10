@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { GoogleLogin } from "@react-oauth/google";
 import { getDictionary, t } from "@/app/i18n";
+import { canUseGoogleAuthOnCurrentOrigin } from "@/lib/googleAuth";
 
 /**
  * Responsive, i18n-aware Google button:
@@ -21,6 +22,7 @@ export default function GoogleButton({
 }) {
   const containerRef = useRef(null);
   const [buttonWidth, setButtonWidth] = useState(null);
+  const [available, setAvailable] = useState(false);
 
   // Detect locale from URL
   const pathname = usePathname();
@@ -44,6 +46,8 @@ export default function GoogleButton({
   };
 
   useEffect(() => {
+    setAvailable(canUseGoogleAuthOnCurrentOrigin());
+
     function updateWidth() {
       if (!containerRef.current) return;
       const w = containerRef.current.getBoundingClientRect().width;
@@ -57,6 +61,8 @@ export default function GoogleButton({
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
+
+  if (!available) return null;
 
   return (
     <div

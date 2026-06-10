@@ -18,6 +18,7 @@ import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 import BrandLogo from "@/components/brand/BrandLogo";
+import { canUseGoogleAuthOnCurrentOrigin } from "@/lib/googleAuth";
 
 function getSafeNextPath(rawNext, fallbackPath) {
   if (!rawNext) return fallbackPath;
@@ -54,6 +55,7 @@ function LoginInner({ dict }) {
   const [showPassword, setShowPassword] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
 
   const router = useRouter();
   const params = useSearchParams();
@@ -87,6 +89,10 @@ function LoginInner({ dict }) {
     router.replace(fallbackPath);
     router.refresh();
   }, [params, router, locale]);
+
+  useEffect(() => {
+    setGoogleAvailable(canUseGoogleAuthOnCurrentOrigin());
+  }, []);
 
   useEffect(() => {
     if (!checking && user) {
@@ -174,18 +180,22 @@ function LoginInner({ dict }) {
 
           {!user ? (
             <>
-              <div className="auth-social">
-                <GoogleButton
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  localeOverride={locale}
-                  label={t(dict, "google_button_label")}
-                />
-              </div>
+              {googleAvailable && (
+                <>
+                  <div className="auth-social">
+                    <GoogleButton
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      localeOverride={locale}
+                      label={t(dict, "google_button_label")}
+                    />
+                  </div>
 
-              <div className="auth-divider">
-                <span>{t(dict, "social_divider")}</span>
-              </div>
+                  <div className="auth-divider">
+                    <span>{t(dict, "social_divider")}</span>
+                  </div>
+                </>
+              )}
 
               <form className="auth-form" onSubmit={login}>
                 {msg && (

@@ -1,7 +1,7 @@
 // app/register/page.js
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
@@ -18,6 +18,7 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { canUseGoogleAuthOnCurrentOrigin } from "@/lib/googleAuth";
 
 function RegisterInner({ dict, locale }) {
   const [step, setStep] = useState(1);
@@ -32,9 +33,14 @@ function RegisterInner({ dict, locale }) {
   const [sending, setSending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
 
   const loginPath = routeHref(APP_ROUTES.login, locale);
   const dashboardPath = routeHref(APP_ROUTES.dashboard, locale);
+
+  useEffect(() => {
+    setGoogleAvailable(canUseGoogleAuthOnCurrentOrigin());
+  }, []);
 
   const sendCode = async (e) => {
     e?.preventDefault?.();
@@ -194,19 +200,23 @@ function RegisterInner({ dict, locale }) {
 
           {step === 1 && (
             <>
-              <div className="auth-social">
-                <GoogleButton
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  localeOverride={locale}
-                  label={t(dict, "google_button_label")}
-                  text="signup_with"
-                />
-              </div>
+              {googleAvailable && (
+                <>
+                  <div className="auth-social">
+                    <GoogleButton
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      localeOverride={locale}
+                      label={t(dict, "google_button_label")}
+                      text="signup_with"
+                    />
+                  </div>
 
-              <div className="auth-divider">
-                <span>{t(dict, "social_cta")}</span>
-              </div>
+                  <div className="auth-divider">
+                    <span>{t(dict, "social_cta")}</span>
+                  </div>
+                </>
+              )}
 
               <form className="auth-form" onSubmit={sendCode}>
                 <div className="form-field">
