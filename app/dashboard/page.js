@@ -432,6 +432,10 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
   const visibleNext =
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
   const { upcomingCount, completedCount } = summary;
+  const kpiTotal = upcomingCount + completedCount;
+  // Each KPI ring fills to its share of the learner's total sessions
+  const kpiPct = (n) =>
+    kpiTotal > 0 ? Math.round((Number(n) / kpiTotal) * 100) : 0;
   const timezone = user?.timezone || summary?.timezone;
 
   const joinableTeach =
@@ -890,6 +894,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
               </svg>
             }
             gradient="blue"
+            percent={kpiPct(upcomingCount)}
           />
           <DashboardKpiCard
             title={t(dict, "kpi_completed")}
@@ -906,10 +911,11 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
               </svg>
             }
             gradient="green"
+            percent={kpiPct(completedCount)}
           />
           <DashboardKpiCard
             title={t(dict, "kpi_total")}
-            value={upcomingCount + completedCount}
+            value={kpiTotal}
             icon={
               <svg
                 viewBox="0 0 24 24"
@@ -919,12 +925,14 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
               </svg>
             }
             gradient="purple"
+            percent={kpiTotal > 0 ? 100 : 0}
           />
         </div>
 

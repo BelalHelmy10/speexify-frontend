@@ -7,6 +7,8 @@ import { GoogleLogin } from "@react-oauth/google";
 import { getDictionary, t } from "@/app/i18n";
 import { canUseGoogleAuthOnCurrentOrigin } from "@/lib/googleAuth";
 
+const DEFAULT_GOOGLE_BUTTON_WIDTH = 360;
+
 /**
  * Responsive, i18n-aware Google button:
  * - Measures its container width
@@ -30,6 +32,7 @@ export default function GoogleButton({
   const locale = localeOverride || routeLocale;
   const googleLocale = locale === "ar" ? "ar" : "en";
   const hasLocalLabel = Boolean(label);
+  const resolvedButtonWidth = buttonWidth || DEFAULT_GOOGLE_BUTTON_WIDTH;
 
   // i18n (login section)
   const dict = getDictionary(locale, "login");
@@ -47,6 +50,10 @@ export default function GoogleButton({
 
   useEffect(() => {
     setAvailable(canUseGoogleAuthOnCurrentOrigin());
+  }, []);
+
+  useEffect(() => {
+    if (!available) return undefined;
 
     function updateWidth() {
       if (!containerRef.current) return;
@@ -58,9 +65,18 @@ export default function GoogleButton({
     }
 
     updateWidth();
+    const observer =
+      typeof ResizeObserver !== "undefined" && containerRef.current
+        ? new ResizeObserver(updateWidth)
+        : null;
+    if (observer) observer.observe(containerRef.current);
+
     window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
-  }, []);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateWidth);
+    };
+  }, [available]);
 
   if (!available) return null;
 
@@ -95,28 +111,26 @@ export default function GoogleButton({
           <span>{label}</span>
         </div>
       )}
-      {buttonWidth && (
-        <div
-          className={
-            hasLocalLabel ? "google-button-localized__native" : undefined
-          }
-        >
-          <GoogleLogin
-            key={googleLocale}
-            useOneTap={false}
-            ux_mode="popup"
-            onSuccess={handleSuccess}
-            onError={handleError}
-            theme="outline"
-            size="large"
-            shape="rectangular"
-            text="signin_with"
-            width={String(buttonWidth)} // pixels, as a string
-            locale={googleLocale}
-            {...rest}
-          />
-        </div>
-      )}
+      <div
+        className={
+          hasLocalLabel ? "google-button-localized__native" : undefined
+        }
+      >
+        <GoogleLogin
+          key={googleLocale}
+          useOneTap={false}
+          ux_mode="popup"
+          onSuccess={handleSuccess}
+          onError={handleError}
+          theme="outline"
+          size="large"
+          shape="rectangular"
+          text="signin_with"
+          width={String(resolvedButtonWidth)} // pixels, as a string
+          locale={googleLocale}
+          {...rest}
+        />
+      </div>
     </div>
   );
 }

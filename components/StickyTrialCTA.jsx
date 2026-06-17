@@ -84,7 +84,14 @@ export default function StickyTrialCTA() {
         nearFooter = rect.top < window.innerHeight - 48 && rect.bottom > 120;
       }
 
-      setShown(!nearFooter);
+      let overPricing = false;
+      const pricing = document.querySelector(".home-pricing");
+      if (pricing) {
+        const rect = pricing.getBoundingClientRect();
+        overPricing = rect.top < window.innerHeight - 80 && rect.bottom > 160;
+      }
+
+      setShown(!nearFooter && !overPricing);
     };
 
     update();

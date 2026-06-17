@@ -41,12 +41,23 @@ $stc-live: #2ecc8c;
   transform: translateX(var(--stc-shift-x)) translateY(0) scale(1);
 }
 
+body.spx-pricing-in-view .spx-trial-cta,
+body:has(#home-pricing:target) .spx-trial-cta {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(var(--stc-shift-x)) translateY(20px) scale(0.97);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .spx-trial-cta {
     transform: translateX(var(--stc-shift-x));
     transition: opacity 0.3s ease;
   }
   .spx-trial-cta.is-visible {
+    transform: translateX(var(--stc-shift-x));
+  }
+  body.spx-pricing-in-view .spx-trial-cta,
+  body:has(#home-pricing:target) .spx-trial-cta {
     transform: translateX(var(--stc-shift-x));
   }
 }

@@ -62,6 +62,11 @@ function LoginInner({ dict }) {
   const pathname = usePathname();
 
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const registerPath = routeHref(APP_ROUTES.register, locale);
+  const nextForRegister = getSafeNextPath(params.get("next"), "");
+  const registerHref = nextForRegister
+    ? `${registerPath}?next=${encodeURIComponent(nextForRegister)}`
+    : registerPath;
 
   const { user, checking, refresh } = useAuth();
 
@@ -335,7 +340,7 @@ function LoginInner({ dict }) {
               <footer className="auth-footer">
                 <p>
                   {t(dict, "no_account")}{" "}
-                  <Link href={routeHref(APP_ROUTES.register, locale)} className="link-primary">
+                  <Link href={registerHref} className="link-primary">
                     {t(dict, "link_create_account")}
                   </Link>
                 </p>

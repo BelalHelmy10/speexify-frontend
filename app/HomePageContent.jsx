@@ -1,16 +1,28 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ArrowRight, Building2, Check, Users } from "lucide-react";
 import "@/styles/home.scss";
 
 import { getDictionary, t } from "./i18n"; // ✅ i18n
 import FadeIn from "@/components/FadeIn";
+import { detectUserCountry } from "@/lib/geo";
+import { oneOnOnePlans } from "@/lib/plans";
+import { getPricingRegion } from "@/lib/pricing-regions";
+import {
+  calculatePackagePrice,
+  calculatePerSessionPrice,
+  formatRegionalPrice,
+} from "@/lib/regional-pricing";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 const MARKETING_IMAGE_VERSION = "20260519";
 const marketingImage = (src) => `${src}?v=${MARKETING_IMAGE_VERSION}`;
+const DEFAULT_COUNTRY_CODE = "EG";
+const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || "manual";
+const HOME_PRICING_PLAN_IDS = ["1on1-4", "1on1-12", "1on1-24"];
 
 export default function HomePageContent({ locale = "en" }) {
   return <Home locale={locale} />;
@@ -47,6 +59,63 @@ function useSectionObserver() {
 function Home({ locale = "en" }) {
   const dict = getDictionary(locale, "home");
   useSectionObserver();
+
+  const scrollToPricing = useCallback(({ behavior = "smooth" } = {}) => {
+    const pricingSection = document.getElementById("home-pricing");
+    if (!pricingSection) return false;
+
+    const headerOffset = 112;
+    const targetTop =
+      pricingSection.getBoundingClientRect().top + window.scrollY - headerOffset;
+
+    window.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior,
+    });
+    document.body.classList.add("spx-pricing-in-view");
+
+    return true;
+  }, []);
+
+  useEffect(() => {
+    if (window.location.hash !== "#home-pricing") return undefined;
+
+    const timer = window.setTimeout(() => {
+      scrollToPricing({ behavior: "auto" });
+    }, 50);
+
+    return () => window.clearTimeout(timer);
+  }, [scrollToPricing]);
+
+  useEffect(() => {
+    const updatePricingVisibility = () => {
+      const pricingSection = document.getElementById("home-pricing");
+      if (!pricingSection) return;
+
+      const rect = pricingSection.getBoundingClientRect();
+      const pricingInView =
+        rect.top < window.innerHeight - 80 && rect.bottom > 160;
+
+      document.body.classList.toggle("spx-pricing-in-view", pricingInView);
+    };
+
+    updatePricingVisibility();
+    window.addEventListener("scroll", updatePricingVisibility, { passive: true });
+    window.addEventListener("resize", updatePricingVisibility);
+
+    return () => {
+      window.removeEventListener("scroll", updatePricingVisibility);
+      window.removeEventListener("resize", updatePricingVisibility);
+      document.body.classList.remove("spx-pricing-in-view");
+    };
+  }, []);
+
+  const handlePricingJump = (event) => {
+    if (scrollToPricing()) {
+      event.preventDefault();
+      window.history.pushState(null, "", "#home-pricing");
+    }
+  };
 
   return (
     <div className="home-home">
@@ -131,12 +200,13 @@ function Home({ locale = "en" }) {
                   />
                 </svg>
               </Link>
-              <Link
+              <a
                 className="spx-btn spx-btn--ghost-navy"
-                href={routeHref(APP_ROUTES.packages, locale)}
+                href={routeHref(APP_ROUTES.home, locale, "#home-pricing")}
+                onClick={handlePricingJump}
               >
                 {t(dict, "ctaSecondary")}
-              </Link>
+              </a>
             </FadeIn>
           </div>
 
@@ -391,6 +461,9 @@ function Home({ locale = "en" }) {
       {/* ===== TRANSFORMATION DEMO ===== */}
       <TransformationDemo dict={dict} locale={locale} />
 
+      {/* ===== PRICING ===== */}
+      <PricingSection dict={dict} locale={locale} />
+
       {/* ===== TESTIMONIALS ===== */}
       <TestimonialsCarousel dict={dict} locale={locale} />
 
@@ -498,6 +571,251 @@ function Home({ locale = "en" }) {
 }
 
 /* ========== Local UI bits ========== */
+
+function parsePlanFeatures(raw) {
+  if (!raw) return [];
+  return String(raw)
+    .split(/\r?\n|;|,/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function getHomePlanPriceLabels(plan, countryCode, locale) {
+  const resolvedCountry = countryCode || DEFAULT_COUNTRY_CODE;
+  const regionalPrice = calculatePackagePrice(plan, resolvedCountry);
+  const perSessionPrice = calculatePerSessionPrice(plan, resolvedCountry);
+
+  return {
+    regionalPrice,
+    perSessionPrice,
+    totalLabel:
+      regionalPrice?.displayAmount > 0
+        ? formatRegionalPrice(regionalPrice, locale)
+        : "Custom",
+    perSessionLabel:
+      perSessionPrice?.displayAmount > 0
+        ? formatRegionalPrice(perSessionPrice, locale)
+        : null,
+  };
+}
+
+function buildPlanStartHref(plan, locale, countryCode) {
+  const resolvedCountry = countryCode || DEFAULT_COUNTRY_CODE;
+  const currency = getPricingRegion(resolvedCountry).currency;
+  const paymentRoute =
+    PAYMENT_MODE === "paymob" ? APP_ROUTES.checkout : APP_ROUTES.manualPayment;
+  const paymentTarget = `${routeHref(paymentRoute, locale)}?planId=${encodeURIComponent(
+    plan.id,
+  )}&plan=${encodeURIComponent(
+    plan._backendTitle || plan.title,
+  )}&cc=${encodeURIComponent(resolvedCountry)}&cur=${encodeURIComponent(
+    currency,
+  )}`;
+
+  return `${routeHref(APP_ROUTES.register, locale)}?next=${encodeURIComponent(
+    paymentTarget,
+  )}`;
+}
+
+function PricingSection({ dict, locale }) {
+  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const packageDict = useMemo(() => getDictionary(locale, "packages"), [locale]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    detectUserCountry()
+      .then((detectedCountry) => {
+        if (isMounted && detectedCountry) {
+          setCountryCode(detectedCountry);
+        }
+      })
+      .catch(() => {
+        // Keep the safe EGP default if geo detection is unavailable.
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const plans = useMemo(
+    () =>
+      HOME_PRICING_PLAN_IDS.map((id) =>
+        oneOnOnePlans.find((plan) => plan.id === id),
+      )
+        .filter(Boolean)
+        .map((plan) => ({
+          ...plan,
+          _backendTitle: plan.title,
+          title: packageDict[`plan_${plan.id}_title`] || plan.title,
+          description: packageDict[`plan_${plan.id}_desc`] || plan.description,
+          featuresRaw: packageDict[`plan_${plan.id}_features`] || plan.featuresRaw,
+        })),
+    [packageDict],
+  );
+
+  const pricedPlans = useMemo(
+    () =>
+      plans.map((plan) => ({
+        plan,
+        features: parsePlanFeatures(plan.featuresRaw).slice(0, 3),
+        ...getHomePlanPriceLabels(plan, countryCode, locale),
+      })),
+    [countryCode, locale, plans],
+  );
+
+  const lowestPerSession = pricedPlans.reduce((best, item) => {
+    if (!item.perSessionPrice?.displayAmount) return best;
+    if (!best) return item;
+    return item.perSessionPrice.displayAmount < best.perSessionPrice.displayAmount
+      ? item
+      : best;
+  }, null);
+
+  const region = getPricingRegion(countryCode);
+
+  return (
+    <section className="home-pricing" id="home-pricing">
+      <div className="home-container">
+        <div className="home-pricing__shell">
+          <div className="home-pricing__intro">
+            <p className="home-pricing__eyebrow">
+              {t(dict, "pricing_eyebrow")}
+            </p>
+            <h2 className="home-section-title">{t(dict, "pricing_title")}</h2>
+            <p className="home-section-subtitle home-pricing__subtitle">
+              {t(dict, "pricing_subtitle")}
+            </p>
+
+            <div className="home-pricing__from">
+              <span>{t(dict, "pricing_from_label")}</span>
+              <strong>
+                {lowestPerSession?.perSessionLabel}/
+                {t(dict, "pricing_per_session")}
+              </strong>
+              <small>{t(dict, "pricing_from_hint")}</small>
+            </div>
+
+            <div
+              className="home-pricing__trust"
+              aria-label={t(dict, "pricing_trust_label")}
+            >
+              <span>
+                <Check size={16} aria-hidden="true" />
+                {t(dict, "pricing_trust_1")}
+              </span>
+              <span>
+                <Check size={16} aria-hidden="true" />
+                {t(dict, "pricing_trust_2")}
+              </span>
+              <span>
+                <Check size={16} aria-hidden="true" />
+                {t(dict, "pricing_trust_3")}
+              </span>
+            </div>
+          </div>
+
+          <div
+            className="home-pricing__cards"
+            aria-label={t(dict, "pricing_cards_label")}
+          >
+            {pricedPlans.map((item) => (
+              <article
+                className={`home-price-card${
+                  item.plan.isPopular ? " home-price-card--featured" : ""
+                }`}
+                key={item.plan.id}
+              >
+                {item.plan.isPopular && (
+                  <div className="home-price-card__badge">
+                    {t(dict, "pricing_popular")}
+                  </div>
+                )}
+
+                <div className="home-price-card__top">
+                  <span className="home-price-card__sessions">
+                    {item.plan.sessionsPerPack} {t(dict, "pricing_sessions")}
+                  </span>
+                  {item.plan.savings && (
+                    <span className="home-price-card__savings">
+                      {item.plan.savings}
+                    </span>
+                  )}
+                </div>
+
+                <h3>{item.plan.title}</h3>
+                <p className="home-price-card__desc">{item.plan.description}</p>
+
+                <div className="home-price-card__price">
+                  <strong>{item.totalLabel}</strong>
+                  {item.perSessionLabel && (
+                    <span>
+                      {item.perSessionLabel}/{t(dict, "pricing_per_session")}
+                    </span>
+                  )}
+                </div>
+
+                <ul className="home-price-card__features">
+                  {item.features.map((feature) => (
+                    <li key={feature}>
+                      <Check size={15} aria-hidden="true" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  className="home-price-card__button"
+                  href={buildPlanStartHref(item.plan, locale, countryCode)}
+                >
+                  <span>{t(dict, "pricing_card_cta")}</span>
+                  <ArrowRight size={16} aria-hidden="true" />
+                </Link>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="home-pricing__footer">
+          <div className="home-pricing__region">
+            {t(dict, "pricing_region_note", {
+              currency: region.currency,
+              region: region.name,
+            })}
+          </div>
+          <Link
+            className="home-pricing__all-link"
+            href={routeHref(APP_ROUTES.packages, locale)}
+          >
+            <span>{t(dict, "pricing_all_packages")}</span>
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
+
+        <div className="home-pricing__team">
+          <div className="home-pricing__team-icon" aria-hidden="true">
+            <Building2 size={22} />
+          </div>
+          <div>
+            <p className="home-pricing__team-label">
+              {t(dict, "pricing_team_label")}
+            </p>
+            <h3>{t(dict, "pricing_team_title")}</h3>
+            <p>{t(dict, "pricing_team_text")}</p>
+          </div>
+          <Link
+            className="home-pricing__team-link"
+            href={routeHref(APP_ROUTES.corporateTraining, locale, "#rfp")}
+          >
+            <Users size={16} aria-hidden="true" />
+            <span>{t(dict, "pricing_team_cta")}</span>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function FeaturesSection({ dict }) {
   const scenarios = [

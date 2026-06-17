@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const GoogleButton = dynamic(() => import("@/components/GoogleButton"), {
   ssr: false,
@@ -20,6 +20,34 @@ import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 import { canUseGoogleAuthOnCurrentOrigin } from "@/lib/googleAuth";
 
+function getSafeNextPath(rawNext, fallbackPath) {
+  if (!rawNext) return fallbackPath;
+
+  const candidates = [rawNext];
+  try {
+    candidates.unshift(decodeURIComponent(rawNext));
+  } catch {
+    // URLSearchParams usually decodes already.
+  }
+
+  for (const candidate of candidates) {
+    if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
+      continue;
+    }
+
+    try {
+      const url = new URL(candidate, "https://speexify.local");
+      if (url.origin !== "https://speexify.local") continue;
+      if (url.pathname === "/" || url.pathname === "/ar") continue;
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      // Keep checking remaining candidates.
+    }
+  }
+
+  return fallbackPath;
+}
+
 function RegisterInner({ dict, locale }) {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
@@ -34,9 +62,15 @@ function RegisterInner({ dict, locale }) {
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [googleAvailable, setGoogleAvailable] = useState(false);
+  const searchParams = useSearchParams();
 
   const loginPath = routeHref(APP_ROUTES.login, locale);
   const dashboardPath = routeHref(APP_ROUTES.dashboard, locale);
+  const nextPath = getSafeNextPath(searchParams.get("next"), dashboardPath);
+  const loginPathWithNext =
+    nextPath !== dashboardPath
+      ? `${loginPath}?next=${encodeURIComponent(nextPath)}`
+      : loginPath;
 
   useEffect(() => {
     setGoogleAvailable(canUseGoogleAuthOnCurrentOrigin());
@@ -84,7 +118,7 @@ function RegisterInner({ dict, locale }) {
       setMsgType("success");
       setMsg(t(dict, "msg_register_success"));
       setTimeout(() => {
-        window.location.href = loginPath;
+        window.location.href = loginPathWithNext;
       }, 1200);
     } catch (err) {
       setMsgType("error");
@@ -104,7 +138,7 @@ function RegisterInner({ dict, locale }) {
       }
       setMsg("");
       await apiGoogleLogin(credential);
-      window.location.href = dashboardPath;
+      window.location.href = nextPath;
     } catch (err) {
       console.error(err);
       setMsgType("error");
@@ -278,7 +312,7 @@ function RegisterInner({ dict, locale }) {
                 <p className="auth-privacy-note">{t(dict, "privacy_note")}</p>
                 <p className="auth-switch-link">
                   {t(dict, "already_have_account")}{" "}
-                  <Link href={loginPath} className="link-primary">
+                  <Link href={loginPathWithNext} className="link-primary">
                     {t(dict, "link_sign_in")}
                   </Link>
                 </p>
@@ -482,7 +516,7 @@ function RegisterInner({ dict, locale }) {
                 <p className="auth-privacy-note">{t(dict, "privacy_note")}</p>
                 <p className="auth-switch-link">
                   {t(dict, "already_have_account")}{" "}
-                  <Link href={loginPath} className="link-primary">
+                  <Link href={loginPathWithNext} className="link-primary">
                     {t(dict, "link_sign_in")}
                   </Link>
                 </p>

@@ -731,7 +731,7 @@
       opacity: 1;
     }
 
-    .card__icon {
+    .card__glyph {
       transform: scale(1.1);
     }
 
@@ -741,21 +741,51 @@
   }
 
   .card__icon {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    flex-shrink: 0;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
+    width: 58px;
+    height: 58px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    z-index: 1;
+  }
+
+  // Progress ring that sweeps in around the glyph on load
+  .card__ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg); // start the sweep at 12 o'clock
+    overflow: visible;
+  }
+
+  .card__ring-track {
+    fill: none;
+    stroke: rgba($navy, 0.08);
+    stroke-width: 5;
+  }
+
+  .card__ring-prog {
+    fill: none;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-dasharray: var(--ring-circ);
+    stroke-dashoffset: var(--ring-circ);
+    animation: kpi-ring-fill 1.3s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+  }
+
+  .card__glyph {
+    display: grid;
+    place-items: center;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 1;
 
     svg {
-      width: 24px;
-      height: 24px;
-      stroke-width: 2.5;
+      width: 23px;
+      height: 23px;
+      stroke-width: 2.4;
+      display: block;
     }
   }
 
@@ -782,26 +812,22 @@
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  // Gradient variations
-  &.card--blue {
-    .card__icon {
-      background: linear-gradient(135deg, $blue-50 0%, $gray-100 100%);
-      color: $blue-800;
-    }
+  // ── Tones: each card now carries its own color (Upcoming ≠ Total) ──
+  &.card--blue {            // UPCOMING → coral
+    .card__glyph { color: $coral-dark; }
+    .card__ring-prog { stroke: $coral; }
 
     .card__value {
-      background: linear-gradient(135deg, $blue-600 0%, $blue-800 100%);
+      background: linear-gradient(135deg, $coral 0%, $coral-dark 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
   }
 
-  &.card--green {
-    .card__icon {
-      background: linear-gradient(135deg, $success-bg 0%, rgba($success, 0.18));
-      color: $success;
-    }
+  &.card--green {           // COMPLETED → green
+    .card__glyph { color: $success; }
+    .card__ring-prog { stroke: $success; }
 
     .card__value {
       background: linear-gradient(135deg, $success 0%, $payment-green-600 100%);
@@ -811,22 +837,31 @@
     }
   }
 
-  &.card--purple {
-    .card__icon {
-      background: linear-gradient(135deg,
-          rgba($calendar-primary, 0.12) 0%,
-          rgba($calendar-secondary, 0.18) 100%);
-      color: $calendar-secondary;
-    }
+  &.card--purple {          // TOTAL → navy (was coral; now visually distinct)
+    .card__glyph { color: $navy-muted; }
+    .card__ring-prog { stroke: $navy-muted; }
 
     .card__value {
-      background: linear-gradient(135deg,
-          $calendar-secondary 0%,
-          $accent-light 100%);
+      background: linear-gradient(135deg, $navy-muted 0%, $navy 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+  }
+}
+
+// Ring sweep-in
+@keyframes kpi-ring-fill {
+  to {
+    stroke-dashoffset: var(--ring-offset);
+  }
+}
+
+// Respect reduced-motion: show the final ring without the sweep
+@media (prefers-reduced-motion: reduce) {
+  .dashboard .card--kpi .card__ring-prog {
+    animation: none;
+    stroke-dashoffset: var(--ring-offset);
   }
 }
 
@@ -1492,13 +1527,13 @@
     min-height: auto;
 
     .card__icon {
-      width: 42px;
-      height: 42px;
+      width: 50px;
+      height: 50px;
+    }
 
-      svg {
-        width: 20px;
-        height: 20px;
-      }
+    .card__glyph svg {
+      width: 20px;
+      height: 20px;
     }
   }
 
