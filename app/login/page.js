@@ -90,13 +90,19 @@ function LoginInner({ dict }) {
       }
     }
 
-    // 3) Final fallback: locale-aware dashboard
-    router.replace(fallbackPath);
-    router.refresh();
-  }, [params, router, locale]);
+    // 3) Final fallback: locale-aware dashboard.
+    // Use a hard navigation (not router.replace + router.refresh). A hard load
+    // resolves the user on the server from the freshly-set session cookie — the
+    // exact path that already works on a manual reload. The old soft navigation
+    // raced the cold-start auth check and could strand the dashboard blank.
+    window.location.assign(fallbackPath);
+  }, [params, locale]);
 
   useEffect(() => {
     setGoogleAvailable(canUseGoogleAuthOnCurrentOrigin());
+    // Pre-warm the (possibly asleep) backend while the user fills the form, so
+    // the cold start is already underway by the time they submit.
+    fetch("/api/health", { cache: "no-store" }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -113,7 +119,9 @@ function LoginInner({ dict }) {
     setRedirecting(true);
     try {
       await apiLogin(form);
-      await refresh();
+      // The login response already established the session cookie. Navigate
+      // hard and let the server resolve the user from it — no extra /auth/me
+      // round-trip, which on a cold backend doubled the wait and could fail.
       redirectAfterLogin();
     } catch (err) {
       setRedirecting(false);
@@ -133,7 +141,8 @@ function LoginInner({ dict }) {
       setMsg("");
       setRedirecting(true);
       await apiGoogleLogin(credential);
-      await refresh();
+      // Session cookie is set by the response; hard-navigate and resolve the
+      // user server-side instead of an extra client /auth/me round-trip.
       redirectAfterLogin();
     } catch (err) {
       if (process.env.NODE_ENV !== "production") {

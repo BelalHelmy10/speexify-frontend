@@ -15,6 +15,27 @@ import DashboardKpiCard from "./components/DashboardKpiCard";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 import LearnerFeedbackPanel from "./components/LearnerFeedbackPanel";
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Retry GETs that fail transiently (network error / timeout / 5xx) within a
+// time budget. A definitive client error (4xx, e.g. 401/403) is rethrown right
+// away — retrying won't help. This mirrors the resilient auth check so the
+// dashboard survives a cold-starting backend instead of dying on attempt one.
+async function withRetry(fn, { tries = 4, baseDelay = 1200, budgetMs = 30000 } = {}) {
+  const deadline = Date.now() + budgetMs;
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await fn();
+    } catch (e) {
+      const httpStatus = e?.response?.status;
+      const transient = !httpStatus || httpStatus >= 500;
+      const timeLeft = deadline - Date.now();
+      if (!transient || attempt >= tries - 1 || timeLeft <= 0) throw e;
+      await sleep(Math.min(baseDelay * 2 ** attempt, 6000, timeLeft));
+    }
+  }
+}
+
 const canJoin = (startAt, endAt, windowMins = 15) => {
   const now = new Date();
   const start = new Date(startAt);
@@ -119,6 +140,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
   const [status, setStatus] = useState(() => t(dict, "status_loading"));
   const [summary, setSummary] = useState(null);
+  const [summaryError, setSummaryError] = useState(false);
   const { user, status: authStatus, checking, refresh } = useAuth();
   // ...
 
@@ -168,10 +190,14 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
   const fetchSummary = useCallback(async () => {
     try {
-      const res = await api.get("/me/summary", { params: { t: Date.now() } });
+      const res = await withRetry(() =>
+        api.get("/me/summary", { params: { t: Date.now() } })
+      );
       setSummary(res.data);
+      setSummaryError(false);
       setStatus("");
     } catch (e) {
+      setSummaryError(true);
       setStatus(e?.response?.data?.error || t(dict, "status_failed"));
     }
   }, [dict]);
@@ -179,12 +205,16 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
   const fetchSessions = useCallback(async () => {
     try {
       const [u, p] = await Promise.all([
-        api.get("/me/sessions", {
-          params: { range: "upcoming", limit: 20, t: Date.now() },
-        }),
-        api.get("/me/sessions", {
-          params: { range: "past", limit: 20, t: Date.now() },
-        }),
+        withRetry(() =>
+          api.get("/me/sessions", {
+            params: { range: "upcoming", limit: 20, t: Date.now() },
+          })
+        ),
+        withRetry(() =>
+          api.get("/me/sessions", {
+            params: { range: "past", limit: 20, t: Date.now() },
+          })
+        ),
       ]);
 
       const pickList = (payload, preferredKey) => {
@@ -208,9 +238,9 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
   const fetchPackages = useCallback(async () => {
     try {
-      const { data } = await api.get("/me/packages", {
-        params: { t: Date.now() },
-      });
+      const { data } = await withRetry(() =>
+        api.get("/me/packages", { params: { t: Date.now() } })
+      );
       const list = Array.isArray(data)
         ? data
         : Array.isArray(data?.items)
@@ -248,16 +278,21 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
   }, [fetchSummary, fetchSessions, fetchPackages]);
 
   useEffect(() => {
-    // Still verifying, or we simply couldn't reach the backend (e.g. it's
-    // cold-starting): do nothing. Never log the user out for a failed check —
-    // only redirect when the session is *confirmed* invalid.
-    if (authStatus === "checking" || authStatus === "error") return;
+    // A verification is genuinely in progress: wait for it to settle.
+    if (authStatus === "checking") return;
+    // Couldn't reach the backend AND no cached user (e.g. it's cold-starting):
+    // never log out for a failed check — the retry UI below handles this.
+    // Bailing here whenever authStatus was "error" is what used to strand a
+    // logged-in user on a blank dashboard until they manually reloaded.
+    if (authStatus === "error" && !user) return;
     if (authStatus === "unauthenticated" || !user) {
       api.post("/auth/logout").catch(() => {}).finally(() => {
         window.location.replace(`${prefix}/login`);
       });
       return;
     }
+    // From here a user is present (authenticated, or "error" with a still-valid
+    // cached session) — load their data; the fetches retry transient failures.
 
     // ─────────────────────────────────────────────
     // FIXED: When impersonating, DO fetch user data (we want to see their view)
@@ -426,8 +461,30 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
     );
   }
 
+  // Data load failed (after retries) but the session is valid: offer a retry
+  // instead of leaving the user staring at a dead/blank screen.
+  if (summaryError && !summary) {
+    return (
+      <div className="loading-state">
+        <p>{status || t(dict, "status_failed")}</p>
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => {
+            setSummaryError(false);
+            setStatus(t(dict, "status_loading"));
+            refreshAll();
+          }}
+        >
+          {t(dict, "retry")}
+        </button>
+      </div>
+    );
+  }
+
   if (status) return <p className="loading-state">{status}</p>;
-  if (!summary) return null;
+  // Safety net: never render a silent blank — show the loading state instead.
+  if (!summary) return <p className="loading-state">{t(dict, "status_loading")}</p>;
 
   const visibleNext =
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
