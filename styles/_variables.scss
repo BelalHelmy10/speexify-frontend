@@ -161,6 +161,8 @@ $transition-base: 200ms cubic-bezier(0.16, 1, 0.3, 1);
 $font-main: var(--font-inter), system-ui, sans-serif;
 $font-heading: var(--font-outfit), sans-serif;
 $font-arabic: var(--font-cairo), system-ui, sans-serif;
+// Display face for stat figures / numeric callouts (dashboard).
+$font-display-grotesk: var(--font-space-grotesk), var(--font-outfit), sans-serif;
 $default-font-size: 1.6rem;
 $font-size-big: 2rem;
 

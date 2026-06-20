@@ -933,65 +933,134 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
         <DashboardNextAction action={nextAction} />
 
-        <div className="dashboard__kpis">
-          <DashboardKpiCard
-            title={t(dict, "kpi_upcoming")}
-            value={upcomingCount}
-            icon={
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-            }
-            gradient="blue"
-            percent={kpiPct(upcomingCount)}
-          />
-          <DashboardKpiCard
-            title={t(dict, "kpi_completed")}
-            value={completedCount}
-            icon={
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            }
-            gradient="green"
-            percent={kpiPct(completedCount)}
-          />
-          <DashboardKpiCard
-            title={t(dict, "kpi_total")}
-            value={kpiTotal}
-            icon={
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                <rect x="3" y="14" width="7" height="7" rx="1.5" />
-              </svg>
-            }
-            gradient="purple"
-            percent={kpiTotal > 0 ? 100 : 0}
-          />
-        </div>
+        <section
+          className="dashboard__stats"
+          aria-label={t(dict, "kpi_section_title")}
+        >
+          <div className="dashboard__stats-head">
+            <div>
+              <div className="dashboard__stats-eyebrow">
+                {t(dict, "kpi_section_eyebrow")}
+              </div>
+              <h3 className="dashboard__stats-title">
+                {t(dict, "kpi_section_title")}
+              </h3>
+            </div>
+            <span className="dashboard__stats-scope">
+              <span className="dashboard__stat-dot dashboard__stat-dot--green" />
+              {t(dict, "kpi_section_scope")}
+            </span>
+          </div>
+
+          <div className="dashboard__kpis">
+            <DashboardKpiCard
+              eyebrow={t(dict, "kpi_upcoming")}
+              value={upcomingCount}
+              tone="upcoming"
+              index={0}
+              icon={
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="4.5" width="18" height="16" rx="2.6" />
+                  <line x1="3" y1="9.3" x2="21" y2="9.3" />
+                  <line x1="8" y1="2.5" x2="8" y2="6.4" />
+                  <line x1="16" y1="2.5" x2="16" y2="6.4" />
+                </svg>
+              }
+              footer={
+                <span className="dashboard__stat-status">
+                  <span
+                    className={`dashboard__stat-dot dashboard__stat-dot--orange${
+                      upcomingCount === 0 ? " dashboard__stat-dot--pulse" : ""
+                    }`}
+                  />
+                  <span className="dashboard__stat-status-text">
+                    {upcomingCount === 0
+                      ? t(dict, "kpi_foot_none_scheduled")
+                      : t(dict, "kpi_foot_scheduled", { count: upcomingCount })}
+                  </span>
+                </span>
+              }
+            />
+
+            <DashboardKpiCard
+              eyebrow={t(dict, "kpi_completed")}
+              value={completedCount}
+              tone="completed"
+              index={1}
+              icon={
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="5 12.5 10 17.5 19 7" />
+                </svg>
+              }
+              footer={
+                <span className="dashboard__stat-status">
+                  <span className="dashboard__stat-dot dashboard__stat-dot--green" />
+                  <span className="dashboard__stat-status-text">
+                    {t(dict, "kpi_foot_completion_rate", {
+                      pct: kpiPct(completedCount),
+                    })}
+                  </span>
+                </span>
+              }
+            />
+
+            <DashboardKpiCard
+              eyebrow={t(dict, "kpi_total")}
+              value={kpiTotal}
+              tone="total"
+              index={2}
+              icon={
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3.5" y="3.5" width="7" height="7" rx="1.8" />
+                  <rect x="13.5" y="3.5" width="7" height="7" rx="1.8" />
+                  <rect x="3.5" y="13.5" width="7" height="7" rx="1.8" />
+                  <rect x="13.5" y="13.5" width="7" height="7" rx="1.8" />
+                </svg>
+              }
+              footer={
+                <>
+                  <span className="dashboard__stat-status">
+                    <span className="dashboard__stat-dot dashboard__stat-dot--green" />
+                    <span className="dashboard__stat-status-text">
+                      {t(dict, "kpi_foot_completed_count", {
+                        count: completedCount,
+                      })}
+                    </span>
+                  </span>
+                  <span className="dashboard__stat-status">
+                    <span className="dashboard__stat-dot dashboard__stat-dot--orange" />
+                    <span className="dashboard__stat-status-text">
+                      {t(dict, "kpi_foot_upcoming_count", {
+                        count: upcomingCount,
+                      })}
+                    </span>
+                  </span>
+                </>
+              }
+            />
+          </div>
+        </section>
 
         {/* Two-column body: aside (plan/teacher/feedback) + main (sessions) */}
         <div className="dashboard__body">

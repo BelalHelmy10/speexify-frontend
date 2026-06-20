@@ -4,7 +4,7 @@ import "@/lib/sentry";
 import "react-calendar/dist/Calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../styles/calendar.scss";
-import { Inter, Outfit, Cairo } from "next/font/google";
+import { Inter, Outfit, Cairo, Space_Grotesk } from "next/font/google";
 import { cookies, headers } from "next/headers";
 
 import Providers from "@/components/Providers";
@@ -42,6 +42,14 @@ const outfit = Outfit({
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
   variable: "--font-cairo",
+  display: "swap",
+});
+
+// Display face for dashboard stat figures (big tabular numerals).
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 
@@ -165,7 +173,7 @@ export default async function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className={`${inter.variable} ${outfit.variable} ${cairo.variable}`}>
+      <body className={`${inter.variable} ${outfit.variable} ${cairo.variable} ${spaceGrotesk.variable}`}>
         <LocaleShell>
           <ClientProviders>
             <Providers initialUser={initialUser} hasSessionCookie={hasSessionCookie}>
