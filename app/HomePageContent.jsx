@@ -214,13 +214,13 @@ function Home({ locale = "en" }) {
             <div className="home-media-card">
               <div className="home-media-card__glow"></div>
               <Image
-                src="/images/home-hero-clean.png"
+                src="/images/home-hero-clean.webp"
                 alt="Learner practicing live English coaching on Speexify"
                 className="home-media-card__img"
-                width={2048}
-                height={2048}
+                width={1920}
+                height={1920}
                 priority
-                quality={82}
+                unoptimized
                 sizes="(max-width: 768px) 92vw, (max-width: 1200px) 46vw, 620px"
               />
               <div className="home-media-card__float home-media-card__float--1">
