@@ -5,7 +5,7 @@
   "hero_title_accent": "Speak.",
   "hero_title_3": "Repeat.",
   "hero_subtitle": "Private one-on-one sessions with a coach picked for you. Real conversations, every time. The reps you've been missing, booked when you're ready.",
-  "hero_cta_primary": "Claim your spot",
+  "hero_cta_primary": "Choose this plan",
   "hero_cta_secondary": "See what's inside",
   "hero_feature_1": "Live 1-on-1 sessions",
   "hero_feature_2": "Coaches picked for you",
@@ -140,12 +140,12 @@
 
   "final_title": "Stop studying. Start using.",
   "final_subtitle": "Book your first session. Try the practice ground. The first one is on us.",
-  "final_btn_primary": "Claim your spot →",
+  "final_btn_primary": "Choose this plan →",
   "final_btn_secondary": "See what's inside",
 
   "fomo_hero_proof": "200+ members coached this quarter",
   "fomo_hero_scarcity": "A small number of spots each month",
   "fomo_urgency": "Three months from now, the language you've been studying will still be the language you're studying. Unless you start using it.",
-  "fomo_urgency_cta": "Claim your spot",
+  "fomo_urgency_cta": "Choose this plan",
   "fomo_trial_scarcity": "We only take on members we can actually help. The starter call is how we figure that out, both ways."
 }

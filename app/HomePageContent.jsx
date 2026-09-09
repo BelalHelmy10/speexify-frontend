@@ -1702,7 +1702,7 @@ function HowItWorksSection({ dict, locale }) {
             className="spx-btn spx-btn--primary spx-btn--shine"
             href={routeHref(APP_ROUTES.register, locale)}
           >
-            <span>{t(dict, "how_cta_primary") || "Claim your spot"}</span>
+            <span>{t(dict, "how_cta_primary") || "Choose this plan"}</span>
             <svg
               className="spx-btn__arrow"
               width="16"

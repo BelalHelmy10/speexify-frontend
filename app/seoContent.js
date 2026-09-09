@@ -8,7 +8,7 @@ export const landingPages = {
       title: "Your English should match your ambition. We make sure it does.",
       subtitle:
         "1-on-1 coaching with expert coaches who turn what you already know into real confidence — for interviews, meetings, and every moment that matters.",
-      primaryCta: "Claim your spot",
+      primaryCta: "Choose this plan",
       secondaryCta: "See what's inside",
       proof: ["Live 1-on-1 sessions", "Arabic-aware coaching", "Clear speaking goals"],
       sections: [
@@ -160,7 +160,7 @@ export const landingPages = {
       title: "Stop practising alone. Start speaking with someone who gets it.",
       subtitle:
         "Live conversation practice with a coach who corrects, guides, and helps you sound like yourself — in English.",
-      primaryCta: "Claim your spot",
+      primaryCta: "Choose this plan",
       secondaryCta: "See what's inside",
       proof: ["Real conversations", "Coach feedback", "Flexible online sessions"],
       sections: [
