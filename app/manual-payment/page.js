@@ -162,7 +162,7 @@ export default function ManualPaymentPage() {
     );
   }
 
-  const pricingCurrency = regional?.displayCurrency || "USD";
+  const pricingCurrency = regional?.displayCurrency || "EGP";
 
   const wise = {
     currency: pricingCurrency,
