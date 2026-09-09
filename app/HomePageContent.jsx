@@ -8,7 +8,7 @@ import "@/styles/home.scss";
 
 import { getDictionary, t } from "./i18n"; // ✅ i18n
 import FadeIn from "@/components/FadeIn";
-import { detectUserCountry } from "@/lib/geo";
+import { usePricingCatalog, mergeCatalogPlans } from "@/hooks/usePricingCatalog";
 import { oneOnOnePlans } from "@/lib/plans";
 import { getPricingRegion } from "@/lib/pricing-regions";
 import {
@@ -610,7 +610,7 @@ function buildPlanStartHref(plan, locale, countryCode) {
     plan._backendTitle || plan.title,
   )}&cc=${encodeURIComponent(resolvedCountry)}&cur=${encodeURIComponent(
     currency,
-  )}`;
+  )}&region=${encodeURIComponent(plan.regionToken || "")}&packageId=${plan.backendId}`;
 
   return `${routeHref(APP_ROUTES.register, locale)}?next=${encodeURIComponent(
     paymentTarget,
@@ -618,32 +618,13 @@ function buildPlanStartHref(plan, locale, countryCode) {
 }
 
 function PricingSection({ dict, locale }) {
-  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const {catalog, error, retry} = usePricingCatalog();
+  const countryCode = catalog?.countryCode || DEFAULT_COUNTRY_CODE;
   const packageDict = useMemo(() => getDictionary(locale, "packages"), [locale]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    detectUserCountry()
-      .then((detectedCountry) => {
-        if (isMounted && detectedCountry) {
-          setCountryCode(detectedCountry);
-        }
-      })
-      .catch(() => {
-        // Keep the safe EGP default if geo detection is unavailable.
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const plans = useMemo(
     () =>
-      HOME_PRICING_PLAN_IDS.map((id) =>
-        oneOnOnePlans.find((plan) => plan.id === id),
-      )
+      mergeCatalogPlans(oneOnOnePlans, catalog).filter(plan => HOME_PRICING_PLAN_IDS.includes(plan.id))
         .filter(Boolean)
         .map((plan) => ({
           ...plan,
@@ -652,7 +633,7 @@ function PricingSection({ dict, locale }) {
           description: packageDict[`plan_${plan.id}_desc`] || plan.description,
           featuresRaw: packageDict[`plan_${plan.id}_features`] || plan.featuresRaw,
         })),
-    [packageDict],
+    [packageDict, catalog],
   );
 
   const pricedPlans = useMemo(
@@ -674,6 +655,13 @@ function PricingSection({ dict, locale }) {
   }, null);
 
   const region = getPricingRegion(countryCode);
+
+  if (!catalog) return (
+    <section className="home-pricing" id="home-pricing"><div className="home-container" role="status">
+      <p>{locale === "ar" ? (error ? "الأسعار غير متاحة مؤقتًا. حاول مرة أخرى." : "جارٍ تحميل الأسعار…") : (error || "Loading prices…")}</p>
+      {error && <button className="home-price-card__button" onClick={retry}>{locale === "ar" ? "حاول مرة أخرى" : "Try again"}</button>}
+    </div></section>
+  );
 
   return (
     <section className="home-pricing" id="home-pricing">

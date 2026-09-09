@@ -4,8 +4,8 @@ import { useMemo, useState, useCallback, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { oneOnOnePlans, groupPlans } from "@/lib/plans";
+import {usePricingCatalog, useCheckoutQuote} from "@/hooks/usePricingCatalog";
 import {
-  calculatePackagePrice,
   formatRegionalPrice,
 } from "@/lib/regional-pricing";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
@@ -84,8 +84,7 @@ export default function ManualPaymentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
 
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [discountLoading, setDiscountLoading] = useState(false);
+
 
   const pathname = usePathname();
   const router = useRouter();
@@ -95,14 +94,14 @@ export default function ManualPaymentPage() {
 
   const planId = searchParams.get("planId");
   const planTitle = searchParams.get("plan");
-  const plan = useMemo(
-    () => findPlanById(planId) || findPlanByTitle(planTitle),
-    [planId, planTitle]
-  );
-
-  // passed from /packages in the "next" target
-  const cc = searchParams.get("cc"); // countryCode
-  const cur = searchParams.get("cur"); // viewer currency (for formatting)
+  const {catalog, error: catalogError, retry} = usePricingCatalog();
+  const plan = useMemo(() => {
+    const content = findPlanById(planId) || findPlanByTitle(planTitle);
+    const id = Number(searchParams.get("packageId"));
+    const item = id ? catalog?.packages.find(p => p.id === id)
+      : catalog?.packages.find(p => p.catalogKey === content?.id);
+    return item ? {...content, ...item} : null;
+  }, [catalog, planId, planTitle, searchParams]);
 
   // discount kept in URL query (?discount=CODE)
   const initialDiscount = useMemo(
@@ -131,64 +130,23 @@ export default function ManualPaymentPage() {
     [pathname, router, searchParams]
   );
 
-  async function onApplyDiscount(e) {
+  function onApplyDiscount(e) {
     e?.preventDefault?.();
-
-    const clean = (discountInput || "").trim();
-    setQueryParam("discount", clean || "");
-
-    if (!clean) {
-      setDiscountPercent(0);
-      setErr("");
-      return;
-    }
-
-    try {
-      setDiscountLoading(true);
-      const res = await api.post("/api/discounts/validate", { code: clean });
-      setDiscountPercent(res.data.percentage || 0);
-      setErr("");
-    } catch {
-      setDiscountPercent(0);
-      setErr("Invalid discount code");
-    } finally {
-      setDiscountLoading(false);
-    }
+    setQueryParam("discount", discountInput.trim().toUpperCase());
   }
-
   function onClearDiscount() {
     setDiscountInput("");
-    setDiscountPercent(0);
-    setErr("");
     setQueryParam("discount", "");
   }
-
-  // Auto-apply if discount exists in URL
-  useEffect(() => {
-    if (!initialDiscount) return;
-
-    (async () => {
-      try {
-        setDiscountLoading(true);
-        const res = await api.post("/api/discounts/validate", {
-          code: initialDiscount,
-        });
-        setDiscountPercent(res.data.percentage || 0);
-        setErr("");
-      } catch {
-        setDiscountPercent(0);
-        setErr("Invalid discount code");
-      } finally {
-        setDiscountLoading(false);
-      }
-    })();
-  }, [initialDiscount]);
-
-  // apply discount percent to pricing
-  const regional = useMemo(() => {
-    if (!plan) return null;
-    return calculatePackagePrice(plan, cc || null, discountPercent);
-  }, [plan, cc, discountPercent]);
+  const quote = useCheckoutQuote(plan?.id, searchParams.get("region") || catalog?.regionToken, initialDiscount);
+  const regional = quote.pricing;
+  const discountPercent = regional?.discountPercentage || 0;
+  const discountLoading = quote.loading;
+  if (catalogError || quote.error) return (<div role="alert" style={{padding: 24}}>
+    <p>{locale === "ar" ? "تعذّر تأكيد السعر. حاول مرة أخرى." : (catalogError || quote.error)}</p>
+    <button onClick={() => {retry(); router.replace(`${pathname}?packageId=${plan?.id || ""}`); quote.refresh();}}>{locale === "ar" ? "حاول مرة أخرى" : "Try again"}</button>
+  </div>);
+  if (!catalog || (plan && !regional)) return <p role="status" style={{padding: 24}}>{locale === "ar" ? "جارٍ تأكيد السعر…" : "Confirming price…"}</p>;
 
   if (!plan) {
     return (
@@ -233,7 +191,7 @@ export default function ManualPaymentPage() {
       : formatRegionalPrice(
           {
             ...regional,
-            displayCurrency: cur || pricingCurrency,
+            displayCurrency: pricingCurrency,
           },
           locale
         );

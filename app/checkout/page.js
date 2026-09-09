@@ -7,32 +7,21 @@ import { me } from "@/lib/auth";
 import "@/styles/checkout.scss";
 import { useToast } from "@/components/ToastProvider";
 import { getDictionary, t } from "@/app/i18n";
-import { detectUserCountry } from "@/lib/geo";
+import { usePricingCatalog, useCheckoutQuote } from "@/hooks/usePricingCatalog";
 import { oneOnOnePlans, groupPlans } from "@/lib/plans";
 import {
-  calculatePackagePrice,
   formatRegionalPrice,
   formatEgpCharge,
 } from "@/lib/regional-pricing";
 import {
   buildOrderId,
-  buildPriceVerification,
-  egpAmountsAgree,
+  confirmationFromResponse,
 } from "@/lib/payment-contract";
 import {
   getNetworkProfile,
   subscribeToNetworkProfileChanges,
 } from "@/lib/network-profile";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
-
-// When geo detection fails, default to Egypt — we are an Egyptian company
-// and EGP is what Paymob processes anyway. This means the worst-case
-// fallback shows correct EGP pricing rather than a wrong USD multiplier.
-const SAFE_DEFAULT_COUNTRY = "EG";
-
-// Maximum time we wait for geo detection before falling back to the safe
-// default. After this, the user can still pay; we just stop waiting.
-const GEO_TIMEOUT_MS = 4000;
 
 export default function CheckoutPage() {
   const { toast, confirmModal } = useToast();
@@ -43,19 +32,14 @@ export default function CheckoutPage() {
   const locale = pathname && pathname.startsWith("/ar") ? "ar" : "en";
   const dict = useMemo(() => getDictionary(locale, "checkout"), [locale]);
 
-  const [pkg, setPkg] = useState(null);
+  const {catalog, error: catalogError, retry: retryCatalog} = usePricingCatalog();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [loadingPkg, setLoadingPkg] = useState(true);
+
   const [loadingUser, setLoadingUser] = useState(true);
 
-  const [countryCode, setCountryCode] = useState(null);
-  const [geoResolved, setGeoResolved] = useState(false);
-  const [geoFailed, setGeoFailed] = useState(false);
-
   const [discountCode, setDiscountCode] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [discountLoading, setDiscountLoading] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState("");
 
   const [networkProfile, setNetworkProfile] = useState(() => getNetworkProfile());
   const [recoveryOrder, setRecoveryOrder] = useState(null);
@@ -82,48 +66,6 @@ export default function CheckoutPage() {
     });
   }, []);
 
-  // Geo detection with a hard timeout. If the network is slow or geo
-  // services are unreachable, we still let the user check out — but with
-  // the safe default country code instead of `null`.
-  useEffect(() => {
-    let cancelled = false;
-    let timeoutId = null;
-
-    (async () => {
-      const timeoutPromise = new Promise((resolve) => {
-        timeoutId = setTimeout(() => resolve("__timeout__"), GEO_TIMEOUT_MS);
-      });
-
-      try {
-        const result = await Promise.race([
-          detectUserCountry(),
-          timeoutPromise,
-        ]);
-
-        if (cancelled) return;
-
-        if (result === "__timeout__" || !result) {
-          setCountryCode(SAFE_DEFAULT_COUNTRY);
-          setGeoFailed(true);
-        } else {
-          setCountryCode(result);
-        }
-      } catch {
-        if (cancelled) return;
-        setCountryCode(SAFE_DEFAULT_COUNTRY);
-        setGeoFailed(true);
-      } finally {
-        if (timeoutId) clearTimeout(timeoutId);
-        if (!cancelled) setGeoResolved(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, []);
-
   // Fetch current user
   useEffect(() => {
     (async () => {
@@ -138,113 +80,30 @@ export default function CheckoutPage() {
     })();
   }, []);
 
-  // Fetch package details.
-  //
-  // lib/plans.js is the canonical source of truth for prices, titles,
-  // descriptions, and features. The backend /api/packages endpoint exists
-  // only so we can get the numeric `id` that the payment API requires.
-  // We MERGE: local plan content + backend numeric id.
-  useEffect(() => {
-    if (!planIdParam && !planTitleParam) {
-      setLoadingPkg(false);
-      return;
-    }
-
-    (async () => {
-      try {
-        // 1) Find the canonical plan from lib/plans.js
-        const allLocalPlans = [...oneOnOnePlans, ...groupPlans];
-        let localPlan = null;
-
-        if (planIdParam) {
-          localPlan = allLocalPlans.find((p) => p.id === planIdParam) || null;
-        }
-        if (!localPlan && planTitleParam) {
-          const decodedTitle = decodeURIComponent(planTitleParam).trim().toLowerCase();
-          localPlan = allLocalPlans.find(
-            (p) => p.title.toLowerCase() === decodedTitle
-          ) || null;
-        }
-
-        // 2) Fetch backend packages to get the numeric id we send to the
-        //    payment API.
-        const res = await api.get("/api/packages?audience=INDIVIDUAL");
-        const packages = Array.isArray(res.data) ? res.data : [];
-
-        // Match the backend package by the local plan's title (the
-        // English/backend title used as the stable matching key). Fall
-        // back to the URL title param if no local plan matched.
-        const matchTitle = (localPlan?.title || decodeURIComponent(planTitleParam || "")).trim().toLowerCase();
-        const backendPkg = matchTitle
-          ? packages.find((p) => String(p.title || "").toLowerCase() === matchTitle)
-          : null;
-
-        if (localPlan && backendPkg) {
-          // Loud diagnostic so we can see exactly what the backend has
-          // for this package vs. what plans.js says. If these diverge,
-          // Paymob will be charged the backend's number unless the
-          // server honors priceVerification.
-          const backendEgp = backendPkg.priceEGP ?? backendPkg.priceUSD ?? null;
-          if (backendEgp != null && Number(backendEgp) !== Number(localPlan.priceEGP)) {
-            // eslint-disable-next-line no-console
-            console.warn(
-              `[checkout] PRICE DIVERGENCE — plans.js says ${localPlan.title} = ${localPlan.priceEGP} EGP, ` +
-              `backend (id=${backendPkg.id}) has ${backendEgp}. ` +
-              `Run /admin/packages → "Sync from plans.js" to fix.`
-            );
-          } else {
-            // eslint-disable-next-line no-console
-            console.log(
-              `[checkout] price ok — ${localPlan.title} = ${localPlan.priceEGP} EGP (backend id=${backendPkg.id} agrees)`
-            );
-          }
-
-          // Merge: local content wins, backend supplies numeric id only.
-          setPkg({
-            ...localPlan,
-            id: backendPkg.id,
-            // Preserve any backend-only fields (image, etc.) WITHOUT
-            // letting backend override our prices.
-            image: backendPkg.image,
-          });
-        } else if (localPlan) {
-          // Backend doesn't have this plan yet (or fetch failed). We
-          // still know what to show, but can't create a payment intent
-          // without a numeric id.
-          setPkg({ ...localPlan, id: null });
-        } else if (backendPkg) {
-          // Unknown legacy plan — use whatever the backend returned.
-          setPkg(backendPkg);
-        } else {
-          setPkg(null);
-        }
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to load package:", err);
-        setPkg(null);
-      } finally {
-        setLoadingPkg(false);
-      }
-    })();
-  }, [planIdParam, planTitleParam]);
-
-  // Apply discount code
-  async function applyDiscount() {
-    if (!discountCode) return;
-
-    try {
-      setDiscountLoading(true);
-      const res = await api.post("/discounts/validate", { code: discountCode });
-      setDiscountPercent(res.data.percentage);
-      toast.success(
-        t(dict, "discount_toast_applied", { percent: res.data.percentage })
-      );
-    } catch {
-      setDiscountPercent(0);
-      toast.error(t(dict, "discount_toast_invalid"));
-    } finally {
-      setDiscountLoading(false);
-    }
+  const pkg = useMemo(() => {
+    if (!catalog) return null;
+    const numericId = Number(searchParams.get("packageId"));
+    const editorial = [...oneOnOnePlans, ...groupPlans].find(p =>
+      p.id === planIdParam || p.title.toLowerCase() === (planTitleParam || "").trim().toLowerCase());
+    const item = numericId ? catalog.packages.find(p => p.id === numericId)
+      : catalog.packages.find(p => p.catalogKey === editorial?.id);
+    if (!item) return null;
+    const content = [...oneOnOnePlans, ...groupPlans].find(p => p.id === item.catalogKey);
+    const packageDict = getDictionary(locale, "packages");
+    return {...item, title: packageDict[`plan_${item.catalogKey}_title`] || content?.title || item.title,
+      description: packageDict[`plan_${item.catalogKey}_desc`] || content?.description || item.description};
+  }, [catalog, searchParams, planIdParam, planTitleParam, locale]);
+  const regionToken = searchParams.get("region") || catalog?.regionToken;
+  const quote = useCheckoutQuote(pkg?.id, regionToken, appliedDiscount);
+  const regionalPrice = quote.pricing;
+  const discountPercent = regionalPrice?.discountPercentage || 0;
+  const discountLoading = quote.loading;
+  const loadingPkg = !catalog && !catalogError;
+  const geoFailed = catalog?.countrySource === "default";
+  function applyDiscount() {
+    setPendingIntent(null);
+    orderTimestampRef.current = null;
+    setAppliedDiscount(discountCode.trim().toUpperCase());
   }
 
   // Recovery flow — show banner for a pending/failed previous order.
@@ -309,7 +168,7 @@ export default function CheckoutPage() {
         throw new Error(data?.error || t(dict, "recovery_retry_failed"));
       }
 
-      window.location.href = data.iframeUrl;
+      setPendingIntent(confirmationFromResponse(data, regionalPrice));
     } catch (e) {
       // Retry failed — the stored intent is unusable (expired, price
       // changed, backend rejected, etc.). Dismiss the banner so the user
@@ -323,21 +182,12 @@ export default function CheckoutPage() {
     }
   }
 
-  // Frontend-computed regional pricing. This is what's shown on screen
-  // AND what we send to the backend in the priceVerification block so
-  // the backend can detect a disagreement and reject the intent rather
-  // than silently charge a different amount.
-  const regionalPrice = useMemo(() => {
-    if (!pkg || !geoResolved) return null;
-    return calculatePackagePrice(pkg, countryCode, discountPercent);
-  }, [pkg, countryCode, discountPercent, geoResolved]);
-
   // Create the payment intent on the backend. The response includes the
   // locked EGP amount that will actually be charged at Paymob. We show
   // that to the user on a confirmation card before redirecting.
   async function reviewPayment() {
     if (!pkg) return;
-    if (!geoResolved) return; // hard guard — never submit with null country
+    if (!quote.quoteToken) return;
     if (!regionalPrice) return;
 
     // The backend payment API requires a numeric package id. If the local
@@ -374,8 +224,8 @@ export default function CheckoutPage() {
           timestamp: orderTimestampRef.current,
         }),
         packageId: Number(pkg.id),
-        countryCode: countryCode || SAFE_DEFAULT_COUNTRY,
-        discountCode: discountCode || null,
+        quoteToken: quote.quoteToken,
+        discountCode: appliedDiscount || null,
         customer: {
           firstName,
           lastName,
@@ -384,75 +234,9 @@ export default function CheckoutPage() {
         },
       };
 
-      // priceVerification is the recommended new field documented in
-      // lib/payment-contract.js. Until the backend explicitly supports
-      // it, we send it under a feature flag so it cannot break strict
-      // schema validation. Enable by setting NEXT_PUBLIC_PAYMENT_PRICE_VERIFY=1.
-      if (process.env.NEXT_PUBLIC_PAYMENT_PRICE_VERIFY === "1") {
-        body.priceVerification = buildPriceVerification(regionalPrice);
-      }
-
-      // eslint-disable-next-line no-console
-      console.log("[checkout] POST /payments/create-intent", body);
-
       const { data } = await api.post("/payments/create-intent", body);
 
-      // eslint-disable-next-line no-console
-      console.log("[checkout] create-intent response", data);
-
-      if (!data?.ok) {
-        // Backend returned a structured failure. Surface the most useful
-        // error to the user.
-        if (data?.code === "PRICE_MISMATCH" && data?.expectedEgpAmount) {
-          // Backend disagrees with our EGP amount. Show the actual amount
-          // and let the user opt in to the corrected price.
-          const shouldContinue = await confirmModal(
-            t(dict, "price_mismatch_message", {
-              shown: formatEgpCharge(regionalPrice.egpAmount, locale),
-              actual: formatEgpCharge(data.expectedEgpAmount, locale),
-            })
-          );
-          if (shouldContinue && data.iframeUrl) {
-            setPendingIntent({
-              iframeUrl: data.iframeUrl,
-              chargeAmountEGP: data.expectedEgpAmount,
-              chargeCurrency: "EGP",
-            });
-          }
-          return;
-        }
-        throw new Error(data?.message || "Failed to init payment");
-      }
-
-      // Successful intent — show the confirmation card with the locked
-      // EGP amount. We always show the backend's amount if it sent one
-      // (that's what Paymob will actually charge); otherwise we fall
-      // back to our client-computed value.
-      const backendEgp = Number.isFinite(Number(data.chargeAmountEGP))
-        ? Number(data.chargeAmountEGP)
-        : null;
-      const lockedEgp = backendEgp ?? regionalPrice.egpAmount;
-      const expectedEgp = regionalPrice.egpAmount;
-      const mismatch =
-        backendEgp != null && !egpAmountsAgree(backendEgp, expectedEgp);
-
-      if (mismatch) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          `[checkout] EGP amount mismatch — frontend expected ${expectedEgp}, backend will charge ${backendEgp}`
-        );
-      }
-
-      setPendingIntent({
-        iframeUrl: data.iframeUrl,
-        chargeAmountEGP: lockedEgp,
-        chargeCurrency: data.chargeCurrency || "EGP",
-        // For the warning banner — the amount we showed on the page,
-        // and a flag that the user explicitly accepted the mismatch.
-        expectedEgpAmount: expectedEgp,
-        mismatch,
-        accepted: !mismatch, // no acceptance needed when amounts agree
-      });
+      setPendingIntent(confirmationFromResponse(data, regionalPrice));
     } catch (e) {
       // Log everything we can find about the failure as separate args so
       // dev-tools doesn't collapse it. Also stringify the response for
@@ -472,6 +256,7 @@ export default function CheckoutPage() {
       orderTimestampRef.current = null;
 
       const resp = e?.response?.data;
+      if (["PRICE_CHANGED", "QUOTE_EXPIRED"].includes(resp?.code)) quote.refresh();
       const status = e?.response?.status;
 
       // Surface the most specific message the backend gave us. If it's
@@ -499,7 +284,7 @@ export default function CheckoutPage() {
   }
 
   function confirmAndRedirect() {
-    if (!pendingIntent?.iframeUrl) return;
+    if (!pendingIntent?.iframeUrl || !pendingIntent.accepted) return;
     window.location.href = pendingIntent.iframeUrl;
   }
 
@@ -520,6 +305,8 @@ export default function CheckoutPage() {
       </div>
     );
   }
+
+  if (catalogError) return (<div className="checkout__error" role="alert"><p>{locale === "ar" ? "تعذّر تحميل الأسعار." : catalogError}</p><button onClick={retryCatalog}>{locale === "ar" ? "حاول مرة أخرى" : "Try again"}</button></div>);
 
   if (!pkg) {
     return (
@@ -544,7 +331,12 @@ export default function CheckoutPage() {
 
   // Still waiting on geo resolution — show a friendly loading state so the
   // Pay button never appears with a null countryCode.
-  if (!geoResolved || !regionalPrice) {
+  if (quote.error) return (<div className="checkout__error" role="alert">
+    <p>{locale === "ar" ? "تعذّر تأكيد السعر أو كود الخصم. حدّث السعر وحاول مرة أخرى." : quote.error}</p>
+    <button onClick={() => {setAppliedDiscount(""); setDiscountCode(""); router.replace(`${pathname}?packageId=${pkg.id}`); retryCatalog(); quote.refresh();}}>{locale === "ar" ? "تحديث السعر" : "Refresh price"}</button>
+  </div>);
+
+  if (!regionalPrice) {
     return (
       <div className="checkout__loading">
         <div className="checkout__loading-content">
@@ -687,7 +479,7 @@ export default function CheckoutPage() {
           <div className="checkout__discount">
             <input
               value={discountCode}
-              onChange={(e) => setDiscountCode(e.target.value)}
+              onChange={(e) => {setDiscountCode(e.target.value); setAppliedDiscount(""); setPendingIntent(null); orderTimestampRef.current = null;}}
               placeholder={t(dict, "discount_placeholder")}
             />
             <button onClick={applyDiscount} disabled={discountLoading}>
@@ -836,7 +628,7 @@ export default function CheckoutPage() {
         ) : (
           <button
             onClick={reviewPayment}
-            disabled={loading}
+            disabled={loading || !quote.quoteToken}
             className="checkout__pay-button"
           >
             {loading ? (

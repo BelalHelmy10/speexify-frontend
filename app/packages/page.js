@@ -8,7 +8,7 @@ import "@/styles/packages.scss";
 import { getDictionary, t } from "@/app/i18n";
 import FadeIn from "@/components/FadeIn";
 // import { guessCurrencyFromNavigator } from "@/lib/currency"; // no longer needed
-import { detectUserCountry } from "@/lib/geo";
+import { usePricingCatalog, mergeCatalogPlans } from "@/hooks/usePricingCatalog";
 import {
   calculatePackagePrice,
   calculatePerSessionPrice,
@@ -88,12 +88,11 @@ function Packages() {
 
   const [tab, setTab] = useState(AUD.INDIVIDUAL);
   const [lessonType, setLessonType] = useState(LESSON_TYPE.ONE_ON_ONE);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const {catalog, error: err, loading, retry} = usePricingCatalog();
 
   // Regional pricing
-  const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
-  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const countryCode = catalog?.countryCode || DEFAULT_COUNTRY_CODE;
+  const currency = catalog?.packages?.[0]?.pricing?.displayCurrency || DEFAULT_CURRENCY;
 
   // Seats estimator for corporate
   const [seats, setSeats] = useState(15);
@@ -105,29 +104,11 @@ function Packages() {
       setTab(AUD.CORPORATE);
   }, []);
 
-  // Detect viewer country and LOCK currency based on pricing region
-  useEffect(() => {
-    (async () => {
-      const detectedCountry = await detectUserCountry();
-      const resolvedCountry = detectedCountry || DEFAULT_COUNTRY_CODE;
-      setCountryCode(resolvedCountry);
-
-      const region = getPricingRegion(resolvedCountry);
-      setCurrency(region.currency);
-
-      console.log(
-        "🌍 Using pricing for country:",
-        resolvedCountry || "DEFAULT"
-      );
-      console.log("💱 Currency locked to pricing region:", region.currency);
-    })();
-  }, []);
-
   // Get current plans based on selection
   const rawPlans = useMemo(() => {
     if (tab === AUD.CORPORATE) return corporatePlans;
-    return lessonType === LESSON_TYPE.ONE_ON_ONE ? oneOnOnePlans : groupPlans;
-  }, [tab, lessonType]);
+    return mergeCatalogPlans(lessonType === LESSON_TYPE.ONE_ON_ONE ? oneOnOnePlans : groupPlans, catalog);
+  }, [tab, lessonType, catalog]);
 
   // Localize display strings while keeping the English title as the backend identifier.
   const plans = useMemo(() => {
@@ -307,7 +288,7 @@ function Packages() {
                 ? t(dict, "hero_pricing_eyebrow", "Prices visible upfront")
                 : t(dict, "hero_pricing_corp_eyebrow", "Team pricing")}
             </div>
-            {isIndividual && pricePreview.lowestPerSession ? (
+            {isIndividual && !catalog ? (<p role="status">{locale === "ar" ? "جارٍ تحميل الأسعار…" : "Loading prices…"}{err && <button onClick={retry}>{locale === "ar" ? "حاول مرة أخرى" : "Try again"}</button>}</p>) : isIndividual && pricePreview.lowestPerSession ? (
               <>
                 <h2 className="ecp-hero-pricing__title">
                   {t(dict, "hero_pricing_from", "From")}{" "}
@@ -714,7 +695,7 @@ function PricingCard({
     plan.id
   )}&plan=${encodeURIComponent(urlTitle)}&cc=${encodeURIComponent(
     countryCode || ""
-  )}&cur=${encodeURIComponent(currency || "")}`;
+  )}&cur=${encodeURIComponent(currency || "")}&region=${encodeURIComponent(plan.regionToken || "")}&packageId=${plan.backendId}`;
 
   return (
     <div className={`ecp-card ecp-card--plan ${isPopular ? "is-popular" : ""}`}>
