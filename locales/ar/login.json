@@ -13,13 +13,13 @@
   "forgot_password": "نسيت الباسورد؟",
 
   "btn_sign_in": "سجّل دخول",
-  "btn_signing_in": "بيتسجل الدخول...",
+  "btn_signing_in": "بنسجّل دخولك...",
 
   "no_account": "مش عندك حساب؟",
   "link_create_account": "افتح حساب",
 
   "alert_login_failed": "تسجيل الدخول فشل",
-  "alert_google_no_credential": "Google مردّهاش بيانات تسجيل",
+  "alert_google_no_credential": "Google ما رجّعتش بيانات تسجيل",
   "alert_google_failed": "تسجيل الدخول عبر Google فشل",
 
   "user_fallback_name": "المستخدم",

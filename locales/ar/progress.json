@@ -1,7 +1,7 @@
 {
   "page_title": "تقدّمك",
-  "hero_eyebrow": "شاشة الزخم",
-  "subtitle_main": "شوف بوضوح زخمك والجلسات اللي خلصت والملاحظات والخطوة الجاية.",
+  "hero_eyebrow": "متابعة التقدّم",
+  "subtitle_main": "شوف بوضوح استمراريتك والجلسات اللي خلصت والملاحظات والخطوة الجاية.",
   "subtitle_loading": "بيتحمّل تقدّمك...",
   "subtitle_not_logged_in": "لازم تسجّل دخول عشان تشوف الصفحة دي.",
   "subtitle_error": "مقدرناش نحمل بيانات التقدّم دلوقتي.",
@@ -18,7 +18,7 @@
   "first_milestone": "الجلسة الأولى",
 
   "summary_completed_label": "الجلسات اللي خلصت",
-  "summary_total_time_label": "وقت التحدث",
+  "summary_total_time_label": "وقت الكلام",
   "summary_total_time_meta_suffix": "دقيقة تقريباً",
   "summary_avg_rating_label": "متوسط التقييم",
   "summary_avg_rating_meta": "بناءً على تقييمات المتدرب",
@@ -26,7 +26,7 @@
   "metric_minutes_meta": "{duration} الشهر ده",
   "metric_streak_label": "استمراريتك",
   "metric_streak_meta": "أطول استمرارية: {count} أسابيع",
-  "metric_feedback_label": "دائرة الملاحظات",
+  "metric_feedback_label": "المتابعة",
   "metric_feedback_meta": "اتغطّى {count} مادة",
 
   "path_kicker": "مسارك",
@@ -45,7 +45,7 @@
   "mission_subtitle": "أحسن خطوة جاية لك هتظهر هنا.",
   "mission_cta": "افتح الإجراء",
 
-  "skills_kicker": "مؤشرات النمو",
+  "skills_kicker": "مؤشرات التطور",
   "skills_title": "زخم المهارات",
   "skills_subtitle": "الدرجات دي معتمدة على نشاط حقيقي دلوقتي، وممكن نخليها أدق بعدين من خلال تقييمات المدرّب.",
 
@@ -69,15 +69,15 @@
 
   "skill_fluency_practice": "تمرين الطلاقة",
   "skill_consistency": "الاستمرارية",
-  "skill_feedback_loop": "دائرة الملاحظات",
+  "skill_feedback_loop": "المتابعة",
   "skill_course_progress": "تقدّم المسار",
 
-  "source_fluency_practice": "بناءً على وقت التحدث المنجز",
+  "source_fluency_practice": "بناءً على وقت الكلام المنجز",
   "source_consistency": "بناءً على الحضور والجلسات المنجزة",
   "source_feedback_loop": "بناءً على الجلسات اللي فيها ملاحظات المدرّب",
   "source_course_progress": "بناءً على استخدام الباقة النشطة",
 
-  "achievement_momentum_builder": "باني الزخم",
+  "achievement_momentum_builder": "بتبني الاستمرارية",
   "achievement_first_session": "أول جلسة",
   "achievement_five_hours_practiced": "خمس ساعات تدريب",
   "achievement_reliable_learner": "متدرب منتظم",
@@ -88,7 +88,7 @@
   "desc_feedback_loop": "استلم ملاحظات المدرّب في 3 جلسات منجزة",
   "desc_five_hours_practiced": "وصل لـ 300 دقيقة تدريب تحدث موجّه",
   "desc_reliable_learner": "حافظ على حضور كامل بعد 3 جلسات منجزة على الأقل",
-  "desc_halfway_there": "استخدم نصّ باقتك التعليمية النشطة على الأقل",
+  "desc_halfway_there": "استخدم نصّ باقة التدريب النشطة على الأقل",
 
   "progress_label": "التقدّم",
   "achievement_done": "تم",
@@ -96,6 +96,6 @@
 
   "mission_start_timeline": "ابدأ خطّك الزمني للتقدم",
   "mission_start_timeline_desc": "أكمل أول جلسة تدريب عشان تفتح الإنجازات والاستمرارية وسجلّ الملاحظات.",
-  "next_action_choose_package": "اختار باقتك التعليمية اللي جاي",
+  "next_action_choose_package": "اختار باقة التدريب الجاية",
   "next_action_add_credits": "ضيف جلسات عشان مسارك التعليمي يفضل شغّال."
 }

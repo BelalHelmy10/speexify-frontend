@@ -125,7 +125,7 @@ export default function StickyTrialCTA() {
     locale === "ar"
       ? {
           title: "أول جلسة مجانية",
-          sub: "بدون أي التزام",
+          sub: "من غير أي التزام",
           cta: "احجز جلستك",
           aria: "احجز جلسة تجريبية مجانية",
           dismiss: "إخفاء",

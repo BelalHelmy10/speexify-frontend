@@ -9,13 +9,13 @@
   "header_logged_in_as": "مسجّل دخول باسم",
 
   "warning_title_login_required": "محتاج تسجيل دخول",
-  "warning_body_login_required": "هيطلبوا منك تسجيل الدخول قبل ما تكمل الدفع.",
+  "warning_body_login_required": "لازم تسجّل دخول قبل ما تكمل الدفع.",
 
   "details_label_sessions": "عدد الجلسات:",
   "details_label_duration": "مدة كل جلسة:",
   "details_duration_unit": "دقيقة",
 
-  "pricing_label_package_price_usd": "سعر الباقة (دولار):",
+  "pricing_label_package_price_usd": "سعر الباقة بالدولار:",
   "pricing_label_price_egp": "السعر بالجنيه المصري:",
   "pricing_label_total": "الإجمالي:",
 
@@ -29,7 +29,7 @@
   "customer_value_name_missing": "غير مذكور",
   "customer_label_email": "الإيميل:",
 
-  "pay_button_processing": "بيتعامل...",
+  "pay_button_processing": "بنجهّز الدفع...",
   "pay_button_label_with_amount": "ادفع {amount} جنيه مصري",
 
   "security_note": "🔒 الدفع مؤمّن عبر بوابة Paymob",
@@ -49,8 +49,8 @@
   "recovery_start_fresh": "ابدأ دفع جديد",
   "recovery_retry_failed": "مقدرناش نكمل الدفع القديم. ابدأ دفع جديد من تحت.",
   "pricing_label_package_price": "سعر الباقة",
-  "pricing_label_egp_equivalent": "القيمة المكافئة بالجنيه المصري (للدفع)",
-  "exchange_note_regional": "بنعرض السعر بعملة {displayCurrency} لمنطقة {region}. بيتم معالجة الدفع بالجنيه المصري.",
+  "pricing_label_egp_equivalent": "القيمة بالجنيه المصري وقت الدفع",
+  "exchange_note_regional": "بنعرض السعر بعملة {displayCurrency} لمنطقة {region}. الدفع بيتخصم بالجنيه المصري.",
   "pay_button_label": "ادفع",
   "discount_placeholder": "كود الخصم",
   "discount_apply": "طبّق",
@@ -67,11 +67,11 @@
   "confirm_title": "أكّد الدفع",
   "confirm_charge_amount_label": "المبلغ اللي هيتخصم",
   "confirm_currency_note": "الأسعار معروضة بعملة {currency}، لكن Paymob بيعالج الدفع بالجنيه المصري. المبلغ اللي فوق هو اللي هيتخصم من كارتك.",
-  "confirm_btn_proceed": "كمّل إلى Paymob",
+  "confirm_btn_proceed": "كمّل على Paymob",
   "confirm_btn_cancel": "إلغاء",
 
   "confirm_mismatch_title": "السعر مش زي اللي ظهر لك",
-  "confirm_mismatch_body": "الموقع عرض {expected}، بس نظام الدفع هيخصم {actual}. ده غالباً معناه إن كتالوج الأسعار عندنا أحدث من اللي في الباك إند. تقدر تكمل، أو تلغي وتكلم الدعم.",
+  "confirm_mismatch_body": "الموقع عرض {expected}، بس نظام الدفع هيخصم {actual}. ده غالبًا معناه إن السعر اللي عندنا اتحدّث ولسه ماوصلش للدفع. تقدر تكمل، أو تلغي وتكلم الدعم.",
   "confirm_mismatch_acknowledge": "أنا فاهم إن هيتخصم مني {amount}",
 
   "price_mismatch_title": "السعر اتغيّر",

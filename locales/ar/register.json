@@ -1,5 +1,5 @@
 {
-  "title_step1": "افتح حساب",
+  "title_step1": "اعمل حساب",
   "title_step2": "تأكيد الإيميل",
 
   "subtitle_step1": "انضم باستخدام Google أو الإيميل. مش محتاج بطاقة.",
@@ -7,10 +7,10 @@
 
   "form_aria_label": "إنشاء حساب Speexify",
   "register_eyebrow": "ابدأ التحدث أسرع",
-  "friendly_note": "افتح حسابك دلوقتي. احجز التدريب لما تكون جاهز.",
+  "friendly_note": "اعمل حسابك دلوقتي. احجز التدريب لما تكون جاهز.",
   "google_button_label": "كمل باستخدام Google",
   "card_badge": "حساب مجاني",
-  "card_timing": "بياخد 30 ثانية",
+  "card_timing": "بياخد حوالي 30 ثانية",
   "privacy_note": "مش محتاج تدفع. هنستخدم إيميلك بس للتحقق وتحديثات الحساب.",
 
   "step1_label": "الإيميل",
@@ -32,9 +32,9 @@
   "password_hint": "لازم تكون 6 أحرف على الأقل",
 
   "btn_continue": "كمل",
-  "btn_sending_code": "بيتبعت الرمز...",
-  "btn_create_account": "افتح حساب",
-  "btn_creating_account": "بيتفتح الحساب...",
+  "btn_sending_code": "بنبعت الرمز...",
+  "btn_create_account": "اعمل حساب",
+  "btn_creating_account": "بننشئ الحساب...",
   "btn_resend": "ابعت الرمز تاني",
   "btn_resend_with_timer": "ابعت الرمز تاني",
   "btn_change_email": "غيّر الإيميل",
@@ -47,7 +47,7 @@
   "msg_register_failed": "فتح الحساب فشل",
   "msg_google_no_credential": "Google مردّهاش بيانات تسجيل",
   "msg_google_failed": "تسجيل الدخول عبر Google فشل",
-  "msg_register_success": "اتفتح الحساب بنجاح! هيتم تحويلك...",
+  "msg_register_success": "حسابك اتعمل. هنحوّلك دلوقتي...",
 
   "alert_success_icon_label": "تمام",
   "alert_error_icon_label": "مشكلة"

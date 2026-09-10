@@ -1,15 +1,15 @@
 {
   "//": "===== HERO / PAGE HEADER (new naming) =====",
-  "hero_eyebrow": "مكتبة الموارد",
+  "hero_eyebrow": "مكتبة المواد",
   "hero_title": "كل موارد الصف في مكان واحد",
   "hero_subtitle": "تصفّح حسب المسار والكتاب والمستوى والوحدة. افتح الملف الأصلي، أو صفحة الوحدة، أو ادخل غرفة التحضير مع أدوات التعليق.",
 
   "empty_state": "مفيش موارد مضافة لسه. لما نربط الموارد بالمسارات والوحدات هتظهر هنا.",
 
   "//_aliases": "مفاتيح قديمة لسه مستخدمة في الـ JSX الحالي – نربطها بنفس النصوص",
-  "resources_eyebrow": "المصادر",
-  "resources_page_title": "مكتبة الموارد",
-  "resources_page_subtitle": "تصفّح الموارد حسب المسار والكتاب والمستوى والوحدة.",
+  "resources_eyebrow": "المواد",
+  "resources_page_title": "مكتبة المواد",
+  "resources_page_subtitle": "تصفّح المواد حسب المسار والكتاب والمستوى والوحدة.",
   "resources_stat_courses": "المسارات",
   "resources_stat_units": "وحدات جاهزة",
   "resources_stat_resources": "الموارد",
@@ -20,18 +20,18 @@
   "resources_btn_open_prep": "افتح في غرفة التحضير",
   "resources_field_track": "المسار",
   "resources_field_book": "الكتاب",
-  "resources_field_band": "النطاق",
+  "resources_field_band": "المستوى",
   "resources_field_unit": "الوحدة",
   "resources_field_resources": "الموارد",
   "resources_resources_hint": "اختار وحدة ومواردها عشان تعرضها أو تفتحها في غرفة التحضير.",
-  "resources_preview_title_fallback": "مورد بدون عنوان",
-  "resources_preview_no_resource_title": "مفيش مورد مختار",
+  "resources_preview_title_fallback": "مادة بدون عنوان",
+  "resources_preview_no_resource_title": "لسه مفيش مادة مختارة",
   "resources_preview_no_resource_text": "اختار وحدة عشان تصفّح مواردها، وبعدين اختار مورد عشان تعرضه هنا.",
   "resources_meta_kind": "{kind}",
   "resources_meta_cefr_band": "CEFR {band}",
   "resources_meta_source": "المصدر: {sourceType}",
   "resources_tag": "{tag}",
-  "resources_btn_choose_resource_first": "اختار مورد أولاً",
+  "resources_btn_choose_resource_first": "اختار مادة الأول",
   "resources_btn_unit_unavailable": "صفحة الوحدة مش متوفرة",
   "resources_btn_no_link": "مفيش رابط متاح",
 
@@ -69,28 +69,28 @@
 
   "label_track": "المسار",
   "label_book": "الكتاب",
-  "label_band": "النطاق",
+  "label_band": "المستوى",
   "label_unit": "الوحدة",
   "label_resources": "الموارد في الوحدة دي",
 
-  "resource_untitled": "مورد بدون عنوان",
+  "resource_untitled": "مادة بدون عنوان",
   "picker_hint": "اختار مورد من الوحدة دي عشان تعرضه في المعاينة وتفتحه في غرفة التحضير.",
 
-  "preview_empty_title": "مفيش مورد مختار",
+  "preview_empty_title": "لسه مفيش مادة مختارة",
   "preview_empty_body": "استخدم الفلاتر على الشمال عشان تختار المسار والكتاب والمستوى والوحدة والمورد.",
 
   "label_cefr_band": "CEFR {band}",
   "label_source": "المصدر: {source}",
 
   "btn_open_prep": "افتح في غرفة التحضير",
-  "btn_choose_first": "اختار مورد أولاً",
+  "btn_choose_first": "اختار مادة الأول",
   "btn_unit_page": "افتح صفحة الوحدة",
   "btn_unit_unavailable": "صفحة الوحدة مش متوفرة",
   "btn_open_original": "افتح الملف الأصلي",
   "btn_no_link": "مفيش رابط متاح",
 
   "//": "===== PREP ROOM: GENERIC / EMPTY / ERRORS =====",
-  "prep_empty_title": "مفيش مورد محمّل",
+  "prep_empty_title": "لسه مفيش مادة مفتوحة",
   "prep_empty_body": "اختار مورد من صفحة الموارد عشان تبدأ التحضير للجلسة.",
 
   "prep_breadcrumb_resources": "الموارد",
@@ -100,10 +100,10 @@
   "prep_view_unit_page": "شوف صفحة الوحدة",
   "prep_open_raw_link": "افتح الرابط الأصلي",
 
-  "prep_no_preview_title": "مش متاح معاينة",
+  "prep_no_preview_title": "المعاينة مش متاحة",
   "prep_no_preview_body": "مش ممكن تعاين المورد ده هنا. جرّب تفتح الرابط الأصلي بدلًا من كده.",
 
-  "prep_no_resource_title": "مفيش مورد مختار",
+  "prep_no_resource_title": "لسه مفيش مادة مختارة",
   "prep_no_resource_body": "افتح صفحة الموارد واختار مورد قبل ما تدخل غرفة التحضير.",
   "prep_no_resource_back": "روح للموارد",
 
@@ -124,12 +124,12 @@
   "prep_sidebar_show_info": "إظهار تفاصيل المورد",
   "prep_sidebar_hide_info": "إخفاء تفاصيل المورد",
 
-  "prep_focus_viewer": "التركيز على العرض",
+  "prep_focus_viewer": "وضع التركيز",
   "prep_exit_focus": "إيقاف وضع التركيز",
 
   "//": "===== TOOLBAR LABELS =====",
   "prep_tool_pen": "قلم",
-  "prep_tool_highlighter": "مميِّز",
+  "prep_tool_highlighter": "هايلايتر",
   "prep_tool_text": "نص",
   "prep_tool_eraser": "ممحاة",
   "prep_tool_note": "ملاحظة لاصقة",
@@ -175,7 +175,7 @@
   "resources_toolbar_sidebar_hide": "إخفاء التفاصيل",
 
   "resources_toolbar_pen": "قلم",
-  "resources_toolbar_highlighter": "مُعلِّم",
+  "resources_toolbar_highlighter": "هايلايتر",
   "resources_toolbar_text": "نص",
   "resources_toolbar_eraser": "ممحاة",
   "resources_toolbar_note": "ملاحظة لاصقة",
@@ -198,7 +198,7 @@
   "resources_prep_notes_label": "ملاحظات التحضير",
   "resources_prep_notes_hint": "محفوظة محلياً في المتصفح",
   "resources_prep_notes_placeholder": "اكتب ملاحظات الجلسة هنا...",
-  "resources_pdf_engine_error": "حصلت مشكلة في تحميل مُعرِض ملفات PDF.",
+  "resources_pdf_engine_error": "حصلت مشكلة في تحميل عارض ملفات PDF.",
   "resources_pdf_load_generic_error": "مقدرناش نحمل ملف الـ PDF.",
   "resources_pdf_missing_error": "مقدرناش نلاقي ملف الـ PDF.",
   "resources_pdf_invalid_error": "يبدو إن ملف الـ PDF مش صالح أو تالف.",

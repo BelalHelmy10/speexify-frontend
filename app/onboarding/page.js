@@ -220,12 +220,12 @@ const LOCAL_COPY = {
     },
   },
   ar: {
-    eyebrow: "إعداد Speexify",
+    eyebrow: "بداية Speexify",
     title: "يلّا نصمم خطتك المناسبة.",
     subtitle:
       "إعداد قصير بيساعد المدرّب يفهم إيه المهم ليك قبل أول محادثة مباشرة. كمّل الأقسام بأي ترتيب يناسبك.",
     estimate: "حوالي 3 دقائق",
-    saveIdle: "بيتحفظ لوحده وأنت بتكتب",
+    saveIdle: "تقدمك بيتحفظ وأنت بتكتب",
     savedAt: "اتحفظ {time}",
     progressSaved: "تقدمك اتحفظ. تقدر ترجع في أي وقت.",
     requiredTimezone: "أكد منطقتك الزمنية قبل ما تحفظ إعدادك.",
@@ -292,7 +292,7 @@ const LOCAL_COPY = {
     fieldPrimaryGoal: "الهدف الأساسي",
     fieldPrimaryGoalHint: "اكتب نتيجة واقعية، مش بس 'عايز أتكلم زي الأمريكان'.",
     fieldContextHint: "إنجليزية بتظهر فين في حياتك.",
-    fieldNotesHint: "تفضيلات، مخاوف، احتياجات وصول، أو أي حاجة شخصية.",
+    fieldNotesHint: "تفضيلات، مخاوف، احتياجات خاصة أو تفضيلات مهمة، أو أي حاجة شخصية.",
     quickGoalTitle: "أهداف سريعة",
     quickGoals: [
       "أتكلم بثقة أكتر في الاجتماعات",
@@ -1107,7 +1107,7 @@ export default function OnboardingPage() {
           <h1>{locale === "ar" ? "سجّل دخولك عشان نبدأ." : "Sign in to start your setup."}</h1>
           <p>
             {locale === "ar"
-              ? "إعدادك بيتحفظ بأمان على حسابك وتقدر تكمله من أي جهاز."
+              ? "بياناتك بتتحفظ بأمان على حسابك وتقدر تكمله من أي جهاز."
               : "Your setup is saved securely to your account so you can continue on any device."}
           </p>
           <div className="onboarding-complete__actions">

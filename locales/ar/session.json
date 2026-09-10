@@ -31,19 +31,19 @@
   "datetime_na": "غير متوفر",
 
   "section_coach_title": "المدرّب",
-  "section_coach_not_assigned": "مفيش مدرّب متعيّن لسه.",
+  "section_coach_not_assigned": "لسه مفيش مدرّب مضاف للجلسة.",
 
   "section_learner_title": "المتدرب",
   "section_learners_title": "المتدربين",
-  "section_learner_not_found": "مفيش متدرب متعيّن.",
+  "section_learner_not_found": "لسه مفيش متدرب مضاف.",
 
   "session_participants": "المشاركين",
   "session_no_participants": "مفيش مشاركين لسه.",
 
   "join_title": "الدخول",
   "join_title_completed": "الصف",
-  "join_open_classroom": "افتح صف Speexify",
-  "join_classroom_now": "انضم للصف دلوقتي",
+  "join_open_classroom": "افتح فصل Speexify",
+  "join_classroom_now": "ادخل الفصل دلوقتي",
   "join_view_classroom": "شوف الصف",
   "join_external_link": "رابط اجتماع خارجي",
   "join_no_meeting": "مفيش رابط اجتماع خارجي؛ استخدم صف Speexify اللي فوق.",
@@ -54,16 +54,16 @@
 
   "add_to_calendar": "ضيف للتقويم",
 
-  "actions_title": "حاجات تعملها",
+  "actions_title": "الإجراءات",
   "session_cancel": "إلغاء الجلسة",
   "session_leave": "اطلع من الجلسة",
   "session_leave_title": "عايز تطلع من الجلسة الجماعية؟",
   "session_cancel_title": "عايز تلغي الجلسة دي؟",
   "session_reschedule": "غيّر الموعد",
-  "session_left_success": "اتطلعت من الجلسة.",
+  "session_left_success": "خرجت من الجلسة.",
   "session_canceled_success": "اتلغت الجلسة.",
-  "session_complete": "حدّد إنها خلصت",
-  "session_complete_confirm": "عايز تحدّد إن الجلسة دي خلصت؟ هيتم استهلاك الرصيد.",
+  "session_complete": "علّم الجلسة كمكتملة",
+  "session_complete_confirm": "عايز تحدّد إن الجلسة دي خلصت؟ هيتخصم رصيد جلسة.",
   "session_completed_success": "اتحدّد إن الجلسة خلصت.",
   "success_saved": "تمام.",
 

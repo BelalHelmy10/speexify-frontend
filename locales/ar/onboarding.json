@@ -1,45 +1,35 @@
 {
   "hero_title": "أهلاً بيك! يلّا نبدأ",
   "hero_subtitle": "ساعدنا نخصّص تجربة التمرين من خلال شوية معلومات عنك.",
-
-  "section_profile_title": "الملف والتفاصيل اللوجستية",
-  "section_profile_hint": "المنطقة الزمنية وتوافرك بيساعدونا في تنظيم المواعيد بأحسن شكل.",
-
+  "section_profile_title": "بيانات البداية والمواعيد",
+  "section_profile_hint": "المنطقة الزمنية والأوقات اللي تناسبك بيساعدونا في تنظيم المواعيد بأحسن شكل.",
   "field_timezone_label": "المنطقة الزمنية",
   "field_timezone_hint": "عايش فين؟",
   "field_timezone_placeholder": "مثال: Africa/Cairo أو America/New_York",
-
   "field_format_label": "نمط الجلسات اللي تحبه",
   "field_format_hint": "حجم الصف اللي تحبه",
   "field_format_option_1to1": "جلسات فردية (1:1)",
   "field_format_option_group": "مجموعة صغيرة (2–5 أشخاص)",
   "field_format_option_intensive": "برنامج مكثّف (قصير المدى، بتكرار عال)",
-
   "field_availability_label": "الأوقات المتاحة أسبوعياً",
-  "field_availability_hint": "متى بتكون متفرّغ عادة؟",
+  "field_availability_hint": "إمتى بتكون فاضي عادة؟",
   "field_availability_placeholder": "مثال: الأحد 18:00–20:00، الثلاثاء 10:00–12:00، الخميس 14:00–16:00",
-
   "section_goals_title": "الأهداف والسياق",
-  "section_goals_hint": "قولنا إزاي النتيجة الناجحة بتبانى بالنسبة ليك وإزاي بتستخدم الإنجليزية.",
-
+  "section_goals_hint": "قولنا إزاي النتيجة الناجحة بتبان بالنسبة ليك وإزاي بتستخدم الإنجليزية.",
   "field_goals_label": "أهداف التمرين",
   "field_goals_hint": "عايز توصل لإيه؟",
   "field_goals_placeholder": "مثال: تحسين العروض التقديمية في الشغل، الحصول على IELTS 7.0، اجتياز مقابلات العمل...",
-
-  "field_context_label": "سياق التمرين",
+  "field_context_label": "هتستخدم الإنجليزي فين؟",
   "field_context_hint": "شغل، دراسة، تطوير شخصي؟",
   "field_context_placeholder": "مثال: تطوير مهني، دراسة جامعية، التحضير للهجرة...",
-
-  "field_usage_frequency_label": "كم مرة بتستخدم الإنجليزية؟",
+  "field_usage_frequency_label": "بتستخدم الإنجليزي قد إيه؟",
   "field_usage_frequency_placeholder": "اختار...",
   "usage_frequency_never": "مش باستخدمها",
   "usage_frequency_sometimes": "أحياناً",
   "usage_frequency_often": "غالباً",
   "usage_frequency_daily": "يومياً",
-
   "field_usage_contexts_label": "في أي مواقف بتستخدمها؟",
   "field_usage_contexts_hint": "اختار كل اللي ينطبق",
-
   "usage_work_emails": "إيميلات الشغل",
   "usage_meetings_presentations": "الاجتماعات / العروض التقديمية",
   "usage_client_communication": "التواصل مع العملاء",
@@ -48,13 +38,10 @@
   "usage_social_conversation": "المحادثات الاجتماعية",
   "usage_travel_situations": "مواقف السفر",
   "usage_other": "أخرى",
-
   "section_needs_title": "تحليل الاحتياجات",
   "section_needs_hint": "ساعدنا نخصّص خطتك ونختار المواد المناسبة.",
-
   "field_motivations_label": "أهم أسباب التمرين",
   "field_motivations_hint": "اختار كل اللي ينطبق",
-
   "motivation_professional_development": "التطوير المهني",
   "motivation_academic_studies": "الدراسة الأكاديمية",
   "motivation_exam_preparation": "التحضير لاختبار (IELTS / TOEFL / إلخ)",
@@ -62,63 +49,49 @@
   "motivation_travel": "السفر",
   "motivation_social_personal_growth": "التطوّر الاجتماعي / الشخصي",
   "motivation_other": "أسباب تانية",
-
   "field_motivation_other_label": "قولنا أكتر",
   "field_motivation_other_placeholder": "اشرح باختصار سبب تمرينك",
-
   "field_exam_details_label": "تفاصيل الاختبار",
   "field_exam_details_hint": "إيه الاختبار؟ إيه الدرجة المطلوبة؟ وإيه الموعد النهائي؟",
   "field_exam_details_placeholder": "مثال: IELTS 7.0 قبل 15 أكتوبر",
-
-  "field_skill_priority_label": "أولويات التركيز على المهارات",
+  "field_skill_priority_label": "أهم مهارات عايز تركّز عليها",
   "field_skill_priority_hint": "1 = مش مهم، 5 = مهم جداً",
-
-  "skill_speaking": "المحادثة",
+  "skill_speaking": "الكلام",
   "skill_listening": "الاستماع",
   "skill_reading": "القراءة",
   "skill_writing": "الكتابة",
   "skill_pronunciation": "النطق",
   "skill_grammar": "القواعد",
   "skill_vocabulary": "المفردات",
-
   "field_challenges_label": "إيه الجوانب الأصعب بالنسبة ليك؟",
   "field_challenges_hint": "كن محدد. ده بيوجّه الجلسات الأولى.",
   "field_challenges_placeholder": "مثال: صعوبة فهم المتحدثين السريعين؛ تنظيم الأفكار في الكتابة؛ الدقة في القواعد في الرسايل...",
-
   "field_learning_styles_label": "أسلوب التمرين اللي تحبه",
   "field_learning_styles_hint": "اختار كل اللي ينطبق",
-
   "learning_structured_grammar": "جلسات منظّمة تركّز على القواعد",
   "learning_interactive_speaking": "محادثات وأنشطة تفاعلية",
-  "learning_task_project": "تمرين قائم على المهام والمشاريع",
+  "learning_task_project": "تدريب على مهام ومواقف حقيقية",
   "learning_listening_video": "تدريبات استماع وفيديو",
   "learning_reading_vocab": "تركيز على القراءة وبناء المفردات",
-  "learning_self_paced": "تمرين ذاتي مع ملاحظات ومتابعة",
-
+  "learning_self_paced": "ممارسة فردية مع ملاحظات ومتابعة",
   "section_self_title": "التقييم الذاتي",
-  "section_self_hint": "اختياري بس بيساعد في تحديد نطاقك وخطة الجلسات.",
-
-  "field_band_label": "نطاقك الحالي",
+  "section_self_hint": "اختياري بس بيساعد في تحديد مستواك وخطة الجلسات.",
+  "field_band_label": "مستواك الحالي",
   "field_band_hint": "تقييمك الذاتي (CEFR)",
-  "field_band_placeholder": "اختار نطاقك...",
+  "field_band_placeholder": "اختار مستواك...",
   "band_a1": "A1 · لسه بتبدأ",
   "band_a2": "A2 · بتبني الأساس",
   "band_b1": "B1 · بتستقل في الكلام",
   "band_b2": "B2 · واثق في المواقف المألوفة",
   "band_c1": "C1 · واثق في المواقف المعقّدة",
   "band_c2": "C2 · طلاقة عالية",
-
   "field_confidence_label": "درجة ثقتك في كل مهارة",
   "field_confidence_hint": "1 = ثقة منخفضة، 10 = ثقة عالية جداً",
-
-
   "field_consent_label": "أوافق على استخدام تسجيلات الجلسات / لقطات الشاشة لأغراض الملاحظات والتدريب الخاص بس.",
-
   "section_notes_title": "ملاحظات إضافية",
   "section_notes_hint": "في حاجة تانية لازم نعرفها؟",
   "field_notes_label": "ملاحظات",
   "field_notes_placeholder": "اذكر أي متطلبات خاصة، تفضيلات، احتياجات وصول، أو حاجات مهمة تانية...",
-
   "button_saving": "بيتحفظ...",
   "button_submit": "كمل استبيان البداية",
   "button_back_dashboard": "رجوع للوحة التحكم",
