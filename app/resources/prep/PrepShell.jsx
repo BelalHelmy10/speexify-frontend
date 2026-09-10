@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { resizePrepTextEditor } from "./prepTextEditorDOM";
 import PrepBreadcrumbs from "./PrepBreadcrumbs";
 import PrepInfoSidebar from "./PrepInfoSidebar";
 import PrepViewerFrame from "./PrepViewerFrame";
@@ -646,14 +647,7 @@ export default function PrepShell({
     if (!el) return;
     const box = textBoxesRef.current.find((tbox) => tbox.id === id);
 
-    if (box?.height) {
-      el.style.height = "100%";
-      return;
-    }
-
-    // Height
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    resizePrepTextEditor(el, Boolean(box?.height));
   }, []);
 
   const autoFitTextBoxWidthIfNeeded = useCallback(
@@ -702,7 +696,14 @@ export default function PrepShell({
       }
 
       // Measure the actual text content width
-      const measured = measureTextWidthPx(text, { fontSize });
+      const editor = textAreaRefs.current?.[box.id];
+      const metrics = editor ? getComputedStyle(editor) : null;
+      const measured = measureTextWidthPx(text, {
+        fontSize,
+        fontFamily: metrics?.fontFamily,
+        fontWeight: metrics?.fontWeight || "600",
+        letterSpacing: metrics?.letterSpacing,
+      });
       // padding + caret room + extra buffer
       const desired = measured + 40;
       // CHANGED: Increase max width significantly
@@ -1025,7 +1026,7 @@ export default function PrepShell({
   useEffect(() => {
     if (!activeTextId) return;
     const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
-    if (el) el.focus();
+    if (el) el.focus({ preventScroll: true });
   }, [activeTextId]);
 
   useEffect(() => {

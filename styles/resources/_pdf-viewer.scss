@@ -567,6 +567,10 @@
 
   // ─── Toolbar (Delete & Move buttons) ───────────────────────────
   &__toolbar {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -707,13 +711,13 @@
   // ─── Input Area ────────────────────────────────────────────────
   &__input-area {
     position: relative;
-    min-width: 100px;
-    padding: 4px 12px;
+    min-width: 0;
+    padding: 0;
     background: transparent;
-    border: 2px dashed rgba($cr-accent-primary, 0.5);
+    border: none;
+    outline: 2px dashed rgba($cr-accent-primary, 0.5);
     border-radius: 4px;
-    display: inline-block;
-    max-width: 98vw; // Prevent going off-screen
+    display: block;
     overflow: visible;
     transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
     @include custom-scrollbar(8px,
@@ -721,24 +725,46 @@
       rgba(148, 163, 184, 0.34));
   }
 
+  // Keep the label, native selection surface and color mirror metrically identical.
+  &__textarea,
+  &__rich-preview,
+  &__label {
+    box-sizing: border-box;
+    padding: 4px 8px;
+    margin: 0;
+    border: 0;
+    font-family: inherit;
+    font-weight: 600;
+    line-height: 1.32;
+    letter-spacing: normal;
+    word-spacing: normal;
+    text-indent: 0;
+    text-align: start;
+    text-transform: none;
+    font-variant: normal;
+    tab-size: 8;
+    unicode-bidi: plaintext;
+  }
+
   &__textarea {
     position: relative;
     z-index: 2;
     width: 100%;
-    min-width: 60px;
+    display: block;
+    min-width: 0;
     height: auto;
-    padding: 0;
+    padding: 4px 8px;
     margin: 0;
     font-size: 16px;
     font-weight: 600;
     font-family: inherit;
-    line-height: 1.2;
+    line-height: 1.32;
     background: transparent;
     border: none;
     resize: none;
     outline: none;
     overflow: visible;
-    field-sizing: content;
+    field-sizing: fixed;
     box-sizing: border-box;
     text-shadow: none;
 
@@ -752,15 +778,14 @@
   &__rich-preview {
     position: absolute;
     z-index: 1;
-    top: 4px;
-    left: 12px;
-    right: 12px;
-    bottom: 4px;
+    top: 0;
+    left: 0;
+    overflow: hidden;
     margin: 0;
-    padding: 0;
+    padding: 4px 8px;
     font-weight: 600;
     font-family: inherit;
-    line-height: 1.2;
+    line-height: 1.32;
     pointer-events: none;
     box-sizing: border-box;
     text-shadow: none;

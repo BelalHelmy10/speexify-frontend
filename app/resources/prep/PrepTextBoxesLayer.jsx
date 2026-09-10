@@ -1,5 +1,8 @@
 // app/resources/prep/PrepTextBoxesLayer.jsx
 
+import { useLayoutEffect, useRef } from "react";
+import { getPrepTextClickOffset, syncPrepTextEditor } from "./prepTextEditorDOM";
+
 import { getPrepTextColorSegments } from "./prepTextBoxLogic";
 
 export default function PrepTextBoxesLayer({
@@ -30,6 +33,29 @@ export default function PrepTextBoxesLayer({
   setActiveTextId,
   textPlaceholder,
 }) {
+  const pendingEdit = useRef(null);
+  useLayoutEffect(() => {
+    const textarea = textAreaRefs.current[activeTextId];
+    if (!textarea) return;
+    autoResizeTextarea(activeTextId);
+    const pending = pendingEdit.current;
+    if (pending?.id === activeTextId) {
+      textarea.focus({ preventScroll: true });
+      textarea.setSelectionRange(pending.offset, pending.offset);
+      textarea.scrollTop = pending.scrollTop;
+      textarea.scrollLeft = pending.scrollLeft;
+      pendingEdit.current = null;
+    }
+    const sync = () => syncPrepTextEditor(textarea);
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(textarea);
+    document.fonts?.addEventListener("loadingdone", sync);
+    return () => {
+      observer.disconnect();
+      document.fonts?.removeEventListener("loadingdone", sync);
+    };
+  }, [activeTextId, textBoxes, annotationScale, autoResizeTextarea, textAreaRefs]);
   return (
     <>
       {textBoxes
@@ -77,12 +103,21 @@ export default function PrepTextBoxesLayer({
               {segment.text}
             </span>
           ));
-          const richTextStyle = {
+          const textStyle = {
             fontSize: `${fontSize}px`,
-            whiteSpace: shouldPreserveLineBreaks ? "pre-wrap" : "nowrap",
+            whiteSpace: shouldPreserveLineBreaks ? "pre-wrap" : "pre",
             overflowWrap: shouldPreserveLineBreaks ? "break-word" : "normal",
             wordBreak: "normal",
           };
+          const viewportStyle = {
+            ...textStyle,
+            width: `${boxWidth}px`,
+            height: boxHeight ? `${boxHeight}px` : undefined,
+            maxHeight: isLargeTextBlock && !boxHeight ? "min(70vh, 620px)" : undefined,
+            overflow: "auto",
+          };
+          // A div needs a final line marker to match a textarea's trailing newline.
+          const trailingLine = !box.text || /[\r\n]$/.test(box.text) ? "\u200b" : null;
 
           return (
             <div
@@ -168,15 +203,7 @@ export default function PrepTextBoxesLayer({
 
                     <div
                       className="prep-text-box__input-area"
-                      style={{
-                        width: box.autoWidth ? "auto" : `${boxWidth}px`,
-                        minWidth: box.autoWidth ? `${boxWidth}px` : undefined,
-                        height: boxHeight ? `${boxHeight}px` : undefined,
-                        maxHeight:
-                          isLargeTextBlock && !boxHeight
-                            ? "min(70vh, 620px)"
-                            : undefined,
-                      }}
+                      style={{ width: `${boxWidth}px`, height: boxHeight ? `${boxHeight}px` : undefined }}
                     >
                       <span
                         className="prep-text-box__vertical-handle prep-text-box__vertical-handle--top"
@@ -193,58 +220,28 @@ export default function PrepTextBoxesLayer({
                           className="prep-text-box__rich-preview"
                           aria-hidden="true"
                           dir="auto"
-                          style={{
-                            ...richTextStyle,
-                            width: box.autoWidth ? `${boxWidth}px` : "100%",
-                            minWidth: box.autoWidth ? "100px" : undefined,
-                            height: boxHeight ? "100%" : undefined,
-                            maxHeight:
-                              isLargeTextBlock && !boxHeight
-                                ? "min(68vh, 590px)"
-                                : undefined,
-                            overflowX:
-                              isLargeTextBlock || boxHeight ? "hidden" : "visible",
-                            overflowY: boxHeight || isLargeTextBlock
-                              ? "auto"
-                              : box.autoWidth
-                                ? "visible"
-                                : "hidden",
-                          }}
+                          style={textStyle}
                         >
-                          {richTextContent}
+                          {richTextContent}{trailingLine}
                         </div>
                       ) : null}
 
                       <textarea
                         ref={(el) => {
                           if (el) textAreaRefs.current[box.id] = el;
+                          else delete textAreaRefs.current[box.id];
                         }}
                         data-textbox-id={box.id}
                         className="prep-text-box__textarea"
                         dir="auto"
-                        wrap={box.autoWidth ? "off" : "soft"}
+                        rows={1}
+                        wrap={shouldPreserveLineBreaks ? "soft" : "off"}
                         style={{
+                          ...viewportStyle,
+                          width: "100%",
+                          height: boxHeight ? "100%" : undefined,
                           color: box.text ? "transparent" : box.color,
                           caretColor: penColor || box.color,
-                          fontSize: `${fontSize}px`,
-                          height: boxHeight ? "100%" : undefined,
-                          width: box.autoWidth ? `${boxWidth}px` : "100%",
-                          minWidth: box.autoWidth ? "100px" : undefined,
-                          whiteSpace: shouldPreserveLineBreaks ? "pre-wrap" : "nowrap",
-                          overflowWrap: shouldPreserveLineBreaks ? "break-word" : "normal",
-                          wordBreak: "normal",
-                          resize: "none",
-                          maxHeight:
-                            isLargeTextBlock && !boxHeight
-                              ? "min(68vh, 590px)"
-                              : undefined,
-                          overflowX:
-                            isLargeTextBlock || boxHeight ? "hidden" : "visible",
-                          overflowY: boxHeight || isLargeTextBlock
-                            ? "auto"
-                            : box.autoWidth
-                              ? "visible"
-                              : "hidden",
                         }}
                         placeholder={textPlaceholder}
                         value={box.text}
@@ -256,11 +253,14 @@ export default function PrepTextBoxesLayer({
                           }
                         }}
                         onMouseDown={(e) => {
-                          if (tool !== TOOL_SELECT) e.stopPropagation();
+                          e.stopPropagation();
                           if (blurDebounceRef.current) {
                             clearTimeout(blurDebounceRef.current);
                           }
                         }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onScroll={(e) => syncPrepTextEditor(e.currentTarget)}
                         onInput={() => autoResizeTextarea(box.id)}
                       />
 
@@ -301,27 +301,21 @@ export default function PrepTextBoxesLayer({
                 <div
                   className="prep-text-box__label"
                   dir="auto"
-                  style={{
-                    color: box.color,
-                    fontSize: `${fontSize}px`,
-                    width: `${boxWidth}px`,
-                    height: boxHeight ? `${boxHeight}px` : undefined,
-                    whiteSpace: shouldPreserveLineBreaks ? "pre-wrap" : "nowrap",
-                    overflowWrap: shouldPreserveLineBreaks ? "break-word" : "normal",
-                    wordBreak: "normal",
-                    maxHeight:
-                      isLargeTextBlock && !boxHeight ? "min(70vh, 620px)" : undefined,
-                    overflowX: isLargeTextBlock || boxHeight ? "hidden" : "visible",
-                    overflowY: boxHeight || isLargeTextBlock ? "auto" : "visible",
-                  }}
+                  style={{ ...viewportStyle, color: box.color }}
                   onMouseDown={(e) => startTextDrag(e, box)}
                   onDoubleClick={(e) => {
                     e.stopPropagation();
+                    const label = e.currentTarget;
+                    pendingEdit.current = {
+                      id: box.id,
+                      offset: getPrepTextClickOffset(label, e.clientX, e.clientY, (box.text || "").length),
+                      scrollTop: label.scrollTop,
+                      scrollLeft: label.scrollLeft,
+                    };
                     setActiveTextId(box.id);
-                    setTimeout(() => autoResizeTextarea(box.id), 0);
                   }}
                 >
-                  {richTextContent.length ? richTextContent : box.text}
+                  {richTextContent.length ? richTextContent : box.text}{trailingLine}
                   <span
                     className="prep-text-box__resize-handle"
                     onMouseDown={(e) => {
