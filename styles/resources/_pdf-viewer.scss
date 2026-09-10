@@ -719,6 +719,7 @@
     border-radius: 4px;
     display: block;
     overflow: visible;
+    overscroll-behavior: contain;
     transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast;
     @include custom-scrollbar(8px,
       rgba(148, 163, 184, 0.12),
@@ -764,6 +765,7 @@
     resize: none;
     outline: none;
     overflow: visible;
+    overscroll-behavior: contain;
     field-sizing: fixed;
     box-sizing: border-box;
     text-shadow: none;
@@ -781,6 +783,7 @@
     top: 0;
     left: 0;
     overflow: hidden;
+    overscroll-behavior: contain;
     margin: 0;
     padding: 4px 8px;
     font-weight: 600;

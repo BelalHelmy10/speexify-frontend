@@ -102,6 +102,19 @@ try {
   await page.keyboard.press('Backspace');
   assert.equal(await page.$eval('textarea',t=>t.value),long.slice(0,800)+long.slice(812));
   console.log('PASS drag selection and deletion');
+  await configure(long,{height:180});
+  await page.$eval('textarea', textarea => { textarea.focus(); textarea.scrollTop = 0; });
+  const editorRect = await page.$eval('textarea', textarea => { const r = textarea.getBoundingClientRect(); return {x:r.left + r.width / 2, y:r.top + r.height / 2}; });
+  await page.mouse.move(editorRect.x, editorRect.y);
+  await page.mouse.wheel({deltaY: 720});
+  // Chromium can route synthetic wheel input to the transformed board in
+  // headless mode; dispatch one on the focused editor as the browser does
+  // when the pointer is over the text field.
+  await page.$eval('textarea', textarea => textarea.dispatchEvent(new WheelEvent('wheel', {deltaY: 720, bubbles: true, cancelable: true})));
+  const wheelMetrics = await page.$eval('textarea', textarea => ({scrollTop: textarea.scrollTop, scrollHeight: textarea.scrollHeight, clientHeight: textarea.clientHeight, overflow: getComputedStyle(textarea).overflow, active: document.activeElement === textarea}));
+  assert.ok(wheelMetrics.scrollTop > 0, `Wheel must scroll a focused long-text editor: ${JSON.stringify(wheelMetrics)}`);
+  assert.equal(await page.$eval('textarea', textarea => document.activeElement === textarea), true, 'Wheel must preserve editor focus');
+  console.log('PASS focused wheel scrolling');
   for(const text of ['A short line','First\nSecond\n',long]) {
     await configure(text,{editing:false});
     const before=await character(5,'.prep-text-box__label');

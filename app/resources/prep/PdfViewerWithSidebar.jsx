@@ -180,8 +180,20 @@ export default function PdfViewerWithSidebar({
 
     async function loadPdfJs() {
       try {
-        const mod = await import("pdfjs-dist/build/pdf");
-        const pdfjsLib = mod.default || mod;
+        // PDF.js v5 is ESM-only. Use the explicit browser module path so
+        // Next's dev and production bundlers do not resolve the extensionless
+        // entrypoint as an empty CommonJS module (which causes
+        // `Object.defineProperty called on non-object` locally).
+        // The minified ESM entrypoint avoids a known Webpack 5.98 runtime
+        // bug in Next 16 dev that can throw `Object.defineProperty called
+        // on non-object` while evaluating the unminified PDF.js bundle.
+        const mod = await import("pdfjs-dist/legacy/build/pdf.min.mjs");
+        const pdfjsLib =
+          mod && typeof mod.default === "object" ? mod.default : mod;
+
+        if (!pdfjsLib || typeof pdfjsLib.getDocument !== "function") {
+          throw new Error("PDF.js loaded without a usable getDocument API");
+        }
 
         if (typeof window !== "undefined") {
           pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";

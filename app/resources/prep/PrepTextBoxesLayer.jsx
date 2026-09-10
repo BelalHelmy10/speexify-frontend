@@ -260,6 +260,18 @@ export default function PrepTextBoxesLayer({
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
                         onTouchStart={(e) => e.stopPropagation()}
+                        onWheel={(e) => {
+                          // The annotation layer sits inside the board/PDF
+                          // scroller. Keep wheel input on the focused editor;
+                          // otherwise the parent consumes it for board scroll
+                          // or zoom before the textarea can move its content.
+                          e.stopPropagation();
+                          e.preventDefault();
+                          const textarea = e.currentTarget;
+                          textarea.scrollTop += e.deltaY;
+                          textarea.scrollLeft += e.deltaX;
+                          syncPrepTextEditor(textarea);
+                        }}
                         onScroll={(e) => syncPrepTextEditor(e.currentTarget)}
                         onInput={() => autoResizeTextarea(box.id)}
                       />
