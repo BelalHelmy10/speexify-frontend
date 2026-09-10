@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import "@/styles/packages.scss";
 import { getDictionary, t } from "@/app/i18n";
 import FadeIn from "@/components/FadeIn";
+import PackageComparison from "@/components/PackageComparison";
 // import { guessCurrencyFromNavigator } from "@/lib/currency"; // no longer needed
 import { usePricingCatalog, mergeCatalogPlans } from "@/hooks/usePricingCatalog";
 import {
@@ -24,31 +25,15 @@ const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || "manual"; // "manua
 const DEFAULT_COUNTRY_CODE = "EG";
 const DEFAULT_CURRENCY = getPricingRegion(DEFAULT_COUNTRY_CODE).currency;
 
-// Split features by newline/semicolon/comma and trim
+// Semicolons/newlines separate benefits; commas belong to the copy.
 function parseFeatures(raw) {
   if (!raw) return [];
   return String(raw)
-    .split(/\r?\n|;|,/g)
+    .split(/\r?\n|;/g)
     .map((s) => s.trim())
     .filter(Boolean);
 }
 
-// Build a feature matrix from given plans (limit rows to keep it readable)
-function buildFeatureMatrix(plans, maxRows = 10) {
-  const map = new Map();
-  plans.forEach((p, i) => {
-    const feats = parseFeatures(p.featuresRaw || "").concat(p.features || []);
-    new Set(feats).forEach((f) => {
-      if (!map.has(f)) map.set(f, new Set());
-      map.get(f).add(i);
-    });
-  });
-  const rows = Array.from(map.keys()).slice(0, maxRows);
-  return rows.map((label) => ({
-    label,
-    checks: plans.map((_p, i) => map.get(label)?.has(i) || false),
-  }));
-}
 
 function getPlanPriceLabels(plan, countryCode, locale, dict) {
   const resolvedCountry = countryCode || DEFAULT_COUNTRY_CODE;
@@ -126,8 +111,6 @@ function Packages() {
     });
   }, [rawPlans, dict]);
 
-  const matrix = useMemo(() => buildFeatureMatrix(plans), [plans]);
-
   // Corporate estimate
   const corpEstimate = useMemo(() => {
     const base = 60;
@@ -152,7 +135,15 @@ function Packages() {
       null
     );
 
-    return { pricedPlans, lowestPerSession };
+    const lowestTotal = pricedPlans.reduce(
+      (best, item) =>
+        !best || item.regionalPrice.displayAmount < best.regionalPrice.displayAmount
+          ? item
+          : best,
+      null,
+    );
+
+    return { pricedPlans, lowestPerSession, lowestTotal };
   }, [plans, countryCode, locale, dict]);
 
   // Section title/subtitle logic with translations
@@ -165,7 +156,7 @@ function Packages() {
   const pricingSubtitle = isIndividual
     ? t(
       dict,
-      "pricing_subtitle_individual",
+      isOneOnOne ? "pricing_subtitle_1on1" : "pricing_subtitle_group",
       "Choose the package that fits your learning goals and schedule"
     )
     : t(
@@ -293,15 +284,22 @@ function Packages() {
                 <h2 className="ecp-hero-pricing__title">
                   {t(dict, "hero_pricing_from", "From")}{" "}
                   <strong>
-                    {pricePreview.lowestPerSession.perSessionLabel}/
-                    {t(dict, "label_per_session", "session")}
+                    {pricePreview.lowestTotal?.totalLabel || pricePreview.lowestPerSession.perSessionLabel}
                   </strong>
+                  <span className="ecp-hero-pricing__unit">
+                    {t(dict, "hero_pricing_upfront", "upfront")}
+                  </span>
                 </h2>
                 <p className="ecp-hero-pricing__copy">
+                  {t(dict, "hero_pricing_lowest_per_session", "Best value")}:{" "}
+                  <strong>
+                    {pricePreview.lowestPerSession.perSessionLabel}/
+                    {t(dict, "label_per_session", "session")}
+                  </strong>{" "}
                   {t(
                     dict,
                     "hero_pricing_copy",
-                    "Choose a package now. Details and full comparison are directly below."
+                    "Paid upfront. Details and full comparison are below."
                   )}
                 </p>
               </>
@@ -324,7 +322,7 @@ function Packages() {
               {pricePreview.pricedPlans.map((item) => (
                 <a
                   className="ecp-hero-pricing__row"
-                  href="#packages-pricing"
+                  href={`#package-${item.plan.id}`}
                   key={item.plan.id || item.plan.title}
                 >
                   <span>
@@ -383,7 +381,7 @@ function Packages() {
             <FadeIn as="p" className="ecp-section-subtitle" delay={0.1}>{pricingSubtitle}</FadeIn>
           </div>
 
-          <div className="ecp-grid ecp-grid--fade-in">
+          <div className={`ecp-grid ecp-grid--fade-in ${isIndividual ? "ecp-grid--shared" : ""}`}>
             {plans.map((p, idx) => (
               <PricingCard
                 key={p.id || idx}
@@ -498,59 +496,15 @@ function Packages() {
         </div>
       </section>
 
-      {/* FEATURE COMPARISON */}
-      <section className="ecp__section">
-        <div className="ecp__container ecp-compare ecp-card">
-          <div className="ecp-compare__header">
-            <FadeIn as="h2" className="ecp-compare__title">
-              {t(dict, "compare_title", "What's Included")}
-            </FadeIn>
-            <FadeIn as="p" className="ecp-compare__subtitle" delay={0.1}>
-              {t(
-                dict,
-                "compare_subtitle",
-                "Compare features across all packages"
-              )}
-            </FadeIn>
-          </div>
-          <div className="ecp-compare__tablewrap">
-            <table className="ecp-compare__table">
-              <thead>
-                <tr>
-                  <th>{t(dict, "compare_col_features", "Features")}</th>
-                  {plans.map((p, i) => (
-                    <th key={i}>{p.title}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {matrix.length === 0 ? (
-                  <tr>
-                    <td colSpan={1 + plans.length} className="empty">
-                      {t(
-                        dict,
-                        "compare_empty",
-                        "All packages include personalized coaching, flexible scheduling, and progress tracking."
-                      )}
-                    </td>
-                  </tr>
-                ) : (
-                  matrix.map((row, rIdx) => (
-                    <tr key={rIdx}>
-                      <td className="feat">{row.label}</td>
-                      {row.checks.map((has, cIdx) => (
-                        <td key={cIdx} className="check">
-                          {has ? "✓" : "—"}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+      <PackageComparison
+        key={isIndividual ? lessonType : tab}
+        kind={isIndividual ? (isOneOnOne ? "individual" : "group") : "corporate"}
+        plans={plans}
+        locale={locale}
+        prices={pricePreview.pricedPlans}
+        loading={loading}
+        ready={Boolean(catalog)}
+      />
 
       {/* FAQ */}
       <section className="ecp__section ecp-faq">
@@ -627,7 +581,7 @@ function Packages() {
               </Link>
               <Link
                 className="ecp-btn ecp-btn--ghost ecp-btn--lg"
-                href={routeHref(APP_ROUTES.packages, locale)}
+                href="#packages-comparison"
               >
                 {t(dict, "cta_individual_secondary", "View All Plans")}
               </Link>
@@ -698,7 +652,10 @@ function PricingCard({
   )}&cur=${encodeURIComponent(currency || "")}&region=${encodeURIComponent(plan.regionToken || "")}&packageId=${plan.backendId}`;
 
   return (
-    <div className={`ecp-card ecp-card--plan ${isPopular ? "is-popular" : ""}`}>
+    <div
+      id={`package-${plan.id}`}
+      className={`ecp-card ecp-card--plan ${isPopular ? "is-popular" : ""}`}
+    >
       {isPopular && (
         <div className="ecp-badge">
           {t(dict, "badge_most_popular", "MOST POPULAR")}
@@ -707,10 +664,15 @@ function PricingCard({
       {savings && <div className="ecp-savings">{savings.toUpperCase()}</div>}
 
       <div className="ecp-card__head">
+        {(!isPopular || !isCorp) && (
+          <div className="ecp-card__eyebrow">
+            {t(dict, "card_eyebrow_live", "Live practice")}
+          </div>
+        )}
         <div className="ecp-card__title">{title}</div>
         {sessionsPerPack && (
           <div className="ecp-card__sessions">
-            {sessionsPerPack} {t(dict, "label_sessions", "sessions")}
+            {!isCorp ? (plan.id.startsWith("1on1-") ? t(dict, "card_format_1on1", "One-on-one coaching") : t(dict, "card_format_group", "Small-group coaching")) : <>{sessionsPerPack} {t(dict, "label_sessions", "sessions")}</>}
           </div>
         )}
       </div>
@@ -734,7 +696,10 @@ function PricingCard({
       {bullets.length > 0 && (
         <ul className="ecp-card__bullets">
           {bullets.map((b, i) => (
-            <li key={i}>{b}</li>
+            <li key={i}>
+              <span className="ecp-card__bullet-icon" aria-hidden="true">✓</span>
+              <span>{b}</span>
+            </li>
           ))}
         </ul>
       )}
@@ -770,8 +735,9 @@ function PricingCard({
             <Link
               href={`${routeHref(APP_ROUTES.login, locale)}?next=${encodeURIComponent(target)}`}
               className="ecp-btn ecp-btn--primary"
+              aria-label={`${t(dict, "cta_buy_plan", "Choose")} ${title}`}
             >
-              {t(dict, "cta_buy_now", "Buy Now")}
+              {t(dict, "cta_buy_plan", "Choose")} {title}
             </Link>
           </>
         )}
@@ -792,17 +758,27 @@ function Step({ n, title, desc }) {
 
 function Faq({ q, a }) {
   const [open, setOpen] = useState(false);
+  const id = useId();
+  const panelId = `faq-${id.replace(/:/g, "")}`;
   return (
     <div className={`ecp-faq__item ${open ? "is-open" : ""}`}>
       <button
         className="ecp-faq__q"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-controls={panelId}
       >
         {q}
         <span className="ecp-faq__icon">{open ? "−" : "+"}</span>
       </button>
-      <div className="ecp-faq__a">{a}</div>
+      <div
+        id={panelId}
+        className="ecp-faq__a"
+        role="region"
+        aria-hidden={!open}
+      >
+        {a}
+      </div>
     </div>
   );
 }

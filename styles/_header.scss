@@ -381,9 +381,12 @@
 
 .spx-kids-shapes {
   position: absolute;
-  inset: -6px -10px;
+  inset: -3px -4px;
   z-index: 3;
   pointer-events: none;
+  opacity: 0.5;
+  transform: scale(0.78);
+  transform-origin: center;
 }
 
 .spx-kids-doodle {

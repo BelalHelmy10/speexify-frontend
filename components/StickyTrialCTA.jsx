@@ -33,6 +33,7 @@ const SUPPRESS_PREFIXES = [
   "/classroom",
   "/dashboard",
   "/manual-payment",
+  "/packages",
   "/onboarding",
   "/payment",
   "/profile",
@@ -84,12 +85,16 @@ export default function StickyTrialCTA() {
         nearFooter = rect.top < window.innerHeight - 48 && rect.bottom > 120;
       }
 
-      let overPricing = false;
-      const pricing = document.querySelector(".home-pricing");
-      if (pricing) {
-        const rect = pricing.getBoundingClientRect();
-        overPricing = rect.top < window.innerHeight - 80 && rect.bottom > 160;
-      }
+      // Pricing pages have their own high-intent actions. Keep the global
+      // trial pill out of the hero and package cards so it never covers a
+      // price, comparison button, or plan CTA.
+      const pricingSections = document.querySelectorAll(
+        ".home-pricing, .ecp-hero-pricing, .ecp-pricing-section",
+      );
+      const overPricing = [...pricingSections].some((section) => {
+        const rect = section.getBoundingClientRect();
+        return rect.top < window.innerHeight - 80 && rect.bottom > 120;
+      });
 
       setShown(!nearFooter && !overPricing);
     };

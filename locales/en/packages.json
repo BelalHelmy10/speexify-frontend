@@ -1,6 +1,6 @@
 {
   "hero_title": "Start practicing.",
-  "hero_subtitle": "One-on-one sessions with a coach, or small-group practice with members at your band. Sessions in packs, paid upfront. You keep your spot.",
+  "hero_subtitle": "One-on-one sessions with a coach, or small-group practice with members at your level. Sessions in packs, paid upfront. You keep your spot.",
 
   "tab_individual": "For yourself",
   "tab_corporate": "For your team",
@@ -19,7 +19,9 @@
   "hero_pricing_eyebrow": "Prices, upfront",
   "hero_pricing_corp_eyebrow": "Team programs",
   "hero_pricing_from": "From",
-  "hero_pricing_copy": "Pick the pack that fits. Full comparison below.",
+  "hero_pricing_upfront": "upfront",
+  "hero_pricing_lowest_per_session": "Best value",
+  "hero_pricing_copy": "Paid upfront. Full comparison below.",
   "hero_pricing_custom": "Tailored team programs",
   "hero_pricing_custom_copy": "See the tiers. Request a plan for your team size.",
   "hero_pricing_custom_scope": "Tailored scope",
@@ -29,6 +31,10 @@
   "status_error": "Something went wrong. Try again in a moment.",
 
   "pricing_title_1on1": "One-on-one packs",
+  "pricing_subtitle_1on1": "The same personal attention. A practice commitment that fits you.",
+  "card_format_1on1": "One-on-one coaching",
+  "pricing_subtitle_group": "The same small-group experience. A practice commitment that fits you.",
+  "card_format_group": "Small-group coaching",
   "pricing_title_group": "Small-group packs",
   "pricing_title_corporate": "Team programs",
   "pricing_subtitle_individual": "Sessions in packs. The more reps you commit to, the lower the per-session price.",
@@ -53,6 +59,7 @@
 
   "compare_title": "What's in each pack.",
   "compare_subtitle": "Side by side.",
+  "compare_caption": "Feature comparison by package",
   "compare_col_features": "Features",
   "compare_empty": "Every pack includes a coach picked for you, live sessions, and notes after every one.",
 
@@ -69,12 +76,13 @@
   "faq5_a": "Yes. Tailored programs with reporting your leadership will read. See the team tab above to start the conversation.",
 
   "cta_title": "Stop studying. Start using.",
-  "cta_individual_primary": "Choose this plan",
-  "cta_individual_secondary": "See what's inside",
+  "cta_individual_primary": "Start with a free trial",
+  "cta_individual_secondary": "Compare all features",
   "cta_corp_primary": "Request a plan",
   "cta_corp_secondary": "See team programs",
 
   "badge_most_popular": "Most chosen",
+  "card_eyebrow_live": "Live practice",
   "price_custom": "Tailored",
   "price_from": "From",
   "label_sessions": "sessions",
@@ -83,6 +91,7 @@
   "cta_corp_card_primary": "Request a plan",
   "cta_corp_card_secondary": "See how it works",
   "cta_buy_now": "Choose this plan",
+  "cta_buy_plan": "Choose",
 
   "fomo_proof": "300+ members practicing right now",
   "fomo_popular_badge": "Most chosen this month",
@@ -91,37 +100,37 @@
   "fomo_urgency": "Most members say the same thing after their first session: I should have started months ago.",
   "fomo_urgency_cta": "Pick your pack",
 
-  "plan_1on1-4_title": "Starter",
-  "plan_1on1-4_desc": "Try the practice ground. Four sessions to feel the shift.",
-  "plan_1on1-4_features": "A coach picked for you;Schedule that fits your week;A practice plan built around you;Recordings of every session;Email support",
+  "plan_1on1-4_title": "4 sessions",
+  "plan_1on1-4_desc": "A focused introduction to your personal coaching experience.",
+  "plan_1on1-4_features": "A coach matched to your goals;A personal learning plan;Live, guided conversation practice;Individual feedback;Support throughout your program",
 
-  "plan_1on1-12_title": "Professional",
-  "plan_1on1-12_desc": "The pack most members start with. Real practice, in a routine you can keep.",
-  "plan_1on1-12_features": "A coach picked for you;First-pick scheduling;A practice plan built around you;Notes after every session;Between-session reps;Pronunciation feedback",
+  "plan_1on1-12_title": "12 sessions",
+  "plan_1on1-12_desc": "Build a consistent practice routine around your goals.",
+  "plan_1on1-12_features": "A coach matched to your goals;A personal learning plan;Live, guided conversation practice;Individual feedback;Support throughout your program",
 
-  "plan_1on1-24_title": "Intensive",
-  "plan_1on1-24_desc": "Deep practice on the moments that matter. Built for the people in a hurry to use it.",
-  "plan_1on1-24_features": "A coach picked for you;First-pick scheduling;Deeper practice on your hardest moments;Weekly progress check-ins;Mock interviews and pitches;Industry-specific scenarios;Unlimited email support",
+  "plan_1on1-24_title": "24 sessions",
+  "plan_1on1-24_desc": "Give your skills more time to develop through regular practice.",
+  "plan_1on1-24_features": "A coach matched to your goals;A personal learning plan;Live, guided conversation practice;Individual feedback;Support throughout your program",
 
-  "plan_1on1-48_title": "Master",
-  "plan_1on1-48_desc": "Long-term practice with a coach who knows you. The deepest version of the practice ground.",
-  "plan_1on1-48_features": "A dedicated coach;Bi-weekly strategy sessions;In-depth progress assessments;Career conversation coaching;Networking practice;Library access (kept for life);Priority support",
+  "plan_1on1-48_title": "48 sessions",
+  "plan_1on1-48_desc": "Make sustained practice part of your long-term development.",
+  "plan_1on1-48_features": "A coach matched to your goals;A personal learning plan;Live, guided conversation practice;Individual feedback;Support throughout your program",
 
-  "plan_group-4_title": "Group Starter",
-  "plan_group-4_desc": "Try the group practice ground. Four sessions in a small, band-matched cohort.",
-  "plan_group-4_features": "Small groups (2–5 members);Members matched at a similar place;Real conversations, in a group;Group practice scenarios;Shared notes after each session",
+  "plan_group-4_title": "4 sessions",
+  "plan_group-4_desc": "A focused introduction to guided practice in a small group.",
+  "plan_group-4_features": "Small groups of 2–5;Learners matched to your level;Live, guided conversation practice;Feedback from your coach;Support throughout your program",
 
-  "plan_group-12_title": "Group Professional",
-  "plan_group-12_desc": "Group practice in a routine you can keep. The pack most members of small-group plans choose.",
-  "plan_group-12_features": "Small groups (2–5 members);Groups matched with care;Role-play that mirrors real situations;Peer feedback in the room;Monthly progress check;Practice prompts between sessions",
+  "plan_group-12_title": "12 sessions",
+  "plan_group-12_desc": "Build a consistent routine of learning and practicing together.",
+  "plan_group-12_features": "Small groups of 2–5;Learners matched to your level;Live, guided conversation practice;Feedback from your coach;Support throughout your program",
 
-  "plan_group-24_title": "Group Intensive",
-  "plan_group-24_desc": "Twice the reps. A cohort that stays together. The shift comes faster.",
-  "plan_group-24_features": "Small groups (2–5 members);A stable cohort that stays together;Realistic scenarios, not classroom drills;Group projects you actually finish;Presentations in front of peers;Progress tracked over time;Extended practice library",
+  "plan_group-24_title": "24 sessions",
+  "plan_group-24_desc": "Give your skills more time to develop through regular group practice.",
+  "plan_group-24_features": "Small groups of 2–5;Learners matched to your level;Live, guided conversation practice;Feedback from your coach;Support throughout your program",
 
-  "plan_group-48_title": "Group Master",
-  "plan_group-48_desc": "Deep group practice for the long haul. A cohort that grows together.",
-  "plan_group-48_features": "Small groups (2–5 members);A dedicated cohort, long-term;Specialist workshops;Guest speaker sessions;Community access;End-of-program completion summary (optional);Alumni network (kept for life);Ongoing coach support",
+  "plan_group-48_title": "48 sessions",
+  "plan_group-48_desc": "Make group practice part of your long-term development.",
+  "plan_group-48_features": "Small groups of 2–5;Learners matched to your level;Live, guided conversation practice;Feedback from your coach;Support throughout your program",
 
   "plan_corp-pilot_title": "Pilot",
   "plan_corp-pilot_desc": "A small cohort. Before-and-after measures. A clear answer before you commit further.",
