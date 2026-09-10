@@ -111,9 +111,6 @@
   "field_confidence_label": "درجة ثقتك في كل مهارة",
   "field_confidence_hint": "1 = ثقة منخفضة، 10 = ثقة عالية جداً",
 
-  "field_writing_sample_label": "نموذج كتابة قصير (اختياري)",
-  "field_writing_sample_hint": "3–5 جمل عن أهدافك أو اهتماماتك",
-  "field_writing_sample_placeholder": "اكتب فقرة قصيرة هنا...",
 
   "field_consent_label": "أوافق على استخدام تسجيلات الجلسات / لقطات الشاشة لأغراض الملاحظات والتدريب الخاص بس.",
 

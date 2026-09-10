@@ -111,9 +111,6 @@
   "field_confidence_label": "Confidence by skill",
   "field_confidence_hint": "1 = Low confidence, 10 = Very confident",
 
-  "field_writing_sample_label": "Short writing sample (optional)",
-  "field_writing_sample_hint": "3–5 sentences about your goals or interests",
-  "field_writing_sample_placeholder": "Write a short paragraph here…",
 
   "field_consent_label": "I consent to use of session recordings/screenshots for private feedback and coaching purposes only.",
 

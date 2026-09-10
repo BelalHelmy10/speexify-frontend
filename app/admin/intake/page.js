@@ -427,10 +427,10 @@ function PlacementFullAttempt({ assessment, review }) {
       <section className="adm-placement-group">
         <div className="adm-placement-group__header">
           <div>
-            <h3>Section 4: Speaking self-check</h3>
+            <h3>Section 4: Speaking evidence</h3>
             <p>{review.speaking.prompt}</p>
           </div>
-          <span>{formatSeconds(review.speaking.seconds)}</span>
+          <span>{review.speaking.mode === "live" ? "Live speaking check requested" : formatSeconds(review.speaking.seconds)}</span>
         </div>
         <div className="adm-placement-speaking-list">
           {review.speaking.checks.map((check) => (
@@ -441,6 +441,12 @@ function PlacementFullAttempt({ assessment, review }) {
             </div>
           ))}
         </div>
+        {review.speaking.audioDataUrl && (
+          <div className="adm-placement-audio-review">
+            <span>Recorded speaking sample</span>
+            <audio controls preload="metadata" src={review.speaking.audioDataUrl} />
+          </div>
+        )}
       </section>
 
       <section className="adm-placement-group">

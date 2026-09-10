@@ -521,7 +521,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
   const outOfCredits = remainingSessions <= 0;
 
-  const onbComplete = !!onboarding;
+  const onbComplete = onboarding?.status === "submitted" || (!!onboarding && !onboarding.status);
   const assComplete = !!assessment;
   const pendingActionsCount = [!onbComplete, !assComplete].filter(
     Boolean
@@ -680,6 +680,12 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
             label: t(dict, "next_action_cta_onboarding"),
           },
           secondary: [
+            ...(!assComplete
+              ? [{
+                  href: `${prefix}/assessment`,
+                  label: t(dict, "next_action_cta_assessment"),
+                }]
+              : []),
             {
               href: `${prefix}/dashboard/progress`,
               label: t(dict, "next_action_secondary_progress"),

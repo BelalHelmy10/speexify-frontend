@@ -19,6 +19,7 @@ const APP_PATH_PREFIXES = [
   "/classroom",
   "/dashboard",
   "/manual-payment",
+  "/needsanalysis",
   "/onboarding",
   "/payment",
   "/profile",
@@ -72,10 +73,10 @@ export default function AppChrome({ children }) {
       <Suspense fallback={null}>
         <main>{children}</main>
       </Suspense>
-      {showSiteChrome && <Footer />}
+      {showSiteChrome && normalizedPath !== "/assessment" && <Footer />}
       {showSiteChrome && <SupportWidget hideMobileFab={hideMobileSupportFab} />}
       {showSiteChrome && <ScrollToTop />}
-      {showSiteChrome && <StickyTrialCTA />}
+      {showSiteChrome && normalizedPath !== "/assessment" && <StickyTrialCTA />}
     </>
   );
 }

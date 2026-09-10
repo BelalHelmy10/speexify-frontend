@@ -13,7 +13,7 @@ Derived clips:
 - `bill-payment.wav` from conversation `3e56291000464230`
 
 Modification:
-- Original caller and agent mono WAV files were combined into one stereo WAV per conversation for browser playback. Caller audio is on the left channel; agent audio is on the right channel.
+- Original caller and agent WAV files were combined and downmixed into one mono WAV per conversation for browser playback. Both speakers are audible through either earphone. Sample rate and timing are unchanged.
 
 Citation:
 Mike Wu, Jonathan Nafziger, Anthony Scodary, and Andrew Maas. "HarperValleyBank: A Domain-Specific Spoken Dialog Corpus." arXiv:2010.13929, 2020.

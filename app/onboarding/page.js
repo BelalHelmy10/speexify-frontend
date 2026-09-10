@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -21,6 +21,7 @@ import api from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
 import { trackEvent } from "@/lib/analytics";
 import { getDictionary, t } from "@/app/i18n";
+import useAuth from "@/hooks/useAuth";
 
 const DRAFT_KEY = "speexify_onboarding_draft_v2";
 
@@ -96,24 +97,52 @@ const DEFAULT_ANSWERS = {
     Reading: 5,
     Writing: 5,
   },
-  writingSample: "",
   consentRecording: false,
 };
+
+const ONBOARDING_SECTION_IDS = ["schedule", "goal", "focus", "style"];
+
+function safeAnswers(value) {
+  const input = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const merged = mergeAnswers(input);
+  const clampNumber = (value, min, max, fallback) => {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
+  };
+  return {
+    ...merged,
+    timezone: typeof merged.timezone === "string" ? merged.timezone : "",
+    availability: typeof merged.availability === "string" ? merged.availability : "",
+    goals: typeof merged.goals === "string" ? merged.goals : "",
+    context: typeof merged.context === "string" ? merged.context : "",
+    notes: typeof merged.notes === "string" ? merged.notes : "",
+    challenges: typeof merged.challenges === "string" ? merged.challenges : "",
+    skillPriority: Object.fromEntries(
+      SKILLS.map((skill) => [skill, clampNumber(merged.skillPriority[skill], 1, 5, 3)])
+    ),
+    confidence: Object.fromEntries(
+      CONFIDENCE_SKILLS.map((skill) => [skill, clampNumber(merged.confidence[skill], 1, 10, 5)])
+    ),
+  };
+}
 
 const LOCAL_COPY = {
   en: {
     eyebrow: "Speexify setup",
     title: "Let's shape your coaching plan.",
     subtitle:
-      "A short setup so your coach knows what matters before the first live conversation.",
+      "A short setup so your coach knows what matters before the first live conversation. Complete each section in any order.",
     estimate: "About 3 minutes",
     saveIdle: "Autosaves as you go",
     savedAt: "Autosaved {time}",
+    progressSaved: "Your progress is saved. You can return anytime.",
+    requiredTimezone: "Please confirm your timezone before saving your setup.",
+    requiredAvailability: "Please add at least one time window that works for you.",
     requiredGoal: "Add one clear goal before continuing.",
     completeTitle: "Your coaching brief is ready.",
     completeBody:
-      "We saved your setup. The next best step is the placement test so your coach can match the plan to your current band.",
-    placementCta: "Start placement test",
+      "We saved your setup. You can take the placement test whenever you are ready, or go straight to your dashboard.",
+    placementCta: "Take placement test",
     dashboardCta: "Go to dashboard",
     reviewTitle: "Review your brief",
     reviewBody:
@@ -122,9 +151,11 @@ const LOCAL_COPY = {
     buttons: {
       back: "Back",
       next: "Continue",
+      saveProgress: "Save progress",
       submit: "Save setup",
       saving: "Saving...",
     },
+    stepsAriaLabel: "Onboarding sections",
     steps: [
       {
         id: "schedule",
@@ -164,7 +195,7 @@ const LOCAL_COPY = {
     ],
     coachNoteTitle: "What happens next",
     coachNote:
-      "Your coach sees this brief with your placement result, then builds the first session around your real use case.",
+      "Your coach sees this brief and any placement result, then builds the first session around your real use case.",
     proof: ["Private to your coaching team", "Editable later", "No payment step here"],
     fieldPrimaryGoal: "Main goal",
     fieldPrimaryGoalHint: "Use a real outcome, not just 'be fluent'.",
@@ -192,15 +223,18 @@ const LOCAL_COPY = {
     eyebrow: "إعداد Speexify",
     title: "يلّا نصمم خطتك المناسبة.",
     subtitle:
-      "إعداد قصير بيساعد المدرّب يفهم إيه المهم ليك قبل أول محادثة مباشرة.",
+      "إعداد قصير بيساعد المدرّب يفهم إيه المهم ليك قبل أول محادثة مباشرة. كمّل الأقسام بأي ترتيب يناسبك.",
     estimate: "حوالي 3 دقائق",
     saveIdle: "بيتحفظ لوحده وأنت بتكتب",
     savedAt: "اتحفظ {time}",
+    progressSaved: "تقدمك اتحفظ. تقدر ترجع في أي وقت.",
+    requiredTimezone: "أكد منطقتك الزمنية قبل ما تحفظ إعدادك.",
+    requiredAvailability: "ضيف معاد واحد على الأقل يناسبك.",
     requiredGoal: "ضيف هدف واضح واحد قبل ما تكمل.",
     completeTitle: "ملخص التدريب جاهز.",
     completeBody:
-      "حفظنا إعداداتك. أحسن خطوة دلوقتي هي اختبار تحديد مستواك عشان المدرّب يضبط الخطة على وضعك الحالي.",
-    placementCta: "ابدأ اختبار تحديد المستوى",
+      "حفظنا إعداداتك. تقدر تعمل اختبار تحديد المستوى وقت ما تكون جاهز، أو تروح للوحة التحكم مباشرة.",
+    placementCta: "اعمل اختبار تحديد المستوى",
     dashboardCta: "روح للوحة التحكم",
     reviewTitle: "راجع الملخص",
     reviewBody:
@@ -209,9 +243,11 @@ const LOCAL_COPY = {
     buttons: {
       back: "رجوع",
       next: "كمل",
+      saveProgress: "احفظ التقدم",
       submit: "احفظ الإعداد",
       saving: "بيتحفظ...",
     },
+    stepsAriaLabel: "أقسام الإعداد",
     steps: [
       {
         id: "schedule",
@@ -251,7 +287,7 @@ const LOCAL_COPY = {
     ],
     coachNoteTitle: "إيه اللي هيحصل بعد كده",
     coachNote:
-      "المدرّب هيشوف الملخص ده مع نتيجة اختبار المستوى، وبعدين يبني أول جلسة حول استخدامك الحقيقي للغة.",
+      "المدرّب هيشوف الملخص ده وأي نتيجة لاختبار المستوى، وبعدين يبني أول جلسة حول استخدامك الحقيقي للغة.",
     proof: ["خاص بفريق التدريب", "ممكن تعديله بعدين", "مفيش خطوة دفع هنا"],
     fieldPrimaryGoal: "الهدف الأساسي",
     fieldPrimaryGoalHint: "اكتب نتيجة واقعية، مش بس 'عايز أتكلم زي الأمريكان'.",
@@ -283,9 +319,15 @@ function mergeAnswers(incoming = {}) {
   return {
     ...DEFAULT_ANSWERS,
     ...incoming,
-    usageContexts: Array.isArray(incoming.usageContexts) ? incoming.usageContexts : [],
-    motivations: Array.isArray(incoming.motivations) ? incoming.motivations : [],
-    learningStyles: Array.isArray(incoming.learningStyles) ? incoming.learningStyles : [],
+    usageContexts: Array.isArray(incoming.usageContexts)
+      ? incoming.usageContexts.filter((value) => USAGE_CONTEXTS.includes(value))
+      : [],
+    motivations: Array.isArray(incoming.motivations)
+      ? incoming.motivations.filter((value) => MOTIVATIONS.includes(value))
+      : [],
+    learningStyles: Array.isArray(incoming.learningStyles)
+      ? incoming.learningStyles.filter((value) => LEARNING_STYLES.includes(value))
+      : [],
     skillPriority: {
       ...DEFAULT_ANSWERS.skillPriority,
       ...(incoming.skillPriority || {}),
@@ -319,8 +361,13 @@ function hasDraftProgress(answers) {
       answers.usageFrequency ||
       answers.usageContexts.length ||
       answers.motivations.length ||
+      answers.motivationOther ||
+      answers.examDetails ||
       answers.challenges ||
       answers.learningStyles.length ||
+      answers.levelSelfEval ||
+      Object.values(answers.skillPriority).some((value) => Number(value) !== 3) ||
+      Object.values(answers.confidence).some((value) => Number(value) !== 5) ||
       answers.notes ||
       answers.consentRecording
   );
@@ -344,30 +391,76 @@ function topSkills(answers, limit = 3) {
     .slice(0, limit);
 }
 
+function sectionIsComplete(sectionId, answers) {
+  switch (sectionId) {
+    case "schedule":
+      return Boolean(answers.timezone.trim() && answers.availability.trim());
+    case "goal":
+      return Boolean(answers.goals.trim());
+    case "focus":
+      return Boolean(
+        answers.motivations.length ||
+          answers.challenges.trim() ||
+          Object.values(answers.skillPriority).some((value) => Number(value) !== 3)
+      );
+    case "style":
+      return Boolean(
+        answers.learningStyles.length ||
+          answers.levelSelfEval ||
+          Object.values(answers.confidence).some((value) => Number(value) !== 5)
+      );
+    default:
+      return false;
+  }
+}
+
+function clampStep(value, total) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.min(total - 1, Math.trunc(parsed)));
+}
+
 export default function OnboardingPage() {
   const { toast } = useToast();
+  const { user, status: authStatus } = useAuth();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const prefix = locale === "ar" ? "/ar" : "";
   const dict = getDictionary(locale, "onboarding");
   const copy = LOCAL_COPY[locale] || LOCAL_COPY.en;
   const isRTL = locale === "ar";
+  const draftStorageKey = useMemo(
+    () => (user?.id ? `${DRAFT_KEY}:${user.id}` : DRAFT_KEY),
+    [user?.id]
+  );
+  const packageId = useMemo(() => {
+    const value = Number(searchParams.get("packageId"));
+    return Number.isInteger(value) && value > 0 ? value : null;
+  }, [searchParams]);
 
   const [answers, setAnswers] = useState(DEFAULT_ANSWERS);
   const [activeStep, setActiveStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [draftReady, setDraftReady] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [serverStatus, setServerStatus] = useState(null);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const saveTimer = useRef(null);
+  const remoteSaveTimer = useRef(null);
+  const stepHeadingRef = useRef(null);
 
   const isExamSelected = useMemo(
     () => answers.motivations.includes("exam_preparation"),
     [answers.motivations]
   );
 
-  const progress = Math.round(((activeStep + 1) / copy.steps.length) * 100);
   const isLastStep = activeStep === copy.steps.length - 1;
+  const completedSections = ONBOARDING_SECTION_IDS.filter((id) =>
+    sectionIsComplete(id, answers)
+  ).length;
+  const progress = Math.round((completedSections / ONBOARDING_SECTION_IDS.length) * 100);
 
   const getSliderBackground = (value, min, max, accent = "#f25c2e") => {
     const percentage = ((value - min) / (max - min)) * 100;
@@ -406,27 +499,52 @@ export default function OnboardingPage() {
   };
 
   useEffect(() => {
+    if (authStatus === "checking" && !user) return undefined;
+
     let active = true;
 
     (async () => {
+      if (!user) {
+        setInitialLoading(false);
+        setDraftReady(true);
+        return;
+      }
+
       let serverAnswers = null;
+      let serverForm = null;
       let localDraft = null;
 
       try {
         const { data } = await api.get("/me/onboarding");
-        if (data?.answers) serverAnswers = data.answers;
+        if (data?.answers) {
+          serverAnswers = data.answers;
+          serverForm = data;
+          setServerStatus(data.status || "submitted");
+        }
       } catch {}
 
       try {
-        const local = window.localStorage.getItem(DRAFT_KEY);
+        const local =
+          window.localStorage.getItem(draftStorageKey) ||
+          (draftStorageKey === DRAFT_KEY
+            ? null
+            : window.localStorage.getItem(DRAFT_KEY));
         if (local) localDraft = JSON.parse(local);
       } catch {}
 
       if (!active) return;
 
-      if (localDraft?.answers && hasDraftProgress(mergeAnswers(localDraft.answers))) {
-        setAnswers(withDetectedTimezone(localDraft.answers));
-        setActiveStep(Number(localDraft.activeStep || 0));
+      if (localDraft?.answers && hasDraftProgress(safeAnswers(localDraft.answers))) {
+        setAnswers(withDetectedTimezone(safeAnswers(localDraft.answers)));
+        setActiveStep(clampStep(localDraft.activeStep, copy.steps.length));
+        if (
+          serverForm?.status === "submitted" &&
+          localDraft.updatedAt &&
+          serverForm.updatedAt &&
+          new Date(localDraft.updatedAt).getTime() > new Date(serverForm.updatedAt).getTime()
+        ) {
+          setServerStatus("draft");
+        }
         if (localDraft.updatedAt) {
           const savedAt = new Date(localDraft.updatedAt);
           if (!Number.isNaN(savedAt.getTime())) setLastSavedAt(savedAt);
@@ -437,13 +555,19 @@ export default function OnboardingPage() {
         setAnswers(withDetectedTimezone());
       }
 
+      setInitialLoading(false);
       setDraftReady(true);
     })();
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [authStatus, copy.steps.length, draftStorageKey, user]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    stepHeadingRef.current?.focus({ preventScroll: true });
+  }, [activeStep, draftReady]);
 
   const saveDraftNow = useCallback(() => {
     if (!draftReady || typeof window === "undefined") return;
@@ -451,13 +575,13 @@ export default function OnboardingPage() {
 
     try {
       if (!hasDraftProgress(answers)) {
-        window.localStorage.removeItem(DRAFT_KEY);
+        window.localStorage.removeItem(draftStorageKey);
         setLastSavedAt(null);
         return;
       }
 
       window.localStorage.setItem(
-        DRAFT_KEY,
+        draftStorageKey,
         JSON.stringify({
           answers,
           activeStep,
@@ -466,7 +590,21 @@ export default function OnboardingPage() {
       );
       setLastSavedAt(savedAt);
     } catch {}
-  }, [activeStep, answers, draftReady]);
+
+    // Keep an in-progress onboarding available across devices. Once a form
+    // has been submitted we leave it untouched until the learner explicitly
+    // submits the edited version again.
+    if (serverStatus === "submitted" || !user) return;
+    if (remoteSaveTimer.current) window.clearTimeout(remoteSaveTimer.current);
+    remoteSaveTimer.current = window.setTimeout(async () => {
+      try {
+        await api.post("/me/onboarding", { answers, packageId, status: "draft" });
+        setServerStatus("draft");
+      } catch {
+        // Local storage remains the fallback when the backend is asleep.
+      }
+    }, 900);
+  }, [activeStep, answers, draftReady, draftStorageKey, packageId, serverStatus, user]);
 
   useEffect(() => {
     if (!draftReady) return undefined;
@@ -475,6 +613,7 @@ export default function OnboardingPage() {
 
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
+      if (remoteSaveTimer.current) window.clearTimeout(remoteSaveTimer.current);
     };
   }, [draftReady, saveDraftNow]);
 
@@ -497,22 +636,11 @@ export default function OnboardingPage() {
     };
   }, [draftReady, saveDraftNow]);
 
-  const validateStep = (stepIndex) => {
-    if (stepIndex === 1 && !answers.goals.trim()) {
-      toast.error(copy.requiredGoal);
-      return false;
-    }
-    return true;
-  };
-
   const goToStep = (stepIndex) => {
-    if (stepIndex <= activeStep || validateStep(activeStep)) {
-      setActiveStep(Math.max(0, Math.min(copy.steps.length - 1, stepIndex)));
-    }
+    setActiveStep(clampStep(stepIndex, copy.steps.length));
   };
 
   const goNext = () => {
-    if (!validateStep(activeStep)) return;
     setActiveStep((current) => Math.min(copy.steps.length - 1, current + 1));
   };
 
@@ -520,10 +648,28 @@ export default function OnboardingPage() {
     setActiveStep((current) => Math.max(0, current - 1));
   };
 
+  const saveProgress = () => {
+    saveDraftNow();
+    toast.success(copy.progressSaved);
+  };
+
   const submit = async (e) => {
     e.preventDefault();
 
-    if (!validateStep(1)) {
+    if (!answers.timezone.trim()) {
+      toast.error(copy.requiredTimezone);
+      setActiveStep(0);
+      return;
+    }
+
+    if (!answers.availability.trim()) {
+      toast.error(copy.requiredAvailability);
+      setActiveStep(0);
+      return;
+    }
+
+    if (!answers.goals.trim()) {
+      toast.error(copy.requiredGoal);
       setActiveStep(1);
       return;
     }
@@ -531,7 +677,7 @@ export default function OnboardingPage() {
     setSaving(true);
     setSaved(false);
     try {
-      await api.post("/me/onboarding", { answers });
+      await api.post("/me/onboarding", { answers, packageId, status: "submitted" });
 
       trackEvent("onboarding_completed", {
         preferredFormat: answers.preferredFormat,
@@ -540,10 +686,11 @@ export default function OnboardingPage() {
       });
 
       try {
-        window.localStorage.removeItem(DRAFT_KEY);
+        window.localStorage.removeItem(draftStorageKey);
       } catch {}
 
       setLastSavedAt(null);
+      setServerStatus("submitted");
       setSaved(true);
     } catch (e) {
       toast.error(e?.response?.data?.error || t(dict, "error_save_failed"));
@@ -562,6 +709,12 @@ export default function OnboardingPage() {
   const renderSelectIcon = () => (
     <ChevronDown className="onboarding-field__select-icon" aria-hidden="true" />
   );
+
+  const preferredFormatLabel = {
+    "1:1": t(dict, "field_format_option_1to1"),
+    group: t(dict, "field_format_option_group"),
+    intensive: t(dict, "field_format_option_intensive"),
+  }[answers.preferredFormat] || answers.preferredFormat;
 
   const renderStep = () => {
     switch (copy.steps[activeStep].id) {
@@ -870,7 +1023,7 @@ export default function OnboardingPage() {
                 label={copy.summary.schedule}
                 value={[
                   answers.timezone || copy.reviewEmpty,
-                  answers.preferredFormat,
+                  preferredFormatLabel,
                   answers.availability,
                 ]
                   .filter(Boolean)
@@ -898,6 +1051,21 @@ export default function OnboardingPage() {
                 }
               />
               <SummaryItem
+                label={t(dict, "field_motivations_label")}
+                value={
+                  selectedLabels(dict, answers.motivations, "motivation").join(", ") ||
+                  copy.reviewEmpty
+                }
+              />
+              <SummaryItem
+                label={t(dict, "field_band_label")}
+                value={answers.levelSelfEval || copy.reviewEmpty}
+              />
+              <SummaryItem
+                label={t(dict, "field_challenges_label")}
+                value={answers.challenges || copy.reviewEmpty}
+              />
+              <SummaryItem
                 label={copy.summary.confidence}
                 value={CONFIDENCE_SKILLS.map(
                   (skill) => `${t(dict, `skill_${skill.toLowerCase()}`)} ${answers.confidence[skill]}/10`
@@ -919,6 +1087,42 @@ export default function OnboardingPage() {
         );
     }
   };
+
+  if (authStatus === "checking" || (user && initialLoading)) {
+    return (
+      <main className="onboarding-wrapper" dir={isRTL ? "rtl" : "ltr"}>
+        <section className="onboarding-complete onboarding-complete--loading" aria-live="polite">
+          <div className="onboarding-btn__spinner" aria-hidden="true" />
+          <p>{locale === "ar" ? "بنجهز إعداداتك..." : "Preparing your setup…"}</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="onboarding-wrapper" dir={isRTL ? "rtl" : "ltr"}>
+        <section className="onboarding-complete" aria-live="polite">
+          <p className="onboarding-kicker">{copy.eyebrow}</p>
+          <h1>{locale === "ar" ? "سجّل دخولك عشان نبدأ." : "Sign in to start your setup."}</h1>
+          <p>
+            {locale === "ar"
+              ? "إعدادك بيتحفظ بأمان على حسابك وتقدر تكمله من أي جهاز."
+              : "Your setup is saved securely to your account so you can continue on any device."}
+          </p>
+          <div className="onboarding-complete__actions">
+            <Link className="onboarding-btn onboarding-btn--primary" href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/onboarding`)}`}>
+              {locale === "ar" ? "تسجيل الدخول" : "Sign in"}
+              <ArrowRight aria-hidden="true" />
+            </Link>
+            <Link className="onboarding-btn onboarding-btn--ghost" href={`${prefix}/register?next=${encodeURIComponent(`${prefix}/onboarding`)}`}>
+              {locale === "ar" ? "إنشاء حساب" : "Create an account"}
+            </Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   if (saved) {
     return (
@@ -963,14 +1167,27 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          <div className="onboarding-progress" aria-label={`${progress}%`}>
+          <div
+            className="onboarding-progress"
+            role="progressbar"
+            aria-label={locale === "ar" ? "تقدم الإعداد" : "Setup progress"}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress}
+          >
             <span style={{ width: `${progress}%` }} />
           </div>
+          <p className="onboarding-progress__label">
+            {completedSections}/{ONBOARDING_SECTION_IDS.length} {locale === "ar" ? "أقسام مكتملة" : "sections complete"}
+          </p>
 
-          <nav className="onboarding-stepper" aria-label="Onboarding steps">
+          <nav className="onboarding-stepper" aria-label={copy.stepsAriaLabel}>
             {copy.steps.map((step, index) => {
               const Icon = STEP_ICONS[index];
-              const complete = index < activeStep;
+              const complete =
+                step.id === "review"
+                  ? completedSections === ONBOARDING_SECTION_IDS.length
+                  : sectionIsComplete(step.id, answers);
               const active = index === activeStep;
               return (
                 <button
@@ -979,6 +1196,8 @@ export default function OnboardingPage() {
                   className={`onboarding-step ${active ? "is-active" : ""} ${
                     complete ? "is-complete" : ""
                   }`}
+                  aria-current={active ? "step" : undefined}
+                  aria-label={`${step.label}${complete ? " — complete" : ""}`}
                   onClick={() => goToStep(index)}
                 >
                   <span className="onboarding-step__icon">
@@ -1016,7 +1235,9 @@ export default function OnboardingPage() {
                 .replace("{current}", activeStep + 1)
                 .replace("{total}", copy.steps.length)}
             </span>
-            <h2>{copy.steps[activeStep].title}</h2>
+            <h2 ref={stepHeadingRef} tabIndex={-1}>
+              {copy.steps[activeStep].title}
+            </h2>
             <p>{copy.steps[activeStep].description}</p>
           </header>
 
@@ -1031,6 +1252,16 @@ export default function OnboardingPage() {
             >
               <ChevronLeft aria-hidden="true" />
               {copy.buttons.back}
+            </button>
+
+            <button
+              type="button"
+              className="onboarding-btn onboarding-btn--save"
+              onClick={saveProgress}
+              disabled={saving}
+            >
+              <Save aria-hidden="true" />
+              {copy.buttons.saveProgress}
             </button>
 
             {isLastStep ? (
@@ -1122,6 +1353,8 @@ function RangeControl({ label, value, min, max, marks, style, onChange }) {
       </div>
       <input
         type="range"
+        aria-label={label}
+        aria-valuetext={`${value} out of ${max}`}
         min={min}
         max={max}
         step="1"

@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import useAuth from "@/hooks/useAuth";
 import "@/styles/needsanalysis.scss";
 
 const SECTIONS = [
@@ -183,6 +185,8 @@ function safeParseJSON(v, fallback) {
 }
 
 export default function NeedsAnalysisPage() {
+  const { user, status: authStatus } = useAuth();
+  const storageKey = user?.id ? `${STORAGE_KEY}:${user.id}` : STORAGE_KEY;
   const [clientName, setClientName] = useState("Jessica");
   const [answers, setAnswers] = useState({});
   const [scores, setScores] = useState(() =>
@@ -194,26 +198,33 @@ export default function NeedsAnalysisPage() {
     priority: "",
     redFlags: "",
   });
+  const [hydrated, setHydrated] = useState(false);
   const [toast, setToast] = useState(null);
 
   // Load
   useEffect(() => {
-    const saved = safeParseJSON(localStorage.getItem(STORAGE_KEY), null);
-    if (!saved) return;
-
-    setClientName(saved.clientName ?? "Jessica");
-    setAnswers(saved.answers ?? {});
-    setScores((prev) => ({ ...prev, ...(saved.scores ?? {}) }));
-    setCoachNotes((prev) => ({ ...prev, ...(saved.coachNotes ?? {}) }));
-  }, []);
+    if (!user) return;
+    try {
+      const saved = safeParseJSON(localStorage.getItem(storageKey), null);
+      if (saved) {
+        setClientName(saved.clientName ?? "Jessica");
+        setAnswers(saved.answers ?? {});
+        setScores((prev) => ({ ...prev, ...(saved.scores ?? {}) }));
+        setCoachNotes((prev) => ({ ...prev, ...(saved.coachNotes ?? {}) }));
+      }
+    } finally {
+      setHydrated(true);
+    }
+  }, [storageKey, user]);
 
   // Save
   useEffect(() => {
+    if (!user || !hydrated) return;
     localStorage.setItem(
-      STORAGE_KEY,
+      storageKey,
       JSON.stringify({ clientName, answers, scores, coachNotes })
     );
-  }, [clientName, answers, scores, coachNotes]);
+  }, [answers, clientName, coachNotes, hydrated, scores, storageKey, user]);
 
   const completion = useMemo(() => {
     const total = SECTIONS.reduce((acc, s) => acc + s.questions.length, 0);
@@ -254,7 +265,7 @@ export default function NeedsAnalysisPage() {
   }
 
   function reset() {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(storageKey);
     setClientName("Jessica");
     setAnswers({});
     setScores(Object.fromEntries(SCORE_ITEMS.map((s) => [s.id, 5])));
@@ -266,6 +277,20 @@ export default function NeedsAnalysisPage() {
     });
     setToast("Reset complete.");
     setTimeout(() => setToast(null), 1400);
+  }
+
+  if (authStatus === "checking" || (authStatus === "authenticated" && !user)) {
+    return <main className="naSimple naSimple--guard">Preparing the needs analysis…</main>;
+  }
+
+  if (!user || !["admin", "teacher"].includes(user.role)) {
+    return (
+      <main className="naSimple naSimple--guard">
+        <h1>Coach access required</h1>
+        <p>This workspace is for the coaching team.</p>
+        <Link href="/dashboard">Return to dashboard</Link>
+      </main>
+    );
   }
 
   async function copySummary() {
