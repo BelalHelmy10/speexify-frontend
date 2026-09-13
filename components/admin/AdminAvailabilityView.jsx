@@ -55,6 +55,7 @@ export default function AdminAvailabilityView() {
 
   const [roleFilter, setRoleFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [showOnlyWithAvailability, setShowOnlyWithAvailability] =
     useState(false);
 
@@ -64,7 +65,7 @@ export default function AdminAvailabilityView() {
     try {
       setLoading(true);
       const { data } = await api.get("/admin/availability/summary", {
-        params: { role: roleFilter || undefined },
+        params: { role: roleFilter || undefined, q: searchQuery || undefined, limit: 50, offset: page * 50 },
       });
       setSummary(data);
     } catch (err) {
@@ -73,7 +74,7 @@ export default function AdminAvailabilityView() {
     } finally {
       setLoading(false);
     }
-  }, [roleFilter, toast]);
+  }, [roleFilter, searchQuery, page, toast]);
 
   useEffect(() => {
     fetchSummary();
@@ -101,13 +102,6 @@ export default function AdminAvailabilityView() {
     if (!summary?.users) return [];
 
     return summary.users.filter((user) => {
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const nameMatch = user.name?.toLowerCase().includes(query);
-        const emailMatch = user.email?.toLowerCase().includes(query);
-        if (!nameMatch && !emailMatch) return false;
-      }
-
       if (showOnlyWithAvailability && !user.hasAvailability) {
         return false;
       }
@@ -118,7 +112,7 @@ export default function AdminAvailabilityView() {
 
       return true;
     });
-  }, [summary?.users, searchQuery, showOnlyWithAvailability, roleFilter]);
+  }, [summary?.users, showOnlyWithAvailability, roleFilter]);
 
   const usersByRole = useMemo(() => {
     const teachers = filteredUsers.filter((u) => u.role === "teacher");
@@ -254,7 +248,7 @@ export default function AdminAvailabilityView() {
                 type="text"
                 placeholder="Search by name or email…"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
                 className="av-input"
               />
             </div>
@@ -262,14 +256,14 @@ export default function AdminAvailabilityView() {
             <div className="av-segment" role="tablist" aria-label="Role filter">
               <button
                 type="button"
-                onClick={() => setRoleFilter("")}
+                onClick={() => { setRoleFilter(""); setPage(0); }}
                 className={`av-segment__btn ${!roleFilter ? "is-active" : ""}`}
               >
                 All
               </button>
               <button
                 type="button"
-                onClick={() => setRoleFilter("teacher")}
+                onClick={() => { setRoleFilter("teacher"); setPage(0); }}
                 className={`av-segment__btn ${
                   roleFilter === "teacher" ? "is-active" : ""
                 }`}
@@ -278,7 +272,7 @@ export default function AdminAvailabilityView() {
               </button>
               <button
                 type="button"
-                onClick={() => setRoleFilter("learner")}
+                onClick={() => { setRoleFilter("learner"); setPage(0); }}
                 className={`av-segment__btn ${
                   roleFilter === "learner" ? "is-active" : ""
                 }`}
@@ -295,6 +289,12 @@ export default function AdminAvailabilityView() {
               />
               <span>Show only users with availability</span>
             </label>
+          </div>
+
+          <div className="av-pagination" aria-label="Availability users pagination">
+            <button type="button" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>Previous</button>
+            <span>Page {page + 1}</span>
+            <button type="button" onClick={() => setPage((p) => p + 1)} disabled={!summary?.hasMore}>Next</button>
           </div>
 
           <div className="av-users__list">
