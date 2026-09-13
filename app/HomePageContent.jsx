@@ -348,7 +348,7 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== LIVE SESSION DEMO ===== */}
-      <LiveSessionDemo />
+      <LiveSessionDemo locale={locale} />
 
       {/* ===== FEATURES ===== */}
       <FeaturesSection dict={dict} />
@@ -1438,14 +1438,11 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
   const scroll = (dir) => {
     if (!trackRef.current) return;
     const track = trackRef.current;
-    const cardWidth = track.querySelector(".home-quote")?.offsetWidth || 400;
-    const gap = 24;
-    const currentIdx = Math.round(track.scrollLeft / (cardWidth + gap));
-    const next = (currentIdx + dir + testimonials.length) % testimonials.length;
-    track.scrollTo({
-      left: next * (cardWidth + gap),
-      behavior: "smooth",
-    });
+    const cards = Array.from(track.querySelectorAll(".home-quote"));
+    if (!cards.length) return;
+    const current = Math.max(0, Math.min(active, cards.length - 1));
+    const next = (current + dir + cards.length) % cards.length;
+    cards[next].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
     setActive(next);
   };
 
@@ -1454,16 +1451,24 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
     const track = trackRef.current;
     if (!track) return;
     const onScroll = () => {
-      const cardWidth = track.querySelector(".home-quote")?.offsetWidth || 400;
-      const idx = Math.round(track.scrollLeft / (cardWidth + 24));
-      setActive(Math.min(idx, testimonials.length - 1));
+      const cards = Array.from(track.querySelectorAll(".home-quote"));
+      if (!cards.length) return;
+      const trackCenter = track.getBoundingClientRect().left + track.clientWidth / 2;
+      let closest = 0;
+      let distance = Infinity;
+      cards.forEach((card, i) => {
+        const rect = card.getBoundingClientRect();
+        const d = Math.abs(rect.left + rect.width / 2 - trackCenter);
+        if (d < distance) { distance = d; closest = i; }
+      });
+      setActive(closest);
     };
     track.addEventListener("scroll", onScroll, { passive: true });
     return () => track.removeEventListener("scroll", onScroll);
   }, [testimonials.length]);
 
   return (
-    <section className="home-testimonials">
+    <section className={`home-testimonials${locale === "ar" ? " home-testimonials--rtl" : ""}`}>
       <div className="home-container">
         <div className="home-testimonials__header-row">
           <div className="home-testimonials__header">
@@ -1482,7 +1487,7 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
 
           <div
             className="home-testimonials__arrows"
-            aria-label="Carousel navigation"
+            aria-label={locale === "ar" ? "التنقل بين الشهادات" : "Carousel navigation"}
           >
             <button
               className="home-testimonials__arrow"
@@ -1550,7 +1555,7 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
           <Link
             href={routeHref(APP_ROUTES.memberStories, locale)}
           >
-            <span>Read their full stories</span>
+            <span>{locale === "ar" ? "اقرأ قصصهم كاملة" : "Read their full stories"}</span>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -1560,7 +1565,7 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
         <div
           className="home-testimonials__dots"
           role="tablist"
-          aria-label="Testimonial slides"
+          aria-label={locale === "ar" ? "شرائح الشهادات" : "Testimonial slides"}
         >
           {testimonials.map((_, i) => (
             <button
@@ -1571,13 +1576,8 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
               className={`home-testimonials__dot${active === i ? " home-testimonials__dot--active" : ""}`}
               onClick={() => {
                 if (!trackRef.current) return;
-                const cardWidth =
-                  trackRef.current.querySelector(".home-quote")?.offsetWidth ||
-                  400;
-                trackRef.current.scrollTo({
-                  left: i * (cardWidth + 24),
-                  behavior: "smooth",
-                });
+                const card = trackRef.current.querySelectorAll(".home-quote")[i];
+                card?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
                 setActive(i);
               }}
             />
@@ -1952,7 +1952,10 @@ function HeroCinema() {
 /* ============================
    Live Session Demo
    ============================ */
-function LiveSessionDemo() {
+function LiveSessionDemo({ locale = "en" }) {
+  const copy = locale === "ar"
+    ? { eyebrow: "جلسة مباشرة", title: "شوف بالضبط إيه اللي بيحصل", title2: "جوا جلسة Speexify." }
+    : { eyebrow: "Live session", title: "See exactly what happens", title2: "inside a Speexify session." };
   const waveBars = [
     { h: 30, d: "0s" }, { h: 55, d: "0.12s" }, { h: 70, d: "0.28s" },
     { h: 45, d: "0.08s" }, { h: 85, d: "0.42s" }, { h: 60, d: "0.18s" },
@@ -1969,12 +1972,12 @@ function LiveSessionDemo() {
         <div className="home-live-demo__header">
           <span className="home-live-demo__eyebrow">
             <span className="home-live-demo__eyebrow-dot" aria-hidden="true" />
-            Live session
+            {copy.eyebrow}
           </span>
           <h2 className="home-live-demo__heading">
-            See exactly what happens
+            {copy.title}
             <br />
-            inside a Speexify session.
+            {copy.title2}
           </h2>
         </div>
 

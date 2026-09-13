@@ -4134,3 +4134,17 @@
   white-space: nowrap;
   border: 1px solid currentColor;
 }
+.adm-role-filter { display: flex; align-items: center; gap: 3px; padding: 4px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: rgba(5,18,31,.58); }
+.adm-role-filter button { border: 0; border-radius: 8px; background: transparent; color: rgba(210,222,235,.68); padding: 9px 12px; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: .18s ease; }
+.adm-role-filter button span { display: inline-grid; place-items: center; min-width: 20px; height: 18px; margin-left: 5px; padding: 0 5px; border-radius: 5px; color: inherit; background: rgba(255,255,255,.08); font-size: 10px; }
+.adm-role-filter button:hover { color: $color-white; background: rgba(255,255,255,.06); }
+.adm-role-filter button.is-active { color: $color-white; background: $brand; box-shadow: 0 5px 14px rgba($brand,.24), inset 0 1px 0 rgba(255,255,255,.25); }
+.adm-role-filter button.is-active span { color: $brand-dark; background: rgba(255,255,255,.78); }
+.adm-role-filter button:focus-visible { outline: 2px solid rgba($brand,.7); outline-offset: 2px; }
+.adm-user-sort { min-height: 40px; padding: 0 32px 0 12px; border: 1px solid rgba($border, .8); border-radius: 10px; background: rgba($bg-soft, .72); color: $ink; font-size: 11px; font-weight: 700; cursor: pointer; }
+.adm-user-management-card .adm-admin-card__header { align-items: flex-start; flex-direction: column; gap: 20px; }
+.adm-user-management-card .adm-admin-card__actions { width: 100%; justify-content: flex-start; flex-wrap: nowrap; gap: 10px; }
+.adm-user-management-card .adm-search-box { flex: 0 1 360px; }
+.adm-user-management-card .adm-role-filter { flex: 0 1 auto; }
+@media (max-width: 900px) { .adm-user-management-card .adm-admin-card__actions { flex-wrap: wrap; } .adm-user-management-card .adm-search-box { flex-basis: 100%; } }
+@media (max-width: 900px) { .adm-role-filter { width: 100%; overflow-x: auto; } .adm-role-filter button { flex: 1 0 auto; } }

@@ -118,6 +118,8 @@ export default function AdminSessionsSection({
   setQ,
   teacherIdFilter,
   setTeacherIdFilter,
+  learnerIdFilter,
+  setLearnerIdFilter,
   sessionRangeFilter,
   setSessionRangeFilter,
   sessionTypeFilter,
@@ -186,6 +188,7 @@ export default function AdminSessionsSection({
     setSessionNeedsTeacher(false);
     setSessionNeedsFeedback(false);
     setTeacherIdFilter("");
+    setLearnerIdFilter("");
     setFrom("");
     setTo("");
   };
@@ -373,6 +376,11 @@ export default function AdminSessionsSection({
               {teacher.name || teacher.email}
             </option>
           ))}
+        </select>
+
+        <select className="adm-filter-select" value={learnerIdFilter} onChange={(e) => setLearnerIdFilter(e.target.value)}>
+          <option value="">All learners</option>
+          {users.filter((user) => user.role === "learner").map((learner) => <option key={learner.id} value={learner.id}>{learner.name || learner.email}</option>)}
         </select>
 
         <select

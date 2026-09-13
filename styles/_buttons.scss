@@ -46,7 +46,6 @@
   &:hover {
     background: $color-primary-dark;
     box-shadow: 0 8px 24px rgba($color-primary, 0.35);
-    transform: translateY(-2px);
     text-decoration: none;
   }
 }
@@ -62,7 +61,6 @@
     border-color: $color-primary;
     color: $color-white;
     box-shadow: 0 8px 24px rgba($color-primary, 0.25);
-    transform: translateY(-2px) scale(1.02);
     text-decoration: none;
   }
 }
@@ -76,7 +74,6 @@
   &:hover {
     background: rgba($navy, 0.06);
     border-color: $navy-mid;
-    transform: translateY(-2px);
     text-decoration: none;
   }
 }
@@ -102,7 +99,6 @@
   &:hover {
     background: darken($error, 5%);
     box-shadow: 0 8px 24px rgba($error, 0.35);
-    transform: translateY(-2px);
   }
 }
 
@@ -113,7 +109,6 @@
 
   &:hover {
     background: $surface;
-    transform: translateY(-1px);
   }
 }
 
@@ -281,4 +276,13 @@
   .spx-btn--shine::before {
     animation: none;
   }
+}
+
+// Keep hover hit areas stable: movement or scaling on the control itself can
+// make the pointer repeatedly leave and re-enter at the edge.
+button:hover:not(:disabled),
+.spx-btn:hover,
+.btn:hover,
+[role="button"]:hover {
+  transform: none !important;
 }

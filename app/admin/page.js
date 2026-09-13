@@ -48,6 +48,7 @@ function Admin() {
   const [sessions, setSessions] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [teacherIdFilter, setTeacherIdFilter] = useState("");
+  const [learnerIdFilter, setLearnerIdFilter] = useState("");
   const [sessionRangeFilter, setSessionRangeFilter] = useState("");
   const [sessionTypeFilter, setSessionTypeFilter] = useState("");
   const [sessionStatusFilter, setSessionStatusFilter] = useState("");
@@ -244,6 +245,7 @@ function Admin() {
     from,
     to,
     teacherIdFilter,
+    learnerIdFilter,
     sessionRangeFilter,
     sessionTypeFilter,
     sessionStatusFilter,
@@ -258,6 +260,7 @@ function Admin() {
     if (from) p.set("from", from);
     if (to) p.set("to", to);
     if (teacherIdFilter) p.set("teacherId", String(teacherIdFilter));
+    if (learnerIdFilter) p.set("userId", String(learnerIdFilter));
     if (sessionRangeFilter) p.set("range", sessionRangeFilter);
     if (sessionTypeFilter) p.set("type", sessionTypeFilter);
     if (sessionStatusFilter) p.set("status", sessionStatusFilter);
@@ -275,6 +278,7 @@ function Admin() {
     from,
     to,
     teacherIdFilter,
+    learnerIdFilter,
     sessionRangeFilter,
     sessionTypeFilter,
     sessionStatusFilter,
@@ -1167,6 +1171,8 @@ function Admin() {
         setQ={setQ}
         teacherIdFilter={teacherIdFilter}
         setTeacherIdFilter={setTeacherIdFilter}
+        learnerIdFilter={learnerIdFilter}
+        setLearnerIdFilter={setLearnerIdFilter}
         sessionRangeFilter={sessionRangeFilter}
         setSessionRangeFilter={setSessionRangeFilter}
         sessionTypeFilter={sessionTypeFilter}

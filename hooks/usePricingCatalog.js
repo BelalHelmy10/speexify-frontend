@@ -15,10 +15,15 @@ export function fetchPricingCatalog() {
   return pending;
 }
 export function mergeCatalogPlans(editorial, catalog) {
-  if (!catalog) return [];
+  // Keep the editorial package cards visible while pricing is loading or
+  // temporarily unavailable. Catalog fields are layered on when available.
+  if (!catalog) return editorial.map(plan => ({ ...plan, backendId: null, regionToken: null }));
   return editorial.flatMap(plan => {
-    const item = catalog.packages.find(p => p.catalogKey === plan.id);
-    if (!item) return [];
+    const item = catalog.packages.find(p =>
+      p.catalogKey === plan.id ||
+      (p.title && p.title.trim().toLowerCase() === plan.title.trim().toLowerCase())
+    );
+    if (!item) return [{ ...plan, backendId: null, regionToken: catalog.regionToken }];
     return [{...plan, backendId: item.id, priceEGP: item.priceEGP,
       sessionsPerPack: item.sessionsPerPack, durationMin: item.durationMin,
       pricing: item.pricing, regionToken: catalog.regionToken}];

@@ -1,5 +1,5 @@
 {
-  "title_step1": "اعمل حساب",
+  "title_step1": "أنشئ حسابك",
   "title_step2": "تأكيد الإيميل",
 
   "subtitle_step1": "انضم باستخدام Google أو الإيميل. مش محتاج بطاقة.",
@@ -7,7 +7,7 @@
 
   "form_aria_label": "إنشاء حساب Speexify",
   "register_eyebrow": "ابدأ التحدث أسرع",
-  "friendly_note": "اعمل حسابك دلوقتي. احجز التدريب لما تكون جاهز.",
+  "friendly_note": "أنشئ حسابكك دلوقتي. احجز التدريب لما تكون جاهز.",
   "google_button_label": "كمل باستخدام Google",
   "card_badge": "حساب مجاني",
   "card_timing": "بياخد حوالي 30 ثانية",
@@ -33,7 +33,7 @@
 
   "btn_continue": "كمل",
   "btn_sending_code": "بنبعت الرمز...",
-  "btn_create_account": "اعمل حساب",
+  "btn_create_account": "أنشئ حسابك",
   "btn_creating_account": "بننشئ الحساب...",
   "btn_resend": "ابعت الرمز تاني",
   "btn_resend_with_timer": "ابعت الرمز تاني",

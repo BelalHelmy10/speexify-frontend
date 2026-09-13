@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClipboardCheck } from "lucide-react";
+import { useMemo, useState } from "react";
 
 export default function AdminUserManagementSection({
   usersAdmin,
@@ -24,9 +25,22 @@ export default function AdminUserManagementSection({
 }) {
   const pathname = usePathname();
   const prefix = pathname?.startsWith("/ar") ? "/ar" : "";
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [userSort, setUserSort] = useState("created_desc");
+  const visibleUsers = useMemo(() => {
+    const filtered = roleFilter === "all" ? [...usersAdmin] : usersAdmin.filter((user) => user.role === roleFilter);
+    return filtered.sort((a, b) => {
+      if (userSort === "name") return String(a.name || a.email).localeCompare(String(b.name || b.email));
+      if (userSort === "role") return String(a.role).localeCompare(String(b.role));
+      const aDate = new Date(a.createdAt || 0).getTime();
+      const bDate = new Date(b.createdAt || 0).getTime();
+      return userSort === "created_asc" ? aDate - bDate : bDate - aDate;
+    });
+  }, [roleFilter, userSort, usersAdmin]);
+  const roleCounts = useMemo(() => usersAdmin.reduce((counts, user) => { counts[user.role] = (counts[user.role] || 0) + 1; return counts; }, {}), [usersAdmin]);
 
   return (
-    <section className="adm-admin-card">
+    <section className="adm-admin-card adm-user-management-card">
       <div className="adm-admin-card__header">
         <div className="adm-admin-card__title-group">
           <div className="adm-admin-card__icon adm-admin-card__icon--primary">
@@ -68,6 +82,15 @@ export default function AdminUserManagementSection({
               onChange={(e) => setUsersQ(e.target.value)}
             />
           </div>
+          <div className="adm-role-filter" role="group" aria-label="Filter users by role">
+            {[['all', 'All users'], ['learner', 'Learners'], ['teacher', 'Teachers'], ['admin', 'Admins']].map(([value, label]) => <button type="button" key={value} className={roleFilter === value ? "is-active" : ""} onClick={() => setRoleFilter(value)}>{label} <span>{value === "all" ? usersAdmin.length : roleCounts[value] || 0}</span></button>)}
+          </div>
+          <select className="adm-user-sort" value={userSort} onChange={(e) => setUserSort(e.target.value)} aria-label="Sort users">
+            <option value="created_desc">Newest first</option>
+            <option value="created_asc">Oldest first</option>
+            <option value="name">Name A–Z</option>
+            <option value="role">Role</option>
+          </select>
           <button className="adm-btn-secondary" onClick={stopImpersonate}>
             Return to admin
           </button>
@@ -95,7 +118,7 @@ export default function AdminUserManagementSection({
                   <input
                     type="checkbox"
                     className="adm-checkbox"
-                    checked={selectedUserIds.size === usersAdmin.length && usersAdmin.length > 0}
+                    checked={visibleUsers.length > 0 && visibleUsers.every((user) => selectedUserIds.has(user.id))}
                     onChange={toggleAllUsers}
                     title="Select all users"
                   />
@@ -109,7 +132,7 @@ export default function AdminUserManagementSection({
               </tr>
             </thead>
             <tbody>
-              {usersAdmin.map((u) => (
+              {visibleUsers.map((u) => (
                 <tr key={u.id} className={selectedUserIds.has(u.id) ? "adm-row--selected" : ""}>
                   <td>
                     <input
