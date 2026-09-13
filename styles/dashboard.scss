@@ -58,6 +58,61 @@
 @media (max-width: 820px) { .dashboard .dashboard__stats { padding: 24px; } .dashboard .dashboard__stat-card { padding: 20px; } }
 @media (max-width: 580px) { .dashboard .dashboard__stats { padding: 20px 16px; } .dashboard .dashboard__kpis { grid-template-columns: 1fr; } .dashboard .dashboard__stat-card + .dashboard__stat-card { border-left: 0; border-top: 1px solid $border; } .dashboard .dashboard__stat-card { min-height: 142px; } }
 
+/* Session history refinement: date anchors, quiet metadata, one clear action. */
+.dashboard .session-item {
+  display: grid;
+  grid-template-columns: 4px 58px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 22px;
+  border-radius: 14px;
+  padding: 16px 18px 16px 0;
+  border: 1px solid rgba($border, .78);
+  background: $card-bg;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.dashboard .session-item + .session-item { margin-top: 10px; }
+.dashboard .session-item:hover { transform: translateY(-1px); border-color: rgba($coral,.28); box-shadow: 0 8px 24px rgba($navy,.06); }
+.dashboard .session-item__indicator { width: 4px; border-radius: 0 4px 4px 0; background: $coral; }
+.dashboard .session-item--completed .session-item__indicator { background: $secondary; }
+.dashboard .session-item--canceled { background: rgba($bg-soft,.62); border-color: rgba($border,.7); }
+.dashboard .session-item--canceled .session-item__indicator { background: rgba($coral,.5); }
+.dashboard .session-item__date { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 58px; min-height: 58px; align-self: center; margin-left: 10px; border-radius: 10px; background: $bg-soft; color: $muted; }
+.dashboard .session-item__date span { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.dashboard .session-item__date strong { font: 600 23px/1 $font-heading; letter-spacing: -.04em; color: $ink; }
+.dashboard .session-item__content { min-width: 0; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 18px; align-items: center; padding: 0; }
+.dashboard .session-item__title { margin-bottom: 8px; font-family: $font-heading; font-size: 16px; font-weight: 600; line-height: 1.25; }
+.dashboard .session-item--canceled .session-item__title { color: $muted; }
+.dashboard .session-item__meta { gap: 8px; font-size: 12px; }
+.dashboard .session-item__time svg { color: $muted; width: 14px; height: 14px; }
+.dashboard .session-item .badge { border: 0; border-radius: 5px; padding: 4px 7px; font-size: 10px; font-weight: 600; }
+.dashboard .session-item .badge--completed { color: $secondary; background: rgba($secondary,.1); }
+.dashboard .session-item .badge--canceled { color: #b94432; background: rgba($coral,.1); }
+.dashboard .session-item__actions { flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.dashboard .session-item__actions .btn { min-height: 38px; padding: 8px 12px; border-radius: 7px; font-size: 11px; }
+.dashboard .session-item__actions .session-item__details { border-color: transparent; background: transparent; color: $muted; }
+.dashboard .session-item__actions .session-item__details:hover { color: $ink; background: $bg-soft; }
+.dashboard .session-item__actions .btn--primary { background: $coral; border-color: $coral; color: $navy; box-shadow: 0 5px 14px rgba($coral,.17); }
+.dashboard .session-item__actions .btn--primary:hover { background: $coral-dark; border-color: $coral-dark; color: $color-white; }
+.dashboard .session-item__actions .btn--danger { color: $muted; border-color: transparent; background: transparent; }
+.dashboard .session-item__actions .btn--danger:hover { color: $coral-dark; background: rgba($coral,.06); }
+
+@media (max-width: 760px) {
+  .dashboard .session-item { grid-template-columns: 4px 48px minmax(0,1fr); gap: 17px; padding-right: 12px; }
+  .dashboard .session-item__date { min-width: 48px; min-height: 52px; margin-left: 8px; }
+  .dashboard .session-item__date strong { font-size: 20px; }
+  .dashboard .session-item__content { grid-template-columns: 1fr; gap: 10px; }
+  .dashboard .session-item__actions { justify-content: flex-start; }
+}
+
+@media (max-width: 460px) {
+  .dashboard .session-item { grid-template-columns: 3px 42px minmax(0,1fr); gap: 14px; padding-right: 9px; }
+  .dashboard .session-item__date { min-width: 42px; min-height: 48px; margin-left: 6px; }
+  .dashboard .session-item__date span { font-size: 8px; }
+  .dashboard .session-item__date strong { font-size: 18px; }
+  .dashboard .session-item__title { font-size: 14px; }
+  .dashboard .session-item__meta { font-size: 10px; }
+}
+
 .dashboard .dashboard__header {
   display: flex;
   align-items: flex-start;

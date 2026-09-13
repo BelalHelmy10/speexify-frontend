@@ -478,6 +478,18 @@
   }
 }
 
+.placement-listening-format {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 4px 8px !important;
+  border: 1px solid rgba($brand, 0.22);
+  background: transparent !important;
+  color: $brand-dark;
+  font-size: 10px !important;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
 .placement-audio-player {
   width: 100%;
   min-height: 44px;

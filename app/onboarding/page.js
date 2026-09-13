@@ -66,6 +66,15 @@ const SKILLS = [
 ];
 
 const CONFIDENCE_SKILLS = ["Speaking", "Listening", "Reading", "Writing"];
+const AVAILABILITY_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const AVAILABILITY_DAY_LABELS_AR = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"];
+const AVAILABILITY_HOURS = Array.from({ length: 17 }, (_, index) => index + 8);
+const formatAvailabilityHour = (hour) => {
+  const normalized = hour === 24 ? 0 : hour;
+  const suffix = normalized < 12 ? "AM" : "PM";
+  const display = normalized % 12 || 12;
+  return `${display} ${suffix}`;
+};
 
 const DEFAULT_ANSWERS = {
   timezone: "",
@@ -430,6 +439,10 @@ export default function OnboardingPage() {
   const dict = getDictionary(locale, "onboarding");
   const copy = LOCAL_COPY[locale] || LOCAL_COPY.en;
   const isRTL = locale === "ar";
+  const availabilityDayLabels = locale === "ar" ? AVAILABILITY_DAY_LABELS_AR : AVAILABILITY_DAYS;
+  const availabilityText = locale === "ar"
+    ? { instruction: "اختار الساعات اللي بتكون متاح فيها عادةً.", clear: "مسح الكل", empty: "لم يتم اختيار أي ساعات بعد" }
+    : { instruction: "Select the hours that usually work for you.", clear: "Clear all", empty: "No hours selected yet" };
   const draftStorageKey = useMemo(
     () => (user?.id ? `${DRAFT_KEY}:${user.id}` : DRAFT_KEY),
     [user?.id]
@@ -440,6 +453,8 @@ export default function OnboardingPage() {
   }, [searchParams]);
 
   const [answers, setAnswers] = useState(DEFAULT_ANSWERS);
+  const [availabilitySlots, setAvailabilitySlots] = useState([]);
+  const availabilityGridRef = useRef(null);
   const [activeStep, setActiveStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -763,14 +778,14 @@ export default function OnboardingPage() {
               hint={t(dict, "field_availability_hint")}
               full
             >
-              <textarea
-                id="availability"
-                rows={4}
-                className="onboarding-field__textarea"
-                value={answers.availability}
-                onChange={(e) => updateAnswer({ availability: e.target.value })}
-                placeholder={t(dict, "field_availability_placeholder")}
-              />
+              <div className="onboarding-availability-grid" id="availability">
+                <div className="onboarding-availability-grid__toolbar"><span>{availabilityText.instruction}</span><div><button type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: -420, behavior: "smooth" })} aria-label="Show earlier times">←</button><button type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: 420, behavior: "smooth" })} aria-label="Show later times">→</button><button type="button" onClick={() => { setAvailabilitySlots([]); updateAnswer({ availability: "" }); }}>{availabilityText.clear}</button></div></div>
+                <div className="onboarding-availability-grid__scroll" ref={availabilityGridRef}>
+                  <div className="onboarding-availability-grid__head"><span />{AVAILABILITY_HOURS.map((hour) => <span key={hour}>{formatAvailabilityHour(hour)}</span>)}</div>
+                  {AVAILABILITY_DAYS.map((day, dayIndex) => <div className="onboarding-availability-grid__row" key={day}><strong>{availabilityDayLabels[dayIndex]}</strong>{AVAILABILITY_HOURS.map((hour) => { const slot = `${day} ${String(hour).padStart(2, "0")}:00`; const checked = availabilitySlots.includes(slot); return <label className={checked ? "is-selected" : ""} key={slot}><input type="checkbox" checked={checked} onChange={() => { const next = checked ? availabilitySlots.filter((item) => item !== slot) : [...availabilitySlots, slot]; setAvailabilitySlots(next); updateAnswer({ availability: next.join(", ") }); }} /><span aria-hidden="true" /></label>; })}</div>)}
+                </div>
+                <p className="onboarding-availability-grid__summary">{answers.availability || availabilityText.empty}</p>
+              </div>
             </Field>
           </div>
         );

@@ -123,9 +123,24 @@ export default function SessionRow({
       ? t(dict, "session_leave_title") || "Leave this group session"
       : t(dict, "session_cancel_title") || "Cancel session";
 
+  const sessionDate = s.startAt ? new Date(s.startAt) : null;
+  const dateLocale = prefix === "/ar" ? "ar" : "en-US";
+  const dateMonth = sessionDate && !Number.isNaN(sessionDate.getTime())
+    ? sessionDate.toLocaleDateString(dateLocale, { month: "short", timeZone: timezone || undefined })
+    : "";
+  const dateDay = sessionDate && !Number.isNaN(sessionDate.getTime())
+    ? sessionDate.toLocaleDateString(dateLocale, { day: "numeric", timeZone: timezone || undefined })
+    : "";
+
   return (
     <div className={`session-item session-item--${sessionTone}`}>
       <div className="session-item__indicator"></div>
+      {dateMonth && (
+        <div className="session-item__date" aria-label={`${dateMonth} ${dateDay}`}>
+          <span>{dateMonth}</span>
+          <strong>{dateDay}</strong>
+        </div>
+      )}
       <div className="session-item__content">
         <div className="session-item__main">
           <div className="session-item__title">
@@ -176,7 +191,7 @@ export default function SessionRow({
             <>
               <Link
                 href={`${prefix}/dashboard/sessions/${s.id}`}
-                className="btn btn--ghost"
+                className="btn btn--ghost session-item__details"
                 title={t(dict, "session_view_details") || "View session details"}
               >
                 {countdown || t(dict, "session_view_details") || "View session"}
@@ -225,7 +240,7 @@ export default function SessionRow({
             <>
               <Link
                 href={`${prefix}/dashboard/sessions/${s.id}`}
-                className="btn btn--ghost"
+                className="btn btn--ghost session-item__details"
               >
                 {t(dict, "session_view_details")}
                 <svg

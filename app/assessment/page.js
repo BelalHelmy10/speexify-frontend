@@ -389,6 +389,8 @@ const READING_PASSAGES = [
 const LISTENING_ITEMS = [
   {
     id: "l1",
+    format: "Listen and select",
+    focus: "Main idea and key detail",
     title: "Card replacement call",
     titleAr: "مكالمة استبدال كارت",
     audioSrc: "/audio/placement/card-replacement.wav",
@@ -429,6 +431,8 @@ const LISTENING_ITEMS = [
   },
   {
     id: "l2",
+    format: "Listen and select",
+    focus: "Specific information",
     title: "Balance check call",
     titleAr: "مكالمة معرفة الرصيد",
     audioSrc: "/audio/placement/balance-check.wav",
@@ -464,6 +468,8 @@ const LISTENING_ITEMS = [
   },
   {
     id: "l3",
+    format: "Extended listening",
+    focus: "Details and sequence",
     title: "Bill payment call",
     titleAr: "مكالمة دفع فاتورة",
     audioSrc: "/audio/placement/bill-payment.wav",
@@ -731,7 +737,7 @@ const ASSESSMENT_COPY = {
     sections: {
       language: { label: "Language in context", shortLabel: "Language", title: "How do you use English?", description: "A focused check of grammar, vocabulary, structure, and precision.", heading: "Language in context", intro: "Choose the sentence that sounds right. The questions become more challenging. Choose “I’m not sure” when you don’t know; this helps us see where support will be useful." },
       reading: { label: "Reading for meaning", shortLabel: "Reading", title: "Read between the lines.", description: "Short texts that test detail, inference, tone, and meaning in context.", heading: "Reading for meaning", intro: "Read each short text at your own pace. Look for the main idea, detail, inference, tone, and meaning in context." },
-      listening: { label: "Listening in real situations", shortLabel: "Listening", title: "Listen for what matters.", description: "Natural conversations with detail, intent, and real-world texture.", heading: "Listening in real situations", intro: "Each clip can be played twice. Listen for gist, detail, numbers, and what the speaker means." },
+      listening: { label: "Listening in real situations", shortLabel: "Listening", title: "Listen for what matters.", description: "Natural conversations with detail, intent, and real-world texture.", heading: "Listening in real situations", intro: "You will hear short and extended recordings twice. Start with the main idea, then listen for details, implied meaning, and the order of events. Questions follow the Cambridge-style placement formats." },
       speaking: { label: "Speaking in your own voice", shortLabel: "Speaking", title: "Let your voice do the work.", description: "A private recording gives your coach evidence of real spoken English.", heading: "Speaking in your own voice", intro: "Record one natural response. Your coach will review it for fluency, range, pronunciation, and clarity. Interaction is checked in a live conversation." },
       writing: { label: "Writing with a real purpose", shortLabel: "Writing", title: "Show how you communicate.", description: "A writing task chosen for your life, reviewed by a coach.", heading: "Writing with a real purpose", intro: `Choose the situation that feels closest to your life. Write ${WRITING_TARGET} words; your coach will review organization, control, range, and clarity.` },
     },
@@ -1366,7 +1372,7 @@ function AssessmentExperience() {
               const title = getListeningTitle(item);
               return (
                 <article className="placement-listening" key={item.id}>
-                  <div className="placement-listening-header"><div><h3>{title}</h3><p>{getListeningSourceNote(item)}</p></div><span>{getListeningDuration(item)} · {copy.playsLeft(Math.max(0, 2 - Number(listeningPlays[item.id] || 0)))}</span></div>
+                  <div className="placement-listening-header"><div><span className="placement-listening-format">{item.format}</span><h3>{title}</h3><p>{getListeningSourceNote(item)} · {item.focus}</p></div><span>{getListeningDuration(item)} · {copy.playsLeft(Math.max(0, 2 - Number(listeningPlays[item.id] || 0)))}</span></div>
                   <audio ref={(node) => { listeningAudioRefs.current[item.id] = node; }} preload="metadata" src={item.audioSrc}
                     onTimeUpdate={(event) => { const time = Math.floor(event.currentTarget.currentTime); setAudioPositions((current) => current[item.id] === time ? current : { ...current, [item.id]: time }); }}
                     onEnded={() => { setPlayingId(null); setAudioPositions((current) => ({ ...current, [item.id]: 0 })); }}

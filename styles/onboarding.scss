@@ -946,3 +946,21 @@ body:has(.onboarding-wrapper) .site-footer-wrapper {
     flex-direction: column;
   }
 }
+.onboarding-availability-grid { display: grid; gap: 14px; padding: 16px; border: 1px solid rgba($brand, .22); border-radius: 16px; background: $color-white; }
+.onboarding-availability-grid__toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: $text-secondary; font-size: 13px; }
+.onboarding-availability-grid__toolbar > div { display: flex; align-items: center; gap: 6px; }
+.onboarding-availability-grid__toolbar button { border: 1px solid rgba($brand, .2); border-radius: 7px; background: $color-white; color: $brand-dark; padding: 6px 9px; font-weight: 700; cursor: pointer; }
+.onboarding-availability-grid__toolbar button:hover { border-color: $brand; background: rgba($brand, .06); }
+.onboarding-availability-grid__toolbar button:last-child { border: 0; background: transparent; padding-inline: 4px; }
+.onboarding-availability-grid__scroll { overflow-x: auto; padding-bottom: 4px; }
+.onboarding-availability-grid__head, .onboarding-availability-grid__row { display: grid; grid-template-columns: 92px repeat(17, minmax(48px, 1fr)); min-width: 950px; gap: 5px; align-items: center; }
+.onboarding-availability-grid__head { margin-bottom: 6px; color: $text-muted; font-size: 10px; text-align: center; }
+.onboarding-availability-grid__row { min-height: 38px; }
+.onboarding-availability-grid__row strong { color: $text-primary; font-size: 13px; }
+.onboarding-availability-grid__row label { display: grid; place-items: center; height: 34px; border: 1px solid rgba($border, .9); border-radius: 7px; background: $bg-soft; cursor: pointer; transition: .16s ease; }
+.onboarding-availability-grid__row label:hover { border-color: rgba($brand, .5); }
+.onboarding-availability-grid__row label.is-selected { border-color: $brand; background: $brand; box-shadow: 0 4px 10px rgba($brand, .18); }
+.onboarding-availability-grid__row input { position: absolute; opacity: 0; pointer-events: none; }
+.onboarding-availability-grid__row label span { width: 7px; height: 7px; border-radius: 50%; background: rgba($text-muted, .28); }
+.onboarding-availability-grid__row label.is-selected span { background: $color-white; }
+.onboarding-availability-grid__summary { margin: 0; padding: 11px 12px; border-radius: 9px; background: $bg-soft; color: $text-secondary; font-size: 12px; }
