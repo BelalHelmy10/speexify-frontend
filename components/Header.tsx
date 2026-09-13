@@ -299,7 +299,9 @@ export default function Header() {
   ];
 
   const links =
-    !user
+    authPending
+      ? []
+      : !user
       ? loggedOut
       : user.role === "admin"
         ? admin
@@ -475,6 +477,11 @@ export default function Header() {
         />
 
         <nav className="spx-nav">
+          {authPending && (
+            <span className="spx-auth-restoring" role="status" aria-live="polite">
+              {isArabic ? "جارٍ استعادة جلستك…" : "Restoring your session…"}
+            </span>
+          )}
           <ul className="spx-nav-list">
             {links.map((item, idx) => {
               const href = localizeHref(item.to, locale);
