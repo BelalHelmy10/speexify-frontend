@@ -1924,6 +1924,16 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   }
 }
 
+/* Refined desktop navigation: calm active state and clearer utility controls. */
+@media (min-width: 1024px) {
+  .spx-nav-list { gap: 8px; }
+  .spx-nav-link.spx-is-active { color: $brand-dark; }
+  .spx-nav-link.spx-is-active .spx-link-bg { background: rgba($brand, .09); border: 1px solid rgba($brand, .18); box-shadow: 0 3px 10px rgba($brand, .08); }
+  .spx-nav-item-lang { margin-left: 10px; }
+  .spx-nav-item-clock { opacity: .78; transform: scale(.94); transform-origin: center; }
+  .spx-nav-item-notif { margin-left: 2px; }
+}
+
 /* High contrast mode support (kept) */
 @media (prefers-contrast: high) {
   .spx-header-container {
