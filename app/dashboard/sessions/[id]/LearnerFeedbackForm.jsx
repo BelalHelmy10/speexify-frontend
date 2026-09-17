@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Info, Star, X } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
+import { getIntlLocale } from "@/utils/locale";
 
 /**
  * LearnerFeedbackForm - Post-session feedback form for learners
@@ -30,6 +31,7 @@ export default function LearnerFeedbackForm({
   sessionDate,
   onSubmit,
   onClose,
+  locale = "en",
 }) {
   const toast = useToast();
 
@@ -162,7 +164,7 @@ export default function LearnerFeedbackForm({
 
   // Format session date
   const formattedDate = sessionDate
-    ? new Date(sessionDate).toLocaleDateString(undefined, {
+    ? new Date(sessionDate).toLocaleDateString(getIntlLocale(locale), {
         weekday: "long",
         month: "long",
         day: "numeric",
@@ -285,7 +287,7 @@ export default function LearnerFeedbackForm({
             <Info aria-hidden="true" size={16} strokeWidth={2.2} />
             <span>
               You submitted feedback on{" "}
-              {new Date(existingFeedback.createdAt).toLocaleDateString()}. You
+              {new Date(existingFeedback.createdAt).toLocaleDateString(getIntlLocale(locale))}. You
               can update it anytime.
             </span>
           </p>
@@ -306,6 +308,7 @@ export function LearnerFeedbackModal({
   sessionDate,
   onSubmit,
   onClose,
+  locale = "en",
 }) {
   useEffect(() => {
     if (!isOpen) return;
@@ -342,6 +345,7 @@ export function LearnerFeedbackModal({
           sessionTitle={sessionTitle}
           teacherName={teacherName}
           sessionDate={sessionDate}
+          locale={locale}
           onSubmit={() => {
             if (typeof onSubmit === "function") onSubmit();
             if (typeof onClose === "function") onClose();

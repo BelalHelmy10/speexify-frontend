@@ -10,6 +10,7 @@ import { getDictionary, t } from "@/app/i18n";
 import { useToast } from "@/components/ToastProvider";
 import useAuth from "@/hooks/useAuth";
 import { getSafeExternalUrl } from "@/utils/url";
+import { getIntlLocale } from "@/utils/locale";
 import { LearnerFeedbackModal } from "./LearnerFeedbackForm";
 import SessionDetailLayout from "./SessionDetailLayout";
 import {
@@ -107,7 +108,7 @@ export default function SessionDetailPage() {
       if (!value) return txt("datetime_na", "N/A");
       const d = new Date(value);
       if (Number.isNaN(d.getTime())) return String(value);
-      return d.toLocaleString(locale === "ar" ? "ar" : undefined, {
+      return d.toLocaleString(getIntlLocale(locale), {
         weekday: "short",
         month: "short",
         day: "numeric",
@@ -122,7 +123,7 @@ export default function SessionDetailPage() {
   const formatOpensTime = useCallback(
     (date) => {
       if (!date) return "";
-      return date.toLocaleTimeString(locale === "ar" ? "ar" : undefined, {
+      return date.toLocaleTimeString(getIntlLocale(locale), {
         hour: "2-digit",
         minute: "2-digit",
       });
@@ -471,6 +472,7 @@ export default function SessionDetailPage() {
         sessionTitle={sessionTitle}
         teacherName={teacher?.name}
         sessionDate={startAt}
+        locale={locale}
         onSubmit={() => {
           checkLearnerFeedback();
           loadSession();

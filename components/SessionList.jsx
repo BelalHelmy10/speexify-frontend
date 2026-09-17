@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import SessionCard from "./SessionCard";
 import { useToast } from "@/components/ToastProvider";
 import useAuth from "@/hooks/useAuth";
+import { getIntlLocale } from "@/utils/locale";
 
 /**
  * SessionList - Displays a list of sessions with filtering and pagination
@@ -72,7 +73,7 @@ export default function SessionList({
   const groupedSessions = filteredSessions.reduce((groups, session) => {
     const date = session.startAt
       ? new Date(session.startAt).toLocaleDateString(
-        locale === "ar" ? "ar-EG" : "en-US",
+        getIntlLocale(locale),
         {
           weekday: "long",
           month: "long",

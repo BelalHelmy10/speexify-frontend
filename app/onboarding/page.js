@@ -21,6 +21,7 @@ import api from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
 import { trackEvent } from "@/lib/analytics";
 import { getDictionary, t } from "@/app/i18n";
+import { getIntlLocale } from "@/utils/locale";
 import useAuth from "@/hooks/useAuth";
 
 const DRAFT_KEY = "speexify_onboarding_draft_v2";
@@ -382,11 +383,11 @@ function hasDraftProgress(answers) {
   );
 }
 
-function formatSavedAt(copy, value) {
+function formatSavedAt(copy, value, locale) {
   if (!value) return copy.saveIdle;
   return copy.savedAt.replace(
     "{time}",
-    value.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    value.toLocaleTimeString(getIntlLocale(locale), { hour: "numeric", minute: "2-digit" })
   );
 }
 
@@ -1178,7 +1179,7 @@ export default function OnboardingPage() {
             </div>
             <div>
               <Save aria-hidden="true" />
-              <span>{formatSavedAt(copy, lastSavedAt)}</span>
+              <span>{formatSavedAt(copy, lastSavedAt, locale)}</span>
             </div>
           </div>
 

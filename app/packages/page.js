@@ -18,6 +18,7 @@ import {
 import { oneOnOnePlans, groupPlans, corporatePlans } from "@/lib/plans";
 import { getPricingRegion } from "@/lib/pricing-regions";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { formatNumber } from "@/utils/locale";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
@@ -427,12 +428,12 @@ function Packages() {
                 onChange={(e) => setSeats(Number(e.target.value))}
               />
               <div className="ecp-estimator__value">
-                {seats} {t(dict, "estimator_employees", "employees")}
+                {formatNumber(seats, locale)} {t(dict, "estimator_employees", "employees")}
               </div>
             </div>
             <div className="ecp-estimator__result">
               <div className="ecp-estimator__number">
-                ~${corpEstimate.toLocaleString()}/
+                ~${formatNumber(corpEstimate, locale)}/
                 {t(dict, "estimator_period", "mo")}
               </div>
               <Link

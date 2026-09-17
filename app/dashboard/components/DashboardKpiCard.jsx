@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatNumber } from "@/utils/locale";
 
 // Squircle (rounded-square) progress ring framing each stat glyph.
 // Drawn in a 0 0 100 100 box; the icon is centered on top.
@@ -21,6 +22,7 @@ const prefersReducedMotion = () =>
  * @param {ReactNode}  icon     Glyph rendered inside the ring.
  * @param {ReactNode}  footer   Status row beneath the divider.
  * @param {number}     index    Position (0-based) for entrance stagger.
+ * @param {string}     locale   Display locale for the animated figure.
  */
 export default function DashboardKpiCard({
   eyebrow,
@@ -29,6 +31,7 @@ export default function DashboardKpiCard({
   icon,
   footer,
   index = 0,
+  locale = "en",
 }) {
   const target = Number(value) || 0;
   const [display, setDisplay] = useState(target);
@@ -88,7 +91,7 @@ export default function DashboardKpiCard({
       <div className="dashboard__stat-top">
         <div className="dashboard__stat-headings">
           <div className="dashboard__stat-eyebrow">{eyebrow}</div>
-          <span className="dashboard__stat-value">{display}</span>
+          <span className="dashboard__stat-value">{formatNumber(display, locale)}</span>
         </div>
 
         <div className="dashboard__stat-ring" aria-hidden="true">

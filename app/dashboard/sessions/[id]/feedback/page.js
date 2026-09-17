@@ -41,6 +41,7 @@ import {
   getReportFromFeedback,
   serializeRichFeedbackComments,
 } from "@/lib/feedbackReport";
+import { getIntlLocale } from "@/utils/locale";
 import "@/styles/session-feedback.scss";
 
 const CATEGORY_CONFIG = [
@@ -1261,7 +1262,7 @@ export default function SessionFeedbackPage() {
     if (!start) return "";
     const d = new Date(start);
     if (Number.isNaN(d.getTime())) return "";
-    return d.toLocaleString(undefined, {
+    return d.toLocaleString(getIntlLocale(locale), {
       dateStyle: "medium",
       timeStyle: "short",
     });

@@ -1,3 +1,5 @@
+import { formatNumber } from "@/utils/locale";
+
 export const SESSION_TIME_WARNING = {
   SOFT: "soft",
   HARD: "hard",
@@ -11,32 +13,32 @@ export function parseTimestampMs(value) {
   return Number.isFinite(timestamp) ? timestamp : null;
 }
 
-export function formatSessionClock(totalSeconds) {
+export function formatSessionClock(totalSeconds, locale = "en") {
   const safeSeconds = Math.max(0, Math.floor(Number(totalSeconds) || 0));
   const hours = Math.floor(safeSeconds / 3600);
   const minutes = Math.floor((safeSeconds % 3600) / 60);
   const seconds = safeSeconds % 60;
-  const pad = (n) => String(n).padStart(2, "0");
+  const pad = (n) => formatNumber(n, locale).padStart(2, locale === "ar" ? "٠" : "0");
 
   return hours > 0
     ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
     : `${pad(minutes)}:${pad(seconds)}`;
 }
 
-export function formatCompactDuration(totalSeconds) {
+export function formatCompactDuration(totalSeconds, locale = "en") {
   const safeSeconds = Math.max(0, Math.floor(Number(totalSeconds) || 0));
   const hours = Math.floor(safeSeconds / 3600);
   const minutes = Math.floor((safeSeconds % 3600) / 60);
 
   if (hours > 0) {
-    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    return minutes > 0 ? `${formatNumber(hours, locale)}h ${formatNumber(minutes, locale)}m` : `${formatNumber(hours, locale)}h`;
   }
 
-  if (minutes > 0) return `${minutes}m`;
+  if (minutes > 0) return `${formatNumber(minutes, locale)}m`;
   return "<1m";
 }
 
-export function getSessionTiming({ startedAt, endAt, nowMs = Date.now() } = {}) {
+export function getSessionTiming({ startedAt, endAt, nowMs = Date.now(), locale = "en" } = {}) {
   const startMs = parseTimestampMs(startedAt);
   const endMs = parseTimestampMs(endAt);
   const elapsedSeconds = startMs
@@ -65,13 +67,13 @@ export function getSessionTiming({ startedAt, endAt, nowMs = Date.now() } = {}) 
     startMs,
     endMs,
     elapsedSeconds,
-    elapsedLabel: formatSessionClock(elapsedSeconds),
+    elapsedLabel: formatSessionClock(elapsedSeconds, locale),
     remainingSeconds,
     remainingLabel:
-      remainingSeconds === null ? "" : formatSessionClock(remainingSeconds),
+      remainingSeconds === null ? "" : formatSessionClock(remainingSeconds, locale),
     scheduledSeconds,
     scheduledLabel:
-      scheduledSeconds === null ? "" : formatCompactDuration(scheduledSeconds),
+      scheduledSeconds === null ? "" : formatCompactDuration(scheduledSeconds, locale),
     hasStarted,
     hasEnded,
     warningLevel,

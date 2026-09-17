@@ -1503,6 +1503,18 @@ export default function PrepVideoCall({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, hasJoined]); // Jitsi mounts only after the custom prejoin lobby
 
+  // Keep the external call identity in sync if auth data arrives after the
+  // prejoin UI mounted. This is especially important for group classrooms:
+  // each learner must remain labeled as their own account.
+  useEffect(() => {
+    if (!hasJoined || !userName || !apiRef.current) return;
+    try {
+      apiRef.current.executeCommand?.("displayName", userName);
+    } catch {
+      // Ignore transient Jitsi command errors during connection setup.
+    }
+  }, [hasJoined, userName]);
+
   if (!hasJoined) {
     const networkClass = `cr-prejoin__network cr-prejoin__network--${networkStatus.state}`;
     const levelPercent = Math.round(micLevel * 100);

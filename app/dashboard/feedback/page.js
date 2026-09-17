@@ -78,7 +78,7 @@ function TeacherAvatar({ name, url }) {
   );
 }
 
-function FeedbackCard({ item, timezone, prefix, dict }) {
+function FeedbackCard({ item, timezone, prefix, dict, locale }) {
   const fb = item.feedback;
   const commentsOnSession = stripRichFeedbackPayload(fb.commentsOnSession || "");
   const hasMessage = !!fb.messageToLearner?.trim();
@@ -94,7 +94,7 @@ function FeedbackCard({ item, timezone, prefix, dict }) {
             {t(dict, "from_coach")?.replace("{name}", item.teacher?.name || "Your coach")}
           </span>
           <span className="fb-card__date">
-            {item.startAt ? fmtInTz(item.startAt, timezone) : ""}
+            {item.startAt ? fmtInTz(item.startAt, timezone, locale) : ""}
           </span>
         </div>
         <Link
@@ -258,6 +258,7 @@ export default function FeedbackHistoryPage() {
                   timezone={timezone}
                   prefix={prefix}
                   dict={dict}
+                  locale={locale}
                 />
               ))}
             </div>

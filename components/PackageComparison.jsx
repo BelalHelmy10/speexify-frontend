@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import Link from "next/link";
 import { routeHref, APP_ROUTES } from "@/lib/routes";
+import { formatNumber } from "@/utils/locale";
 import "@/styles/package-comparison.scss";
 
 // Curated groups reference the semicolon-separated editorial features in
@@ -60,7 +61,7 @@ const COPY = {
     groupNote: "كل باقة جماعية بتقدّم نفس التدريب والدعم. الاختلاف في عدد الجلسات والسعر.",
     corporateSubtitle: "قارن نطاق البرامج والتقارير والدعم لفريقك.",
     shared: "في كل باقة", individual: "تدريب فردي مباشر · الدفع مقدمًا بالجنيه المصري",
-    group: "ممارسة مباشرة في مجموعات من 2–5 · الدفع مقدمًا بالجنيه المصري",
+    group: "ممارسة مباشرة في مجموعات من ٢–٥ · الدفع مقدمًا بالجنيه المصري",
     corporate: "برامج للفرق · السعر حسب العرض",
     first: "الباقة الأولى", second: "قارن مع", detail: "تجربتك",
     recommended: "الأكثر اختيارًا", total: "إجمالي الباقة", perSession: "للجلسة",
@@ -98,7 +99,7 @@ export default function PackageComparison({ plans, kind, locale, prices, loading
       if (!ready) return <span className="pcx-muted">{loading ? c.loading : c.unavailable}</span>;
       return <span className="pcx-price" dir="auto">{field === "total" ? prices[i]?.totalLabel : prices[i]?.perSessionLabel}</span>;
     }
-    if (field === "sessions") return <><strong>{plan.sessionsPerPack}</strong><small>{plan.durationMin} {c.minutes}</small></>;
+    if (field === "sessions") return <><strong>{formatNumber(plan.sessionsPerPack, locale)}</strong><small>{formatNumber(plan.durationMin, locale)} {c.minutes}</small></>;
     const indices = config.plans[plan.id]?.[config.fields.indexOf(field)] || [];
     const features = (plan.featuresRaw || "").split(/;|\r?\n/).map(s => s.trim()).filter(Boolean);
     const values = indices.map(index => features[index]).filter(Boolean);

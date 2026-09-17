@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import api, { clearCsrfToken } from "@/lib/api";
 import { fmtInTz, fmtSessionSchedule } from "@/utils/date";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 import { useToast } from "@/components/ToastProvider";
 import { getDictionary, t } from "@/app/i18n";
 import SessionRow from "./components/SessionRow";
@@ -499,6 +500,23 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
     teachSummary.nextTeach &&
     canJoin(teachSummary.nextTeach.startAt, teachSummary.nextTeach.endAt);
 
+  const teachingLearners = Array.isArray(teachSummary.nextTeach?.learners)
+    ? teachSummary.nextTeach.learners
+    : [];
+  const teachingParticipantCount = Number(
+    teachSummary.nextTeach?.participantCount || teachingLearners.length || 0
+  );
+  const teachingLearnerLabel =
+    teachingParticipantCount > 1
+      ? t(dict, "teaching_learner_count", { count: formatNumber(teachingParticipantCount, locale) })
+      : teachingLearners[0]
+        ? [teachingLearners[0].name, teachingLearners[0].email]
+            .filter(Boolean)
+            .join(" · ")
+        : teachingParticipantCount === 1
+          ? t(dict, "teaching_one_learner")
+          : t(dict, "teaching_no_learner");
+
   const activePacks = packs.filter((p) => p.status === "active" && !p.expired);
   const totalSessions = activePacks.reduce(
     (s, p) => s + Number(p.sessionsTotal || 0),
@@ -516,7 +534,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
   const primaryPack = activePacks[0];
   const expiryLabel = primaryPack?.expiresAt
-    ? new Date(primaryPack.expiresAt).toLocaleDateString()
+    ? new Date(primaryPack.expiresAt).toLocaleDateString(getIntlLocale(locale))
     : null;
 
   const outOfCredits = remainingSessions <= 0;
@@ -871,10 +889,10 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
               dateTime={new Date().toISOString().slice(0, 10)}
             >
               <span className="dashboard__date-weekday">
-                {new Date().toLocaleDateString(locale === "ar" ? "ar" : "en", { weekday: "long" })}
+                {new Date().toLocaleDateString(getIntlLocale(locale), { weekday: "long" })}
               </span>
               <span className="dashboard__date-main">
-                {new Date().toLocaleDateString(locale === "ar" ? "ar" : "en", { month: "long", day: "numeric" })}
+                {new Date().toLocaleDateString(getIntlLocale(locale), { month: "long", day: "numeric" })}
               </span>
             </time>
             {isTeacher && (
@@ -964,6 +982,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
             <DashboardKpiCard
               eyebrow={t(dict, "kpi_upcoming")}
               value={upcomingCount}
+              locale={locale}
               tone="upcoming"
               index={0}
               icon={
@@ -991,7 +1010,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                   <span className="dashboard__stat-status-text">
                     {upcomingCount === 0
                       ? t(dict, "kpi_foot_none_scheduled")
-                      : t(dict, "kpi_foot_scheduled", { count: upcomingCount })}
+                      : t(dict, "kpi_foot_scheduled", { count: formatNumber(upcomingCount, locale) })}
                   </span>
                 </span>
               }
@@ -1000,6 +1019,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
             <DashboardKpiCard
               eyebrow={t(dict, "kpi_completed")}
               value={completedCount}
+              locale={locale}
               tone="completed"
               index={1}
               icon={
@@ -1029,6 +1049,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
             <DashboardKpiCard
               eyebrow={t(dict, "kpi_total")}
               value={kpiTotal}
+              locale={locale}
               tone="total"
               index={2}
               icon={
@@ -1052,7 +1073,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                     <span className="dashboard__stat-dot dashboard__stat-dot--green" />
                     <span className="dashboard__stat-status-text">
                       {t(dict, "kpi_foot_completed_count", {
-                        count: completedCount,
+                        count: formatNumber(completedCount, locale),
                       })}
                     </span>
                   </span>
@@ -1060,7 +1081,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                     <span className="dashboard__stat-dot dashboard__stat-dot--orange" />
                     <span className="dashboard__stat-status-text">
                       {t(dict, "kpi_foot_upcoming_count", {
-                        count: upcomingCount,
+                        count: formatNumber(upcomingCount, locale),
                       })}
                     </span>
                   </span>
@@ -1164,7 +1185,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                     {primaryPack?.minutesPerSession && (
                       <span className="plan-card__meta-item">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        {primaryPack.minutesPerSession} min / session
+                        {formatNumber(primaryPack.minutesPerSession, locale)} min / session
                       </span>
                     )}
                     {expiryLabel && (
@@ -1179,7 +1200,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                 {/* ── Sessions counter + XP bar ── */}
                 <div className="plan-xp-block">
                   <div className="plan-xp-block__counter">
-                    <span className="plan-xp-block__num">{remainingSessions}</span>
+                    <span className="plan-xp-block__num">{formatNumber(remainingSessions, locale)}</span>
                     <span className="plan-xp-block__lbl">sessions<br/>remaining</span>
                   </div>
                   <div className="plan-xp-block__bar-wrap">
@@ -1190,8 +1211,8 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                       />
                     </div>
                     <div className="plan-xp-bar__legend">
-                      <span>{usedSessions} used</span>
-                      <span>{totalSessions} total</span>
+                      <span>{formatNumber(usedSessions, locale)} used</span>
+                      <span>{formatNumber(totalSessions, locale)} total</span>
                     </div>
                   </div>
                 </div>
@@ -1334,9 +1355,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
-                    {teachSummary.nextTeach.user?.name
-                      ? `${teachSummary.nextTeach.user.name} · ${teachSummary.nextTeach.user.email}`
-                      : teachSummary.nextTeach.user?.email || "—"}
+                    {teachingLearnerLabel}
                   </div>
                 </div>
                 <div className="button-row">
@@ -1393,7 +1412,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
               <h3>{t(dict, "upcoming_title")}</h3>
               {upcoming.length > 0 && (
                 <span className="session-count">
-                  {upcoming.length}{" "}
+                  {formatNumber(upcoming.length, locale)}{" "}
                   {upcoming.length === 1 ? "session" : "sessions"}
                 </span>
               )}
@@ -1467,7 +1486,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
               <h3>{t(dict, "past_title")}</h3>
               {past.length > 0 && (
                 <span className="session-count">
-                  {past.length} {past.length === 1 ? "session" : "sessions"}
+                  {formatNumber(past.length, locale)} {past.length === 1 ? "session" : "sessions"}
                 </span>
               )}
             </div>
@@ -1521,7 +1540,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                   >
                     <span>
                       {t(dict, "past_archive_view_all_count", {
-                        count: pastArchiveCount,
+                        count: formatNumber(pastArchiveCount, locale),
                       })}
                     </span>
                     <svg

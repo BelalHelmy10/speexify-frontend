@@ -34,6 +34,7 @@ import {
 import useAuth from "@/hooks/useAuth";
 import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
 import SpeexifyLogoMark from "@/components/SpeexifyLogoMark";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 import "@/styles/support-widget.scss";
 
 const CATEGORIES = [
@@ -78,15 +79,15 @@ function isImageFile(mimeType, fileName) {
 }
 
 // Format file size
-function formatFileSize(bytes) {
-  if (bytes === 0) return "0 B";
+function formatFileSize(bytes, locale = "en") {
+  if (bytes === 0) return `${formatNumber(0, locale)} B`;
   const k = 1024;
   const sizes = ["B", "KB", "MB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  return `${formatNumber(Math.round((bytes / Math.pow(k, i)) * 100) / 100, locale)} ${sizes[i]}`;
 }
 
-const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick }) => {
+const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick, locale = "en" }) => {
   const hasAttachments = message.attachments?.length > 0;
   const [failedImages, setFailedImages] = useState(() => new Set());
 
@@ -146,7 +147,7 @@ const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick }) => {
                   </div>
                   {a.fileSize && (
                     <div className="sw-message__file-size">
-                      {formatFileSize(a.fileSize)}
+                      {formatFileSize(a.fileSize, locale)}
                     </div>
                   )}
                 </div>
@@ -158,7 +159,7 @@ const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick }) => {
       )}
 
       <div className="sw-message__time">
-        {new Date(message.createdAt).toLocaleTimeString([], {
+        {new Date(message.createdAt).toLocaleTimeString(getIntlLocale(locale), {
           hour: "2-digit",
           minute: "2-digit",
         })}
@@ -1038,6 +1039,7 @@ export default function SupportWidget({ hideMobileFab = false }) {
                       onImageClick={(url, name) =>
                         setLightboxImage({ url, name })
                       }
+                      locale={isArabic ? "ar" : "en"}
                     />
                   ))}
 
@@ -1214,7 +1216,7 @@ export default function SupportWidget({ hideMobileFab = false }) {
                         )}
 
                         <div className="sw-ticket-card__time">
-                          {new Date(t.updatedAt).toLocaleDateString()}
+                          {new Date(t.updatedAt).toLocaleDateString(getIntlLocale(isArabic ? "ar" : "en"))}
                         </div>
                       </button>
                     ))}

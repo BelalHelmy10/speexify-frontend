@@ -8,6 +8,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useToast } from "@/components/ToastProvider";
 import useAuth from "@/hooks/useAuth";
 import { loadPlacementAudio, savePlacementAudio, clearPlacementAudio } from "@/lib/placementAudioDraft";
+import { formatNumber } from "@/utils/locale";
 
 const PLACEMENT_VERSION = "speexify-placement-v1";
 const DRAFT_KEY = "speexifyPlacementDraft_v1";
@@ -604,10 +605,11 @@ function getListeningQuestions() {
   return LISTENING_ITEMS.flatMap((item) => item.questions);
 }
 
-function formatTime(seconds) {
+function formatTime(seconds, locale = "en") {
   const mins = Math.floor(seconds / 60);
-  const secs = String(seconds % 60).padStart(2, "0");
-  return `${mins}:${secs}`;
+  const zero = locale === "ar" ? "٠" : "0";
+  const secs = formatNumber(seconds % 60, locale).padStart(2, zero);
+  return `${formatNumber(mins, locale)}:${secs}`;
 }
 
 function safeObject(value) {
@@ -1396,7 +1398,7 @@ function AssessmentExperience() {
               <h2 id="placement-section-speaking">{getSectionCopy(3).heading}</h2>
               <p>{getSectionCopy(3).intro}</p>
             </header>
-            <div className="placement-speaking-task"><div><h3>{copy.speakingPromptTitle}</h3><p>{copy.speakingPromptBody}</p><p className="placement-speaking-note">{copy.speakingNote}</p></div><div className="placement-timer"><strong aria-label={copy.recordingDurationLabel}>{formatTime(speakingSeconds)}</strong>{recording ? <button type="button" className="placement-primary-button" onClick={stopRecording}>{copy.stopRecording}</button> : <button type="button" className="placement-primary-button" onClick={startRecording} disabled={recordingBusy}>{speakingRecording ? copy.recordAgain : copy.recordResponse}</button>}<button type="button" className="placement-secondary-button" onClick={resetRecording} disabled={recordingBusy}>{copy.reset}</button></div></div>
+            <div className="placement-speaking-task"><div><h3>{copy.speakingPromptTitle}</h3><p>{copy.speakingPromptBody}</p><p className="placement-speaking-note">{copy.speakingNote}</p></div><div className="placement-timer"><strong aria-label={copy.recordingDurationLabel}>{formatTime(speakingSeconds, locale)}</strong>{recording ? <button type="button" className="placement-primary-button" onClick={stopRecording}>{copy.stopRecording}</button> : <button type="button" className="placement-primary-button" onClick={startRecording} disabled={recordingBusy}>{speakingRecording ? copy.recordAgain : copy.recordResponse}</button>}<button type="button" className="placement-secondary-button" onClick={resetRecording} disabled={recordingBusy}>{copy.reset}</button></div></div>
             <label className="placement-live-option"><input type="checkbox" checked={speakingMode === "live"} disabled={recording || recordingBusy} onChange={(event) => { setSpeakingMode(event.target.checked ? "live" : "recording"); setAutosaveEnabled(true); }} /><span>{copy.liveOption}</span></label>
             {recordingError && <p className="placement-recording-error" role="alert">{recordingError}</p>}
             {speakingRecording?.url && <div className="placement-recording-preview"><span>{copy.recordingReady}</span><audio controls src={speakingRecording.url} /></div>}

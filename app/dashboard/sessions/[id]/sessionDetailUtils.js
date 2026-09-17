@@ -1,5 +1,7 @@
 /** Shared session detail helpers */
 
+import { getIntlLocale } from "@/utils/locale";
+
 export function formatDuration(startAt, endAt) {
   if (!startAt || !endAt) return "";
   const diffMs = new Date(endAt).getTime() - new Date(startAt).getTime();
@@ -39,7 +41,7 @@ export function formatHeroDate(startAt, locale = "en") {
   if (!startAt) return "";
   try {
     return new Date(startAt).toLocaleDateString(
-      locale === "ar" ? "ar-EG" : "en-US",
+      getIntlLocale(locale),
       { weekday: "short", month: "short", day: "numeric", year: "numeric" }
     );
   } catch {

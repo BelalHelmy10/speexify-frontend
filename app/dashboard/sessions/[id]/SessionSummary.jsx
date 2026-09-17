@@ -6,6 +6,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { SessionIcon } from "./SessionDetailUI";
 import { stripRichFeedbackPayload } from "@/lib/feedbackReport";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 
 /**
  * SessionSummary - Comprehensive view of everything that happened in a session
@@ -90,7 +91,7 @@ export default function SessionSummary({
   // Format date
   const sessionDate = session.startAt
     ? new Date(session.startAt).toLocaleDateString(
-        locale === "ar" ? "ar-EG" : "en-US",
+        locale === "ar" ? "ar-EG-u-nu-arab" : "en-US",
         {
           weekday: "long",
           year: "numeric",
@@ -102,7 +103,7 @@ export default function SessionSummary({
 
   const sessionTime = session.startAt
     ? new Date(session.startAt).toLocaleTimeString(
-        locale === "ar" ? "ar-EG" : "en-US",
+        locale === "ar" ? "ar-EG-u-nu-arab" : "en-US",
         {
           hour: "2-digit",
           minute: "2-digit",
@@ -159,25 +160,25 @@ export default function SessionSummary({
           <div className="session-summary__attendance-stats">
             <div className="session-summary__stat session-summary__stat--attended">
               <span className="session-summary__stat-value">
-                {attendance.attended}
+                {formatNumber(attendance.attended, locale)}
               </span>
               <span className="session-summary__stat-label">Attended</span>
             </div>
             <div className="session-summary__stat session-summary__stat--noshow">
               <span className="session-summary__stat-value">
-                {attendance.noShow}
+                {formatNumber(attendance.noShow, locale)}
               </span>
               <span className="session-summary__stat-label">No Show</span>
             </div>
             <div className="session-summary__stat session-summary__stat--excused">
               <span className="session-summary__stat-value">
-                {attendance.excused}
+                {formatNumber(attendance.excused, locale)}
               </span>
               <span className="session-summary__stat-label">Excused</span>
             </div>
             <div className="session-summary__stat session-summary__stat--total">
               <span className="session-summary__stat-value">
-                {attendance.total}
+                {formatNumber(attendance.total, locale)}
               </span>
               <span className="session-summary__stat-label">Total</span>
             </div>
@@ -230,7 +231,7 @@ export default function SessionSummary({
                 </span>
                 {resource.firstOpenedAt && (
                   <span className="session-summary__resource-time">
-                    {new Date(resource.firstOpenedAt).toLocaleTimeString([], {
+                    {new Date(resource.firstOpenedAt).toLocaleTimeString(getIntlLocale(locale), {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
@@ -328,7 +329,7 @@ export default function SessionSummary({
                     <RatingStars value={learnerFeedback.averageRating || 0} />
                   </span>
                   <span className="session-summary__rating-count">
-                    ({learnerFeedback.count}{" "}
+                    ({formatNumber(learnerFeedback.count, locale)}{" "}
                     {learnerFeedback.count === 1 ? "rating" : "ratings"})
                   </span>
                 </div>

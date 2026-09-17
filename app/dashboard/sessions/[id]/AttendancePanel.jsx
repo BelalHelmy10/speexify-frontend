@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
+import { getIntlLocale } from "@/utils/locale";
 
 /**
  * AttendancePanel - Allows teachers to mark attendance for session participants
@@ -31,6 +32,7 @@ export default function AttendancePanel({
   sessionStatus,
   sessionStartAt,
   onUpdate,
+  locale = "en",
 }) {
   const toast = useToast();
   const [localParticipants, setLocalParticipants] = useState(participants);
@@ -214,7 +216,7 @@ export default function AttendancePanel({
                     </span>
                     {p.attendedAt && (
                       <span className="attendance-panel__time">
-                        Marked at {new Date(p.attendedAt).toLocaleTimeString()}
+                        Marked at {new Date(p.attendedAt).toLocaleTimeString(getIntlLocale(locale))}
                       </span>
                     )}
                   </div>

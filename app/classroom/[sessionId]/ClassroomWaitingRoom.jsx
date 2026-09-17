@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Clock, Users, Shield, Wifi, WifiOff, Sparkles } from "lucide-react";
+import { formatNumber } from "@/utils/locale";
 
 /* -----------------------------------------------------------
    Waiting Room — Learner-facing lobby while awaiting teacher
@@ -50,8 +51,8 @@ export default function ClassroomWaitingRoom({
   const formatElapsed = useCallback((seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return m > 0 ? `${m}m ${s}s` : `${s}s`;
-  }, []);
+    return m > 0 ? `${formatNumber(m, locale)}m ${formatNumber(s, locale)}s` : `${formatNumber(s, locale)}s`;
+  }, [locale]);
 
   const dots = ".".repeat(dotCount);
   const isArabic = locale === "ar";
@@ -165,7 +166,7 @@ export default function ClassroomWaitingRoom({
             <div className="cr-waiting-room__meta-item">
               <Users size={14} />
               <span className="cr-waiting-room__meta-value">
-                {isArabic ? `${participantCount}/${capacity} مشارك` : `${participantCount}/${capacity} participants`}
+                {isArabic ? `${formatNumber(participantCount, locale)}/${formatNumber(capacity, locale)} مشارك` : `${formatNumber(participantCount, locale)}/${formatNumber(capacity, locale)} participants`}
               </span>
             </div>
           )}

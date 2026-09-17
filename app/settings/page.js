@@ -33,6 +33,7 @@ import api from "@/lib/api";
 import "@/styles/settings.scss";
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "@/app/i18n";
+import { getIntlLocale } from "@/utils/locale";
 import { getDefaultTimezones, getSupportedTimezones } from "../../lib/timezones";
 
 const DEFAULT_NOTIFICATION_PREFERENCES = {
@@ -71,7 +72,7 @@ function getApiError(error, fallback) {
 function formatDate(value, locale) {
   if (!value) return "—";
   try {
-    return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+    return new Intl.DateTimeFormat(getIntlLocale(locale), {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -84,7 +85,7 @@ function formatDate(value, locale) {
 function formatDateTime(value, locale) {
   if (!value) return "—";
   try {
-    return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+    return new Intl.DateTimeFormat(getIntlLocale(locale), {
       month: "short",
       day: "numeric",
       hour: "numeric",

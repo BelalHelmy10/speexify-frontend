@@ -8,6 +8,7 @@ import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import "@/styles/progress-page.scss";
 import { getDictionary, t } from "@/app/i18n";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 
 function copy(dict, key, fallback, vars) {
   const value = t(dict, key, vars);
@@ -20,25 +21,26 @@ function clampPercent(value) {
   return Math.max(0, Math.min(100, Math.round(numeric)));
 }
 
-function formatDuration(minutes, dict) {
+function formatDuration(minutes, dict, locale = "en") {
   const total = Math.max(0, Math.round(Number(minutes || 0)));
+  const number = (value) => formatNumber(value, locale);
   const minLabel = copy(dict, "unit_minutes", "min");
   const hLabel = copy(dict, "unit_hours", "h");
-  if (total < 60) return `${total} ${minLabel}`;
+  if (total < 60) return `${number(total)} ${minLabel}`;
   const hours = Math.floor(total / 60);
   const mins = total % 60;
   if (mins > 0) {
     const hmTemplate = copy(dict, "unit_hours_minutes", "{hours}h {mins}m");
-    return hmTemplate.replace("{hours}", hours).replace("{mins}", mins);
+    return hmTemplate.replace("{hours}", number(hours)).replace("{mins}", number(mins));
   }
-  return `${hours} ${hLabel}`;
+  return `${number(hours)} ${hLabel}`;
 }
 
 function formatDate(value, locale, options) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", options);
+  return date.toLocaleDateString(getIntlLocale(locale), options);
 }
 
 function formatMonthLabel(month, locale) {
@@ -46,7 +48,7 @@ function formatMonthLabel(month, locale) {
   const [year, monthIndex] = month.split("-").map(Number);
   if (!year || !monthIndex) return month;
   return new Date(year, monthIndex - 1, 1).toLocaleDateString(
-    locale === "ar" ? "ar-EG" : "en-US",
+    getIntlLocale(locale),
     { month: "short" }
   );
 }
@@ -177,7 +179,7 @@ export default function ProgressPage() {
   const [error, setError] = useState("");
 
   const numberFormat = useMemo(
-    () => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", { numberingSystem: "latn" }),
+    () => new Intl.NumberFormat(getIntlLocale(locale)),
     [locale]
   );
 
@@ -278,12 +280,12 @@ export default function ProgressPage() {
     },
     {
       label: copy(dict, "summary_total_time_label", "Speaking time"),
-      value: formatDuration(summary.totalMinutes || 0, dict),
+      value: formatDuration(summary.totalMinutes || 0, dict, locale),
       meta: copy(
         dict,
         "metric_minutes_meta",
         "{duration} this month",
-        { duration: formatDuration(summary.minutesThisMonth || 0, dict) }
+        { duration: formatDuration(summary.minutesThisMonth || 0, dict, locale) }
       ),
       tone: "sage",
     },
@@ -628,7 +630,7 @@ function JourneyItem({ item, index, locale, prefix, dict }) {
           </Link>
         </div>
         <div className="learning-progress__chips">
-          <span>{formatDuration(item.durationMinutes, dict)}</span>
+          <span>{formatDuration(item.durationMinutes, dict, locale)}</span>
           <span>
             {item.materialsCount || 0} {copy(dict, "materials_label", "materials")}
           </span>

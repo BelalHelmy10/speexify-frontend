@@ -60,6 +60,7 @@ export default function LearnerFeedbackPanel({ dict, prefix, timezone }) {
 
   const count = feedbacks.length;
   const latest = feedbacks[0] || null;
+  const locale = prefix === "/ar" ? "ar" : "en";
 
   if (loading) {
     return (
@@ -129,7 +130,7 @@ export default function LearnerFeedbackPanel({ dict, prefix, timezone }) {
               {dict?.from_coach?.replace("{name}", latest.teacher?.name || "Your coach") || `From ${latest.teacher?.name || "Your coach"}`}
             </span>
             <span className="feedback-highlight__date">
-              {latest.startAt ? fmtInTz(latest.startAt, timezone) : ""}
+              {latest.startAt ? fmtInTz(latest.startAt, timezone, locale) : ""}
             </span>
           </div>
           <h4 className="feedback-highlight__title">{latest.title}</h4>
@@ -164,7 +165,7 @@ export default function LearnerFeedbackPanel({ dict, prefix, timezone }) {
               <div className="feedback-mini-item__content">
                 <span className="feedback-mini-item__title">{fb.title}</span>
                 <span className="feedback-mini-item__date">
-                  {fb.startAt ? fmtInTz(fb.startAt, timezone) : ""}
+                  {fb.startAt ? fmtInTz(fb.startAt, timezone, locale) : ""}
                 </span>
               </div>
               <ArrowRightIcon />

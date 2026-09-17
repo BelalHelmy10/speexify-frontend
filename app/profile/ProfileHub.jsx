@@ -28,6 +28,7 @@ import {
 import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 import "@/styles/profile.scss";
+import { getIntlLocale } from "@/utils/locale";
 
 const COPY = {
   en: {
@@ -209,7 +210,7 @@ function pickList(payload, key) {
 function formatDate(value, locale) {
   if (!value) return "—";
   try {
-    return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+    return new Intl.DateTimeFormat(getIntlLocale(locale), {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -222,7 +223,7 @@ function formatDate(value, locale) {
 function formatDateTime(value, locale, timezone) {
   if (!value) return "—";
   try {
-    return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+    return new Intl.DateTimeFormat(getIntlLocale(locale), {
       month: "short",
       day: "numeric",
       hour: "numeric",

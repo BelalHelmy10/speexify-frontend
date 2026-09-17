@@ -3,6 +3,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 
 /**
  * SessionCard - Displays a session with support for both ONE_ON_ONE and GROUP types
@@ -66,7 +67,7 @@ export default function SessionCard({
       }
 
       const dateStr = start.toLocaleDateString(
-        locale === "ar" ? "ar-EG" : "en-US",
+        getIntlLocale(locale),
         {
           timeZone: timezone,
           weekday: "short",
@@ -76,7 +77,7 @@ export default function SessionCard({
       );
 
       const timeStr = start.toLocaleTimeString(
-        locale === "ar" ? "ar-EG" : "en-US",
+        getIntlLocale(locale),
         {
           timeZone: timezone,
           hour: "2-digit",
@@ -85,7 +86,7 @@ export default function SessionCard({
       );
 
       const endTimeStr = end
-        ? end.toLocaleTimeString(locale === "ar" ? "ar-EG" : "en-US", {
+        ? end.toLocaleTimeString(getIntlLocale(locale), {
           timeZone: timezone,
           hour: "2-digit",
           minute: "2-digit",
@@ -148,8 +149,8 @@ export default function SessionCard({
     const count = participantCount || learners?.length || 0;
     const cap = capacity || "∞";
 
-    return `${count}/${cap} participants`;
-  }, [isGroup, participantCount, learners, capacity]);
+    return `${formatNumber(count, locale)}/${cap === "∞" ? cap : formatNumber(cap, locale)} participants`;
+  }, [isGroup, participantCount, learners, capacity, locale]);
 
   // Learner names for teacher view
   const learnerNames = useMemo(() => {
@@ -161,10 +162,10 @@ export default function SessionCard({
       .join(", ");
 
     if (learners.length > 3) {
-      return `${names} +${learners.length - 3} more`;
+      return `${names} +${formatNumber(learners.length - 3, locale)} more`;
     }
     return names;
-  }, [learners]);
+  }, [learners, locale]);
 
   // Render compact version
   if (compact) {

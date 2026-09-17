@@ -11,6 +11,7 @@ import {
   Users,
   UserX,
 } from "lucide-react";
+import { formatNumber } from "@/utils/locale";
 
 function normalizeName(value) {
   return String(value || "")
@@ -90,6 +91,7 @@ export default function ClassroomParticipantsModal({
   onRemoveParticipant,
   onLowerHand,
   onToggleClassroomLock,
+  locale = "en",
 }) {
   if (!show) return null;
 
@@ -134,8 +136,8 @@ export default function ClassroomParticipantsModal({
       >
         <div className="cr-modal__header">
           <h2 className="cr-modal__title">
-            <Users size={18} /> Participants ({participantCount}
-            {capacity && `/${capacity}`})
+            <Users size={18} /> Participants ({formatNumber(participantCount, locale)}
+            {capacity && `/${formatNumber(capacity, locale)}`})
           </h2>
           <button
             className="cr-modal__close"
@@ -158,7 +160,7 @@ export default function ClassroomParticipantsModal({
                   {isClassroomLocked ? <Lock size={16} /> : <Unlock size={16} />}
                   {isClassroomLocked ? "Locked" : "Unlocked"}
                 </span>
-                <span>{liveParticipants.length} live</span>
+                <span>{formatNumber(liveParticipants.length, locale)} live</span>
               </div>
 
               <div className="cr-moderation-panel__actions">

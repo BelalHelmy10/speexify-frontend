@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import useAuth from "@/hooks/useAuth";
+import { usePathname } from "next/navigation";
+import { getIntlLocale } from "@/utils/locale";
 
 function FlipDigit({ value }) {
   const [display, setDisplay] = useState(value);
@@ -47,6 +49,8 @@ function FlipPair({ value }) {
 
 export default function DigitalClock() {
   const { user } = useAuth();
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const [time, setTime] = useState(null);
   const [tick, setTick] = useState(true);
 
@@ -61,7 +65,7 @@ export default function DigitalClock() {
 
   const parts = useMemo(() => {
     if (!time) return null;
-    const p = new Intl.DateTimeFormat("en-US", {
+    const p = new Intl.DateTimeFormat(getIntlLocale(locale), {
       timeZone: user?.timezone || undefined,
       hour12: false,
       hour: "2-digit",
@@ -72,11 +76,11 @@ export default function DigitalClock() {
       hour: get("hour"),
       minute: get("minute"),
     };
-  }, [time, user?.timezone]);
+  }, [time, user?.timezone, locale]);
 
   if (!time || !parts) return null;
 
-  const dateStr = time.toLocaleDateString("en-US", {
+  const dateStr = time.toLocaleDateString(getIntlLocale(locale), {
     timeZone: user?.timezone || undefined,
     weekday: "short",
     month: "short",
@@ -87,7 +91,7 @@ export default function DigitalClock() {
     <div className="spx-digital-clock" title={dateStr} dir="ltr">
       <span
         className="spx-clock-time"
-        aria-label={time.toLocaleTimeString("en-US", {
+        aria-label={time.toLocaleTimeString(getIntlLocale(locale), {
           timeZone: user?.timezone || undefined,
           hour12: true,
         })}

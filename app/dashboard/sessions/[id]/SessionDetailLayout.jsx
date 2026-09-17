@@ -12,6 +12,7 @@ import {
 } from "./SessionDetailUI";
 import { getSafeExternalUrl } from "@/utils/url";
 import { stripRichFeedbackPayload } from "@/lib/feedbackReport";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 
 function getInitials(value = "") {
   const s = String(value || "?").trim();
@@ -100,7 +101,7 @@ export default function SessionDetailLayout({
   const fmtTime = (iso) => {
     if (!iso) return "";
     return new Date(iso).toLocaleTimeString(
-      locale === "ar" ? "ar-EG" : "en-US",
+      getIntlLocale(locale),
       { hour: "numeric", minute: "2-digit" }
     );
   };
@@ -224,17 +225,17 @@ export default function SessionDetailLayout({
               <div className="sd-hero__person-card">
                 <div className="sd-hero__person-avatar sd-hero__person-avatar--group">
                   {typeof participantCount === "number"
-                    ? participantCount
-                    : activeParticipants.length}
+                    ? formatNumber(participantCount, locale)
+                    : formatNumber(activeParticipants.length, locale)}
                 </div>
                 <div className="sd-hero__person-info">
                   <span className="sd-hero__person-name">
                     {typeof participantCount === "number"
-                      ? participantCount
-                      : activeParticipants.length}
+                      ? formatNumber(participantCount, locale)
+                      : formatNumber(activeParticipants.length, locale)}
                     {" "}
                     {txt("session_participants", "Participants")}
-                    {typeof capacity === "number" ? ` / ${capacity}` : ""}
+                    {typeof capacity === "number" ? ` / ${formatNumber(capacity, locale)}` : ""}
                   </span>
                   <span className="sd-hero__person-role">
                     {txt("type_group", "Group session")}
@@ -261,6 +262,7 @@ export default function SessionDetailLayout({
                   sessionStatus={sessionStatus}
                   sessionStartAt={startAt}
                   onUpdate={loadSession}
+                  locale={locale}
                 />
               </Panel>
             )}

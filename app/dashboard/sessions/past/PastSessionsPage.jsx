@@ -19,6 +19,7 @@ import {
 import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { getDictionary, t } from "@/app/i18n";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 
 const PAGE_SIZE = 60;
 
@@ -108,7 +109,7 @@ function formatMonthLabel(iso, locale, timezone) {
     return "Unscheduled";
   }
 
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     month: "long",
     year: "numeric",
     timeZone: timezone || undefined,
@@ -119,7 +120,7 @@ function formatDateLabel(iso, locale, timezone) {
   const date = iso ? new Date(iso) : null;
   if (!date || Number.isNaN(date.getTime())) return "";
 
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -132,7 +133,7 @@ function formatTimeRange(session, locale, timezone) {
   const start = session?.startAt ? new Date(session.startAt) : null;
   if (!start || Number.isNaN(start.getTime())) return "";
 
-  const formatter = new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+  const formatter = new Intl.DateTimeFormat(getIntlLocale(locale), {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: timezone || undefined,
@@ -270,7 +271,7 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
                 <UsersRound />
                 {participants}
                 {isGroup && typeof session.capacity === "number"
-                  ? ` / ${session.capacity}`
+                  ? ` / ${formatNumber(session.capacity, locale)}`
                   : ""}
               </span>
             )}
@@ -286,7 +287,7 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
             <span>
               <Clock3 />
               {timeLabel}
-              {duration ? ` - ${text(dict, "past_archive_duration", "{minutes} min", { minutes: duration })}` : ""}
+              {duration ? ` - ${text(dict, "past_archive_duration", "{minutes} min", { minutes: formatNumber(duration, locale) })}` : ""}
             </span>
           </div>
 
@@ -571,19 +572,19 @@ export default function PastSessionsPage() {
           tone="total"
           icon={<CalendarDays />}
           label={text(dict, "past_archive_total_loaded", "Loaded sessions")}
-          value={stats.total}
+          value={formatNumber(stats.total, locale)}
         />
         <StatCard
           tone="completed"
           icon={<CheckCircle2 />}
           label={text(dict, "past_archive_completed", "Completed")}
-          value={stats.completed}
+          value={formatNumber(stats.completed, locale)}
         />
         <StatCard
           tone="canceled"
           icon={<XCircle />}
           label={text(dict, "past_archive_canceled", "Canceled")}
-          value={stats.canceled}
+          value={formatNumber(stats.canceled, locale)}
         />
         <StatCard
           tone={isTeacher ? "needs" : "feedback"}
@@ -676,7 +677,7 @@ export default function PastSessionsPage() {
             <span>{text(dict, "past_archive_results_label", "Archive")}</span>
             <strong>
               {text(dict, "past_archive_results", "{count} shown", {
-                count: filteredSessions.length,
+                count: formatNumber(filteredSessions.length, locale),
               })}
             </strong>
           </div>
@@ -721,7 +722,7 @@ export default function PastSessionsPage() {
               <section key={group.label} className="past-archive__month">
                 <div className="past-archive__month-label">
                   <span>{group.label}</span>
-                  <strong>{group.sessions.length}</strong>
+                  <strong>{formatNumber(group.sessions.length, locale)}</strong>
                 </div>
                 <div className="past-archive__list">
                   {group.sessions.map((session) => (

@@ -2,6 +2,7 @@
 import { sanityClient } from "@/lib/sanity";
 import ResourcesPicker from "./ResourcesPicker";
 import { getDictionary, t } from "@/app/i18n";
+import { getIntlLocale } from "@/utils/locale";
 import { requireResourceAccess } from "@/app/protected-access";
 
 export const dynamic = "force-dynamic";
@@ -155,7 +156,7 @@ export default async function ResourcesPage({ locale = "en" }) {
   const tracks = await getResourcesTree();
   const dict = getDictionary(locale, "resources");
   const stats = summarizeResourceLibrary(tracks);
-  const numberFormatter = new Intl.NumberFormat(locale === "ar" ? "ar" : "en");
+  const numberFormatter = new Intl.NumberFormat(getIntlLocale(locale));
   const heroStats = [
     {
       label: t(dict, "resources_stat_courses"),

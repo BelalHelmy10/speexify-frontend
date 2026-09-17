@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
 import PrepShell from "@/app/resources/prep/PrepShell";
 import ClassroomChat from "./ClassroomChat";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 import MobileClassroomLayout from "./MobileClassroomLayout";
 import ClassroomHeaderBar from "./ClassroomHeaderBar";
 import ClassroomControlBar from "./ClassroomControlBar";
@@ -251,10 +252,10 @@ function mergeClassroomStatePatch(current, patch) {
   };
 }
 
-function formatSessionEndLabel(endMs) {
+function formatSessionEndLabel(endMs, locale = "en") {
   if (!endMs) return "";
 
-  const time = new Date(endMs).toLocaleTimeString([], {
+  const time = new Date(endMs).toLocaleTimeString(getIntlLocale(locale), {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -272,6 +273,7 @@ export default function ClassroomShell({
   locale = "en",
   prefix = "",
 }) {
+  const { user: authUser } = useAuth();
   const {
     teacherName,
     learnerName,
@@ -288,16 +290,22 @@ export default function ClassroomShell({
     session?.userType === "teacher" ||
     (session?.currentUser && session.currentUser.role === "teacher");
 
-  const userName = isTeacher ? teacherName : learnerName;
-  const { user: authUser } = useAuth();
-  const localUserId = String(
-    authUser?._id ||
-      authUser?.id ||
-      session?.currentUser?._id ||
-      session?.currentUser?.id ||
-      userName ||
-      sessionId
-  );
+  // Group sessions contain every learner, so the first learner in the API
+  // response is not necessarily the person viewing this classroom. Resolve
+  // the local identity from the authenticated account for all participant
+  // labels, chat messages, lobby events, video, and private annotations.
+  const authUserId = authUser?._id || authUser?.id || null;
+  const sessionUserId = session?.currentUser?._id || session?.currentUser?.id || null;
+  const localUserId = authUserId || sessionUserId || null;
+  const currentLearner = learners.find((learner) => {
+    const learnerId = learner?._id || learner?.id || learner?.userId || null;
+    return localUserId != null && learnerId != null && String(learnerId) === String(localUserId);
+  });
+  const currentLearnerName =
+    buildDisplayName(currentLearner) ||
+    (localUserId != null && !isTeacher ? buildDisplayName(authUser) : "") ||
+    (isGroup ? "Learner" : learnerName);
+  const userName = isTeacher ? teacherName : currentLearnerName;
   const sessionStartedAt = session?.startedAt || session?.startAt;
 
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -314,8 +322,9 @@ export default function ClassroomShell({
         startedAt: sessionStartedAt,
         endAt: session?.endAt,
         nowMs,
+        locale,
       }),
-    [sessionStartedAt, session?.endAt, nowMs]
+    [sessionStartedAt, session?.endAt, nowMs, locale]
   );
 
   /* -----------------------------------------------------------
@@ -1391,10 +1400,10 @@ export default function ClassroomShell({
         ? Math.floor((nowMs - sessionTiming.endMs) / 1000)
         : 0;
     const participantLabel = isGroup
-      ? `${participantCount}${capacity ? `/${capacity}` : ""}`
+      ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
       : participantCount === 1
-        ? "1 learner"
-        : `${participantCount || 1} learners`;
+        ? `${formatNumber(1, locale)} learner`
+        : `${formatNumber(participantCount || 1, locale)} learners`;
     const resourceLabel =
       resource?.title || resource?.name || "No resource selected";
 
@@ -1402,7 +1411,7 @@ export default function ClassroomShell({
     if (sessionTiming.endMs) {
       statusLabel = sessionTiming.hasEnded
         ? overBySeconds > 0
-          ? `Over by ${formatCompactDuration(overBySeconds)}`
+          ? `Over by ${formatCompactDuration(overBySeconds, locale)}`
           : "Time is up"
         : `Ends in ${sessionTiming.remainingLabel}`;
     }
@@ -1413,7 +1422,7 @@ export default function ClassroomShell({
       scheduledLabel: sessionTiming.scheduledLabel || "Open-ended",
       participantLabel,
       resourceLabel,
-      endLabel: formatSessionEndLabel(sessionTiming.endMs),
+      endLabel: formatSessionEndLabel(sessionTiming.endMs, locale),
     };
   }, [
     capacity,
@@ -1422,6 +1431,7 @@ export default function ClassroomShell({
     participantCount,
     resource?.name,
     resource?.title,
+    locale,
     sessionTiming.elapsedLabel,
     sessionTiming.endMs,
     sessionTiming.hasEnded,
@@ -1679,7 +1689,7 @@ export default function ClassroomShell({
   const headerTitle = session?.title || "Classroom";
   const typeLabel = isGroup ? "GROUP" : "1:1";
   const countLabel = isGroup
-    ? `${participantCount}${capacity ? `/${capacity}` : ""}`
+    ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
     : "";
   const sessionEnded =
     sessionTiming.hasEnded ||
@@ -1732,6 +1742,7 @@ export default function ClassroomShell({
           isOpen={lobby.isLobbyPanelOpen}
           onToggle={lobby.togglePanel}
           onClose={lobby.closePanel}
+          locale={locale}
         />
       )}
 
@@ -1745,7 +1756,7 @@ export default function ClassroomShell({
         countLabel={countLabel}
         isTeacher={isTeacher}
         teacherName={teacherName}
-        learnerName={learnerName}
+        learnerName={isTeacher ? learnerName : userName}
         setShowParticipantList={setShowParticipantList}
         wsStatus={classroomChannel?.status}
         networkQuality={networkQuality}
@@ -1856,11 +1867,12 @@ export default function ClassroomShell({
                 sessionId={sessionId}
                 isTeacher={isTeacher}
                 teacherName={teacherName}
-                learnerName={learnerName}
+                learnerName={isTeacher ? learnerName : userName}
                 isOpen={isChatOpen}
                 onUnreadCountChange={setChatUnreadCount}
                 allLearnerNames={allLearnerNames}
                 isGroup={isGroup}
+                locale={locale}
               />
             </div>
           </aside>
@@ -2114,11 +2126,12 @@ export default function ClassroomShell({
               sessionId={sessionId}
               isTeacher={isTeacher}
               teacherName={teacherName}
-              learnerName={learnerName}
+              learnerName={isTeacher ? learnerName : userName}
               isOpen={true}
               onUnreadCountChange={setChatUnreadCount}
               allLearnerNames={allLearnerNames}
               isGroup={isGroup}
+              locale={locale}
             />
           }
         />
@@ -2139,6 +2152,7 @@ export default function ClassroomShell({
         setShowParticipantList={setShowParticipantList}
         participantCount={participantCount}
         capacity={capacity}
+        locale={locale}
         teacherName={teacherName}
         learners={learners}
         buildDisplayName={buildDisplayName}

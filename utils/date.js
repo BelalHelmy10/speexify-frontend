@@ -1,6 +1,7 @@
-// web/src/utils/date.js
+import { getIntlLocale } from "@/utils/locale";
+
 const getTimeParts = (date, locale, timezone) => {
-  const parts = new Intl.DateTimeFormat(locale, {
+  const parts = new Intl.DateTimeFormat(getIntlLocale(locale), {
     timeZone: timezone || undefined,
     hour: "numeric",
     minute: "2-digit",
@@ -22,7 +23,7 @@ export const fmtSessionSchedule = (startAt, endAt, tz, locale = "en-US") => {
     return { dateLabel: "", timeLabel: "", timezoneLabel: "", label: "" };
   }
 
-  const dateLabel = new Intl.DateTimeFormat(locale, {
+  const dateLabel = new Intl.DateTimeFormat(getIntlLocale(locale), {
     timeZone: tz || undefined,
     weekday: "short",
     month: "short",
@@ -42,7 +43,7 @@ export const fmtSessionSchedule = (startAt, endAt, tz, locale = "en-US") => {
       : `${startClock}${startTime.period ? ` ${startTime.period}` : ""}–${endClock}${endTime.period ? ` ${endTime.period}` : ""}`
     : `${startClock}${startTime.period ? ` ${startTime.period}` : ""}`;
 
-  const timezoneLabel = new Intl.DateTimeFormat(locale, {
+  const timezoneLabel = new Intl.DateTimeFormat(getIntlLocale(locale), {
     timeZone: tz || undefined,
     timeZoneName: "short",
   }).formatToParts(start).find((part) => part.type === "timeZoneName")?.value || "";
@@ -55,8 +56,8 @@ export const fmtSessionSchedule = (startAt, endAt, tz, locale = "en-US") => {
   };
 };
 
-export const fmtInTz = (iso, tz) =>
-  new Date(iso).toLocaleString([], {
+export const fmtInTz = (iso, tz, locale = "en") =>
+  new Date(iso).toLocaleString(getIntlLocale(locale), {
     timeZone: tz || undefined, // user tz or browser default
     weekday: "short",
     year: "numeric",

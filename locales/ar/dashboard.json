@@ -97,6 +97,9 @@
   "teaching_badge": "التدريس",
   "teaching_title": "أقرب جلسة هتدرّسها",
   "teaching_none": "مفيش جلسات تدريس جاية.",
+  "teaching_no_learner": "لسه مفيش متعلم متعيّن.",
+  "teaching_one_learner": "متعلم واحد",
+  "teaching_learner_count": "{count} متعلمين",
   "teaching_view_calendar": "شوف التقويم",
 
   "upcoming_title": "الجلسات الجاية",

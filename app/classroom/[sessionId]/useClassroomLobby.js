@@ -93,6 +93,12 @@ export function useClassroomLobby({
   useEffect(() => {
     if (isTeacher || lobbyStatus !== "not_joined" || !lobbyEnabled) return;
 
+    // Wait for the authenticated learner identity before creating the lobby
+    // record. A group classroom can load its participant list before auth
+    // finishes; posting the fallback name here would attribute the join to the
+    // wrong person or leave the participant as "Learner".
+    if (userId == null || !userName || userName === "Learner") return;
+
     let cancelled = false;
 
     async function joinLobby() {

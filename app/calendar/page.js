@@ -28,6 +28,7 @@ import {
 } from "date-fns";
 import { ar as dateFnsAr } from "date-fns/locale";
 import { shiftDateToTimezone } from "@/utils/date";
+import { getIntlLocale, formatNumber } from "@/utils/locale";
 import { usePathname, useRouter } from "next/navigation";
 import { getDictionary, t } from "@/app/i18n";
 import { useToast } from "@/components/ToastProvider";
@@ -105,7 +106,7 @@ function formatAvailabilityTime(totalMinutes) {
 function formatMinuteLabel(totalMinutes, locale) {
   const date = new Date();
   date.setHours(Math.floor(totalMinutes / 60), totalMinutes % 60, 0, 0);
-  return date.toLocaleTimeString(locale === "ar" ? "ar" : "en", { hour: "numeric", minute: "2-digit", hour12: true });
+  return date.toLocaleTimeString(getIntlLocale(locale), { hour: "numeric", minute: "2-digit", hour12: true });
 }
 
 function timeToMinutesValue(time = "00:00") {
@@ -222,7 +223,7 @@ function availabilitySlotChangedTimeOrNote(before, after) {
   );
 }
 
-const toRbcEvents = (arr = [], timezone) =>
+const toRbcEvents = (arr = [], timezone, locale = "en") =>
   arr.map((s) => {
     const type = String(s.type || "").toUpperCase();
     const isGroup = type === "GROUP";
@@ -248,7 +249,7 @@ const toRbcEvents = (arr = [], timezone) =>
       participantCount: count,
       seatsLabel:
         isGroup && (count !== null || cap !== null)
-          ? `${count ?? 0}${cap ? `/${cap}` : ""}`
+          ? `${formatNumber(count ?? 0, locale)}${cap ? `/${formatNumber(cap, locale)}` : ""}`
           : "",
       _raw: s,
       isAvailability: false,
@@ -457,7 +458,7 @@ function getEventTone(event) {
 }
 
 function getViewRangeLabel(currentDate, view, locale) {
-  const dtfLocale = locale === "ar" ? "ar" : "en";
+  const dtfLocale = getIntlLocale(locale);
   if (view === "month") return currentDate.toLocaleDateString(dtfLocale, { month: "long", year: "numeric" });
   if (view === "day") return currentDate.toLocaleDateString(dtfLocale, { weekday: "long", month: "short", day: "numeric", year: "numeric" });
 
@@ -540,7 +541,7 @@ function SessionQuickPopover({
   const joinable = tone !== "canceled" && joinHref && canJoin(event.start, event.end);
   const detailHref = getSessionDetailsHref(prefix, event);
   const style = getAnchoredPopoverStyle(anchor);
-  const dtfLocale = locale === "ar" ? "ar" : "en";
+  const dtfLocale = getIntlLocale(locale);
 
   return createPortal(
     <>
@@ -578,7 +579,7 @@ function SessionQuickPopover({
           </div>
           <div className="calx-event-popover__row">
             <Clock3 size={15} />
-            <span>{duration} {t(dict, "min")}</span>
+            <span>{formatNumber(duration, locale)} {t(dict, "min")}</span>
           </div>
           <div className="calx-event-popover__row">
             <UserRound size={15} />
@@ -652,7 +653,7 @@ function SessionDetailDrawer({
   const detailHref = getSessionDetailsHref(prefix, event);
   const joinable = tone !== "canceled" && joinHref && canJoin(event.start, event.end);
   const canCancelSession = event.status !== "canceled" && event.start > new Date();
-  const dtfLocale = locale === "ar" ? "ar" : "en";
+  const dtfLocale = getIntlLocale(locale);
 
   return createPortal(
     <>
@@ -687,7 +688,7 @@ function SessionDetailDrawer({
             <Clock3 size={17} />
             <span>
               {event.start.toLocaleTimeString(dtfLocale, { hour: "numeric", minute: "2-digit", hour12: true })}
-              {event.end ? ` - ${event.end.toLocaleTimeString(dtfLocale, { hour: "numeric", minute: "2-digit", hour12: true })}` : ""} · {duration} {t(dict, "min")}
+              {event.end ? ` - ${event.end.toLocaleTimeString(dtfLocale, { hour: "numeric", minute: "2-digit", hour12: true })}` : ""} · {formatNumber(duration, locale)} {t(dict, "min")}
             </span>
           </div>
           <div className="calx-session-drawer__detail">
@@ -823,12 +824,12 @@ export default function CalendarPage() {
     (async () => {
       try {
         const sessions = await fetchEvents(start.toISOString(), end.toISOString());
-        setEvents(toRbcEvents(sessions, user?.timezone));
+        setEvents(toRbcEvents(sessions, user?.timezone, locale));
       } catch (e) {
         setError(e?.response?.data?.error || t(dict, "error_failed"));
       }
     })();
-  }, [checking, user, currentDate, view, fetchEvents, dict]);
+  }, [checking, user, currentDate, view, fetchEvents, dict, locale]);
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -937,7 +938,7 @@ export default function CalendarPage() {
   );
 
   const selectedWeekLabel = useMemo(() => {
-    const dtfLocale = locale === "ar" ? "ar" : "en";
+    const dtfLocale = getIntlLocale(locale);
     return `${selectedWeekStart.toLocaleDateString(dtfLocale, { month: "short", day: "numeric" })} - ${selectedWeekEnd.toLocaleDateString(dtfLocale, { month: "short", day: "numeric" })}`;
   }, [selectedWeekEnd, selectedWeekStart, locale]);
 
@@ -970,7 +971,7 @@ export default function CalendarPage() {
         const hour = SLOT_START_HOUR + i;
         const date = new Date();
         date.setHours(hour, 0, 0, 0);
-        return date.toLocaleTimeString(locale === "ar" ? "ar" : "en", { hour: "numeric", hour12: true });
+        return date.toLocaleTimeString(getIntlLocale(locale), { hour: "numeric", hour12: true });
       }),
     [locale]
   );
@@ -1629,8 +1630,8 @@ export default function CalendarPage() {
 
     const { start, end } = getVisibleRange(currentDate, view);
     const sessions = await fetchEvents(start.toISOString(), end.toISOString());
-    setEvents(toRbcEvents(sessions, user?.timezone));
-  }, [currentDate, fetchEvents, user, view]);
+    setEvents(toRbcEvents(sessions, user?.timezone, locale));
+  }, [currentDate, fetchEvents, user, view, locale]);
 
   const getEventAnchor = useCallback((target) => {
     if (!target || !target.getBoundingClientRect) {
@@ -1939,8 +1940,8 @@ export default function CalendarPage() {
               aria-label={t(dict, "aria_expand_sidebar")}
             >
               <CalendarDays size={18} strokeWidth={2.4} />
-              <span>{selectedDate.toLocaleDateString(locale === "ar" ? "ar" : "en", { month: "short" })}</span>
-              <strong>{selectedDate.toLocaleDateString(locale === "ar" ? "ar" : "en", { day: "numeric" })}</strong>
+              <span>{selectedDate.toLocaleDateString(getIntlLocale(locale), { month: "short" })}</span>
+              <strong>{selectedDate.toLocaleDateString(getIntlLocale(locale), { day: "numeric" })}</strong>
             </button>
           ) : (
             <div className="calx-sidebar-content">
@@ -1990,7 +1991,7 @@ export default function CalendarPage() {
                   >
                     <Clock3 size={17} strokeWidth={2.4} />
                     {t(dict, "mode_availability")}
-                    <span className="calx-mode-count">{activeSlotCount}</span>
+            <span className="calx-mode-count">{formatNumber(activeSlotCount, locale)}</span>
                   </button>
                 </div>
               </section>
@@ -2000,15 +2001,15 @@ export default function CalendarPage() {
                 <div className="calx-week-metrics">
                   <div className="calx-week-metric">
                     <span>{t(dict, "mode_sessions")}</span>
-                    <strong className="is-primary">{weekSessionCount}</strong>
+                    <strong className="is-primary">{formatNumber(weekSessionCount, locale)}</strong>
                   </div>
                   <div className="calx-week-metric">
                     <span>{t(dict, "slots")}</span>
-                    <strong className="is-green">{activeSlotCount}</strong>
+                    <strong className="is-green">{formatNumber(activeSlotCount, locale)}</strong>
                   </div>
                   <div className="calx-week-metric">
                     <span>{t(dict, "weekly")}</span>
-                    <strong>{totalAvailabilityHours}h</strong>
+                    <strong>{formatNumber(totalAvailabilityHours, locale)}h</strong>
                   </div>
                 </div>
               </section>
@@ -2042,8 +2043,8 @@ export default function CalendarPage() {
                               </span>
                             </span>
                             <span className="calx-upcoming-time">
-                              {ev.start.toLocaleDateString(locale === "ar" ? "ar" : "en", { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true })}
-                              {ev.end ? ` - ${ev.end.toLocaleTimeString(locale === "ar" ? "ar" : "en", { hour: "numeric", minute: "2-digit", hour12: true })}` : ""}
+                              {ev.start.toLocaleDateString(getIntlLocale(locale), { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true })}
+                              {ev.end ? ` - ${ev.end.toLocaleTimeString(getIntlLocale(locale), { hour: "numeric", minute: "2-digit", hour12: true })}` : ""}
                             </span>
                           </span>
                         </button>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getSafeExternalUrl } from "@/utils/url";
 import { fmtSessionSchedule } from "@/utils/date";
 import { t } from "@/app/i18n";
+import { getIntlLocale } from "@/utils/locale";
 
 const canJoin = (startAt, endAt, windowMins = 15) => {
   const now = new Date();
@@ -125,7 +126,7 @@ export default function SessionRow({
   dict,
   prefix,
 }) {
-  const dateLocale = prefix === "/ar" ? "ar" : "en-US";
+  const dateLocale = getIntlLocale(prefix === "/ar" ? "ar" : "en");
   const countdown = useCountdown(s.startAt, s.endAt, {
     startsToday: t(dict, "countdown_starts_today"),
     startsTomorrow: t(dict, "countdown_starts_tomorrow"),

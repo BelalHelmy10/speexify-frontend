@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { formatNumber } from "@/utils/locale";
 
 /* -----------------------------------------------------------
    Lobby Panel — Teacher-facing panel to manage learners
@@ -34,6 +35,7 @@ export default function ClassroomLobbyPanel({
   isOpen = false,
   onToggle,
   onClose,
+  locale = "en",
 }) {
   const [admittingIds, setAdmittingIds] = useState(new Set());
   const [denyingIds, setDenyingIds] = useState(new Set());
@@ -108,7 +110,7 @@ export default function ClassroomLobbyPanel({
       >
         <span className="cr-lobby-badge__pulse" />
         <Bell size={18} />
-        <span className="cr-lobby-badge__count">{count}</span>
+        <span className="cr-lobby-badge__count">{formatNumber(count, locale)}</span>
         <span className="cr-lobby-badge__label">
           {count === 1 ? "Learner waiting" : "Learners waiting"}
         </span>
@@ -127,7 +129,7 @@ export default function ClassroomLobbyPanel({
           <h3 className="cr-lobby-panel__title">
             Waiting Room
             {count > 0 && (
-              <span className="cr-lobby-panel__count">{count}</span>
+              <span className="cr-lobby-panel__count">{formatNumber(count, locale)}</span>
             )}
           </h3>
         </div>
@@ -163,7 +165,7 @@ export default function ClassroomLobbyPanel({
                   disabled={isAdmittingAll}
                 >
                   <CheckCheck size={16} />
-                  {isAdmittingAll ? "Admitting…" : `Admit all (${count})`}
+                  {isAdmittingAll ? "Admitting…" : `Admit all (${formatNumber(count, locale)})`}
                 </button>
               </div>
             )}

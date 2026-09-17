@@ -4,15 +4,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageSquare } from "lucide-react";
 import api from "@/lib/api";
+import { getIntlLocale } from "@/utils/locale";
 
 const CHAT_HISTORY_LIMIT = 100;
 const TEMP_MESSAGE_PREFIX = "temp_chat_";
 
-function formatTime(isoString) {
+function formatTime(isoString, locale = "en") {
   if (!isoString) return "";
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(getIntlLocale(locale), { hour: "2-digit", minute: "2-digit" });
 }
 
 function getErrorMessage(err, fallback) {
@@ -94,6 +95,7 @@ export default function ClassroomChat({
   learnerName,
   isOpen = true,
   onUnreadCountChange,
+  locale = "en",
 }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -343,6 +345,11 @@ export default function ClassroomChat({
   useEffect(() => {
     if (!ready) return;
 
+    // Do not announce a learner before the authenticated account has supplied
+    // its real name. In a group session, sending the first fallback name can
+    // make the live transcript attribute the wrong person's messages.
+    if (!isTeacher && (!myName || myName === "Learner")) return;
+
     if (!hasAnnouncedJoinRef.current) {
       hasAnnouncedJoinRef.current = true;
 
@@ -383,8 +390,7 @@ export default function ClassroomChat({
         // no-op
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
+  }, [appendOrMergeMessage, isTeacher, myName, myRole, ready, send, sessionId]);
 
   useEffect(() => {
     if (!ready) return;
@@ -765,7 +771,7 @@ export default function ClassroomChat({
                     <div className="cr-chat__bubble-text">{msg.text}</div>
                     {msg.at && (
                       <div className="cr-chat__bubble-time">
-                        {formatTime(msg.at)}
+                        {formatTime(msg.at, locale)}
                       </div>
                     )}
                   </div>
@@ -800,7 +806,7 @@ export default function ClassroomChat({
                         (msg.role === "teacher" ? "Teacher" : "Learner")}
                     </span>
                     <span className="cr-chat__bubble-time">
-                      {formatTime(msg.at)}
+                      {formatTime(msg.at, locale)}
                     </span>
                   </div>
 
