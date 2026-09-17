@@ -1,4 +1,60 @@
 // web/src/utils/date.js
+const getTimeParts = (date, locale, timezone) => {
+  const parts = new Intl.DateTimeFormat(locale, {
+    timeZone: timezone || undefined,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).formatToParts(date);
+
+  return {
+    hour: parts.find((part) => part.type === "hour")?.value || "",
+    minute: parts.find((part) => part.type === "minute")?.value || "",
+    period: parts.find((part) => part.type === "dayPeriod")?.value || "",
+  };
+};
+
+export const fmtSessionSchedule = (startAt, endAt, tz, locale = "en-US") => {
+  const start = startAt ? new Date(startAt) : null;
+  const end = endAt ? new Date(endAt) : null;
+
+  if (!start || Number.isNaN(start.getTime())) {
+    return { dateLabel: "", timeLabel: "", timezoneLabel: "", label: "" };
+  }
+
+  const dateLabel = new Intl.DateTimeFormat(locale, {
+    timeZone: tz || undefined,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(start);
+
+  const startTime = getTimeParts(start, locale, tz);
+  const endTime = end && !Number.isNaN(end.getTime())
+    ? getTimeParts(end, locale, tz)
+    : null;
+  const startClock = `${startTime.hour}:${startTime.minute}`;
+  const endClock = endTime ? `${endTime.hour}:${endTime.minute}` : "";
+  const samePeriod = endTime && startTime.period === endTime.period;
+  const timeLabel = endTime
+    ? samePeriod && endTime.period
+      ? `${startClock}–${endClock} ${endTime.period}`
+      : `${startClock}${startTime.period ? ` ${startTime.period}` : ""}–${endClock}${endTime.period ? ` ${endTime.period}` : ""}`
+    : `${startClock}${startTime.period ? ` ${startTime.period}` : ""}`;
+
+  const timezoneLabel = new Intl.DateTimeFormat(locale, {
+    timeZone: tz || undefined,
+    timeZoneName: "short",
+  }).formatToParts(start).find((part) => part.type === "timeZoneName")?.value || "";
+
+  return {
+    dateLabel,
+    timeLabel,
+    timezoneLabel,
+    label: [dateLabel, timeLabel].filter(Boolean).join(" · "),
+  };
+};
+
 export const fmtInTz = (iso, tz) =>
   new Date(iso).toLocaleString([], {
     timeZone: tz || undefined, // user tz or browser default

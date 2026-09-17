@@ -7,6 +7,7 @@ import { getDictionary, t } from "@/app/i18n";
 import {
   Camera,
   CameraOff,
+  ChevronDown,
   Mic,
   MicOff,
   Play,
@@ -203,6 +204,8 @@ export default function PrepVideoCall({
   roomId,
   userName,
   isTeacher,
+  sessionTitle = "Live coaching session",
+  coachName = "",
   onScreenShareStreamChange,
   onModerationStateChange,
   onNetworkQualityChange,
@@ -987,19 +990,22 @@ export default function PrepVideoCall({
         state,
         label:
           state === "good"
-            ? "Network ready"
+            ? "Connection is ready"
             : state === "fair"
-              ? "Network is usable"
-              : "Network may be unstable",
-        detail: detailParts.join(" - "),
+              ? "Connection may feel delayed"
+              : "Connection is weak",
+        detail:
+          state === "poor"
+            ? `${detailParts.join(" · ")} · Try Wi-Fi if you can.`
+            : detailParts.join(" · "),
         latency,
         reachable: true,
       });
     } catch {
       setNetworkStatus({
         state: "poor",
-        label: "Network check failed",
-        detail: "Check your connection before joining.",
+        label: "Connection could not be checked",
+        detail: "Check your connection, then try again.",
         latency: null,
         reachable: false,
       });
@@ -1500,11 +1506,16 @@ export default function PrepVideoCall({
   if (!hasJoined) {
     const networkClass = `cr-prejoin__network cr-prejoin__network--${networkStatus.state}`;
     const levelPercent = Math.round(micLevel * 100);
+    const previewName = userName || (isTeacher ? "Coach" : "Member");
+    const previewInitial = previewName.trim().charAt(0).toUpperCase() || "S";
 
     return (
       <div className="cr-video cr-video--prejoin">
         <div className="cr-prejoin">
-          <section className="cr-prejoin__preview" aria-label="Camera preview">
+          <section
+            className={`cr-prejoin__preview ${joinVideoMuted ? "cr-prejoin__preview--camera-off" : ""}`}
+            aria-label="Camera preview"
+          >
             {!joinVideoMuted && !prejoinError ? (
               <video
                 ref={previewVideoRef}
@@ -1515,22 +1526,32 @@ export default function PrepVideoCall({
               />
             ) : (
               <div className="cr-prejoin__camera-off">
-                <CameraOff size={32} />
-                <span>{joinVideoMuted ? "Camera off" : "Preview unavailable"}</span>
+                <span className="cr-prejoin__avatar" aria-hidden="true">
+                  {previewInitial}
+                </span>
+                <strong>{previewName}</strong>
+                <span>{joinVideoMuted ? "Camera off · You can still join" : "Preview unavailable"}</span>
               </div>
             )}
 
             <div className="cr-prejoin__preview-bar">
-              <span>{userName || (isTeacher ? "Teacher" : "Learner")}</span>
-              <span>{joinAudioMuted ? "Joining muted" : "Mic on"}</span>
+              <span>{previewName}</span>
+              <span>{joinAudioMuted ? "Microphone off" : "Microphone on"}</span>
             </div>
           </section>
 
           <section className="cr-prejoin__panel" aria-label="Prejoin setup">
             <div className="cr-prejoin__header">
-              <span className="cr-prejoin__eyebrow">Classroom Lobby</span>
-              <h2>Ready to join?</h2>
-              <p>Check your devices before entering the live session.</p>
+              <span className="cr-prejoin__eyebrow">Prepare to join</span>
+              <h2>Join your coaching session</h2>
+              <p>
+                {coachName
+                  ? `You’re joining ${coachName}. Check your setup, then you’re ready.`
+                  : "Check your setup, then you’re ready to join."}
+              </p>
+              <span className="cr-prejoin__session-context" title={sessionTitle}>
+                {sessionTitle}
+              </span>
             </div>
 
             {prejoinError && (
@@ -1547,7 +1568,10 @@ export default function PrepVideoCall({
                 aria-pressed={!joinAudioMuted}
               >
                 {joinAudioMuted ? <MicOff size={16} /> : <Mic size={16} />}
-                {joinAudioMuted ? "Join muted" : "Mic on"}
+                <span>
+                  <strong>{joinAudioMuted ? "Microphone off" : "Microphone on"}</strong>
+                  <small>{joinAudioMuted ? "You can turn it on anytime" : "Your coach can hear you"}</small>
+                </span>
               </button>
 
               <button
@@ -1557,89 +1581,98 @@ export default function PrepVideoCall({
                 aria-pressed={!joinVideoMuted}
               >
                 {joinVideoMuted ? <CameraOff size={16} /> : <Camera size={16} />}
-                {joinVideoMuted ? "Camera off" : "Camera on"}
-              </button>
-
-              <button
-                type="button"
-                className="cr-prejoin__pill"
-                onClick={() => {
-                  void refreshDevices();
-                  void runNetworkCheck();
-                }}
-              >
-                <RefreshCw size={16} />
-                Refresh
+                <span>
+                  <strong>{joinVideoMuted ? "Camera off" : "Camera on"}</strong>
+                  <small>{joinVideoMuted ? "You can still join" : "Preview is visible"}</small>
+                </span>
               </button>
             </div>
 
-            <div className="cr-prejoin__device-grid">
-              <label className="cr-prejoin__field">
-                <span>Microphone</span>
-                <select
-                  value={selectedAudioInputId}
-                  onChange={(e) => setSelectedAudioInputId(e.target.value)}
-                >
-                  {devices.audioInputs.length ? (
-                    devices.audioInputs.map((device, index) => (
-                      <option key={device.deviceId} value={device.deviceId}>
-                        {device.label || `Microphone ${index + 1}`}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">Default microphone</option>
-                  )}
-                </select>
-              </label>
+            <button
+              type="button"
+              className="cr-prejoin__refresh"
+              onClick={() => {
+                void refreshDevices();
+                void runNetworkCheck();
+              }}
+            >
+              <RefreshCw size={14} />
+              Refresh device check
+            </button>
 
-              <label className="cr-prejoin__field">
-                <span>Camera</span>
-                <select
-                  value={selectedVideoInputId}
-                  onChange={(e) => setSelectedVideoInputId(e.target.value)}
-                >
-                  {devices.videoInputs.length ? (
-                    devices.videoInputs.map((device, index) => (
-                      <option key={device.deviceId} value={device.deviceId}>
-                        {device.label || `Camera ${index + 1}`}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">Default camera</option>
-                  )}
-                </select>
-              </label>
-
-              <label className="cr-prejoin__field cr-prejoin__field--wide">
-                <span>Speaker</span>
-                <div className="cr-prejoin__speaker-row">
+            <details className="cr-prejoin__details">
+              <summary>
+                <span>Advanced device settings</span>
+                <ChevronDown size={16} aria-hidden="true" />
+              </summary>
+              <div className="cr-prejoin__device-grid">
+                <label className="cr-prejoin__field">
+                  <span>Microphone</span>
                   <select
-                    value={selectedAudioOutputId}
-                    onChange={(e) => setSelectedAudioOutputId(e.target.value)}
+                    value={selectedAudioInputId}
+                    onChange={(e) => setSelectedAudioInputId(e.target.value)}
                   >
-                    {devices.audioOutputs.length ? (
-                      devices.audioOutputs.map((device, index) => (
+                    {devices.audioInputs.length ? (
+                      devices.audioInputs.map((device, index) => (
                         <option key={device.deviceId} value={device.deviceId}>
-                          {device.label || `Speaker ${index + 1}`}
+                          {device.label || `Microphone ${index + 1}`}
                         </option>
                       ))
                     ) : (
-                      <option value="">System default speaker</option>
+                      <option value="">Default microphone</option>
                     )}
                   </select>
+                </label>
 
-                  <button
-                    type="button"
-                    className="cr-prejoin__test"
-                    onClick={playSpeakerTest}
-                    disabled={isTestingSpeaker}
+                <label className="cr-prejoin__field">
+                  <span>Camera</span>
+                  <select
+                    value={selectedVideoInputId}
+                    onChange={(e) => setSelectedVideoInputId(e.target.value)}
                   >
-                    {isTestingSpeaker ? <Volume2 size={16} /> : <Play size={16} />}
-                    {isTestingSpeaker ? "Playing" : "Test"}
-                  </button>
-                </div>
-              </label>
-            </div>
+                    {devices.videoInputs.length ? (
+                      devices.videoInputs.map((device, index) => (
+                        <option key={device.deviceId} value={device.deviceId}>
+                          {device.label || `Camera ${index + 1}`}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Default camera</option>
+                    )}
+                  </select>
+                </label>
+
+                <label className="cr-prejoin__field cr-prejoin__field--wide">
+                  <span>Speaker</span>
+                  <div className="cr-prejoin__speaker-row">
+                    <select
+                      value={selectedAudioOutputId}
+                      onChange={(e) => setSelectedAudioOutputId(e.target.value)}
+                    >
+                      {devices.audioOutputs.length ? (
+                        devices.audioOutputs.map((device, index) => (
+                          <option key={device.deviceId} value={device.deviceId}>
+                            {device.label || `Speaker ${index + 1}`}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">System default speaker</option>
+                      )}
+                    </select>
+
+                    <button
+                      type="button"
+                      className="cr-prejoin__test"
+                      onClick={playSpeakerTest}
+                      disabled={isTestingSpeaker}
+                    >
+                      {isTestingSpeaker ? <Volume2 size={16} /> : <Play size={16} />}
+                      {isTestingSpeaker ? "Playing" : "Test"}
+                    </button>
+                  </div>
+                </label>
+              </div>
+            </details>
 
             <div className="cr-prejoin__checks">
               <div className="cr-prejoin__meter" aria-label="Microphone level">
@@ -1667,7 +1700,7 @@ export default function PrepVideoCall({
               onClick={handleJoin}
               disabled={!canJoin}
             >
-              {canJoin ? "Join classroom" : "Checking connection…"}
+              {canJoin ? "Join coaching session" : "Checking connection…"}
             </button>
           </section>
         </div>

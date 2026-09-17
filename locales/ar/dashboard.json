@@ -151,6 +151,9 @@
   "past_archive_feedback_missing": "مفيش ملاحظات لسه",
 
   "countdown_starts_in": "بتبدأ بعد",
+  "countdown_starts_today": "بتبدأ النهارده الساعة {time}",
+  "countdown_starts_tomorrow": "بتبدأ بكرة الساعة {time}",
+  "countdown_starts_on": "بتبدأ {date} الساعة {time}",
   "countdown_live": "مباشر دلوقتي",
   "countdown_ended": "خلصت",
 

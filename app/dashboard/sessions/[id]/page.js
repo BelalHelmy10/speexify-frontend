@@ -405,7 +405,7 @@ export default function SessionDetailPage() {
             {txt("add_to_calendar", "Add to calendar")}
           </a>
         )}
-        <Link href={classroomHref} className="btn btn--ghost">
+        <Link href={classroomHref} className="btn btn--primary">
           {txt("join_open_classroom", "Open Speexify classroom")}
         </Link>
       </div>

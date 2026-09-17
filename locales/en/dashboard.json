@@ -151,6 +151,9 @@
   "past_archive_feedback_missing": "No feedback yet",
 
   "countdown_starts_in": "Starts in",
+  "countdown_starts_today": "Starts today at {time}",
+  "countdown_starts_tomorrow": "Starts tomorrow at {time}",
+  "countdown_starts_on": "Starts {date} at {time}",
   "countdown_live": "Live",
   "countdown_ended": "Ended",
 

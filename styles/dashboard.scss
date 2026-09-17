@@ -83,14 +83,50 @@
 .dashboard .session-item__title { margin-bottom: 8px; font-family: $font-heading; font-size: 16px; font-weight: 600; line-height: 1.25; }
 .dashboard .session-item--canceled .session-item__title { color: $muted; }
 .dashboard .session-item__meta { gap: 8px; font-size: 12px; }
+.dashboard .session-item__time { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; line-height: 1.4; }
 .dashboard .session-item__time svg { color: $muted; width: 14px; height: 14px; }
+.dashboard .session-item__timezone { color: $muted; font-size: 11px; white-space: nowrap; }
 .dashboard .session-item .badge { border: 0; border-radius: 5px; padding: 4px 7px; font-size: 10px; font-weight: 600; }
 .dashboard .session-item .badge--completed { color: $secondary; background: rgba($secondary,.1); }
 .dashboard .session-item .badge--canceled { color: #b94432; background: rgba($coral,.1); }
 .dashboard .session-item__actions { flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
 .dashboard .session-item__actions .btn { min-height: 38px; padding: 8px 12px; border-radius: 7px; font-size: 11px; }
-.dashboard .session-item__actions .session-item__details { border-color: transparent; background: transparent; color: $muted; }
-.dashboard .session-item__actions .session-item__details:hover { color: $ink; background: $bg-soft; }
+.dashboard .session-item__actions .session-item__details {
+  border: 1px solid rgba($border, .92);
+  background: rgba($bg-soft, .72);
+  color: $text-secondary;
+  box-shadow: 0 1px 2px rgba($navy, .03);
+}
+.dashboard .session-item__actions .session-item__details:hover {
+  border-color: rgba($coral, .32);
+  color: $ink;
+  background: rgba($coral, .05);
+  box-shadow: 0 3px 10px rgba($navy, .05);
+}
+.dashboard .session-item__actions .session-item__details--schedule {
+  border-color: rgba($coral, .24);
+  background: rgba($coral, .08);
+  color: $coral-dark;
+  box-shadow: 0 2px 8px rgba($coral, .08);
+}
+.dashboard .session-item__actions .session-item__details--schedule:hover {
+  border-color: rgba($coral, .42);
+  background: rgba($coral, .13);
+  color: $coral-dark;
+  box-shadow: 0 4px 12px rgba($coral, .12);
+}
+.dashboard .session-item__actions .session-item__reschedule {
+  border-color: rgba($border, .92);
+  background: $card-bg;
+  color: $text-secondary;
+  box-shadow: none;
+}
+.dashboard .session-item__actions .session-item__reschedule:hover {
+  border-color: rgba($navy, .2);
+  background: $bg-soft;
+  color: $ink;
+  box-shadow: none;
+}
 .dashboard .session-item__actions .btn--primary { background: $coral; border-color: $coral; color: $navy; box-shadow: 0 5px 14px rgba($coral,.17); }
 .dashboard .session-item__actions .btn--primary:hover { background: $coral-dark; border-color: $coral-dark; color: $color-white; }
 .dashboard .session-item__actions .btn--danger { color: $muted; border-color: transparent; background: transparent; }

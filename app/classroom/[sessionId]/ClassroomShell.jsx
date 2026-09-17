@@ -1808,6 +1808,8 @@ export default function ClassroomShell({
                 roomId={sessionId}
                 userName={userName}
                 isTeacher={isTeacher}
+                sessionTitle={session?.title || "Live coaching session"}
+                coachName={teacherName}
                 onScreenShareStreamChange={handleScreenShareStreamChange}
                 onModerationStateChange={handleVideoModerationChange}
                 onNetworkQualityChange={handleNetworkQualityChange}
@@ -2035,6 +2037,8 @@ export default function ClassroomShell({
                 roomId={sessionId}
                 userName={userName}
                 isTeacher={isTeacher}
+                sessionTitle={session?.title || "Live coaching session"}
+                coachName={teacherName}
                 onScreenShareStreamChange={handleScreenShareStreamChange}
                 onModerationStateChange={handleVideoModerationChange}
                 onNetworkQualityChange={handleNetworkQualityChange}

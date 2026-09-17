@@ -935,6 +935,8 @@ body.classroom-active {
 // because the tabbed mobile layout shows video as its own screen.
 .cr-video-container {
   position: relative;
+  container-name: classroom-video;
+  container-type: inline-size;
   flex: 1 1 auto;
   min-height: 240px;
   border-radius: $cr-radius-lg;
@@ -1086,7 +1088,7 @@ body.classroom-active {
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+  grid-template-columns: minmax(220px, 0.9fr) minmax(340px, 1.1fr);
   background: $cr-bg-primary;
 
   &__preview {
@@ -1097,6 +1099,12 @@ body.classroom-active {
     background:
       linear-gradient(135deg, rgba($cr-accent-primary, 0.08), transparent 38%),
       $cr-bg-secondary;
+
+    &--camera-off {
+      background:
+        radial-gradient(circle at 50% 42%, rgba($cr-accent-primary, 0.16), transparent 34%),
+        linear-gradient(160deg, $cr-bg-secondary 0%, $cr-bg-primary 100%);
+    }
   }
 
   &__video {
@@ -1117,14 +1125,36 @@ body.classroom-active {
     gap: 0.75rem;
     color: $cr-text-secondary;
 
+    strong {
+      margin-top: -0.15rem;
+      color: $cr-text-primary;
+      font-size: 1rem;
+    }
+
+    span:last-child {
+      color: $cr-text-muted;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
     svg {
       color: $cr-text-muted;
     }
+  }
 
-    span {
-      font-size: 0.875rem;
-      font-weight: 700;
-    }
+  &__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border: 1px solid rgba($cr-accent-primary, 0.4);
+    border-radius: 50%;
+    background: rgba($cr-accent-primary, 0.14);
+    color: $cr-accent-primary;
+    font-size: 1.5rem;
+    font-weight: 800;
+    box-shadow: 0 12px 28px rgba($cr-bg-primary, 0.25);
   }
 
   &__preview-bar {
@@ -1179,6 +1209,21 @@ body.classroom-active {
     }
   }
 
+  &__session-context {
+    max-width: 100%;
+    overflow: hidden;
+    margin-top: 0.35rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid $cr-border-subtle;
+    border-radius: $cr-radius-sm;
+    background: rgba($cr-bg-secondary, 0.72);
+    color: $cr-text-primary;
+    font-size: 0.75rem;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   &__eyebrow {
     font-size: 0.625rem;
     font-weight: 800;
@@ -1199,7 +1244,7 @@ body.classroom-active {
 
   &__quick-actions {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
   }
 
@@ -1245,11 +1290,95 @@ body.classroom-active {
   &__pill {
     min-height: 38px;
     padding: 0.5rem 0.625rem;
+    text-align: left;
+
+    > svg {
+      flex: 0 0 auto;
+    }
+
+    > span {
+      display: grid;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+
+    strong {
+      font-size: 0.7rem;
+      line-height: 1.1;
+    }
+
+    small {
+      overflow: hidden;
+      color: $cr-text-muted;
+      font-size: 0.56rem;
+      font-weight: 600;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     &--active {
       border-color: rgba($cr-accent-success, 0.4);
       background: rgba($cr-accent-success, 0.12);
       color: $cr-accent-success;
+    }
+  }
+
+  &__refresh {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 0.35rem;
+    padding: 0.05rem 0;
+    border: 0;
+    background: transparent;
+    color: $cr-text-muted;
+    font-family: $cr-font-sans;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover {
+      color: $cr-text-primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba($cr-accent-primary, 0.5);
+      outline-offset: 3px;
+      border-radius: $cr-radius-sm;
+    }
+  }
+
+  &__details {
+    border-top: 1px solid $cr-border-subtle;
+    border-bottom: 1px solid $cr-border-subtle;
+
+    summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 38px;
+      color: $cr-text-secondary;
+      font-size: 0.72rem;
+      font-weight: 800;
+      cursor: pointer;
+      list-style: none;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      svg {
+        transition: transform $cr-transition-fast;
+      }
+    }
+
+    &[open] summary svg {
+      transform: rotate(180deg);
+    }
+
+    .cr-prejoin__device-grid {
+      padding-bottom: 0.75rem;
     }
   }
 
@@ -1400,8 +1529,8 @@ body.classroom-active {
     }
 
     &--poor {
-      border-color: rgba($cr-accent-danger, 0.3);
-      background: rgba($cr-accent-danger, 0.08);
+      border-color: rgba($cr-accent-danger, 0.25);
+      background: rgba($cr-accent-danger, 0.06);
 
       svg {
         color: $cr-accent-danger;
@@ -1410,7 +1539,7 @@ body.classroom-active {
   }
 
   &__join {
-    min-height: 44px;
+    min-height: 48px;
     padding: 0.7rem 1rem;
     border-color: rgba($cr-accent-primary, 0.75);
     background: $cr-accent-primary;
@@ -1420,6 +1549,79 @@ body.classroom-active {
     &:hover:not(:disabled) {
       background: $cr-accent-primary-light;
       box-shadow: 0 12px 30px rgba($cr-accent-primary, 0.34);
+    }
+  }
+
+  @container classroom-video (max-width: 720px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(130px, 0.42fr) minmax(0, 1.58fr);
+    overflow-y: auto;
+
+    &__preview {
+      min-height: 130px;
+      max-height: 240px;
+    }
+
+    &__camera-off {
+      strong,
+      span:last-child {
+        display: none;
+      }
+    }
+
+    &__avatar {
+      width: 54px;
+      height: 54px;
+      font-size: 1.25rem;
+    }
+
+    &__panel {
+      border-top: 1px solid $cr-border-subtle;
+      border-left: 0;
+      overflow-y: auto;
+      padding: 0.7rem;
+      gap: 0.45rem;
+    }
+
+    &__join {
+      min-height: 42px;
+      padding: 0.55rem 0.8rem;
+    }
+
+    &__header {
+      gap: 0.15rem;
+
+      h2 {
+        font-size: 1rem;
+      }
+
+      p {
+        font-size: 0.68rem;
+      }
+    }
+
+    &__session-context {
+      margin-top: 0.15rem;
+      padding: 0.35rem 0.5rem;
+      font-size: 0.68rem;
+    }
+
+    &__pill {
+      min-height: 34px;
+      padding: 0.35rem 0.5rem;
+
+      strong {
+        font-size: 0.65rem;
+      }
+
+      small {
+        font-size: 0.5rem;
+      }
+    }
+
+    &__meter,
+    &__network {
+      padding: 0.5rem;
     }
   }
 
@@ -1441,8 +1643,7 @@ body.classroom-active {
   }
 
   @media (max-width: 560px) {
-    &__quick-actions,
-    &__device-grid {
+    &__quick-actions {
       grid-template-columns: 1fr;
     }
 
@@ -1451,8 +1652,6 @@ body.classroom-active {
     }
 
     &__join {
-      position: sticky;
-      bottom: calc(0.75rem + var(--spx-safe-bottom));
       z-index: 4;
     }
   }

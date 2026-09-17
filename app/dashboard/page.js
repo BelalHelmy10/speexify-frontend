@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import api, { clearCsrfToken } from "@/lib/api";
-import { fmtInTz } from "@/utils/date";
+import { fmtInTz, fmtSessionSchedule } from "@/utils/date";
 import { useToast } from "@/components/ToastProvider";
 import { getDictionary, t } from "@/app/i18n";
 import SessionRow from "./components/SessionRow";
@@ -553,7 +553,9 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
   const actionSessionTitle = (session) =>
     session?.title || t(dict, "session_title_default");
   const actionSessionTime = (session) =>
-    session?.startAt ? fmtInTz(session.startAt, timezone) : "";
+    session?.startAt
+      ? fmtSessionSchedule(session.startAt, session.endAt, timezone, locale).label
+      : "";
 
   const nextAction = (() => {
     if (showTeacherContent) {
@@ -1293,23 +1295,33 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                   <div className="next-session__title">
                     {teachSummary.nextTeach.title}
                   </div>
-                  <div className="next-session__time">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    {fmtInTz(teachSummary.nextTeach.startAt, timezone)}
-                    {teachSummary.nextTeach.endAt
-                      ? ` – ${fmtInTz(teachSummary.nextTeach.endAt, timezone)}`
-                      : ""}
-                  </div>
+                  {(() => {
+                    const schedule = fmtSessionSchedule(
+                      teachSummary.nextTeach.startAt,
+                      teachSummary.nextTeach.endAt,
+                      timezone,
+                      locale
+                    );
+                    return (
+                      <div className="next-session__time" aria-label={[schedule.label, schedule.timezoneLabel].filter(Boolean).join(", ")}>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span>{schedule.label}</span>
+                        {schedule.timezoneLabel && (
+                          <span className="session-item__timezone">{schedule.timezoneLabel}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="next-session__learner">
                     <svg
                       width="16"

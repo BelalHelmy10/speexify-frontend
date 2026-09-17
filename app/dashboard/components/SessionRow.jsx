@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { fmtInTz } from "@/utils/date";
 import { getSafeExternalUrl } from "@/utils/url";
+import { fmtSessionSchedule } from "@/utils/date";
 import { t } from "@/app/i18n";
 
 const canJoin = (startAt, endAt, windowMins = 15) => {
@@ -16,8 +16,31 @@ const canJoin = (startAt, endAt, windowMins = 15) => {
   return now >= early && now <= end;
 };
 
-const useCountdown = (startAt, endAt, labels = {}) => {
-  const { startsIn = "Starts in", live = "Live", ended = "Ended" } = labels;
+const interpolate = (template, values) =>
+  Object.entries(values).reduce(
+    (result, [key, value]) => result.split(`{${key}}`).join(String(value)),
+    template
+  );
+
+const getDateKey = (date, timezone) => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone || undefined,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(date);
+  const get = (type) => Number(parts.find((part) => part.type === type)?.value);
+  return Date.UTC(get("year"), get("month") - 1, get("day"));
+};
+
+const useCountdown = (startAt, endAt, labels = {}, timezone, locale = "en-US") => {
+  const {
+    startsToday = "Starts today at {time}",
+    startsTomorrow = "Starts tomorrow at {time}",
+    startsOn = "Starts {date} at {time}",
+    live = "Live",
+    ended = "Ended",
+  } = labels;
 
   const [now, setNow] = useState(Date.now());
   const timer = useRef(null);
@@ -33,21 +56,27 @@ const useCountdown = (startAt, endAt, labels = {}) => {
   const end = endAt ? new Date(endAt).getTime() : start + 60 * 60 * 1000;
 
   if (now < start) {
-    let remaining = Math.max(0, Math.floor((start - now) / 1000));
-    const days = Math.floor(remaining / 86400);
-    remaining %= 86400;
-    const hours = Math.floor(remaining / 3600);
-    remaining %= 3600;
-    const mins = Math.floor(remaining / 60);
-    const secs = remaining % 60;
+    const startDate = new Date(start);
+    const nowDate = new Date(now);
+    const dayOffset = Math.round(
+      (getDateKey(startDate, timezone) - getDateKey(nowDate, timezone)) / 86400000
+    );
+    const time = new Intl.DateTimeFormat(locale, {
+      timeZone: timezone || undefined,
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(startDate);
+    const date = new Intl.DateTimeFormat(locale, {
+      timeZone: timezone || undefined,
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    }).format(startDate);
 
-    const parts = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0 || days > 0) parts.push(`${hours}h`);
-    if (mins > 0 || hours > 0 || days > 0) parts.push(`${mins}m`);
-    parts.push(`${String(secs).padStart(2, "0")}s`);
-
-    return `${startsIn} ${parts.join(" ")}`;
+    if (dayOffset === 0) return interpolate(startsToday, { time });
+    if (dayOffset === 1) return interpolate(startsTomorrow, { time });
+    return interpolate(startsOn, { date, time });
   }
 
   if (now >= start && now <= end) return live;
@@ -96,11 +125,14 @@ export default function SessionRow({
   dict,
   prefix,
 }) {
+  const dateLocale = prefix === "/ar" ? "ar" : "en-US";
   const countdown = useCountdown(s.startAt, s.endAt, {
-    startsIn: t(dict, "countdown_starts_in"),
+    startsToday: t(dict, "countdown_starts_today"),
+    startsTomorrow: t(dict, "countdown_starts_tomorrow"),
+    startsOn: t(dict, "countdown_starts_on"),
     live: t(dict, "countdown_live"),
     ended: t(dict, "countdown_ended"),
-  });
+  }, timezone, dateLocale);
 
   const joinable = canJoin(s.startAt, s.endAt);
 
@@ -124,7 +156,7 @@ export default function SessionRow({
       : t(dict, "session_cancel_title") || "Cancel session";
 
   const sessionDate = s.startAt ? new Date(s.startAt) : null;
-  const dateLocale = prefix === "/ar" ? "ar" : "en-US";
+  const schedule = fmtSessionSchedule(s.startAt, s.endAt, timezone, dateLocale);
   const dateMonth = sessionDate && !Number.isNaN(sessionDate.getTime())
     ? sessionDate.toLocaleDateString(dateLocale, { month: "short", timeZone: timezone || undefined })
     : "";
@@ -148,7 +180,10 @@ export default function SessionRow({
           </div>
 
           <div className="session-item__meta">
-            <span className="session-item__time">
+            <span
+              className="session-item__time"
+              aria-label={[schedule.dateLabel, schedule.timeLabel, schedule.timezoneLabel].filter(Boolean).join(", ")}
+            >
               <svg
                 width="14"
                 height="14"
@@ -160,8 +195,10 @@ export default function SessionRow({
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
-              {fmtInTz(s.startAt, timezone)}
-              {s.endAt ? ` – ${fmtInTz(s.endAt, timezone)}` : ""}
+              <span>{schedule.dateLabel} · {schedule.timeLabel}</span>
+              {schedule.timezoneLabel && (
+                <span className="session-item__timezone">{schedule.timezoneLabel}</span>
+              )}
             </span>
 
             {isGroup && (
@@ -191,7 +228,11 @@ export default function SessionRow({
             <>
               <Link
                 href={`${prefix}/dashboard/sessions/${s.id}`}
-                className="btn btn--ghost session-item__details"
+                className={`btn btn--ghost session-item__details${
+                  isUpcoming && sessionTone === "scheduled" && countdown
+                    ? " session-item__details--schedule"
+                    : ""
+                }`}
                 title={t(dict, "session_view_details") || "View session details"}
               >
                 {countdown || t(dict, "session_view_details") || "View session"}
@@ -221,7 +262,7 @@ export default function SessionRow({
 
               {canReschedule && (
                 <button
-                  className="btn btn--ghost"
+                  className="btn btn--ghost session-item__reschedule"
                   onClick={() => onRescheduleClick(s)}
                 >
                   {t(dict, "session_reschedule")}
