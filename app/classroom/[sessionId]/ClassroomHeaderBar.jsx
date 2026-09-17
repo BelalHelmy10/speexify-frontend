@@ -118,12 +118,14 @@ export default function ClassroomHeaderBar({
   prefix,
   setShowLeaveConfirm,
   headerTitle,
-  typeLabel,
   isGroup,
   countLabel,
   isTeacher,
   teacherName,
   learnerName,
+  objective,
+  practiceCue,
+  currentActivity,
   setShowParticipantList,
   wsStatus,
   networkQuality,
@@ -174,9 +176,23 @@ export default function ClassroomHeaderBar({
 
       {/* ── Center: Title ── */}
       <div className="cr-header__center">
-        <div className="cr-header__resource-name">
-          {headerTitle} • {typeLabel}
-          {isGroup ? ` • ${countLabel}` : ""}
+        <div className="cr-header__title-group">
+          <span className="cr-header__eyebrow">
+            {isTeacher ? "Coach workspace" : "Today's practice"}
+          </span>
+          <div className="cr-header__resource-name" title={headerTitle}>
+            {headerTitle}
+          </div>
+          <span className="cr-header__objective" title={objective || undefined}>
+            {objective
+              ? `Today: ${objective}`
+              : currentActivity
+                ? `Today: practice ${currentActivity}`
+                : "Set today's focus"}
+          </span>
+          <span className="cr-header__progress-cue" title={practiceCue || undefined}>
+            Practicing: {practiceCue || "clarity, confidence, and useful phrases"}
+          </span>
         </div>
       </div>
 
@@ -232,7 +248,10 @@ export default function ClassroomHeaderBar({
           data-role={isTeacher ? "teacher" : "learner"}
         >
           {isTeacher ? <UserRound size={14} /> : <GraduationCap size={14} />}
-          {isTeacher ? teacherName : learnerName}
+          <span className="cr-header__role-copy">
+            <strong>{isTeacher ? "Coach" : "Member"}</strong>
+            <span>{isTeacher ? teacherName : learnerName}</span>
+          </span>
         </span>
 
         {isGroup && (

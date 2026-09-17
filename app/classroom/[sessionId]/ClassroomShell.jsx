@@ -1676,8 +1676,25 @@ export default function ClassroomShell({
   /* -----------------------------------------------------------
      Header (FIXED: match SCSS classnames)
   ----------------------------------------------------------- */
-  const headerTitle = session?.title || "Classroom";
-  const typeLabel = isGroup ? "GROUP" : "1:1";
+  const headerTitle = session?.title || (isTeacher ? "Coaching session" : "Your coaching session");
+  const sessionObjective = String(
+    session?.objective ||
+      session?.learningObjective ||
+      session?.goal ||
+      session?.focus ||
+      session?.notes ||
+      ""
+  ).trim().slice(0, 120);
+  const rawPracticeCue =
+    session?.practiceCue ||
+    session?.practiceFocus ||
+    session?.skills ||
+    session?.competencies ||
+    "";
+  const sessionPracticeCue = (Array.isArray(rawPracticeCue)
+    ? rawPracticeCue.join(", ")
+    : String(rawPracticeCue)
+  ).trim().slice(0, 120) || "clarity, confidence, and useful phrases";
   const countLabel = isGroup
     ? `${participantCount}${capacity ? `/${capacity}` : ""}`
     : "";
@@ -1740,12 +1757,14 @@ export default function ClassroomShell({
         prefix={prefix}
         setShowLeaveConfirm={setShowLeaveConfirm}
         headerTitle={headerTitle}
-        typeLabel={typeLabel}
         isGroup={isGroup}
         countLabel={countLabel}
         isTeacher={isTeacher}
         teacherName={teacherName}
         learnerName={learnerName}
+        objective={sessionObjective}
+        practiceCue={sessionPracticeCue}
+        currentActivity={resource?.title || resource?.name || null}
         setShowParticipantList={setShowParticipantList}
         wsStatus={classroomChannel?.status}
         networkQuality={networkQuality}
@@ -1944,18 +1963,24 @@ export default function ClassroomShell({
                   <div className="cr-placeholder__icon">
                     <BookOpen size={32} />
                   </div>
-                  <h2 className="cr-placeholder__title">No resource selected</h2>
+                  <span className="cr-placeholder__eyebrow">Today's practice</span>
+                  <h2 className="cr-placeholder__title">
+                    {sessionObjective || "What will you practice today?"}
+                  </h2>
                   <p className="cr-placeholder__text">
                     {isTeacher
-                      ? "Click the resource picker below to choose content."
-                      : "Waiting for the teacher to select a resource."}
+                      ? "Choose one activity to make this session practical and focused."
+                      : "Your coach will choose the activity and guide the practice from here."}
+                  </p>
+                  <p className="cr-placeholder__progress">
+                    You are practicing: {sessionPracticeCue}
                   </p>
                   {isTeacher && (
                     <button
                       className="cr-placeholder__action"
                       onClick={() => setIsPickerOpen(true)}
                     >
-                      <BookOpen size={16} /> Choose Resource
+                      <BookOpen size={16} /> Choose today's activity
                     </button>
                   )}
                 </div>
@@ -2093,14 +2118,26 @@ export default function ClassroomShell({
                 <div className="cr-placeholder__icon">
                   <BookOpen size={32} />
                 </div>
+                <span className="cr-placeholder__eyebrow">Today's practice</span>
                 <h2 className="cr-placeholder__title">
-                  No resource selected
+                  {sessionObjective || "What will you practice today?"}
                 </h2>
                 <p className="cr-placeholder__text">
                   {isTeacher
-                    ? "Tap the Resources button to choose content."
-                    : "Waiting for the teacher to select a resource."}
+                    ? "Choose one activity to make this session practical and focused."
+                    : "Your coach will choose the activity and guide the practice from here."}
                 </p>
+                <p className="cr-placeholder__progress">
+                  You are practicing: {sessionPracticeCue}
+                </p>
+                {isTeacher && (
+                  <button
+                    className="cr-placeholder__action"
+                    onClick={onOpenPicker}
+                  >
+                    <BookOpen size={16} /> Choose today's activity
+                  </button>
+                )}
               </div>
             )
           }
