@@ -1380,6 +1380,16 @@ export default function PrepShell({
         const snapshot = annotation?.payload;
         if (!snapshot) return;
 
+        // The teacher snapshot is authoritative for the shared page. Clear
+        // any legacy bitmap restored from this learner's local cache before
+        // applying the structured snapshot, otherwise stale pixels can sit
+        // underneath the current annotations.
+        const snapshotCanvas = canvasRef.current;
+        const snapshotContext = snapshotCanvas?.getContext?.("2d");
+        if (snapshotContext && snapshotCanvas) {
+          snapshotContext.clearRect(0, 0, snapshotCanvas.width, snapshotCanvas.height);
+        }
+
         if (Array.isArray(snapshot.stickyNotes)) setStickyNotes(snapshot.stickyNotes);
         if (Array.isArray(snapshot.textBoxes)) setTextBoxes(snapshot.textBoxes);
         if (Array.isArray(snapshot.masks)) setMasks(snapshot.masks);

@@ -151,6 +151,14 @@ export function applyRemotePrepAnnotationState(message, ctx) {
     if (Array.isArray(remoteBoxes)) setBoxes(remoteBoxes);
 
     if (Array.isArray(remoteStrokes)) {
+      // Structured strokes are the current source of truth. Clear any
+      // legacy bitmap that may have been restored from this learner's local
+      // cache before the React redraw effect paints the incoming strokes.
+      const canvas = canvasRef.current;
+      const drawContext = canvas?.getContext?.("2d");
+      if (drawContext && canvas) {
+        drawContext.clearRect(0, 0, canvas.width, canvas.height);
+      }
       setStrokes(remoteStrokes);
     } else if (canvasData && canvasRef.current) {
       const canvas = canvasRef.current;
