@@ -196,7 +196,7 @@ body.classroom-active {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 4.25rem;
+  height: $cr-header-height;
   padding: 0 1rem;
   background: linear-gradient(180deg,
       rgba(17, 24, 39, 0.98) 0%,
@@ -207,7 +207,7 @@ body.classroom-active {
 
   @media (max-width: 768px) {
     padding: var(--spx-safe-top) calc(0.75rem + var(--spx-safe-right)) 0 calc(0.75rem + var(--spx-safe-left));
-    height: calc(58px + var(--spx-safe-top));
+    height: calc(46px + var(--spx-safe-top));
   }
 
   &__left {
@@ -263,31 +263,16 @@ body.classroom-active {
     padding: 0 0.75rem;
   }
 
-  &__title-group {
-    display: grid;
-    min-width: 0;
-    justify-items: center;
-    line-height: 1.1;
-  }
-
-  &__eyebrow {
-    color: $cr-accent-teacher;
-    font-size: 0.56rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
   &__resource-name {
     min-width: 0;
     font-size: 0.75rem;
-    font-weight: 700;
-    color: $cr-text-primary;
+    font-weight: 500;
+    color: $cr-text-secondary;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 320px;
-    padding: 0.25rem 0.75rem 0.1rem;
+    padding: 0.3rem 0.75rem;
     background: $cr-bg-tertiary;
     border-radius: $cr-radius-full;
     border: 1px solid $cr-border-subtle;
@@ -299,36 +284,6 @@ body.classroom-active {
 
     @media (max-width: 640px) {
       display: none;
-    }
-  }
-
-  &__objective {
-    max-width: min(42vw, 30rem);
-    overflow: hidden;
-    color: $cr-text-muted;
-    font-size: 0.62rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-
-    @media (max-width: 640px) {
-      max-width: 34vw;
-      font-size: 0.56rem;
-    }
-  }
-
-  &__progress-cue {
-    max-width: min(42vw, 30rem);
-    overflow: hidden;
-    color: $cr-accent-teacher;
-    font-size: 0.56rem;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-
-    @media (max-width: 640px) {
-      max-width: 34vw;
-      font-size: 0.5rem;
     }
   }
 
@@ -588,32 +543,9 @@ body.classroom-active {
       padding: 0.2rem 0.45rem;
       font-size: 0.5625rem;
 
-      > .cr-header__role-copy > span {
+      span:last-child {
         display: none;
       }
-    }
-  }
-
-  &__role-copy {
-    display: grid;
-    gap: 0.08rem;
-    min-width: 0;
-    text-transform: none;
-    letter-spacing: normal;
-
-    strong {
-      color: $cr-text-primary;
-      font-size: 0.62rem;
-      line-height: 1;
-    }
-
-    span {
-      max-width: 7rem;
-      overflow: hidden;
-      color: $cr-text-muted;
-      font-size: 0.56rem;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
   }
 
@@ -2056,15 +1988,6 @@ body.classroom-active {
     opacity: 0.6;
   }
 
-  &__eyebrow {
-    margin-bottom: 0.45rem;
-    color: $cr-accent-teacher;
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
   &__title {
     margin: 0 0 0.5rem;
     font-size: 1.25rem;
@@ -2077,14 +2000,6 @@ body.classroom-active {
     font-size: 0.9375rem;
     color: $cr-text-secondary;
     max-width: 400px;
-  }
-
-  &__progress {
-    margin: 0.75rem 0 0;
-    color: $cr-accent-teacher;
-    font-size: 0.78rem;
-    font-weight: 700;
-    max-width: 30rem;
   }
 
   &__action {
