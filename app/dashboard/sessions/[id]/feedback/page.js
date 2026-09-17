@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -206,27 +206,24 @@ function buildQuizQuestions(items) {
   const grammar = items.filter((item) => item.type === "grammar");
   const questions = [];
 
-  if (vocabulary.length) {
-    const target = vocabulary[0];
+  vocabulary.forEach((target, index) => {
     const choices = uniqueChoices([
       target.response,
-      ...vocabulary.slice(1).map((item) => item.response),
+      ...vocabulary.filter((item) => item.id !== target.id).map((item) => item.response),
       "A filler word used when you need more time.",
       "A phrase for ending a conversation politely.",
       "A word used only in formal writing.",
     ]);
-
     questions.push({
-      id: "vocab",
+      id: `vocab-${target.id || index}`,
       type: "vocabulary",
       prompt: `What does "${target.prompt}" mean in this session?`,
       answer: target.response,
-      choices,
+      choices: rotateChoices(choices, index),
     });
-  }
+  });
 
-  if (grammar.length) {
-    const target = grammar[0];
+  grammar.forEach((target, index) => {
     const { correction } = splitCorrectionAndExplanation(target.response);
     const choices = uniqueChoices([
       correction,
@@ -236,15 +233,21 @@ function buildQuizQuestions(items) {
     ]);
 
     questions.push({
-      id: "grammar",
+      id: `grammar-${target.id || index}`,
       type: "grammar",
       prompt: "Choose the stronger correction.",
       answer: correction,
-      choices,
+      choices: rotateChoices(choices, index + vocabulary.length),
     });
-  }
+  });
 
-  return questions.slice(0, 2);
+  return questions;
+}
+
+function rotateChoices(choices, offset) {
+  if (choices.length < 2) return choices;
+  const index = Math.abs(Number(offset) || 0) % choices.length;
+  return [...choices.slice(index), ...choices.slice(0, index)];
 }
 
 function SessionMeta({ session, sessionDateLabel }) {
@@ -665,6 +668,15 @@ function VocabularyCarousel({ items }) {
   const [flippedId, setFlippedId] = useState(null);
   const active = items[index] || null;
 
+  const speak = (event) => {
+    event.stopPropagation();
+    if (typeof window === "undefined" || !window.speechSynthesis || !active) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(`${active.prompt}. ${active.response}`);
+    utterance.lang = "en-US";
+    window.speechSynthesis.speak(utterance);
+  };
+
   useEffect(() => {
     setIndex((current) => Math.min(current, Math.max(items.length - 1, 0)));
   }, [items.length]);
@@ -739,7 +751,16 @@ function VocabularyCarousel({ items }) {
             </span>
             <span className="session-report-flashcard__face session-report-flashcard__back">
               <p>{active.response}</p>
-              <span className="session-report-listen">
+              <span
+                className="session-report-listen"
+                role="button"
+                tabIndex={0}
+                aria-label={`Listen to ${active.prompt}`}
+                onClick={speak}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") speak(event);
+                }}
+              >
                 <Volume2 size={16} />
                 Listen
               </span>
@@ -836,18 +857,68 @@ function GrammarFixCards({ items }) {
 
 function PronunciationHub({ items }) {
   const [recordingId, setRecordingId] = useState(null);
-  const [recorded, setRecorded] = useState({});
+  const [recordings, setRecordings] = useState({});
+  const [recordingError, setRecordingError] = useState("");
+  const recorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const streamRef = useRef(null);
+  const recordingsRef = useRef(recordings);
 
   useEffect(() => {
-    if (!recordingId) return undefined;
+    recordingsRef.current = recordings;
+  }, [recordings]);
 
-    const timer = window.setTimeout(() => {
-      setRecorded((current) => ({ ...current, [recordingId]: true }));
-      setRecordingId(null);
-    }, 1800);
+  useEffect(() => {
+    return () => {
+      recorderRef.current?.stop?.();
+      streamRef.current?.getTracks?.().forEach((track) => track.stop());
+      Object.values(recordingsRef.current).forEach((recording) => URL.revokeObjectURL(recording.url));
+    };
+  }, []);
 
-    return () => window.clearTimeout(timer);
-  }, [recordingId]);
+  const stopRecording = () => {
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+  };
+
+  const startRecording = async (itemId) => {
+    if (recordingId) return;
+    setRecordingError("");
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setRecordingError("Audio recording is not supported in this browser.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      streamRef.current = stream;
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        const url = URL.createObjectURL(blob);
+        setRecordings((current) => {
+          if (current[itemId]?.url) URL.revokeObjectURL(current[itemId].url);
+          return { ...current, [itemId]: { url } };
+        });
+        stream.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        recorderRef.current = null;
+        setRecordingId(null);
+      };
+      recorder.start();
+      setRecordingId(itemId);
+    } catch (err) {
+      setRecordingError(
+        err?.name === "NotAllowedError"
+          ? "Microphone access is required to record your pronunciation."
+          : "Could not start recording. Try again."
+      );
+    }
+  };
 
   return (
     <section className="session-report-learner-section">
@@ -862,7 +933,7 @@ function PronunciationHub({ items }) {
         <div className="session-report-pronunciation-grid">
           {items.map((item) => {
             const isRecording = recordingId === item.id;
-            const isDone = recorded[item.id];
+            const recording = recordings[item.id];
 
             return (
               <motion.article
@@ -881,17 +952,19 @@ function PronunciationHub({ items }) {
                   className="session-report-recorder"
                   onClick={() => {
                     if (isRecording) {
-                      setRecorded((current) => ({ ...current, [item.id]: true }));
-                      setRecordingId(null);
+                      stopRecording();
                     } else {
-                      setRecordingId(item.id);
+                      void startRecording(item.id);
                     }
                   }}
                   aria-label={isRecording ? "Stop recording" : `Record ${item.prompt}`}
                   title={isRecording ? "Stop" : "Record"}
                 >
-                  {isRecording ? <Square size={18} /> : isDone ? <Check size={18} /> : <Mic size={18} />}
+                  {isRecording ? <Square size={18} /> : recording ? <Check size={18} /> : <Mic size={18} />}
                 </button>
+                {recording && (
+                  <audio className="session-report-pronunciation-audio" controls src={recording.url} />
+                )}
                 <div className="session-report-wave" aria-hidden>
                   {[0, 1, 2, 3, 4].map((bar) => (
                     <span key={bar} />
@@ -904,6 +977,7 @@ function PronunciationHub({ items }) {
       ) : (
         <EmptyLearnerState label="No pronunciation items for this report." />
       )}
+      {recordingError && <p className="session-report-inline-error" role="alert">{recordingError}</p>}
     </section>
   );
 }
@@ -952,6 +1026,7 @@ function QuickReviewQuiz({ questions }) {
                     type="button"
                     key={choice}
                     className={`${selected ? "is-selected" : ""} ${isCorrect ? "is-correct" : ""} ${isWrong ? "is-wrong" : ""}`}
+                    aria-pressed={selected}
                     onClick={() => setAnswers((current) => ({ ...current, [question.id]: choice }))}
                   >
                     <span>{choice}</span>
@@ -961,6 +1036,11 @@ function QuickReviewQuiz({ questions }) {
                 );
               })}
             </div>
+            {answers[question.id] && (
+              <p className="session-report-quiz-result" role="status">
+                {answers[question.id] === question.answer ? "Correct" : "Try again"}
+              </p>
+            )}
           </article>
         ))}
       </div>

@@ -6,12 +6,17 @@ export default function ClassroomLeaveConfirmModal({
   show,
   setShowLeaveConfirm,
   prefix,
+  sessionId,
   summary,
   isTeacher,
 }) {
   if (!show) return null;
 
   const hasEnded = summary?.statusLabel?.includes("Over") || summary?.statusLabel === "Time is up";
+
+  const leaveHref = isTeacher
+    ? `${prefix}/dashboard`
+    : `${prefix}/dashboard/sessions/${sessionId}/feedback`;
 
   return (
     <div className="cr-modal-overlay" onClick={() => setShowLeaveConfirm(false)}>
@@ -78,8 +83,8 @@ export default function ClassroomLeaveConfirmModal({
           >
             Stay in session
           </button>
-          <a href={`${prefix}/dashboard`} className="cr-button cr-button--danger">
-            Leave session
+          <a href={leaveHref} className="cr-button cr-button--danger">
+            {isTeacher ? "Leave session" : "Open my recap"}
           </a>
         </div>
       </div>

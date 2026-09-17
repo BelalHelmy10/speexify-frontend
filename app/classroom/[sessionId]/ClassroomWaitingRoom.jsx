@@ -12,7 +12,7 @@ import { Clock, Users, Shield, Wifi, WifiOff, Sparkles } from "lucide-react";
      - sessionId: current session ID
      - sessionInfo: { teacherName, sessionTitle, startTime, participantCount, capacity }
      - userName: current learner's display name
-     - status: "waiting" | "admitted" | "denied"
+     - status: "waiting" | "admitted" | "denied" | "error" | "ended"
      - wsConnected: boolean indicating WS connection status
      - onRetry: callback to retry lobby join
      - onLeave: callback to leave waiting room
@@ -21,6 +21,7 @@ export default function ClassroomWaitingRoom({
   sessionId,
   sessionInfo = {},
   userName = "Learner",
+  locale = "en",
   status = "waiting",
   wsConnected = false,
   onRetry,
@@ -53,6 +54,7 @@ export default function ClassroomWaitingRoom({
   }, []);
 
   const dots = ".".repeat(dotCount);
+  const isArabic = locale === "ar";
 
   const {
     teacherName = "your teacher",
@@ -62,9 +64,11 @@ export default function ClassroomWaitingRoom({
     capacity,
   } = sessionInfo;
 
-  if (status === "denied") {
+  if (["denied", "ended", "error"].includes(status)) {
+    const isEnded = status === "ended";
+    const isError = status === "error";
     return (
-      <div className="cr-waiting-room cr-waiting-room--denied">
+      <div className={`cr-waiting-room cr-waiting-room--${status}`} dir={isArabic ? "rtl" : "ltr"}>
         <div className="cr-waiting-room__orbs" aria-hidden="true">
           <span className="cr-waiting-room__orb cr-waiting-room__orb--1" />
           <span className="cr-waiting-room__orb cr-waiting-room__orb--2" />
@@ -72,23 +76,32 @@ export default function ClassroomWaitingRoom({
 
         <div className="cr-waiting-room__card">
           <div className="cr-waiting-room__icon-ring cr-waiting-room__icon-ring--denied">
-            <Shield size={28} />
+            {isError ? <WifiOff size={28} /> : <Shield size={28} />}
           </div>
 
-          <h1 className="cr-waiting-room__title">Entry Not Approved</h1>
+          <h1 className="cr-waiting-room__title">
+            {isEnded
+              ? isArabic ? "انتهت الجلسة" : "Session Ended"
+              : isError
+                ? isArabic ? "مشكلة في الاتصال" : "Connection Problem"
+                : isArabic ? "لم تتم الموافقة على الدخول" : "Entry Not Approved"}
+          </h1>
           <p className="cr-waiting-room__subtitle">
-            The teacher has not admitted you to this session. This may be
-            because the session is full or has already started.
+            {isEnded
+              ? isArabic ? "هذه الجلسة لم تعد متاحة." : "This classroom session is no longer available."
+              : isError
+                ? isArabic ? "تعذر التحقق من دخولك. تحقق من الاتصال وحاول مرة أخرى." : "We could not verify your admission. Check your connection and try again."
+                : isArabic ? "لم يسمح لك المعلم بالدخول بعد. قد تكون الجلسة ممتلئة أو بدأت بالفعل." : "The teacher has not admitted you to this session. This may be because the session is full or has already started."}
           </p>
 
           <div className="cr-waiting-room__actions">
-            {onRetry && (
+            {onRetry && !isEnded && (
               <button
                 type="button"
                 className="cr-waiting-room__btn cr-waiting-room__btn--secondary"
                 onClick={onRetry}
               >
-                Request again
+                {isError ? (isArabic ? "حاول مرة أخرى" : "Try again") : isArabic ? "اطلب الدخول مرة أخرى" : "Request again"}
               </button>
             )}
             {onLeave && (
@@ -97,7 +110,7 @@ export default function ClassroomWaitingRoom({
                 className="cr-waiting-room__btn cr-waiting-room__btn--ghost"
                 onClick={onLeave}
               >
-                ← Back to dashboard
+                {isArabic ? "← العودة إلى لوحة التحكم" : "← Back to dashboard"}
               </button>
             )}
           </div>
@@ -107,7 +120,7 @@ export default function ClassroomWaitingRoom({
   }
 
   return (
-    <div className="cr-waiting-room">
+    <div className="cr-waiting-room" dir={isArabic ? "rtl" : "ltr"}>
       {/* Ambient background orbs */}
       <div className="cr-waiting-room__orbs" aria-hidden="true">
         <span className="cr-waiting-room__orb cr-waiting-room__orb--1" />
@@ -124,35 +137,35 @@ export default function ClassroomWaitingRoom({
         </div>
 
         {/* Status */}
-        <span className="cr-waiting-room__eyebrow">Waiting Room</span>
+        <span className="cr-waiting-room__eyebrow">{isArabic ? "غرفة الانتظار" : "Waiting Room"}</span>
         <h1 className="cr-waiting-room__title">
-          Waiting for admission{dots}
+          {isArabic ? `في انتظار السماح بالدخول${dots}` : `Waiting for admission${dots}`}
         </h1>
         <p className="cr-waiting-room__subtitle">
-          <strong>{teacherName}</strong> will let you in shortly.
+          <strong>{teacherName}</strong> {isArabic ? "سيسمح لك بالدخول قريبًا." : "will let you in shortly."}
           <br />
-          Please stay on this page.
+          {isArabic ? "يرجى البقاء في هذه الصفحة." : "Please stay on this page."}
         </p>
 
         {/* Session meta */}
         <div className="cr-waiting-room__meta">
           {sessionTitle && (
             <div className="cr-waiting-room__meta-item">
-              <span className="cr-waiting-room__meta-label">Session</span>
+            <span className="cr-waiting-room__meta-label">{isArabic ? "الجلسة" : "Session"}</span>
               <span className="cr-waiting-room__meta-value">{sessionTitle}</span>
             </div>
           )}
           <div className="cr-waiting-room__meta-item">
             <Clock size={14} />
             <span className="cr-waiting-room__meta-value">
-              Waiting {formatElapsed(elapsed)}
+                {isArabic ? `انتظار ${formatElapsed(elapsed)}` : `Waiting ${formatElapsed(elapsed)}`}
             </span>
           </div>
           {participantCount != null && capacity != null && (
             <div className="cr-waiting-room__meta-item">
               <Users size={14} />
               <span className="cr-waiting-room__meta-value">
-                {participantCount}/{capacity} participants
+                {isArabic ? `${participantCount}/${capacity} مشارك` : `${participantCount}/${capacity} participants`}
               </span>
             </div>
           )}
@@ -167,7 +180,9 @@ export default function ClassroomWaitingRoom({
           }`}
         >
           {wsConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
-          <span>{wsConnected ? "Connected. Listening for approval" : "Reconnecting…"}</span>
+          <span>{wsConnected
+            ? isArabic ? "متصل. في انتظار الموافقة" : "Connected. Listening for approval"
+            : isArabic ? "جارٍ إعادة الاتصال…" : "Reconnecting…"}</span>
         </div>
 
         {/* Identity badge */}
@@ -177,7 +192,7 @@ export default function ClassroomWaitingRoom({
           </div>
           <div className="cr-waiting-room__identity-text">
             <strong>{userName}</strong>
-            <span>You'll join as a learner</span>
+            <span>{isArabic ? "ستنضم كمتعلم" : "You'll join as a learner"}</span>
           </div>
         </div>
 
@@ -189,7 +204,7 @@ export default function ClassroomWaitingRoom({
               className="cr-waiting-room__btn cr-waiting-room__btn--ghost"
               onClick={onLeave}
             >
-              Leave waiting room
+              {isArabic ? "مغادرة غرفة الانتظار" : "Leave waiting room"}
             </button>
           )}
         </div>
@@ -197,7 +212,7 @@ export default function ClassroomWaitingRoom({
 
       {/* Bottom ambient text */}
       <p className="cr-waiting-room__footer">
-        Speexify • Group Session #{sessionId}
+        {isArabic ? `Speexify • جلسة جماعية #${sessionId}` : `Speexify • Group Session #${sessionId}`}
       </p>
     </div>
   );

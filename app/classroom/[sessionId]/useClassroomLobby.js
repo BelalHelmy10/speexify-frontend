@@ -18,6 +18,7 @@ const LOBBY_STATUS_POLL_INTERVAL_MS = 3000;
  * @param {boolean} options.isTeacher
  * @param {Object} options.classroomChannel - { ready, send, subscribe }
  * @param {string} options.userName - learner display name
+ * @param {string|number} options.userId - authenticated learner id
  * @returns lobby state and actions
  */
 export function useClassroomLobby({
@@ -25,10 +26,11 @@ export function useClassroomLobby({
   isTeacher = false,
   classroomChannel,
   userName = "Learner",
+  userId,
 }) {
   // Shared state
   const [lobbyEnabled, setLobbyEnabled] = useState(null); // null = unknown
-  const [lobbyStatus, setLobbyStatus] = useState("checking"); // "checking" | "admitted" | "waiting" | "denied" | "not_joined"
+  const [lobbyStatus, setLobbyStatus] = useState("checking"); // "checking" | "admitted" | "waiting" | "denied" | "not_joined" | "error"
 
   // Teacher state
   const [waitingLearners, setWaitingLearners] = useState([]);
@@ -74,9 +76,9 @@ export function useClassroomLobby({
       } catch (err) {
         console.warn("Failed to check lobby status:", err);
         if (!cancelled) {
-          // On error, assume no lobby (graceful degradation)
-          setLobbyStatus("admitted");
-          setLobbyEnabled(false);
+          // Never grant classroom access when admission state is unknown.
+          setLobbyStatus("error");
+          setLobbyEnabled(true);
         }
       }
     }
@@ -114,13 +116,12 @@ export function useClassroomLobby({
       } catch (err) {
         console.warn("Failed to join lobby:", err);
         if (!cancelled) {
-          // If error has denied status
-          if (err?.response?.data?.status === "denied") {
-            setLobbyStatus("denied");
-          } else {
-            // Graceful: just let them through
-            setLobbyStatus("admitted");
-          }
+          const serverStatus = err?.response?.data?.status;
+          setLobbyStatus(
+            serverStatus === "denied" || serverStatus === "ended"
+              ? serverStatus
+              : "error"
+          );
         }
       }
     }
@@ -133,16 +134,16 @@ export function useClassroomLobby({
 
   // ─── Learner: poll status while waiting ───
   useEffect(() => {
-    if (isTeacher || lobbyStatus !== "waiting") return;
+    if (isTeacher || !["waiting", "error"].includes(lobbyStatus)) return;
 
     const interval = setInterval(async () => {
       try {
         const { data } = await api.get(`/sessions/${sessionId}/lobby/status`);
         if (!mountedRef.current) return;
 
-        if (data.status === "admitted") {
-          setLobbyStatus("admitted");
-        }
+        if (data.lobbyEnabled === false) setLobbyEnabled(false);
+        else setLobbyEnabled(true);
+        setLobbyStatus(data.status || "not_joined");
       } catch {
         // Ignore polling errors
       }
@@ -160,16 +161,23 @@ export function useClassroomLobby({
       if (!data?.type) return;
 
       if (data.type === "LOBBY_ADMITTED") {
-        setLobbyStatus("admitted");
+        if (userId != null && data.learnerId != null && String(data.learnerId) === String(userId)) {
+          setLobbyStatus("admitted");
+        }
       } else if (data.type === "LOBBY_DENIED") {
-        setLobbyStatus("denied");
+        if (userId != null && data.learnerId != null && String(data.learnerId) === String(userId)) {
+          setLobbyStatus("denied");
+        }
       } else if (data.type === "LOBBY_ADMIT_ALL") {
-        setLobbyStatus("admitted");
+        const admittedIds = Array.isArray(data.admittedIds) ? data.admittedIds : [];
+        if (admittedIds.some((id) => String(id) === String(userId))) {
+          setLobbyStatus("admitted");
+        }
       }
     });
 
     return unsubscribe;
-  }, [isTeacher, classroomChannel]);
+  }, [isTeacher, classroomChannel, userId]);
 
   // ─── Teacher: poll waiting list ───
   useEffect(() => {
@@ -322,9 +330,15 @@ export function useClassroomLobby({
     isLobbyPanelOpen,
 
     // Computed
-    isInWaitingRoom: !isTeacher && lobbyEnabled && lobbyStatus === "waiting",
+    isInWaitingRoom:
+      !isTeacher &&
+      lobbyEnabled !== false &&
+      ["checking", "waiting", "error"].includes(lobbyStatus),
     isDenied: !isTeacher && lobbyStatus === "denied",
-    isAdmitted: lobbyStatus === "admitted" || !lobbyEnabled,
+    isError: !isTeacher && lobbyStatus === "error",
+    isChecking: !isTeacher && lobbyStatus === "checking",
+    isEnded: !isTeacher && lobbyStatus === "ended",
+    isAdmitted: lobbyStatus === "admitted" || lobbyEnabled === false,
     hasWaitingLearners: isTeacher && waitingLearners.length > 0,
 
     // Teacher actions

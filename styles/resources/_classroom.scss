@@ -3463,6 +3463,22 @@ body.classroom-active {
     &:active {
       transform: translateY(0);
     }
+
+    &:disabled {
+      cursor: not-allowed;
+      filter: grayscale(0.35);
+      opacity: 0.55;
+      transform: none;
+    }
+  }
+
+  &__error {
+    width: 100%;
+    margin: 0 0 0.25rem;
+    color: $cr-accent-danger;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    text-align: center;
   }
 }
 

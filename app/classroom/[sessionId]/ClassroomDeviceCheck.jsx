@@ -176,12 +176,7 @@ export default function ClassroomDeviceCheck({ userName = "Learner", onReady }) 
     setTimeout(() => onReady?.(), 500);
   }, [onReady]);
 
-  // Auto-enter after a brief pause when all checks pass
-  useEffect(() => {
-    if (!allDone) return;
-    const timeout = setTimeout(handleEnter, 1500);
-    return () => clearTimeout(timeout);
-  }, [allDone, handleEnter]);
+  const canEnter = allDone && micStatus === STATUS.OK && netStatus === STATUS.OK;
 
   return (
     <div
@@ -206,7 +201,11 @@ export default function ClassroomDeviceCheck({ userName = "Learner", onReady }) 
         <h1 className="cr-device-check__title">{userName}</h1>
         <p className="cr-device-check__subtitle">
           {allDone
-            ? "All set. Entering classroom…"
+            ? canEnter
+              ? camStatus === STATUS.FAIL
+                ? "Your microphone and network are ready. You can join with the camera off."
+                : "Your devices are ready. Choose when to enter."
+              : "We found an issue before joining."
             : "Let's check your devices"}
         </p>
 
@@ -231,13 +230,20 @@ export default function ClassroomDeviceCheck({ userName = "Learner", onReady }) 
           />
         </div>
 
+        {allDone && !canEnter && (
+          <p className="cr-device-check__error" role="alert">
+            Microphone and network access are required to join. Check the failed item and try again.
+          </p>
+        )}
+
         {allDone && (
           <button
             type="button"
             className="cr-device-check__enter"
             onClick={handleEnter}
+            disabled={!canEnter}
           >
-            Enter classroom
+            {canEnter ? "Enter classroom" : "Fix device issues to continue"}
           </button>
         )}
       </div>

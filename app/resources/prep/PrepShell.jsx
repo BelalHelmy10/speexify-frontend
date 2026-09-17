@@ -102,6 +102,7 @@ import {
 } from "./prepInputHandlers";
 import { getDictionary, t } from "@/app/i18n";
 import useAuth from "@/hooks/useAuth";
+import api from "@/lib/api";
 
 export default function PrepShell({
   resource,
@@ -112,6 +113,7 @@ export default function PrepShell({
   isScreenShareActive = false,
   screenShareStream = null,
   isTeacher = false,
+  sessionId = null,
   locale = "en",
   initialAudioState = null,
   initialPdfScroll = null,
@@ -141,7 +143,10 @@ export default function PrepShell({
     );
   }
 
-  const storageKey = `prep_annotations_${resource._id}`;
+  const annotationScope = sessionId
+    ? `session_${sessionId}_user_${myUserId || "anonymous"}`
+    : "resource";
+  const storageKey = `prep_annotations_${annotationScope}_${resource._id}`;
 
   // ✅ define viewerUrl FIRST
   const viewerUrl = viewer?.viewerUrl || null;
@@ -1303,7 +1308,7 @@ export default function PrepShell({
   }, [strokes, isPdf, pdfCurrentPage]);
 
   // ─────────────────────────────────────────────────────────────
-  // Load annotations from localStorage
+  // Load the local annotation cache first, then merge the durable classroom snapshot.
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!storageKey) return;
@@ -1353,6 +1358,49 @@ export default function PrepShell({
       console.warn("Failed to load annotations", err);
     }
   }, [storageKey]);
+
+  // Restore the durable classroom snapshot after the local cache loads. The
+  // teacher's snapshot is shared with learners, while each user keeps their
+  // own private annotation record.
+  useEffect(() => {
+    if (!sessionId || !resource?._id) return undefined;
+    let cancelled = false;
+
+    api
+      .get(`/sessions/${sessionId}/annotations`, {
+        params: { resourceId: resource._id },
+      })
+      .then(({ data }) => {
+        if (cancelled) return;
+        const rows = Array.isArray(data?.annotations) ? data.annotations : [];
+        const ownId = myUserId == null ? null : String(myUserId);
+        const annotation = isTeacher
+          ? rows.find((row) => String(row.userId) === ownId) || rows[0]
+          : rows.find((row) => String(row.userId) !== ownId) || rows[0];
+        const snapshot = annotation?.payload;
+        if (!snapshot) return;
+
+        if (Array.isArray(snapshot.stickyNotes)) setStickyNotes(snapshot.stickyNotes);
+        if (Array.isArray(snapshot.textBoxes)) setTextBoxes(snapshot.textBoxes);
+        if (Array.isArray(snapshot.masks)) setMasks(snapshot.masks);
+        if (Array.isArray(snapshot.lines)) setLines(snapshot.lines);
+        if (Array.isArray(snapshot.boxes)) setBoxes(snapshot.boxes);
+        if (Array.isArray(snapshot.strokes)) {
+          setStrokes(
+            snapshot.strokes.filter(
+              (stroke) => stroke.tool === TOOL_PEN || stroke.tool === TOOL_HIGHLIGHTER
+            )
+          );
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) console.warn("Failed to load server annotations", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, resource?._id, myUserId, isTeacher]);
 
   // ─────────────────────────────────────────────────────────────
   // Resize canvas with container (and redraw strokes)
@@ -1448,6 +1496,24 @@ export default function PrepShell({
       linesRef,
       boxesRef,
     });
+
+    if (sessionId && isTeacher) {
+      const payload = {
+        canvasData: saveOpts?.includeCanvas ? opts.canvasData : null,
+        strokes: opts.strokes ?? strokesRef.current,
+        stickyNotes: opts.stickyNotes ?? stickyNotesRef.current,
+        textBoxes: opts.textBoxes ?? textBoxesRef.current,
+        masks: opts.masks ?? masksRef.current,
+        lines: opts.lines ?? linesRef.current,
+        boxes: opts.boxes ?? boxesRef.current,
+      };
+      api
+        .put(`/sessions/${sessionId}/annotations`, {
+          resourceId: resource._id,
+          payload,
+        })
+        .catch((err) => console.warn("Failed to save server annotations", err));
+    }
   }
 
   const pendingBroadcastRef = useRef({});

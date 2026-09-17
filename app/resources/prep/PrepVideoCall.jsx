@@ -44,6 +44,17 @@ const JITSI_DOMINANT_SPEAKER_CSS = `
 // 16:9, and recompute on every join, leave, and resize.
 // ─────────────────────────────────────────────────────────────
 const JITSI_TILE_GRID_STYLE_ID = "speexify-tile-grid-style";
+const LS_AUDIO_DEVICE = "speexify-classroom-audioInput";
+const LS_VIDEO_DEVICE = "speexify-classroom-videoInput";
+
+function getStoredDeviceId(key) {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.localStorage.getItem(key) || "";
+  } catch {
+    return "";
+  }
+}
 const JITSI_TILE_GRID_CSS = `
   /* Make sure the filmstrip container fills the iframe in tile view */
   .filmstrip.is-tile-view,
@@ -203,7 +214,9 @@ export default function PrepVideoCall({
   const apiRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [hasJoined, setHasJoined] = useState(true);
+  // Keep the call behind an explicit prejoin decision. This prevents a
+  // camera/microphone from being activated before the user sees the preview.
+  const [hasJoined, setHasJoined] = useState(false);
   const [joinAudioMuted, setJoinAudioMuted] = useState(true);
   const [joinVideoMuted, setJoinVideoMuted] = useState(false);
   const [prejoinError, setPrejoinError] = useState(null);
@@ -222,6 +235,7 @@ export default function PrepVideoCall({
     label: "Checking network",
     detail: "Measuring connection quality...",
     latency: null,
+    reachable: null,
   });
   const [activeSpeakerName, setActiveSpeakerName] = useState("");
   const [isTestingSpeaker, setIsTestingSpeaker] = useState(false);
@@ -236,6 +250,13 @@ export default function PrepVideoCall({
   const jitsiParticipantsRef = useRef(new Map());
   const localParticipantIdRef = useRef(null);
   const activeSpeakerIdRef = useRef(null);
+
+  useEffect(() => {
+    // Read preferences after mount so server-rendered markup stays identical
+    // to the first client render while still restoring the user's devices.
+    setSelectedAudioInputId((current) => current || getStoredDeviceId(LS_AUDIO_DEVICE));
+    setSelectedVideoInputId((current) => current || getStoredDeviceId(LS_VIDEO_DEVICE));
+  }, []);
 
   // ─────────────────────────────────────────────
   // Page recording is handled by ClassroomShell
@@ -850,10 +871,14 @@ export default function PrepVideoCall({
 
     setDevices(nextDevices);
     setSelectedAudioInputId((current) =>
-      current || nextDevices.audioInputs[0]?.deviceId || ""
+      nextDevices.audioInputs.some((device) => device.deviceId === current)
+        ? current
+        : nextDevices.audioInputs[0]?.deviceId || ""
     );
     setSelectedVideoInputId((current) =>
-      current || nextDevices.videoInputs[0]?.deviceId || ""
+      nextDevices.videoInputs.some((device) => device.deviceId === current)
+        ? current
+        : nextDevices.videoInputs[0]?.deviceId || ""
     );
     setSelectedAudioOutputId((current) =>
       current || nextDevices.audioOutputs[0]?.deviceId || ""
@@ -937,11 +962,12 @@ export default function PrepVideoCall({
     const start = performance.now();
 
     try {
-      await fetch(`/api/ws-config?prejoin=${Date.now()}`, {
+      const response = await fetch(`/api/ws-config?prejoin=${Date.now()}`, {
         method: "GET",
         cache: "no-store",
         credentials: "include",
       });
+      if (!response.ok) throw new Error(`Network check failed (${response.status})`);
 
       const latency = Math.round(performance.now() - start);
       const effectiveType = connection?.effectiveType || "";
@@ -967,6 +993,7 @@ export default function PrepVideoCall({
               : "Network may be unstable",
         detail: detailParts.join(" - "),
         latency,
+        reachable: true,
       });
     } catch {
       setNetworkStatus({
@@ -974,6 +1001,7 @@ export default function PrepVideoCall({
         label: "Network check failed",
         detail: "Check your connection before joining.",
         latency: null,
+        reachable: false,
       });
     }
   }, []);
@@ -1045,9 +1073,22 @@ export default function PrepVideoCall({
   }, [isTestingSpeaker, selectedAudioOutputId, stopSpeakerTest]);
 
   const handleJoin = useCallback(() => {
+    // Save the user's explicit device choices for the next session.
+    try {
+      if (selectedAudioInputId) {
+        window.localStorage.setItem(LS_AUDIO_DEVICE, selectedAudioInputId);
+      }
+      if (selectedVideoInputId) {
+        window.localStorage.setItem(LS_VIDEO_DEVICE, selectedVideoInputId);
+      }
+    } catch {
+      // Device preference persistence is best-effort.
+    }
     stopPreviewStream();
     setHasJoined(true);
-  }, [stopPreviewStream]);
+  }, [selectedAudioInputId, selectedVideoInputId, stopPreviewStream]);
+
+  const canJoin = networkStatus.reachable === true;
 
   useEffect(() => {
     if (hasJoined) return;
@@ -1522,7 +1563,10 @@ export default function PrepVideoCall({
               <button
                 type="button"
                 className="cr-prejoin__pill"
-                onClick={refreshDevices}
+                onClick={() => {
+                  void refreshDevices();
+                  void runNetworkCheck();
+                }}
               >
                 <RefreshCw size={16} />
                 Refresh
@@ -1621,8 +1665,9 @@ export default function PrepVideoCall({
               type="button"
               className="cr-prejoin__join"
               onClick={handleJoin}
+              disabled={!canJoin}
             >
-              Join classroom
+              {canJoin ? "Join classroom" : "Checking connection…"}
             </button>
           </section>
         </div>

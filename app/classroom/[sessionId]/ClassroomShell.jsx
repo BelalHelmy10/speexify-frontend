@@ -289,6 +289,15 @@ export default function ClassroomShell({
     (session?.currentUser && session.currentUser.role === "teacher");
 
   const userName = isTeacher ? teacherName : learnerName;
+  const { user: authUser } = useAuth();
+  const localUserId = String(
+    authUser?._id ||
+      authUser?.id ||
+      session?.currentUser?._id ||
+      session?.currentUser?.id ||
+      userName ||
+      sessionId
+  );
   const sessionStartedAt = session?.startedAt || session?.startAt;
 
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -478,6 +487,7 @@ export default function ClassroomShell({
     isTeacher,
     classroomChannel,
     userName,
+    userId: localUserId,
   });
 
   /* -----------------------------------------------------------
@@ -545,16 +555,6 @@ export default function ClassroomShell({
   /* -----------------------------------------------------------
      Screen Sharing (cross-side state + UI gates)
   ----------------------------------------------------------- */
-  const { user: authUser } = useAuth();
-  const localUserId = String(
-    authUser?._id ||
-      authUser?.id ||
-      session?.currentUser?._id ||
-      session?.currentUser?.id ||
-      userName ||
-      sessionId
-  );
-
   const screenShare = useClassroomScreenShare(classroomChannel, {
     userName,
     userId: localUserId,
@@ -1681,9 +1681,13 @@ export default function ClassroomShell({
   const countLabel = isGroup
     ? `${participantCount}${capacity ? `/${capacity}` : ""}`
     : "";
+  const sessionEnded =
+    sessionTiming.hasEnded ||
+    session?.status === "completed" ||
+    session?.status === "canceled";
 
   // ─── Waiting Room: block classroom until admitted ───
-  if (lobby.isInWaitingRoom || lobby.isDenied) {
+  if (sessionEnded || lobby.isInWaitingRoom || lobby.isDenied || lobby.isEnded) {
     return (
       <ClassroomWaitingRoom
         sessionId={sessionId}
@@ -1695,12 +1699,21 @@ export default function ClassroomShell({
           capacity,
         }}
         userName={userName}
-        status={lobby.isDenied ? "denied" : "waiting"}
+        locale={locale}
+        status={
+          sessionEnded || lobby.isEnded
+            ? "ended"
+            : lobby.isDenied
+              ? "denied"
+              : lobby.isError
+                ? "error"
+                : "waiting"
+        }
         wsConnected={classroomChannel?.ready || false}
         onRetry={lobby.retryJoin}
         onLeave={() => {
           if (typeof window !== "undefined") {
-            window.location.href = prefix || "/dashboard";
+            window.location.href = `${prefix}/dashboard`;
           }
         }}
       />
@@ -1800,6 +1813,7 @@ export default function ClassroomShell({
                 onNetworkQualityChange={handleNetworkQualityChange}
                 onAudioMuteChange={handleAudioMuteChange}
                 suspendTileViewLock={screenShare.isSomeoneSharing}
+                locale={locale}
               />
               <ClassroomRaiseHandOverlay
                 raisedHands={raisedHands}
@@ -1917,6 +1931,7 @@ export default function ClassroomShell({
                   hideBreadcrumbs={true}
                   classroomChannel={classroomChannel}
                   isTeacher={isTeacher}
+                  sessionId={sessionId}
                   locale={locale}
                   initialAudioState={classroomStateSnapshot?.audio || null}
                   initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
@@ -2025,6 +2040,7 @@ export default function ClassroomShell({
                 onNetworkQualityChange={handleNetworkQualityChange}
                 onAudioMuteChange={handleAudioMuteChange}
                 suspendTileViewLock={screenShare.isSomeoneSharing}
+                locale={locale}
               />
               <ClassroomRaiseHandOverlay
                 raisedHands={raisedHands}
@@ -2065,6 +2081,7 @@ export default function ClassroomShell({
                 hideBreadcrumbs={true}
                 classroomChannel={classroomChannel}
                 isTeacher={isTeacher}
+                sessionId={sessionId}
                 locale={locale}
                 initialAudioState={classroomStateSnapshot?.audio || null}
                 initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
@@ -2145,6 +2162,7 @@ export default function ClassroomShell({
         show={showLeaveConfirm}
         setShowLeaveConfirm={setShowLeaveConfirm}
         prefix={prefix}
+        sessionId={sessionId}
         summary={leaveSummary}
         isTeacher={isTeacher}
       />

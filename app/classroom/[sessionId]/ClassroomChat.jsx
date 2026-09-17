@@ -878,6 +878,7 @@ export default function ClassroomChat({
         <input
           type="text"
           className="cr-chat__input"
+          aria-label="Message"
           placeholder="Type a message..."
           value={inputValue}
           onChange={handleInputChange}
