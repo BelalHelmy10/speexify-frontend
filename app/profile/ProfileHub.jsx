@@ -235,12 +235,10 @@ function formatDateTime(value, locale, timezone) {
   }
 }
 
-function canJoin(startAt, endAt) {
-  if (!startAt) return false;
-  const now = Date.now();
+function canOpenClassroom(startAt, status) {
+  if (!startAt || String(status || "").toLowerCase() === "canceled") return false;
   const start = new Date(startAt).getTime();
-  const end = endAt ? new Date(endAt).getTime() : start + 60 * 60 * 1000;
-  return now >= start - 15 * 60 * 1000 && now <= end;
+  return Number.isFinite(start) && Date.now() >= start - 15 * 60 * 1000;
 }
 
 function packageTotals(packages) {
@@ -453,7 +451,7 @@ export default function ProfileHub() {
   const readinessScore = Math.round(
     (readinessItems.filter((item) => item.complete).length / readinessItems.length) * 100
   );
-  const joinable = nextSession && canJoin(nextSession.startAt, nextSession.endAt);
+  const joinable = nextSession && canOpenClassroom(nextSession.startAt, nextSession.status);
   const primaryNextHref = joinable
     ? `/classroom/${nextSession.id}`
     : nextSession?.id

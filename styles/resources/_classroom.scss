@@ -375,6 +375,10 @@ body.classroom-active {
         box-shadow: 0 0 8px rgba($cr-accent-danger, 0.55);
       }
     }
+
+    &--extended {
+      color: $cr-accent-success;
+    }
   }
 
   &__pill-net {

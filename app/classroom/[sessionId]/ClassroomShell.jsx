@@ -452,6 +452,9 @@ export default function ClassroomShell({
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showParticipantList, setShowParticipantList] = useState(false);
   const exportFnRef = useRef(null);
+  const handleExportReady = useCallback((fn) => {
+    exportFnRef.current = fn;
+  }, []);
   const [isClassroomLocked, setIsClassroomLocked] = useState(() =>
     Boolean(session?.classroomState?.moderation?.locked)
   );
@@ -1393,7 +1396,10 @@ export default function ClassroomShell({
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId]
     : null;
-  const viewer = resource ? getViewerInfo(resource) : null;
+  const viewer = useMemo(
+    () => (resource ? getViewerInfo(resource) : null),
+    [resource]
+  );
   const leaveSummary = useMemo(() => {
     const overBySeconds =
       sessionTiming.endMs && nowMs > sessionTiming.endMs
@@ -1457,7 +1463,7 @@ export default function ClassroomShell({
   );
 
   // ✅ Track resource usage when teacher changes resource
-  const handleChangeResourceId = async (newId) => {
+  const handleChangeResourceId = useCallback(async (newId) => {
     selectedResourceIdRef.current = newId;
     setSelectedResourceId(newId);
     setIsPickerOpen(false);
@@ -1500,7 +1506,7 @@ export default function ClassroomShell({
         { immediate: true }
       );
     }
-  };
+  }, [isTeacher, resourcesById, ready, send, sessionId, persistClassroomState]);
 
   const handleScreenShareStreamChange = useCallback((payload) => {
     // Supports both old boolean callback and richer payload shape.
@@ -1692,8 +1698,6 @@ export default function ClassroomShell({
     ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
     : "";
   const sessionEnded =
-    sessionTiming.hasEnded ||
-    session?.status === "completed" ||
     session?.status === "canceled";
 
   // ─── Waiting Room: block classroom until admitted ───
@@ -1950,7 +1954,7 @@ export default function ClassroomShell({
                   initialAudioState={classroomStateSnapshot?.audio || null}
                   initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
                   onClassroomStateChange={persistClassroomState}
-                  onExportReady={(fn) => { exportFnRef.current = fn; }}
+                  onExportReady={handleExportReady}
                   className="cr-prep-shell-fullsize"
                 />
               ) : (
@@ -2102,7 +2106,7 @@ export default function ClassroomShell({
                 initialAudioState={classroomStateSnapshot?.audio || null}
                 initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
                 onClassroomStateChange={persistClassroomState}
-                onExportReady={(fn) => { exportFnRef.current = fn; }}
+                onExportReady={handleExportReady}
               />
             ) : (
               <div className="cr-placeholder">

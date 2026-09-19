@@ -387,6 +387,13 @@ const canJoin = (startAt, endAt, windowMins = 15) => {
   return now >= early && now <= end;
 };
 
+const canOpenClassroom = (startAt, status, windowMins = 15) => {
+  if (!startAt || String(status || "").toLowerCase() === "canceled") return false;
+  const start = new Date(startAt);
+  if (Number.isNaN(start.getTime())) return false;
+  return Date.now() >= start.getTime() - windowMins * 60 * 1000;
+};
+
 function buildDayLayout(events, dayDate) {
   const dayStart = new Date(dayDate);
   dayStart.setHours(SLOT_START_HOUR, 0, 0, 0);
@@ -487,8 +494,8 @@ function getSessionDetailsHref(prefix, event) {
   return `${prefix}/dashboard/sessions/${event.id}`;
 }
 
-function getSessionJoinHref(event) {
-  return event.joinUrl || event.meetingUrl || "";
+function getSessionJoinHref(event, prefix = "") {
+  return event.joinUrl || event.meetingUrl || `${prefix}/classroom/${event.id}`;
 }
 
 function getAnchoredPopoverStyle(anchor) {
@@ -537,8 +544,8 @@ function SessionQuickPopover({
   const tone = getEventTone(event);
   const coachName = getSessionCoachName(event);
   const duration = Math.max(1, differenceInMinutes(event.end, event.start));
-  const joinHref = getSessionJoinHref(event);
-  const joinable = tone !== "canceled" && joinHref && canJoin(event.start, event.end);
+  const joinHref = getSessionJoinHref(event, prefix);
+  const joinable = tone !== "canceled" && canOpenClassroom(event.start, event.status);
   const detailHref = getSessionDetailsHref(prefix, event);
   const style = getAnchoredPopoverStyle(anchor);
   const dtfLocale = getIntlLocale(locale);
@@ -649,9 +656,9 @@ function SessionDetailDrawer({
   const tone = getEventTone(event);
   const coachName = getSessionCoachName(event);
   const duration = Math.max(1, differenceInMinutes(event.end, event.start));
-  const joinHref = getSessionJoinHref(event);
+  const joinHref = getSessionJoinHref(event, prefix);
   const detailHref = getSessionDetailsHref(prefix, event);
-  const joinable = tone !== "canceled" && joinHref && canJoin(event.start, event.end);
+  const joinable = tone !== "canceled" && canOpenClassroom(event.start, event.status);
   const canCancelSession = event.status !== "canceled" && event.start > new Date();
   const dtfLocale = getIntlLocale(locale);
 
@@ -1678,7 +1685,7 @@ export default function CalendarPage() {
 
   const copySessionLink = useCallback(
     async (event) => {
-      const joinHref = getSessionJoinHref(event);
+      const joinHref = getSessionJoinHref(event, prefix);
       const fallbackHref = `${window.location.origin}${getSessionDetailsHref(prefix, event)}`;
       const href = joinHref || fallbackHref;
 

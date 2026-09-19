@@ -39,7 +39,6 @@ export default function SessionCard({
     participantCount = 0,
     learners = [],
     teacher,
-    joinUrl,
     hasFeedback,
   } = session || {};
 
@@ -48,7 +47,7 @@ export default function SessionCard({
   const isAdmin = userRole === "admin";
 
   // Format dates
-  const { dateStr, timeStr, endTimeStr, isToday, isPast, isUpcoming, canJoin } =
+  const { dateStr, timeStr, endTimeStr, isToday, isPast, isUpcoming, canOpenClassroom } =
     useMemo(() => {
       const start = startAt ? new Date(startAt) : null;
       const end = endAt ? new Date(endAt) : null;
@@ -62,7 +61,7 @@ export default function SessionCard({
           isToday: false,
           isPast: false,
           isUpcoming: false,
-          canJoin: false,
+          canOpenClassroom: false,
         };
       }
 
@@ -102,11 +101,10 @@ export default function SessionCard({
       const isPast = end ? end < now : start < now;
       const isUpcoming = start > now;
 
-      // Can join: 15 min before start until end (or 2 hours after start if no end)
+      // The scheduled end is informational. Members can reopen the classroom
+      // after it passes, while the 15-minute early-entry guard remains.
       const joinWindowStart = new Date(start.getTime() - 15 * 60 * 1000);
-      const joinWindowEnd =
-        end || new Date(start.getTime() + 2 * 60 * 60 * 1000);
-      const canJoin = now >= joinWindowStart && now <= joinWindowEnd;
+      const canOpenClassroom = status !== "canceled" && now >= joinWindowStart;
 
       return {
         dateStr,
@@ -115,9 +113,9 @@ export default function SessionCard({
         isToday,
         isPast,
         isUpcoming,
-        canJoin,
+        canOpenClassroom,
       };
-    }, [startAt, endAt, locale]);
+    }, [startAt, endAt, locale, status]);
 
   // Status badge
   const statusConfig = useMemo(() => {
@@ -130,7 +128,7 @@ export default function SessionCard({
         className: "session-card__status--completed",
       };
     }
-    if (canJoin) {
+    if (canOpenClassroom && !isPast) {
       return { label: "Live Now", className: "session-card__status--live" };
     }
     if (isToday) {
@@ -140,7 +138,11 @@ export default function SessionCard({
       return { label: "Upcoming", className: "session-card__status--upcoming" };
     }
     return { label: "Scheduled", className: "session-card__status--scheduled" };
-  }, [status, canJoin, isToday, isUpcoming]);
+  }, [status, canOpenClassroom, isPast, isToday, isUpcoming]);
+
+  const classroomActionLabel = isPast || status === "completed"
+    ? "Open Classroom"
+    : "Join Classroom";
 
   // Participant display
   const participantDisplay = useMemo(() => {
@@ -192,12 +194,12 @@ export default function SessionCard({
             )}
           </div>
 
-          {canJoin && status === "scheduled" && joinUrl && (
+          {canOpenClassroom && id && status !== "canceled" && (
             <a
               href={`${prefix}/classroom/${id}`}
               className="session-card__join-btn session-card__join-btn--compact"
             >
-              Join
+              {isPast || status === "completed" ? "Open" : "Join"}
             </a>
           )}
         </div>
@@ -209,7 +211,7 @@ export default function SessionCard({
   return (
     <div
       className={`session-card ${status === "canceled" ? "session-card--canceled" : ""
-        } ${canJoin ? "session-card--live" : ""}`}
+        } ${canOpenClassroom && !isPast ? "session-card--live" : ""}`}
     >
       {/* Header */}
       <div className="session-card__header">
@@ -300,13 +302,13 @@ export default function SessionCard({
       {/* Actions */}
       <div className="session-card__actions">
         {/* Join button */}
-        {canJoin && status === "scheduled" && (
+        {canOpenClassroom && id && status !== "canceled" && (
           <a
             href={`${prefix}/classroom/${id}`}
             className="session-card__btn session-card__btn--primary"
             onClick={onJoin}
           >
-            🎥 Join Classroom
+            🎥 {classroomActionLabel}
           </a>
         )}
 

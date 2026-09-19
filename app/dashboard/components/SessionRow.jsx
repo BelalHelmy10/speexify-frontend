@@ -7,14 +7,12 @@ import { fmtSessionSchedule } from "@/utils/date";
 import { t } from "@/app/i18n";
 import { getIntlLocale } from "@/utils/locale";
 
-const canJoin = (startAt, endAt, windowMins = 15) => {
-  const now = new Date();
+const canOpenClassroom = (startAt, status, windowMins = 15) => {
+  if (!startAt || String(status || "").toLowerCase() === "canceled") return false;
   const start = new Date(startAt);
-  const end = endAt
-    ? new Date(endAt)
-    : new Date(start.getTime() + 60 * 60 * 1000);
+  if (Number.isNaN(start.getTime())) return false;
   const early = new Date(start.getTime() - windowMins * 60 * 1000);
-  return now >= early && now <= end;
+  return Date.now() >= early;
 };
 
 const interpolate = (template, values) =>
@@ -135,7 +133,10 @@ export default function SessionRow({
     ended: t(dict, "countdown_ended"),
   }, timezone, dateLocale);
 
-  const joinable = canJoin(s.startAt, s.endAt);
+  const joinable = canOpenClassroom(s.startAt, s.status);
+  const classroomLabel = !isUpcoming
+    ? t(dict, "session_open_classroom") || "Open classroom"
+    : t(dict, "session_join_classroom") || "Join";
 
   const isGroup = String(s.type || "").toUpperCase() === "GROUP";
   const participantCount =
@@ -241,11 +242,11 @@ export default function SessionRow({
 
               {joinable && (
                 <Link
-                  href={`/classroom/${s.id}`}
+                  href={`${prefix}/classroom/${s.id}`}
                   className="btn btn--primary btn--glow"
-                  title={t(dict, "session_join_classroom") || "Join classroom"}
+                  title={classroomLabel}
                 >
-                  {t(dict, "session_join_classroom") || "Join"}
+                  {classroomLabel}
                 </Link>
               )}
 
@@ -296,6 +297,16 @@ export default function SessionRow({
                   <path d="M9 18l6-6-6-6" />
                 </svg>
               </Link>
+
+              {joinable && (
+                <Link
+                  href={`${prefix}/classroom/${s.id}`}
+                  className="btn btn--primary"
+                  title={classroomLabel}
+                >
+                  {classroomLabel}
+                </Link>
+              )}
 
               {isTeacher && s.status === "completed" && (
                 <Link

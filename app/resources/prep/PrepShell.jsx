@@ -1,7 +1,7 @@
 // app/resources/prep/PrepShell.jsx
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { memo, useEffect, useRef, useState, useCallback } from "react";
 import { resizePrepTextEditor } from "./prepTextEditorDOM";
 import PrepBreadcrumbs from "./PrepBreadcrumbs";
 import PrepInfoSidebar from "./PrepInfoSidebar";
@@ -104,7 +104,7 @@ import { getDictionary, t } from "@/app/i18n";
 import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 
-export default function PrepShell({
+function PrepShell({
   resource,
   viewer,
   hideSidebar = false,
@@ -2574,3 +2574,5 @@ export default function PrepShell({
     </>
   );
 }
+
+export default memo(PrepShell);

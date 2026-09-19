@@ -37,14 +37,12 @@ async function withRetry(fn, { tries = 4, baseDelay = 1200, budgetMs = 30000 } =
   }
 }
 
-const canJoin = (startAt, endAt, windowMins = 15) => {
-  const now = new Date();
+const canOpenClassroom = (startAt, status, windowMins = 15) => {
+  if (!startAt || String(status || "").toLowerCase() === "canceled") return false;
   const start = new Date(startAt);
-  const end = endAt
-    ? new Date(endAt)
-    : new Date(start.getTime() + 60 * 60 * 1000);
+  if (Number.isNaN(start.getTime())) return false;
   const early = new Date(start.getTime() - windowMins * 60 * 1000);
-  return now >= early && now <= end;
+  return Date.now() >= early;
 };
 
 function DashboardNextActionIcon({ tone }) {
@@ -498,7 +496,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
   const joinableTeach =
     teachSummary.nextTeach &&
-    canJoin(teachSummary.nextTeach.startAt, teachSummary.nextTeach.endAt);
+    canOpenClassroom(teachSummary.nextTeach.startAt, teachSummary.nextTeach.status);
 
   const teachingLearners = Array.isArray(teachSummary.nextTeach?.learners)
     ? teachSummary.nextTeach.learners
@@ -559,7 +557,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
     upcoming.find((s) => String(s.status || "").toLowerCase() !== "canceled");
   const nextLearnerJoinable =
     nextLearnerSession &&
-    canJoin(nextLearnerSession.startAt, nextLearnerSession.endAt);
+    canOpenClassroom(nextLearnerSession.startAt, nextLearnerSession.status);
   const pastArchiveHref = `${prefix}/dashboard/sessions/past`;
   const pastArchiveCount = Math.max(Number(completedCount || 0), past.length);
   const latestFeedbackSession = past.find((s) => s.teacherFeedback);

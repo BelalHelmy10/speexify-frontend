@@ -163,6 +163,7 @@
   "session_title_default": "Session",
 
   "session_join_classroom": "Join classroom",
+  "session_open_classroom": "Open classroom",
   "session_join_tooltip_early": "Classroom opens shortly before start time",
   "session_join_soon": "Classroom soon",
   "session_external_link": "External link",

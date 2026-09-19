@@ -163,6 +163,7 @@
   "session_title_default": "جلسة",
 
   "session_join_classroom": "دخول الفصل",
+  "session_open_classroom": "افتح الفصل",
   "session_join_tooltip_early": "الفصل بيفتح قبل ما تبدأ بشوية",
   "session_join_soon": "الفصل هيفتح قريب",
   "session_external_link": "رابط خارجي",

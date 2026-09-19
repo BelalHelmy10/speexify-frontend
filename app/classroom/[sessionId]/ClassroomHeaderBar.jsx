@@ -149,7 +149,7 @@ export default function ClassroomHeaderBar({
     "cr-header__pill-timer",
     "cr-header__pill-timer--ends",
     countdownWarningLevel ? `cr-header__pill-timer--${countdownWarningLevel}` : "",
-    timing.hasEnded ? "cr-header__pill-timer--ended" : "",
+    timing.hasEnded ? "cr-header__pill-timer--extended" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -212,7 +212,7 @@ export default function ClassroomHeaderBar({
           {timing.endMs && (
             <span className={endsInClassName}>
               <span className="cr-header__pill-sep">|</span>
-              {timing.hasEnded ? "Ended" : timing.remainingLabel}
+              {timing.hasEnded ? "Open" : timing.remainingLabel}
             </span>
           )}
 

@@ -1,7 +1,7 @@
 // app/resources/prep/PrepVideoCall.jsx
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { JITSI_DOMAIN, buildJitsiOptions } from "@/lib/jitsiConfig";
 import { getDictionary, t } from "@/app/i18n";
 import {
@@ -200,7 +200,7 @@ function computeTileColumns(count, width, height) {
   return bestCols;
 }
 
-export default function PrepVideoCall({
+function PrepVideoCall({
   roomId,
   userName,
   isTeacher,
@@ -1770,3 +1770,5 @@ export default function PrepVideoCall({
     </div>
   );
 }
+
+export default memo(PrepVideoCall);

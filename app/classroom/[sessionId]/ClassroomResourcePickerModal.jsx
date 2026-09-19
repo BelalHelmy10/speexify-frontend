@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  memo,
+  useDeferredValue,
   useCallback,
   useEffect,
   useMemo,
@@ -41,7 +43,7 @@ function getResourceIcon(resource) {
   return "📁";
 }
 
-export default function ClassroomResourcePickerModal({
+function ClassroomResourcePickerModal({
   isOpen,
   setIsPickerOpen,
   isTeacher,
@@ -68,12 +70,13 @@ export default function ClassroomResourcePickerModal({
   }, [flatIndex]);
 
   const trimmedQuery = query.trim();
+  const deferredQuery = useDeferredValue(trimmedQuery);
   const isSearching = trimmedQuery.length > 0;
 
   const results = useMemo(() => {
-    if (!isSearching) return [];
-    return searchEntries(flatIndex, trimmedQuery, SEARCH_LIMIT);
-  }, [flatIndex, trimmedQuery, isSearching]);
+    if (!deferredQuery) return [];
+    return searchEntries(flatIndex, deferredQuery, SEARCH_LIMIT);
+  }, [flatIndex, deferredQuery]);
 
   const recentEntries = useMemo(() => {
     if (isSearching) return [];
@@ -380,3 +383,5 @@ export default function ClassroomResourcePickerModal({
     </div>
   );
 }
+
+export default memo(ClassroomResourcePickerModal);

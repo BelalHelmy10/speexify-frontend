@@ -1,7 +1,7 @@
 // app/resources/prep/useClassroomChannel.js
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import api from "@/lib/api";
 
 const MAX_RECONNECT_ATTEMPTS = 10;
@@ -637,15 +637,27 @@ export function useClassroomChannel(roomId) {
     status === "reconnecting" ||
     (status === "connecting" && retryAttemptRef.current > 0);
 
-  return {
-    ready,
-    send,
-    subscribe,
-    status,
-    isReconnecting,
-    reconnectAttempt,
-    maxReconnectAttempts: MAX_RECONNECT_ATTEMPTS,
-    reconnectFailed,
-    retryNow,
-  };
+  return useMemo(
+    () => ({
+      ready,
+      send,
+      subscribe,
+      status,
+      isReconnecting,
+      reconnectAttempt,
+      maxReconnectAttempts: MAX_RECONNECT_ATTEMPTS,
+      reconnectFailed,
+      retryNow,
+    }),
+    [
+      ready,
+      send,
+      subscribe,
+      status,
+      isReconnecting,
+      reconnectAttempt,
+      reconnectFailed,
+      retryNow,
+    ]
+  );
 }

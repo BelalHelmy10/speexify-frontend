@@ -189,7 +189,10 @@ export async function GET(request) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Cache-Control": "no-store, no-cache, must-revalidate",
+        // A short per-browser cache prevents reopening the same classroom
+        // resource from downloading it again without sharing signed asset
+        // responses through an intermediary cache.
+        "Cache-Control": "private, max-age=300, stale-while-revalidate=86400",
         "X-Content-Type-Options": "nosniff",
       },
     });

@@ -68,6 +68,7 @@ export default function PdfViewerWithSidebar({
 
   const dict = getDictionary(locale, "resources");
   const renderTaskRef = useRef(null);
+  const loadingTaskRef = useRef(null);
   const onFatalErrorRef = useRef(onFatalError);
   const onContainerReadyRef = useRef(onContainerReady);
   const onScrollContainerReadyRef = useRef(onScrollContainerReady);
@@ -280,6 +281,18 @@ export default function PdfViewerWithSidebar({
 
     let cancelled = false;
 
+    const destroyLoadingTask = (task) => {
+      if (!task || typeof task.destroy !== "function") return;
+      try {
+        const result = task.destroy();
+        if (result && typeof result.catch === "function") {
+          result.catch(() => {});
+        }
+      } catch {
+        // A task may already have completed or been canceled.
+      }
+    };
+
     async function loadDocument() {
       setLoading(true);
       setError(null);
@@ -288,21 +301,24 @@ export default function PdfViewerWithSidebar({
       setCurrentPage(1);
 
       try {
+        destroyLoadingTask(loadingTaskRef.current);
         const loadingTask = pdfjs.getDocument({
           url: fileUrl,
           disableRange: true,
           disableStream: true,
           withCredentials: false,
         });
+        loadingTaskRef.current = loadingTask;
 
         const doc = await loadingTask.promise;
         if (cancelled) {
-          try {
-            doc.destroy();
-          } catch (_) { }
+          try { doc.destroy(); } catch (_) { }
           return;
         }
 
+        if (loadingTaskRef.current === loadingTask) {
+          loadingTaskRef.current = null;
+        }
         setPdfDoc(doc);
         setNumPages(doc.numPages || 0);
         setLoading(false);
@@ -335,6 +351,10 @@ export default function PdfViewerWithSidebar({
 
     return () => {
       cancelled = true;
+      if (loadingTaskRef.current) {
+        destroyLoadingTask(loadingTaskRef.current);
+        loadingTaskRef.current = null;
+      }
     };
   }, [pdfjs, fileUrl]);
 
@@ -426,6 +446,15 @@ export default function PdfViewerWithSidebar({
   // ✅ Cleanup auto-fit RAF on unmount
   useEffect(() => {
     return () => {
+      if (loadingTaskRef.current) {
+        try {
+          const result = loadingTaskRef.current.destroy?.();
+          if (result && typeof result.catch === "function") result.catch(() => {});
+        } catch {
+          // no-op
+        }
+        loadingTaskRef.current = null;
+      }
       if (autoFitRafRef.current) {
         cancelAnimationFrame(autoFitRafRef.current);
         autoFitRafRef.current = null;
