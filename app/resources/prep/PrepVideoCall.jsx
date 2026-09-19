@@ -118,11 +118,36 @@ const JITSI_TILE_GRID_CSS = `
   /* Video and avatar inside each tile fill the cell with cover-fit */
   .tile-view .videocontainer video,
   .is-tile-view .videocontainer video,
+  .tile-view .videocontainer .video-wrapper,
+  .is-tile-view .videocontainer .video-wrapper,
+  .tile-view .videocontainer .video-wrapper video,
+  .is-tile-view .videocontainer .video-wrapper video,
   .tile-view .videocontainer .avatar-container,
   .is-tile-view .videocontainer .avatar-container {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
+  }
+
+  /* Jitsi can briefly fall back to stage view while a conference is
+     starting or when a tile-view command races its own layout update. Keep
+     that single-person fallback framed like a real video tile instead of a
+     small 16:9 island with black bars around it. */
+  #largeVideoContainer video,
+  #largeVideoElementsContainer video,
+  #largeVideo video,
+  .videocontainer video {
+    object-fit: cover !important;
+    background: #0f172a !important;
+  }
+
+  /* A shared screen should remain fully visible. The classroom marks this
+     mode on the embedded document root while the shell is sharing. */
+  html[data-spexify-screen-share="true"] #largeVideoContainer video,
+  html[data-spexify-screen-share="true"] #largeVideoElementsContainer video,
+  html[data-spexify-screen-share="true"] #largeVideo video {
+    object-fit: contain !important;
+    background: #000 !important;
   }
 
   /* Center the avatar circle within its tile regardless of cell size */
@@ -141,9 +166,12 @@ const JITSI_TILE_GRID_CSS = `
      in tile view because Jitsi already hides #largeVideoContainer there. */
   #largeVideoContainer,
   #largeVideoWrapper,
+  #largeVideoElementsContainer,
   .videocontainer#largeVideoContainer {
     width: 100% !important;
     height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
     inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
@@ -151,10 +179,19 @@ const JITSI_TILE_GRID_CSS = `
     margin: 0 !important;
   }
 
-  #largeVideo,
-  #largeVideoElementsContainer video {
+  #largeVideoElementsContainer {
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  #largeVideo {
     width: 100% !important;
     height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  html[data-spexify-screen-share="true"] #largeVideo {
     object-fit: contain !important;
     background: #000 !important;
   }
@@ -210,6 +247,7 @@ function PrepVideoCall({
   onModerationStateChange,
   onNetworkQualityChange,
   onAudioMuteChange,
+  onParticipantCountChange,
   suspendTileViewLock = false,
   locale = "en",
 }) {
@@ -217,9 +255,10 @@ function PrepVideoCall({
   const apiRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Keep the call behind an explicit prejoin decision. This prevents a
-  // camera/microphone from being activated before the user sees the preview.
-  const [hasJoined, setHasJoined] = useState(false);
+  // Enter the classroom immediately. Jitsi still starts with the existing
+  // safe defaults (microphone muted, camera enabled) and exposes its own
+  // controls once the call is open.
+  const [hasJoined, setHasJoined] = useState(true);
   const [joinAudioMuted, setJoinAudioMuted] = useState(true);
   const [joinVideoMuted, setJoinVideoMuted] = useState(false);
   const [prejoinError, setPrejoinError] = useState(null);
@@ -250,9 +289,14 @@ function PrepVideoCall({
   const speakerTestTimeoutRef = useRef(null);
   const moderationCbRef = useRef(onModerationStateChange);
   const networkQualityCbRef = useRef(onNetworkQualityChange);
+  const participantCountCbRef = useRef(onParticipantCountChange);
   const jitsiParticipantsRef = useRef(new Map());
   const localParticipantIdRef = useRef(null);
   const activeSpeakerIdRef = useRef(null);
+
+  useEffect(() => {
+    participantCountCbRef.current = onParticipantCountChange;
+  }, [onParticipantCountChange]);
 
   useEffect(() => {
     // Read preferences after mount so server-rendered markup stays identical
@@ -535,6 +579,15 @@ function PrepVideoCall({
   // fires when participants join or leave.
   const [remoteParticipantCount, setRemoteParticipantCount] = useState(0);
 
+  // Expose the live count to the classroom shell so it can make the outer
+  // video surface feel intentional for a pair or a growing group. Jitsi's
+  // own tile layout still owns the actual media grid.
+  useEffect(() => {
+    const cb = participantCountCbRef.current;
+    if (typeof cb !== "function") return;
+    cb(hasJoined ? Math.max(1, remoteParticipantCount + 1) : 0);
+  }, [hasJoined, remoteParticipantCount]);
+
   // When someone shares their screen, Jitsi adds a *second* endpoint
   // for the screen track whose displayName follows a known pattern
   // (e.g. "Belal Helmy's screen", "Belal (Screen Sharing)"). We track
@@ -579,6 +632,14 @@ function PrepVideoCall({
 
     doc.documentElement.style.setProperty("--spx-tile-cols", String(cols));
   }, [getJitsiIframeDocument, remoteParticipantCount]);
+
+  const syncJitsiScreenShareMode = useCallback(() => {
+    const doc = getJitsiIframeDocument();
+    if (!doc?.documentElement) return;
+    doc.documentElement.dataset.spexifyScreenShare = suspendTileViewLock
+      ? "true"
+      : "false";
+  }, [getJitsiIframeDocument, suspendTileViewLock]);
 
   const forceTileViewNow = useCallback(() => {
     const api = apiRef.current;
@@ -701,6 +762,7 @@ function PrepVideoCall({
   // Switch between tile view (default) and stage view (screen-sharing).
   useEffect(() => {
     if (!hasJoined) return;
+    syncJitsiScreenShareMode();
     const api = apiRef.current;
     if (!api || typeof api.executeCommand !== "function") return;
 
@@ -724,7 +786,7 @@ function PrepVideoCall({
         // No tile-view command available; nothing more to do.
       }
     }
-  }, [hasJoined, suspendTileViewLock]);
+  }, [hasJoined, suspendTileViewLock, syncJitsiScreenShareMode]);
 
   const normalizeJitsiParticipant = useCallback((participant) => {
     if (!participant || typeof participant !== "object") return null;
@@ -765,6 +827,11 @@ function PrepVideoCall({
         console.warn("Failed to read Jitsi participants", err);
       }
     }
+
+    // `videoConferenceJoined` can fire after the initial participant list is
+    // already populated. Keep the adaptive grid and the shell's presence
+    // treatment in sync with that first snapshot too.
+    setRemoteParticipantCount(jitsiParticipantsRef.current.size);
 
     cb({
       ready: Boolean(api),
@@ -1327,6 +1394,7 @@ function PrepVideoCall({
           }
           injectDominantSpeakerStyles();
           injectTileGridStyles();
+          syncJitsiScreenShareMode();
           publishModerationState();
 
           // Lock the conference in tile view so the learner always sees

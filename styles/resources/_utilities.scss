@@ -211,32 +211,17 @@
   width: 26px;
   height: 26px;
   border-radius: 999px;
-  border: 2px solid $cr-border-default;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
   cursor: pointer;
   position: relative;
 }
 
-/* stacked illusion */
+/* Keep the selector circular without the heavy stacked rings that made the
+   toolbar feel over-decorated at small sizes. */
 .prep-annotate-color--picker::before,
 .prep-annotate-color--picker::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  pointer-events: none;
-}
-
-.prep-annotate-color--picker::before {
-  transform: translate(-4px, -3px);
-  opacity: 0.45;
-}
-
-.prep-annotate-color--picker::after {
-  transform: translate(-2px, -2px);
-  opacity: 0.7;
+  display: none;
 }
 
 .prep-annotate-colors__menu {

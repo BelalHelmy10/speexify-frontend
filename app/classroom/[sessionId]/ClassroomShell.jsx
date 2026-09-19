@@ -33,7 +33,7 @@ import useAuth from "@/hooks/useAuth";
 import { formatCompactDuration, getSessionTiming } from "./classroomTime";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import api from "@/lib/api";
-import { MessageCircle, BookOpenText, Target, MessageSquare, BookOpen, Monitor } from "lucide-react";
+import { MessageCircle, MessageSquare, BookOpenText, Target, BookOpen, Monitor } from "lucide-react";
 
 /* -----------------------------------------------------------
    Utility: Safely generate a display name
@@ -465,7 +465,15 @@ export default function ClassroomShell({
     screenShareEndpointId: null,
     actions: null,
   });
+  const [liveVideoParticipantCount, setLiveVideoParticipantCount] = useState(
+    () => Math.max(1, Number(participantCount) || 1)
+  );
   const [networkQuality, setNetworkQuality] = useState(null);
+
+  const handleVideoParticipantCountChange = useCallback((count) => {
+    const nextCount = Math.max(0, Number(count) || 0);
+    setLiveVideoParticipantCount(nextCount);
+  }, []);
 
   /* -----------------------------------------------------------
      Realtime sync (classroom channel) - MUST be before resize handlers
@@ -1100,6 +1108,20 @@ export default function ClassroomShell({
   };
 
   const leftPanelWidth = getSplitPercentage();
+
+  // The media surface adapts its framing to the live room shape. A group
+  // session keeps the group treatment even while people are still joining;
+  // the live count then updates the data attribute as Jitsi reports joins and
+  // leaves so the video panel never feels like an empty fixed placeholder.
+  const videoParticipantCount = Math.max(
+    1,
+    Number(liveVideoParticipantCount) || Number(participantCount) || 1
+  );
+  const videoLayoutClass = isGroup
+    ? "cr-video-container--group"
+    : videoParticipantCount > 1
+      ? "cr-video-container--pair"
+      : "cr-video-container--solo";
 
   const resetToMode = (mode) => {
     setFocusMode(mode);
@@ -1808,6 +1830,7 @@ export default function ClassroomShell({
             "cr-main",
             isDragging ? "cr-main--dragging" : "",
             screenShare.isSomeoneSharing ? "cr-main--screen-share" : "",
+            isChatOpen ? "cr-main--chat-open" : "",
           ]
             .filter(Boolean)
             .join(" ")}
@@ -1818,7 +1841,11 @@ export default function ClassroomShell({
             className="cr-panel cr-panel--left"
             style={{ width: `${leftPanelWidth}%` }}
           >
-            <div className="cr-video-container">
+            <div
+              className={`cr-video-container ${videoLayoutClass}`}
+              data-session-type={isGroup ? "group" : "one-on-one"}
+              data-participant-count={videoParticipantCount}
+            >
               <PrepVideoCall
                 roomId={sessionId}
                 userName={userName}
@@ -1829,6 +1856,7 @@ export default function ClassroomShell({
                 onModerationStateChange={handleVideoModerationChange}
                 onNetworkQualityChange={handleNetworkQualityChange}
                 onAudioMuteChange={handleAudioMuteChange}
+                onParticipantCountChange={handleVideoParticipantCountChange}
                 suspendTileViewLock={screenShare.isSomeoneSharing}
                 locale={locale}
               />
@@ -1840,45 +1868,6 @@ export default function ClassroomShell({
               <ClassroomCaptionsOverlay captions={captions} />
             </div>
 
-            <div
-              className={`cr-chat-container ${!isChatOpen ? "cr-chat-container--collapsed" : ""
-                }`}
-              data-lenis-prevent
-            >
-              <button
-                className="cr-chat-toggle"
-                onClick={() => setIsChatOpen(!isChatOpen)}
-                aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
-              >
-                <span className="cr-chat-toggle__label">
-                  <MessageSquare size={14} /> Chat
-                  {chatUnreadCount > 0 && !isChatOpen && (
-                    <span className="cr-chat-toggle__unread" aria-label={`${chatUnreadCount} unread`}>
-                      {chatUnreadCount > 9 ? "9+" : chatUnreadCount}
-                    </span>
-                  )}
-                </span>
-                <span
-                  className={`cr-chat-toggle__icon ${isChatOpen ? "cr-chat-toggle__icon--open" : ""
-                    }`}
-                >
-                  ▼
-                </span>
-              </button>
-
-              <ClassroomChat
-                classroomChannel={classroomChannel}
-                sessionId={sessionId}
-                isTeacher={isTeacher}
-                teacherName={teacherName}
-                learnerName={isTeacher ? learnerName : userName}
-                isOpen={isChatOpen}
-                onUnreadCountChange={setChatUnreadCount}
-                allLearnerNames={allLearnerNames}
-                isGroup={isGroup}
-                locale={locale}
-              />
-            </div>
           </aside>
 
           {/* Drag Handle */}
@@ -1983,6 +1972,40 @@ export default function ClassroomShell({
         </div>
       )}
 
+      {/* Desktop chat drawer: anchored to the chat control so opening the
+          conversation never steals height from the video or lesson canvas. */}
+      {!isMobile && (
+        <aside
+          className={`cr-chat-drawer ${isChatOpen ? "cr-chat-drawer--open" : ""}`}
+          aria-hidden={!isChatOpen}
+          data-lenis-prevent
+        >
+          <div className="cr-chat-drawer__panel">
+            <header className="cr-chat-drawer__header">
+              <div className="cr-chat-drawer__title">
+                <MessageSquare size={16} aria-hidden="true" />
+                <span>Conversation</span>
+              </div>
+              <span className="cr-chat-drawer__context">
+                {isGroup ? "Group thread" : "Private thread"}
+              </span>
+            </header>
+            <ClassroomChat
+              classroomChannel={classroomChannel}
+              sessionId={sessionId}
+              isTeacher={isTeacher}
+              teacherName={teacherName}
+              learnerName={isTeacher ? learnerName : userName}
+              isOpen={isChatOpen}
+              onUnreadCountChange={setChatUnreadCount}
+              allLearnerNames={allLearnerNames}
+              isGroup={isGroup}
+              locale={locale}
+            />
+          </div>
+        </aside>
+      )}
+
       {/* Bottom Control Bar - Desktop only */}
       <ClassroomControlBar
         isMobile={isMobile}
@@ -2059,6 +2082,7 @@ export default function ClassroomShell({
                 onModerationStateChange={handleVideoModerationChange}
                 onNetworkQualityChange={handleNetworkQualityChange}
                 onAudioMuteChange={handleAudioMuteChange}
+                onParticipantCountChange={handleVideoParticipantCountChange}
                 suspendTileViewLock={screenShare.isSomeoneSharing}
                 locale={locale}
               />

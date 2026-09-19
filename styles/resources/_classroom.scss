@@ -182,6 +182,7 @@ body.classroom-active {
   position: fixed;
   inset: 0;
   height: var(--spx-mobile-shell);
+  --cr-chat-drawer-width: min(380px, calc(100vw - 2rem));
   display: flex;
   flex-direction: column;
   background: $cr-bg-primary;
@@ -947,6 +948,27 @@ body.classroom-active {
   overflow: hidden;
   background: $cr-bg-primary;
   border: 1px solid $cr-border-subtle;
+  isolation: isolate;
+
+  // The live media surface should read as the primary stage. These variants
+  // let the shell signal the room shape without hard-coding a one-size-fits-
+  // all height or tile treatment.
+  &--solo,
+  &--pair,
+  &--group {
+    .cr-video {
+      min-width: 0;
+      min-height: 0;
+    }
+  }
+
+  &--pair {
+    border-color: rgba($cr-accent-primary, 0.34);
+  }
+
+  &--group {
+    border-color: rgba($cr-border-default, 0.9);
+  }
 
   @media (max-width: 900px) {
     min-height: 180px;
@@ -963,9 +985,19 @@ body.classroom-active {
   justify-content: center;
   background: $cr-bg-primary;
 
+  // Ensure the external Jitsi iframe itself participates in the flex stage;
+  // without an explicit block/position it can retain its intrinsic 16:9
+  // height and leave large bands of unused space around a single participant.
+  min-width: 0;
+  min-height: 0;
+
   &__frame {
     width: 100%;
     height: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: block;
+    position: relative;
     border-radius: $cr-radius-lg;
     overflow: hidden;
     transition: box-shadow $cr-transition-fast;
@@ -973,6 +1005,7 @@ body.classroom-active {
     iframe {
       width: 100%;
       height: 100%;
+      display: block;
       border: none;
     }
   }
@@ -1661,36 +1694,85 @@ body.classroom-active {
   }
 }
 
-// ─── Chat Container ─────────────────────────────────────────────────────────
-// Chat owns its height deliberately rather than fighting the video for
-// flex space. When open it claims a viewport-aware slab (clamp lets it
-// breathe on tall monitors and stay compact on laptops). The video
-// container above is `flex: 1 1 auto`, so it takes everything that's
-// left after chat + header + controls.
-.cr-chat-container {
-  display: flex;
-  flex-direction: column;
-  margin-top: 0.5rem;
-  min-height: 0;
-  flex: 0 1 auto;
-  height: clamp(280px, 38vh, 440px);
-  max-height: clamp(280px, 38vh, 440px);
-  transition: height $cr-transition-normal, max-height $cr-transition-normal,
-    flex-basis $cr-transition-normal;
+// ─── Desktop Chat Drawer ───────────────────────────────────────────────────
+// Chat is anchored to the bottom control instead of living below the video.
+// It overlays the workspace with a stable footprint, so opening a message
+// thread never resizes the people or the lesson content.
+.cr-chat-drawer {
+  position: absolute;
+  right: 1rem;
+  bottom: calc(#{$cr-controls-height} + 1rem);
+  z-index: 180;
+  width: var(--cr-chat-drawer-width);
+  height: min(620px, max(320px, calc(100% - #{$cr-header-height} - #{$cr-controls-height} - 2rem)));
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  transform-origin: bottom right;
+  transition: opacity 180ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 
-  &--collapsed {
-    height: 44px;
-    max-height: 44px;
-    flex: 0 0 44px;
+  &--open {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 
-    .cr-chat {
-      display: none;
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    background: rgba($cr-bg-secondary, 0.98);
+    border: 1px solid $cr-border-default;
+    border-radius: $cr-radius-lg;
+    box-shadow:
+      0 24px 70px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    backdrop-filter: blur(18px);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 48px;
+    padding: 0.7rem 0.9rem;
+    background: linear-gradient(180deg, rgba($cr-bg-tertiary, 0.94), rgba($cr-bg-secondary, 0.94));
+    border-bottom: 1px solid $cr-border-subtle;
+  }
+
+  &__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: $cr-text-primary;
+    font-size: 0.82rem;
+    font-weight: 750;
+
+    svg {
+      color: $cr-accent-primary;
     }
   }
 
+  &__context {
+    color: $cr-text-muted;
+    font-size: 0.68rem;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  .cr-chat {
+    flex: 1;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
   @media (max-width: 900px) {
-    height: 220px;
-    max-height: 220px;
+    display: none;
   }
 }
 
@@ -2112,6 +2194,13 @@ body.classroom-active {
   overflow: auto; // Changed from hidden to auto (key fix: allow content viewer scroll)
   position: relative;
 
+  // Reserve the drawer's footprint instead of allowing it to cover the
+  // lesson. The resource becomes narrower while remaining fully visible and
+  // interactive, and the video panel keeps its existing dimensions.
+  .cr-main--chat-open .cr-panel--right & {
+    width: calc(100% - var(--cr-chat-drawer-width) - 1rem);
+  }
+
   >* {
     flex: 1;
     min-height: 0;
@@ -2122,6 +2211,8 @@ body.classroom-active {
     max-height: none !important;
     display: flex !important;
     flex-direction: row !important;
+    border-radius: 0 !important;
+    border: 0 !important;
   }
 
   .prep-viewer {
@@ -2521,6 +2612,59 @@ body.classroom-active {
       color: $cr-text-primary;
       border-color: $cr-border-default;
     }
+  }
+}
+
+// Compact desktop controls keep the lesson surface dominant. Touch layouts
+// retain their larger hit areas below the desktop breakpoint.
+@media (min-width: 901px) {
+  .cr-controls {
+    height: 44px;
+    min-height: 44px;
+    padding: 0.25rem 0.6rem;
+
+    &__left,
+    &__right {
+      gap: 0.25rem;
+    }
+
+    &__center {
+      gap: 0.35rem;
+    }
+
+    &__btn {
+      min-height: 30px;
+      padding: 0.28rem 0.55rem;
+      gap: 0.28rem;
+      font-size: 0.72rem;
+      border-radius: $cr-radius-sm;
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+
+  .cr-focus-switcher {
+    padding: 2px;
+    border-radius: $cr-radius-sm;
+  }
+
+  .cr-focus-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: $cr-radius-sm;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+  }
+
+  .cr-controls__toggle-wrapper {
+    gap: 0.35rem;
+    padding: 4px 8px;
   }
 }
 
