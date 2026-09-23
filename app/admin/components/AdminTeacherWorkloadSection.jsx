@@ -1,6 +1,7 @@
 "use client";
 
 import TeacherWorkloadPanel from "./TeacherWorkloadPanel";
+import AdminTeacherEarningsPanel from "./AdminTeacherEarningsPanel";
 
 export default function AdminTeacherWorkloadSection({
   teacherIdFilter,
@@ -63,6 +64,7 @@ export default function AdminTeacherWorkloadSection({
       </div>
 
       <TeacherWorkloadPanel teacherId={teacherIdFilter} from={from} to={to} />
+      <AdminTeacherEarningsPanel teacherId={teacherIdFilter} teachers={teachers} />
     </section>
   );
 }

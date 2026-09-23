@@ -846,17 +846,35 @@ function Admin() {
   }
 
   async function onRateHourlyBlur(userId, raw) {
-    const value = String(raw || "").trim();
-    const cents = value === "" ? null : Math.round(Number(value) * 100);
-    await api.patch(`/admin/users/${userId}`, { rateHourlyCents: cents });
-    loadUsersAdmin();
+    const value = String(raw ?? "").trim();
+    const amount = value === "" ? null : Number(value);
+    if (amount !== null && (!Number.isFinite(amount) || amount < 0)) {
+      toast.error("Enter a valid non-negative hourly EGP rate.");
+      return;
+    }
+    try {
+      const rateMinor = amount === null ? null : Math.round(amount * 100);
+      await api.patch(`/admin/users/${userId}`, { rateHourlyEgpPiastres: rateMinor });
+      loadUsersAdmin();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to save the hourly EGP rate");
+    }
   }
 
   async function onRatePerSessionBlur(userId, raw) {
-    const value = String(raw || "").trim();
-    const cents = value === "" ? null : Math.round(Number(value) * 100);
-    await api.patch(`/admin/users/${userId}`, { ratePerSessionCents: cents });
-    loadUsersAdmin();
+    const value = String(raw ?? "").trim();
+    const amount = value === "" ? null : Number(value);
+    if (amount !== null && (!Number.isFinite(amount) || amount < 0)) {
+      toast.error("Enter a valid non-negative per-session EGP rate.");
+      return;
+    }
+    try {
+      const rateMinor = amount === null ? null : Math.round(amount * 100);
+      await api.patch(`/admin/users/${userId}`, { ratePerSessionEgpPiastres: rateMinor });
+      loadUsersAdmin();
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to save the per-session EGP rate");
+    }
   }
 
   function openPackagesForUser(u) {

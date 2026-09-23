@@ -125,8 +125,8 @@ export default function AdminUserManagementSection({
                 </th>
                 <th>User</th>
                 <th>Role</th>
-                <th>Hourly Rate ($)</th>
-                <th>Per Session ($)</th>
+                <th>Hourly Rate (EGP)</th>
+                <th>Per Session (EGP)</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -164,13 +164,13 @@ export default function AdminUserManagementSection({
                   </td>
 
                   <td>
-                    {u.role === "teacher" || u.role === "admin" ? (
+                    {u.role === "teacher" ? (
                       <input
                         type="number"
                         className="adm-form-input adm-rate-input"
                         defaultValue={
-                          typeof u.rateHourlyCents === "number"
-                            ? (u.rateHourlyCents / 100).toFixed(2)
+                          typeof u.rateHourlyEgpPiastres === "number"
+                            ? (u.rateHourlyEgpPiastres / 100).toFixed(2)
                             : ""
                         }
                         placeholder="—"
@@ -184,13 +184,13 @@ export default function AdminUserManagementSection({
                   </td>
 
                   <td>
-                    {u.role === "teacher" || u.role === "admin" ? (
+                    {u.role === "teacher" ? (
                       <input
                         type="number"
                         className="adm-form-input adm-rate-input"
                         defaultValue={
-                          typeof u.ratePerSessionCents === "number"
-                            ? (u.ratePerSessionCents / 100).toFixed(2)
+                          typeof u.ratePerSessionEgpPiastres === "number"
+                            ? (u.ratePerSessionEgpPiastres / 100).toFixed(2)
                             : ""
                         }
                         placeholder="—"

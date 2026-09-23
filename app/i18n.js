@@ -79,6 +79,8 @@ import arFeedback from "@/locales/ar/feedback.json";
 
 import enClassroom from "@/locales/en/classroom.json";
 import arClassroom from "@/locales/ar/classroom.json";
+import enEarnings from "@/locales/en/earnings.json";
+import arEarnings from "@/locales/ar/earnings.json";
 
 import enMemberStories from "@/locales/en/member-stories.json";
 import arMemberStories from "@/locales/ar/member-stories.json";
@@ -113,6 +115,7 @@ const dictionaries = {
     "payment-result": enPayment,
     feedback: enFeedback,
     classroom: enClassroom,
+    earnings: enEarnings,
     "member-stories": enMemberStories,
   },
   ar: {
@@ -144,6 +147,7 @@ const dictionaries = {
     "payment-result": arPayment,
     feedback: arFeedback,
     classroom: arClassroom,
+    earnings: arEarnings,
     "member-stories": arMemberStories,
   },
 };
