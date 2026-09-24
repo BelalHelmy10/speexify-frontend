@@ -29,6 +29,9 @@
 
   "status_loading": "جاري التحميل…",
   "status_error": "حصل خطأ. جرّب تاني.",
+  "pricing_loading": "جاري تحميل الأسعار…",
+  "pricing_unavailable": "الأسعار غير متاحة مؤقتًا. تم تعطيل الشراء حتى نؤكد الأسعار الحالية.",
+  "pricing_retry": "حاول مرة أخرى",
 
   "pricing_title_1on1": "باقات الجلسات الفردية",
   "pricing_subtitle_1on1": "نفس الاهتمام الشخصي. والتزام بالممارسة يناسبك.",
@@ -92,6 +95,8 @@
   "cta_corp_card_secondary": "شوف إزاي بتشتغل",
   "cta_buy_now": "اختار الخطة دي",
   "cta_buy_plan": "اختار",
+  "cta_loading": "جاري تحميل السعر…",
+  "cta_unavailable": "غير متاح",
 
   "fomo_proof": "أكتر من 300 عضو بيتدرّبوا حاليًا",
   "fomo_popular_badge": "الأكثر اختيارًا الشهر ده",

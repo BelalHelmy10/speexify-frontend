@@ -29,6 +29,9 @@
 
   "status_loading": "Loading…",
   "status_error": "Something went wrong. Try again in a moment.",
+  "pricing_loading": "Loading prices…",
+  "pricing_unavailable": "Prices are temporarily unavailable. Purchase options are disabled until we can confirm the live prices.",
+  "pricing_retry": "Retry",
 
   "pricing_title_1on1": "One-on-one packs",
   "pricing_subtitle_1on1": "The same personal attention. A practice commitment that fits you.",
@@ -92,6 +95,8 @@
   "cta_corp_card_secondary": "See how it works",
   "cta_buy_now": "Choose this plan",
   "cta_buy_plan": "Choose",
+  "cta_loading": "Loading price…",
+  "cta_unavailable": "Unavailable",
 
   "fomo_proof": "300+ members practicing right now",
   "fomo_popular_badge": "Most chosen this month",

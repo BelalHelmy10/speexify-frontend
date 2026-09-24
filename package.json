@@ -29,7 +29,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "latest",
     "eslint-config-next": "latest",
-    "puppeteer": "^24.43.1",
+    "puppeteer": "^25.12.0",
     "sass": "^1.93.2",
     "typescript": "^5.9.3"
   },
@@ -42,6 +42,9 @@
     "styles:check": "node scripts/checkStyleIsolation.mjs",
     "i18n:check": "node scripts/checkLocales.js",
     "i18n:check:strict": "node scripts/checkLocales.js --strict",
+    "test:auth-proxy": "node --test scripts/proxyAuth.test.mjs",
+    "test:pricing": "node --test scripts/pricingCatalog.test.mjs",
+    "test:sanity": "node --test scripts/sanityQuery.test.mjs",
     "qa:responsive": "node scripts/responsiveQa.mjs",
     "qa:public-routes": "node scripts/checkPublicRoutes.mjs --start-server",
     "typecheck": "./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/next typegen .",

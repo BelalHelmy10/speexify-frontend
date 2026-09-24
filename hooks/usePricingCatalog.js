@@ -2,13 +2,16 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { readPaymentPricing } from "@/lib/payment-contract";
+import {
+  fetchPricingCatalogData,
+  isValidPricingCatalog,
+} from "@/lib/pricing-catalog.mjs";
 
 let cached = null;
 let pending = null;
 export function fetchPricingCatalog() {
   if (cached && Date.now() - cached.at < 60_000) return Promise.resolve(cached.data);
-  if (!pending) pending = api.get("/pricing/catalog").then(({data}) => {
-    if (!Array.isArray(data.packages) || !data.regionToken) throw new Error("Prices are unavailable.");
+  if (!pending) pending = fetchPricingCatalogData(() => api.get("/pricing/catalog")).then((data) => {
     cached = {at: Date.now(), data};
     return data;
   }).finally(() => {pending = null;});
@@ -17,7 +20,9 @@ export function fetchPricingCatalog() {
 export function mergeCatalogPlans(editorial, catalog) {
   // Keep the editorial package cards visible while pricing is loading or
   // temporarily unavailable. Catalog fields are layered on when available.
-  if (!catalog) return editorial.map(plan => ({ ...plan, backendId: null, regionToken: null }));
+  if (!isValidPricingCatalog(catalog)) {
+    return editorial.map(plan => ({ ...plan, backendId: null, regionToken: null }));
+  }
   return editorial.flatMap(plan => {
     const item = catalog.packages.find(p =>
       p.catalogKey === plan.id ||
@@ -35,12 +40,23 @@ export function usePricingCatalog() {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let live = true;
+    setCatalog(null);
     setError("");
     fetchPricingCatalog().then(data => {if (live) setCatalog(data);})
-      .catch(() => {if (live) setError("Prices are temporarily unavailable.");});
+      .catch(() => {if (live) {setCatalog(null); setError("Prices are temporarily unavailable.");}});
     return () => {live = false;};
   }, [attempt]);
-  return {catalog, error, loading: !catalog && !error, retry: () => {cached = null; setAttempt(n => n + 1);}};
+  return {
+    catalog,
+    error,
+    loading: !catalog && !error,
+    retry: () => {
+      cached = null;
+      setCatalog(null);
+      setError("");
+      setAttempt(n => n + 1);
+    },
+  };
 }
 
 export function useCheckoutQuote(packageId, regionToken, discountCode) {

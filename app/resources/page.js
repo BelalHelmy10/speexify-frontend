@@ -1,6 +1,7 @@
 // app/resources/page.js
-import { sanityClient } from "@/lib/sanity";
+import { fetchSanity } from "@/lib/sanity";
 import ResourcesPicker from "./ResourcesPicker";
+import ResourcesUnavailableState from "./ResourcesUnavailableState";
 import { getDictionary, t } from "@/app/i18n";
 import { getIntlLocale } from "@/utils/locale";
 import { requireResourceAccess } from "@/app/protected-access";
@@ -102,8 +103,23 @@ const RESOURCES_PICKER_QUERY = `
 `;
 
 async function getResourcesTree() {
-  const data = await sanityClient.fetch(RESOURCES_PICKER_QUERY);
-  return Array.isArray(data) ? data : [];
+  try {
+    const data = await fetchSanity(RESOURCES_PICKER_QUERY, {}, {
+      queryName: "resources.picker",
+      validate: (value) => {
+        if (!Array.isArray(value)) {
+          const error = new Error("Sanity returned an invalid resources tree");
+          error.code = "SANITY_INVALID_PAYLOAD";
+          throw error;
+        }
+      },
+    });
+
+    return { tracks: data, unavailable: false };
+  } catch {
+    // Keep the page shell available and let the client retry the data request.
+    return { tracks: [], unavailable: true };
+  }
 }
 
 function summarizeResourceLibrary(tracks = []) {
@@ -153,7 +169,7 @@ export default async function ResourcesPage({ locale = "en" }) {
     locale,
     nextPath: locale === "ar" ? "/ar/resources" : "/resources",
   });
-  const tracks = await getResourcesTree();
+  const { tracks, unavailable } = await getResourcesTree();
   const dict = getDictionary(locale, "resources");
   const stats = summarizeResourceLibrary(tracks);
   const numberFormatter = new Intl.NumberFormat(getIntlLocale(locale));
@@ -202,7 +218,13 @@ export default async function ResourcesPage({ locale = "en" }) {
           </dl>
         </header>
 
-        {tracks.length === 0 ? (
+        {unavailable ? (
+          <ResourcesUnavailableState
+            title={t(dict, "resources_load_error")}
+            body={t(dict, "resources_load_error_body")}
+            retryLabel={t(dict, "resources_retry")}
+          />
+        ) : tracks.length === 0 ? (
           <p className="spx-resources-empty">
             {t(dict, "resources_empty_tracks")}
           </p>

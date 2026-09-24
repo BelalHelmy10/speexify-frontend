@@ -132,6 +132,7 @@ export default async function RootLayout({ children }) {
   const requestHeaders = await headers();
   const cookieStore = await cookies();
   const locale = requestHeaders.get("x-speexify-locale") || "en";
+  const authState = requestHeaders.get("x-speexify-auth-state") || "available";
   const isArabic = locale === "ar";
   const hasSessionCookie = Boolean(cookieStore.get("speexify.sid")?.value);
 
@@ -140,7 +141,9 @@ export default async function RootLayout({ children }) {
   // /auth/me round-trip. Bounded by a short timeout: if the backend is slow or
   // cold-starting, we fall back to null and let the (resilient) client check
   // take over instead of stalling the page.
-  const initialUser = hasSessionCookie
+  // If the proxy already observed a transient outage, avoid a second blocking
+  // server request; the client auth provider owns the retry budget.
+  const initialUser = hasSessionCookie && authState !== "unavailable"
     ? await getServerUser({ timeoutMs: 2500 })
     : null;
 
@@ -176,7 +179,11 @@ export default async function RootLayout({ children }) {
       <body className={`${inter.variable} ${outfit.variable} ${cairo.variable} ${spaceGrotesk.variable}`}>
         <LocaleShell>
           <ClientProviders>
-            <Providers initialUser={initialUser} hasSessionCookie={hasSessionCookie}>
+            <Providers
+              initialUser={initialUser}
+              hasSessionCookie={hasSessionCookie}
+              initialAuthStatus={authState}
+            >
               <AppChrome>{children}</AppChrome>
             </Providers>
           </ClientProviders>

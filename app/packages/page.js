@@ -10,6 +10,7 @@ import FadeIn from "@/components/FadeIn";
 import PackageComparison from "@/components/PackageComparison";
 // import { guessCurrencyFromNavigator } from "@/lib/currency"; // no longer needed
 import { usePricingCatalog, mergeCatalogPlans } from "@/hooks/usePricingCatalog";
+import { isPurchaseReadyPlan, isValidPricingCatalog } from "@/lib/pricing-catalog.mjs";
 import {
   calculatePackagePrice,
   calculatePerSessionPrice,
@@ -120,6 +121,7 @@ function Packages() {
 
   const isIndividual = tab === AUD.INDIVIDUAL;
   const isOneOnOne = lessonType === LESSON_TYPE.ONE_ON_ONE;
+  const catalogReady = isValidPricingCatalog(catalog) && !loading && !err;
   const pricePreview = useMemo(() => {
     const pricedPlans = plans.map((plan) => ({
       plan,
@@ -280,7 +282,20 @@ function Packages() {
                 ? t(dict, "hero_pricing_eyebrow", "Prices visible upfront")
                 : t(dict, "hero_pricing_corp_eyebrow", "Team pricing")}
             </div>
-            {isIndividual && !catalog ? (<p role="status">{locale === "ar" ? "جارٍ تحميل الأسعار…" : "Loading prices…"}{err && <button onClick={retry}>{locale === "ar" ? "حاول مرة أخرى" : "Try again"}</button>}</p>) : isIndividual && pricePreview.lowestPerSession ? (
+            {isIndividual && !catalog ? (
+              <div className="ecp-hero-pricing__availability" role={err ? "alert" : "status"}>
+                <span>
+                  {err
+                    ? t(dict, "pricing_unavailable", "Prices are temporarily unavailable.")
+                    : t(dict, "pricing_loading", "Loading prices…")}
+                </span>
+                {err && (
+                  <button type="button" className="ecp-pricing-retry" onClick={retry}>
+                    {t(dict, "pricing_retry", "Retry")}
+                  </button>
+                )}
+              </div>
+            ) : isIndividual && pricePreview.lowestPerSession ? (
               <>
                 <h2 className="ecp-hero-pricing__title">
                   {t(dict, "hero_pricing_from", "From")}{" "}
@@ -358,8 +373,8 @@ function Packages() {
       {loading && (
         <section className="ecp__section">
           <div className="ecp__container">
-            <div className="ecp-status">
-              {t(dict, "status_loading", "Loading packages…")}
+            <div className="ecp-status" role="status">
+              {t(dict, "pricing_loading", "Loading prices…")}
             </div>
           </div>
         </section>
@@ -367,8 +382,11 @@ function Packages() {
       {!loading && err && (
         <section className="ecp__section">
           <div className="ecp__container">
-            <div className="ecp-status ecp-status--warn">
-              {t(dict, "status_error", err || "Something went wrong.")}
+            <div className="ecp-status ecp-status--warn" role="alert">
+              <span>{t(dict, "pricing_unavailable", "Prices are temporarily unavailable.")}</span>
+              <button type="button" className="ecp-pricing-retry" onClick={retry}>
+                {t(dict, "pricing_retry", "Retry")}
+              </button>
             </div>
           </div>
         </section>
@@ -392,6 +410,9 @@ function Packages() {
                 locale={locale}
                 currency={currency}
                 countryCode={countryCode}
+                catalog={catalog}
+                loading={loading}
+                catalogError={err}
               />
             ))}
           </div>
@@ -504,7 +525,7 @@ function Packages() {
         locale={locale}
         prices={pricePreview.pricedPlans}
         loading={loading}
-        ready={Boolean(catalog)}
+        ready={catalogReady}
       />
 
       {/* FAQ */}
@@ -621,6 +642,9 @@ function PricingCard({
   locale,
   currency,
   countryCode,
+  catalog,
+  loading,
+  catalogError,
 }) {
   const {
     title,
@@ -643,14 +667,19 @@ function PricingCard({
 
   // inside function PricingCard({ plan, ... })
   const paymentRoute = PAYMENT_MODE === "paymob" ? APP_ROUTES.checkout : APP_ROUTES.manualPayment;
+  const canPurchase = !isCorp && !loading && !catalogError && isPurchaseReadyPlan(plan, catalog);
   // Pass planId (stable, locale-independent identifier) plus the English
   // backend title as a fallback for backward compatibility.
   const urlTitle = plan._backendTitle || plan.title;
-  const target = `${routeHref(paymentRoute, locale)}?planId=${encodeURIComponent(
-    plan.id
-  )}&plan=${encodeURIComponent(urlTitle)}&cc=${encodeURIComponent(
-    countryCode || ""
-  )}&cur=${encodeURIComponent(currency || "")}&region=${encodeURIComponent(plan.regionToken || "")}&packageId=${plan.backendId}`;
+  const target = canPurchase
+    ? `${routeHref(paymentRoute, locale)}?planId=${encodeURIComponent(
+      plan.id
+    )}&plan=${encodeURIComponent(urlTitle)}&cc=${encodeURIComponent(
+      countryCode || ""
+    )}&cur=${encodeURIComponent(currency || "")}&region=${encodeURIComponent(
+      plan.regionToken
+    )}&packageId=${encodeURIComponent(plan.backendId)}`
+    : null;
 
   return (
     <div
@@ -733,13 +762,26 @@ function PricingCard({
               {t(dict, "cta_buy_now", "Buy Now")}
             </Link> */}
 
-            <Link
-              href={`${routeHref(APP_ROUTES.login, locale)}?next=${encodeURIComponent(target)}`}
-              className="ecp-btn ecp-btn--primary"
-              aria-label={`${t(dict, "cta_buy_plan", "Choose")} ${title}`}
-            >
-              {t(dict, "cta_buy_plan", "Choose")} {title}
-            </Link>
+            {target ? (
+              <Link
+                href={`${routeHref(APP_ROUTES.login, locale)}?next=${encodeURIComponent(target)}`}
+                className="ecp-btn ecp-btn--primary"
+                aria-label={`${t(dict, "cta_buy_plan", "Choose")} ${title}`}
+              >
+                {t(dict, "cta_buy_plan", "Choose")} {title}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="ecp-btn ecp-btn--primary ecp-btn--disabled"
+                disabled
+                aria-label={`${t(dict, "cta_unavailable", "Unavailable")} ${title}`}
+              >
+                {loading
+                  ? t(dict, "cta_loading", "Loading price…")
+                  : t(dict, "cta_unavailable", "Unavailable")}
+              </button>
+            )}
           </>
         )}
       </div>

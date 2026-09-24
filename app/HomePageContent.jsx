@@ -17,6 +17,7 @@ import {
   formatRegionalPrice,
 } from "@/lib/regional-pricing";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { isPurchaseReadyPlan } from "@/lib/pricing-catalog.mjs";
 
 const MARKETING_IMAGE_VERSION = "20260519";
 const marketingImage = (src) => `${src}?v=${MARKETING_IMAGE_VERSION}`;
@@ -599,7 +600,8 @@ function getHomePlanPriceLabels(plan, countryCode, locale) {
   };
 }
 
-function buildPlanStartHref(plan, locale, countryCode) {
+function buildPlanStartHref(plan, locale, countryCode, catalog) {
+  if (!isPurchaseReadyPlan(plan, catalog)) return null;
   const resolvedCountry = countryCode || DEFAULT_COUNTRY_CODE;
   const currency = getPricingRegion(resolvedCountry).currency;
   const paymentRoute =
@@ -610,7 +612,7 @@ function buildPlanStartHref(plan, locale, countryCode) {
     plan._backendTitle || plan.title,
   )}&cc=${encodeURIComponent(resolvedCountry)}&cur=${encodeURIComponent(
     currency,
-  )}&region=${encodeURIComponent(plan.regionToken || "")}&packageId=${plan.backendId}`;
+  )}&region=${encodeURIComponent(plan.regionToken)}&packageId=${encodeURIComponent(plan.backendId)}`;
 
   return `${routeHref(APP_ROUTES.register, locale)}?next=${encodeURIComponent(
     paymentTarget,
@@ -708,13 +710,15 @@ function PricingSection({ dict, locale }) {
             className="home-pricing__cards"
             aria-label={t(dict, "pricing_cards_label")}
           >
-            {pricedPlans.map((item) => (
-              <article
-                className={`home-price-card${
-                  item.plan.isPopular ? " home-price-card--featured" : ""
-                }`}
-                key={item.plan.id}
-              >
+            {pricedPlans.map((item) => {
+              const startHref = buildPlanStartHref(item.plan, locale, countryCode, catalog);
+              return (
+                <article
+                  className={`home-price-card${
+                    item.plan.isPopular ? " home-price-card--featured" : ""
+                  }`}
+                  key={item.plan.id}
+                >
                 {item.plan.isPopular && (
                   <div className="home-price-card__badge">
                     {t(dict, "pricing_popular")}
@@ -753,15 +757,24 @@ function PricingSection({ dict, locale }) {
                   ))}
                 </ul>
 
-                <Link
-                  className="home-price-card__button"
-                  href={buildPlanStartHref(item.plan, locale, countryCode)}
-                >
-                  <span>{t(dict, "pricing_card_cta")}</span>
-                  <ArrowRight size={16} aria-hidden="true" />
-                </Link>
-              </article>
-            ))}
+                {startHref ? (
+                  <Link className="home-price-card__button" href={startHref}>
+                    <span>{t(dict, "pricing_card_cta")}</span>
+                    <ArrowRight size={16} aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="home-price-card__button home-price-card__button--disabled"
+                    disabled
+                    aria-label={`${t(dict, "pricing_unavailable", "Unavailable")} ${item.plan.title}`}
+                  >
+                    <span>{t(dict, "pricing_unavailable", "Unavailable")}</span>
+                  </button>
+                )}
+                </article>
+              );
+            })}
           </div>
         </div>
 

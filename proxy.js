@@ -1,5 +1,6 @@
 // proxy.js
 import { NextResponse } from "next/server";
+import { AUTH_STATE, buildLoginRedirect, fetchSessionUser } from "@/lib/proxy-auth.mjs";
 
 const TOKEN_COOKIE = "speexify.sid"; // session cookie name
 const AUTH_CHECK_TIMEOUT_MS = 2500;
@@ -59,27 +60,19 @@ function withCommonHeaders(response) {
   return response;
 }
 
-async function getSessionUser(req) {
-  const cookieHeader = req.headers.get("cookie");
-  if (!cookieHeader) return null;
+function allowThrough(req, isArabic, authState = null) {
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-speexify-locale", isArabic ? "ar" : "en");
+  requestHeaders.delete("x-speexify-auth-state");
+  if (authState) requestHeaders.set("x-speexify-auth-state", authState);
 
-  try {
-    const response = await fetch(`${apiBase}/api/auth/me`, {
-      method: "GET",
-      headers: {
-        cookie: cookieHeader,
-        "cache-control": "no-store",
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(AUTH_CHECK_TIMEOUT_MS),
-    });
-
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data?.user || null;
-  } catch {
-    return null;
-  }
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+  if (authState) response.headers.set("x-speexify-auth-state", authState);
+  return withCommonHeaders(response);
 }
 
 export async function proxy(req) {
@@ -107,22 +100,28 @@ export async function proxy(req) {
   const onPrivatePage = isPrivate(basePath);
   const onAdminPage = isAdminRoute(basePath);
   const needsAuthState = Boolean(token) && onPrivatePage;
-  const sessionUser = needsAuthState ? await getSessionUser(req) : null;
-  const isAuthed = Boolean(sessionUser);
+  const authResult = onPrivatePage
+    ? needsAuthState
+      ? await fetchSessionUser({
+        cookieHeader: req.headers.get("cookie"),
+        apiBase,
+        timeoutMs: AUTH_CHECK_TIMEOUT_MS,
+      })
+      : {state: AUTH_STATE.UNAUTHENTICATED, user: null}
+    : {state: null, user: null};
+  const sessionUser = authResult.user;
+  const isAuthed = authResult.state === AUTH_STATE.AUTHENTICATED;
+
+  // A timeout, network error, malformed response, or 5xx does not prove that
+  // the session is invalid. Let the page render so AuthProvider can retry and
+  // show its recoverable service-unavailable state instead of redirecting.
+  if (onPrivatePage && authResult.state === AUTH_STATE.UNAVAILABLE) {
+    return allowThrough(req, isArabic, AUTH_STATE.UNAVAILABLE);
+  }
 
   // Not logged in + private route -> redirect to login with ?next=...
   if (!isAuthed && onPrivatePage) {
-    const loginPath = isArabic ? "/ar/login" : "/login";
-    const dest = url.clone();
-
-    dest.pathname = loginPath;
-    dest.search = "";
-
-    const originalPathWithQuery =
-      pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
-
-    dest.searchParams.set("next", originalPathWithQuery);
-
+    const dest = buildLoginRedirect(req.url, {pathname, searchParams, isArabic});
     return withCommonHeaders(NextResponse.redirect(dest));
   }
 
@@ -133,17 +132,8 @@ export async function proxy(req) {
     );
   }
 
-  // Otherwise allow through
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-speexify-locale", isArabic ? "ar" : "en");
-
-  return withCommonHeaders(
-    NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    })
-  );
+  // Otherwise allow through.
+  return allowThrough(req, isArabic);
 }
 
 export const config = {

@@ -10,7 +10,12 @@ import { getGoogleClientId } from "@/lib/googleAuth";
  * - GoogleOAuthProvider: needed for @react-oauth/google
  * - AuthProvider: your app auth context
  */
-export default function Providers({ children, initialUser, hasSessionCookie = false }) {
+export default function Providers({
+  children,
+  initialUser,
+  hasSessionCookie = false,
+  initialAuthStatus = "available",
+}) {
   const clientId = getGoogleClientId();
 
   if (!clientId) {
@@ -23,7 +28,11 @@ export default function Providers({ children, initialUser, hasSessionCookie = fa
 
   if (!clientId) {
     return (
-      <AuthProvider initialUser={initialUser} hasSessionCookie={hasSessionCookie}>
+      <AuthProvider
+        initialUser={initialUser}
+        hasSessionCookie={hasSessionCookie}
+        initialAuthStatus={initialAuthStatus}
+      >
         {children}
       </AuthProvider>
     );
@@ -31,7 +40,11 @@ export default function Providers({ children, initialUser, hasSessionCookie = fa
 
   return (
     <GoogleOAuthProvider clientId={clientId}>
-      <AuthProvider initialUser={initialUser} hasSessionCookie={hasSessionCookie}>
+      <AuthProvider
+        initialUser={initialUser}
+        hasSessionCookie={hasSessionCookie}
+        initialAuthStatus={initialAuthStatus}
+      >
         {children}
       </AuthProvider>
     </GoogleOAuthProvider>

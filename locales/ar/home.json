@@ -19,6 +19,7 @@
   "pricing_cards_label": "باقات Speexify",
   "pricing_popular": "أفضل قيمة",
   "pricing_card_cta": "اختار الباقة دي",
+  "pricing_unavailable": "غير متاح",
   "pricing_region_note": "بنعرِض أسعار {currency} لمنطقة {region}. التسعير الإقليمي الكامل موجود في صفحة الباقات.",
   "pricing_all_packages": "قارن كل الباقات",
   "pricing_team_label": "للشركات والفرق",

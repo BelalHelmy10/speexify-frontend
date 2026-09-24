@@ -44,10 +44,12 @@ export function AuthProvider({
   children,
   initialUser = null,
   hasSessionCookie = false,
+  initialAuthStatus = "available",
 }) {
   const [user, setUser] = useState(initialUser);
   const [status, setStatus] = useState(() => {
     if (initialUser) return "authenticated";
+    if (hasSessionCookie && initialAuthStatus === "unavailable") return "error";
     if (hasSessionCookie) return "checking";
     return "unauthenticated";
   });

@@ -155,6 +155,15 @@
       padding: 14px 28px;
       font-size: 16px;
     }
+
+    &--disabled,
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+      box-shadow: none;
+      transform: none;
+      pointer-events: none;
+    }
   }
 
   &-label {
@@ -173,6 +182,37 @@
     &--warn {
       color: #b45309;
       background: #fef3c7;
+    }
+
+    .ecp-pricing-retry {
+      margin-inline-start: 12px;
+    }
+  }
+
+  &-hero-pricing__availability {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: $muted;
+    line-height: 1.5;
+
+    &[role="alert"] {
+      color: #b45309;
+    }
+  }
+
+  &-pricing-retry {
+    border: 0;
+    padding: 0;
+    color: $accent-ink;
+    background: transparent;
+    font: inherit;
+    font-weight: 800;
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover {
+      color: $accent;
     }
   }
 

@@ -20,6 +20,7 @@
   "pricing_cards_label": "Featured Speexify packages",
   "pricing_popular": "Best value",
   "pricing_card_cta": "Choose this package",
+  "pricing_unavailable": "Unavailable",
   "pricing_region_note": "Showing {currency} pricing for {region}. Full regional pricing is available on the packages page.",
   "pricing_all_packages": "Compare every package",
   "pricing_team_label": "For teams",
