@@ -132,6 +132,7 @@ export default async function RootLayout({ children }) {
   const requestHeaders = await headers();
   const cookieStore = await cookies();
   const locale = requestHeaders.get("x-speexify-locale") || "en";
+  const nonce = requestHeaders.get("x-nonce") || undefined;
   const authState = requestHeaders.get("x-speexify-auth-state") || "available";
   const isArabic = locale === "ar";
   const hasSessionCookie = Boolean(cookieStore.get("speexify.sid")?.value);
@@ -164,12 +165,14 @@ export default async function RootLayout({ children }) {
         {/* Theme color for mobile browsers */}
         <meta name="theme-color" content="#f25c2e" />
         <script
+          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: safeJsonLd(organizationJsonLd),
           }}
         />
         <script
+          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: safeJsonLd(websiteJsonLd),

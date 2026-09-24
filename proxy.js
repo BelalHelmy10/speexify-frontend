@@ -11,6 +11,42 @@ const rawApiBase =
   "http://localhost:5050";
 const apiBase = rawApiBase.replace(/\/+$/, "").replace(/\/api$/, "");
 
+function createNonce() {
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function createSecurityContext() {
+  const nonce = createNonce();
+  const websocketBase = apiBase
+    .replace(/^http:/, "ws:")
+    .replace(/^https:/, "wss:");
+
+  return {
+    nonce,
+    contentSecurityPolicy: [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'self'",
+      "form-action 'self'",
+      `script-src 'self' 'nonce-${nonce}' https://accounts.google.com https://apis.google.com https://www.googletagmanager.com https://meet.speexify.com`,
+      "script-src-attr 'none'",
+      `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://accounts.google.com`,
+      // React uses dynamic style attributes for calendar geometry and progress
+      // indicators. Inline scripts remain nonce-only; this directive is CSS-only.
+      "style-src-attr 'unsafe-inline'",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "img-src 'self' data: blob: https:",
+      "media-src 'self' data: blob: https:",
+      "frame-src 'self' https://accounts.google.com https://www.google.com https://maps.google.com https://meet.jit.si https://*.jit.si https://meet.speexify.com https://accept.paymob.com https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://docs.google.com https://drive.google.com",
+      `connect-src 'self' ${apiBase} ${websocketBase} ws://localhost:5050 wss://localhost:5050 https://ipapi.co https://accounts.google.com https://*.sentry.io https://cdn.sanity.io https://*.sanity.io https://meet.speexify.com https://*.jit.si`,
+      "worker-src 'self' blob:",
+    ].join("; "),
+  };
+}
+
 // Any route in here requires an authenticated session
 const PRIVATE_ROUTES = [
   "/dashboard",
@@ -52,17 +88,22 @@ function getInvalidMemberStorySlug(pathname) {
   return VALID_MEMBER_STORY_SLUGS.has(slug) ? null : slug;
 }
 
-function withCommonHeaders(response) {
+function withCommonHeaders(response, securityContext) {
   response.headers.set(
     "Cross-Origin-Opener-Policy",
     "same-origin-allow-popups"
   );
+  response.headers.set(
+    "Content-Security-Policy",
+    securityContext.contentSecurityPolicy
+  );
   return response;
 }
 
-function allowThrough(req, isArabic, authState = null) {
+function allowThrough(req, isArabic, authState = null, securityContext) {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-speexify-locale", isArabic ? "ar" : "en");
+  requestHeaders.set("x-nonce", securityContext.nonce);
   requestHeaders.delete("x-speexify-auth-state");
   if (authState) requestHeaders.set("x-speexify-auth-state", authState);
 
@@ -72,13 +113,14 @@ function allowThrough(req, isArabic, authState = null) {
     },
   });
   if (authState) response.headers.set("x-speexify-auth-state", authState);
-  return withCommonHeaders(response);
+  return withCommonHeaders(response, securityContext);
 }
 
 export async function proxy(req) {
   const url = req.nextUrl.clone();
   const pathname = url.pathname;
   const searchParams = url.searchParams;
+  const securityContext = createSecurityContext();
 
   const isArabic = pathname === "/ar" || pathname.startsWith("/ar/");
   // Normalize to EN-style base path ("/dashboard", "/login", etc.)
@@ -92,7 +134,8 @@ export async function proxy(req) {
         headers: {
           "content-type": "text/plain; charset=utf-8",
         },
-      })
+      }),
+      securityContext
     );
   }
 
@@ -116,64 +159,29 @@ export async function proxy(req) {
   // the session is invalid. Let the page render so AuthProvider can retry and
   // show its recoverable service-unavailable state instead of redirecting.
   if (onPrivatePage && authResult.state === AUTH_STATE.UNAVAILABLE) {
-    return allowThrough(req, isArabic, AUTH_STATE.UNAVAILABLE);
+    return allowThrough(req, isArabic, AUTH_STATE.UNAVAILABLE, securityContext);
   }
 
   // Not logged in + private route -> redirect to login with ?next=...
   if (!isAuthed && onPrivatePage) {
     const dest = buildLoginRedirect(req.url, {pathname, searchParams, isArabic});
-    return withCommonHeaders(NextResponse.redirect(dest));
+    return withCommonHeaders(NextResponse.redirect(dest), securityContext);
   }
 
   if (isAuthed && onAdminPage && sessionUser?.role !== "admin") {
     const dashboardPath = isArabic ? "/ar/dashboard" : "/dashboard";
     return withCommonHeaders(
-      NextResponse.redirect(new URL(dashboardPath, req.url))
+      NextResponse.redirect(new URL(dashboardPath, req.url)),
+      securityContext
     );
   }
 
   // Otherwise allow through.
-  return allowThrough(req, isArabic);
+  return allowThrough(req, isArabic, null, securityContext);
 }
 
 export const config = {
   matcher: [
-    "/", // home
-    "/login",
-    "/register",
-    "/member-stories/:path*",
-    "/dashboard/:path*",
-    "/calendar/:path*",
-    "/settings/:path*",
-    "/admin/:path*",
-    "/classroom/:path*",
-    "/resources/:path*",
-    "/assessment/:path*",
-    "/onboarding/:path*",
-    "/manual-payment/:path*",
-    "/checkout/:path*", // ✅ protect checkout
-    "/payment/:path*", // ✅ protect /payment/success and friends
-    "/profile",
-    "/profile/:path*",
-
-    // Arabic equivalents
-    "/ar",
-    "/ar/:path*",
-    "/ar/login",
-    "/ar/register",
-    "/ar/member-stories/:path*",
-    "/ar/dashboard/:path*",
-    "/ar/calendar/:path*",
-    "/ar/settings/:path*",
-    "/ar/admin/:path*",
-    "/ar/classroom/:path*",
-    "/ar/resources/:path*",
-    "/ar/assessment/:path*",
-    "/ar/onboarding/:path*",
-    "/ar/manual-payment/:path*",
-    "/ar/checkout/:path*", // ✅ ar checkout
-    "/ar/payment/:path*", // ✅ ar payment/success
-    "/ar/profile",
-    "/ar/profile/:path*",
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest).*)",
   ],
 };

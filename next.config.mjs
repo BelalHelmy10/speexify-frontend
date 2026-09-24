@@ -16,27 +16,26 @@ const rawBase =
 // - if someone set ".../api", strip that so we don't end up with "/api/api"
 const apiBase = rawBase.replace(/\/+$/, "").replace(/\/api$/, "");
 
+const googleClientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "").trim();
+const googleAuthDisabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_DISABLED === "true";
+const localGoogleAuthEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ALLOW_LOCALHOST === "true";
+const looksLikePlaceholderGoogleClient =
+  !googleClientId || /your-|localhost|example\.com/i.test(googleClientId);
+
+if (process.env.NODE_ENV === "production") {
+  if (looksLikePlaceholderGoogleClient || googleAuthDisabled) {
+    throw new Error(
+      "Production builds require a real NEXT_PUBLIC_GOOGLE_CLIENT_ID and enabled Google OAuth configuration"
+    );
+  }
+  if (localGoogleAuthEnabled) {
+    throw new Error(
+      "NEXT_PUBLIC_GOOGLE_AUTH_ALLOW_LOCALHOST must be false in production"
+    );
+  }
+}
+
 const securityHeaders = [
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "object-src 'none'",
-      "frame-ancestors 'self'",
-      "form-action 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://www.googletagmanager.com https://meet.speexify.com",
-      "script-src-attr 'none'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
-      "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
-      "font-src 'self' data: https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https:",
-      "media-src 'self' data: blob: https:",
-      "frame-src 'self' https://accounts.google.com https://www.google.com https://maps.google.com https://meet.jit.si https://*.jit.si https://meet.speexify.com https://accept.paymob.com https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://docs.google.com https://drive.google.com",
-      `connect-src 'self' ${apiBase} ${apiBase.replace(/^http:/, "ws:").replace(/^https:/, "wss:")} ws://localhost:5050 wss://localhost:5050 https://ipapi.co https://accounts.google.com https://*.sentry.io https://cdn.sanity.io https://*.sanity.io https://meet.speexify.com https://*.jit.si`,
-      "worker-src 'self' blob:",
-    ].join("; "),
-  },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
   { key: "X-Content-Type-Options", value: "nosniff" },

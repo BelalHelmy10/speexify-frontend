@@ -955,6 +955,11 @@ export default function SettingsPage() {
 
             {calendarUrls ? (
               <div className="settings-calendar-links">
+                <p className="settings-calendar-expiry">
+                  {copyText("calendar_expiry", "This link expires")}: {calendarUrls.expiresAt
+                    ? new Date(calendarUrls.expiresAt).toLocaleString()
+                    : copyText("calendar_expiry_unknown", "according to the server policy")}
+                </p>
                 {[
                   ["webcal", "webcalUrl", copyText("calendar_webcal", "webcal subscription link")],
                   ["ics", "httpsUrl", copyText("calendar_ics", "ICS direct link")],

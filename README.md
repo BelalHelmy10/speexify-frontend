@@ -149,6 +149,10 @@ JavaScript origins. Set its ID in `NEXT_PUBLIC_GOOGLE_LOCAL_CLIENT_ID` and set
 Google button is intentionally hidden locally and email authentication remains
 available.
 
+Production Google OAuth → Set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to the exact
+production OAuth client and register the deployed HTTPS origin in Google Cloud.
+Production builds reject placeholder client IDs and any localhost OAuth flag.
+
 Styles not applying → Ensure globals.css is imported in app/layout.tsx.
 
 Always-fresh SSR → Use export const revalidate = 0 for no caching.
