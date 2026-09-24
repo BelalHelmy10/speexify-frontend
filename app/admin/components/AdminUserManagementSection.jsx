@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClipboardCheck } from "lucide-react";
 import { useMemo, useState } from "react";
+import useAuth from "@/hooks/useAuth";
+import { getDictionary, t } from "@/app/i18n";
 
 export default function AdminUserManagementSection({
   usersAdmin,
@@ -23,6 +25,8 @@ export default function AdminUserManagementSection({
   onOpenPackages,
   onOpenAttendance,
 }) {
+  const { user } = useAuth();
+  const copy = getDictionary(user?.language === "ar" ? "ar" : "en", "admin");
   const pathname = usePathname();
   const prefix = pathname?.startsWith("/ar") ? "/ar" : "";
   const [roleFilter, setRoleFilter] = useState("all");
@@ -55,8 +59,8 @@ export default function AdminUserManagementSection({
             </svg>
           </div>
           <div>
-            <h2 className="adm-admin-card__title">User Management</h2>
-            <p className="adm-admin-card__subtitle">{usersAdmin.length} total users</p>
+            <h2 className="adm-admin-card__title">{t(copy, "userManagement")}</h2>
+            <p className="adm-admin-card__subtitle">{t(copy, "totalUsersCount", { count: usersAdmin.length })}</p>
           </div>
         </div>
         <div className="adm-admin-card__actions">
@@ -77,23 +81,23 @@ export default function AdminUserManagementSection({
             </svg>
             <input
               type="text"
-              aria-label="Search users"
-              placeholder="Search users..."
+              aria-label={t(copy, "searchUsers")}
+              placeholder={t(copy, "searchUsersPlaceholder")}
               value={usersQ}
               onChange={(e) => setUsersQ(e.target.value)}
             />
           </div>
-          <div className="adm-role-filter" role="group" aria-label="Filter users by role">
-            {[['all', 'All users'], ['learner', 'Learners'], ['teacher', 'Teachers'], ['admin', 'Admins']].map(([value, label]) => <button type="button" key={value} className={roleFilter === value ? "is-active" : ""} onClick={() => setRoleFilter(value)}>{label} <span>{value === "all" ? usersAdmin.length : roleCounts[value] || 0}</span></button>)}
+          <div className="adm-role-filter" role="group" aria-label={t(copy, "filterUsersByRole")}>
+            {[['all', t(copy, "allUsers")], ['learner', t(copy, "learners")], ['teacher', t(copy, "teachers")], ['admin', t(copy, "admins")]].map(([value, label]) => <button type="button" key={value} className={roleFilter === value ? "is-active" : ""} onClick={() => setRoleFilter(value)}>{label} <span>{value === "all" ? usersAdmin.length : roleCounts[value] || 0}</span></button>)}
           </div>
-          <select className="adm-user-sort" value={userSort} onChange={(e) => setUserSort(e.target.value)} aria-label="Sort users">
-            <option value="created_desc">Newest first</option>
-            <option value="created_asc">Oldest first</option>
-            <option value="name">Name A–Z</option>
-            <option value="role">Role</option>
+          <select className="adm-user-sort" value={userSort} onChange={(e) => setUserSort(e.target.value)} aria-label={t(copy, "sortUsers")}>
+            <option value="created_desc">{t(copy, "newestFirst")}</option>
+            <option value="created_asc">{t(copy, "oldestFirst")}</option>
+            <option value="name">{t(copy, "nameAZ")}</option>
+            <option value="role">{t(copy, "roleFilter")}</option>
           </select>
           <button className="adm-btn-secondary" onClick={stopImpersonate}>
-            Return to admin
+            {t(copy, "returnToAdmin")}
           </button>
         </div>
       </div>

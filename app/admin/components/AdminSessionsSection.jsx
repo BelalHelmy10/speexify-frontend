@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import TimePicker from "@/components/ui/TimePicker";
+import useAuth from "@/hooks/useAuth";
+import { getDictionary, t } from "@/app/i18n";
 
 const SESSION_VIEWS = [
   { key: "all", label: "All" },
@@ -156,6 +158,8 @@ export default function AdminSessionsSection({
   fmt,
   getSessionLearnerDisplay,
 }) {
+  const { user } = useAuth();
+  const copy = getDictionary(user?.language === "ar" ? "ar" : "en", "admin");
   const [drawerSessionId, setDrawerSessionId] = useState(null);
   const [drawerMode, setDrawerMode] = useState("overview");
   const [participantDraftId, setParticipantDraftId] = useState("");
@@ -325,7 +329,7 @@ export default function AdminSessionsSection({
         </div>
       </div>
 
-      <div className="adm-session-views" aria-label="Session views">
+      <div className="adm-session-views" aria-label={t(copy, "sessionViews")}>
         {SESSION_VIEWS.map((view) => (
           <button
             key={view.key}
@@ -336,7 +340,7 @@ export default function AdminSessionsSection({
             onClick={() => applyView(view.key)}
             aria-pressed={activeView === view.key}
           >
-            {view.label}
+            {view.label === "All" ? t(copy, "all") : view.label}
           </button>
         ))}
       </div>
@@ -359,8 +363,8 @@ export default function AdminSessionsSection({
           </svg>
           <input
             type="text"
-            aria-label="Search sessions by title or meeting link"
-            placeholder="Search title or meeting link..."
+            aria-label={t(copy, "searchSessions")}
+            placeholder={t(copy, "searchSessionsPlaceholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />

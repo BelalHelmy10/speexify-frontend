@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpen, CalendarClock, Clock3, LogOut, Timer, Users } from "lucide-react";
+import useFocusTrap from "@/hooks/useFocusTrap";
 
 export default function ClassroomLeaveConfirmModal({
   show,
@@ -10,6 +11,10 @@ export default function ClassroomLeaveConfirmModal({
   summary,
   isTeacher,
 }) {
+  const modalRef = useFocusTrap(Boolean(show), {
+    onEscape: () => setShowLeaveConfirm(false),
+  });
+
   if (!show) return null;
 
   const hasEnded = summary?.statusLabel?.includes("Over") || summary?.statusLabel === "Time is up";
@@ -17,12 +22,18 @@ export default function ClassroomLeaveConfirmModal({
   const leaveHref = isTeacher
     ? `${prefix}/dashboard`
     : `${prefix}/dashboard/sessions/${sessionId}/feedback`;
-
   return (
     <div className="cr-modal-overlay" onClick={() => setShowLeaveConfirm(false)}>
-      <div className="cr-modal cr-modal--small" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={modalRef}
+        className="cr-modal cr-modal--small"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cr-leave-confirm-title"
+      >
         <div className="cr-modal__header">
-          <h2 className="cr-modal__title">
+          <h2 id="cr-leave-confirm-title" className="cr-modal__title">
             <LogOut size={18} />
             Leave classroom?
           </h2>

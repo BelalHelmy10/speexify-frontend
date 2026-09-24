@@ -1,12 +1,17 @@
 // app/resources/page.js
 import { fetchSanity } from "@/lib/sanity";
-import ResourcesPicker from "./ResourcesPicker";
+import nextDynamic from "next/dynamic";
 import ResourcesUnavailableState from "./ResourcesUnavailableState";
 import { getDictionary, t } from "@/app/i18n";
 import { getIntlLocale } from "@/utils/locale";
 import { requireResourceAccess } from "@/app/protected-access";
+import { unstable_cache } from "next/cache";
 
 export const dynamic = "force-dynamic";
+
+const ResourcesPicker = nextDynamic(() => import("./ResourcesPicker"), {
+  loading: () => <div className="spx-resources-picker-loading" aria-hidden="true" />,
+});
 
 /**
  * Sanity query for the Resources picker.
@@ -102,9 +107,9 @@ const RESOURCES_PICKER_QUERY = `
 }
 `;
 
-async function getResourcesTree() {
-  try {
-    const data = await fetchSanity(RESOURCES_PICKER_QUERY, {}, {
+const getCachedResourcesTree = unstable_cache(
+  async () =>
+    fetchSanity(RESOURCES_PICKER_QUERY, {}, {
       queryName: "resources.picker",
       validate: (value) => {
         if (!Array.isArray(value)) {
@@ -113,7 +118,14 @@ async function getResourcesTree() {
           throw error;
         }
       },
-    });
+    }),
+  ["resources-picker-tree-v1"],
+  { revalidate: 300, tags: ["resources-picker"] }
+);
+
+async function getResourcesTree() {
+  try {
+    const data = await getCachedResourcesTree();
 
     return { tracks: data, unavailable: false };
   } catch {

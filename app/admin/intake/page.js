@@ -28,6 +28,7 @@ import { useToast } from "@/components/ToastProvider";
 import "@/styles/admin.scss";
 import "@/styles/admin-intake.scss";
 import AdminAccessFallback from "../components/AdminAccessFallback";
+import { getDictionary, t } from "@/app/i18n";
 
 const PAGE_SIZE = 25;
 const CEFR_LEVELS = [
@@ -467,6 +468,7 @@ function PlacementFullAttempt({ assessment, review }) {
 
 export default function AdminIntakePage() {
   const { user, checking } = useAuth();
+  const copy = getDictionary(user?.language === "ar" ? "ar" : "en", "admin");
   const isAdmin = user?.role === "admin";
   const { toast } = useToast();
   const pathname = usePathname();
@@ -743,10 +745,10 @@ export default function AdminIntakePage() {
               <Search size={16} aria-hidden="true" />
               <input
                 type="search"
-                aria-label="Search intake records by learner or email"
+                aria-label={t(copy, "searchIntake")}
                 value={q}
                 onChange={(event) => setQ(event.target.value)}
-                placeholder="Search learner or email..."
+                placeholder={t(copy, "searchIntakePlaceholder")}
               />
             </div>
 

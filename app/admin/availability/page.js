@@ -4,16 +4,18 @@
 import AdminAvailabilityView from "@/components/admin/AdminAvailabilityView";
 import useAuth from "@/hooks/useAuth";
 import Link from "next/link";
+import { getDictionary, t } from "@/app/i18n";
 
 export default function AdminAvailabilityPage() {
   const { user, checking } = useAuth();
+  const copy = getDictionary(user?.language === "ar" ? "ar" : "en", "admin");
 
   if (checking)
     return (
       <div className="admin-availability-page">
         <div className="admin-shell">
           <div className="admin-state">
-            <div className="admin-state__card" role="status" aria-live="polite">Loading availability workspace…</div>
+            <div className="admin-state__card" role="status" aria-live="polite">{t(copy, "loading")}</div>
           </div>
         </div>
       </div>
@@ -24,7 +26,7 @@ export default function AdminAvailabilityPage() {
       <div className="admin-availability-page">
         <div className="admin-shell">
           <div className="admin-state">
-            <div className="admin-state__card">Access denied</div>
+            <div className="admin-state__card">{t(copy, "accessDenied")}</div>
           </div>
         </div>
       </div>
@@ -38,12 +40,12 @@ export default function AdminAvailabilityPage() {
             <span className="admin-backlink__icon" aria-hidden="true">
               ←
             </span>
-            Back to Admin
+            {t(copy, "backToAdmin")}
           </Link>
 
           <div className="admin-topbar__meta">
-            <span className="admin-pill">Admin</span>
-            <span className="admin-pill admin-pill--soft">Availability</span>
+            <span className="admin-pill">{t(copy, "admin")}</span>
+            <span className="admin-pill admin-pill--soft">{t(copy, "availability")}</span>
           </div>
         </header>
 

@@ -18,7 +18,10 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
-import { canUseGoogleAuthOnCurrentOrigin } from "@/lib/googleAuth";
+import {
+  canUseGoogleAuthOnCurrentOrigin,
+  getGoogleAuthErrorKey,
+} from "@/lib/googleAuth";
 
 function getSafeNextPath(rawNext, fallbackPath) {
   if (!rawNext) return fallbackPath;
@@ -63,6 +66,7 @@ function RegisterInner({ dict, locale }) {
   const [cooldown, setCooldown] = useState(0);
   const [googleAvailable, setGoogleAvailable] = useState(false);
   const searchParams = useSearchParams();
+  const adminCopy = getDictionary(locale, "admin");
 
   const loginPath = routeHref(APP_ROUTES.login, locale);
   const dashboardPath = routeHref(APP_ROUTES.dashboard, locale);
@@ -81,7 +85,7 @@ function RegisterInner({ dict, locale }) {
     setMsg("");
     setSending(true);
     try {
-      await apiRegisterStart(email);
+      await apiRegisterStart(email, locale);
       setStep(2);
       setMsgType("success");
       setMsg(`${t(dict, "msg_code_sent_prefix")} ${email}`);
@@ -133,7 +137,7 @@ function RegisterInner({ dict, locale }) {
       const credential = resp?.credential;
       if (!credential) {
         setMsgType("error");
-        setMsg(t(dict, "msg_google_no_credential"));
+        setMsg(t(adminCopy, "googleNoCredential"));
         return;
       }
       setMsg("");
@@ -142,14 +146,14 @@ function RegisterInner({ dict, locale }) {
     } catch (err) {
       console.error(err);
       setMsgType("error");
-      setMsg(err?.message || t(dict, "msg_google_failed"));
+      setMsg(t(adminCopy, getGoogleAuthErrorKey(err)));
     }
   };
 
   const handleGoogleError = (err) => {
     console.error(err);
     setMsgType("error");
-    setMsg(t(dict, "msg_google_failed"));
+    setMsg(t(adminCopy, getGoogleAuthErrorKey(err)));
   };
 
   return (

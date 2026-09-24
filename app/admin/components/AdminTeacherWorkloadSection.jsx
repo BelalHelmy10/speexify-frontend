@@ -2,6 +2,7 @@
 
 import TeacherWorkloadPanel from "./TeacherWorkloadPanel";
 import AdminTeacherEarningsPanel from "./AdminTeacherEarningsPanel";
+import AdminTeacherPayoutHistorySection from "./AdminTeacherPayoutHistorySection";
 
 export default function AdminTeacherWorkloadSection({
   teacherIdFilter,
@@ -65,6 +66,7 @@ export default function AdminTeacherWorkloadSection({
 
       <TeacherWorkloadPanel teacherId={teacherIdFilter} from={from} to={to} />
       <AdminTeacherEarningsPanel teacherId={teacherIdFilter} teachers={teachers} />
+      <AdminTeacherPayoutHistorySection teacherId={teacherIdFilter} from={from} to={to} />
     </section>
   );
 }

@@ -13,6 +13,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { useToast, useConfirm } from "@/components/ToastProvider";
+import { getDictionary, t } from "@/app/i18n";
 import "@/styles/admin.scss";
 
 const normAudience = (v) => String(v || "INDIVIDUAL").toUpperCase();
@@ -30,6 +31,7 @@ export default function AdminPackagesPage() {
   const { user, checking } = useAuth();
 
   const isAdmin = user?.role === "admin";
+  const copy = getDictionary(user?.language === "ar" ? "ar" : "en", "admin");
 
   // Filters
   const [q, setQ] = useState("");
@@ -291,8 +293,8 @@ export default function AdminPackagesPage() {
               </svg>
               <input
                 type="text"
-                aria-label="Search packages by title, description, or feature"
-                placeholder="Search title/description/features…"
+                aria-label={t(copy, "searchPackages")}
+                placeholder={t(copy, "searchPackagesPlaceholder")}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />

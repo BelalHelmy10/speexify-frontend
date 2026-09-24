@@ -18,8 +18,8 @@
 // ===========================================
 
 // ── Coral (Primary CTA accent)
-$coral: #f25c2e;
-$coral-dark: #d94b1f;
+$coral: #b13b10;
+$coral-dark: #8f2f0c;
 $coral-light: #f37550;
 $coral-pale: #fdf0eb;
 // ── Navy (Brand foundation)
@@ -215,9 +215,9 @@ $radius-card: 20px;
 // THEME - Main (CSS Custom Properties)
 // ===========================================
 :root {
-  --accent: #f25c2e;
-  --accent-soft: rgba(242, 92, 46, 0.15);
-  --accent-coral: #f25c2e;
+  --accent: #b13b10;
+  --accent-soft: rgba(177, 59, 16, 0.15);
+  --accent-coral: #b13b10;
   --accent-navy: #0d1b2a;
   --panel-bg: #fefcfa;
   --text: #0d1b2a;
@@ -251,12 +251,12 @@ $radius-card: 20px;
   --admin-text-secondary: #94a3b8;
   --admin-text-muted: #5a6a7a;
 
-  --admin-primary: #f25c2e;
-  --admin-primary-dark: #d94b1f;
+  --admin-primary: #b13b10;
+  --admin-primary-dark: #8f2f0c;
   --admin-success: #15803d;
   --admin-success-dark: #15803d;
   --admin-accent: #f37550;
-  --admin-accent-dark: #f25c2e;
+  --admin-accent-dark: #b13b10;
   --admin-warning: #d4890a;
   --admin-warning-dark: #b37008;
   --admin-danger: #ef4444;
@@ -271,16 +271,16 @@ $radius-card: 20px;
 // THEME - Settings (CSS Custom Properties)
 // ===========================================
 :root {
-  --settings-bg-start: #f25c2e;
-  --settings-bg-end: #d94b1f;
+  --settings-bg-start: #b13b10;
+  --settings-bg-end: #8f2f0c;
   --settings-surface: rgba(255, 255, 255, 0.97);
   --settings-border: rgba(232, 224, 213, 0.25);
   --settings-text: #0d1b2a;
   --settings-text-light: #5a6a7a;
   --settings-text-muted: #5a6a7a;
 
-  --settings-primary: #f25c2e;
-  --settings-primary-dark: #d94b1f;
+  --settings-primary: #b13b10;
+  --settings-primary-dark: #8f2f0c;
   --settings-success: #15803d;
   --settings-warning: #d4890a;
   --settings-danger: #ef4444;
@@ -381,8 +381,8 @@ $payment-red-600: #ef4444;
 // ============================================================================
 
 // Sessions page
-$sessions-primary: #f25c2e;
-$sessions-primary-dark: #d94b1f;
+$sessions-primary: #b13b10;
+$sessions-primary-dark: #8f2f0c;
 $sessions-success: #15803d;
 $sessions-warning: #d4890a;
 $sessions-danger: #ef4444;
@@ -407,7 +407,7 @@ $sessions-shadow-lg:
   0 4px 6px -2px rgba(13, 27, 42, 0.05);
 
 // Classroom experience page
-$classroom-primary: #f25c2e;
+$classroom-primary: #b13b10;
 $classroom-primary-light: #f37550;
 $classroom-success: #15803d;
 $classroom-warning: #d4890a;
@@ -429,8 +429,8 @@ $classroom-shadow-md: 0 4px 6px -1px rgba(13, 27, 42, 0.08);
 $classroom-shadow-lg: 0 10px 15px -3px rgba(13, 27, 42, 0.09);
 
 // Admin support page
-$asp-primary: #f25c2e;
-$asp-primary-hover: #d94b1f;
+$asp-primary: #b13b10;
+$asp-primary-hover: #8f2f0c;
 $asp-primary-active: #b83d18;
 $asp-success: #15803d;
 $asp-danger: #ef4444;
@@ -468,11 +468,11 @@ $policy-color-bg: #ffffff;
 $policy-color-bg-alt: #fefcfa;
 $policy-color-text: #0d1b2a;
 $policy-color-text-muted: #5a6a7a;
-$policy-color-primary: #f25c2e;
-$policy-color-primary-hover: #d94b1f;
+$policy-color-primary: #b13b10;
+$policy-color-primary-hover: #8f2f0c;
 $policy-color-border: #e8e0d5;
-$policy-color-link: #f25c2e;
-$policy-color-link-hover: #d94b1f;
+$policy-color-link: #b13b10;
+$policy-color-link-hover: #8f2f0c;
 $policy-font-size-base: 1rem;
 $policy-font-size-sm: 0.875rem;
 $policy-font-size-lg: 1.125rem;
@@ -526,7 +526,7 @@ $cr-bg-elevated: #1f2937;
 $cr-bg-surface: #151d2e;
 $cr-accent-teacher: #d4890a;
 $cr-accent-learner: #0f766e;
-$cr-accent-primary: #f25c2e;
+$cr-accent-primary: #b13b10;
 $cr-accent-primary-light: #f37550;
 $cr-accent-primary-lighter: #f47d5a;
 $cr-accent-success: #15803d;
@@ -568,10 +568,10 @@ $cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 // CENTRALIZED CSS CUSTOM PROPERTIES FOR PAGE THEMES
 // ============================================================================
 :root {
-  --brand: #f25c2e;
+  --brand: #b13b10;
 
-  --why-brand-blue: #f25c2e;
-  --why-brand-blue-dark: #d94b1f;
+  --why-brand-blue: #b13b10;
+  --why-brand-blue-dark: #8f2f0c;
   --why-brand-blue-light: #f37550;
   --why-text-primary: #0d1b2a;
   --why-text-secondary: #5a6a7a;
@@ -595,8 +595,8 @@ $cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --individual-navy: #0d1b2a;
   --individual-navy-mid: #1a3a5c;
   --individual-navy-muted: #2c5478;
-  --individual-coral: #f25c2e;
-  --individual-coral-dark: #d94b1f;
+  --individual-coral: #b13b10;
+  --individual-coral-dark: #8f2f0c;
   --individual-coral-light: #f37550;
   --individual-coral-pale: #fdf0eb;
   --individual-bg: #fefcfa;
@@ -610,15 +610,15 @@ $cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --individual-shadow-coral: 0 8px 32px rgba(242, 92, 46, 0.28);
   --individual-shadow-navy: 0 8px 32px rgba(13, 27, 42, 0.15);
   --individual-radius: 20px;
-  --individual-tone-coral: #f25c2e;
+  --individual-tone-coral: #b13b10;
   --individual-tone-gold: #d4890a;
   --individual-tone-teal: #0f766e;
 
-  --tone-coral-color: #f25c2e;
-  --tone-coral-bg: rgba(242, 92, 46, 0.1);
-  --tone-coral-shadow-14: rgba(242, 92, 46, 0.14);
-  --tone-coral-shadow-15: rgba(242, 92, 46, 0.15);
-  --tone-coral-shadow-18: rgba(242, 92, 46, 0.18);
+  --tone-coral-color: #b13b10;
+  --tone-coral-bg: rgba(177, 59, 16, 0.1);
+  --tone-coral-shadow-14: rgba(177, 59, 16, 0.14);
+  --tone-coral-shadow-15: rgba(177, 59, 16, 0.15);
+  --tone-coral-shadow-18: rgba(177, 59, 16, 0.18);
 
   --tone-blue-color: #0f766e;
   --tone-blue-bg: rgba(15, 118, 110, 0.1);

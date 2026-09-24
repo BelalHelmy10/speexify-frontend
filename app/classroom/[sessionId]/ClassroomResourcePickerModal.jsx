@@ -11,6 +11,7 @@ import {
 } from "react";
 import { Clock, Search, X } from "lucide-react";
 import ClassroomResourcePicker from "./ClassroomResourcePicker";
+import useFocusTrap from "@/hooks/useFocusTrap";
 import {
   buildFlatResourceIndex,
   loadRecentResourceIds,
@@ -60,6 +61,10 @@ function ClassroomResourcePickerModal({
 
   const inputRef = useRef(null);
   const resultRefs = useRef(new Map());
+  const modalRef = useFocusTrap(Boolean(isOpen && isTeacher), {
+    onEscape: () => setIsPickerOpen(false),
+    initialFocusRef: inputRef,
+  });
 
   // Build the flat searchable index once per tracks change.
   const flatIndex = useMemo(() => buildFlatResourceIndex(tracks || []), [tracks]);
@@ -172,9 +177,11 @@ function ClassroomResourcePickerModal({
   return (
     <div className="cr-modal-overlay" onClick={() => setIsPickerOpen(false)}>
       <div
+        ref={modalRef}
         className="cr-modal cr-modal--picker"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
+        aria-modal="true"
         aria-label="Choose a resource"
       >
         <div className="cr-picker-search">

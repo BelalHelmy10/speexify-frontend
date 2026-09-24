@@ -161,6 +161,25 @@
   border: 1px dashed $cr-border-default;
 }
 
+.spx-resources-picker-loading {
+  min-height: 18rem;
+  border: 1px solid $cr-border-default;
+  border-radius: $cr-radius-xl;
+  background: linear-gradient(
+    100deg,
+    rgba($cr-bg-secondary, 0.72) 30%,
+    rgba($cr-bg-tertiary, 0.92) 45%,
+    rgba($cr-bg-secondary, 0.72) 60%
+  );
+  background-size: 200% 100%;
+  animation: spx-resources-picker-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes spx-resources-picker-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
 .spx-resources-unavailable {
   display: flex;
   align-items: center;

@@ -402,7 +402,7 @@
     border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
-    color: #d94b1f;
+    color: #8f2f0c;
     margin-bottom: 28px;
     letter-spacing: 0.02em;
 
@@ -1472,7 +1472,7 @@
 
     span {
       font-size: 12px;
-      color: rgba($color-white, 0.45);
+      color: rgba($color-white, 0.72);
     }
   }
 
@@ -1483,7 +1483,7 @@
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: $coral;
+    color: $coral-light;
     background: rgba($coral, 0.1);
     border: 1px solid rgba($coral, 0.2);
     border-radius: 20px;
@@ -1536,7 +1536,7 @@
 
   &__err {
     background: rgba($coral, 0.15);
-    color: rgba($coral, 0.85);
+    color: $coral-light;
     border-radius: 3px;
     padding: 1px 5px;
     text-decoration: underline;
@@ -1590,7 +1590,7 @@
     font-weight: 700;
     letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: $coral;
+    color: $coral-light;
   }
 
   &__swap {
@@ -1601,7 +1601,7 @@
   }
 
   &__old {
-    color: rgba($color-white, 0.4);
+    color: rgba($color-white, 0.72);
     text-decoration: line-through;
     text-decoration-color: rgba($coral, 0.5);
   }

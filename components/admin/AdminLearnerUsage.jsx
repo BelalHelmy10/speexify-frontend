@@ -5,9 +5,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import api from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
+import useAuth from "@/hooks/useAuth";
+import { getDictionary, t } from "@/app/i18n";
 
 export default function AdminLearnerUsage() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const copy = getDictionary(user?.language === "ar" ? "ar" : "en", "admin");
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [q, setQ] = useState("");
@@ -27,7 +31,7 @@ export default function AdminLearnerUsage() {
       toast?.error?.(
         e?.response?.data?.error ||
           e?.response?.data?.message ||
-          "Failed to load learner usage"
+          t(copy, "failedLearnerUsage")
       );
     } finally {
       setLoading(false);
@@ -56,9 +60,9 @@ export default function AdminLearnerUsage() {
       <div className="adm-admin-card">
         <div className="adm-admin-card__header">
           <div className="adm-admin-card__title-group">
-            <div className="adm-admin-card__title">Learner Usage</div>
+            <div className="adm-admin-card__title">{t(copy, "learnerUsage")}</div>
             <div className="adm-admin-card__subtitle">
-              Packages (granted) vs consumed vs remaining + attendance outcomes
+              {t(copy, "learnerUsageSubtitle")}
             </div>
           </div>
 
@@ -68,7 +72,7 @@ export default function AdminLearnerUsage() {
               onClick={fetchUsage}
               disabled={loading}
             >
-              Refresh
+              {t(copy, "refresh")}
             </button>
           </div>
         </div>
@@ -84,27 +88,27 @@ export default function AdminLearnerUsage() {
           >
             <input
               className="adm-input"
-              aria-label="Search learner usage by name or email"
+              aria-label={t(copy, "searchLearnerUsage")}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search learner name or email…"
+              placeholder={t(copy, "searchLearnerUsagePlaceholder")}
               style={{ maxWidth: 420 }}
             />
-            {loading ? <span className="adm-muted">Loading…</span> : null}
+            {loading ? <span className="adm-muted">{t(copy, "loading")}</span> : null}
           </div>
 
           <div style={{ overflowX: "auto" }}>
             <table className="adm-table">
               <thead>
                 <tr>
-                  <th>Learner</th>
-                  <th>Granted</th>
-                  <th>Consumed</th>
-                  <th>Remaining</th>
-                  <th>Attended</th>
-                  <th>No-show</th>
-                  <th>Late cancel</th>
-                  <th>Early cancel</th>
+                  <th>{t(copy, "learner")}</th>
+                  <th>{t(copy, "granted")}</th>
+                  <th>{t(copy, "consumed")}</th>
+                  <th>{t(copy, "remaining")}</th>
+                  <th>{t(copy, "attended")}</th>
+                  <th>{t(copy, "noShow")}</th>
+                  <th>{t(copy, "lateCancel")}</th>
+                  <th>{t(copy, "earlyCancel")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -134,7 +138,7 @@ export default function AdminLearnerUsage() {
                       className="adm-muted"
                       style={{ padding: 16 }}
                     >
-                      No learners found.
+                      {t(copy, "noLearners")}
                     </td>
                   </tr>
                 ) : null}
@@ -143,8 +147,7 @@ export default function AdminLearnerUsage() {
           </div>
 
           <div className="adm-muted" style={{ marginTop: 12 }}>
-            Policy: attended = consume 1, no-show = consume 1, late cancel (&lt;
-            6 hours) = consume 1, early cancel = 0.
+            {t(copy, "usagePolicy")}
           </div>
         </div>
       </div>

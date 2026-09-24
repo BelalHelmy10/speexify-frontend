@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState } from "react";
+import useFocusTrap from "@/hooks/useFocusTrap";
 
 const ToastContext = createContext(null);
 
@@ -9,6 +10,9 @@ let idCounter = 0;
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const [confirmState, setConfirmState] = useState(null); // <- for confirm()
+  const confirmRef = useFocusTrap(Boolean(confirmState), {
+    onEscape: () => handleConfirm(false),
+  });
 
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -174,8 +178,10 @@ export function ToastProvider({ children }) {
           }}
         >
           <div
+            ref={confirmRef}
             role="dialog"
             aria-modal="true"
+            aria-labelledby="toast-confirm-title"
             style={{
               background: "white",
               padding: "16px 20px",
@@ -185,7 +191,7 @@ export function ToastProvider({ children }) {
               boxShadow: "0 18px 45px rgba(15,23,42,0.4)",
             }}
           >
-            <p style={{ marginBottom: 16 }}>{confirmState.message}</p>
+            <p id="toast-confirm-title" style={{ marginBottom: 16 }}>{confirmState.message}</p>
             <div
               style={{
                 display: "flex",

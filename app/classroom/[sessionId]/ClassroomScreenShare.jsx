@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Monitor, MonitorOff, ShieldOff, Volume2, X } from "lucide-react";
+import useFocusTrap from "@/hooks/useFocusTrap";
 
 /* ─────────────────────────────────────────────────────────────
    Hook: own the cross-side screen-share state
@@ -189,18 +190,7 @@ export function ClassroomScreenShareConfirmModal({
   onConfirm,
   onCancel,
 }) {
-  // Close on Escape.
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onCancel?.();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [isOpen, onCancel]);
+  const modalRef = useFocusTrap(Boolean(isOpen), { onEscape: onCancel });
 
   if (!isOpen) return null;
 
@@ -208,13 +198,14 @@ export function ClassroomScreenShareConfirmModal({
     <div
       className="cr-modal-overlay"
       onClick={onCancel}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cr-screenshare-confirm-title"
     >
       <div
+        ref={modalRef}
         className="cr-modal cr-modal--small"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cr-screenshare-confirm-title"
       >
         <div className="cr-modal__header">
           <h2 id="cr-screenshare-confirm-title" className="cr-modal__title">

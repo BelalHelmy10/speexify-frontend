@@ -22,9 +22,13 @@ function isSelectable(row) {
   );
 }
 
+const PAGE_SIZE = 50;
+
 export default function AdminTeacherEarningsPanel({ teacherId, teachers }) {
   const { toast } = useToast();
   const [rows, setRows] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
   const [errorCode, setErrorCode] = useState(null);
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState(new Set());
@@ -40,6 +44,7 @@ export default function AdminTeacherEarningsPanel({ teacherId, teachers }) {
   const load = async () => {
     if (!teacherId) {
       setRows([]);
+      setTotal(0);
       setSelected(new Set());
       setErrorCode(null);
       return;
@@ -48,9 +53,10 @@ export default function AdminTeacherEarningsPanel({ teacherId, teachers }) {
     setErrorCode(null);
     try {
       const { data } = await api.get("/admin/teacher-earnings", {
-        params: { teacherId, limit: 100, t: Date.now() },
+        params: { teacherId, limit: PAGE_SIZE, offset: page * PAGE_SIZE, t: Date.now() },
       });
       setRows(Array.isArray(data?.entries) ? data.entries : []);
+      setTotal(Number(data?.total) || 0);
       setSelected(new Set());
     } catch (error) {
       setRows([]);
@@ -62,6 +68,10 @@ export default function AdminTeacherEarningsPanel({ teacherId, teachers }) {
 
   useEffect(() => {
     load();
+  }, [teacherId, page]);
+
+  useEffect(() => {
+    setPage(0);
   }, [teacherId]);
 
   const pending = useMemo(() => rows.filter((row) => row.status === "PENDING"), [rows]);
@@ -210,6 +220,15 @@ export default function AdminTeacherEarningsPanel({ teacherId, teachers }) {
               </tbody>
             </table>
           </div>
+          {total > PAGE_SIZE ? (
+            <div className="adm-earnings-panel__toolbar" aria-label="Earnings pagination">
+              <span>Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total}</span>
+              <div className="adm-earnings-panel__actions">
+                <button type="button" className="adm-btn" disabled={page === 0 || busy} onClick={() => setPage((value) => Math.max(0, value - 1))}>Previous</button>
+                <button type="button" className="adm-btn" disabled={(page + 1) * PAGE_SIZE >= total || busy} onClick={() => setPage((value) => value + 1)}>Next</button>
+              </div>
+            </div>
+          ) : null}
         </>
       )}
 
@@ -230,6 +249,7 @@ export default function AdminTeacherEarningsPanel({ teacherId, teachers }) {
         <div className="adm-earnings-modal-backdrop" role="presentation">
           <form className="adm-earnings-modal" onSubmit={markPaid}>
             <div className="adm-earnings-modal__head"><div><span className="adm-earnings-panel__eyebrow">Confirm settlement</span><h3>Record {formatEGP(selectedTotal)} as paid</h3></div><button type="button" className="adm-earnings-modal__close" onClick={() => setPayoutFormOpen(false)} aria-label="Close">×</button></div>
+            <p className="adm-earnings-modal__hint"><strong>Confirm the exact net amount: {formatEGP(selectedTotal)}.</strong> This settlement is recorded in the EGP ledger and cannot be edited. Use the payout history correction workflow if it is wrong.</p>
             <label>Payment method<select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}><option value="bank_transfer">Bank transfer</option><option value="cash">Cash</option><option value="wallet">Digital wallet</option><option value="other">Other</option></select></label>
             <label>Reference (optional)<input value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} placeholder="Transfer reference" /></label>
             <label>Note (optional)<textarea value={paymentNote} onChange={(event) => setPaymentNote(event.target.value)} placeholder="Add a short internal note" rows={3} /></label>

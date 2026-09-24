@@ -84,6 +84,8 @@ import arEarnings from "@/locales/ar/earnings.json";
 
 import enMemberStories from "@/locales/en/member-stories.json";
 import arMemberStories from "@/locales/ar/member-stories.json";
+import enAdmin from "@/locales/en/admin.json";
+import arAdmin from "@/locales/ar/admin.json";
 
 const dictionaries = {
   en: {
@@ -117,6 +119,7 @@ const dictionaries = {
     classroom: enClassroom,
     earnings: enEarnings,
     "member-stories": enMemberStories,
+    admin: enAdmin,
   },
   ar: {
     home: arHome,
@@ -149,6 +152,7 @@ const dictionaries = {
     classroom: arClassroom,
     earnings: arEarnings,
     "member-stories": arMemberStories,
+    admin: arAdmin,
   },
 };
 

@@ -7,6 +7,7 @@ import api, { clearCsrfToken } from "@/lib/api";
 import MiniCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import useAuth from "@/hooks/useAuth";
+import useFocusTrap from "@/hooks/useFocusTrap";
 import { Calendar as BigCalendar, dateFnsLocalizer } from "react-big-calendar";
 import {
   addDays,
@@ -535,6 +536,7 @@ function SessionQuickPopover({
   prefix,
   locale,
 }) {
+  const popoverRef = useFocusTrap(Boolean(event), { onEscape: onClose });
   const countdown = useCountdown(event.start, event.end, {
     startsIn: t(dict, "countdown_starts_in"),
     live: t(dict, "countdown_live"),
@@ -558,11 +560,18 @@ function SessionQuickPopover({
         aria-label={t(dict, "popover_details")}
         onClick={onClose}
       />
-      <div className="calx-event-popover" role="dialog" style={style}>
+      <div
+        ref={popoverRef}
+        className="calx-event-popover"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calx-event-popover-title"
+        style={style}
+      >
         <div className="calx-event-popover__header">
           <div className={`calx-event-popover__mark is-${tone}`} />
           <div className="calx-event-popover__head-copy">
-            <div className="calx-event-popover__title">
+            <div id="calx-event-popover-title" className="calx-event-popover__title">
               {event.title || t(dict, "session_default_title")}
             </div>
             <div className={`calx-event-popover__type is-${tone}`}>
@@ -570,7 +579,12 @@ function SessionQuickPopover({
               {event.isGroup && event.seatsLabel ? ` · ${event.seatsLabel}` : ""}
             </div>
           </div>
-          <button className="calx-event-popover__close" onClick={onClose}>
+          <button
+            type="button"
+            className="calx-event-popover__close"
+            onClick={onClose}
+            aria-label={t(dict, "modal_close") || "Close details"}
+          >
             <X size={15} />
           </button>
         </div>
@@ -648,6 +662,7 @@ function SessionDetailDrawer({
   prefix,
   locale,
 }) {
+  const drawerRef = useFocusTrap(Boolean(event), { onEscape: onClose });
   const countdown = useCountdown(event.start, event.end, {
     startsIn: t(dict, "countdown_starts_in"),
     live: t(dict, "countdown_live"),
@@ -670,16 +685,27 @@ function SessionDetailDrawer({
         aria-label={t(dict, "popover_details")}
         onClick={onClose}
       />
-      <aside className="calx-session-drawer" role="dialog" aria-modal="true">
+      <aside
+        ref={drawerRef}
+        className="calx-session-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calx-session-drawer-title"
+      >
         <div className="calx-session-drawer__header">
           <div>
             <div className={`calx-session-drawer__type is-${tone}`}>
               {getSessionTypeLabel(event, tone, dict)}
               {event.isGroup && event.seatsLabel ? ` · ${event.seatsLabel}` : ""}
             </div>
-            <h2>{event.title || t(dict, "session_default_title")}</h2>
+            <h2 id="calx-session-drawer-title">{event.title || t(dict, "session_default_title")}</h2>
           </div>
-          <button className="calx-session-drawer__close" onClick={onClose}>
+          <button
+            type="button"
+            className="calx-session-drawer__close"
+            onClick={onClose}
+            aria-label={t(dict, "modal_close") || "Close details"}
+          >
             <X size={17} />
           </button>
         </div>

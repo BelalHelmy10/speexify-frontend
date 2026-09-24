@@ -45,6 +45,10 @@ for (const route of routes) {
 
   const rec = { route, url };
   try {
+    // The app's production CSP blocks inline axe injection by design. Bypass
+    // it only in this local, read-only audit context so the accessibility
+    // results reflect the rendered page instead of an injection error.
+    await page.setBypassCSP(true);
     const resp = await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
     rec.status = resp ? resp.status() : null;
     // settle
@@ -93,6 +97,11 @@ for (const route of routes) {
 
     // axe-core
     try {
+      // Freeze motion so opacity/transform animations cannot create a
+      // transient contrast result while the page is being audited.
+      await page.addStyleTag({
+        content: "*,*::before,*::after{animation:none!important;transition:none!important}",
+      });
       await page.addScriptTag({ content: axeSrc });
       const axe = await page.evaluate(async () => {
         // eslint-disable-next-line no-undef

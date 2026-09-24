@@ -18,7 +18,10 @@ import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 import BrandLogo from "@/components/brand/BrandLogo";
-import { canUseGoogleAuthOnCurrentOrigin } from "@/lib/googleAuth";
+import {
+  canUseGoogleAuthOnCurrentOrigin,
+  getGoogleAuthErrorKey,
+} from "@/lib/googleAuth";
 
 function getSafeNextPath(rawNext, fallbackPath) {
   if (!rawNext) return fallbackPath;
@@ -69,6 +72,7 @@ function LoginInner({ dict }) {
     : registerPath;
 
   const { user, checking, refresh } = useAuth();
+  const adminCopy = getDictionary(locale, "admin");
 
   const redirectAfterLogin = useCallback(() => {
     const fallbackPath = routeHref(APP_ROUTES.dashboard, locale);
@@ -135,7 +139,7 @@ function LoginInner({ dict }) {
     try {
       const credential = resp?.credential;
       if (!credential) {
-        setMsg(t(dict, "alert_google_no_credential"));
+        setMsg(t(adminCopy, "googleNoCredential"));
         return;
       }
       setMsg("");
@@ -149,7 +153,7 @@ function LoginInner({ dict }) {
         console.warn("[login] Google sign-in failed", err?.message || err);
       }
       setRedirecting(false);
-      setMsg(err?.message || t(dict, "alert_google_failed"));
+      setMsg(t(adminCopy, getGoogleAuthErrorKey(err)));
     }
   };
 
@@ -157,7 +161,7 @@ function LoginInner({ dict }) {
     if (process.env.NODE_ENV !== "production") {
       console.warn("[login] Google sign-in was not completed", err);
     }
-    setMsg(t(dict, "alert_google_failed"));
+    setMsg(t(adminCopy, getGoogleAuthErrorKey(err)));
   };
 
   const logout = async () => {

@@ -8,6 +8,9 @@ const STATUS_LABELS = [
   ["PROCESSING", "Processing"],
   ["SENT", "Sent"],
   ["FAILED", "Failed"],
+  ["BOUNCED", "Bounced"],
+  ["COMPLAINED", "Complaints"],
+  ["SUPPRESSED", "Suppressed"],
 ];
 
 function formatDate(value) {
@@ -21,7 +24,7 @@ function formatDate(value) {
 }
 
 export default function AdminNotificationDeliveriesSection() {
-  const [deliveryData, setDeliveryData] = useState({ items: [], counts: {} });
+  const [deliveryData, setDeliveryData] = useState({ items: [], counts: {}, suppressionCount: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retryingId, setRetryingId] = useState(null);
@@ -29,7 +32,11 @@ export default function AdminNotificationDeliveriesSection() {
   const loadDeliveries = useCallback(async () => {
     try {
       const { data } = await api.get("/admin/notification-deliveries?limit=20");
-      setDeliveryData({ items: data?.items || [], counts: data?.counts || {} });
+      setDeliveryData({
+        items: data?.items || [],
+        counts: data?.counts || {},
+        suppressionCount: data?.suppressionCount || 0,
+      });
       setError("");
     } catch (requestError) {
       setError(
@@ -94,6 +101,10 @@ export default function AdminNotificationDeliveriesSection() {
             <strong>{deliveryData.counts[status] || 0}</strong>
           </div>
         ))}
+        <div className="adm-notification-delivery-metric">
+          <span>Suppressed</span>
+          <strong>{deliveryData.suppressionCount || 0}</strong>
+        </div>
       </div>
 
       {error ? (

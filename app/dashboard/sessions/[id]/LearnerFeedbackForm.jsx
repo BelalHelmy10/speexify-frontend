@@ -6,6 +6,7 @@ import { Info, Star, X } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
 import { getIntlLocale } from "@/utils/locale";
+import useFocusTrap from "@/hooks/useFocusTrap";
 
 /**
  * LearnerFeedbackForm - Post-session feedback form for learners
@@ -33,6 +34,8 @@ export default function LearnerFeedbackForm({
   onClose,
   locale = "en",
 }) {
+  const modalRef = useFocusTrap(Boolean(isOpen), { onEscape: onClose });
+
   const toast = useToast();
 
   const [rating, setRating] = useState(0);
@@ -334,6 +337,7 @@ export function LearnerFeedbackModal({
   return (
     <div className="learner-feedback-modal-overlay" onClick={onClose}>
       <div
+        ref={modalRef}
         className="learner-feedback-modal"
         role="dialog"
         aria-modal="true"

@@ -36,4 +36,9 @@
   "currency": "ج.م",
   "manualAdjustment": "تعديل يدوي",
   "adminAdjustment": "تعديل من الإدارة"
+  ,"trendLabel": "اتجاه الأرباح خلال ستة أشهر",
+  "pagination": "صفحات الأرباح",
+  "pageOf": "عرض {from}–{to} من {total}",
+  "previous": "السابق",
+  "next": "التالي"
 }

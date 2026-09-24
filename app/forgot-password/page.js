@@ -34,7 +34,7 @@ function ForgotPasswordInner({ dict }) {
     setMsg("");
     setBusy(true);
     try {
-      await api.post("/auth/password/reset/start", { email });
+      await api.post("/auth/password/reset/start", { email, locale });
       setStep(2);
 
       // clear any previous timer before starting a new one

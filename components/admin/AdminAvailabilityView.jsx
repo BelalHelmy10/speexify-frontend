@@ -5,6 +5,8 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import api from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
 import Spinner from "@/components/Spinner";
+import useAuth from "@/hooks/useAuth";
+import { getDictionary, t } from "@/app/i18n";
 
 // Day names
 const DAYS = [
@@ -46,6 +48,14 @@ function isSlotInRange(slotTime, startTime, endTime) {
 
 export default function AdminAvailabilityView() {
   const toast = useToast();
+  const { user } = useAuth();
+  const locale = user?.language === "ar" ? "ar" : "en";
+  const copy = getDictionary(locale, "admin");
+  const localizedDays = useMemo(() => DAYS.map((day) => ({
+    ...day,
+    name: t(copy, `day${day.name}`),
+    short: t(copy, `short${day.name}`),
+  })), [copy]);
 
   const [summary, setSummary] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -70,7 +80,7 @@ export default function AdminAvailabilityView() {
       setSummary(data);
     } catch (err) {
       console.error("Failed to load availability summary:", err);
-      toast?.error?.("Failed to load availability data");
+      toast?.error?.(t(copy, "failedAvailability"));
     } finally {
       setLoading(false);
     }
@@ -87,7 +97,7 @@ export default function AdminAvailabilityView() {
       setUserAvailability(data);
     } catch (err) {
       console.error("Failed to load user availability:", err);
-      toast?.error?.("Failed to load user availability");
+      toast?.error?.(t(copy, "failedUserAvailability"));
     } finally {
       setUserLoading(false);
     }
@@ -155,14 +165,14 @@ export default function AdminAvailabilityView() {
       <section className="av-hero">
         <div className="av-hero__head">
           <div className="av-hero__titleWrap">
-            <h1 className="av-hero__title">Availability Management</h1>
+            <h1 className="av-hero__title">{t(copy, "availabilityManagement")}</h1>
             <p className="av-hero__subtitle">
-              Monitor learner and teacher availability schedules at a glance.
+              {t(copy, "availabilitySubtitle")}
             </p>
           </div>
           <div className="av-hero__badgeRow">
-            <span className="av-chip av-chip--primary">Live</span>
-            <span className="av-chip av-chip--soft">Admin Dashboard</span>
+            <span className="av-chip av-chip--primary">{t(copy, "live")}</span>
+            <span className="av-chip av-chip--soft">{t(copy, "adminDashboard")}</span>
           </div>
         </div>
 
@@ -171,39 +181,39 @@ export default function AdminAvailabilityView() {
             <div className="av-metric__value av-metric__value--primary">
               {totalUsers}
             </div>
-            <div className="av-metric__label">Total Users</div>
+            <div className="av-metric__label">{t(copy, "totalUsers")}</div>
           </div>
 
           <div className="av-metric">
             <div className="av-metric__value av-metric__value--success">
               {usersWithAvailability}
             </div>
-            <div className="av-metric__label">With Availability</div>
+            <div className="av-metric__label">{t(copy, "withAvailability")}</div>
           </div>
 
           <div className="av-metric">
             <div className="av-metric__value av-metric__value--warn">
               {usersWithoutAvailability}
             </div>
-            <div className="av-metric__label">No Availability</div>
+            <div className="av-metric__label">{t(copy, "noAvailability")}</div>
           </div>
 
           <div className="av-metric">
             <div className="av-metric__value av-metric__value--ink">
               {completionRate}%
             </div>
-            <div className="av-metric__label">Completion Rate</div>
+            <div className="av-metric__label">{t(copy, "completionRate")}</div>
           </div>
         </div>
 
         {summary?.dayDistribution && (
           <div className="av-distribution">
             <div className="av-distribution__title">
-              Availability by Day of Week
+              {t(copy, "availabilityByDay")}
             </div>
 
-            <div className="av-bars" role="img" aria-label="Day distribution">
-              {DAYS.map((day) => {
+            <div className="av-bars" role="img" aria-label={t(copy, "dayDistribution")}>
+              {localizedDays.map((day) => {
                 const count = summary.dayDistribution[day.key] || 0;
                 const maxCount = Math.max(
                   ...Object.values(summary.dayDistribution),
@@ -235,9 +245,9 @@ export default function AdminAvailabilityView() {
         {/* Left: Users */}
         <aside className="av-users">
           <div className="av-users__head">
-            <div className="av-users__title">Users</div>
+            <div className="av-users__title">{t(copy, "users")}</div>
             <div className="av-users__hint">
-              {filteredUsers.length} shown
+              {t(copy, "shown", { count: filteredUsers.length })}
               {roleFilter ? ` • ${roleFilter}` : ""}
             </div>
           </div>
@@ -246,21 +256,21 @@ export default function AdminAvailabilityView() {
             <div className="av-field">
               <input
                 type="text"
-                aria-label="Search availability by name or email"
-                placeholder="Search by name or email…"
+                aria-label={t(copy, "searchAvailability")}
+                placeholder={t(copy, "searchAvailabilityPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
                 className="av-input"
               />
             </div>
 
-            <div className="av-segment" role="tablist" aria-label="Role filter">
+            <div className="av-segment" role="tablist" aria-label={t(copy, "roleFilter")}>
               <button
                 type="button"
                 onClick={() => { setRoleFilter(""); setPage(0); }}
                 className={`av-segment__btn ${!roleFilter ? "is-active" : ""}`}
               >
-                All
+                {t(copy, "all")}
               </button>
               <button
                 type="button"
@@ -269,7 +279,7 @@ export default function AdminAvailabilityView() {
                   roleFilter === "teacher" ? "is-active" : ""
                 }`}
               >
-                Teachers
+                {t(copy, "teachers")}
               </button>
               <button
                 type="button"
@@ -278,7 +288,7 @@ export default function AdminAvailabilityView() {
                   roleFilter === "learner" ? "is-active" : ""
                 }`}
               >
-                Learners
+                {t(copy, "learners")}
               </button>
             </div>
 
@@ -288,14 +298,14 @@ export default function AdminAvailabilityView() {
                 checked={showOnlyWithAvailability}
                 onChange={(e) => setShowOnlyWithAvailability(e.target.checked)}
               />
-              <span>Show only users with availability</span>
+              <span>{t(copy, "onlyWithAvailability")}</span>
             </label>
           </div>
 
-          <div className="av-pagination" aria-label="Availability users pagination">
-            <button type="button" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>Previous</button>
-            <span>Page {page + 1}</span>
-            <button type="button" onClick={() => setPage((p) => p + 1)} disabled={!summary?.hasMore}>Next</button>
+          <div className="av-pagination" aria-label={`${t(copy, "availability")} pagination`}>
+            <button type="button" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>{t(copy, "previous")}</button>
+            <span>{t(copy, "page", { page: page + 1 })}</span>
+            <button type="button" onClick={() => setPage((p) => p + 1)} disabled={!summary?.hasMore}>{t(copy, "next")}</button>
           </div>
 
           <div className="av-users__list">
@@ -303,12 +313,13 @@ export default function AdminAvailabilityView() {
               usersByRole.teachers.length > 0 && (
                 <div className="av-group">
                   <div className="av-group__label av-group__label--teacher">
-                    Teachers ({usersByRole.teachers.length})
+                    {t(copy, "teachers")} ({usersByRole.teachers.length})
                   </div>
                   {usersByRole.teachers.map((user) => (
                     <UserListItem
                       key={user.id}
                       user={user}
+                      copy={copy}
                       isSelected={selectedUser?.id === user.id}
                       onClick={() => handleSelectUser(user)}
                     />
@@ -320,12 +331,13 @@ export default function AdminAvailabilityView() {
               usersByRole.learners.length > 0 && (
                 <div className="av-group">
                   <div className="av-group__label av-group__label--learner">
-                    Learners ({usersByRole.learners.length})
+                    {t(copy, "learners")} ({usersByRole.learners.length})
                   </div>
                   {usersByRole.learners.map((user) => (
                     <UserListItem
                       key={user.id}
                       user={user}
+                      copy={copy}
                       isSelected={selectedUser?.id === user.id}
                       onClick={() => handleSelectUser(user)}
                     />
@@ -334,7 +346,7 @@ export default function AdminAvailabilityView() {
               )}
 
             {filteredUsers.length === 0 && (
-              <div className="av-empty">No users found</div>
+              <div className="av-empty">{t(copy, "noUsers")}</div>
             )}
           </div>
         </aside>
@@ -346,9 +358,9 @@ export default function AdminAvailabilityView() {
               <div className="av-detail__emptyIcon" aria-hidden="true">
                 👈
               </div>
-              <div className="av-detail__emptyTitle">Select a user</div>
+              <div className="av-detail__emptyTitle">{t(copy, "selectUser")}</div>
               <p className="av-detail__emptyText">
-                Choose someone from the left panel to view their availability.
+                {t(copy, "selectUserHint")}
               </p>
             </div>
           ) : userLoading ? (
@@ -397,21 +409,21 @@ export default function AdminAvailabilityView() {
                 {userAvailability?.summary && (
                   <div className="av-quick">
                     <div className="av-quick__item">
-                      <div className="av-quick__label">Total Slots</div>
+                      <div className="av-quick__label">{t(copy, "totalSlots")}</div>
                       <div className="av-quick__value">
                         {userAvailability.summary.totalSlots}
                       </div>
                     </div>
 
                     <div className="av-quick__item">
-                      <div className="av-quick__label">Active</div>
+                      <div className="av-quick__label">{t(copy, "active")}</div>
                       <div className="av-quick__value av-quick__value--success">
                         {userAvailability.summary.activeSlots}
                       </div>
                     </div>
 
                     <div className="av-quick__item">
-                      <div className="av-quick__label">Recurring</div>
+                      <div className="av-quick__label">{t(copy, "recurring")}</div>
                       <div className="av-quick__value">
                         {userAvailability.summary.recurringSlots}
                       </div>
@@ -421,7 +433,7 @@ export default function AdminAvailabilityView() {
               </div>
 
               {/* View Toggle */}
-              <div className="av-tabs" role="tablist" aria-label="View mode">
+              <div className="av-tabs" role="tablist" aria-label={t(copy, "viewMode")}>
                 <button
                   type="button"
                   onClick={() => setViewMode("calendar")}
@@ -429,14 +441,14 @@ export default function AdminAvailabilityView() {
                     viewMode === "calendar" ? "is-active" : ""
                   }`}
                 >
-                  Calendar View
+                  {t(copy, "calendarView")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("list")}
                   className={`av-tab ${viewMode === "list" ? "is-active" : ""}`}
                 >
-                  List View
+                  {t(copy, "listView")}
                 </button>
               </div>
 
@@ -449,10 +461,10 @@ export default function AdminAvailabilityView() {
                         📭
                       </div>
                       <div className="av-pane__emptyTitle">
-                        No availability set
+                        {t(copy, "noAvailabilitySet")}
                       </div>
                       <p className="av-pane__emptyText">
-                        This user hasn’t added any active time slots.
+                        {t(copy, "noAvailabilityHint")}
                       </p>
                     </div>
                   ) : (
@@ -463,8 +475,8 @@ export default function AdminAvailabilityView() {
                       }}
                     >
                       {/* Header */}
-                      <div className="av-grid__h av-grid__h--time">Time</div>
-                      {DAYS.map((day) => (
+                      <div className="av-grid__h av-grid__h--time">{t(copy, "time")}</div>
+                      {localizedDays.map((day) => (
                         <div key={day.key} className="av-grid__h">
                           {day.short}
                         </div>
@@ -476,6 +488,7 @@ export default function AdminAvailabilityView() {
                           key={`row-${time}`}
                           time={time}
                           isCellAvailable={isCellAvailable}
+                          days={localizedDays}
                         />
                       ))}
                     </div>
@@ -492,15 +505,15 @@ export default function AdminAvailabilityView() {
                         📭
                       </div>
                       <div className="av-pane__emptyTitle">
-                        No availability set
+                        {t(copy, "noAvailabilitySet")}
                       </div>
                       <p className="av-pane__emptyText">
-                        This user hasn’t added any active time slots.
+                        {t(copy, "noAvailabilityHint")}
                       </p>
                     </div>
                   ) : (
                     <div className="av-days">
-                      {DAYS.map((day) => {
+                      {localizedDays.map((day) => {
                         const daySlots =
                           userAvailability?.byDayOfWeek?.[day.key]?.filter(
                             (s) => s.status === "active"
@@ -514,8 +527,7 @@ export default function AdminAvailabilityView() {
                                 {day.name}
                               </div>
                               <div className="av-dayCard__count">
-                                {daySlots.length} slot
-                                {daySlots.length !== 1 ? "s" : ""}
+                                {daySlots.length} {daySlots.length !== 1 ? t(copy, "slots") : t(copy, "slot")}
                               </div>
                             </div>
 
@@ -549,7 +561,7 @@ export default function AdminAvailabilityView() {
                         <div className="av-dayCard av-dayCard--amber">
                           <div className="av-dayCard__head">
                             <div className="av-dayCard__title">
-                              Specific Dates
+                              {t(copy, "specificDates")}
                             </div>
                             <div className="av-dayCard__count">
                               {userAvailability.specificDates.length}
@@ -592,11 +604,11 @@ export default function AdminAvailabilityView() {
  * Row fragment for the calendar grid (keeps logic unchanged)
  * NOTE: We avoid React Fragment keys mess by rendering one "row component".
  */
-function FragmentRow({ time, isCellAvailable }) {
+function FragmentRow({ time, isCellAvailable, days }) {
   return (
     <>
       <div className="av-grid__t">{time}</div>
-      {DAYS.map((day) => {
+      {days.map((day) => {
         const isAvailable = isCellAvailable(day.key, time);
         return (
           <div
@@ -612,7 +624,7 @@ function FragmentRow({ time, isCellAvailable }) {
 /**
  * User list item
  */
-function UserListItem({ user, isSelected, onClick }) {
+function UserListItem({ user, isSelected, onClick, copy }) {
   const initial = (user.name?.[0] || user.email?.[0] || "?").toUpperCase();
 
   return (
@@ -626,17 +638,17 @@ function UserListItem({ user, isSelected, onClick }) {
       </div>
 
       <div className="av-userItem__main">
-        <div className="av-userItem__name">{user.name || "No Name"}</div>
+        <div className="av-userItem__name">{user.name || t(copy, "noName")}</div>
         <div className="av-userItem__email">{user.email}</div>
       </div>
 
       <div className="av-userItem__end">
         {user.hasAvailability ? (
           <span className="av-badge av-badge--success">
-            {user.availabilityCount} slots
+            {t(copy, "availabilitySlots", { count: user.availabilityCount })}
           </span>
         ) : (
-          <span className="av-badge av-badge--muted">No availability</span>
+          <span className="av-badge av-badge--muted">{t(copy, "noAvailability")}</span>
         )}
       </div>
     </button>

@@ -49,6 +49,7 @@
     "test": "npm run test:frontend",
     "qa:responsive": "node scripts/responsiveQa.mjs",
     "qa:public-routes": "node scripts/checkPublicRoutes.mjs --start-server",
+    "qa:seo": "node qa-audit/seo.mjs",
     "typecheck": "./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/next typegen .",
     "ci:check": "npm run lint && npm run typecheck && npm run build && npm run qa:public-routes"
   },

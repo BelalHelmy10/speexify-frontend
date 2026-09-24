@@ -128,7 +128,8 @@ html {
 
   a {
     color: $policy-color-link;
-    text-decoration: none;
+    text-decoration: underline;
+    text-underline-offset: 2px;
     font-size: $policy-font-size-sm;
 
     &:hover,
@@ -164,7 +165,8 @@ html {
 
   a {
     color: $policy-color-link;
-    text-decoration: none;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 
     &:hover,
     &:focus {
