@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getServerApiJson, getServerUser } from "./server-auth";
 
+const PROTECTED_ACCESS_TIMEOUT_MS = 2500;
+
 function localizedPath(locale, path) {
   if (locale === "ar") {
     if (path === "/") return "/ar";
@@ -33,7 +35,10 @@ export async function requireResourceAccess({
   locale = "en",
   nextPath = "/resources",
 } = {}) {
-  const user = await getServerUser();
+  const user = await getServerUser({
+    timeoutMs: PROTECTED_ACCESS_TIMEOUT_MS,
+    throwOnTransient: true,
+  });
   if (!user) loginRedirect(locale, nextPath);
 
   const role = String(user.role || "").toLowerCase();
@@ -54,8 +59,15 @@ export async function requireResourceAccess({
     dashboardRedirect(locale);
   }
 
-  const packages = await getServerApiJson("me/packages");
+  const packages = await getServerApiJson("me/packages", {
+    timeoutMs: PROTECTED_ACCESS_TIMEOUT_MS,
+  });
   if (!packages.ok) {
+    if (packages.status >= 500) {
+      const error = new Error("Resource access service is temporarily unavailable");
+      error.code = "RESOURCE_ACCESS_UNAVAILABLE";
+      throw error;
+    }
     dashboardRedirect(locale);
   }
 

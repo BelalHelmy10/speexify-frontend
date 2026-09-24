@@ -5,7 +5,7 @@ export default function DashboardLoading() {
   const rows = Array.from({ length: 4 });
 
   return (
-    <div className="dashboard dashboard--loading">
+    <div className="dashboard dashboard--loading" role="status" aria-label="Loading your dashboard" aria-live="polite">
       {/* Top header skeleton */}
       <section className="dashboard__top">
         <div className="dashboard__headline">

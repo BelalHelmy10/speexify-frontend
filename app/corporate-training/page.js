@@ -193,7 +193,7 @@ function CorporateTraining({ dict, locale }) {
       {/* OUTCOMES */}
       <section className="spx-corp__section spx-corp-outcomes">
         <div className="spx-corp__container spx-corp-grid--3">
-          <Metric value="92%" label={t(dict, "metric1_label")} tone="coral" icon={
+          <Metric value={t(dict, "metric1_value")} label={t(dict, "metric1_label")} tone="coral" icon={
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <rect x="2" y="12" width="4" height="10" rx="1" fill="currentColor" opacity="0.5" />
               <rect x="8" y="7" width="4" height="15" rx="1" fill="currentColor" opacity="0.75" />
@@ -201,12 +201,12 @@ function CorporateTraining({ dict, locale }) {
               <path d="M20 6l-3-3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           } />
-          <Metric value="4.9/5" label={t(dict, "metric2_label")} tone="gold" icon={
+          <Metric value={t(dict, "metric2_value")} label={t(dict, "metric2_label")} tone="gold" icon={
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 2l2.6 5.26L21 8.27l-4.5 4.38 1.06 6.19L12 15.77l-5.56 2.92 1.06-6.19L3 8.27l6.4-.91L12 2Z" fill="currentColor" />
             </svg>
           } />
-          <Metric value="6–8 wks" label={t(dict, "metric3_label")} tone="teal" icon={
+          <Metric value={t(dict, "metric3_value")} label={t(dict, "metric3_label")} tone="teal" icon={
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
               <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.8" />
@@ -356,30 +356,22 @@ function CorporateTraining({ dict, locale }) {
             title={t(dict, "testis_title")}
             subtitle={t(dict, "testis_subtitle")}
           />
+          <p className="spx-corp-evidence-note">{t(dict, "testis_evidence_note")}</p>
           <div className="spx-corp-grid--3">
-            <Testi
-              quote={t(dict, "testi1_quote")}
-              by={t(dict, "testi1_by")}
-              role={t(dict, "testi1_role")}
-              avatar="/images/head-of-cs.avif"
-              rating={5}
-              outcome={t(dict, "testi1_outcome")}
+            <EvidenceCard
+              title={t(dict, "evidence1_title")}
+              body={t(dict, "evidence1_body")}
+              artifact={t(dict, "evidence1_artifact")}
             />
-            <Testi
-              quote={t(dict, "testi2_quote")}
-              by={t(dict, "testi2_by")}
-              role={t(dict, "testi2_role")}
-              avatar="/images/l&d-manager.avif"
-              rating={5}
-              outcome={t(dict, "testi2_outcome")}
+            <EvidenceCard
+              title={t(dict, "evidence2_title")}
+              body={t(dict, "evidence2_body")}
+              artifact={t(dict, "evidence2_artifact")}
             />
-            <Testi
-              quote={t(dict, "testi3_quote")}
-              by={t(dict, "testi3_by")}
-              role={t(dict, "testi3_role")}
-              avatar="/images/global-ops.avif"
-              rating={5}
-              outcome={t(dict, "testi3_outcome")}
+            <EvidenceCard
+              title={t(dict, "evidence3_title")}
+              body={t(dict, "evidence3_body")}
+              artifact={t(dict, "evidence3_artifact")}
             />
           </div>
         </div>
@@ -398,6 +390,17 @@ function CorporateTraining({ dict, locale }) {
                 <li>{t(dict, "rfp_aside_b2")}</li>
                 <li>{t(dict, "rfp_aside_b3")}</li>
               </ul>
+              <div className="spx-corp-rfp__qualification">
+                <strong>{t(dict, "rfp_fit_title")}</strong>
+                <p>{t(dict, "rfp_fit_body")}</p>
+                <ul>
+                  <li>{t(dict, "rfp_fit_1")}</li>
+                  <li>{t(dict, "rfp_fit_2")}</li>
+                  <li>{t(dict, "rfp_fit_3")}</li>
+                </ul>
+                <strong>{t(dict, "rfp_next_title")}</strong>
+                <p>{t(dict, "rfp_next_body")}</p>
+              </div>
             </aside>
 
             <div className="spx-corp-rfp__form-panel">
@@ -687,36 +690,13 @@ function Plan({
   );
 }
 
-function Testi({ quote, by, role, avatar, rating, outcome }) {
+function EvidenceCard({ title, body, artifact }) {
   return (
-    <div className="spx-corp-card spx-corp-testi">
-      <div className="spx-corp-testi__header">
-        <img
-          className="spx-corp-testi__avatar"
-          src={avatar}
-          alt=""
-          loading="lazy"
-        />
-        <div
-          className="spx-corp-testi__stars"
-          role="img"
-          aria-label={`${rating} out of 5 stars`}
-        >
-          {[...Array(rating)].map((_, i) => (
-            <svg key={i} className="spx-corp-testi__star" width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <path d="M7 1.5l1.545 3.13 3.455.503-2.5 2.436.59 3.44L7 9.25l-3.09 1.759.59-3.44L2 5.133l3.455-.503L7 1.5Z" fill="currentColor" />
-            </svg>
-          ))}
-        </div>
-      </div>
-      <span className="spx-corp-testi__outcome">{outcome}</span>
-      <blockquote className="spx-corp-testi__quote">
-        {quote}
-      </blockquote>
-      <div className="spx-corp-testi__author">
-        <cite className="spx-corp-testi__by">{by}</cite>
-        <span className="spx-corp-testi__role">{role}</span>
-      </div>
+    <div className="spx-corp-card spx-corp-evidence-card">
+      <span className="spx-corp-evidence-card__artifact">{artifact}</span>
+      <h3>{title}</h3>
+      <p>{body}</p>
+      <span className="spx-corp-evidence-card__check">✓ {artifact}</span>
     </div>
   );
 }

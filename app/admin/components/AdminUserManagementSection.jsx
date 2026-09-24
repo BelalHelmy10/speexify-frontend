@@ -77,6 +77,7 @@ export default function AdminUserManagementSection({
             </svg>
             <input
               type="text"
+              aria-label="Search users"
               placeholder="Search users..."
               value={usersQ}
               onChange={(e) => setUsersQ(e.target.value)}

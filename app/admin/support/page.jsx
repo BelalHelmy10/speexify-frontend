@@ -750,6 +750,7 @@ export default function AdminSupportInboxPage() {
           <Search size={18} />
           <input
             type="text"
+            aria-label="Search support tickets"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search tickets..."

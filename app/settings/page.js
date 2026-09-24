@@ -555,9 +555,9 @@ export default function SettingsPage() {
   if (checking) {
     return (
       <main className="settings-modern">
-        <div className="settings-loading">
+        <div className="settings-loading" role="status" aria-live="polite">
           <Loader2 className="settings-loading__spinner" size={34} />
-          <p>{copyText("loading_generic", "Loading...")}</p>
+          <p>{copyText("loading_settings", "Loading your account settings…")}</p>
         </div>
       </main>
     );
@@ -566,7 +566,7 @@ export default function SettingsPage() {
   if (!user) {
     return (
       <main className="settings-modern">
-        <div className="settings-loading">
+        <div className="settings-loading" role="alert">
           <AlertCircle size={32} />
           <p>{copyText("not_authenticated", "Not authenticated")}</p>
         </div>
@@ -577,9 +577,9 @@ export default function SettingsPage() {
   if (initialLoading) {
     return (
       <main className="settings-modern">
-        <div className="settings-loading">
+        <div className="settings-loading" role="status" aria-live="polite">
           <Loader2 className="settings-loading__spinner" size={34} />
-          <p>{copyText("loading_generic", "Loading...")}</p>
+          <p>{copyText("loading_settings", "Loading your account settings…")}</p>
         </div>
       </main>
     );
@@ -1115,7 +1115,12 @@ export default function SettingsPage() {
             </div>
             <div className="settings-callout settings-callout--quiet">
               <ShieldCheck size={18} />
-              <p>{copyText("devices_future", "Full device history and “log out of other devices” should be backed by the session store next.")}</p>
+              <div>
+                <p>{copyText("devices_security_hint", "This browser is the active session shown here. Change your password in Security to invalidate other sessions.")}</p>
+                <a className="settings-btn settings-btn--ghost" href="#security">
+                  {copyText("devices_change_password", "Review password security")}
+                </a>
+              </div>
             </div>
           </SettingsCard>
         </div>

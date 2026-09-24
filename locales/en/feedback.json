@@ -22,5 +22,6 @@
   "back_to_dashboard": "Back to dashboard",
   "load_more": "Load more",
   "loading": "Loading feedback…",
+  "loading_more": "Loading more feedback…",
   "error_loading": "Failed to load feedback"
 }

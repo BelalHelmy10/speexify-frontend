@@ -219,6 +219,7 @@ export default function AdminSessionList() {
 
         <input
           type="text"
+          aria-label="Search sessions by title"
           className="admin-sessions__search"
           placeholder="Search by title..."
           value={searchQuery}
@@ -240,7 +241,7 @@ export default function AdminSessionList() {
       {/* Loading */}
       {loading && (
         <div className="admin-sessions__loading">
-          <p>Loading sessions...</p>
+          <p role="status" aria-live="polite">Loading the session queue…</p>
         </div>
       )}
 

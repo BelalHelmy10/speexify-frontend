@@ -7,6 +7,15 @@
 
   "title": "لوحة التحكم",
   "subtitle": "أهلاً بيك، {name}",
+  "admin_dashboard_title": "لوحة تشغيل الإدارة",
+  "admin_dashboard_subtitle": "دير عملية التعلّم من مكان واحد، {name}",
+  "admin_dashboard_eyebrow": "مساحة الإدارة",
+  "admin_dashboard_panel_title": "افتح مركز تشغيل الإدارة",
+  "admin_dashboard_panel_body": "دير الأعضاء والمدرّبين والجلسات والباقات والاستقبال والمدفوعات من مساحة الإدارة.",
+  "admin_dashboard_open_admin": "افتح الإدارة",
+  "admin_dashboard_calendar": "شوف الجدول",
+  "teacher_kpi_section_eyebrow": "نظرة على التدريب",
+  "teacher_kpi_section_title": "جلسات التدريب بتاعتك",
 
   "next_action_label": "الخطوة الجاية",
   "next_action_meta_live": "جاهز دلوقتي",

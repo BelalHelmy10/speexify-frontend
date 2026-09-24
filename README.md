@@ -40,7 +40,8 @@ npm run dev	Start the development server
 npm run build	Build the app for production
 npm start	Run the production build
 npm run lint	Lint code with ESLint
-npm test	Run tests (if configured)
+npm test	Run the frontend regression tests
+npm run test:frontend	Run the frontend regression tests explicitly
 npm run format	Format code (if Prettier is set up)
 
 🗂 Project Structure
@@ -140,6 +141,13 @@ docker run -p 3000:3000 --env-file .env.local next-app
 Build fails → Check Node version (>=18.17) and ensure all env vars are set.
 
 Env not available on client → Only variables with NEXT_PUBLIC_ prefix are public.
+
+Google OAuth on localhost → Configure a separate Google OAuth client with
+`http://localhost:3000` (and any other local origin you use) in Authorized
+JavaScript origins. Set its ID in `NEXT_PUBLIC_GOOGLE_LOCAL_CLIENT_ID` and set
+`NEXT_PUBLIC_GOOGLE_AUTH_ALLOW_LOCALHOST=true`. Until both are present, the
+Google button is intentionally hidden locally and email authentication remains
+available.
 
 Styles not applying → Ensure globals.css is imported in app/layout.tsx.
 

@@ -341,6 +341,7 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
                         </label>
                         <input
                             type="text"
+                            aria-label="Search learners by name or email"
                             className="bulk-scheduler__search"
                             placeholder="Search learners by name or email..."
                             value={learnerSearch}

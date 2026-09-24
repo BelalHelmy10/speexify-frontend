@@ -13,7 +13,7 @@ export default function AdminAvailabilityPage() {
       <div className="admin-availability-page">
         <div className="admin-shell">
           <div className="admin-state">
-            <div className="admin-state__card">Loading…</div>
+            <div className="admin-state__card" role="status" aria-live="polite">Loading availability workspace…</div>
           </div>
         </div>
       </div>

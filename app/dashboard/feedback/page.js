@@ -273,7 +273,7 @@ export default function FeedbackHistoryPage() {
                   {loadingMore ? (
                     <>
                       <div className="feedback-spinner feedback-spinner--sm" />
-                      {t(dict, "loading") || "Loading…"}
+                      {t(dict, "loading_more") || "Loading more feedback…"}
                     </>
                   ) : (
                     t(dict, "load_more") || "Load more"

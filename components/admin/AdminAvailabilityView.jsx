@@ -246,6 +246,7 @@ export default function AdminAvailabilityView() {
             <div className="av-field">
               <input
                 type="text"
+                aria-label="Search availability by name or email"
                 placeholder="Search by name or email…"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}

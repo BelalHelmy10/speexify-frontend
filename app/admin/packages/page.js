@@ -268,7 +268,7 @@ export default function AdminPackagesPage() {
             <div>
               <h2 className="adm-admin-card__title">Catalog</h2>
               <p className="adm-admin-card__subtitle">
-                {busy ? "Loading…" : `${items.length} packages`}
+                {busy ? "Loading package catalog…" : `${items.length} packages`}
               </p>
             </div>
           </div>
@@ -291,6 +291,7 @@ export default function AdminPackagesPage() {
               </svg>
               <input
                 type="text"
+                aria-label="Search packages by title, description, or feature"
                 placeholder="Search title/description/features…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}

@@ -426,6 +426,7 @@ export default function AdminSessionForm({
             {/* Search */}
             <input
               type="text"
+              aria-label="Search learners by name or email"
               className="admin-session-form__input"
               placeholder="Search learners by name or email..."
               value={learnerSearch}

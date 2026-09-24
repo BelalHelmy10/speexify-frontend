@@ -299,7 +299,7 @@ export default function AdminSessionsSection({
             <h2 className="adm-admin-card__title">Session Operations</h2>
             <p className="adm-admin-card__subtitle">
               {loading
-                ? "Loading sessions..."
+                ? "Loading the session queue…"
                 : `Showing ${visibleStart}-${visibleEnd} of ${total} sessions`}
             </p>
           </div>
@@ -359,6 +359,7 @@ export default function AdminSessionsSection({
           </svg>
           <input
             type="text"
+            aria-label="Search sessions by title or meeting link"
             placeholder="Search title or meeting link..."
             value={q}
             onChange={(e) => setQ(e.target.value)}

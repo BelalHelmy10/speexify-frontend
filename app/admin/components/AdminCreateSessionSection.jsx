@@ -237,6 +237,7 @@ function LearnerMultiPicker({ learners, selectedIds, capacity, setForm }) {
         <input
           type="search"
           className="adm-form-input"
+          aria-label="Search learners by name, email, or timezone"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search learners by name, email, or timezone"

@@ -7,6 +7,15 @@
 
   "title": "Dashboard",
   "subtitle": "Welcome back, {name}",
+  "admin_dashboard_title": "Operations dashboard",
+  "admin_dashboard_subtitle": "Manage the learning operation from one place, {name}",
+  "admin_dashboard_eyebrow": "Admin workspace",
+  "admin_dashboard_panel_title": "Open the admin command center",
+  "admin_dashboard_panel_body": "Manage members, coaches, sessions, packages, intake, and payouts from the admin area.",
+  "admin_dashboard_open_admin": "Open admin",
+  "admin_dashboard_calendar": "View schedule",
+  "teacher_kpi_section_eyebrow": "Coaching overview",
+  "teacher_kpi_section_title": "Your coaching sessions",
 
   "next_action_label": "Next action",
   "next_action_meta_live": "Ready now",

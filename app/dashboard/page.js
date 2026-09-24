@@ -448,7 +448,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
   if (authStatus === "error" && !user) {
     return (
-      <div className="loading-state">
+      <div className="loading-state" role="status" aria-live="polite">
         <p>{t(dict, "status_unreachable")}</p>
         <button
           type="button"
@@ -465,7 +465,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
   // instead of leaving the user staring at a dead/blank screen.
   if (summaryError && !summary) {
     return (
-      <div className="loading-state">
+      <div className="loading-state" role="alert">
         <p>{status || t(dict, "status_failed")}</p>
         <button
           type="button"
@@ -482,9 +482,9 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
     );
   }
 
-  if (status) return <p className="loading-state">{status}</p>;
+  if (status) return <p className="loading-state" role="status" aria-live="polite">{status}</p>;
   // Safety net: never render a silent blank — show the loading state instead.
-  if (!summary) return <p className="loading-state">{t(dict, "status_loading")}</p>;
+  if (!summary) return <p className="loading-state" role="status" aria-live="polite">{t(dict, "status_loading")}</p>;
 
   const visibleNext =
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
@@ -544,7 +544,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
     Boolean
   ).length;
 
-  const subtitleText = t(dict, "subtitle", {
+  const subtitleText = t(dict, isAdmin ? "admin_dashboard_subtitle" : "subtitle", {
     name: user?.name || user?.email || "",
   });
 
@@ -866,7 +866,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
         <div className="dashboard__header">
           <div>
-            <h2>{t(dict, "title")}</h2>
+            <h2>{t(dict, isAdmin ? "admin_dashboard_title" : "title")}</h2>
             <p className="dashboard__subtitle">{subtitleText}</p>
 
             {isImpersonating && (
@@ -964,7 +964,21 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
           </Link>
         </nav>
 
-        <DashboardNextAction action={nextAction} />
+        {isAdmin ? (
+          <section className="dashboard-admin-command" aria-labelledby="admin-command-title">
+            <div className="dashboard-admin-command__copy">
+              <span className="dashboard-admin-command__eyebrow">{t(dict, "admin_dashboard_eyebrow")}</span>
+              <h3 id="admin-command-title">{t(dict, "admin_dashboard_panel_title")}</h3>
+              <p>{t(dict, "admin_dashboard_panel_body")}</p>
+            </div>
+            <div className="dashboard-admin-command__actions">
+              <Link href="/admin" className="btn btn--primary">{t(dict, "admin_dashboard_open_admin")}</Link>
+              <Link href={`${prefix}/calendar`} className="btn btn--ghost">{t(dict, "admin_dashboard_calendar")}</Link>
+            </div>
+          </section>
+        ) : (
+          <>
+          <DashboardNextAction action={nextAction} />
 
         <section
           className="dashboard__stats"
@@ -973,10 +987,10 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
           <div className="dashboard__stats-head">
             <div>
               <div className="dashboard__stats-eyebrow">
-                {t(dict, "kpi_section_eyebrow")}
+              {t(dict, isTeacher ? "teacher_kpi_section_eyebrow" : "kpi_section_eyebrow")}
               </div>
               <h3 className="dashboard__stats-title">
-                {t(dict, "kpi_section_title")}
+                {t(dict, isTeacher ? "teacher_kpi_section_title" : "kpi_section_title")}
               </h3>
             </div>
             <span className="dashboard__stats-scope">
@@ -1573,6 +1587,8 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
           </div>{/* dashboard__main */}
         </div>{/* dashboard__body */}
+          </>
+        )}
 
         {reschedOpen && (
           <DashboardModal

@@ -1048,6 +1048,76 @@
   font-weight: 700;
 }
 
+.calx-session-mode-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 14px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(31, 91, 139, .18);
+  border-radius: 12px;
+  background: rgba(239, 246, 255, .9);
+  color: #17324d;
+}
+
+.calx-session-mode-banner--loading {
+  justify-content: flex-start;
+  color: #526579;
+  background: rgba(248, 250, 252, .92);
+}
+
+.calx-session-mode-banner--passive {
+  background: rgba(248, 250, 252, .92);
+  border-color: rgba(82, 101, 121, .18);
+}
+
+.calx-session-mode-banner__copy {
+  display: grid;
+  gap: 4px;
+}
+
+.calx-session-mode-banner__copy span {
+  color: #526579;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.calx-session-mode-banner__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.calx-banner-action,
+.calx-banner-link {
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.calx-banner-action {
+  border: 1px solid #1f5b8b;
+  background: #1f5b8b;
+  color: #fff;
+  cursor: pointer;
+}
+
+.calx-banner-link {
+  color: #1f5b8b;
+}
+
+@media (max-width: 700px) {
+  .calx-session-mode-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .calx-week-wrap {
   flex: 1;
   position: relative;

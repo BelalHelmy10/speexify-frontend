@@ -16,7 +16,38 @@
 @use "resources/pdf-viewer";
 @use "resources/classroom";
 @use "resources/modals";
-
-// ─── Utilities & Generic ────────────────────────────────────────────────────
 @use "resources/buttons";
 @use "resources/utilities";
+
+.spx-resources-loading__hero {
+  min-height: 210px;
+}
+
+.spx-resources-loading__line,
+.spx-resources-loading__stats span,
+.spx-resources-loading__cards span {
+  display: block;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(148, 163, 184, .14), rgba(148, 163, 184, .28), rgba(148, 163, 184, .14));
+  background-size: 200% 100%;
+  animation: resources-loading-shimmer 1.4s ease-in-out infinite;
+}
+
+.spx-resources-loading__line--eyebrow { width: 130px; height: 12px; }
+.spx-resources-loading__line--title { width: min(480px, 82%); height: 42px; margin-top: 18px; }
+.spx-resources-loading__line--subtitle { width: min(620px, 95%); height: 18px; margin-top: 18px; }
+.spx-resources-loading__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.spx-resources-loading__stats span { min-height: 78px; }
+.spx-resources-loading__message { color: rgba(51, 65, 85, .75); }
+.spx-resources-loading__cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.spx-resources-loading__cards span { min-height: 180px; }
+
+@keyframes resources-loading-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (max-width: 760px) {
+  .spx-resources-loading__stats,
+  .spx-resources-loading__cards { grid-template-columns: 1fr 1fr; }
+}

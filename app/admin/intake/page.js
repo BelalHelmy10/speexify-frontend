@@ -743,6 +743,7 @@ export default function AdminIntakePage() {
               <Search size={16} aria-hidden="true" />
               <input
                 type="search"
+                aria-label="Search intake records by learner or email"
                 value={q}
                 onChange={(event) => setQ(event.target.value)}
                 placeholder="Search learner or email..."

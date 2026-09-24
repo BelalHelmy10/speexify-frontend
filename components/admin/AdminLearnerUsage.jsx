@@ -84,6 +84,7 @@ export default function AdminLearnerUsage() {
           >
             <input
               className="adm-input"
+              aria-label="Search learner usage by name or email"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search learner name or email…"

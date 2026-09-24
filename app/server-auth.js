@@ -79,14 +79,21 @@ export async function getServerApiJson(path, options = {}) {
 }
 
 export async function getServerUser(options = {}) {
+  const { throwOnTransient = false, ...requestOptions } = options;
   try {
     const res = await fetchServerApi("auth/me", {
       method: "GET",
-      ...options,
+      ...requestOptions,
     });
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) return null;
+      if (throwOnTransient && res.status >= 500) {
+        const error = new Error("Authentication service is temporarily unavailable");
+        error.code = "SERVER_AUTH_UNAVAILABLE";
+        error.status = res.status;
+        throw error;
+      }
       console.warn("[getServerUser] unexpected status:", res.status);
       return null;
     }
@@ -94,6 +101,13 @@ export async function getServerUser(options = {}) {
     const data = await res.json();
     return data?.user ?? null;
   } catch (err) {
+    if (throwOnTransient) {
+      if (err?.code === "SERVER_AUTH_UNAVAILABLE") throw err;
+      const error = new Error("Authentication service is temporarily unavailable");
+      error.code = "SERVER_AUTH_UNAVAILABLE";
+      error.cause = err;
+      throw error;
+    }
     if (process.env.NODE_ENV !== "production") {
       console.warn("[getServerUser] failed:", err?.message || err);
     }

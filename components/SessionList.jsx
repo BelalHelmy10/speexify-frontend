@@ -115,9 +115,9 @@ export default function SessionList({
 
   if (loading) {
     return (
-      <div className="session-list session-list--loading">
+      <div className="session-list session-list--loading" role="status" aria-live="polite">
         <div className="session-list__spinner" />
-        <p>Loading sessions...</p>
+        <p>{range === "past" ? "Loading your session history…" : "Loading your upcoming sessions…"}</p>
       </div>
     );
   }

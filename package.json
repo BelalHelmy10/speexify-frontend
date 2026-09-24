@@ -45,6 +45,8 @@
     "test:auth-proxy": "node --test scripts/proxyAuth.test.mjs",
     "test:pricing": "node --test scripts/pricingCatalog.test.mjs",
     "test:sanity": "node --test scripts/sanityQuery.test.mjs",
+    "test:frontend": "node --test scripts/*.test.mjs",
+    "test": "npm run test:frontend",
     "qa:responsive": "node scripts/responsiveQa.mjs",
     "qa:public-routes": "node scripts/checkPublicRoutes.mjs --start-server",
     "typecheck": "./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/next typegen .",

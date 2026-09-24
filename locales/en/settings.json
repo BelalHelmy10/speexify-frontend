@@ -142,7 +142,8 @@
   "current_device_title": "Current browser session",
   "current_device_hint": "This is the active session you are using right now.",
   "device_active": "Active",
-  "devices_future": "Full device history and “log out of other devices” should be backed by the session store next.",
+  "devices_security_hint": "This browser is the active session shown here. Change your password in Security to invalidate other sessions.",
+  "devices_change_password": "Review password security",
 
   "role_label": "Account Role",
   "role_default": "User",
