@@ -15,6 +15,7 @@ import AdminCreateSessionSection from "./components/AdminCreateSessionSection";
 import AdminSessionsSection from "./components/AdminSessionsSection";
 import AdminTeacherWorkloadSection from "./components/AdminTeacherWorkloadSection";
 import AdminAvailabilitySection from "./components/AdminAvailabilitySection";
+import AdminNotificationDeliveriesSection from "./components/AdminNotificationDeliveriesSection";
 import AdminAccessFallback from "./components/AdminAccessFallback";
 import AdminDashboardHeader from "./components/AdminDashboardHeader";
 import AdminUserManagementSection from "./components/AdminUserManagementSection";
@@ -1244,6 +1245,7 @@ function Admin() {
 
       {/* USER AVAILABILITY */}
       <AdminAvailabilitySection />
+      <AdminNotificationDeliveriesSection />
       <AdminPackagesModal
         open={showPackagesModal}
         modalRef={modalRef}
