@@ -58,7 +58,7 @@
   "how_step2_title": "Meet your coach.",
   "how_step2_desc": "We pick a coach for what you actually need to say. Not random. Chosen.",
   "how_step3_title": "Show up. Speak. Repeat.",
-  "how_step3_desc": "One or two sessions a week. Real conversations every time. The shift comes inside a month.",
+  "how_step3_desc": "One or two sessions a week. Real conversations every time. Your coach helps you choose a rhythm you can keep.",
 
   "compare_title": "What's in each pack.",
   "compare_subtitle": "Side by side.",
@@ -79,12 +79,12 @@
   "faq5_a": "Yes. Tailored programs with reporting your leadership will read. See the team tab above to start the conversation.",
 
   "cta_title": "Stop studying. Start using.",
-  "cta_individual_primary": "Start with a free trial",
+  "cta_individual_primary": "Ask about a starter session",
   "cta_individual_secondary": "Compare all features",
   "cta_corp_primary": "Request a plan",
   "cta_corp_secondary": "See team programs",
 
-  "badge_most_popular": "Most chosen",
+  "badge_most_popular": "A focused option",
   "card_eyebrow_live": "Live practice",
   "price_custom": "Tailored",
   "price_from": "From",
@@ -98,11 +98,11 @@
   "cta_loading": "Loading price…",
   "cta_unavailable": "Unavailable",
 
-  "fomo_proof": "300+ members practicing right now",
-  "fomo_popular_badge": "Most chosen this month",
-  "fomo_scarcity_1on1": "A small number of new 1:1 spots open each week.",
-  "fomo_scarcity_group": "The next group cohort starts soon.",
-  "fomo_urgency": "Most members say the same thing after their first session: I should have started months ago.",
+  "fomo_proof": "Practice built around your goals",
+  "fomo_popular_badge": "A focused option",
+  "fomo_scarcity_1on1": "Availability depends on coach fit and schedule.",
+  "fomo_scarcity_group": "Ask about the next group schedule.",
+  "fomo_urgency": "Start with a practice rhythm that fits your week.",
   "fomo_urgency_cta": "Pick your pack",
 
   "plan_1on1-4_title": "4 sessions",

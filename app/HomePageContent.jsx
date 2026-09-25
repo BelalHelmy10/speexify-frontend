@@ -16,8 +16,9 @@ import {
   calculatePerSessionPrice,
   formatRegionalPrice,
 } from "@/lib/regional-pricing";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
 import { isPurchaseReadyPlan } from "@/lib/pricing-catalog.mjs";
+import { getProductClaimDisplay } from "@/lib/productClaims";
 
 const MARKETING_IMAGE_VERSION = "20260519";
 const marketingImage = (src) => `${src}?v=${MARKETING_IMAGE_VERSION}`;
@@ -181,7 +182,7 @@ function Home({ locale = "en" }) {
             <FadeIn as="div" className="home-hero__cta" delay={0.4}>
               <Link
                 className="spx-btn spx-btn--primary spx-btn--shine"
-                href={routeHref(APP_ROUTES.register, locale)}
+                href={getStarterSessionHref(locale)}
               >
                 <span>{t(dict, "ctaPrimary")}</span>
                 <svg
@@ -320,30 +321,19 @@ function Home({ locale = "en" }) {
           </div>
 
           <FadeIn as="div" className="home-hero__stats" delay={0.6}>
-            <div className="home-hero__stat">
-              <div className="home-hero__stat-num">
-                {t(dict, "hero_stat1_num")}
-              </div>
-              <div className="home-hero__stat-label">
-                {t(dict, "hero_stat1_label")}
-              </div>
-            </div>
-            <div className="home-hero__stat">
-              <div className="home-hero__stat-num">
-                {t(dict, "hero_stat2_num")}
-              </div>
-              <div className="home-hero__stat-label">
-                {t(dict, "hero_stat2_label")}
-              </div>
-            </div>
-            <div className="home-hero__stat">
-              <div className="home-hero__stat-num">
-                {t(dict, "hero_stat3_num")}
-              </div>
-              <div className="home-hero__stat-label">
-                {t(dict, "hero_stat3_label")}
-              </div>
-            </div>
+            {[
+              "recommendationRate",
+              "coachedHours",
+              "comparativeOutcome",
+            ].map((claimId) => {
+              const display = getProductClaimDisplay(claimId, locale);
+              return (
+                <div className="home-hero__stat" key={claimId}>
+                  <div className="home-hero__stat-num">{display.value}</div>
+                  <div className="home-hero__stat-label">{display.label}</div>
+                </div>
+              );
+            })}
           </FadeIn>
         </div>
       </section>
@@ -352,7 +342,7 @@ function Home({ locale = "en" }) {
       <LiveSessionDemo locale={locale} />
 
       {/* ===== FEATURES ===== */}
-      <FeaturesSection dict={dict} />
+      <FeaturesSection dict={dict} locale={locale} />
 
       {/* ===== HOW IT WORKS ===== */}
       <HowItWorksSection dict={dict} locale={locale} />
@@ -413,7 +403,7 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== PRODUCT DEMO ===== */}
-      <ProductDemoSection dict={dict} />
+      <ProductDemoSection dict={dict} locale={locale} />
 
       {/* ===== COACHES ===== */}
       <section className="home-spx-coaches">
@@ -539,7 +529,7 @@ function Home({ locale = "en" }) {
           <div className="home-cta__actions">
             <Link
               className="spx-btn spx-btn--primary spx-btn--lg"
-              href={routeHref(APP_ROUTES.register, locale)}
+              href={getStarterSessionHref(locale)}
             >
               <span>{t(dict, "cta_primary")}</span>
               <svg
@@ -818,7 +808,7 @@ function PricingSection({ dict, locale }) {
   );
 }
 
-function FeaturesSection({ dict }) {
+function FeaturesSection({ dict, locale = "en" }) {
   const scenarios = [
     "The meeting you've been avoiding.",
     "The interview next Tuesday.",
@@ -997,7 +987,9 @@ function FeaturesSection({ dict }) {
             <span className="home-bento__tag">
               {t(dict, "bento_tag_outcome")}
             </span>
-            <div className="home-bento__stat">2.7×</div>
+            <div className="home-bento__stat">
+              {getProductClaimDisplay("comparativeOutcome", locale).value}
+            </div>
             <h3 className="home-bento__title">{t(dict, "bento_stat_title")}</h3>
             <p className="home-bento__text">{t(dict, "bento_stat_text")}</p>
             <div className="home-bento__minichart">
@@ -1134,32 +1126,11 @@ function FeatureIcon({ icon }) {
   );
 }
 
-function Quote({ quote, author, role, rating }) {
+function Quote({ quote, author, role, label }) {
   return (
     <figure className="home-quote">
       <div className="home-quote__top">
-        <div
-          className="home-quote__stars"
-          role="img"
-          aria-label={`${rating} out of 5 stars`}
-        >
-          {Array.from({ length: rating }).map((_, i) => (
-            <svg
-              key={i}
-              className="home-quote__star"
-              width="14"
-              height="14"
-              viewBox="0 0 14 14"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M7 1.5l1.545 3.13 3.455.503-2.5 2.436.59 3.44L7 9.25l-3.09 1.759.59-3.44L2 5.133l3.455-.503L7 1.5Z"
-                fill="currentColor"
-              />
-            </svg>
-          ))}
-        </div>
+        <span className="home-quote__label">{label}</span>
         <svg
           className="home-quote__mark"
           width="24"
@@ -1408,7 +1379,7 @@ function TransformationDemo({ dict, locale }) {
         <div className="home-shift__cta">
           <Link
             className="spx-btn spx-btn--primary spx-btn--shine"
-            href={routeHref(APP_ROUTES.register, locale)}
+            href={getStarterSessionHref(locale)}
           >
             <span>{t(dict, "shift_cta")}</span>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -1425,26 +1396,22 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
   const trackRef = useRef(null);
   const [active, setActive] = React.useState(0);
 
-  const testimonials = [
+  const practiceNotes = [
     {
-      quote: t(dict, "testi1_quote"),
-      author: t(dict, "testi1_author"),
-      role: t(dict, "testi1_role"),
+      body: t(dict, "practice_note1_text"),
+      title: t(dict, "practice_note1_title"),
     },
     {
-      quote: t(dict, "testi2_quote"),
-      author: t(dict, "testi2_author"),
-      role: t(dict, "testi2_role"),
+      body: t(dict, "practice_note2_text"),
+      title: t(dict, "practice_note2_title"),
     },
     {
-      quote: t(dict, "testi3_quote"),
-      author: t(dict, "testi3_author"),
-      role: t(dict, "testi3_role"),
+      body: t(dict, "practice_note3_text"),
+      title: t(dict, "practice_note3_title"),
     },
     {
-      quote: t(dict, "testi4_quote"),
-      author: t(dict, "testi4_author"),
-      role: t(dict, "testi4_role"),
+      body: t(dict, "practice_note4_text"),
+      title: t(dict, "practice_note4_title"),
     },
   ];
 
@@ -1478,7 +1445,7 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
     };
     track.addEventListener("scroll", onScroll, { passive: true });
     return () => track.removeEventListener("scroll", onScroll);
-  }, [testimonials.length]);
+  }, [practiceNotes.length]);
 
   return (
     <section className={`home-testimonials${locale === "ar" ? " home-testimonials--rtl" : ""}`}>
@@ -1500,7 +1467,7 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
 
           <div
             className="home-testimonials__arrows"
-            aria-label={locale === "ar" ? "التنقل بين الشهادات" : "Carousel navigation"}
+            aria-label={locale === "ar" ? "التنقل بين ملاحظات التمرين" : "Practice note navigation"}
           >
             <button
               className="home-testimonials__arrow"
@@ -1553,22 +1520,22 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
           tabIndex={0}
           aria-label={t(dict, "testimonials_title")}
         >
-          {testimonials.map((t_, i) => (
+          {practiceNotes.map((note, i) => (
             <Quote
               key={i}
-              quote={t_.quote}
-              author={t_.author}
-              role={t_.role}
-              rating={5}
+              quote={note.body}
+              author={note.title}
+              role={getProductClaimDisplay("testimonials", locale).label}
+              label={locale === "ar" ? "ملاحظة عملية" : "Practice note"}
             />
           ))}
         </div>
 
         <div className="home-testimonials__cta">
           <Link
-            href={routeHref(APP_ROUTES.memberStories, locale)}
+            href={routeHref(APP_ROUTES.individualTraining, locale)}
           >
-            <span>{locale === "ar" ? "اقرأ قصصهم كاملة" : "Read their full stories"}</span>
+            <span>{locale === "ar" ? "شوف الطريقة" : "See how it works"}</span>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -1578,9 +1545,9 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
         <div
           className="home-testimonials__dots"
           role="tablist"
-          aria-label={locale === "ar" ? "شرائح الشهادات" : "Testimonial slides"}
+          aria-label={locale === "ar" ? "ملاحظات التمرين" : "Practice notes"}
         >
-          {testimonials.map((_, i) => (
+          {practiceNotes.map((_, i) => (
             <button
               key={i}
               role="tab"
@@ -1713,9 +1680,9 @@ function HowItWorksSection({ dict, locale }) {
         <div className="home-spx-how__cta">
           <Link
             className="spx-btn spx-btn--primary spx-btn--shine"
-            href={routeHref(APP_ROUTES.register, locale)}
+            href={getStarterSessionHref(locale)}
           >
-            <span>{t(dict, "how_cta_primary") || "Choose this plan"}</span>
+            <span>{t(dict, "how_cta_primary") || "Ask about a starter session"}</span>
             <svg
               className="spx-btn__arrow"
               width="16"
@@ -1748,7 +1715,7 @@ function HowItWorksSection({ dict, locale }) {
 /* ============================
    Product Demo Section
    ============================ */
-function ProductDemoSection({ dict }) {
+function ProductDemoSection({ dict, locale = "en" }) {
   const features = [
     t(dict, "demo_feature_1"),
     t(dict, "demo_feature_2"),
@@ -1789,7 +1756,7 @@ function ProductDemoSection({ dict }) {
               style={floatStyle}
             >
               <div className="home-demo__float-card">
-                {t(dict, "demo_rating_label")}
+                {getProductClaimDisplay("memberRating", locale).value}
               </div>
             </div>
             <div
@@ -1797,7 +1764,7 @@ function ProductDemoSection({ dict }) {
               style={floatStyle2}
             >
               <div className="home-demo__float-card">
-                {t(dict, "demo_sessions_label")}
+                {getProductClaimDisplay("coachedHours", locale).label}
               </div>
             </div>
 

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import "@/styles/about.scss";
 import { getDictionary, t } from "@/app/i18n";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
+import { getProductClaimDisplay } from "@/lib/productClaims";
 
 const heroImg = "/images/about_hero.avif";
 const historyImg = "/images/about_history.avif";
@@ -23,6 +24,7 @@ const leadChris = "/images/leader_chris.avif";
 
 const statsConfig = [
   {
+    claimId: "recommendationRate",
     tone: "coral",
     valueKey: "stat1_value",
     labelKey: "stat1_label",
@@ -35,6 +37,7 @@ const statsConfig = [
     ),
   },
   {
+    claimId: "coachedHours",
     tone: "blue",
     valueKey: "stat2_value",
     labelKey: "stat2_label",
@@ -47,6 +50,7 @@ const statsConfig = [
     ),
   },
   {
+    claimId: "memberRating",
     tone: "gold",
     valueKey: "stat3_value",
     labelKey: "stat3_label",
@@ -59,6 +63,7 @@ const statsConfig = [
     ),
   },
   {
+    claimId: "comparativeOutcome",
     tone: "teal",
     valueKey: "stat4_value",
     labelKey: "stat4_label",
@@ -142,40 +147,12 @@ const leadersConfig = [
   { img: leadChris, nameKey: "leader3_name", roleKey: "leader3_role" },
 ];
 
-const testimonialsConfig = [
-  {
-    quoteKey: "testi1_quote",
-    nameKey: "testi1_name",
-    companyKey: "testi1_company",
-  },
-  {
-    quoteKey: "testi2_quote",
-    nameKey: "testi2_name",
-    companyKey: "testi2_company",
-  },
-  {
-    quoteKey: "testi3_quote",
-    nameKey: "testi3_name",
-    companyKey: "testi3_company",
-  },
-  {
-    quoteKey: "testi4_quote",
-    nameKey: "testi4_name",
-    companyKey: "testi4_company",
-  },
+const practiceNotesConfig = [
+  { titleKey: "practice_note1_title", textKey: "practice_note1_text" },
+  { titleKey: "practice_note2_title", textKey: "practice_note2_text" },
+  { titleKey: "practice_note3_title", textKey: "practice_note3_text" },
+  { titleKey: "practice_note4_title", textKey: "practice_note4_text" },
 ];
-
-function getInitials(name) {
-  const parts = String(name || "")
-    .replace(/\./g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (!parts.length) return "SP";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
-}
 
 function renderStatValue(value) {
   const raw = String(value || "").trim();
@@ -225,7 +202,7 @@ export default function AboutPage() {
             <p className="hero-sub">{t(dict, "hero_sub")}</p>
 
             <div className="hero-cta">
-              <Link href={routeHref(APP_ROUTES.register, locale)} className="btn btn-primary btn-lg">
+              <Link href={getStarterSessionHref(locale)} className="btn btn-primary btn-lg">
                 {t(dict, "hero_cta_primary")}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -257,8 +234,12 @@ export default function AboutPage() {
           <div className="hero-float">
             <div className="hf-icon">🌍</div>
             <div>
-              <div className="hf-val">{t(dict, "stat1_value")}</div>
-              <div className="hf-label">{t(dict, "stat1_label")}</div>
+              <div className="hf-val">
+                {getProductClaimDisplay("recommendationRate", locale).value}
+              </div>
+              <div className="hf-label">
+                {getProductClaimDisplay("recommendationRate", locale).label}
+              </div>
             </div>
           </div>
         </div>
@@ -270,8 +251,12 @@ export default function AboutPage() {
             {statsConfig.map((s) => (
               <div className="stat" key={s.labelKey}>
                 <div className={`stat-icon ${s.tone}`}>{s.icon}</div>
-                <div className="stat-val">{renderStatValue(t(dict, s.valueKey))}</div>
-                <div className="stat-label">{t(dict, s.labelKey)}</div>
+                <div className="stat-val">
+                  {renderStatValue(getProductClaimDisplay(s.claimId, locale).value)}
+                </div>
+                <div className="stat-label">
+                  {getProductClaimDisplay(s.claimId, locale).label}
+                </div>
               </div>
             ))}
           </div>
@@ -409,24 +394,18 @@ export default function AboutPage() {
       <section className="testimonials">
         <div className="container">
           <div className="section-header">
-            <div className="eyebrow">{t(dict, "testimonials_title")}</div>
-            <h2 className="section-title">{t(dict, "testimonials_title")}</h2>
-            <p className="section-sub">{t(dict, "testimonials_subtitle")}</p>
+            <div className="eyebrow">{t(dict, "practice_notes_title")}</div>
+            <h2 className="section-title">{t(dict, "practice_notes_title")}</h2>
+            <p className="section-sub">{t(dict, "practice_notes_subtitle")}</p>
           </div>
 
           <div className="quote-grid">
-            {testimonialsConfig.map((item, idx) => {
-              const name = t(dict, item.nameKey);
+            {practiceNotesConfig.map((item, idx) => {
               return (
-                <blockquote className="quote-card" key={`${item.quoteKey}-${idx}`}>
-                  <div className="quote-stars" role="img" aria-label="5 out of 5 stars">★★★★★</div>
-                  <p className="quote-text">&ldquo;{t(dict, item.quoteKey)}&rdquo;</p>
+                <blockquote className="quote-card" key={`${item.titleKey}-${idx}`}>
+                  <p className="quote-text">{t(dict, item.textKey)}</p>
                   <footer className="quote-footer">
-                    <div className="quote-avatar">{getInitials(name)}</div>
-                    <div>
-                      <div className="quote-name">{name}</div>
-                      <div className="quote-company">{t(dict, item.companyKey)}</div>
-                    </div>
+                    <div className="quote-name">{t(dict, item.titleKey)}</div>
                   </footer>
                 </blockquote>
               );

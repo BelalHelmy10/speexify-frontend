@@ -6,7 +6,7 @@ import {
   faqJsonLd,
   serviceJsonLd,
 } from "./seo";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
 
 export default function SeoLandingPage({ pageKey, locale = "en" }) {
   const config = landingPages[pageKey];
@@ -16,6 +16,14 @@ export default function SeoLandingPage({ pageKey, locale = "en" }) {
 
   const contactPath = routeHref(APP_ROUTES.contact, locale);
   const packagesPath = routeHref(APP_ROUTES.packages, locale);
+  const individualConversionKeys = new Set([
+    "speakingCoachEgypt",
+    "onlineEnglishConversationPractice",
+    "englishPresentationCoaching",
+  ]);
+  const primaryPath = individualConversionKeys.has(pageKey)
+    ? getStarterSessionHref(locale)
+    : contactPath;
   const homeLabel = locale === "ar" ? "الرئيسية" : "Home";
 
   const jsonLd = [
@@ -44,7 +52,7 @@ export default function SeoLandingPage({ pageKey, locale = "en" }) {
             <h1>{page.title}</h1>
             <p className="seo-lede">{page.subtitle}</p>
             <div className="seo-actions">
-              <Link href={contactPath} className="seo-btn seo-btn--primary">
+              <Link href={primaryPath} className="seo-btn seo-btn--primary">
                 {page.primaryCta}
               </Link>
               <Link href={packagesPath} className="seo-btn seo-btn--secondary">
@@ -97,7 +105,7 @@ export default function SeoLandingPage({ pageKey, locale = "en" }) {
               ? "جاهز لتحويل الإنجليزية إلى مهارة تستخدمها بثقة؟"
               : "Ready to turn English into a skill you actually use?"}
           </h2>
-          <Link href={contactPath} className="seo-btn seo-btn--primary">
+          <Link href={primaryPath} className="seo-btn seo-btn--primary">
             {page.primaryCta}
           </Link>
         </div>

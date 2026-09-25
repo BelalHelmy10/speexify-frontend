@@ -18,7 +18,7 @@ import {
 } from "@/lib/regional-pricing";
 import { oneOnOnePlans, groupPlans, corporatePlans } from "@/lib/plans";
 import { getPricingRegion } from "@/lib/pricing-regions";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
 import { formatNumber } from "@/utils/locale";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
@@ -597,9 +597,9 @@ function Packages() {
             <div className="ecp-cta__actions">
               <Link
                 className="ecp-btn ecp-btn--primary ecp-btn--lg"
-                href={routeHref(APP_ROUTES.individualTraining, locale, "#trial")}
+                href={getStarterSessionHref(locale)}
               >
-                {t(dict, "cta_individual_primary", "Book Free Consultation")}
+                {t(dict, "cta_individual_primary", "Ask about a starter session")}
               </Link>
               <Link
                 className="ecp-btn ecp-btn--ghost ecp-btn--lg"

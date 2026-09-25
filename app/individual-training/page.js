@@ -9,7 +9,7 @@ import api from "@/lib/api";
 import "@/styles/individual.scss";
 import { getDictionary, t } from "@/app/i18n";
 import { getDefaultTimezones, getSupportedTimezones } from "../../lib/timezones";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
 
 const MARKETING_IMAGE_VERSION = "20260519";
 const marketingImage = (src) => {
@@ -174,7 +174,7 @@ function IndividualInner({ dict, locale }) {
                 {t(dict, "hero_subtitle") || "Private one-on-one sessions with a coach picked for you. Real conversations, every time. The reps you've been missing, booked when you're ready."}
               </Reveal>
               <Reveal delay={0.4} className="hero-cta">
-                <a href="#trial" className="btn btn-primary btn-lg">
+                <a href={getStarterSessionHref(locale)} className="btn btn-primary btn-lg">
                   {t(dict, "hero_cta_primary")}
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
@@ -343,7 +343,7 @@ function IndividualInner({ dict, locale }) {
             />
           </div>
           <div className="goals-cta">
-            <a href="#trial" className="btn btn-ghost">{t(dict, "goals_cta") || "Tell us yours"}</a>
+            <a href={getStarterSessionHref(locale)} className="btn btn-ghost">{t(dict, "goals_cta") || "Tell us yours"}</a>
           </div>
         </div>
       </section>
@@ -424,29 +424,17 @@ function IndividualInner({ dict, locale }) {
               <Reveal as="p" delay={0.1} className="section-sub">{t(dict, "testi_subtitle")}</Reveal>
             </div>
             <div className="testi-grid">
-              <Testimonial
-                avatarCls="tav1"
-                avatarTxt="AM"
-                outcome={t(dict, "testi1_outcome")}
-                quote={t(dict, "testi1_quote")}
-                by={t(dict, "testi1_by")}
-                role={t(dict, "testi1_role")}
+              <PracticeNote
+                title={t(dict, "practice_note1_title")}
+                body={t(dict, "practice_note1_text")}
               />
-              <Testimonial
-                avatarCls="tav2"
-                avatarTxt="SR"
-                outcome={t(dict, "testi2_outcome")}
-                quote={t(dict, "testi2_quote")}
-                by={t(dict, "testi2_by")}
-                role={t(dict, "testi2_role")}
+              <PracticeNote
+                title={t(dict, "practice_note2_title")}
+                body={t(dict, "practice_note2_text")}
               />
-              <Testimonial
-                avatarCls="tav3"
-                avatarTxt="LK"
-                outcome={t(dict, "testi3_outcome")}
-                quote={t(dict, "testi3_quote")}
-                by={t(dict, "testi3_by")}
-                role={t(dict, "testi3_role")}
+              <PracticeNote
+                title={t(dict, "practice_note3_title")}
+                body={t(dict, "practice_note3_text")}
               />
             </div>
           </div>
@@ -639,7 +627,7 @@ function IndividualInner({ dict, locale }) {
               <h2 className="cta-title">{t(dict, "final_title")}</h2>
               <p className="cta-sub">{t(dict, "final_subtitle")}</p>
               <div className="cta-btns">
-                <a href="#trial" className="btn btn-cta-white btn-lg">
+                <a href={getStarterSessionHref(locale)} className="btn btn-cta-white btn-lg">
                   {t(dict, "final_btn_primary")}
                 </a>
                 <Link href={routeHref(APP_ROUTES.packages, locale)} className="btn btn-ghost-white btn-lg">
@@ -715,31 +703,13 @@ function Step({ cls, n, title, p }) {
   );
 }
 
-function Testimonial({ avatarCls, avatarTxt, outcome, quote, by, role }) {
+function PracticeNote({ title, body }) {
   return (
     <div className="testi-card">
       <div className="testi-head">
-        <div className={`testi-av ${avatarCls}`}>{avatarTxt}</div>
-        <span className="testi-outcome">{outcome}</span>
-        <div className="testi-stars" role="img" aria-label="5 out of 5 stars">
-          {Array.from({ length: 5 }).map((_, idx) => (
-            <svg
-              key={idx}
-              className="testi-star"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M12 2.5l2.87 5.82 6.43.94-4.65 4.53 1.1 6.41L12 17.18 6.25 20.2l1.1-6.41L2.7 9.26l6.43-.94L12 2.5z" />
-            </svg>
-          ))}
-        </div>
+        <span className="testi-outcome">{title}</span>
       </div>
-      <div className="testi-quote">{quote}</div>
-      <div className="testi-author">
-        <div className="testi-name">{by}</div>
-        <div className="testi-role">{role}</div>
-      </div>
+      <div className="testi-quote">{body}</div>
     </div>
   );
 }

@@ -4,14 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { getStarterSessionHref } from "@/lib/routes";
 import { normalizeLocalizedPath } from "@/lib/chromeRoutes";
+import { getProductClaimDisplay } from "@/lib/productClaims";
 
 /**
- * Site-wide floating "Book free trial" CTA — a centered glass "command pill".
+ * Site-wide floating starter-session CTA — a centered glass "command pill".
  *
  * Visual: compact coral pill that expands on hover/focus/tap to reveal a live
- * dot + two-line "First session free / No commitment" detail.
+ * dot + two-line starter-session detail.
  *
  * Placement: bottom-CENTER on every breakpoint. Centered neutral space never
  * collides with the bottom-left ScrollToTop button or the bottom-right
@@ -20,7 +21,7 @@ import { normalizeLocalizedPath } from "@/lib/chromeRoutes";
  * Behavior:
  *  - Visible from the very top of the page (no scroll required).
  *  - Steps aside only when the footer's own CTA section is in view, so two
- *    trial CTAs never stack.
+ *    starter-session CTAs never stack.
  *  - Dismiss (×) persists for the tab session via sessionStorage.
  *  - Suppressed on app pages (dashboard, classroom, etc.) and auth pages.
  */
@@ -121,20 +122,21 @@ export default function StickyTrialCTA() {
   if (shouldSuppress(pathname)) return null;
   if (dismissed) return null;
 
+  const offer = getProductClaimDisplay("firstSessionOffer", locale);
   const copy =
     locale === "ar"
       ? {
-          title: "أول جلسة مجانية",
-          sub: "من غير أي التزام",
-          cta: "احجز جلستك",
-          aria: "احجز جلسة تجريبية مجانية",
+          title: offer.value,
+          sub: offer.label,
+          cta: "اسأل عن جلسة تعريفية",
+          aria: "اسأل عن جلسة تعريفية",
           dismiss: "إخفاء",
         }
       : {
-          title: "First session free",
-          sub: "No commitment",
-          cta: "Book free trial",
-          aria: "Book a free trial session",
+          title: offer.value,
+          sub: offer.label,
+          cta: "Ask about a starter session",
+          aria: "Ask about a starter session",
           dismiss: "Dismiss",
         };
 
@@ -163,7 +165,7 @@ export default function StickyTrialCTA() {
       }}
     >
       <Link
-        href={routeHref(APP_ROUTES.register, locale)}
+        href={getStarterSessionHref(locale)}
         className="spx-trial-cta__pill"
         aria-label={copy.aria}
         onClick={handleClick}

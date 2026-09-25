@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import "@/styles/why-speexify.scss";
 import { getDictionary, t } from "@/app/i18n";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
 
 const valuesConfig = [
     { num: "01", titleKey: "value1_title", descKey: "value1_desc", detailKey: "value1_detail", icon: Target },
@@ -53,10 +53,10 @@ const contrastConfig = [
     { themKey: "contrast_row5_them", usKey: "contrast_row5_us" },
 ];
 
-const proofsConfig = [
-    { quoteKey: "proof1_quote", nameKey: "proof1_name", contextKey: "proof1_context" },
-    { quoteKey: "proof2_quote", nameKey: "proof2_name", contextKey: "proof2_context" },
-    { quoteKey: "proof3_quote", nameKey: "proof3_name", contextKey: "proof3_context" },
+const practiceNotesConfig = [
+    { titleKey: "practice_note1_title", textKey: "practice_note1_text" },
+    { titleKey: "practice_note2_title", textKey: "practice_note2_text" },
+    { titleKey: "practice_note3_title", textKey: "practice_note3_text" },
 ];
 
 export default function WhySpeexifyPage() {
@@ -215,19 +215,18 @@ export default function WhySpeexifyPage() {
             <section className="why__proof">
                 <div className="container">
                     <div className="why__section-header">
-                        <h2 className="why__section-title">{t(dict, "proof_title")}</h2>
-                        <p className="why__section-subtitle">{t(dict, "proof_subtitle")}</p>
+                        <h2 className="why__section-title">{t(dict, "practice_notes_title")}</h2>
+                        <p className="why__section-subtitle">{t(dict, "practice_notes_subtitle")}</p>
                     </div>
 
                     <div className="why__proof-grid">
-                        {proofsConfig.map((p, idx) => (
-                            <blockquote className="why__proof-card" key={idx}>
-                                <p>&ldquo;{t(dict, p.quoteKey)}&rdquo;</p>
+                        {practiceNotesConfig.map((p, idx) => (
+                            <article className="why__proof-card" key={idx}>
+                                <p>{t(dict, p.textKey)}</p>
                                 <footer>
-                                    <strong>{t(dict, p.nameKey)}</strong>
-                                    <span>{t(dict, p.contextKey)}</span>
+                                    <strong>{t(dict, p.titleKey)}</strong>
                                 </footer>
-                            </blockquote>
+                            </article>
                         ))}
                     </div>
                 </div>
@@ -244,7 +243,7 @@ export default function WhySpeexifyPage() {
                     <p>{t(dict, "cta_sub")}</p>
 
                     <div className="why__cta-buttons">
-                        <Link href={routeHref(APP_ROUTES.individualTraining, locale)} className="why-btn why-btn--primary why-btn--lg">
+                        <Link href={getStarterSessionHref(locale)} className="why-btn why-btn--primary why-btn--lg">
                             <span>{t(dict, "cta_primary")}</span>
                             <ArrowRight className="why-btn__arrow" size={18} strokeWidth={2.4} aria-hidden="true" />
                         </Link>
