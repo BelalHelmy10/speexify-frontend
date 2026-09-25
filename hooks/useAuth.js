@@ -22,13 +22,18 @@ const Ctx = createContext({
   logout: async () => {},
 });
 
-// Timeout for a single /auth/me attempt.
-const AUTH_REFRESH_TIMEOUT_MS = 20000;
-// On a transient failure (timeout / network / 5xx) we keep retrying with
-// backoff until this budget runs out. The backend can cold-start (Render free
-// tier sleeps after inactivity and takes ~30-50s to wake), so we give it room
-// to come up instead of giving up — and we NEVER log the user out for it.
-const AUTH_WAKE_BUDGET_MS = 60000;
+const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
+
+// Timeout for a single /auth/me attempt. Public pages should not be held by a
+// stale local cookie while an idle backend wakes up; production keeps the
+// longer window so a valid session can survive a real cold start.
+const AUTH_REFRESH_TIMEOUT_MS = IS_DEVELOPMENT ? 4000 : 20000;
+
+// On a transient failure (timeout / network / 5xx) we retry with backoff. The
+// backend can cold-start in production, but local development should fail fast
+// and let the public shell render its logged-out state instead of displaying
+// "Restoring your session…" for a minute.
+const AUTH_WAKE_BUDGET_MS = IS_DEVELOPMENT ? 6000 : 60000;
 
 // A 401/403 is a definitive "this session is not valid" answer.
 // Anything else (timeout, network error, 5xx, cold start) just means we
