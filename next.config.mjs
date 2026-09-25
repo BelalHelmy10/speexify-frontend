@@ -19,6 +19,8 @@ const apiBase = rawBase.replace(/\/+$/, "").replace(/\/api$/, "");
 const googleClientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "").trim();
 const googleAuthDisabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_DISABLED === "true";
 const localGoogleAuthEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ALLOW_LOCALHOST === "true";
+const isVercelProductionBuild =
+  process.env.VERCEL === "1" && process.env.VERCEL_ENV === "production";
 const looksLikePlaceholderGoogleClient =
   !googleClientId || /your-|localhost|example\.com/i.test(googleClientId);
 
@@ -28,9 +30,9 @@ if (process.env.NODE_ENV === "production") {
       "Production builds require a real NEXT_PUBLIC_GOOGLE_CLIENT_ID and enabled Google OAuth configuration"
     );
   }
-  if (localGoogleAuthEnabled) {
+  if (isVercelProductionBuild && localGoogleAuthEnabled) {
     throw new Error(
-      "NEXT_PUBLIC_GOOGLE_AUTH_ALLOW_LOCALHOST must be false in production"
+      "NEXT_PUBLIC_GOOGLE_AUTH_ALLOW_LOCALHOST must be false in Vercel production"
     );
   }
 }

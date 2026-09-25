@@ -142,16 +142,17 @@ Build fails → Check Node version (>=18.17) and ensure all env vars are set.
 
 Env not available on client → Only variables with NEXT_PUBLIC_ prefix are public.
 
-Google OAuth on localhost → Configure a separate Google OAuth client with
+Google OAuth on localhost → Configure a Google OAuth client with
 `http://localhost:3000` (and any other local origin you use) in Authorized
-JavaScript origins. Set its ID in `NEXT_PUBLIC_GOOGLE_LOCAL_CLIENT_ID` and set
-`NEXT_PUBLIC_GOOGLE_AUTH_ALLOW_LOCALHOST=true`. Until both are present, the
-Google button is intentionally hidden locally and email authentication remains
-available.
+JavaScript origins. Set `NEXT_PUBLIC_GOOGLE_AUTH_ALLOW_LOCALHOST=true`. The
+primary `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is used when no separate local client
+ID is configured; `NEXT_PUBLIC_GOOGLE_LOCAL_CLIENT_ID` remains supported for a
+dedicated local client. The localhost opt-in is ignored on deployed domains.
 
 Production Google OAuth → Set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to the exact
 production OAuth client and register the deployed HTTPS origin in Google Cloud.
-Production builds reject placeholder client IDs and any localhost OAuth flag.
+Vercel production builds reject placeholder client IDs and a localhost OAuth
+flag; local production-mode builds can still validate with `.env.local`.
 
 Styles not applying → Ensure globals.css is imported in app/layout.tsx.
 
