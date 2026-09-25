@@ -8,6 +8,7 @@ import { fmtInTz } from "@/utils/date";
 import { getDictionary, t } from "@/app/i18n";
 import useAuth from "@/hooks/useAuth";
 import { stripRichFeedbackPayload } from "@/lib/feedbackReport";
+import ResilientAvatar from "@/components/ResilientAvatar";
 
 function FeedbackIcon({ size = 24 }) {
   return (
@@ -69,11 +70,11 @@ function TeacherAvatar({ name, url }) {
     : "T";
   return (
     <div className="fb-teacher-avatar">
-      {url ? (
-        <img src={url} alt={name || "Teacher"} />
-      ) : (
-        <span>{initials}</span>
-      )}
+      <ResilientAvatar
+        src={url}
+        alt={name || "Teacher"}
+        fallback={<span>{initials}</span>}
+      />
     </div>
   );
 }

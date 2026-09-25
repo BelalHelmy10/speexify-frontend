@@ -23,6 +23,7 @@ import { getDictionary, t } from "@/app/i18n";
 import NotificationsBell from "@/components/NotificationsBell";
 import DigitalClock from "@/components/DigitalClock";
 import BrandLogo from "@/components/brand/BrandLogo";
+import ResilientAvatar from "@/components/ResilientAvatar";
 
 /* ------------------------------------------------------------------
    Locale helpers
@@ -79,10 +80,13 @@ function getInitials(user) {
 }
 
 function AvatarContent({ user }) {
-  if (user?.avatarUrl) {
-    return <img src={user.avatarUrl} alt="" />;
-  }
-  return getInitials(user);
+  return (
+    <ResilientAvatar
+      src={user?.avatarUrl}
+      alt=""
+      fallback={getInitials(user)}
+    />
+  );
 }
 
 /* ------------------------------------------------------------------

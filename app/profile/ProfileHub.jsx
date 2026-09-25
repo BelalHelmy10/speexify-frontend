@@ -29,6 +29,7 @@ import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 import "@/styles/profile.scss";
 import { getIntlLocale } from "@/utils/locale";
+import ResilientAvatar from "@/components/ResilientAvatar";
 
 const COPY = {
   en: {
@@ -182,10 +183,13 @@ function getInitials(user) {
 }
 
 function AvatarVisual({ user }) {
-  if (user?.avatarUrl) {
-    return <img src={user.avatarUrl} alt="" />;
-  }
-  return <span>{getInitials(user)}</span>;
+  return (
+    <ResilientAvatar
+      src={user?.avatarUrl}
+      alt=""
+      fallback={<span>{getInitials(user)}</span>}
+    />
+  );
 }
 
 function displayName(user) {
