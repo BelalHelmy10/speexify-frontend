@@ -1,4 +1,3 @@
-// app/dashboard/progress/page.js
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -25,15 +24,18 @@ function formatDuration(minutes, dict, locale = "en") {
   const total = Math.max(0, Math.round(Number(minutes || 0)));
   const number = (value) => formatNumber(value, locale);
   const minLabel = copy(dict, "unit_minutes", "min");
-  const hLabel = copy(dict, "unit_hours", "h");
+  const hourLabel = copy(dict, "unit_hours", "h");
+
   if (total < 60) return `${number(total)} ${minLabel}`;
+
   const hours = Math.floor(total / 60);
   const mins = total % 60;
   if (mins > 0) {
-    const hmTemplate = copy(dict, "unit_hours_minutes", "{hours}h {mins}m");
-    return hmTemplate.replace("{hours}", number(hours)).replace("{mins}", number(mins));
+    const template = copy(dict, "unit_hours_minutes", "{hours}h {mins}m");
+    return template.replace("{hours}", number(hours)).replace("{mins}", number(mins));
   }
-  return `${number(hours)} ${hLabel}`;
+
+  return `${number(hours)} ${hourLabel}`;
 }
 
 function formatDate(value, locale, options) {
@@ -43,21 +45,63 @@ function formatDate(value, locale, options) {
   return date.toLocaleDateString(getIntlLocale(locale), options);
 }
 
-function formatMonthLabel(month, locale) {
-  if (!month || !month.includes("-")) return month || "";
-  const [year, monthIndex] = month.split("-").map(Number);
-  if (!year || !monthIndex) return month;
-  return new Date(year, monthIndex - 1, 1).toLocaleDateString(
-    getIntlLocale(locale),
-    { month: "short" }
-  );
-}
-
 function localizeHref(href, prefix) {
   if (!href || href === "#") return "#";
   if (/^https?:\/\//i.test(href)) return href;
   if (!prefix || href.startsWith(prefix)) return href;
   return `${prefix}${href.startsWith("/") ? href : `/${href}`}`;
+}
+
+function getNextActionContent(action, nextSession, completedSessions, dict) {
+  const type = action?.type;
+  const nextTitle = nextSession?.title || copy(dict, "next_session_fallback", "your next session");
+
+  if (type === "prepare") {
+    return {
+      label: copy(dict, "next_action_prepare", "Prepare for your next session"),
+      description: copy(
+        dict,
+        "next_action_prepare_description",
+        "Review your last notes before {title} so your next conversation starts with momentum.",
+        { title: nextTitle }
+      ),
+    };
+  }
+
+  if (type === "review-feedback") {
+    return {
+      label: copy(dict, "next_action_review", "Review your latest coach feedback"),
+      description: copy(
+        dict,
+        "next_action_review_description",
+        "Turn one note from your coach into a concrete improvement before your next session."
+      ),
+    };
+  }
+
+  if (type === "schedule") {
+    return {
+      label: copy(dict, "next_action_schedule", "Schedule your next session"),
+      description: copy(
+        dict,
+        completedSessions > 0
+          ? "next_action_schedule_description"
+          : "next_action_first_session_description",
+        completedSessions > 0
+          ? "You still have session credits ready. Book the next step while your rhythm is fresh."
+          : "Start your first live session and unlock your progress journey."
+      ),
+    };
+  }
+
+  return {
+    label: copy(dict, "next_action_package", "Choose your next learning package"),
+    description: copy(
+      dict,
+      "next_action_package_description",
+      "Add session credits to keep your learning path active."
+    ),
+  };
 }
 
 export default function ProgressPage() {
@@ -70,7 +114,7 @@ export default function ProgressPage() {
 
   const skillLabelMap = {
     "Fluency practice": "skill_fluency_practice",
-    "Consistency": "skill_consistency",
+    Consistency: "skill_consistency",
     "Feedback loop": "skill_feedback_loop",
     "Course progress": "skill_course_progress",
   };
@@ -100,22 +144,8 @@ export default function ProgressPage() {
     "Use at least half of your active learning package": "desc_halfway_there",
   };
 
-  const missionTitleMap = {
-    "Start your progress timeline": "mission_start_timeline",
-    "Choose your next learning package": "next_action_choose_package",
-  };
-
-  const missionDescMap = {
-    "Complete your first coaching session to unlock milestones, streaks, and feedback history.": "mission_start_timeline_desc",
-    "Add session credits to keep your learning path active.": "next_action_add_credits",
-  };
-
   const courseTitleMap = {
     "Learning package": "course_default",
-  };
-
-  const milestoneLabelMap = {
-    "First session completed": "first_milestone",
   };
 
   function localizeSkillLabel(label) {
@@ -139,25 +169,12 @@ export default function ProgressPage() {
     return translated === `__${key}__` ? title : translated;
   }
 
-  function localizeAchievementDescription(desc) {
-    const key = achievementDescMap[desc];
-    if (!key) return desc;
+  function localizeAchievementDescription(description) {
+    const normalized = description?.replace(/\.$/, "");
+    const key = achievementDescMap[description] || achievementDescMap[normalized];
+    if (!key) return description;
     const translated = t(dict, key);
-    return translated === `__${key}__` ? desc : translated;
-  }
-
-  function localizeMissionTitle(title) {
-    const key = missionTitleMap[title];
-    if (!key) return title;
-    const translated = t(dict, key);
-    return translated === `__${key}__` ? title : translated;
-  }
-
-  function localizeMissionDescription(desc) {
-    const key = missionDescMap[desc];
-    if (!key) return desc;
-    const translated = t(dict, key);
-    return translated === `__${key}__` ? desc : translated;
+    return translated === `__${key}__` ? description : translated;
   }
 
   function localizeCourseTitle(title) {
@@ -165,13 +182,6 @@ export default function ProgressPage() {
     if (!key) return title;
     const translated = t(dict, key);
     return translated === `__${key}__` ? title : translated;
-  }
-
-  function localizeMilestoneLabel(label) {
-    const key = milestoneLabelMap[label];
-    if (!key) return label;
-    const translated = t(dict, key);
-    return translated === `__${key}__` ? label : translated;
   }
 
   const [loading, setLoading] = useState(true);
@@ -217,7 +227,7 @@ export default function ProgressPage() {
   if (checking || loading) {
     return (
       <ProgressState
-        title={copy(dict, "page_title", "Learning progress")}
+        title={copy(dict, "page_title", "Your speaking journey")}
         text={copy(dict, "subtitle_loading", "Loading your progress...")}
         dict={dict}
       />
@@ -227,7 +237,7 @@ export default function ProgressPage() {
   if (!user) {
     return (
       <ProgressState
-        title={copy(dict, "page_title", "Learning progress")}
+        title={copy(dict, "page_title", "Your speaking journey")}
         text={copy(
           dict,
           "subtitle_not_logged_in",
@@ -241,7 +251,7 @@ export default function ProgressPage() {
   if (error) {
     return (
       <ProgressState
-        title={copy(dict, "page_title", "Learning progress")}
+        title={copy(dict, "page_title", "Your speaking journey")}
         text={copy(dict, "subtitle_error", "We could not load your progress.")}
         error={error}
         actionHref={localizeHref("/dashboard", prefix)}
@@ -254,126 +264,99 @@ export default function ProgressPage() {
   const summary = progress?.summary || {};
   const course = progress?.course || {};
   const nextAction = progress?.nextAction || {};
-  const missions = progress?.missions || [];
+  const nextSession = progress?.nextSession || null;
   const skills = progress?.skillGrowth || [];
   const achievements = progress?.achievements || [];
   const learningPath = progress?.learningPath || [];
-  const timeline = progress?.timeline || [];
-  const nextMilestone = summary.nextMilestone || {};
-
+  const latestSession = learningPath[0] || null;
+  const completedSessions = Number(summary.totalCompletedSessions || 0);
   const coursePercent = clampPercent(course.completionPercent);
-  const milestonePercent = nextMilestone.target
-    ? clampPercent((Number(nextMilestone.progress || 0) / nextMilestone.target) * 100)
-    : 0;
+  const nextActionContent = getNextActionContent(
+    nextAction,
+    nextSession,
+    completedSessions,
+    dict
+  );
+  const firstName = user?.name?.trim()?.split(/\s+/)[0] || "";
+  const nextAchievement = achievements.find((achievement) => !achievement.earned) || achievements[0];
+  const earnedAchievement = achievements.find((achievement) => achievement.earned);
 
-  const metricCards = [
+  const focusItems = [];
+  if (latestSession?.teacherFeedback?.futureSteps) {
+    focusItems.push({
+      type: "coach",
+      title: latestSession.teacherFeedback.futureSteps,
+      source: copy(dict, "focus_from_coach", "From your latest coach feedback"),
+      href: latestSession.href,
+    });
+  }
+
+  skills
+    .filter((skill) => skill.key !== "course-progress")
+    .slice(0, 3)
+    .forEach((skill) => {
+      focusItems.push({
+        type: "signal",
+        title: localizeSkillLabel(skill.label),
+        source: localizeSkillSource(skill.source),
+      });
+    });
+
+  const momentumCards = [
     {
-      label: copy(dict, "summary_completed_label", "Completed sessions"),
-      value: numberFormat.format(summary.totalCompletedSessions || 0),
-      meta: copy(
-        dict,
-        "metric_completed_meta",
-        "{count} this month",
-        { count: numberFormat.format(summary.sessionsThisMonth || 0) }
-      ),
-      tone: "coral",
+      key: "sessions",
+      value: numberFormat.format(completedSessions),
+      label: copy(dict, "momentum_sessions", "Sessions completed"),
     },
     {
-      label: copy(dict, "summary_total_time_label", "Speaking time"),
+      key: "time",
       value: formatDuration(summary.totalMinutes || 0, dict, locale),
-      meta: copy(
-        dict,
-        "metric_minutes_meta",
-        "{duration} this month",
-        { duration: formatDuration(summary.minutesThisMonth || 0, dict, locale) }
-      ),
-      tone: "sage",
+      label: copy(dict, "momentum_time", "Speaking time"),
     },
     {
-      label: copy(dict, "metric_streak_label", "Learning streak"),
+      key: "streak",
       value: `${numberFormat.format(summary.currentStreak || 0)}${copy(dict, "unit_weeks", "w")}`,
-      meta: copy(
-        dict,
-        "metric_streak_meta",
-        "Best streak: {count} weeks",
-        { count: numberFormat.format(summary.longestStreak || 0) }
-      ),
-      tone: "amber",
+      label: copy(dict, "momentum_streak", "Current streak"),
     },
     {
-      label: copy(dict, "metric_feedback_label", "Feedback loop"),
+      key: "feedback",
       value: numberFormat.format(summary.feedbackReceivedCount || 0),
-      meta: copy(
-        dict,
-        "metric_feedback_meta",
-        "{count} materials covered",
-        { count: numberFormat.format(summary.resourcesCoveredCount || 0) }
-      ),
-      tone: "navy",
+      label: copy(dict, "momentum_feedback", "Feedback received"),
     },
   ];
 
-  const maxTimelineCount = Math.max(1, ...timeline.map((item) => item.count || 0));
-
   return (
-    <main className="container page-dashboard learning-progress">
-      <section className="learning-progress__hero">
-        <div className="learning-progress__hero-copy">
-          <p className="learning-progress__eyebrow">
-            {copy(dict, "hero_eyebrow", "Momentum dashboard")}
+    <main className="container page-dashboard learning-journey">
+      <section className="learning-journey__hero">
+        <div className="learning-journey__hero-copy">
+          <p className="learning-journey__eyebrow">
+            {copy(dict, "journey_eyebrow", "Your next conversation")}
           </p>
-          <h1>{copy(dict, "page_title", "Learning progress")}</h1>
-          <p>
+          <h1>
+            {firstName
+              ? copy(dict, "journey_greeting_title", "{name}, this is your speaking journey", {
+                  name: firstName,
+                })
+              : copy(dict, "page_title", "Your speaking journey")}
+          </h1>
+          <p className="learning-journey__hero-subtitle">
             {copy(
               dict,
-              "subtitle_main",
-              "A clear view of your learning momentum, completed sessions, feedback, and next best step."
+              "journey_subtitle",
+              "See what changed, what your coach noticed, and what to practice next."
             )}
           </p>
-          {nextAction?.label && (
-            <div className="learning-progress__hero-action">
-              <Link
-                href={localizeHref(nextAction.href, prefix)}
-                className="learning-progress__primary-link"
-              >
-                {localizeMissionTitle(nextAction.label)}
-              </Link>
-              <span>{localizeMissionDescription(nextAction.description)}</span>
-            </div>
-          )}
-        </div>
-
-        <div
-          className="learning-progress__score"
-          style={{ "--ring-progress": `${coursePercent}%` }}
-          aria-label={`${copy(dict, "course_progress_label", "course progress")} ${coursePercent}%`}
-        >
-          <div className="learning-progress__score-ring">
-            <strong>{coursePercent}%</strong>
-            <span>{copy(dict, "course_progress_label", "course progress")}</span>
-          </div>
-          <div className="learning-progress__score-meta">
-            <strong>{localizeCourseTitle(course.title) || copy(dict, "course_default", "Learning package")}</strong>
-            <span>
-              {numberFormat.format(course.usedSessions || 0)} /{" "}
-              {numberFormat.format(course.totalSessions || 0)}{" "}
-              {copy(dict, "sessions_used", "sessions used")}
-            </span>
+          <div className="learning-journey__hero-stat" aria-label={copy(dict, "momentum_sessions", "Sessions completed")}>
+            <strong>{numberFormat.format(completedSessions)}</strong>
+            <span>{copy(dict, "hero_sessions_label", "real conversations completed")}</span>
           </div>
         </div>
-      </section>
 
-      <section className="learning-progress__metrics" aria-label={copy(dict, "progress_label", "Progress")}>
-        {metricCards.map((metric) => (
-          <MetricCard key={metric.label} metric={metric} />
-        ))}
-      </section>
-
-      <section className="learning-progress__course">
-        <div>
-          <p className="learning-progress__section-kicker">
-            {copy(dict, "course_section_kicker", "Current path")}
-          </p>
+        <div className="learning-journey__hero-path">
+          <div className="learning-journey__hero-path-top">
+            <p>{copy(dict, "journey_path_label", "Current path")}</p>
+            <span>{course.hasActivePackage ? `${coursePercent}%` : "—"}</span>
+          </div>
           <h2>{localizeCourseTitle(course.title) || copy(dict, "course_default", "Learning package")}</h2>
           <p>
             {course.hasActivePackage
@@ -383,52 +366,87 @@ export default function ProgressPage() {
                   "{remaining} sessions remaining in this learning path.",
                   { remaining: numberFormat.format(course.remainingSessions || 0) }
                 )
-              : copy(
-                  dict,
-                  "course_empty_meta",
-                  "Choose a package to activate course progress."
-                )}
+              : copy(dict, "course_empty_meta", "Choose a package to activate course progress.")}
           </p>
-        </div>
-        <div className="learning-progress__course-track">
-          <div className="learning-progress__course-bar">
-            <span style={{ width: `${coursePercent}%` }} />
+          <div className="learning-journey__hero-track" aria-hidden="true">
+            <span style={{ width: `${course.hasActivePackage ? coursePercent : 0}%` }} />
           </div>
-          <div className="learning-progress__milestone">
-            <span>{copy(dict, "next_milestone", "Next milestone")}</span>
-            <strong>{localizeMilestoneLabel(nextMilestone.label) || copy(dict, "first_milestone", "First session")}</strong>
-            <div className="learning-progress__mini-bar">
-              <span style={{ width: `${milestonePercent}%` }} />
-            </div>
+          <div className="learning-journey__hero-path-meta">
+            <span>
+              {numberFormat.format(course.usedSessions || 0)} / {numberFormat.format(course.totalSessions || 0)} {copy(dict, "sessions_used", "sessions used")}
+            </span>
+            {nextSession?.startAt && (
+              <span>
+                {copy(dict, "next_session_label", "Next")}: {formatDate(nextSession.startAt, locale, { month: "short", day: "numeric" })}
+              </span>
+            )}
           </div>
         </div>
       </section>
 
-      <div className="learning-progress__layout">
-        <section className="learning-progress__panel learning-progress__panel--path">
+      <section className="learning-journey__next" aria-labelledby="learning-journey-next-title">
+        <div className="learning-journey__next-index" aria-hidden="true">01</div>
+        <div className="learning-journey__next-copy">
+          <p className="learning-journey__section-kicker">
+            {copy(dict, "next_step_kicker", "Next best step")}
+          </p>
+          <h2 id="learning-journey-next-title">{nextActionContent.label}</h2>
+          <p>{nextActionContent.description}</p>
+        </div>
+        <Link
+          href={localizeHref(nextAction.href, prefix)}
+          className="learning-journey__primary-link"
+        >
+          {copy(dict, "next_step_cta", "Open next step")}
+          <span aria-hidden="true">↗</span>
+        </Link>
+      </section>
+
+      <section className="learning-journey__momentum" aria-labelledby="learning-journey-momentum-title">
+        <div className="learning-journey__section-heading">
+          <p className="learning-journey__section-kicker">
+            {copy(dict, "momentum_kicker", "Momentum")}
+          </p>
+          <h2 id="learning-journey-momentum-title">
+            {copy(dict, "momentum_title", "The work is adding up")}
+          </h2>
+        </div>
+        <div className="learning-journey__momentum-grid">
+          {momentumCards.map((card, index) => (
+            <article className={`learning-journey__momentum-card learning-journey__momentum-card--${index + 1}`} key={card.key}>
+              <strong>{card.value}</strong>
+              <span>{card.label}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <div className="learning-journey__content-grid">
+        <section className="learning-journey__panel learning-journey__panel--recent">
           <PanelHeader
-            kicker={copy(dict, "path_kicker", "Learning path")}
-            title={copy(dict, "path_title", "Recent session journey")}
+            kicker={copy(dict, "recent_kicker", "What changed")}
+            title={copy(dict, "recent_title", "Your recent coaching")}
             subtitle={copy(
               dict,
-              "path_subtitle",
-              "Completed sessions become checkpoints with feedback, materials, and practice time."
+              "recent_subtitle",
+              "Every completed session leaves you with something practical to carry forward."
             )}
           />
-
           {learningPath.length === 0 ? (
             <EmptyPanel
-              title={copy(dict, "path_empty_title", "No completed sessions yet")}
+              title={copy(dict, "recent_empty_title", "Your first checkpoint is waiting")}
               text={copy(
                 dict,
-                "path_empty_text",
-                "Once your first course session is completed, this area becomes a journey timeline."
+                "recent_empty_text",
+                "Complete your first coaching session and this space will become your personal record of progress."
               )}
+              actionHref={localizeHref(nextAction.href || "/calendar", prefix)}
+              actionLabel={nextActionContent.label}
             />
           ) : (
-            <div className="learning-progress__path-list">
+            <div className="learning-journey__recent-list">
               {learningPath.map((item, index) => (
-                <JourneyItem
+                <RecentSessionCard
                   key={item.id}
                   item={item}
                   index={index}
@@ -441,123 +459,69 @@ export default function ProgressPage() {
           )}
         </section>
 
-        <aside className="learning-progress__side">
-          <section className="learning-progress__panel learning-progress__panel--mission">
+        <aside className="learning-journey__sidebar">
+          <section className="learning-journey__panel learning-journey__panel--focus">
             <PanelHeader
-              kicker={copy(dict, "mission_kicker", "Next mission")}
-              title={localizeMissionTitle(missions[0]?.title) || localizeMissionTitle(nextAction.label) || copy(dict, "mission_title", "Keep moving")}
-              subtitle={
-                localizeMissionDescription(missions[0]?.description) ||
-                localizeMissionDescription(nextAction.description) ||
-                copy(dict, "mission_subtitle", "Your next best action will appear here.")
-              }
+              kicker={copy(dict, "focus_kicker", "Practice focus")}
+              title={copy(dict, "focus_title", "What to work on next")}
+              subtitle={copy(
+                dict,
+                "focus_subtitle",
+                "Small, specific focus beats trying to improve everything at once."
+              )}
             />
-            {nextAction?.href && (
-              <Link
-                href={localizeHref(nextAction.href, prefix)}
-                className="learning-progress__secondary-link"
-              >
-                {copy(dict, "mission_cta", "Open action")}
-              </Link>
-            )}
-            {missions.length > 1 && (
-              <div className="learning-progress__mission-queue">
-                {missions.slice(1).map((mission) => (
-                  <Link
-                    key={mission.key}
-                    href={localizeHref(mission.href, prefix)}
-                    className="learning-progress__queue-item"
-                  >
-                    <span>{mission.title}</span>
-                    <small>{mission.description}</small>
-                  </Link>
+            {focusItems.length === 0 ? (
+              <EmptyPanel
+                title={copy(dict, "focus_empty_title", "Your focus will appear here")}
+                text={copy(
+                  dict,
+                  "focus_empty_text",
+                  "Complete a session to reveal your first practice signal."
+                )}
+              />
+            ) : (
+              <div className="learning-journey__focus-list">
+                {focusItems.slice(0, 4).map((item, index) => (
+                  <FocusCard key={`${item.type}-${item.title}-${index}`} item={item} index={index} prefix={prefix} />
                 ))}
               </div>
             )}
           </section>
 
-          <section className="learning-progress__panel">
+          <section className="learning-journey__panel learning-journey__panel--milestones">
             <PanelHeader
-              kicker={copy(dict, "skills_kicker", "Growth signals")}
-              title={copy(dict, "skills_title", "Skill momentum")}
-              subtitle={copy(
-                dict,
-                "skills_subtitle",
-                "These scores use real activity now; teacher skill scoring can make them more precise later."
-              )}
+              kicker={copy(dict, "milestones_kicker", "Milestones")}
+              title={copy(dict, "milestones_title", "Moments worth noticing")}
             />
-            <div className="learning-progress__skills">
-              {skills.map((skill) => (
-                <SkillBar
-                  key={skill.key}
-                  skill={{
-                    ...skill,
-                    label: localizeSkillLabel(skill.label),
-                    source: localizeSkillSource(skill.source),
-                  }}
-                />
-              ))}
-            </div>
-          </section>
-
-          <section className="learning-progress__panel">
-            <PanelHeader
-              kicker={copy(dict, "achievements_kicker", "Achievements")}
-              title={copy(dict, "achievements_title", "Progress badges")}
-            />
-            <div className="learning-progress__badges">
-              {achievements.map((achievement) => (
-                <AchievementCard
-                  key={achievement.key}
-                  achievement={{
-                    ...achievement,
-                    title: localizeAchievementTitle(achievement.title),
-                    description: localizeAchievementDescription(achievement.description),
-                  }}
+            <div className="learning-journey__milestone-list">
+              {nextAchievement && (
+                <MilestoneCard
+                  achievement={nextAchievement}
+                  title={localizeAchievementTitle(nextAchievement.title)}
+                  description={localizeAchievementDescription(nextAchievement.description)}
                   numberFormat={numberFormat}
                   dict={dict}
+                  isNext={!nextAchievement.earned}
                 />
-              ))}
+              )}
+              {earnedAchievement && earnedAchievement.key !== nextAchievement?.key && (
+                <MilestoneCard
+                  achievement={earnedAchievement}
+                  title={localizeAchievementTitle(earnedAchievement.title)}
+                  description={localizeAchievementDescription(earnedAchievement.description)}
+                  numberFormat={numberFormat}
+                  dict={dict}
+                  isNext={false}
+                />
+              )}
             </div>
           </section>
         </aside>
       </div>
 
-      <section className="learning-progress__panel learning-progress__timeline-panel">
-        <PanelHeader
-          kicker={copy(dict, "timeline_kicker", "Activity")}
-          title={copy(dict, "timeline_title", "Sessions per month")}
-          subtitle={copy(
-            dict,
-            "timeline_subtitle_new",
-            "A simple rhythm check so learners can see consistency building over time."
-          )}
-        />
-        {timeline.length === 0 ? (
-          <EmptyPanel
-            title={copy(dict, "timeline_empty_title", "No activity yet")}
-            text={copy(dict, "timeline_empty", "Your monthly activity will appear here.")}
-          />
-        ) : (
-          <div className="learning-progress__chart">
-            {timeline.map((item) => {
-              const height = Math.max(10, Math.round((item.count / maxTimelineCount) * 100));
-              return (
-                <div className="learning-progress__chart-item" key={item.month}>
-                  <div className="learning-progress__chart-bar">
-                    <span style={{ height: `${height}%` }} />
-                  </div>
-                  <strong>{numberFormat.format(item.count)}</strong>
-                  <small>{formatMonthLabel(item.month, locale)}</small>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <footer className="learning-progress__footer">
-        <Link href={localizeHref("/dashboard", prefix)} className="btn btn--ghost">
+      <footer className="learning-journey__footer">
+        <Link href={localizeHref("/dashboard", prefix)} className="learning-journey__back-link">
+          <span aria-hidden="true">←</span>
           {copy(dict, "back_to_dashboard", "Back to dashboard")}
         </Link>
       </footer>
@@ -567,14 +531,14 @@ export default function ProgressPage() {
 
 function ProgressState({ title, text, error, actionHref, actionLabel, dict }) {
   return (
-    <main className="container page-dashboard learning-progress learning-progress--state">
-      <section className="learning-progress__state-card">
-        <p className="learning-progress__eyebrow">{copy(dict, "progress_label", "Progress")}</p>
+    <main className="container page-dashboard learning-journey learning-journey--state">
+      <section className="learning-journey__state-card">
+        <p className="learning-journey__eyebrow">{copy(dict, "progress_label", "Progress")}</p>
         <h1>{title}</h1>
         <p>{text}</p>
-        {error && <div className="learning-progress__error">{error}</div>}
+        {error && <div className="learning-journey__error">{error}</div>}
         {actionHref && (
-          <Link href={actionHref} className="learning-progress__secondary-link">
+          <Link href={actionHref} className="learning-journey__secondary-link">
             {actionLabel}
           </Link>
         )}
@@ -585,121 +549,138 @@ function ProgressState({ title, text, error, actionHref, actionLabel, dict }) {
 
 function PanelHeader({ kicker, title, subtitle }) {
   return (
-    <header className="learning-progress__panel-header">
-      {kicker && <p className="learning-progress__section-kicker">{kicker}</p>}
+    <header className="learning-journey__panel-header">
+      {kicker && <p className="learning-journey__section-kicker">{kicker}</p>}
       <h2>{title}</h2>
       {subtitle && <p>{subtitle}</p>}
     </header>
   );
 }
 
-function MetricCard({ metric }) {
-  return (
-    <article className={`learning-progress__metric learning-progress__metric--${metric.tone}`}>
-      <span className="learning-progress__metric-dot" />
-      <p>{metric.label}</p>
-      <strong>{metric.value}</strong>
-      <small>{metric.meta}</small>
-    </article>
-  );
-}
-
-function JourneyItem({ item, index, locale, prefix, dict }) {
+function RecentSessionCard({ item, index, locale, prefix, dict }) {
   const dateLabel = formatDate(item.startAt, locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+  const note =
+    item.teacherFeedback?.futureSteps ||
+    item.teacherFeedback?.messageToLearner ||
+    item.teacherFeedback?.commentsOnSession;
 
   return (
-    <article className="learning-progress__journey-item">
-      <div className="learning-progress__journey-marker">
-        <span>{index + 1}</span>
+    <article className="learning-journey__session-card">
+      <div className="learning-journey__session-index" aria-hidden="true">
+        <span>{String(index + 1).padStart(2, "0")}</span>
       </div>
-      <div className="learning-progress__journey-body">
-        <div className="learning-progress__journey-top">
+      <div className="learning-journey__session-main">
+        <div className="learning-journey__session-heading">
           <div>
+            <p className="learning-journey__session-date">{dateLabel}</p>
             <h3>{item.title}</h3>
-            <p>
-              {dateLabel}
-              {item.teacherName ? ` ${copy(dict, "with_coach", "with")} ${item.teacherName}` : ""}
+            <p className="learning-journey__session-meta">
+              {item.teacherName
+                ? `${copy(dict, "with_coach", "with")} ${item.teacherName} · `
+                : ""}
+              {formatDuration(item.durationMinutes, dict, locale)}
             </p>
           </div>
-          <Link href={localizeHref(item.href, prefix)}>
-            {copy(dict, "path_view_session", "View")}
+          <Link href={localizeHref(item.href, prefix)} className="learning-journey__text-link">
+            {copy(dict, "view_session", "Open session")}
+            <span aria-hidden="true">↗</span>
           </Link>
         </div>
-        <div className="learning-progress__chips">
-          <span>{formatDuration(item.durationMinutes, dict, locale)}</span>
-          <span>
-            {item.materialsCount || 0} {copy(dict, "materials_label", "materials")}
-          </span>
+
+        <div className="learning-journey__session-tags">
           <span className={item.hasTeacherFeedback ? "is-positive" : ""}>
             {item.hasTeacherFeedback
               ? copy(dict, "feedback_received", "Feedback received")
               : copy(dict, "feedback_pending", "Feedback pending")}
           </span>
+          <span>{numberLabel(item.materialsCount || 0, dict, "materials_label", locale)}</span>
           {item.learnerRating && (
             <span>
               {copy(dict, "rating_label", "Rating")} {item.learnerRating}/5
             </span>
           )}
         </div>
-        {item.teacherFeedback?.futureSteps && (
-          <p className="learning-progress__future-step">
-            {item.teacherFeedback.futureSteps}
-          </p>
+
+        {note && (
+          <div className="learning-journey__coach-note">
+            <span>{copy(dict, "coach_note_label", "Coach note")}</span>
+            <p>{note}</p>
+          </div>
         )}
       </div>
     </article>
   );
 }
 
-function SkillBar({ skill }) {
-  const score = clampPercent(skill.score);
-  return (
-    <article className="learning-progress__skill">
-      <div>
-        <strong>{skill.label}</strong>
-        <span>{score}%</span>
-      </div>
-      <div className="learning-progress__skill-track">
-        <span style={{ width: `${score}%` }} />
-      </div>
-      <p>{skill.source}</p>
-    </article>
-  );
+function numberLabel(value, dict, key, locale) {
+  return `${formatNumber(value, locale)} ${copy(dict, key, "materials")}`;
 }
 
-function AchievementCard({ achievement, numberFormat, dict }) {
+function FocusCard({ item, index, prefix }) {
+  const content = (
+    <>
+      <span className="learning-journey__focus-number">{String(index + 1).padStart(2, "0")}</span>
+      <span className="learning-journey__focus-copy">
+        <strong>{item.title}</strong>
+        <small>{item.source}</small>
+      </span>
+      {item.href && <span className="learning-journey__focus-arrow" aria-hidden="true">↗</span>}
+    </>
+  );
+
+  if (item.href) {
+    return (
+      <Link href={localizeHref(item.href, prefix)} className="learning-journey__focus-card">
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="learning-journey__focus-card">{content}</div>;
+}
+
+function MilestoneCard({ achievement, title, description, numberFormat, dict, isNext }) {
   const progress = Number(achievement.progress || 0);
   const target = Number(achievement.target || 1);
   const percent = target > 0 ? clampPercent((progress / target) * 100) : 0;
 
   return (
-    <article
-      className={`learning-progress__badge ${
-        achievement.earned ? "learning-progress__badge--earned" : ""
-      }`}
-    >
-      <span className="learning-progress__badge-status">
-        {achievement.earned ? copy(dict, "achievement_done", "Done") : `${percent}%`}
-      </span>
-      <h3>{achievement.title}</h3>
-      <p>{achievement.description}</p>
-      <small>
-        {numberFormat.format(Math.min(progress, target))} /{" "}
-        {numberFormat.format(target)}
-      </small>
+    <article className={`learning-journey__milestone-card ${achievement.earned ? "is-earned" : ""}`}>
+      <div className="learning-journey__milestone-top">
+        <span className="learning-journey__milestone-status">
+          {achievement.earned
+            ? copy(dict, "achievement_done", "Done")
+            : isNext
+              ? copy(dict, "milestone_next", "Up next")
+              : `${percent}%`}
+        </span>
+        <span className="learning-journey__milestone-count">
+          {numberFormat.format(Math.min(progress, target))}/{numberFormat.format(target)}
+        </span>
+      </div>
+      <h3>{title}</h3>
+      <p>{description}</p>
+      <div className="learning-journey__milestone-track" aria-hidden="true">
+        <span style={{ width: `${percent}%` }} />
+      </div>
     </article>
   );
 }
 
-function EmptyPanel({ title, text }) {
+function EmptyPanel({ title, text, actionHref, actionLabel }) {
   return (
-    <div className="learning-progress__empty">
+    <div className="learning-journey__empty">
       <h3>{title}</h3>
       <p>{text}</p>
+      {actionHref && (
+        <Link href={actionHref} className="learning-journey__secondary-link">
+          {actionLabel}
+        </Link>
+      )}
     </div>
   );
 }

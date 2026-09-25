@@ -221,7 +221,6 @@ function Home({ locale = "en" }) {
                 width={1920}
                 height={1920}
                 priority
-                unoptimized
                 sizes="(max-width: 768px) 92vw, (max-width: 1200px) 46vw, 620px"
               />
               <div className="home-media-card__float home-media-card__float--1">

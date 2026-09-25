@@ -6,6 +6,7 @@ import Link from "next/link";
 import api, { clearCsrfToken } from "@/lib/api";
 import MiniCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import "react-big-calendar/lib/css/react-big-calendar.css";
 import useAuth from "@/hooks/useAuth";
 import useFocusTrap from "@/hooks/useFocusTrap";
 import { Calendar as BigCalendar, dateFnsLocalizer } from "react-big-calendar";

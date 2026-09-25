@@ -1,4 +1,5 @@
 import { noIndexMetadata } from "../../seo";
+import "@/styles/assessment.scss";
 
 export const metadata = noIndexMetadata("التقييم", "/assessment", "ar");
 

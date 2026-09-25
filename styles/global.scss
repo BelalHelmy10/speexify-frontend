@@ -8,33 +8,14 @@
 @use "./cards";
 @use "./tables";
 @use "./forms";
-@use "./calendar";
-@use "./careers";
 /* src/styles/global.scss (or wherever you collect partials) */
 @use "./brand";
 @use "./header"; // <= add this line (resolves to _header.scss)
 @use "./auth";
 @use "./_footer.scss";
 @use "./sticky-trial-cta";
-@use "./admin.scss";
-@use "./dashboard.scss";
-@use "./checkout.scss";
-@use "./payment-result.scss";
-@use "./onboarding";
-@use "./assessment.scss";
-@use "./session-detail.scss";
-@use "./session-feedback";
-@use "./progress-page.scss";
 @use "./skeletons";
-@use "./resources.scss";
-@use "./notifications.scss";
-@use "./classroom-experience.scss";
-@use "./support-widget.scss";
 @use "./seo-content.scss";
-@use "./admin-support.scss";
-@use "./admin-availability.scss";
-@use "./needsanalysis.scss";
-@use "./earnings.scss";
 
 *,
 *::before,
