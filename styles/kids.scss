@@ -4,9 +4,7 @@
 $k-navy:    #0d1b2a;
 $k-navy-mid:#1a3a5c;
 $k-coral:   #f25c2e;
-$k-coral-d: #a83a1b;
-$k-coral-ink: #c2411d;
-$k-coral-light: #f37550;
+$k-coral-d: #d94b1f;
 $k-teal:    #0f766e;
 $k-gold:    #d4890a;
 $k-bg:      #fefcfa;
@@ -102,8 +100,8 @@ $k-ring:    #ede5d8;
   50%      { opacity: 0.3; transform: scale(0.7); }
 }
 @keyframes kdemo-err-pulse {
-  0%, 42%, 100% { background: rgba($k-coral, 0.12); color: $k-coral-light; }
-  48%, 57%      { background: rgba($k-coral, 0.28); color: $k-coral-light; }
+  0%, 42%, 100% { background: rgba($k-coral, 0.12); color: $k-coral; }
+  48%, 57%      { background: rgba($k-coral, 0.28); color: $k-coral-d; }
 }
 @keyframes kids-marquee {
   from { transform: translateX(0); }
@@ -180,7 +178,7 @@ $k-ring:    #ede5d8;
   border: 2px solid transparent;
 
   &--primary {
-    background: $k-coral-ink;
+    background: $k-coral;
     color: #fff;
     box-shadow: 0 4px 20px rgba($k-coral, 0.3);
 
@@ -201,10 +199,10 @@ $k-ring:    #ede5d8;
 
   &--outline {
     background: transparent;
-    color: $k-coral-ink;
-    border-color: $k-coral-ink;
+    color: $k-coral;
+    border-color: $k-coral;
 
-    &:hover { background: $k-coral-ink; color: #fff; }
+    &:hover { background: $k-coral; color: #fff; }
   }
 
   &--cta {
@@ -545,7 +543,7 @@ $k-ring:    #ede5d8;
       top: 62%;
       right: -24px;
       animation: kids-float-b 4.2s ease-in-out infinite;
-      color: $k-coral-ink;
+      color: $k-coral;
       border-color: rgba($k-coral, 0.2);
 
       @media (max-width: 900px) {
@@ -1231,7 +1229,7 @@ $k-ring:    #ede5d8;
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, $k-coral-ink, $k-coral-d);
+    background: linear-gradient(135deg, $k-coral, $k-coral-d);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1264,7 +1262,7 @@ $k-ring:    #ede5d8;
 
   &__coach-role {
     font-size: 0.68rem;
-    color: rgba($k-bg, 0.72);
+    color: rgba($k-bg, 0.38);
     margin-top: 2px;
   }
 
@@ -1272,7 +1270,7 @@ $k-ring:    #ede5d8;
     font-size: 0.6rem;
     font-weight: 700;
     letter-spacing: 0.1em;
-    color: #4ade80;
+    color: #15803d;
     background: rgba(34, 197, 94, 0.1);
     border: 1px solid rgba(34, 197, 94, 0.22);
     padding: 3px 8px;
@@ -1372,7 +1370,7 @@ $k-ring:    #ede5d8;
 
   &__correction-label {
     font-size: 0.7rem;
-    color: rgba($k-bg, 0.68);
+    color: rgba($k-bg, 0.45);
     margin-bottom: 6px;
   }
 
@@ -1386,7 +1384,7 @@ $k-ring:    #ede5d8;
   &__corr-before {
     font-size: 0.82rem;
     font-weight: 600;
-    color: $k-coral-light;
+    color: rgba($k-coral, 0.65);
     text-decoration: line-through;
   }
 
@@ -1403,7 +1401,7 @@ $k-ring:    #ede5d8;
 
   &__corr-hint {
     font-size: 0.68rem;
-    color: rgba($k-bg, 0.68);
+    color: rgba($k-bg, 0.32);
     font-style: italic;
   }
 

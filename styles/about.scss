@@ -42,7 +42,7 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: $coral-ink;
+  color: $coral;
 }
 
 .about-page .eyebrow::before {
@@ -50,7 +50,7 @@
   width: 14px;
   height: 2px;
   border-radius: 2px;
-  background: $coral-ink;
+  background: $coral;
 }
 
 .about-page .section-title {
@@ -92,7 +92,7 @@
 }
 
 .about-page .btn-primary {
-  background: $coral-ink;
+  background: $coral;
   color: $color-white;
   box-shadow: $shadow-coral;
 }
@@ -190,7 +190,7 @@
 
 .about-page .hero-title .accent {
   display: block;
-  color: $coral-ink;
+  color: $coral;
 }
 
 .about-page .hero-sub {
@@ -406,7 +406,7 @@
 }
 
 .about-page .stat-val span {
-  color: $coral-ink;
+  color: $coral;
 }
 
 .about-page .stat-label {
@@ -481,7 +481,7 @@
 
 .about-page .offer-card.coral .offer-icon {
   background: rgba($coral, 0.1);
-  color: $coral-ink;
+  color: $coral;
 }
 
 .about-page .offer-card.gold .offer-icon {
@@ -556,7 +556,7 @@
   font-size: 14px;
   font-weight: 800;
   color: $color-white;
-  background: $coral-ink;
+  background: $coral;
   box-shadow: 0 4px 16px rgba($coral, 0.4);
 }
 
@@ -1070,7 +1070,7 @@
 }
 
 .about-page .cta-email a:hover {
-  text-decoration-color: $coral-ink;
+  text-decoration-color: $coral-light;
 }
 
 .about-page .cta-btns {
@@ -1081,7 +1081,7 @@
 }
 
 .about-page .btn-cta-coral {
-  background: $coral-ink;
+  background: $coral;
   color: $color-white;
   box-shadow: $shadow-coral;
 }

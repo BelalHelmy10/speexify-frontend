@@ -402,7 +402,7 @@
     border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
-    color: $coral-ink;
+    color: #d94b1f;
     margin-bottom: 28px;
     letter-spacing: 0.02em;
 
@@ -1087,7 +1087,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: $coral-ink;
+    background: $coral;
     opacity: 0;
     transform: scale(0);
     transition:
@@ -1447,7 +1447,7 @@
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: $coral-ink;
+    background: $coral;
     color: $color-white;
     display: flex;
     align-items: center;
@@ -1472,7 +1472,7 @@
 
     span {
       font-size: 12px;
-      color: rgba($color-white, 0.62);
+      color: rgba($color-white, 0.45);
     }
   }
 
@@ -1483,7 +1483,7 @@
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: $coral-light;
+    color: $coral;
     background: rgba($coral, 0.1);
     border: 1px solid rgba($coral, 0.2);
     border-radius: 20px;
@@ -1494,7 +1494,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: $coral-light;
+    background: $coral;
     flex-shrink: 0;
     animation: ldemo-live-pulse 1.2s ease-in-out infinite;
   }
@@ -1536,7 +1536,7 @@
 
   &__err {
     background: rgba($coral, 0.15);
-    color: $coral-light;
+    color: rgba($coral, 0.85);
     border-radius: 3px;
     padding: 1px 5px;
     text-decoration: underline;
@@ -2003,7 +2003,7 @@
     transition: background 0.3s;
 
     &--active {
-      background: $coral-ink;
+      background: $coral;
     }
 
     .home-bento__card:hover &:not(.home-bento__bar--active) {
@@ -2257,8 +2257,8 @@
     z-index: 2;
 
     &.is-active {
-      background: $coral-ink;
-      border-color: $coral-ink;
+      background: $coral;
+      border-color: $coral;
       color: $color-white;
       transform: scale(1.2);
       box-shadow: 0 0 0 6px rgba($coral, 0.18);
@@ -2266,8 +2266,8 @@
 
     &.is-done {
       background: rgba($coral, 0.12);
-      border-color: $coral-ink;
-      color: $coral-ink;
+      border-color: $coral;
+      color: $coral;
     }
   }
 
@@ -2351,7 +2351,7 @@
     transition: background 0.3s ease;
 
     .is-active & {
-      background: $coral-ink;
+      background: $coral;
     }
   }
 
@@ -2387,7 +2387,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: $coral-ink;
+    color: $coral;
   }
 
   &__cta {
@@ -2453,7 +2453,7 @@
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: $coral-ink;
+    color: $coral;
     margin-bottom: 16px;
 
     &::before {
@@ -2589,7 +2589,7 @@
   }
 
   &__live-badge {
-    background: $coral-ink;
+    background: $coral;
     color: $color-white;
     font-size: 10px;
     font-weight: 800;
@@ -2731,7 +2731,7 @@
   }
 
   .home-features__eyebrow {
-    color: $coral-ink;
+    color: $coral;
   }
 
   .home-features__eyebrow::before {
@@ -3235,7 +3235,7 @@ body.rtl .home-spx-curriculum .home-section-subtitle {
   &__role {
     margin: 0 0 14px;
     font-size: 14px;
-    color: $coral-ink;
+    color: $coral;
     font-weight: 600;
     letter-spacing: 0.01em;
   }
@@ -3418,7 +3418,7 @@ body.rtl .home-spx-curriculum .home-section-subtitle {
     border: 1px solid rgba($coral, 0.3);
     display: grid;
     place-items: center;
-    color: $coral-ink;
+    color: $coral;
     flex-shrink: 0;
 
     svg {
@@ -4246,7 +4246,7 @@ body.rtl .home-spx-curriculum .home-section-subtitle {
   }
 
   &__mark {
-    color: $coral-ink;
+    color: $coral;
     flex-shrink: 0;
   }
 
@@ -4580,7 +4580,7 @@ body.rtl .home-spx-curriculum .home-section-subtitle {
 
   .spx-btn--primary {
     background: $color-white;
-    color: $coral-ink;
+    color: $coral;
     font-weight: 700;
     box-shadow: 0 12px 40px rgba($navy, 0.2);
 

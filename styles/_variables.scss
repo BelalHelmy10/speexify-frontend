@@ -19,8 +19,7 @@
 
 // ── Coral (Primary CTA accent)
 $coral: #f25c2e;
-$coral-ink: #c2411d;
-$coral-dark: #a83a1b;
+$coral-dark: #d94b1f;
 $coral-light: #f37550;
 $coral-pale: #fdf0eb;
 // ── Navy (Brand foundation)
@@ -29,22 +28,22 @@ $navy-mid: #1a3a5c;
 $navy-muted: #2c5478;
 
 // ── Aliases (keep all existing variable names working)
-$primary: $coral-ink;
+$primary: $coral;
 $secondary: #0f766e;
-$color-primary: $coral-ink;
+$color-primary: $coral;
 $color-primary-dark: $coral-dark;
 $color-primary-light: $coral-light;
 
-$brand: $coral-ink;
+$brand: $coral;
 $brand-dark: $coral-dark;
-$brand-light: $coral-dark;
-$brand-ink: $coral-ink;
-$brand-700: color-mix(in srgb, $coral-ink 85%, #000);
+$brand-light: $coral-light;
+$brand-ink: $coral-dark;
+$brand-700: color-mix(in srgb, $coral 85%, #000);
 
-$accent: $coral-ink;
-$accent-ink: $coral-ink;
+$accent: $coral;
+$accent-ink: $coral-dark;
 $accent-light: $coral-light;
-$color-primary-ink: $coral-ink;
+$color-primary-ink: $coral-dark;
 
 // ===========================================
 // COLORS - Secondary & Tertiary
@@ -216,7 +215,7 @@ $radius-card: 20px;
 // THEME - Main (CSS Custom Properties)
 // ===========================================
 :root {
-  --accent: #c2411d;
+  --accent: #f25c2e;
   --accent-soft: rgba(242, 92, 46, 0.15);
   --accent-coral: #f25c2e;
   --accent-navy: #0d1b2a;
@@ -343,7 +342,7 @@ $duration-dramatic: 600ms;
 // Speexify Checkout Styles
 // ============================================================================
 
-$primary-color: $coral-ink;
+$primary-color: $coral;
 $primary-hover: $coral-dark;
 $gray-50: #fefcfa;
 $gray-100: #f5f0ea;
@@ -469,11 +468,11 @@ $policy-color-bg: #ffffff;
 $policy-color-bg-alt: #fefcfa;
 $policy-color-text: #0d1b2a;
 $policy-color-text-muted: #5a6a7a;
-$policy-color-primary: $coral-ink;
-$policy-color-primary-hover: $coral-dark;
+$policy-color-primary: #f25c2e;
+$policy-color-primary-hover: #d94b1f;
 $policy-color-border: #e8e0d5;
-$policy-color-link: $coral-ink;
-$policy-color-link-hover: $coral-dark;
+$policy-color-link: #f25c2e;
+$policy-color-link-hover: #d94b1f;
 $policy-font-size-base: 1rem;
 $policy-font-size-sm: 0.875rem;
 $policy-font-size-lg: 1.125rem;
@@ -569,7 +568,7 @@ $cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 // CENTRALIZED CSS CUSTOM PROPERTIES FOR PAGE THEMES
 // ============================================================================
 :root {
-  --brand: #c2411d;
+  --brand: #f25c2e;
 
   --why-brand-blue: #f25c2e;
   --why-brand-blue-dark: #d94b1f;
@@ -596,8 +595,8 @@ $cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --individual-navy: #0d1b2a;
   --individual-navy-mid: #1a3a5c;
   --individual-navy-muted: #2c5478;
-  --individual-coral: #c2411d;
-  --individual-coral-dark: #a83a1b;
+  --individual-coral: #f25c2e;
+  --individual-coral-dark: #d94b1f;
   --individual-coral-light: #f37550;
   --individual-coral-pale: #fdf0eb;
   --individual-bg: #fefcfa;
@@ -611,11 +610,11 @@ $cr-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --individual-shadow-coral: 0 8px 32px rgba(242, 92, 46, 0.28);
   --individual-shadow-navy: 0 8px 32px rgba(13, 27, 42, 0.15);
   --individual-radius: 20px;
-  --individual-tone-coral: #c2411d;
+  --individual-tone-coral: #f25c2e;
   --individual-tone-gold: #d4890a;
   --individual-tone-teal: #0f766e;
 
-  --tone-coral-color: #c2411d;
+  --tone-coral-color: #f25c2e;
   --tone-coral-bg: rgba(242, 92, 46, 0.1);
   --tone-coral-shadow-14: rgba(242, 92, 46, 0.14);
   --tone-coral-shadow-15: rgba(242, 92, 46, 0.15);
