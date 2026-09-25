@@ -15,7 +15,7 @@ import {
   registerComplete as apiRegisterComplete,
   googleLogin as apiGoogleLogin,
 } from "@/lib/auth";
-import { trackEvent } from "@/lib/analytics";
+import { trackConversionEvent } from "@/lib/analytics";
 import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 import {
@@ -86,6 +86,7 @@ function RegisterInner({ dict, locale }) {
     setSending(true);
     try {
       await apiRegisterStart(email, locale);
+      trackConversionEvent("signup_started", locale, { method: "email" });
       setStep(2);
       setMsgType("success");
       setMsg(`${t(dict, "msg_code_sent_prefix")} ${email}`);
@@ -112,11 +113,11 @@ function RegisterInner({ dict, locale }) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const result = await apiRegisterComplete({ email, code, password, name });
+      await apiRegisterComplete({ email, code, password, name });
 
-      trackEvent("signup_completed", {
-        email,
-        userId: result?.user?.id,
+      trackConversionEvent("signup_completed", locale, {
+        method: "email",
+        has_name: Boolean(name.trim()),
       });
 
       setMsgType("success");
@@ -142,6 +143,7 @@ function RegisterInner({ dict, locale }) {
       }
       setMsg("");
       await apiGoogleLogin(credential);
+      trackConversionEvent("signup_completed", locale, { method: "google" });
       window.location.href = nextPath;
     } catch (err) {
       console.error(err);

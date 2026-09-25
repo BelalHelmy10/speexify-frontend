@@ -19,6 +19,7 @@ import { APP_ROUTES, routeHref } from "@/lib/routes";
 import api from "@/lib/api";
 import { getDictionary, t } from "@/app/i18n";
 import BrandLogo from "@/components/brand/BrandLogo";
+import { trackConversionEvent } from "@/lib/analytics";
 
 const SOCIAL_LINKS = [
   {
@@ -202,6 +203,9 @@ function Footer() {
         topic: "NEWSLETTER",
         locale,
         message: `Newsletter signup from footer. Locale: ${locale}`,
+      });
+      trackConversionEvent("newsletter_subscribed", locale, {
+        source: "footer",
       });
       setEmail("");
       setNewsletterStatus({

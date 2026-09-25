@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import Header from "@/components/Header";
@@ -9,6 +9,8 @@ import SupportWidget from "@/components/SupportWidget";
 import ScrollToTop from "@/components/ScrollToTop";
 import SmoothScroll from "@/components/SmoothScroll";
 import StickyTrialCTA from "@/components/StickyTrialCTA";
+import AnalyticsScript from "@/components/AnalyticsScript";
+import { trackPageView } from "@/lib/analytics";
 import { normalizeLocalizedPath } from "@/lib/chromeRoutes";
 
 const APP_PATH_PREFIXES = [
@@ -58,8 +60,24 @@ export default function AppChrome({ children }) {
   const hideMobileSupportFab =
     normalizedPath === "/" || normalizedPath === "/why-speexify";
 
+  useEffect(() => {
+    if (!pathname || focusedWorkspace) return;
+
+    // Keep authenticated workspace pages out of page analytics, while still
+    // measuring the checkout and payment-result steps of the public funnel.
+    const isConversionPage =
+      normalizedPath === "/checkout" || normalizedPath === "/payment/success";
+    if (appPath && !isConversionPage) return;
+
+    trackPageView({
+      pathname,
+      locale: pathname.startsWith("/ar") ? "ar" : "en",
+    });
+  }, [appPath, focusedWorkspace, normalizedPath, pathname]);
+
   return (
     <>
+      <AnalyticsScript />
       {shouldLoadJitsi(pathname) && (
         <Script
           src="https://meet.speexify.com/external_api.js"

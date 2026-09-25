@@ -22,6 +22,7 @@ import {
   subscribeToNetworkProfileChanges,
 } from "@/lib/network-profile";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { trackConversionEvent } from "@/lib/analytics";
 
 export default function CheckoutPage() {
   const { toast, confirmModal } = useToast();
@@ -55,6 +56,7 @@ export default function CheckoutPage() {
   // the same attempt, so double-clicks don't create duplicate intents.
   // It resets when the user cancels the confirmation card.
   const orderTimestampRef = useRef(null);
+  const checkoutStartedRef = useRef(false);
 
   // Accept either ?planId= (preferred) or ?plan= (legacy, by title).
   const planIdParam = searchParams.get("planId");
@@ -100,6 +102,11 @@ export default function CheckoutPage() {
   const discountLoading = quote.loading;
   const loadingPkg = !catalog && !catalogError;
   const geoFailed = catalog?.countrySource === "default";
+
+  useEffect(() => {
+    checkoutStartedRef.current = false;
+  }, [pkg?.id]);
+
   function applyDiscount() {
     setPendingIntent(null);
     orderTimestampRef.current = null;
@@ -209,6 +216,17 @@ export default function CheckoutPage() {
     try {
       setLoading(true);
 
+      if (!checkoutStartedRef.current) {
+        trackConversionEvent("checkout_started", locale, {
+          source: "checkout",
+          package_id: Number(pkg.id),
+          plan: pkg.catalogKey,
+          currency: regionalPrice.displayCurrency,
+          has_discount: Boolean(appliedDiscount),
+        });
+        checkoutStartedRef.current = true;
+      }
+
       const nameParts = (user.name || "User").split(" ");
       const firstName = nameParts[0] || "User";
       const lastName = nameParts.slice(1).join(" ") || "";
@@ -237,6 +255,13 @@ export default function CheckoutPage() {
       const { data } = await api.post("/payments/create-intent", body);
 
       setPendingIntent(confirmationFromResponse(data, regionalPrice));
+      trackConversionEvent("checkout_intent_created", locale, {
+        source: "checkout",
+        package_id: Number(pkg.id),
+        plan: pkg.catalogKey,
+        currency: regionalPrice.displayCurrency,
+        payment_provider: "paymob",
+      });
     } catch (e) {
       // Log everything we can find about the failure as separate args so
       // dev-tools doesn't collapse it. Also stringify the response for
@@ -285,6 +310,10 @@ export default function CheckoutPage() {
 
   function confirmAndRedirect() {
     if (!pendingIntent?.iframeUrl || !pendingIntent.accepted) return;
+    trackConversionEvent("payment_redirected", locale, {
+      source: "checkout",
+      payment_provider: "paymob",
+    });
     window.location.href = pendingIntent.iframeUrl;
   }
 

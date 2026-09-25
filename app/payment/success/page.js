@@ -1,7 +1,7 @@
 // app/payment/success/page.js
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import "@/styles/payment-result.scss";
 import api from "@/lib/api";
@@ -11,6 +11,7 @@ import {
   subscribeToNetworkProfileChanges,
 } from "@/lib/network-profile";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { trackConversionEvent } from "@/lib/analytics";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
@@ -26,6 +27,8 @@ export default function PaymentSuccessPage() {
   const [actionError, setActionError] = useState("");
   const [retrying, setRetrying] = useState(false);
   const [networkProfile, setNetworkProfile] = useState(() => getNetworkProfile());
+  const trackedPaymentStatesRef = useRef(new Set());
+  const paymentDetailsRef = useRef(null);
 
   const orderId = searchParams.get("order"); // Paymob merchant_order_id
   const successParam = searchParams.get("success");
@@ -35,6 +38,11 @@ export default function PaymentSuccessPage() {
       setNetworkProfile(nextProfile);
     });
   }, []);
+
+  useEffect(() => {
+    trackedPaymentStatesRef.current.clear();
+    paymentDetailsRef.current = null;
+  }, [orderId, successParam]);
 
   useEffect(() => {
     let timer = null;
@@ -60,6 +68,14 @@ export default function PaymentSuccessPage() {
         );
 
         if (isUnmounted) return;
+
+        if (data?.amountCents != null) {
+          const amountCents = Number(data.amountCents);
+          paymentDetailsRef.current = {
+            value: Number.isFinite(amountCents) ? amountCents / 100 : null,
+            currency: data.currency || "EGP",
+          };
+        }
 
         if (data?.status === "paid") {
           setStatus("success");
@@ -104,12 +120,48 @@ export default function PaymentSuccessPage() {
     };
   }, [orderId, successParam, pollSeed, networkProfile.isLowBandwidth]);
 
+  useEffect(() => {
+    if (!new Set(["success", "failed", "pending_review"]).has(status)) return;
+
+    const trackingKey = `${orderId || "no-order"}:${status}`;
+    if (trackedPaymentStatesRef.current.has(trackingKey)) return;
+    trackedPaymentStatesRef.current.add(trackingKey);
+
+    const eventName =
+      status === "success"
+        ? "payment_completed"
+        : status === "failed"
+          ? "payment_failed"
+          : "payment_pending";
+
+    const paymentDetails = paymentDetailsRef.current;
+    const revenue =
+      status === "success" && Number.isFinite(paymentDetails?.value)
+        ? {
+            value: paymentDetails.value,
+            currency: paymentDetails.currency,
+          }
+        : {};
+
+    trackConversionEvent(eventName, locale, {
+      source: "payment_result",
+      payment_provider: "paymob",
+      payment_status: status,
+      has_order_id: Boolean(orderId),
+      ...revenue,
+    });
+  }, [locale, orderId, status]);
+
   async function retrySamePayment() {
     if (!orderId) return;
 
     try {
       setRetrying(true);
       setActionError("");
+      trackConversionEvent("payment_retry_started", locale, {
+        source: "payment_result",
+        payment_provider: "paymob",
+      });
 
       const { data } = await api.post(
         `/api/payments/orders/${encodeURIComponent(orderId)}/retry-intent`
