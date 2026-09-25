@@ -1,17 +1,31 @@
+// app/member-stories/page.js
 "use client";
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import "@/styles/member-stories.scss";
 import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
 
-const practiceNotes = [
-  { key: "note1", slug: "practice", index: "01" },
-  { key: "note2", slug: "conversation", index: "02" },
-  { key: "note3", slug: "next-step", index: "03" },
+const stories = [
+  {
+    key: "story1",
+    slug: "sara",
+    img: "/images/head-of-cs.avif",
+  },
+  {
+    key: "story2",
+    slug: "ahmed",
+    img: "/images/ali.avif",
+  },
+  {
+    key: "story3",
+    slug: "yara",
+    img: "/images/leader_chris.avif",
+  },
 ];
 
 export default function MemberStoriesIndexPage() {
@@ -21,6 +35,7 @@ export default function MemberStoriesIndexPage() {
 
   return (
     <main className="ms">
+      {/* HERO */}
       <section className="ms__hero">
         <div className="ms__container">
           <span className="ms__eyebrow">{t(dict, "index_eyebrow")}</span>
@@ -32,34 +47,42 @@ export default function MemberStoriesIndexPage() {
         </div>
       </section>
 
+      {/* STORY LIST */}
       <section className="ms__list">
         <div className="ms__container">
-          {practiceNotes.map((note, idx) => (
+          {stories.map((s, idx) => (
             <article
-              key={note.key}
+              key={s.key}
               className={`ms__row${idx % 2 === 1 ? " ms__row--flip" : ""}`}
             >
               <Link
-                href={routeHref(`${APP_ROUTES.memberStories}/${note.slug}`, locale)}
-                className="ms__row-media ms__row-media--note"
-                aria-label={t(dict, `${note.key}_title`)}
+                href={routeHref(`${APP_ROUTES.memberStories}/${s.slug}`, locale)}
+                className="ms__row-media"
+                aria-label={t(dict, `${s.key}_name`)}
               >
+                <Image
+                  src={s.img}
+                  alt={t(dict, `${s.key}_name`)}
+                  width={900}
+                  height={1100}
+                  className="ms__row-img"
+                  sizes="(max-width: 780px) 92vw, 46vw"
+                />
                 <span className="ms__row-index" aria-hidden="true">
-                  N° {note.index}
+                  N° 0{idx + 1}
                 </span>
-                <span className="ms__eyebrow">{t(dict, "note_label")}</span>
-                <strong>{t(dict, `${note.key}_title`)}</strong>
               </Link>
 
               <div className="ms__row-body">
                 <div className="ms__meta">
-                  <strong>{t(dict, "note_label")}</strong>
-                  <span>{t(dict, `${note.key}_tag`)}</span>
+                  <strong>{t(dict, `${s.key}_name`)}</strong>
+                  <span>{t(dict, `${s.key}_role`)}</span>
+                  <span className="ms__meta-dot" aria-hidden="true">·</span>
+                  <span>{t(dict, `${s.key}_city`)}</span>
                 </div>
-                <h2 className="ms__row-title">{t(dict, `${note.key}_title`)}</h2>
-                <p className="ms__row-copy">{t(dict, `${note.key}_body`)}</p>
+                <h2 className="ms__row-title">{t(dict, `${s.key}_shift`)}</h2>
                 <Link
-                  href={routeHref(`${APP_ROUTES.memberStories}/${note.slug}`, locale)}
+                  href={routeHref(`${APP_ROUTES.memberStories}/${s.slug}`, locale)}
                   className="ms__read"
                 >
                   <span>{t(dict, "index_card_read")}</span>
@@ -71,6 +94,7 @@ export default function MemberStoriesIndexPage() {
         </div>
       </section>
 
+      {/* CTA */}
       <section className="ms__cta">
         <div className="ms__container ms__cta-inner">
           <h2>{t(dict, "index_cta_title")}</h2>

@@ -53,10 +53,10 @@ const contrastConfig = [
     { themKey: "contrast_row5_them", usKey: "contrast_row5_us" },
 ];
 
-const practiceNotesConfig = [
-    { titleKey: "practice_note1_title", textKey: "practice_note1_text" },
-    { titleKey: "practice_note2_title", textKey: "practice_note2_text" },
-    { titleKey: "practice_note3_title", textKey: "practice_note3_text" },
+const proofsConfig = [
+    { quoteKey: "proof1_quote", nameKey: "proof1_name", contextKey: "proof1_context" },
+    { quoteKey: "proof2_quote", nameKey: "proof2_name", contextKey: "proof2_context" },
+    { quoteKey: "proof3_quote", nameKey: "proof3_name", contextKey: "proof3_context" },
 ];
 
 export default function WhySpeexifyPage() {
@@ -215,18 +215,19 @@ export default function WhySpeexifyPage() {
             <section className="why__proof">
                 <div className="container">
                     <div className="why__section-header">
-                        <h2 className="why__section-title">{t(dict, "practice_notes_title")}</h2>
-                        <p className="why__section-subtitle">{t(dict, "practice_notes_subtitle")}</p>
+                        <h2 className="why__section-title">{t(dict, "proof_title")}</h2>
+                        <p className="why__section-subtitle">{t(dict, "proof_subtitle")}</p>
                     </div>
 
                     <div className="why__proof-grid">
-                        {practiceNotesConfig.map((p, idx) => (
-                            <article className="why__proof-card" key={idx}>
-                                <p>{t(dict, p.textKey)}</p>
+                        {proofsConfig.map((p, idx) => (
+                            <blockquote className="why__proof-card" key={idx}>
+                                <p>&ldquo;{t(dict, p.quoteKey)}&rdquo;</p>
                                 <footer>
-                                    <strong>{t(dict, p.titleKey)}</strong>
+                                    <strong>{t(dict, p.nameKey)}</strong>
+                                    <span>{t(dict, p.contextKey)}</span>
                                 </footer>
-                            </article>
+                            </blockquote>
                         ))}
                     </div>
                 </div>

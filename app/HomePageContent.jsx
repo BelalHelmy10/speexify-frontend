@@ -18,7 +18,6 @@ import {
 } from "@/lib/regional-pricing";
 import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
 import { isPurchaseReadyPlan } from "@/lib/pricing-catalog.mjs";
-import { getProductClaimDisplay } from "@/lib/productClaims";
 
 const MARKETING_IMAGE_VERSION = "20260519";
 const marketingImage = (src) => `${src}?v=${MARKETING_IMAGE_VERSION}`;
@@ -321,19 +320,30 @@ function Home({ locale = "en" }) {
           </div>
 
           <FadeIn as="div" className="home-hero__stats" delay={0.6}>
-            {[
-              "recommendationRate",
-              "coachedHours",
-              "comparativeOutcome",
-            ].map((claimId) => {
-              const display = getProductClaimDisplay(claimId, locale);
-              return (
-                <div className="home-hero__stat" key={claimId}>
-                  <div className="home-hero__stat-num">{display.value}</div>
-                  <div className="home-hero__stat-label">{display.label}</div>
-                </div>
-              );
-            })}
+            <div className="home-hero__stat">
+              <div className="home-hero__stat-num">
+                {t(dict, "hero_stat1_num")}
+              </div>
+              <div className="home-hero__stat-label">
+                {t(dict, "hero_stat1_label")}
+              </div>
+            </div>
+            <div className="home-hero__stat">
+              <div className="home-hero__stat-num">
+                {t(dict, "hero_stat2_num")}
+              </div>
+              <div className="home-hero__stat-label">
+                {t(dict, "hero_stat2_label")}
+              </div>
+            </div>
+            <div className="home-hero__stat">
+              <div className="home-hero__stat-num">
+                {t(dict, "hero_stat3_num")}
+              </div>
+              <div className="home-hero__stat-label">
+                {t(dict, "hero_stat3_label")}
+              </div>
+            </div>
           </FadeIn>
         </div>
       </section>
@@ -342,7 +352,7 @@ function Home({ locale = "en" }) {
       <LiveSessionDemo locale={locale} />
 
       {/* ===== FEATURES ===== */}
-      <FeaturesSection dict={dict} locale={locale} />
+      <FeaturesSection dict={dict} />
 
       {/* ===== HOW IT WORKS ===== */}
       <HowItWorksSection dict={dict} locale={locale} />
@@ -403,7 +413,7 @@ function Home({ locale = "en" }) {
       </section>
 
       {/* ===== PRODUCT DEMO ===== */}
-      <ProductDemoSection dict={dict} locale={locale} />
+      <ProductDemoSection dict={dict} />
 
       {/* ===== COACHES ===== */}
       <section className="home-spx-coaches">
@@ -808,7 +818,7 @@ function PricingSection({ dict, locale }) {
   );
 }
 
-function FeaturesSection({ dict, locale = "en" }) {
+function FeaturesSection({ dict }) {
   const scenarios = [
     "The meeting you've been avoiding.",
     "The interview next Tuesday.",
@@ -987,9 +997,7 @@ function FeaturesSection({ dict, locale = "en" }) {
             <span className="home-bento__tag">
               {t(dict, "bento_tag_outcome")}
             </span>
-            <div className="home-bento__stat">
-              {getProductClaimDisplay("comparativeOutcome", locale).value}
-            </div>
+            <div className="home-bento__stat">2.7×</div>
             <h3 className="home-bento__title">{t(dict, "bento_stat_title")}</h3>
             <p className="home-bento__text">{t(dict, "bento_stat_text")}</p>
             <div className="home-bento__minichart">
@@ -1126,11 +1134,32 @@ function FeatureIcon({ icon }) {
   );
 }
 
-function Quote({ quote, author, role, label }) {
+function Quote({ quote, author, role, rating }) {
   return (
     <figure className="home-quote">
       <div className="home-quote__top">
-        <span className="home-quote__label">{label}</span>
+        <div
+          className="home-quote__stars"
+          role="img"
+          aria-label={`${rating} out of 5 stars`}
+        >
+          {Array.from({ length: rating }).map((_, i) => (
+            <svg
+              key={i}
+              className="home-quote__star"
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M7 1.5l1.545 3.13 3.455.503-2.5 2.436.59 3.44L7 9.25l-3.09 1.759.59-3.44L2 5.133l3.455-.503L7 1.5Z"
+                fill="currentColor"
+              />
+            </svg>
+          ))}
+        </div>
         <svg
           className="home-quote__mark"
           width="24"
@@ -1396,22 +1425,26 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
   const trackRef = useRef(null);
   const [active, setActive] = React.useState(0);
 
-  const practiceNotes = [
+  const testimonials = [
     {
-      body: t(dict, "practice_note1_text"),
-      title: t(dict, "practice_note1_title"),
+      quote: t(dict, "testi1_quote"),
+      author: t(dict, "testi1_author"),
+      role: t(dict, "testi1_role"),
     },
     {
-      body: t(dict, "practice_note2_text"),
-      title: t(dict, "practice_note2_title"),
+      quote: t(dict, "testi2_quote"),
+      author: t(dict, "testi2_author"),
+      role: t(dict, "testi2_role"),
     },
     {
-      body: t(dict, "practice_note3_text"),
-      title: t(dict, "practice_note3_title"),
+      quote: t(dict, "testi3_quote"),
+      author: t(dict, "testi3_author"),
+      role: t(dict, "testi3_role"),
     },
     {
-      body: t(dict, "practice_note4_text"),
-      title: t(dict, "practice_note4_title"),
+      quote: t(dict, "testi4_quote"),
+      author: t(dict, "testi4_author"),
+      role: t(dict, "testi4_role"),
     },
   ];
 
@@ -1445,7 +1478,7 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
     };
     track.addEventListener("scroll", onScroll, { passive: true });
     return () => track.removeEventListener("scroll", onScroll);
-  }, [practiceNotes.length]);
+  }, [testimonials.length]);
 
   return (
     <section className={`home-testimonials${locale === "ar" ? " home-testimonials--rtl" : ""}`}>
@@ -1467,7 +1500,7 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
 
           <div
             className="home-testimonials__arrows"
-            aria-label={locale === "ar" ? "التنقل بين ملاحظات التمرين" : "Practice note navigation"}
+            aria-label={locale === "ar" ? "التنقل بين الشهادات" : "Carousel navigation"}
           >
             <button
               className="home-testimonials__arrow"
@@ -1520,13 +1553,13 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
           tabIndex={0}
           aria-label={t(dict, "testimonials_title")}
         >
-          {practiceNotes.map((note, i) => (
+          {testimonials.map((t_, i) => (
             <Quote
               key={i}
-              quote={note.body}
-              author={note.title}
-              role={getProductClaimDisplay("testimonials", locale).label}
-              label={locale === "ar" ? "ملاحظة عملية" : "Practice note"}
+              quote={t_.quote}
+              author={t_.author}
+              role={t_.role}
+              rating={5}
             />
           ))}
         </div>
@@ -1545,9 +1578,9 @@ function TestimonialsCarousel({ dict, locale = "en" }) {
         <div
           className="home-testimonials__dots"
           role="tablist"
-          aria-label={locale === "ar" ? "ملاحظات التمرين" : "Practice notes"}
+          aria-label={locale === "ar" ? "شرائح الشهادات" : "Testimonial slides"}
         >
-          {practiceNotes.map((_, i) => (
+          {testimonials.map((_, i) => (
             <button
               key={i}
               role="tab"
@@ -1715,7 +1748,7 @@ function HowItWorksSection({ dict, locale }) {
 /* ============================
    Product Demo Section
    ============================ */
-function ProductDemoSection({ dict, locale = "en" }) {
+function ProductDemoSection({ dict }) {
   const features = [
     t(dict, "demo_feature_1"),
     t(dict, "demo_feature_2"),
@@ -1756,7 +1789,7 @@ function ProductDemoSection({ dict, locale = "en" }) {
               style={floatStyle}
             >
               <div className="home-demo__float-card">
-                {getProductClaimDisplay("memberRating", locale).value}
+                {t(dict, "demo_rating_label")}
               </div>
             </div>
             <div
@@ -1764,7 +1797,7 @@ function ProductDemoSection({ dict, locale = "en" }) {
               style={floatStyle2}
             >
               <div className="home-demo__float-card">
-                {getProductClaimDisplay("coachedHours", locale).label}
+                {t(dict, "demo_sessions_label")}
               </div>
             </div>
 

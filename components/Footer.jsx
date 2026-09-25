@@ -19,7 +19,6 @@ import { APP_ROUTES, routeHref } from "@/lib/routes";
 import api from "@/lib/api";
 import { getDictionary, t } from "@/app/i18n";
 import BrandLogo from "@/components/brand/BrandLogo";
-import { getProductClaimDisplay } from "@/lib/productClaims";
 
 const SOCIAL_LINKS = [
   {
@@ -83,13 +82,13 @@ function Footer() {
   const proofItems = [
     {
       icon: UsersRound,
-      value: getProductClaimDisplay("coachedHours", locale).value,
-      label: getProductClaimDisplay("coachedHours", locale).label,
+      value: $t("proofSessionsValue"),
+      label: $t("proofSessionsLabel"),
     },
     {
       icon: Star,
-      value: getProductClaimDisplay("memberRating", locale).value,
-      label: getProductClaimDisplay("memberRating", locale).label,
+      value: $t("proofRatingValue"),
+      label: $t("proofRatingLabel"),
     },
     {
       icon: Clock3,

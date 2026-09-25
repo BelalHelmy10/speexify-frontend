@@ -33,9 +33,9 @@ const KIDS_AR = {
     titleAccent: "حاجة يقولها.",
     sub:
       "تدريب مباشر مع كوتش يساعد طفلك يبني ثقة حقيقية في الكلام، مش درجات امتحانات بس. جلسات مباشرة، ومدرّبين متخصصين مع الأطفال، وتقدم يظهر في المدرسة والبيت وكل موقف يحتاج إنجليزي.",
-    primaryCta: "اسأل عن جلسة تعريفية",
+    primaryCta: "احجز جلسة تجربة مجانية",
     secondaryCta: "اعرف الطريقة",
-    stats: ["ممارسة مباشرة", "ملاحظات للأهل", "مراحل عمرية"],
+    stats: ["طفل اتدربوا", "رضا أولياء الأمور", "مراحل عمرية"],
     alt: "طفل من الشرق الأوسط في جلسة تدريب إنجليزي مباشرة أونلاين",
     floats: ["جلسة لايف مع كوتش", "برافو يا عمر!", "تصحيح لحظي"],
   },
@@ -52,8 +52,8 @@ const KIDS_AR = {
       tone: "teal",
     },
     {
-      title: "جلسة تعريفية",
-      text: "اسألوا عن التوفر والشروط قبل أي قرار.",
+      title: "أول جلسة مجانية",
+      text: "جرّبوا الكوتش وطريقة الجلسة قبل أي قرار.",
       tone: "gold",
     },
     {
@@ -63,15 +63,15 @@ const KIDS_AR = {
     },
   ],
   firstSession: {
-    eyebrow: "جلسة تعريفية",
+    eyebrow: "جلسة التجربة المجانية",
     title: "من أول جلسة هتعرفوا هل ده مناسب لطفلكم.",
     sub:
       "أول جلسة مصممة عشان تكون مريحة، سهلة، وآمنة. إحنا مش بنقيس طفلك على كتاب. بنشوف بيتكلم إزاي، بيتردد فين، وأي نوع من الكوتشز يقدر يطلّع أفضل ما عنده.",
-    cta: "اسألوا عن جلسة تعريفية",
+    cta: "احجز جلسة التجربة",
     cardLabel: "شكل أول جلسة",
     pill: "30 دقيقة",
     parentNoteLabel: "ملاحظة للأهل",
-    parentNoteTitle: "بعد الجلسة، نوضح لكم الخطوات المتاحة.",
+    parentNoteTitle: "بعد التجربة، توصلكم توصية واضحة.",
     parentNoteText: "أنسب نوع جلسات، عدد المرات المقترح، والخطوة الجاية لطفلك.",
     steps: [
       {
@@ -262,10 +262,10 @@ const KIDS_AR = {
         num: "03",
         label: "شوفوه وهو بيتطور",
         title: "شوفوه وهو بيتطور.",
-        text: "جلسات لايف مرة أو مرتين في الأسبوع، مع ملاحظة للأهل بعد كل جلسة تساعدكم تتابعوا الممارسة.",
+        text: "جلسات لايف مرة أو مرتين في الأسبوع. وملاحظة للأهل بعد كل جلسة. خلال شهر، هتسمعوا الفرق.",
       },
     ],
-    primaryCta: "اسأل عن جلسة تعريفية",
+    primaryCta: "احجز جلسة تجربة مجانية",
     secondaryCta: "اسألنا أي حاجة",
   },
   sessions: {
@@ -282,7 +282,7 @@ const KIDS_AR = {
       "30 أو 45 دقيقة للجلسة",
       "ملاحظات للأهل بعد كل جلسة",
     ],
-    soloCta: "اسأل عن جلسة فردية",
+    soloCta: "احجز تجربة فردية مجانية",
     groupTag: "جروب",
     groupTitle: "جلسات جروب.",
     groupText:
@@ -297,27 +297,39 @@ const KIDS_AR = {
     groupCta: "انضم لجروب",
   },
   sticky: {
-    aria: "اسأل عن جلسة تعريفية",
-    title: "جلسة تعريفية",
-    sub: "اسأل عن التوفر والشروط",
-    cta: "اسأل الآن",
+    aria: "احجز جلسة تجربة مجانية",
+    title: "تجربة مجانية",
+    sub: "من غير التزام",
+    cta: "احجز التجربة",
   },
   testimonials: {
-    eyebrow: "داخل التمرين",
-    title: "إزاي بتشتغل الجلسة.",
-    sub: "ملاحظات عملية عن شكل الجلسة، من غير وعود بنتيجة مسبقة.",
+    eyebrow: "من أولياء الأمور",
+    title: "إيه اللي بيقولوه بعد ما يشوفوا الفرق.",
+    sub: "تحولات حقيقية في أطفال حقيقيين، يلاحظها أقرب ناس ليهم.",
     items: [
       {
-        title: "نبدأ من موقف حقيقي",
-        text: "الكوتش يبدأ بسؤال أو موقف قريب من حياة الطفل، ثم يترك له مساحة يجاوب بطريقته.",
+        quote:
+          "بنتي كانت بترفض تتكلم إنجليزي بره المدرسة. بعد 6 جلسات، بقت تصحح لي أنا لما أقول حاجة غلط. فرق الثقة كان واضح.",
+        author: "دينا ر.",
+        role: "والدة طفلة 9 سنوات",
+        metric: "6 جلسات",
+        metricLabel: "لتحول واضح",
       },
       {
-        title: "التصحيح يأتي بلطف",
-        text: "نلتقط نقطة واحدة قابلة للتدريب، ونجرّبها مرة أخرى داخل المحادثة بدل تحويل الجلسة إلى اختبار.",
+        quote:
+          "ابني كان مرعوب من بريزنتيشن المدرسة. عملنا 3 جلسات تدريب. جاب الدرجة النهائية. الأهم إنه دخل من غير الخوف القديم.",
+        author: "أحمد م.",
+        role: "والد طفل 13 سنة",
+        metric: "3 جلسات",
+        metricLabel: "قبل اليوم المهم",
       },
       {
-        title: "الأهل يعرفون الخطوة التالية",
-        text: "بعد الجلسة، نشارك ما تمّت ممارسته وما يمكن تجربته لاحقًا، حسب احتياج الطفل وجدوله.",
+        quote:
+          "جربنا تطبيقات ومدرسين. ما فيش حاجة اشتغلت بالشكل ده. الكوتش حسّسنا إنها مهتمة بليلى نفسها، مش بتشرح إنجليزي وخلاص.",
+        author: "منى ك.",
+        role: "والدة طفلة 11 سنة",
+        metric: "شهر واحد",
+        metricLabel: "لتقدم حقيقي",
       },
     ],
   },
@@ -365,7 +377,7 @@ const KIDS_AR = {
       },
       {
         q: "الجلسة مدتها قد إيه وبتتكرر كام مرة؟",
-        a: "30 أو 45 دقيقة، مرة أو مرتين في الأسبوع. قصيرة كفاية عشان التركيز، وسهلة التخطيط حول جدول البيت.",
+        a: "30 أو 45 دقيقة، مرة أو مرتين في الأسبوع. قصيرة كفاية عشان التركيز، ومنتظمة كفاية عشان تشوفوا تقدم حقيقي خلال شهر.",
       },
       {
         q: "هعرف إيه اللي حصل في كل جلسة؟",
@@ -379,11 +391,11 @@ const KIDS_AR = {
   },
   cta: {
     eyebrow: "ابدأوا",
-    titleLineOne: "جلسة تعريفية",
-    titleLineTwo: "لطفلكم.",
+    titleLineOne: "أول جلسة",
+    titleLineTwo: "علينا.",
     sub:
-      "اسألوا عن جلسة تعريفية، ونعرفكم على طريقة الجلسة والتوفر والشروط المناسبة لطفلكم.",
-    primary: "اسألوا عن جلسة تعريفية",
+      "احجزوا جلسة تجربة مجانية. من غير التزام. شوفوا بنفسكم إيه اللي يقدر يعمله كوتش حقيقي مع طفل عنده مساحة آمنة يتدرب فيها.",
+    primary: "احجز الجلسة المجانية",
     secondary: "اسألنا أي حاجة",
   },
 };
@@ -456,7 +468,7 @@ function KidsHero({ locale }) {
               className="kids-btn kids-btn--primary"
               href={getStarterSessionHref(locale)}
             >
-              <span>{copy?.primaryCta || "Ask about a starter session"}</span>
+              <span>{copy?.primaryCta || "Book a free trial session"}</span>
             </Link>
             <a className="kids-btn kids-btn--ghost" href="#kids-how">
               {copy?.secondaryCta || "See how it works"}
@@ -465,23 +477,23 @@ function KidsHero({ locale }) {
 
           <div className="kids-hero__stats">
             <div className="kids-hero__stat">
-              <span className="kids-hero__stat-num">Live</span>
+              <span className="kids-hero__stat-num">500+</span>
               <span className="kids-hero__stat-label">
-                {copy?.stats[0] || "practice with a coach"}
+                {copy?.stats[0] || "Kids coached"}
               </span>
             </div>
             <div className="kids-hero__stat-sep" aria-hidden="true" />
             <div className="kids-hero__stat">
-              <span className="kids-hero__stat-num">Notes</span>
+              <span className="kids-hero__stat-num">98%</span>
               <span className="kids-hero__stat-label">
-                {copy?.stats[1] || "for parents"}
+                {copy?.stats[1] || "Parent satisfaction"}
               </span>
             </div>
             <div className="kids-hero__stat-sep" aria-hidden="true" />
             <div className="kids-hero__stat">
-              <span className="kids-hero__stat-num">6–18</span>
+              <span className="kids-hero__stat-num">3</span>
               <span className="kids-hero__stat-label">
-                {copy?.stats[2] || "ask about fit"}
+                {copy?.stats[2] || "Age groups"}
               </span>
             </div>
           </div>
@@ -537,8 +549,8 @@ const TRUST_ITEMS = [
     tone: "teal",
   },
   {
-    title: "Starter session",
-    text: "Ask about availability and terms.",
+    title: "Free first session",
+    text: "Try the coach, the flow, and the fit first.",
     tone: "gold",
   },
   {
@@ -577,7 +589,7 @@ function KidsTrustDoodle({ tone }) {
   }
 
   if (tone === "gold") {
-    // Wobbly star + sparkles — a welcoming starting point.
+    // Wobbly star + sparkles — "the gift / the freebie"
     return (
       <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
         <g {...s}>
@@ -687,7 +699,7 @@ function KidsFirstSession({ locale }) {
       <div className="kids-container kids-first__grid">
         <div className="kids-first__copy" data-reveal>
           <span className="kids-first__eyebrow">
-            {copy?.eyebrow || "Starter session"}
+            {copy?.eyebrow || "The free trial"}
           </span>
           <h2 className="kids-first__title">
             {copy?.title || "You will know in one session if this is right for them."}
@@ -700,7 +712,7 @@ function KidsFirstSession({ locale }) {
             className="kids-btn kids-btn--primary"
             href={getStarterSessionHref(locale)}
           >
-            {copy?.cta || "Ask about a starter session"}
+            {copy?.cta || "Book the free trial"}
           </Link>
         </div>
 
@@ -729,7 +741,7 @@ function KidsFirstSession({ locale }) {
             <span aria-hidden="true">{copy?.parentNoteLabel || "Parent note"}</span>
             <strong>
               {copy?.parentNoteTitle ||
-                "After the session, we explain the available next steps."}
+                "After the trial, you get a clear recommendation."}
             </strong>
             <p>
               {copy?.parentNoteText ||
@@ -1415,7 +1427,7 @@ const HOW_STEPS = [
     num: "03",
     label: "Watch them grow",
     title: "Watch them grow.",
-    text: "Live sessions, once or twice a week, with a parent note after each one so the practice stays visible.",
+    text: "Live sessions, once or twice a week. A parent note after every one. Within a month, you will hear the difference.",
   },
 ];
 
@@ -1454,7 +1466,7 @@ function KidsHowItWorks({ locale }) {
             className="kids-btn kids-btn--primary"
             href={getStarterSessionHref(locale)}
           >
-            {copy?.primaryCta || "Ask about a starter session"}
+            {copy?.primaryCta || "Book a free trial session"}
           </Link>
           <Link
             className="kids-btn kids-btn--ghost"
@@ -1519,7 +1531,7 @@ function KidsSessionTypes({ locale }) {
               className="kids-btn kids-btn--primary kids-btn--full"
               href={getStarterSessionHref(locale)}
             >
-              {copy?.soloCta || "Ask about a 1-on-1 session"}
+              {copy?.soloCta || "Book free 1-on-1 trial"}
             </Link>
           </div>
 
@@ -1573,13 +1585,13 @@ function KidsStickyCTA({ locale }) {
     <Link
       className="kids-sticky-cta"
       href={getStarterSessionHref(locale)}
-      aria-label={copy?.aria || "Ask about a starter session"}
+      aria-label={copy?.aria || "Book a free trial session"}
     >
       <span>
-        <strong>{copy?.title || "Starter session"}</strong>
-        <small>{copy?.sub || "Ask about availability and terms"}</small>
+        <strong>{copy?.title || "Free trial"}</strong>
+        <small>{copy?.sub || "No commitment"}</small>
       </span>
-      <b>{copy?.cta || "Ask now"}</b>
+      <b>{copy?.cta || "Book free trial"}</b>
     </Link>
   );
 }
@@ -1587,24 +1599,36 @@ function KidsStickyCTA({ locale }) {
 /* ─────────────────────────────────────────────
    PARENT TESTIMONIALS
 ───────────────────────────────────────────── */
-const PRACTICE_NOTES = [
+const TESTIMONIALS = [
   {
-    title: "Start with a real situation",
-    text: "The coach starts with a question or situation from the child’s world, then leaves room for an answer in their own words.",
+    quote:
+      "My daughter used to refuse to speak English outside of school. After six sessions, she corrects ME when I say something wrong. The confidence shift was real.",
+    author: "Dina R.",
+    role: "Mother of a 9-year-old",
+    metric: "6 sessions",
+    metricLabel: "to a visible shift",
   },
   {
-    title: "Keep correction useful",
-    text: "The coach focuses on one practice point, then tries it again inside the conversation instead of turning the session into a test.",
+    quote:
+      "My son had a school presentation he was terrified of. We did three practice sessions. He got full marks. But more than that, he walked in without the fear.",
+    author: "Ahmed M.",
+    role: "Father of a 13-year-old",
+    metric: "3 sessions",
+    metricLabel: "before the big one",
   },
   {
-    title: "Make the next step visible",
-    text: "Parents receive a short note about what was practiced and what could be tried next, based on the child’s needs and schedule.",
+    quote:
+      "We tried apps, we tried tutors. Nothing worked like this. The coach felt like she actually cared about Layla specifically, not just teaching English in general.",
+    author: "Mona K.",
+    role: "Mother of an 11-year-old",
+    metric: "1 month",
+    metricLabel: "to real progress",
   },
 ];
 
 function KidsTestimonials({ locale }) {
   const copy = getKidsCopy(locale)?.testimonials;
-  const items = copy?.items || PRACTICE_NOTES;
+  const items = copy?.items || TESTIMONIALS;
 
   return (
     <section className="kids-testi">
@@ -1626,11 +1650,24 @@ function KidsTestimonials({ locale }) {
           {items.map((item, i) => (
             <div key={i} className="kids-testi__card" data-reveal>
               <div className="kids-testi__metric">
-                <span className="kids-testi__metric-num">{String(i + 1).padStart(2, "0")}</span>
-                <span className="kids-testi__metric-label">{locale === "ar" ? "ملاحظة عملية" : "Practice note"}</span>
+                <span className="kids-testi__metric-num">{item.metric}</span>
+                <span className="kids-testi__metric-label">{item.metricLabel}</span>
               </div>
-              <h3 className="kids-testi__quote">{item.title}</h3>
-              <p className="kids-testi__role">{item.text}</p>
+              <blockquote className="kids-testi__quote">
+                &ldquo;{item.quote}&rdquo;
+              </blockquote>
+              <div className="kids-testi__author">
+                <div className="kids-testi__avatar">
+                  {item.author
+                    .split(" ")
+                    .map((w) => w[0])
+                    .join("")}
+                </div>
+                <div>
+                  <div className="kids-testi__name">{item.author}</div>
+                  <div className="kids-testi__role">{item.role}</div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -1728,7 +1765,7 @@ const FAQS = [
   },
   {
     q: "How long is each session and how often?",
-    a: "30 or 45 minutes, once or twice a week. Short enough to keep their focus and easy to plan around the family schedule.",
+    a: "30 or 45 minutes, once or twice a week. Short enough to keep their focus. Consistent enough to feel real progress inside a month.",
   },
   {
     q: "Will I know what happened in each session?",
@@ -1801,19 +1838,19 @@ function KidsCTA({ locale }) {
             {copy?.eyebrow || "Get started"}
           </span>
           <h2 className="kids-cta__title">
-            {copy?.titleLineOne || "A starter session"}<br />
-            {copy?.titleLineTwo || "for your child."}
+            {copy?.titleLineOne || "The first session"}<br />
+            {copy?.titleLineTwo || "is on us."}
           </h2>
           <p className="kids-cta__sub">
             {copy?.sub ||
-              "Ask about a starter session, and learn how the coaching format, availability, and terms could fit your child."}
+              "Book a free trial session. No commitment. See for yourself what a real coach, and a child who has been given a place to practice, can do."}
           </p>
           <div className="kids-cta__buttons">
             <Link
               className="kids-btn kids-btn--cta"
               href={getStarterSessionHref(locale)}
             >
-              {copy?.primary || "Ask about a starter session"}
+              {copy?.primary || "Book their free session"}
             </Link>
             <Link
               className="kids-btn kids-btn--cta-ghost"

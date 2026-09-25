@@ -424,17 +424,29 @@ function IndividualInner({ dict, locale }) {
               <Reveal as="p" delay={0.1} className="section-sub">{t(dict, "testi_subtitle")}</Reveal>
             </div>
             <div className="testi-grid">
-              <PracticeNote
-                title={t(dict, "practice_note1_title")}
-                body={t(dict, "practice_note1_text")}
+              <Testimonial
+                avatarCls="tav1"
+                avatarTxt="AM"
+                outcome={t(dict, "testi1_outcome")}
+                quote={t(dict, "testi1_quote")}
+                by={t(dict, "testi1_by")}
+                role={t(dict, "testi1_role")}
               />
-              <PracticeNote
-                title={t(dict, "practice_note2_title")}
-                body={t(dict, "practice_note2_text")}
+              <Testimonial
+                avatarCls="tav2"
+                avatarTxt="SR"
+                outcome={t(dict, "testi2_outcome")}
+                quote={t(dict, "testi2_quote")}
+                by={t(dict, "testi2_by")}
+                role={t(dict, "testi2_role")}
               />
-              <PracticeNote
-                title={t(dict, "practice_note3_title")}
-                body={t(dict, "practice_note3_text")}
+              <Testimonial
+                avatarCls="tav3"
+                avatarTxt="LK"
+                outcome={t(dict, "testi3_outcome")}
+                quote={t(dict, "testi3_quote")}
+                by={t(dict, "testi3_by")}
+                role={t(dict, "testi3_role")}
               />
             </div>
           </div>
@@ -703,13 +715,31 @@ function Step({ cls, n, title, p }) {
   );
 }
 
-function PracticeNote({ title, body }) {
+function Testimonial({ avatarCls, avatarTxt, outcome, quote, by, role }) {
   return (
     <div className="testi-card">
       <div className="testi-head">
-        <span className="testi-outcome">{title}</span>
+        <div className={`testi-av ${avatarCls}`}>{avatarTxt}</div>
+        <span className="testi-outcome">{outcome}</span>
+        <div className="testi-stars" role="img" aria-label="5 out of 5 stars">
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <svg
+              key={idx}
+              className="testi-star"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M12 2.5l2.87 5.82 6.43.94-4.65 4.53 1.1 6.41L12 17.18 6.25 20.2l1.1-6.41L2.7 9.26l6.43-.94L12 2.5z" />
+            </svg>
+          ))}
+        </div>
       </div>
-      <div className="testi-quote">{body}</div>
+      <div className="testi-quote">{quote}</div>
+      <div className="testi-author">
+        <div className="testi-name">{by}</div>
+        <div className="testi-role">{role}</div>
+      </div>
     </div>
   );
 }
