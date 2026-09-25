@@ -51,6 +51,7 @@ export default function DigitalClock() {
   const { user } = useAuth();
   const pathname = usePathname();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const isArabic = locale === "ar";
   const [time, setTime] = useState(null);
   const [tick, setTick] = useState(true);
 
@@ -67,7 +68,7 @@ export default function DigitalClock() {
     if (!time) return null;
     const p = new Intl.DateTimeFormat(getIntlLocale(locale), {
       timeZone: user?.timezone || undefined,
-      hour12: false,
+      hour12: true,
       hour: "2-digit",
       minute: "2-digit",
     }).formatToParts(time);
@@ -75,6 +76,7 @@ export default function DigitalClock() {
     return {
       hour: get("hour"),
       minute: get("minute"),
+      period: get("dayPeriod"),
     };
   }, [time, user?.timezone, locale]);
 
@@ -88,7 +90,7 @@ export default function DigitalClock() {
   });
 
   return (
-    <div className="spx-digital-clock" title={dateStr} dir="ltr">
+    <div className={`spx-digital-clock ${isArabic ? "is-arabic" : ""}`} title={dateStr} dir="ltr">
       <span
         className="spx-clock-time"
         aria-label={time.toLocaleTimeString(getIntlLocale(locale), {
@@ -96,9 +98,11 @@ export default function DigitalClock() {
           hour12: true,
         })}
       >
+        {isArabic && <span className="spx-clock-period" aria-hidden="true">{parts.period}</span>}
         <FlipPair value={parts.hour} />
         <span className={`spx-clock-colon ${tick ? "is-on" : ""}`}>:</span>
         <FlipPair value={parts.minute} />
+        {!isArabic && <span className="spx-clock-period" aria-hidden="true">{parts.period}</span>}
       </span>
     </div>
   );

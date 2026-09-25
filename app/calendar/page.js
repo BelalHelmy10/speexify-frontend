@@ -47,6 +47,7 @@ import {
   PanelRightClose,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   SlidersHorizontal,
   UserRound,
   X,
@@ -1300,7 +1301,7 @@ export default function CalendarPage() {
         (slot) =>
           slot.status === "active" &&
           slot.isRecurring &&
-          slot.dayOfWeek === dayOfWeek &&
+          Number(slot.dayOfWeek) === dayOfWeek &&
           slot.startTime === startTime &&
           slot.endTime === endTime
       );
@@ -1339,12 +1340,17 @@ export default function CalendarPage() {
     (e, dayDate, dayIdx) => {
       if (calendarMode !== "availability" || savingAvailability) return;
       if (e.button !== 0) return;
-      if (!e.target.closest(".calx-week-cell")) return;
+      const cell = e.target.closest(".calx-week-cell");
+      if (!cell) return;
+
+      const anchorHour = Number(cell.dataset.hour);
+      if (!Number.isInteger(anchorHour)) return;
 
       dragSelectionRef.current = {
         pointerId: e.pointerId,
         dayDate,
         dayIdx,
+        anchorHour,
         anchorMinute: getSnappedMinuteFromPointer(e.clientY, e.currentTarget),
         startY: e.clientY,
         hasMoved: false,
@@ -1385,7 +1391,14 @@ export default function CalendarPage() {
       dragSelectionRef.current = null;
       setDragSelection(null);
 
-      if (!drag.hasMoved) return;
+      if (!drag.hasMoved) {
+        suppressWeekCellClickRef.current = true;
+        window.setTimeout(() => {
+          suppressWeekCellClickRef.current = false;
+        }, 120);
+        toggleWeekCellAvailability(drag.dayDate, drag.anchorHour);
+        return;
+      }
 
       const selection = drag.selection || getWeekDragSelection(drag, e.clientY, e.currentTarget);
       if (!selection || selection.endMinute <= selection.startMinute) return;
@@ -1401,7 +1414,7 @@ export default function CalendarPage() {
         formatAvailabilityTime(selection.endMinute)
       );
     },
-    [addAvailabilitySlot, getWeekDragSelection]
+    [addAvailabilitySlot, getWeekDragSelection, toggleWeekCellAvailability]
   );
 
   const handleWeekDayPointerCancel = useCallback((e) => {
@@ -2049,6 +2062,15 @@ export default function CalendarPage() {
                     <strong>{formatNumber(totalAvailabilityHours, locale)}h</strong>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  className="calx-set-availability-btn"
+                  onClick={() => setCalendarMode("availability")}
+                  aria-pressed={calendarMode === "availability"}
+                >
+                  <Plus size={16} strokeWidth={2.7} />
+                  {t(dict, "set_availability")}
+                </button>
               </section>
 
               <section className="calx-sidebar-section">
@@ -2139,6 +2161,29 @@ export default function CalendarPage() {
             </div>
 
             <div className="calx-toolbar__right">
+              <div className="calx-toolbar-mode-tabs" role="group" aria-label={t(dict, "view_mode")}>
+                <button
+                  type="button"
+                  className={`calx-toolbar-mode-tab ${calendarMode === "sessions" ? "is-active" : ""}`}
+                  onClick={() => setCalendarMode("sessions")}
+                  aria-pressed={calendarMode === "sessions"}
+                >
+                  <CalendarDays size={14} strokeWidth={2.5} />
+                  {t(dict, "mode_sessions")}
+                </button>
+                <button
+                  type="button"
+                  className={`calx-toolbar-mode-tab ${calendarMode === "availability" ? "is-active is-availability" : ""}`}
+                  onClick={() => setCalendarMode("availability")}
+                  aria-pressed={calendarMode === "availability"}
+                >
+                  <Clock3 size={14} strokeWidth={2.5} />
+                  <span className="calx-toolbar-mode-tab__availability-label">
+                    {t(dict, "mode_availability")}
+                  </span>
+                </button>
+              </div>
+
               <div className="calx-view-tabs" role="group" aria-label={t(dict, "aria_calendar_view")}>
                 <button
                   type="button"
@@ -2209,12 +2254,16 @@ export default function CalendarPage() {
           </div>
 
           {calendarMode === "availability" && showAvailabilityHint && (
-            <div className="calx-availability-banner">
+            <div className="calx-availability-banner" role="status" aria-live="polite">
               <span className="calx-availability-banner__icon">💡</span>
               <span className="calx-availability-banner__text">
-                <strong>{t(dict, "instructions_title")}:</strong>{" "}
-                {t(dict, "instructions_drag")}{" "}
-                {t(dict, "instructions_copy")}
+                <strong>{t(dict, "instructions_title")}</strong>
+                <span className="calx-availability-banner__primary">
+                  {t(dict, "instructions_drag")}
+                </span>
+                <span className="calx-availability-banner__secondary">
+                  {t(dict, "instructions_click")} {t(dict, "instructions_copy")}
+                </span>
               </span>
               <button
                 className="calx-availability-banner__close"
@@ -2333,6 +2382,7 @@ export default function CalendarPage() {
                               key={`cell-${day.toISOString()}-${hour}`}
                               className={`calx-week-cell ${calendarMode === "availability" ? "is-clickable" : ""
                                 }`}
+                              data-hour={hour}
                               onClick={(e) => {
                                 if (suppressWeekCellClickRef.current) {
                                   e.preventDefault();

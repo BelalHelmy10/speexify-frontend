@@ -937,6 +937,39 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   gap: 2px;
 }
 
+.spx-clock-period {
+  margin-left: 3px;
+  color: $flip-text;
+  font-family: $font-main;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.spx-digital-clock.is-arabic {
+  .spx-flip-static,
+  .spx-flip-card {
+    color: $navy;
+    font-family: $font-arabic;
+    font-weight: 800;
+  }
+
+  .spx-clock-colon,
+  .spx-clock-period {
+    color: $navy;
+    font-family: $font-arabic;
+    font-weight: 800;
+  }
+
+  .spx-clock-period {
+    margin-left: 0;
+    margin-right: 3px;
+    direction: rtl;
+    unicode-bidi: isolate;
+  }
+}
+
 .spx-flip-pair {
   display: inline-flex;
   gap: 2px;
