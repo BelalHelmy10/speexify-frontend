@@ -826,8 +826,6 @@ export default function CalendarPage() {
   const suppressAvailabilityBlockClickRef = useRef(false);
 
   const isImpersonating = !!user?._impersonating;
-  const isTeacher = user?.role === "teacher";
-  const isAdmin = user?.role === "admin" && !isImpersonating;
 
   const fetchAvailability = useCallback(async () => {
     try {
@@ -2229,48 +2227,9 @@ export default function CalendarPage() {
 
           {error && <div className="calx-error-banner" role="alert">⚠️ {error}</div>}
 
-          {calendarMode === "sessions" && !error && (
-            <div className="calx-session-mode-banner calx-session-mode-banner--passive" role="note">
-              <div className="calx-session-mode-banner__copy">
-                <strong>{t(dict, "session_mode_hint_title")}</strong>
-                <span>{t(dict, isTeacher ? "session_mode_hint_body_teacher" : isAdmin ? "session_mode_hint_body_admin" : "session_mode_hint_body_learner")}</span>
-              </div>
-              {isTeacher && (
-                <button type="button" className="calx-banner-action" onClick={() => setCalendarMode("availability")}>
-                  {t(dict, "switch_to_availability")}
-                </button>
-              )}
-            </div>
-          )}
-
           {loadingEvents && calendarMode === "sessions" && (
             <div className="calx-session-mode-banner calx-session-mode-banner--loading" role="status" aria-live="polite">
               <strong>{t(dict, "loading_sessions")}</strong>
-            </div>
-          )}
-
-          {!loadingEvents && !error && calendarMode === "sessions" && filteredSessions.length === 0 && (
-            <div className="calx-session-mode-banner" role="status">
-              <div className="calx-session-mode-banner__copy">
-                <strong>
-                  {t(dict, isTeacher ? "empty_teacher_title" : isAdmin ? "empty_admin_title" : "empty_learner_title")}
-                </strong>
-                <span>
-                  {t(dict, isTeacher ? "empty_teacher_body" : isAdmin ? "empty_admin_body" : "empty_learner_body")}
-                </span>
-              </div>
-              <div className="calx-session-mode-banner__actions">
-                {isTeacher ? (
-                  <button type="button" className="calx-banner-action" onClick={() => setCalendarMode("availability")}>
-                    {t(dict, "switch_to_availability")}
-                  </button>
-                ) : isAdmin ? (
-                  <Link href="/admin" className="calx-banner-action">{t(dict, "open_admin")}</Link>
-                ) : (
-                  <Link href={`${prefix}/packages`} className="calx-banner-action">{t(dict, "browse_packages")}</Link>
-                )}
-                <Link href={`${prefix}/contact`} className="calx-banner-link">{t(dict, "contact_support")}</Link>
-              </div>
             </div>
           )}
 
