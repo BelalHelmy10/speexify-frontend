@@ -10,7 +10,6 @@ import "@/styles/individual.scss";
 import { getDictionary, t } from "@/app/i18n";
 import { getDefaultTimezones, getSupportedTimezones } from "../../lib/timezones";
 import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
-import { trackConversionEvent } from "@/lib/analytics";
 
 const MARKETING_IMAGE_VERSION = "20260519";
 const marketingImage = (src) => {
@@ -127,18 +126,6 @@ function IndividualInner({ dict, locale }) {
         topic: "Individual Session Request",
         budget: "",
         message: `Band: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone}\nAvailability: ${form.availability}\n\n${form.message || ""}`,
-      });
-      trackConversionEvent("generate_lead", locale, {
-        source: "individual_training",
-        role: "Individual",
-        topic: "Individual Session Request",
-        goal: form.goal,
-        level: form.level,
-      });
-      trackConversionEvent("trial_requested", locale, {
-        source: "individual_training",
-        goal: form.goal,
-        availability: form.availability,
       });
       setStatus(t(dict, "status_sent"));
       setStatusTone("success");

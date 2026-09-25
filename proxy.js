@@ -41,7 +41,7 @@ function createSecurityContext() {
       "img-src 'self' data: blob: https:",
       "media-src 'self' data: blob: https:",
       "frame-src 'self' https://accounts.google.com https://www.google.com https://maps.google.com https://meet.jit.si https://*.jit.si https://meet.speexify.com https://accept.paymob.com https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://docs.google.com https://drive.google.com",
-      `connect-src 'self' ${apiBase} ${websocketBase} ws://localhost:5050 wss://localhost:5050 https://ipapi.co https://accounts.google.com https://*.sentry.io https://cdn.sanity.io https://*.sanity.io https://meet.speexify.com https://*.jit.si https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com`,
+      `connect-src 'self' ${apiBase} ${websocketBase} ws://localhost:5050 wss://localhost:5050 https://ipapi.co https://accounts.google.com https://*.sentry.io https://cdn.sanity.io https://*.sanity.io https://meet.speexify.com https://*.jit.si`,
       "worker-src 'self' blob:",
     ].join("; "),
   };

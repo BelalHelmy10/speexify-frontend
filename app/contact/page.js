@@ -7,7 +7,6 @@ import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "../i18n";
 import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
-import { trackConversionEvent } from "@/lib/analytics";
 import "@/styles/contact.scss";
 
 const DEFAULT_ROLE = "INDIVIDUAL";
@@ -93,12 +92,6 @@ function Contact() {
     setSending(true);
     try {
       await api.post("/api/contact", { ...form, locale });
-      trackConversionEvent("generate_lead", locale, {
-        source: "contact_form",
-        role: form.role,
-        topic: form.topic,
-        has_company: Boolean(form.company.trim()),
-      });
       setStatus({ text: t(dict, "form_status_sent"), tone: "success" });
       setForm((f) => ({ ...f, message: "" }));
     } catch {
