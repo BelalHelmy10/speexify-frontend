@@ -1,6 +1,6 @@
 // ============================================================================
-// SITE-WIDE STICKY "BOOK FREE TRIAL" CTA
-// Compact by default, with a glass detail tail that expands on hover/focus/tap.
+// SITE-WIDE STICKY FIRST-SESSION CTA
+// Hidden over the hero, then docked above the support FAB after the user scrolls.
 // ============================================================================
 
 @use "variables" as *;
@@ -8,57 +8,49 @@
 $stc-live: #2ecc8c;
 
 .spx-trial-cta {
-  --stc-shift-x: -50%;
-
   position: fixed;
   z-index: 9996;
-  left: 50%;
-  right: auto;
-  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: auto;
+  right: calc(24px + var(--spx-safe-right, 0px) + 72px);
+  bottom: calc(28px + var(--spx-safe-bottom, 0px));
   width: max-content;
   max-width: calc(100vw - 32px);
 
-  // Visibility is toggled by `.is-visible` (see StickyTrialCTA.jsx). Visible
-  // from the top; the hidden base state powers the slide-down near the footer.
+  // Visibility is toggled by `.is-visible` (see StickyTrialCTA.jsx). The
+  // hidden base state keeps the hero clean and powers the slide-in after it.
   opacity: 0;
   pointer-events: none;
-  transform: translateX(var(--stc-shift-x)) translateY(20px) scale(0.97);
+  transform: translateY(20px) scale(0.97);
   transition:
     opacity 0.42s ease,
     transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
 
-  // Desktop — a centered "command pill" in neutral space. It never collides
-  // with the bottom-left ScrollToTop (left:32px) or the bottom-right
-  // SupportWidget FAB (right:24px).
-  @media (min-width: 900px) {
-    bottom: calc(28px + env(safe-area-inset-bottom));
-  }
 }
 
 .spx-trial-cta.is-visible {
   opacity: 1;
   pointer-events: auto;
-  transform: translateX(var(--stc-shift-x)) translateY(0) scale(1);
+  transform: translateY(0) scale(1);
 }
 
 body.spx-pricing-in-view .spx-trial-cta,
 body:has(#home-pricing:target) .spx-trial-cta {
   opacity: 0;
   pointer-events: none;
-  transform: translateX(var(--stc-shift-x)) translateY(20px) scale(0.97);
+  transform: translateY(20px) scale(0.97);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .spx-trial-cta {
-    transform: translateX(var(--stc-shift-x));
+    transform: translateY(20px) scale(0.97);
     transition: opacity 0.3s ease;
   }
   .spx-trial-cta.is-visible {
-    transform: translateX(var(--stc-shift-x));
+    transform: translateY(0) scale(1);
   }
   body.spx-pricing-in-view .spx-trial-cta,
   body:has(#home-pricing:target) .spx-trial-cta {
-    transform: translateX(var(--stc-shift-x));
+    transform: translateY(20px) scale(0.97);
   }
 }
 
@@ -78,8 +70,8 @@ body:has(#home-pricing:target) .spx-trial-cta {
   border: 1px solid rgba($navy, 0.08);
   box-shadow:
     0 1px 0 rgba(#fff, 0.9) inset,
-    0 18px 44px -10px rgba($navy, 0.22),
-    0 4px 14px -4px rgba($navy, 0.1);
+    0 12px 30px -14px rgba($navy, 0.2),
+    0 4px 12px -5px rgba($navy, 0.08);
   text-decoration: none !important;
   color: $navy;
   transition:
@@ -231,8 +223,8 @@ body:has(#home-pricing:target) .spx-trial-cta {
   box-shadow:
     0 1px 0 rgba(#fff, 0.28) inset,
     0 -1px 0 rgba($navy, 0.16) inset,
-    0 10px 24px -6px rgba($coral, 0.55),
-    0 4px 10px -2px rgba($coral, 0.32);
+    0 8px 18px -7px rgba($coral, 0.42),
+    0 3px 8px -3px rgba($coral, 0.24);
   transition:
     transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.25s ease,
@@ -277,8 +269,8 @@ body:has(#home-pricing:target) .spx-trial-cta {
   box-shadow:
     0 1px 0 rgba(#fff, 0.32) inset,
     0 -1px 0 rgba($navy, 0.18) inset,
-    0 14px 30px -6px rgba($coral, 0.62),
-    0 6px 14px -2px rgba($coral, 0.38);
+    0 11px 24px -7px rgba($coral, 0.5),
+    0 5px 11px -3px rgba($coral, 0.3);
 }
 
 .spx-trial-cta__pill:hover .spx-trial-cta__arrow {
@@ -354,11 +346,22 @@ body:has(#home-pricing:target) .spx-trial-cta {
   }
 }
 
+// Keep the CTA in the same lower-right dock as the support button on phones.
+// The support FAB is 46px tall and sits 14px from the bottom, so this leaves a
+// small, deliberate gap between the two controls.
+@media (max-width: 760px) {
+  .spx-trial-cta {
+    right: calc(var(--spx-mobile-gutter) + var(--spx-safe-right, 0px) + 58px);
+    bottom: calc(72px + var(--spx-safe-bottom, 0px));
+    max-width: calc(100vw - 92px);
+  }
+}
+
 // ---- Hide while mobile menu is open (avoid stacking on the overlay) ----
 body.spx-mobile-menu-open .spx-trial-cta {
   opacity: 0 !important;
   pointer-events: none !important;
-  transform: translateX(var(--stc-shift-x)) translateY(24px) !important;
+  transform: translateY(24px) scale(0.97) !important;
 }
 
 // ---- Print: never ----

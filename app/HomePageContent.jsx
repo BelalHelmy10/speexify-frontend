@@ -1714,7 +1714,7 @@ function HowItWorksSection({ dict, locale }) {
             className="spx-btn spx-btn--primary spx-btn--shine"
             href={getStarterSessionHref(locale)}
           >
-            <span>{t(dict, "how_cta_primary") || "Ask about a starter session"}</span>
+            <span>{t(dict, "how_cta_primary") || "Book your free first session"}</span>
             <svg
               className="spx-btn__arrow"
               width="16"

@@ -8,17 +8,15 @@ import { getStarterSessionHref } from "@/lib/routes";
 import { normalizeLocalizedPath } from "@/lib/chromeRoutes";
 
 /**
- * Site-wide floating "Book free trial" CTA — a centered glass "command pill".
+ * Site-wide floating first-session CTA.
  *
  * Visual: compact coral pill that expands on hover/focus/tap to reveal a live
- * dot + two-line "First session free / No commitment" detail.
+ * dot + two-line first-session detail.
  *
- * Placement: bottom-CENTER on every breakpoint. Centered neutral space never
- * collides with the bottom-left ScrollToTop button or the bottom-right
- * SupportWidget FAB.
+ * Placement: lower-right above the SupportWidget FAB, visible from the start.
  *
  * Behavior:
- *  - Visible from the very top of the page (no scroll required).
+ *  - Visible from the first viewport without covering the main content.
  *  - Steps aside only when the footer's own CTA section is in view, so two
  *    trial CTAs never stack.
  *  - Dismiss (×) persists for the tab session via sessionStorage.
@@ -32,6 +30,8 @@ const SUPPRESS_PREFIXES = [
   "/checkout",
   "/classroom",
   "/dashboard",
+  "/individual-training",
+  "/kids",
   "/manual-payment",
   "/packages",
   "/onboarding",
@@ -58,8 +58,8 @@ export default function StickyTrialCTA() {
   // Dismiss persists for the tab session (sessionStorage), so a user who
   // closes it isn't nagged again on every navigation. Resets in a new tab.
   const [dismissed, setDismissed] = useState(false);
-  // "shown" = visible. Visible from the very top of the page; only hidden when
-  // the footer's own CTA section is in view (so two trial CTAs don't stack).
+  // "shown" = visible. The lower-right dock keeps the CTA available without
+  // covering the hero content or stats.
   const [shown, setShown] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const lastPointerType = useRef(null);
@@ -76,8 +76,8 @@ export default function StickyTrialCTA() {
 
   useEffect(() => {
     const update = () => {
-      // Visible from the top — step aside only when the footer's own CTA
-      // section comes into view, to avoid stacking two trial CTAs.
+      // Step aside when the footer's own CTA section comes into view, to avoid
+      // stacking two conversion prompts.
       let nearFooter = false;
       const footer = document.querySelector(".site-footer-wrapper");
       if (footer) {
@@ -85,9 +85,8 @@ export default function StickyTrialCTA() {
         nearFooter = rect.top < window.innerHeight - 48 && rect.bottom > 120;
       }
 
-      // Pricing pages have their own high-intent actions. Keep the global
-      // trial pill out of the hero and package cards so it never covers a
-      // price, comparison button, or plan CTA.
+      // Pricing sections have their own high-intent actions. Keep the global
+      // pill out of prices, comparison buttons, and plan CTAs.
       const pricingSections = document.querySelectorAll(
         ".home-pricing, .ecp-hero-pricing, .ecp-pricing-section",
       );
@@ -124,17 +123,17 @@ export default function StickyTrialCTA() {
   const copy =
     locale === "ar"
       ? {
-          title: "أول جلسة مجانية",
+          title: "أول جلسة ليك مجانًا",
           sub: "من غير أي التزام",
-          cta: "احجز جلستك",
-          aria: "احجز جلسة تجريبية مجانية",
+          cta: "احجز أول جلسة مجانًا",
+          aria: "احجز أول جلسة مجانية",
           dismiss: "إخفاء",
         }
       : {
-          title: "First session free",
-          sub: "No commitment",
-          cta: "Book free trial",
-          aria: "Book a free trial session",
+          title: "Your first session is free",
+          sub: "No commitment required",
+          cta: "Book your free first session",
+          aria: "Book your free first session",
           dismiss: "Dismiss",
         };
 

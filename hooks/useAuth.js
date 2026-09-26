@@ -61,6 +61,7 @@ export function AuthProvider({
 
   const mountedRef = useRef(true);
   const inFlightRef = useRef(false);
+  const timezoneSyncRef = useRef(new Set());
 
   useEffect(() => {
     mountedRef.current = true;
@@ -169,6 +170,38 @@ export function AuthProvider({
     }
     refresh();
   }, [initialUser, hasSessionCookie, refresh]);
+
+  useEffect(() => {
+    if (!user || user._impersonating || user.timezone) return;
+
+    let browserTimezone = "";
+    try {
+      browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    } catch {
+      return;
+    }
+    if (!browserTimezone) return;
+
+    const syncKey = `${user.id}:${browserTimezone}`;
+    if (timezoneSyncRef.current.has(syncKey)) return;
+    timezoneSyncRef.current.add(syncKey);
+
+    api
+      .patch("/me", { timezone: browserTimezone })
+      .then(({ data }) => {
+        const savedTimezone = data?.timezone || browserTimezone;
+        safeSet(() =>
+          setUser((current) =>
+            current?.id === user.id
+              ? { ...current, timezone: savedTimezone }
+              : current
+          )
+        );
+      })
+      .catch(() => {
+        timezoneSyncRef.current.delete(syncKey);
+      });
+  }, [user]);
 
   return (
     <Ctx.Provider

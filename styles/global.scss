@@ -11,6 +11,9 @@
 /* src/styles/global.scss (or wherever you collect partials) */
 @use "./brand";
 @use "./header"; // <= add this line (resolves to _header.scss)
+// NotificationsBell is rendered by the site-wide Header, so its layout styles
+// must be part of the critical root stylesheet rather than dashboard-only CSS.
+@use "./notifications";
 @use "./auth";
 @use "./_footer.scss";
 @use "./sticky-trial-cta";
