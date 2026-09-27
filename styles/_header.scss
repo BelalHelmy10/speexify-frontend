@@ -776,8 +776,8 @@
     min-width: 0;
   }
 
-  strong,
-  span {
+  > div > strong,
+  > div > span {
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -814,6 +814,9 @@
 .spx-account-card__avatar {
   width: 42px;
   height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .spx-account-links {
