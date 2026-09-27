@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import { me } from "@/lib/auth";
 import "@/styles/checkout.scss";
 import { useToast } from "@/components/ToastProvider";
+import BrandLogo from "@/components/brand/BrandLogo";
 import { getDictionary, t } from "@/app/i18n";
 import { usePricingCatalog, useCheckoutQuote } from "@/hooks/usePricingCatalog";
 import { oneOnOnePlans, groupPlans } from "@/lib/plans";
@@ -24,7 +25,7 @@ import {
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 export default function CheckoutPage() {
-  const { toast, confirmModal } = useToast();
+  const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -198,11 +199,8 @@ export default function CheckoutPage() {
     }
 
     if (!user) {
-      const shouldLogin = await confirmModal(t(dict, "confirm_login_message"));
-      if (shouldLogin) {
-        const currentUrl = encodeURIComponent(window.location.href);
-        router.push(`${routeHref(APP_ROUTES.login, locale)}?next=${currentUrl}`);
-      }
+      const currentUrl = encodeURIComponent(window.location.href);
+      router.push(`${routeHref(APP_ROUTES.login, locale)}?next=${currentUrl}`);
       return;
     }
 
@@ -295,6 +293,11 @@ export default function CheckoutPage() {
     setPendingIntent(null);
   }
 
+  function continueToLogin() {
+    const currentUrl = encodeURIComponent(window.location.href);
+    router.push(`${routeHref(APP_ROUTES.login, locale)}?next=${currentUrl}`);
+  }
+
   if (loadingPkg || loadingUser) {
     return (
       <div className="checkout__loading">
@@ -348,12 +351,33 @@ export default function CheckoutPage() {
   }
 
   const displayPrice = formatRegionalPrice(regionalPrice, locale);
+  const baseAmount = Number(pkg.priceEGP);
+  const discountAmount = discountPercent > 0 && Number.isFinite(baseAmount)
+    ? Math.max(0, baseAmount - Number(regionalPrice.displayAmount || 0))
+    : 0;
+  const originalPrice = discountAmount > 0
+    ? formatRegionalPrice({ ...regionalPrice, displayAmount: baseAmount }, locale)
+    : null;
+  const discountDisplay = discountAmount > 0
+    ? formatRegionalPrice({ ...regionalPrice, displayAmount: discountAmount }, locale)
+    : null;
   const lockedEgpDisplay = pendingIntent
     ? formatEgpCharge(pendingIntent.chargeAmountEGP, locale)
     : null;
 
   return (
     <div className="checkout">
+      <div className="checkout__topbar">
+        <BrandLogo
+          context="header"
+          href={routeHref(APP_ROUTES.home, locale)}
+          ariaLabel="Speexify"
+          className="checkout__brand"
+        />
+        <a className="checkout__support-link" href="mailto:support@speexify.com">
+          {t(dict, "support_link")}
+        </a>
+      </div>
       <div className="checkout__container">
         <div className="checkout__header">
           <h1 className="checkout__header-title">{t(dict, "header_title")}</h1>
@@ -476,13 +500,25 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          <div className="checkout__discount">
-            <input
-              value={discountCode}
-              onChange={(e) => {setDiscountCode(e.target.value); setAppliedDiscount(""); setPendingIntent(null); orderTimestampRef.current = null;}}
-              placeholder={t(dict, "discount_placeholder")}
-            />
-            <button onClick={applyDiscount} disabled={discountLoading}>
+          <form
+            className="checkout__discount"
+            onSubmit={(event) => {
+              event.preventDefault();
+              applyDiscount();
+            }}
+          >
+            <div className="checkout__discount-field">
+              <label htmlFor="discount-code">{t(dict, "discount_label")}</label>
+              <input
+                id="discount-code"
+                value={discountCode}
+                onChange={(e) => {setDiscountCode(e.target.value); setAppliedDiscount(""); setPendingIntent(null); orderTimestampRef.current = null;}}
+                placeholder={t(dict, "discount_placeholder")}
+                autoComplete="off"
+                inputMode="text"
+              />
+            </div>
+            <button type="submit" disabled={discountLoading}>
               {t(dict, "discount_apply")}
             </button>
 
@@ -491,9 +527,19 @@ export default function CheckoutPage() {
                 {t(dict, "discount_applied", { percent: discountPercent })}
               </div>
             )}
-          </div>
+          </form>
 
           <div className="checkout__pricing">
+            {originalPrice ? (
+              <div className="checkout__pricing-row">
+                <span className="checkout__pricing-label">
+                  {t(dict, "pricing_label_original_price")}
+                </span>
+                <span className="checkout__pricing-value checkout__pricing-value--struck">
+                  {originalPrice}
+                </span>
+              </div>
+            ) : null}
             <div className="checkout__pricing-row">
               <span className="checkout__pricing-label">
                 {t(dict, "pricing_label_package_price")}
@@ -511,6 +557,17 @@ export default function CheckoutPage() {
                 </span>
               </div>
             )}
+
+            {discountDisplay ? (
+              <div className="checkout__pricing-row checkout__pricing-row--discount">
+                <span className="checkout__pricing-label">
+                  {t(dict, "pricing_label_discount", { percent: discountPercent })}
+                </span>
+                <span className="checkout__pricing-value">
+                  −{discountDisplay}
+                </span>
+              </div>
+            ) : null}
 
             <div className="checkout__pricing-row checkout__pricing-row--total">
               <span className="checkout__pricing-label checkout__pricing-label--total">
@@ -627,8 +684,8 @@ export default function CheckoutPage() {
           </div>
         ) : (
           <button
-            onClick={reviewPayment}
-            disabled={loading || !quote.quoteToken}
+            onClick={user ? reviewPayment : continueToLogin}
+            disabled={loading || (Boolean(user) && !quote.quoteToken)}
             className="checkout__pay-button"
           >
             {loading ? (
@@ -637,12 +694,23 @@ export default function CheckoutPage() {
                 {t(dict, "pay_button_processing")}
               </span>
             ) : (
-              t(dict, "pay_button_review_with_amount", { amount: displayPrice })
+              t(dict, user ? "pay_button_review_with_amount" : "pay_button_login_with_amount", { amount: displayPrice })
             )}
           </button>
         )}
 
-        <div className="checkout__security">{t(dict, "security_note")}</div>
+        <div className="checkout__trust">
+          <div className="checkout__trust-item">🔒 {t(dict, "security_note")}</div>
+          <div className="checkout__trust-item">{t(dict, "activation_note")}</div>
+          <div className="checkout__trust-links">
+            <a href={routeHref(APP_ROUTES.refundPolicy, locale)}>
+              {t(dict, "refund_policy_link")}
+            </a>
+            <a href={routeHref(APP_ROUTES.terms, locale)}>
+              {t(dict, "terms_link")}
+            </a>
+          </div>
+        </div>
 
         <div className="checkout__back">
           <button

@@ -56,8 +56,6 @@ const PRIVATE_ROUTES = [
   "/classroom",
   "/resources",
   "/onboarding",
-  "/manual-payment",
-
   // ✅ new protected routes
   "/checkout",
   "/payment", // protect ALL /payment/*, including /payment/success

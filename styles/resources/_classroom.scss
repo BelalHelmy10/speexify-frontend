@@ -367,13 +367,23 @@ body.classroom-active {
       }
     }
 
-    &--hard,
-    &--ended {
+    &--hard {
       color: #fecaca;
 
       .cr-header__pill-dot {
         background: $cr-accent-danger;
         box-shadow: 0 0 8px rgba($cr-accent-danger, 0.55);
+      }
+    }
+
+    &--ended {
+      color: $cr-text-muted;
+      font-weight: 600;
+
+      .cr-header__pill-dot {
+        background: $cr-text-muted;
+        box-shadow: none;
+        animation: none;
       }
     }
 

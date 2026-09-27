@@ -43,7 +43,6 @@ const APP_PATH_PREFIXES = [
   "/checkout",
   "/classroom",
   "/dashboard",
-  "/manual-payment",
   "/needsanalysis",
   "/onboarding",
   "/payment",
@@ -65,7 +64,11 @@ function isFocusedWorkspace(pathname) {
     normalized === "/classroom" ||
     normalized.startsWith("/classroom/") ||
     normalized === "/resources/prep" ||
-    normalized.startsWith("/resources/prep/")
+    normalized.startsWith("/resources/prep/") ||
+    normalized === "/checkout" ||
+    normalized.startsWith("/checkout/") ||
+    normalized === "/payment" ||
+    normalized.startsWith("/payment/")
   );
 }
 

@@ -51,6 +51,10 @@ export function getSessionTiming({ startedAt, endAt, nowMs = Date.now(), locale 
     startMs && endMs && endMs > startMs
       ? Math.floor((endMs - startMs) / 1000)
       : null;
+  const displayElapsedSeconds =
+    scheduledSeconds === null
+      ? elapsedSeconds
+      : Math.min(elapsedSeconds, scheduledSeconds);
   const hasStarted = startMs ? nowMs >= startMs : true;
   const hasEnded = Boolean(endMs && nowMs >= endMs);
 
@@ -68,6 +72,8 @@ export function getSessionTiming({ startedAt, endAt, nowMs = Date.now(), locale 
     endMs,
     elapsedSeconds,
     elapsedLabel: formatSessionClock(elapsedSeconds, locale),
+    displayElapsedSeconds,
+    displayElapsedLabel: formatSessionClock(displayElapsedSeconds, locale),
     remainingSeconds,
     remainingLabel:
       remainingSeconds === null ? "" : formatSessionClock(remainingSeconds, locale),

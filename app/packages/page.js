@@ -23,7 +23,6 @@ import { formatNumber } from "@/utils/locale";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
-const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || "manual"; // "manual" | "paymob"
 const DEFAULT_COUNTRY_CODE = "EG";
 const DEFAULT_CURRENCY = getPricingRegion(DEFAULT_COUNTRY_CODE).currency;
 
@@ -666,7 +665,7 @@ function PricingCard({
   );
 
   // inside function PricingCard({ plan, ... })
-  const paymentRoute = PAYMENT_MODE === "paymob" ? APP_ROUTES.checkout : APP_ROUTES.manualPayment;
+  const paymentRoute = APP_ROUTES.checkout;
   const canPurchase = !isCorp && !loading && !catalogError && isPurchaseReadyPlan(plan, catalog);
   // Pass planId (stable, locale-independent identifier) plus the English
   // backend title as a fallback for backward compatibility.

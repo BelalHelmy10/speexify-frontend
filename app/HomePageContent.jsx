@@ -3,13 +3,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Building2, Check, Users } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import "@/styles/home.scss";
 
 import { getDictionary, t } from "./i18n"; // ✅ i18n
 import FadeIn from "@/components/FadeIn";
 import { usePricingCatalog, mergeCatalogPlans } from "@/hooks/usePricingCatalog";
-import { oneOnOnePlans } from "@/lib/plans";
+import { groupPlans, oneOnOnePlans } from "@/lib/plans";
 import { getPricingRegion } from "@/lib/pricing-regions";
 import {
   calculatePackagePrice,
@@ -22,8 +22,10 @@ import { isPurchaseReadyPlan } from "@/lib/pricing-catalog.mjs";
 const MARKETING_IMAGE_VERSION = "20260519";
 const marketingImage = (src) => `${src}?v=${MARKETING_IMAGE_VERSION}`;
 const DEFAULT_COUNTRY_CODE = "EG";
-const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || "manual";
-const HOME_PRICING_PLAN_IDS = ["1on1-4", "1on1-12", "1on1-24"];
+const HOME_PRICING_EDITORIAL_PLANS = [
+  ...oneOnOnePlans.map((plan) => ({ ...plan, _homeCategory: "oneOnOne" })),
+  ...groupPlans.map((plan) => ({ ...plan, _homeCategory: "group" })),
+];
 
 export default function HomePageContent({ locale = "en" }) {
   return <Home locale={locale} />;
@@ -73,7 +75,6 @@ function Home({ locale = "en" }) {
       top: Math.max(0, targetTop),
       behavior,
     });
-    document.body.classList.add("spx-pricing-in-view");
 
     return true;
   }, []);
@@ -87,29 +88,6 @@ function Home({ locale = "en" }) {
 
     return () => window.clearTimeout(timer);
   }, [scrollToPricing]);
-
-  useEffect(() => {
-    const updatePricingVisibility = () => {
-      const pricingSection = document.getElementById("home-pricing");
-      if (!pricingSection) return;
-
-      const rect = pricingSection.getBoundingClientRect();
-      const pricingInView =
-        rect.top < window.innerHeight - 80 && rect.bottom > 160;
-
-      document.body.classList.toggle("spx-pricing-in-view", pricingInView);
-    };
-
-    updatePricingVisibility();
-    window.addEventListener("scroll", updatePricingVisibility, { passive: true });
-    window.addEventListener("resize", updatePricingVisibility);
-
-    return () => {
-      window.removeEventListener("scroll", updatePricingVisibility);
-      window.removeEventListener("resize", updatePricingVisibility);
-      document.body.classList.remove("spx-pricing-in-view");
-    };
-  }, []);
 
   const handlePricingJump = (event) => {
     if (scrollToPricing()) {
@@ -347,6 +325,9 @@ function Home({ locale = "en" }) {
         </div>
       </section>
 
+      {/* ===== PACKAGES + PRICING ===== */}
+      <PricingSection dict={dict} locale={locale} />
+
       {/* ===== LIVE SESSION DEMO ===== */}
       <LiveSessionDemo locale={locale} />
 
@@ -460,9 +441,6 @@ function Home({ locale = "en" }) {
 
       {/* ===== TRANSFORMATION DEMO ===== */}
       <TransformationDemo dict={dict} locale={locale} />
-
-      {/* ===== PRICING ===== */}
-      <PricingSection dict={dict} locale={locale} />
 
       {/* ===== TESTIMONIALS ===== */}
       <TestimonialsCarousel dict={dict} locale={locale} />
@@ -603,8 +581,7 @@ function buildPlanStartHref(plan, locale, countryCode, catalog) {
   if (!isPurchaseReadyPlan(plan, catalog)) return null;
   const resolvedCountry = countryCode || DEFAULT_COUNTRY_CODE;
   const currency = getPricingRegion(resolvedCountry).currency;
-  const paymentRoute =
-    PAYMENT_MODE === "paymob" ? APP_ROUTES.checkout : APP_ROUTES.manualPayment;
+  const paymentRoute = APP_ROUTES.checkout;
   const paymentTarget = `${routeHref(paymentRoute, locale)}?planId=${encodeURIComponent(
     plan.id,
   )}&plan=${encodeURIComponent(
@@ -625,7 +602,7 @@ function PricingSection({ dict, locale }) {
 
   const plans = useMemo(
     () =>
-      mergeCatalogPlans(oneOnOnePlans, catalog).filter(plan => HOME_PRICING_PLAN_IDS.includes(plan.id))
+      mergeCatalogPlans(HOME_PRICING_EDITORIAL_PLANS, catalog)
         .filter(Boolean)
         .map((plan) => ({
           ...plan,
@@ -656,160 +633,135 @@ function PricingSection({ dict, locale }) {
   }, null);
 
   const region = getPricingRegion(countryCode);
+  const packageGroups = [
+    {
+      key: "oneOnOne",
+      title: t(packageDict, "pricing_title_1on1", "Private coaching packs"),
+      subtitle: t(packageDict, "note_1on1_rest", "Just you and your coach. Every minute on what you need."),
+      plans: pricedPlans.filter((item) => item.plan._homeCategory === "oneOnOne"),
+    },
+    {
+      key: "group",
+      title: t(packageDict, "pricing_title_group", "Small-group packs"),
+      subtitle: t(packageDict, "note_group_rest", "Practice with 2–5 members at your level."),
+      plans: pricedPlans.filter((item) => item.plan._homeCategory === "group"),
+    },
+  ];
 
   if (!catalog) return (
-    <section className="home-pricing" id="home-pricing"><div className="home-container" role="status">
-      <p>{locale === "ar" ? (error ? "الأسعار غير متاحة مؤقتًا. حاول مرة أخرى." : "جارٍ تحميل الأسعار…") : (error || "Loading prices…")}</p>
-      {error && <button className="home-price-card__button" onClick={retry}>{locale === "ar" ? "حاول مرة أخرى" : "Try again"}</button>}
-    </div></section>
+    <section className="home-pricing home-pricing--elite" id="home-pricing">
+      <div className="home-container" role="status">
+        <div className="home-pricing__loading">
+          <span className="home-pricing__eyebrow">{t(dict, "pricing_eyebrow")}</span>
+          <p>{locale === "ar" ? (error ? "الأسعار غير متاحة مؤقتًا. حاول مرة أخرى." : "جارٍ تحميل الأسعار…") : (error || "Loading prices…")}</p>
+          {error && <button className="home-price-card__button" onClick={retry}>{locale === "ar" ? "حاول مرة أخرى" : "Try again"}</button>}
+        </div>
+      </div>
+    </section>
   );
 
   return (
-    <section className="home-pricing" id="home-pricing">
+    <section className="home-pricing home-pricing--elite" id="home-pricing">
       <div className="home-container">
-        <div className="home-pricing__shell">
-          <div className="home-pricing__intro">
-            <p className="home-pricing__eyebrow">
-              {t(dict, "pricing_eyebrow")}
-            </p>
+        <div className="home-pricing__elite-header">
+          <div>
+            <p className="home-pricing__eyebrow">{t(dict, "pricing_eyebrow")}</p>
             <h2 className="home-section-title">{t(dict, "pricing_title")}</h2>
             <p className="home-section-subtitle home-pricing__subtitle">
               {t(dict, "pricing_subtitle")}
             </p>
-
-            <div className="home-pricing__from">
-              <span>{t(dict, "pricing_from_label")}</span>
-              <strong>
-                {lowestPerSession?.perSessionLabel}/
-                {t(dict, "pricing_per_session")}
-              </strong>
-              <small>{t(dict, "pricing_from_hint")}</small>
-            </div>
-
-            <div
-              className="home-pricing__trust"
-              aria-label={t(dict, "pricing_trust_label")}
-            >
-              <span>
-                <Check size={16} aria-hidden="true" />
-                {t(dict, "pricing_trust_1")}
-              </span>
-              <span>
-                <Check size={16} aria-hidden="true" />
-                {t(dict, "pricing_trust_2")}
-              </span>
-              <span>
-                <Check size={16} aria-hidden="true" />
-                {t(dict, "pricing_trust_3")}
-              </span>
-            </div>
           </div>
-
-          <div
-            className="home-pricing__cards"
-            aria-label={t(dict, "pricing_cards_label")}
-          >
-            {pricedPlans.map((item) => {
-              const startHref = buildPlanStartHref(item.plan, locale, countryCode, catalog);
-              return (
-                <article
-                  className={`home-price-card${
-                    item.plan.isPopular ? " home-price-card--featured" : ""
-                  }`}
-                  key={item.plan.id}
-                >
-                {item.plan.isPopular && (
-                  <div className="home-price-card__badge">
-                    {t(dict, "pricing_popular")}
-                  </div>
-                )}
-
-                <div className="home-price-card__top">
-                  <span className="home-price-card__sessions">
-                    {item.plan.sessionsPerPack} {t(dict, "pricing_sessions")}
-                  </span>
-                  {item.plan.savings && (
-                    <span className="home-price-card__savings">
-                      {item.plan.savings}
-                    </span>
-                  )}
-                </div>
-
-                <h3>{item.plan.title}</h3>
-                <p className="home-price-card__desc">{item.plan.description}</p>
-
-                <div className="home-price-card__price">
-                  <strong>{item.totalLabel}</strong>
-                  {item.perSessionLabel && (
-                    <span>
-                      {item.perSessionLabel}/{t(dict, "pricing_per_session")}
-                    </span>
-                  )}
-                </div>
-
-                <ul className="home-price-card__features">
-                  {item.features.map((feature) => (
-                    <li key={feature}>
-                      <Check size={15} aria-hidden="true" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {startHref ? (
-                  <Link className="home-price-card__button" href={startHref}>
-                    <span>{t(dict, "pricing_card_cta")}</span>
-                    <ArrowRight size={16} aria-hidden="true" />
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    className="home-price-card__button home-price-card__button--disabled"
-                    disabled
-                    aria-label={`${t(dict, "pricing_unavailable", "Unavailable")} ${item.plan.title}`}
-                  >
-                    <span>{t(dict, "pricing_unavailable", "Unavailable")}</span>
-                  </button>
-                )}
-                </article>
-              );
-            })}
+          <div className="home-pricing__elite-note">
+            <span className="home-pricing__elite-note-dot" aria-hidden="true" />
+            <strong>{t(dict, "pricing_from_label")}</strong>
+            <span>
+              {lowestPerSession?.perSessionLabel}/{t(dict, "pricing_per_session")}
+            </span>
+            <small>{t(dict, "pricing_from_hint")}</small>
           </div>
         </div>
 
-        <div className="home-pricing__footer">
-          <div className="home-pricing__region">
-            {t(dict, "pricing_region_note", {
-              currency: region.currency,
-              region: region.name,
-            })}
-          </div>
-          <Link
-            className="home-pricing__all-link"
-            href={routeHref(APP_ROUTES.packages, locale)}
-          >
-            <span>{t(dict, "pricing_all_packages")}</span>
-            <ArrowRight size={16} aria-hidden="true" />
-          </Link>
+        <div className="home-pricing__promise-row" aria-label={t(dict, "pricing_trust_label")}>
+          <span><Check size={15} aria-hidden="true" />{t(dict, "pricing_trust_1")}</span>
+          <span><Check size={15} aria-hidden="true" />{t(dict, "pricing_trust_2")}</span>
+          <span><Check size={15} aria-hidden="true" />{t(dict, "pricing_trust_3")}</span>
         </div>
 
-        <div className="home-pricing__team">
-          <div className="home-pricing__team-icon" aria-hidden="true">
-            <Building2 size={22} />
-          </div>
+        <div className="home-pricing__catalog" aria-label={t(dict, "pricing_cards_label")}>
+          {packageGroups.map((group) => (
+            <section className="home-pricing__package-group" key={group.key}>
+              <div className="home-pricing__group-heading">
+                <div>
+                  <p className="home-pricing__group-kicker">
+                    {group.key === "oneOnOne" ? t(packageDict, "note_1on1_strong", "60-minute sessions") : t(packageDict, "note_group_strong", "90-minute sessions")}
+                  </p>
+                  <h3>{group.title}</h3>
+                </div>
+                <p>{group.subtitle}</p>
+              </div>
+
+              <div className="home-pricing__cards">
+                {group.plans.map((item) => {
+                  const startHref = buildPlanStartHref(item.plan, locale, countryCode, catalog);
+                  return (
+                    <article
+                      className={`home-price-card${item.plan.isPopular ? " home-price-card--featured" : ""}`}
+                      key={item.plan.id}
+                    >
+                      <div className="home-price-card__top">
+                        <span className="home-price-card__sessions">
+                          {item.plan.sessionsPerPack} {t(dict, "pricing_sessions")}
+                        </span>
+                        {item.plan.isPopular && <span className="home-price-card__badge">{t(dict, "pricing_popular")}</span>}
+                      </div>
+
+                      <h4>{item.plan.title}</h4>
+                      <p className="home-price-card__desc">{item.plan.description}</p>
+
+                      <div className="home-price-card__price">
+                        <strong>{item.totalLabel}</strong>
+                        {item.perSessionLabel && <span>{item.perSessionLabel}/{t(dict, "pricing_per_session")}</span>}
+                      </div>
+
+                      <ul className="home-price-card__features">
+                        {item.features.map((feature) => (
+                          <li key={feature}><Check size={15} aria-hidden="true" /><span>{feature}</span></li>
+                        ))}
+                      </ul>
+
+                      {startHref ? (
+                        <Link className="home-price-card__button" href={startHref}>
+                          <span>{t(dict, "pricing_card_cta")}</span>
+                          <ArrowRight size={16} aria-hidden="true" />
+                        </Link>
+                      ) : (
+                        <button type="button" className="home-price-card__button home-price-card__button--disabled" disabled>
+                          <span>{t(dict, "pricing_unavailable", "Unavailable")}</span>
+                        </button>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        <div className="home-pricing__team-callout">
           <div>
-            <p className="home-pricing__team-label">
-              {t(dict, "pricing_team_label")}
-            </p>
+            <p className="home-pricing__team-label">{t(dict, "pricing_team_label")}</p>
             <h3>{t(dict, "pricing_team_title")}</h3>
             <p>{t(dict, "pricing_team_text")}</p>
           </div>
-          <Link
-            className="home-pricing__team-link"
-            href={routeHref(APP_ROUTES.corporateTraining, locale, "#rfp")}
-          >
-            <Users size={16} aria-hidden="true" />
-            <span>{t(dict, "pricing_team_cta")}</span>
+          <Link className="home-pricing__team-link" href={routeHref(APP_ROUTES.corporateTraining, locale)}>
+            <span>{t(dict, "pricing_team_cta")}</span><ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
+
+        <div className="home-pricing__elite-footer">
+          <span>{t(dict, "pricing_region_note", { currency: region.currency, region: region.name })}</span>
+          <Link className="home-pricing__all-link" href={routeHref(APP_ROUTES.packages, locale)}>
+            <span>{t(dict, "pricing_all_packages")}</span><ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
       </div>
@@ -819,9 +771,9 @@ function PricingSection({ dict, locale }) {
 
 function FeaturesSection({ dict }) {
   const scenarios = [
-    "The meeting you've been avoiding.",
-    "The interview next Tuesday.",
-    "The call you usually mute.",
+    t(dict, "bento_scenario_1"),
+    t(dict, "bento_scenario_2"),
+    t(dict, "bento_scenario_3"),
   ];
 
   const bars = [
@@ -996,7 +948,7 @@ function FeaturesSection({ dict }) {
             <span className="home-bento__tag">
               {t(dict, "bento_tag_outcome")}
             </span>
-            <div className="home-bento__stat">2.7×</div>
+            <div className="home-bento__stat">{t(dict, "bento_stat_num")}</div>
             <h3 className="home-bento__title">{t(dict, "bento_stat_title")}</h3>
             <p className="home-bento__text">{t(dict, "bento_stat_text")}</p>
             <div className="home-bento__minichart">
@@ -1997,6 +1949,7 @@ function LiveSessionDemo({ locale = "en" }) {
           {/* Main window */}
           <div
             className="home-live-demo__window"
+            dir="ltr"
             role="img"
             aria-label="Animated preview of a live Speexify coaching session"
           >

@@ -30,14 +30,9 @@ const SUPPRESS_PREFIXES = [
   "/checkout",
   "/classroom",
   "/dashboard",
-  "/individual-training",
-  "/kids",
-  "/manual-payment",
-  "/packages",
   "/onboarding",
   "/payment",
   "/profile",
-  "/resources",
   "/settings",
   "/login",
   "/register",
@@ -85,17 +80,7 @@ export default function StickyTrialCTA() {
         nearFooter = rect.top < window.innerHeight - 48 && rect.bottom > 120;
       }
 
-      // Pricing sections have their own high-intent actions. Keep the global
-      // pill out of prices, comparison buttons, and plan CTAs.
-      const pricingSections = document.querySelectorAll(
-        ".home-pricing, .ecp-hero-pricing, .ecp-pricing-section",
-      );
-      const overPricing = [...pricingSections].some((section) => {
-        const rect = section.getBoundingClientRect();
-        return rect.top < window.innerHeight - 80 && rect.bottom > 120;
-      });
-
-      setShown(!nearFooter && !overPricing);
+      setShown(!nearFooter);
     };
 
     update();

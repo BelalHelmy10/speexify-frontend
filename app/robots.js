@@ -26,8 +26,6 @@ export default function robots() {
     "/ar/onboarding",
     "/needsanalysis",
     "/ar/needsanalysis",
-    "/manual-payment",
-    "/ar/manual-payment",
     "/checkout/",
     "/ar/checkout/",
     "/payment/",

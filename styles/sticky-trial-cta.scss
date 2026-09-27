@@ -33,13 +33,6 @@ $stc-live: #2ecc8c;
   transform: translateY(0) scale(1);
 }
 
-body.spx-pricing-in-view .spx-trial-cta,
-body:has(#home-pricing:target) .spx-trial-cta {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(20px) scale(0.97);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .spx-trial-cta {
     transform: translateY(20px) scale(0.97);
@@ -47,10 +40,6 @@ body:has(#home-pricing:target) .spx-trial-cta {
   }
   .spx-trial-cta.is-visible {
     transform: translateY(0) scale(1);
-  }
-  body.spx-pricing-in-view .spx-trial-cta,
-  body:has(#home-pricing:target) .spx-trial-cta {
-    transform: translateY(20px) scale(0.97);
   }
 }
 

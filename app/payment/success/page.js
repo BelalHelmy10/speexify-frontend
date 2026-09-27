@@ -11,6 +11,7 @@ import {
   subscribeToNetworkProfileChanges,
 } from "@/lib/network-profile";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
+import BrandLogo from "@/components/brand/BrandLogo";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
@@ -41,7 +42,7 @@ export default function PaymentSuccessPage() {
     let isUnmounted = false;
 
     if (!orderId) {
-      setStatus(successParam === "true" ? "success" : "failed");
+      setStatus("pending_review");
       return () => {};
     }
 
@@ -79,11 +80,6 @@ export default function PaymentSuccessPage() {
         timer = setTimeout(poll, delayMs);
       } catch (_e) {
         if (isUnmounted) return;
-
-        if (successParam === "true") {
-          setStatus("success");
-          return;
-        }
 
         if (attempts >= Math.max(3, Math.floor(maxPollAttempts / 3))) {
           setStatus("pending_review");
@@ -137,11 +133,20 @@ export default function PaymentSuccessPage() {
   const onboardingPath = routeHref(APP_ROUTES.onboarding, locale);
   const dashboardPath = routeHref(APP_ROUTES.dashboard, locale);
   const packagesPath = routeHref(APP_ROUTES.packages, locale);
+  const resultBrand = (
+    <BrandLogo
+      context="header"
+      href={routeHref(APP_ROUTES.home, locale)}
+      ariaLabel="Speexify"
+      className="payment-result__brand"
+    />
+  );
 
   // ---------- Loading ----------
   if (status === "loading") {
     return (
       <div className="payment-result payment-result--loading">
+        {resultBrand}
         <div className="payment-result__container">
           <div className="payment-result__loading">
             <div className="payment-result__spinner"></div>
@@ -158,6 +163,7 @@ export default function PaymentSuccessPage() {
   if (status === "success") {
     return (
       <div className="payment-result payment-result--success">
+        {resultBrand}
         <div className="payment-result__container">
           <div className="payment-result__card">
             <div className="payment-result__icon payment-result__icon--success">
@@ -217,6 +223,7 @@ export default function PaymentSuccessPage() {
   if (status === "pending_review") {
     return (
       <div className="payment-result payment-result--loading">
+        {resultBrand}
         <div className="payment-result__container">
           <div className="payment-result__card">
             <h1 className="payment-result__title">
@@ -267,6 +274,7 @@ export default function PaymentSuccessPage() {
   // ---------- Failed ----------
   return (
     <div className="payment-result payment-result--failed">
+      {resultBrand}
       <div className="payment-result__container">
         <div className="payment-result__card">
           <div className="payment-result__icon payment-result__icon--failed">

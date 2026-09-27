@@ -600,6 +600,7 @@ function IndividualInner({ dict, locale }) {
                 />
                 <span>
                   {t(dict, "checkbox_prefix")}
+                  {" "}
                   <Link href={routeHref(APP_ROUTES.privacy, locale)} className="form-link">
                     {t(dict, "checkbox_link")}
                   </Link>

@@ -510,6 +510,180 @@
   }
 }
 
+// ─── Prep Audio Player ─────────────────────────────────────────────────────
+// A compact player keeps the audio controls visible without competing with
+// the annotation tools. The native audio element remains hidden; this is the
+// classroom-friendly control surface for it.
+.prep-audio-player {
+  --audio-progress: 0%;
+
+  display: flex;
+  align-items: center;
+  flex: 0 1 290px;
+  min-width: 230px;
+  max-width: 310px;
+  gap: 0.35rem;
+  min-height: 34px;
+  padding: 0.24rem 0.35rem 0.24rem 0.28rem;
+  color: $cr-text-secondary;
+  background: linear-gradient(135deg, rgba($cr-bg-elevated, 0.96), rgba($cr-bg-tertiary, 0.96));
+  border: 1px solid $cr-border-default;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 4px 12px rgba(0, 0, 0, 0.12);
+  transition: border-color $cr-transition-fast, box-shadow $cr-transition-fast, color $cr-transition-fast;
+
+  &.is-playing {
+    color: $cr-text-primary;
+    border-color: rgba($cr-accent-primary, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 0 2px rgba($cr-accent-primary, 0.08), 0 5px 16px rgba(0, 0, 0, 0.16);
+  }
+
+  &.is-ended {
+    border-color: rgba($cr-accent-success, 0.4);
+  }
+
+  &.is-seeking {
+    border-color: rgba($cr-accent-primary, 0.7);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 0 3px rgba($cr-accent-primary, 0.12), 0 5px 16px rgba(0, 0, 0, 0.16);
+  }
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 27px;
+    height: 27px;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color $cr-transition-fast, background-color $cr-transition-fast, transform $cr-transition-fast;
+
+    &:hover {
+      color: $cr-text-primary;
+      background: rgba($cr-accent-primary, 0.14);
+    }
+
+    &:active {
+      transform: scale(0.94);
+    }
+  }
+
+  &__play {
+    color: $cr-text-primary;
+    background: rgba($cr-accent-primary, 0.16);
+
+    &:hover {
+      color: white;
+      background: $cr-accent-primary;
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.12rem;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-width: 0;
+    font-size: 0.62rem;
+    line-height: 1;
+    letter-spacing: 0.01em;
+  }
+
+  &__label {
+    overflow: hidden;
+    color: $cr-text-secondary;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__time {
+    flex: 0 0 auto;
+    color: $cr-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__range {
+    width: 100%;
+    height: 4px;
+    margin: 0;
+    appearance: none;
+    background: linear-gradient(90deg, $cr-accent-primary var(--audio-progress), rgba($cr-text-muted, 0.28) var(--audio-progress));
+    border-radius: 999px;
+    cursor: pointer;
+    outline: none;
+
+    &::-webkit-slider-thumb {
+      width: 9px;
+      height: 9px;
+      appearance: none;
+      background: $cr-text-primary;
+      border: 2px solid $cr-accent-primary;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    &::-moz-range-thumb {
+      width: 7px;
+      height: 7px;
+      background: $cr-text-primary;
+      border: 2px solid $cr-accent-primary;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 3px rgba($cr-accent-primary, 0.22);
+    }
+  }
+
+  &__restart,
+  &__unlock {
+    color: $cr-text-muted;
+  }
+
+  &__unlock {
+    color: $cr-accent-teacher;
+
+    &:hover {
+      color: $cr-accent-teacher;
+      background: rgba($cr-accent-teacher, 0.14);
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .prep-audio-player {
+    flex: 1 1 250px;
+    max-width: 340px;
+  }
+}
+
+@media (max-width: 640px) {
+  .prep-audio-player {
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
+
 // Desktop resource work benefits from giving the canvas the vertical space.
 // Keep the toolbar readable, but remove the extra air around every control so
 // the lesson itself starts sooner and remains the visual focus.

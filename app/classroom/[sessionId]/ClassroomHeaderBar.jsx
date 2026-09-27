@@ -145,11 +145,12 @@ export default function ClassroomHeaderBar({
           : "unknown";
 
   const countdownWarningLevel = isTeacher ? timing.warningLevel : null;
+  const displayElapsedLabel = timing.displayElapsedLabel || timing.elapsedLabel;
   const endsInClassName = [
     "cr-header__pill-timer",
     "cr-header__pill-timer--ends",
     countdownWarningLevel ? `cr-header__pill-timer--${countdownWarningLevel}` : "",
-    timing.hasEnded ? "cr-header__pill-timer--extended" : "",
+    timing.hasEnded ? "cr-header__pill-timer--ended" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -202,17 +203,17 @@ export default function ClassroomHeaderBar({
             )}
           </span>
 
-          {timing.elapsedLabel && (
-            <span className="cr-header__pill-timer">
+          {displayElapsedLabel && (
+            <span className={`cr-header__pill-timer${timing.hasEnded ? " cr-header__pill-timer--ended" : ""}`}>
               <span className="cr-header__pill-dot" />
-              {timing.elapsedLabel}
+              {displayElapsedLabel}
             </span>
           )}
 
           {timing.endMs && (
             <span className={endsInClassName}>
               <span className="cr-header__pill-sep">|</span>
-              {timing.hasEnded ? "Open" : timing.remainingLabel}
+              {timing.hasEnded ? "Ended" : timing.remainingLabel}
             </span>
           )}
 
