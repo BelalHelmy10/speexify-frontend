@@ -40,6 +40,12 @@ const SOCIAL_LINKS = [
     icon: InstagramIcon,
   },
   {
+    href: "https://wa.me/201111153366",
+    labelKey: "ariaWhatsApp",
+    name: "WhatsApp",
+    icon: WhatsAppIcon,
+  },
+  {
     href: "https://www.youtube.com/@Speexify",
     labelKey: "ariaYouTube",
     name: "YouTube",
@@ -458,6 +464,25 @@ function InstagramIcon() {
         strokeWidth="1.7"
       />
       <path d="M16.35 7.85a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z" fill="#fff" />
+    </svg>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="24" height="24" rx="5" fill="#000" />
+      <path
+        d="M12 5.15a6.85 6.85 0 0 0-5.9 10.33l-.78 2.72 2.79-.74A6.85 6.85 0 1 0 12 5.15Z"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="1.45"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9.25 8.75c.17-.18.38-.2.57-.08l.74.5c.18.12.24.34.14.54l-.32.64c.39.8 1.04 1.45 1.84 1.84l.64-.32c.2-.1.42-.04.54.14l.5.74c.12.19.1.4-.08.57-.29.27-.67.41-1.06.36-1.74-.22-4.14-2.62-4.36-4.36-.05-.39.09-.77.36-1.06Z"
+        fill="#fff"
+      />
     </svg>
   );
 }
