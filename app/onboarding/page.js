@@ -67,8 +67,8 @@ const SKILLS = [
 ];
 
 const CONFIDENCE_SKILLS = ["Speaking", "Listening", "Reading", "Writing"];
-const AVAILABILITY_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const AVAILABILITY_DAY_LABELS_AR = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"];
+const AVAILABILITY_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const AVAILABILITY_DAY_LABELS_AR = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 const AVAILABILITY_HOURS = Array.from({ length: 17 }, (_, index) => index + 8);
 const formatAvailabilityHour = (hour) => {
   const normalized = hour === 24 ? 0 : hour;
@@ -442,8 +442,8 @@ export default function OnboardingPage() {
   const isRTL = locale === "ar";
   const availabilityDayLabels = locale === "ar" ? AVAILABILITY_DAY_LABELS_AR : AVAILABILITY_DAYS;
   const availabilityText = locale === "ar"
-    ? { instruction: "اختار الساعات اللي بتكون متاح فيها عادةً.", clear: "مسح الكل", empty: "لم يتم اختيار أي ساعات بعد" }
-    : { instruction: "Select the hours that usually work for you.", clear: "Clear all", empty: "No hours selected yet" };
+    ? { instruction: "اختار الساعات اللي بتكون متاح فيها عادةً.", earlier: "الساعات اللي قبل كده", later: "عرض الساعات اللي بعد كده", clear: "مسح الكل", empty: "لم يتم اختيار أي ساعات بعد" }
+    : { instruction: "Select the hours that usually work for you.", earlier: "Earlier hours", later: "Show later hours", clear: "Clear all", empty: "No hours selected yet" };
   const draftStorageKey = useMemo(
     () => (user?.id ? `${DRAFT_KEY}:${user.id}` : DRAFT_KEY),
     [user?.id]
@@ -780,7 +780,7 @@ export default function OnboardingPage() {
               full
             >
               <div className="onboarding-availability-grid" id="availability">
-                <div className="onboarding-availability-grid__toolbar"><span>{availabilityText.instruction}</span><div><button type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: -420, behavior: "smooth" })} aria-label="Show earlier times">←</button><button type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: 420, behavior: "smooth" })} aria-label="Show later times">→</button><button type="button" onClick={() => { setAvailabilitySlots([]); updateAnswer({ availability: "" }); }}>{availabilityText.clear}</button></div></div>
+                <div className="onboarding-availability-grid__toolbar"><span>{availabilityText.instruction}</span><div><button className="onboarding-availability-nav" type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: -420, behavior: "smooth" })} aria-label="Show earlier times">← {availabilityText.earlier}</button><button className="onboarding-availability-nav" type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: 420, behavior: "smooth" })} aria-label="Show later times">{availabilityText.later} →</button><button type="button" onClick={() => { setAvailabilitySlots([]); updateAnswer({ availability: "" }); }}>{availabilityText.clear}</button></div></div>
                 <div className="onboarding-availability-grid__scroll" ref={availabilityGridRef}>
                   <div className="onboarding-availability-grid__head"><span />{AVAILABILITY_HOURS.map((hour) => <span key={hour}>{formatAvailabilityHour(hour)}</span>)}</div>
                   {AVAILABILITY_DAYS.map((day, dayIndex) => <div className="onboarding-availability-grid__row" key={day}><strong>{availabilityDayLabels[dayIndex]}</strong>{AVAILABILITY_HOURS.map((hour) => { const slot = `${day} ${String(hour).padStart(2, "0")}:00`; const checked = availabilitySlots.includes(slot); return <label className={checked ? "is-selected" : ""} key={slot}><input type="checkbox" checked={checked} onChange={() => { const next = checked ? availabilitySlots.filter((item) => item !== slot) : [...availabilitySlots, slot]; setAvailabilitySlots(next); updateAnswer({ availability: next.join(", ") }); }} /><span aria-hidden="true" /></label>; })}</div>)}

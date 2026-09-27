@@ -947,12 +947,13 @@ body:has(.onboarding-wrapper) .site-footer-wrapper {
   }
 }
 .onboarding-availability-grid { display: grid; gap: 14px; padding: 16px; border: 1px solid rgba($brand, .22); border-radius: 16px; background: $color-white; }
-.onboarding-availability-grid__toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: $text-secondary; font-size: 13px; }
-.onboarding-availability-grid__toolbar > div { display: flex; align-items: center; gap: 6px; }
-.onboarding-availability-grid__toolbar button { border: 1px solid rgba($brand, .2); border-radius: 7px; background: $color-white; color: $brand-dark; padding: 6px 9px; font-weight: 700; cursor: pointer; }
+.onboarding-availability-grid__toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: $text-secondary; font-size: 13px; flex-wrap: wrap; }
+.onboarding-availability-grid__toolbar > div { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.onboarding-availability-grid__toolbar button { border: 1px solid rgba($brand, .2); border-radius: 7px; background: $color-white; color: $brand-dark; padding: 6px 9px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.onboarding-availability-grid__toolbar button.onboarding-availability-nav { display: inline-flex; align-items: center; gap: 4px; background: rgba($brand, .03); }
 .onboarding-availability-grid__toolbar button:hover { border-color: $brand; background: rgba($brand, .06); }
 .onboarding-availability-grid__toolbar button:last-child { border: 0; background: transparent; padding-inline: 4px; }
-.onboarding-availability-grid__scroll { overflow-x: auto; padding-bottom: 4px; }
+.onboarding-availability-grid__scroll { overflow-x: auto; padding-bottom: 18px; scrollbar-gutter: stable; }
 .onboarding-availability-grid__head, .onboarding-availability-grid__row { display: grid; grid-template-columns: 92px repeat(17, minmax(48px, 1fr)); min-width: 950px; gap: 5px; align-items: center; }
 .onboarding-availability-grid__head { margin-bottom: 6px; color: $text-muted; font-size: 10px; text-align: center; }
 .onboarding-availability-grid__row { min-height: 38px; }

@@ -107,7 +107,9 @@ export default function AppChrome({ children }) {
         <SupportWidget hideMobileFab={hideMobileSupportFab} />
       )}
       {deferredChromeReady && showSiteChrome && <ScrollToTop />}
-      {showSiteChrome && normalizedPath !== "/assessment" && <StickyTrialCTA />}
+      {showSiteChrome &&
+        normalizedPath !== "/assessment" &&
+        normalizedPath !== "/book-free-session" && <StickyTrialCTA />}
     </>
   );
 }
