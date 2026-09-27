@@ -14,6 +14,34 @@
 .starter-page *::before,
 .starter-page *::after { box-sizing: border-box; }
 
+.starter-page[dir="rtl"] {
+  font-family: $font-arabic;
+}
+
+.starter-page[dir="rtl"] .starter-brand-lockup {
+  font-family: $font-heading;
+  direction: ltr;
+}
+
+.starter-page[dir="rtl"] .starter-kicker {
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 13px;
+}
+
+.starter-page[dir="rtl"] .starter-intro h1,
+.starter-page[dir="rtl"] .starter-card h2,
+.starter-page[dir="rtl"] .starter-section-label strong,
+.starter-page[dir="rtl"] .starter-success h1,
+.starter-page[dir="rtl"] .starter-availability-row strong {
+  font-family: $font-arabic;
+  letter-spacing: 0;
+}
+
+.starter-page[dir="rtl"] .starter-intro h1 {
+  line-height: 1.12;
+}
+
 .starter-orb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(2px); }
 .starter-orb--one { width: 520px; height: 520px; top: -260px; left: -180px; background: rgba($coral, .08); }
 .starter-orb--two { width: 420px; height: 420px; right: -160px; bottom: -210px; background: rgba($navy, .06); }
@@ -79,9 +107,12 @@
 .starter-availability-toolbar button:disabled { cursor: not-allowed; opacity: .4; }
 .starter-availability-scroll { overflow-x: auto; padding-bottom: 18px; scrollbar-gutter: stable; }
 .starter-availability-head, .starter-availability-row { display: grid; grid-template-columns: 48px repeat(17, minmax(41px, 1fr)); min-width: 760px; gap: 4px; align-items: center; }
+.starter-page[dir="rtl"] .starter-availability-head,
+.starter-page[dir="rtl"] .starter-availability-row { grid-template-columns: 72px repeat(17, minmax(41px, 1fr)); min-width: 784px; }
 .starter-availability-head { margin-bottom: 5px; color: $muted; font-size: 9px; font-weight: 800; text-align: center; }
 .starter-availability-row { min-height: 31px; }
 .starter-availability-row strong { color: $navy; font-family: $font-heading; font-size: 11px; }
+.starter-page[dir="rtl"] .starter-availability-row strong { font-size: 12px; white-space: nowrap; }
 .starter-availability-row label { display: grid; height: 29px; place-items: center; border: 1px solid #e2ddd6; border-radius: 6px; background: #fbfaf8; cursor: pointer; transition: border-color .16s ease, background .16s ease, transform .16s ease; }
 .starter-availability-row label:hover { border-color: rgba($coral, .55); transform: translateY(-1px); }
 .starter-availability-row label.is-selected { border-color: $coral; background: $coral; box-shadow: 0 3px 8px rgba($coral, .18); }

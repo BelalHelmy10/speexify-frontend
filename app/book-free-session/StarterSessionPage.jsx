@@ -6,13 +6,13 @@ import api from "@/lib/api";
 import "@/styles/free-session.scss";
 
 const AVAILABILITY_DAYS = [
-  { value: "sunday", shortEn: "Sun", shortAr: "حد", en: "Sunday", ar: "الأحد" },
-  { value: "monday", shortEn: "Mon", shortAr: "اتنين", en: "Monday", ar: "الاثنين" },
-  { value: "tuesday", shortEn: "Tue", shortAr: "تلات", en: "Tuesday", ar: "الثلاثاء" },
-  { value: "wednesday", shortEn: "Wed", shortAr: "أربع", en: "Wednesday", ar: "الأربعاء" },
-  { value: "thursday", shortEn: "Thu", shortAr: "خميس", en: "Thursday", ar: "الخميس" },
-  { value: "friday", shortEn: "Fri", shortAr: "جمعة", en: "Friday", ar: "الجمعة" },
-  { value: "saturday", shortEn: "Sat", shortAr: "سبت", en: "Saturday", ar: "السبت" },
+  { value: "sunday", shortEn: "Sun", shortAr: "الأحد", en: "Sunday", ar: "الأحد" },
+  { value: "monday", shortEn: "Mon", shortAr: "الاثنين", en: "Monday", ar: "الاثنين" },
+  { value: "tuesday", shortEn: "Tue", shortAr: "الثلاثاء", en: "Tuesday", ar: "الثلاثاء" },
+  { value: "wednesday", shortEn: "Wed", shortAr: "الأربعاء", en: "Wednesday", ar: "الأربعاء" },
+  { value: "thursday", shortEn: "Thu", shortAr: "الخميس", en: "Thursday", ar: "الخميس" },
+  { value: "friday", shortEn: "Fri", shortAr: "الجمعة", en: "Friday", ar: "الجمعة" },
+  { value: "saturday", shortEn: "Sat", shortAr: "السبت", en: "Saturday", ar: "السبت" },
 ];
 const AVAILABILITY_HOURS = Array.from({ length: 17 }, (_, index) => index + 8);
 
@@ -30,10 +30,10 @@ function availabilitySlot(day, hour) {
 const GOAL_OPTIONS = [
   { value: "work", en: "Work & career", ar: "الشغل والتطور المهني" },
   { value: "travel", en: "Travel", ar: "السفر" },
-  { value: "conversation", en: "Everyday conversation", ar: "الكلام اليومي" },
-  { value: "interviews", en: "Interviews", ar: "الإنترفيوهات" },
+  { value: "conversation", en: "Everyday conversation", ar: "المحادثات اليومية" },
+  { value: "interviews", en: "Interviews", ar: "مقابلات العمل" },
   { value: "exams", en: "Exams", ar: "الامتحانات" },
-  { value: "other", en: "Something else", ar: "حاجة تانية" },
+  { value: "other", en: "Something else", ar: "هدف آخر" },
 ];
 
 const COPY = {
@@ -110,7 +110,7 @@ const COPY = {
     availabilityEmpty: "لسه مفيش مواعيد متختارة",
     availabilitySelected: "اختيارات",
     note: "في حاجة مهمة تحب تعرفنا بيها؟",
-    notePlaceholder: "هدف معين، إنترفيو قريب، أو أي حاجة تانية…",
+    notePlaceholder: "هدف واضح، مقابلة عمل قريبة، أو أي حاجة تانية…",
     submit: "احجز جلستي المجانية",
     submitting: "بنجهّز طلبك…",
     privacy: "هنستخدم البيانات دي بس عشان نرتّب جلستك.",
@@ -260,7 +260,7 @@ export default function StarterSessionPage({ locale = "en" }) {
 
             <div className="starter-form-section">
               <div className="starter-section-label"><span>3</span><div><strong>{copy.step3}</strong><small>{isArabic ? "اختار الأيام والساعات اللي تناسبك" : "Choose the days and hours that suit you"}</small></div></div>
-              <fieldset className="starter-fieldset"><legend>{copy.availability} <em>*</em></legend><p className="starter-fieldset__hint">{copy.availabilityHint}<span>{availabilitySummary}</span></p><div className="starter-availability-grid"><div className="starter-availability-toolbar"><span>{copy.availabilityInstruction}</span><div className="starter-availability-toolbar__actions"><button className="starter-availability-nav" type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: -420, behavior: "smooth" })} aria-label={isArabic ? "عرض الساعات السابقة" : "Show earlier hours"}>← {copy.availabilityEarlier}</button><button className="starter-availability-nav" type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: 420, behavior: "smooth" })} aria-label={isArabic ? "عرض الساعات التالية" : "Show later hours"}>{copy.availabilityLater} <ArrowRight size={13} aria-hidden="true" /></button><button type="button" onClick={clearAvailability} disabled={!form.availabilitySlots.length}>{copy.availabilityClear}</button></div></div><div className="starter-availability-scroll" ref={availabilityGridRef}><div className="starter-availability-head"><span />{AVAILABILITY_HOURS.map((hour) => <span key={hour}>{formatAvailabilityHour(hour, isArabic)}</span>)}</div>{AVAILABILITY_DAYS.map((day) => <div className="starter-availability-row" key={day.value}><strong>{isArabic ? day.shortAr : day.shortEn}</strong>{AVAILABILITY_HOURS.map((hour) => { const value = availabilitySlot(day.value, hour); const selected = form.availabilitySlots.includes(value); return <label className={selected ? "is-selected" : ""} key={value} title={`${getLabel(day, locale)} · ${formatAvailabilityHour(hour, isArabic)}`}><input type="checkbox" name="availabilitySlots" value={value} checked={selected} aria-label={`${getLabel(day, locale)} ${formatAvailabilityHour(hour, isArabic)}`} onChange={() => toggleAvailability(value)} /><span aria-hidden="true" /></label>; })}</div>)}</div></div><p className="starter-availability-summary">{availabilitySummary}</p></fieldset>
+              <fieldset className="starter-fieldset"><legend>{copy.availability} <em>*</em></legend><p className="starter-fieldset__hint">{copy.availabilityHint}<span>{availabilitySummary}</span></p><div className="starter-availability-grid"><div className="starter-availability-toolbar"><span>{copy.availabilityInstruction}</span><div className="starter-availability-toolbar__actions"><button className="starter-availability-nav" type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: -420, behavior: "smooth" })} aria-label={isArabic ? "عرض الساعات السابقة" : "Show earlier hours"}>{isArabic ? "→" : "←"} {copy.availabilityEarlier}</button><button className="starter-availability-nav" type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: 420, behavior: "smooth" })} aria-label={isArabic ? "عرض الساعات التالية" : "Show later hours"}>{copy.availabilityLater} {isArabic ? "←" : <ArrowRight size={13} aria-hidden="true" />}</button><button type="button" onClick={clearAvailability} disabled={!form.availabilitySlots.length}>{copy.availabilityClear}</button></div></div><div className="starter-availability-scroll" ref={availabilityGridRef}><div className="starter-availability-head"><span />{AVAILABILITY_HOURS.map((hour) => <span key={hour}>{formatAvailabilityHour(hour, isArabic)}</span>)}</div>{AVAILABILITY_DAYS.map((day) => <div className="starter-availability-row" key={day.value}><strong>{isArabic ? day.shortAr : day.shortEn}</strong>{AVAILABILITY_HOURS.map((hour) => { const value = availabilitySlot(day.value, hour); const selected = form.availabilitySlots.includes(value); return <label className={selected ? "is-selected" : ""} key={value} title={`${getLabel(day, locale)} · ${formatAvailabilityHour(hour, isArabic)}`}><input type="checkbox" name="availabilitySlots" value={value} checked={selected} aria-label={`${getLabel(day, locale)} ${formatAvailabilityHour(hour, isArabic)}`} onChange={() => toggleAvailability(value)} /><span aria-hidden="true" /></label>; })}</div>)}</div></div><p className="starter-availability-summary">{availabilitySummary}</p></fieldset>
               <label className="starter-field"><span>{copy.note} <small>{copy.optional}</small></span><textarea rows="3" value={form.notes} onChange={(event) => update("notes", event.target.value)} placeholder={copy.notePlaceholder} /></label>
             </div>
 
