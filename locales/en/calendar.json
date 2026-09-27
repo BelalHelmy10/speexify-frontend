@@ -31,6 +31,7 @@
   "instructions_green": "Green slots indicate times you're available",
   "slots": "Slots",
   "weekly": "Weekly",
+  "hours_unit": "h",
   "saving": "Saving...",
   "clear_all": "Clear All",
   "confirm_delete_slot": "Delete this availability slot?",

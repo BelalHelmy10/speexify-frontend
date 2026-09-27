@@ -1208,13 +1208,15 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                     {primaryPack?.minutesPerSession && (
                       <span className="plan-card__meta-item">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        {formatNumber(primaryPack.minutesPerSession, locale)} min / session
+                        {t(dict, "plan_minutes_per_session", {
+                          minutes: formatNumber(primaryPack.minutesPerSession, locale),
+                        })}
                       </span>
                     )}
                     {expiryLabel && (
                       <span className="plan-card__meta-item">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        Expires {expiryLabel}
+                        {t(dict, "plan_expires_with_date", { date: expiryLabel })}
                       </span>
                     )}
                   </div>
@@ -1224,7 +1226,9 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                 <div className="plan-xp-block">
                   <div className="plan-xp-block__counter">
                     <span className="plan-xp-block__num">{formatNumber(remainingSessions, locale)}</span>
-                    <span className="plan-xp-block__lbl">sessions<br/>remaining</span>
+                    <span className="plan-xp-block__lbl">
+                      {t(dict, "plan_sessions_label")}<br />{t(dict, "plan_remaining_label")}
+                    </span>
                   </div>
                   <div className="plan-xp-block__bar-wrap">
                     <div className="plan-xp-bar">
@@ -1234,8 +1238,8 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                       />
                     </div>
                     <div className="plan-xp-bar__legend">
-                      <span>{formatNumber(usedSessions, locale)} used</span>
-                      <span>{formatNumber(totalSessions, locale)} total</span>
+                      <span>{t(dict, "plan_used_label", { count: formatNumber(usedSessions, locale) })}</span>
+                      <span>{t(dict, "plan_total_label", { count: formatNumber(totalSessions, locale) })}</span>
                     </div>
                   </div>
                 </div>
@@ -1245,7 +1249,9 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                   <div className="plan-quests">
                     <div className="plan-quests__header">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                      {pendingActionsCount} {pendingActionsCount === 1 ? "Quest" : "Quests"} available
+                      {t(dict, pendingActionsCount === 1 ? "plan_quest_available_one" : "plan_quests_available_many", {
+                        count: formatNumber(pendingActionsCount, locale),
+                      })}
                     </div>
 
                     {!onbComplete && (
@@ -1255,7 +1261,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                         </div>
                         <div className="plan-quest__body">
                           <span className="plan-quest__name">{t(dict, "onboarding_complete") || "Complete onboarding form"}</span>
-                          <span className="plan-quest__sub">Tell us your goals &amp; schedule</span>
+                          <span className="plan-quest__sub">{t(dict, "onboarding_quest_sub")}</span>
                         </div>
                         <svg className="plan-quest__arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                       </Link>
@@ -1268,7 +1274,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                         </div>
                         <div className="plan-quest__body">
                           <span className="plan-quest__name">{t(dict, "assessment_take") || "Take written assessment"}</span>
-                          <span className="plan-quest__sub">Unlock your personalised path</span>
+                          <span className="plan-quest__sub">{t(dict, "assessment_quest_sub")}</span>
                         </div>
                         <svg className="plan-quest__arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                       </Link>

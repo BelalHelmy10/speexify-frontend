@@ -55,10 +55,21 @@ import {
 } from "lucide-react";
 
 const locales = {};
+const CALENDAR_WEEK_START_DAY = 0;
+const ARABIC_WEEKDAY_LABELS = [
+  "الأحد",
+  "الإثنين",
+  "الثلاثاء",
+  "الأربعاء",
+  "الخميس",
+  "الجمعة",
+  "السبت",
+];
+
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }),
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: CALENDAR_WEEK_START_DAY }),
   getDay,
   locales,
 });
@@ -262,16 +273,16 @@ const toRbcEvents = (arr = [], timezone, locale = "en") =>
 function getVisibleRange(date, view) {
   if (view === "week") {
     return {
-      start: startOfWeek(date, { weekStartsOn: 1 }),
-      end: endOfWeek(date, { weekStartsOn: 1 }),
+      start: startOfWeek(date, { weekStartsOn: CALENDAR_WEEK_START_DAY }),
+      end: endOfWeek(date, { weekStartsOn: CALENDAR_WEEK_START_DAY }),
     };
   }
   if (view === "day") {
     return { start: startOfDay(date), end: endOfDay(date) };
   }
   return {
-    start: startOfWeek(startOfMonth(date), { weekStartsOn: 1 }),
-    end: endOfWeek(endOfMonth(date), { weekStartsOn: 1 }),
+    start: startOfWeek(startOfMonth(date), { weekStartsOn: CALENDAR_WEEK_START_DAY }),
+    end: endOfWeek(endOfMonth(date), { weekStartsOn: CALENDAR_WEEK_START_DAY }),
   };
 }
 
@@ -472,9 +483,14 @@ function getViewRangeLabel(currentDate, view, locale) {
   if (view === "month") return currentDate.toLocaleDateString(dtfLocale, { month: "long", year: "numeric" });
   if (view === "day") return currentDate.toLocaleDateString(dtfLocale, { weekday: "long", month: "short", day: "numeric", year: "numeric" });
 
-  const start = startOfWeek(currentDate, { weekStartsOn: 1 });
-  const end = endOfWeek(currentDate, { weekStartsOn: 1 });
+  const start = startOfWeek(currentDate, { weekStartsOn: CALENDAR_WEEK_START_DAY });
+  const end = endOfWeek(currentDate, { weekStartsOn: CALENDAR_WEEK_START_DAY });
   return `${start.toLocaleDateString(dtfLocale, { month: "short", day: "numeric" })} - ${end.toLocaleDateString(dtfLocale, { month: "short", day: "numeric", year: "numeric" })}`;
+}
+
+function getCalendarWeekdayLabel(day, locale) {
+  if (locale === "ar") return ARABIC_WEEKDAY_LABELS[getDay(day)];
+  return format(day, "EEE");
 }
 
 function getSessionCoachName(event) {
@@ -962,12 +978,12 @@ export default function CalendarPage() {
   }, [filteredSessions, filteredAvailabilityEvents]);
 
   const weekStart = useMemo(
-    () => startOfWeek(currentDate, { weekStartsOn: 1 }),
+    () => startOfWeek(currentDate, { weekStartsOn: CALENDAR_WEEK_START_DAY }),
     [currentDate]
   );
 
   const selectedWeekStart = useMemo(
-    () => startOfWeek(selectedDate, { weekStartsOn: 1 }),
+    () => startOfWeek(selectedDate, { weekStartsOn: CALENDAR_WEEK_START_DAY }),
     [selectedDate]
   );
 
@@ -2060,7 +2076,9 @@ export default function CalendarPage() {
                   </div>
                   <div className="calx-week-metric">
                     <span>{t(dict, "weekly")}</span>
-                    <strong>{formatNumber(totalAvailabilityHours, locale)}h</strong>
+                    <strong>
+                      {formatNumber(totalAvailabilityHours, locale)} {t(dict, "hours_unit")}
+                    </strong>
                   </div>
                 </div>
                 <button
@@ -2307,9 +2325,11 @@ export default function CalendarPage() {
                           setCurrentDate(day);
                         }}
                         aria-pressed={isSel}
-                        aria-label={t(dict, "select_day", { date: format(day, "EEEE, MMMM d", { locale: dateLocale }) })}
+                        aria-label={t(dict, "select_day", {
+                          date: `${getCalendarWeekdayLabel(day, locale)}, ${format(day, "MMMM d", { locale: dateLocale })}`,
+                        })}
                       >
-                        <div className="calx-week-header-dow">{format(day, "EEE", { locale: dateLocale })}</div>
+                        <div className="calx-week-header-dow">{getCalendarWeekdayLabel(day, locale)}</div>
                         <div
                           className={`calx-week-header-num ${isToday ? "is-today" : ""} ${!isToday && isSel ? "is-selected" : ""
                             }`}

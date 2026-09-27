@@ -1313,8 +1313,8 @@
   border-bottom: 1px solid $border;
   display: flex;
   align-items: flex-start;
-  justify-content: flex-end;
-  padding: 4px 8px 0 0;
+  justify-content: center;
+  padding: 4px 0 0;
 }
 
 .calx-week-time-label {
@@ -2928,7 +2928,7 @@
   }
 
   .calx-week-time-slot {
-    padding-inline-end: 5px;
+    padding: 4px 0 0;
   }
 
   .calx-week-time-label {

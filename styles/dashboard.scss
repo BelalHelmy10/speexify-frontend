@@ -76,7 +76,7 @@
 .dashboard .session-item--completed .session-item__indicator { background: $secondary; }
 .dashboard .session-item--canceled { background: rgba($bg-soft,.62); border-color: rgba($border,.7); }
 .dashboard .session-item--canceled .session-item__indicator { background: rgba($coral,.5); }
-.dashboard .session-item__date { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 58px; min-height: 58px; align-self: center; margin-left: 10px; border-radius: 10px; background: $bg-soft; color: $muted; }
+.dashboard .session-item__date { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 58px; min-height: 58px; align-self: center; margin-inline-start: 10px; border-radius: 10px; background: $bg-soft; color: $muted; }
 .dashboard .session-item__date span { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .dashboard .session-item__date strong { font: 600 23px/1 $font-heading; letter-spacing: -.04em; color: $ink; }
 .dashboard .session-item__content { min-width: 0; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 18px; align-items: center; padding: 0; }
@@ -134,7 +134,7 @@
 
 @media (max-width: 760px) {
   .dashboard .session-item { grid-template-columns: 4px 48px minmax(0,1fr); gap: 17px; padding-right: 12px; }
-  .dashboard .session-item__date { min-width: 48px; min-height: 52px; margin-left: 8px; }
+  .dashboard .session-item__date { min-width: 48px; min-height: 52px; margin-inline-start: 8px; }
   .dashboard .session-item__date strong { font-size: 20px; }
   .dashboard .session-item__content { grid-template-columns: 1fr; gap: 10px; }
   .dashboard .session-item__actions { justify-content: flex-start; }
@@ -142,7 +142,7 @@
 
 @media (max-width: 460px) {
   .dashboard .session-item { grid-template-columns: 3px 42px minmax(0,1fr); gap: 14px; padding-right: 9px; }
-  .dashboard .session-item__date { min-width: 42px; min-height: 48px; margin-left: 6px; }
+  .dashboard .session-item__date { min-width: 42px; min-height: 48px; margin-inline-start: 6px; }
   .dashboard .session-item__date span { font-size: 8px; }
   .dashboard .session-item__date strong { font-size: 18px; }
   .dashboard .session-item__title { font-size: 14px; }
@@ -863,6 +863,27 @@
     background: $coral-dark;
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba($coral, 0.4);
+  }
+}
+
+// Directional controls follow the reading direction in the Arabic dashboard.
+[dir="rtl"] {
+  .dashboard .plan-quest__arrow,
+  .dashboard .plan-card__explore svg,
+  .dashboard .plan-card__cta svg {
+    transform: scaleX(-1);
+  }
+
+  .dashboard .plan-quest:hover {
+    transform: translateX(-3px);
+
+    .plan-quest__arrow {
+      transform: translateX(-4px) scaleX(-1);
+    }
+  }
+
+  .dashboard .plan-card__explore:hover svg {
+    transform: translateX(-3px) scaleX(-1);
   }
 }
 

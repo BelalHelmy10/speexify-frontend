@@ -31,6 +31,7 @@
   "instructions_green": "الفترات الخضراء معناها إنك متاح في الوقت ده",
   "slots": "فترات",
   "weekly": "أسبوعياً",
+  "hours_unit": "ساعة",
   "saving": "بيتحفظ...",
   "clear_all": "امسح الكل",
   "confirm_delete_slot": "عايز تمسح الميعاد المتاح ده؟",
