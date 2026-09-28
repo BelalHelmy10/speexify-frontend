@@ -51,6 +51,10 @@ function buildDisplayName(source) {
   return [first, last].filter(Boolean).join(" ") || "";
 }
 
+function getParticipantId(source) {
+  return source?._id || source?.id || source?.userId || null;
+}
+
 /* -----------------------------------------------------------
    Utility: Extract teacher & learner details from session
    UPDATED: Handle GROUP sessions with multiple learners
@@ -89,9 +93,22 @@ function getParticipantsFromSession(session) {
     buildDisplayName(learnerObj) ||
     "Learner";
 
-  const allLearnerNames = learners.map(
+  const learnerSources = learners.length > 0 ? learners : learnerObj ? [learnerObj] : [];
+  const allLearnerNames = learnerSources.map(
     (l) => buildDisplayName(l) || l.email?.split("@")[0] || "Learner"
   );
+  const chatParticipants = [
+    {
+      id: getParticipantId(teacherObj) || s.teacherId || s.teacherUserId || null,
+      name: teacherName,
+      role: "teacher",
+    },
+    ...learnerSources.map((learner) => ({
+      id: getParticipantId(learner),
+      name: buildDisplayName(learner) || learner.email?.split("@")[0] || "Learner",
+      role: "learner",
+    })),
+  ].filter((participant) => participant.id != null);
 
   return {
     teacherName,
@@ -99,6 +116,7 @@ function getParticipantsFromSession(session) {
     isGroup,
     learners,
     allLearnerNames,
+    chatParticipants,
     participantCount:
       s.participantCount || learners.length || (learnerObj ? 1 : 0),
     capacity: s.capacity,
@@ -280,6 +298,7 @@ export default function ClassroomShell({
     isGroup,
     learners,
     allLearnerNames,
+    chatParticipants,
     participantCount,
     capacity,
   } = getParticipantsFromSession(session);
@@ -1999,6 +2018,8 @@ export default function ClassroomShell({
               isOpen={isChatOpen}
               onUnreadCountChange={setChatUnreadCount}
               allLearnerNames={allLearnerNames}
+              chatParticipants={chatParticipants}
+              currentUserId={localUserId}
               isGroup={isGroup}
               locale={locale}
             />
@@ -2158,6 +2179,8 @@ export default function ClassroomShell({
               isOpen={true}
               onUnreadCountChange={setChatUnreadCount}
               allLearnerNames={allLearnerNames}
+              chatParticipants={chatParticipants}
+              currentUserId={localUserId}
               isGroup={isGroup}
               locale={locale}
             />

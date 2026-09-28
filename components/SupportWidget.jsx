@@ -28,6 +28,7 @@ import {
   createSupportTicket,
   replyToSupportTicket,
   uploadSupportAttachment,
+  getSupportAttachmentUrl,
   getSupportWebSocketToken,
   rateSupportTicket,
 } from "@/lib/supportApi";
@@ -284,12 +285,6 @@ export default function SupportWidget({ hideMobileFab = false }) {
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
-
-  const getAttachmentUrl = useCallback((attachmentId) => {
-    const id = Number(attachmentId);
-    if (!Number.isFinite(id)) return "#";
-    return `/api/support/attachments/${id}`;
-  }, []);
 
   // ============================================================================
   // LocalStorage helpers
@@ -1035,7 +1030,7 @@ export default function SupportWidget({ hideMobileFab = false }) {
                       key={m.id}
                       message={m}
                       isUser={m.authorId === activeTicket.userId}
-                      getAttachmentUrl={getAttachmentUrl}
+                      getAttachmentUrl={getSupportAttachmentUrl}
                       onImageClick={(url, name) =>
                         setLightboxImage({ url, name })
                       }

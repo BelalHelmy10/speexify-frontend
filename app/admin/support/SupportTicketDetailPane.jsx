@@ -31,6 +31,74 @@ function isImageFile(mimeType, fileName) {
   return ["jpg", "jpeg", "png", "gif", "webp"].includes(ext);
 }
 
+const MAX_ATTACHMENT_SIZE = 12 * 1024 * 1024;
+const ALLOWED_ATTACHMENT_EXTENSIONS = new Set([
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "pdf",
+  "doc",
+  "docx",
+]);
+
+function validateAttachment(file) {
+  if (!file) return "Choose a file to attach.";
+  if (file.size > MAX_ATTACHMENT_SIZE) {
+    return "That file is too large. Attach a file up to 12 MB.";
+  }
+
+  const extension = String(file.name || "")
+    .toLowerCase()
+    .split(".")
+    .pop();
+  if (!ALLOWED_ATTACHMENT_EXTENSIONS.has(extension)) {
+    return "Attach an image, PDF, DOC, or DOCX file.";
+  }
+
+  return "";
+}
+
+function AttachmentLink({ attachment, getAttachmentUrl }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const isImage = isImageFile(attachment.mimeType, attachment.fileName);
+  const href = getAttachmentUrl(attachment.id);
+  const fileName = attachment.fileName || "Attachment";
+
+  if (isImage && !imageFailed) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="asp-attachment asp-attachment--image"
+      >
+        <img
+          src={href}
+          alt={fileName}
+          onError={() => setImageFailed(true)}
+        />
+        <ImageIcon size={15} />
+      </a>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="asp-attachment asp-attachment--file"
+      title={fileName}
+    >
+      <FileText size={18} aria-hidden="true" />
+      <span>{fileName}</span>
+      <Download size={15} aria-hidden="true" />
+    </a>
+  );
+}
+
 function formatMoney(amountCents, currency = "EGP") {
   const amount = Number(amountCents || 0) / 100;
   return new Intl.NumberFormat(undefined, {
@@ -87,6 +155,13 @@ export default function SupportTicketDetailPane({
 
   async function uploadAttachment(file) {
     if (!file || !activeTicket?.id) return;
+    const validationError = validateAttachment(file);
+    if (validationError) {
+      setAttachmentError(validationError);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setUploadingAttachment(true);
     setAttachmentError("");
     try {
@@ -293,33 +368,12 @@ export default function SupportTicketDetailPane({
                   {m.attachments?.length > 0 && (
                     <div className="asp-message__attachments">
                       {m.attachments.map((a) => {
-                        const isImage = isImageFile(a.mimeType, a.fileName);
                         return (
-                          <a
+                          <AttachmentLink
                             key={a.id}
-                            href={getAttachmentUrl(a.id)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={`asp-attachment ${
-                              isImage ? "asp-attachment--image" : ""
-                            }`}
-                          >
-                            {isImage ? (
-                              <>
-                                <img
-                                  src={getAttachmentUrl(a.id)}
-                                  alt={a.fileName}
-                                />
-                                <ImageIcon size={15} />
-                              </>
-                            ) : (
-                              <>
-                                <FileText size={18} />
-                                <span>{a.fileName || "Attachment"}</span>
-                                <Download size={15} />
-                              </>
-                            )}
-                          </a>
+                            attachment={a}
+                            getAttachmentUrl={getAttachmentUrl}
+                          />
                         );
                       })}
                     </div>
@@ -395,8 +449,10 @@ export default function SupportTicketDetailPane({
                 className="asp-btn asp-btn--ghost"
                 onClick={() => setShowNoteInput(!showNoteInput)}
                 title="Add internal note"
+                type="button"
               >
                 <StickyNote size={18} />
+                <span className="asp-sr-only">Add internal note</span>
               </button>
 
               <button
@@ -404,12 +460,14 @@ export default function SupportTicketDetailPane({
                 onClick={() => fileInputRef.current?.click()}
                 title="Attach file"
                 disabled={uploadingAttachment}
+                type="button"
               >
                 {uploadingAttachment ? (
                   <Loader2 size={18} className="asp-spin" />
                 ) : (
                   <FileText size={18} />
                 )}
+                <span>{uploadingAttachment ? "Uploading..." : "Attach file"}</span>
               </button>
               <input
                 ref={fileInputRef}
@@ -445,6 +503,10 @@ export default function SupportTicketDetailPane({
                 )}
                 Send Reply
               </button>
+            </div>
+
+            <div className="asp-attachment-hint">
+              Images, PDF, DOC or DOCX · up to 12 MB
             </div>
 
             {attachmentError && (

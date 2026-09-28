@@ -3051,7 +3051,9 @@ $stat-shadow-hover: 0 2px 5px rgba(13, 27, 42, 0.06), 0 30px 56px -18px rgba(13,
 .dashboard .dashboard__aside {
   grid-area: aside;
   position: sticky;
-  top: 24px;
+  // Keep sticky cards below the site header instead of letting the header
+  // visually cover their top edge while the dashboard is scrolled.
+  top: 98px;
   display: flex;
   flex-direction: column;
   gap: 14px;

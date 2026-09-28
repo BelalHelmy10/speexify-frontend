@@ -1,8 +1,18 @@
 // app/classroom/[sessionId]/ClassroomChat.jsx
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { MessageSquare } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertCircle,
+  Check,
+  ChevronDown,
+  LockKeyhole,
+  MessageSquare,
+  RefreshCw,
+  Send,
+  Users,
+  UserRound,
+} from "lucide-react";
 import api from "@/lib/api";
 import { getIntlLocale } from "@/utils/locale";
 
@@ -24,6 +34,21 @@ function createTempId() {
   return `${TEMP_MESSAGE_PREFIX}${Date.now()}_${Math.random()
     .toString(16)
     .slice(2)}`;
+}
+
+function normalizeId(value) {
+  if (value === null || value === undefined || value === "") return null;
+  return String(value);
+}
+
+function isDirectMessage(message = {}) {
+  return message.visibility === "direct" || message.recipientId != null;
+}
+
+function getInitials(name = "") {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
 
 function isLearnerChatMessage(message = {}) {
@@ -51,6 +76,7 @@ function normalizeMessage(
     id: message.id || createTempId(),
     clientId: message.clientId || null,
     type: message.type || "message",
+    visibility: isDirectMessage(message) ? "direct" : "public",
     role: message.role || "learner",
     name:
       message.name ||
@@ -65,6 +91,7 @@ function normalizeMessage(
     at: message.at || message.createdAt || new Date().toISOString(),
     updatedAt: message.updatedAt || null,
     senderId: message.senderId ?? null,
+    recipientId: message.recipientId ?? null,
     isMine:
       typeof message.isMine === "boolean" ? message.isMine : fallbackMine,
     isDeleted,
@@ -93,6 +120,8 @@ export default function ClassroomChat({
   isTeacher,
   teacherName,
   learnerName,
+  chatParticipants = [],
+  currentUserId = null,
   isOpen = true,
   onUnreadCountChange,
   locale = "en",
@@ -108,6 +137,9 @@ export default function ClassroomChat({
 
   // Other user is typing.
   const [otherTypingName, setOtherTypingName] = useState(null);
+  const [chatMode, setChatMode] = useState("room");
+  const [selectedRecipientId, setSelectedRecipientId] = useState(null);
+  const [recipientMenuOpen, setRecipientMenuOpen] = useState(false);
 
   const myRole = isTeacher ? "teacher" : "learner";
   const myName = isTeacher
@@ -126,6 +158,82 @@ export default function ClassroomChat({
   const hasAnnouncedJoinRef = useRef(false);
   const hasAnnouncedLeaveRef = useRef(false);
   const seenSystemEventsRef = useRef(new Set());
+  const recipientMenuRef = useRef(null);
+
+  const directRecipients = useMemo(() => {
+    const allowedRole = isTeacher ? "learner" : "teacher";
+    const seen = new Set();
+
+    return chatParticipants
+      .map((participant) => ({
+        id: normalizeId(participant?.id),
+        name: participant?.name || (allowedRole === "teacher" ? "Teacher" : "Learner"),
+        role: participant?.role || allowedRole,
+      }))
+      .filter((participant) => {
+        if (!participant.id || participant.role !== allowedRole || seen.has(participant.id)) {
+          return false;
+        }
+        seen.add(participant.id);
+        return true;
+      });
+  }, [chatParticipants, isTeacher]);
+
+  const selectedRecipient = directRecipients.find(
+    (recipient) => recipient.id === normalizeId(selectedRecipientId)
+  ) || null;
+
+  const isMessageInCurrentConversation = useCallback(
+    (message) => {
+      if (chatMode === "room") return !isDirectMessage(message);
+      if (!selectedRecipientId || !isDirectMessage(message)) return false;
+
+      const myId = normalizeId(currentUserId);
+      const recipientId = normalizeId(selectedRecipientId);
+      const senderId = normalizeId(message.senderId);
+      const messageRecipientId = normalizeId(message.recipientId);
+
+      return (
+        (senderId === recipientId && messageRecipientId === myId) ||
+        (senderId === myId && messageRecipientId === recipientId)
+      );
+    },
+    [chatMode, currentUserId, selectedRecipientId]
+  );
+
+  useEffect(() => {
+    if (chatMode !== "direct") return;
+
+    if (!directRecipients.length) {
+      setSelectedRecipientId(null);
+      setRecipientMenuOpen(false);
+      return;
+    }
+
+    if (!directRecipients.some((recipient) => recipient.id === normalizeId(selectedRecipientId))) {
+      setSelectedRecipientId(directRecipients[0].id);
+    }
+  }, [chatMode, directRecipients, selectedRecipientId]);
+
+  useEffect(() => {
+    if (!recipientMenuOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!recipientMenuRef.current?.contains(event.target)) {
+        setRecipientMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setRecipientMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [recipientMenuOpen]);
 
   const appendOrMergeMessage = useCallback(
     (
@@ -167,7 +275,7 @@ export default function ClassroomChat({
         !isKnown &&
         !normalized.isMine &&
         countAsUnread &&
-        !isOpen &&
+        (!isOpen || !isMessageInCurrentConversation(normalized)) &&
         typeof onUnreadCountChange === "function"
       ) {
         onUnreadCountChange((prev) =>
@@ -177,7 +285,7 @@ export default function ClassroomChat({
 
       return normalized;
     },
-    [isOpen, isTeacher, onUnreadCountChange]
+    [isTeacher, isMessageInCurrentConversation, onUnreadCountChange]
   );
 
   const replaceMessage = useCallback(
@@ -209,6 +317,17 @@ export default function ClassroomChat({
       if (!ready) return;
       try {
         const socketMessage = toSocketMessage(message);
+
+        if (socketMessage.visibility === "direct") {
+          send({
+            type: "CHAT_PRIVATE_MESSAGE",
+            sessionId,
+            messageId: socketMessage.id,
+            recipientId: socketMessage.recipientId,
+          });
+          return;
+        }
+
         send({
           type: "CHAT_MESSAGE",
           sessionId,
@@ -467,6 +586,7 @@ export default function ClassroomChat({
         }
 
         case "CHAT_TYPING": {
+          if (chatMode !== "room") return;
           if (msg.role === myRole && msg.name === myName) return;
 
           if (msg.isTyping) {
@@ -474,6 +594,28 @@ export default function ClassroomChat({
               msg.name || (msg.role === "teacher" ? "Teacher" : "Learner")
             );
 
+            if (otherTypingTimeoutRef.current) {
+              clearTimeout(otherTypingTimeoutRef.current);
+            }
+            otherTypingTimeoutRef.current = setTimeout(() => {
+              setOtherTypingName(null);
+            }, 5000);
+          } else {
+            setOtherTypingName(null);
+            if (otherTypingTimeoutRef.current) {
+              clearTimeout(otherTypingTimeoutRef.current);
+              otherTypingTimeoutRef.current = null;
+            }
+          }
+          break;
+        }
+
+        case "CHAT_PRIVATE_TYPING": {
+          if (chatMode !== "direct") return;
+          if (normalizeId(msg.senderId) !== normalizeId(selectedRecipientId)) return;
+
+          if (msg.isTyping) {
+            setOtherTypingName(msg.name || "Participant");
             if (otherTypingTimeoutRef.current) {
               clearTimeout(otherTypingTimeoutRef.current);
             }
@@ -508,28 +650,41 @@ export default function ClassroomChat({
     myName,
     myRole,
     ready,
+    chatMode,
+    selectedRecipientId,
     sessionId,
     subscribe,
   ]);
 
   const sendTyping = useCallback(
     (isTyping) => {
-      if (!ready) return;
+      if (!ready || (chatMode === "direct" && !selectedRecipientId)) return;
 
       try {
-        send({
-          type: "CHAT_TYPING",
-          isTyping: Boolean(isTyping),
-          role: myRole,
-          name: myName,
-          sessionId,
-          at: new Date().toISOString(),
-        });
+        send(
+          chatMode === "direct"
+            ? {
+                type: "CHAT_PRIVATE_TYPING",
+                isTyping: Boolean(isTyping),
+                recipientId: selectedRecipientId,
+                role: myRole,
+                name: myName,
+                sessionId,
+              }
+            : {
+                type: "CHAT_TYPING",
+                isTyping: Boolean(isTyping),
+                role: myRole,
+                name: myName,
+                sessionId,
+                at: new Date().toISOString(),
+              }
+        );
       } catch (err) {
         console.warn("Failed to send typing event", err);
       }
     },
-    [myName, myRole, ready, send, sessionId]
+    [chatMode, myName, myRole, ready, selectedRecipientId, send, sessionId]
   );
 
   const handleInputChange = (e) => {
@@ -564,9 +719,10 @@ export default function ClassroomChat({
   };
 
   const persistMessage = useCallback(
-    async (text, tempId) => {
+    async (text, tempId, recipientId = null) => {
       const res = await api.post(`/sessions/${sessionId}/chat/messages`, {
         text,
+        ...(recipientId ? { recipientId } : {}),
       });
 
       const saved = replaceMessage(tempId, res.data?.message, {
@@ -582,7 +738,8 @@ export default function ClassroomChat({
   const handleSubmit = async (e) => {
     e.preventDefault();
     const text = inputValue.trim();
-    if (!text || isSending) return;
+    const recipientId = chatMode === "direct" ? selectedRecipient?.id : null;
+    if (!text || isSending || (chatMode === "direct" && !recipientId)) return;
 
     setIsSending(true);
     setInputValue("");
@@ -596,6 +753,8 @@ export default function ClassroomChat({
         role: myRole,
         name: myName,
         text,
+        visibility: recipientId ? "direct" : "public",
+        recipientId,
         at: new Date().toISOString(),
         isMine: true,
         canDelete: false,
@@ -605,7 +764,7 @@ export default function ClassroomChat({
     );
 
     try {
-      await persistMessage(text, tempId);
+      await persistMessage(text, tempId, recipientId);
     } catch (err) {
       const error = getErrorMessage(err, "Message failed to send.");
       appendOrMergeMessage(
@@ -616,6 +775,8 @@ export default function ClassroomChat({
           role: myRole,
           name: myName,
           text,
+          visibility: recipientId ? "direct" : "public",
+          recipientId,
           at: new Date().toISOString(),
           isMine: true,
           canDelete: false,
@@ -655,7 +816,7 @@ export default function ClassroomChat({
     );
 
     try {
-      await persistMessage(message.text, message.id);
+      await persistMessage(message.text, message.id, message.recipientId);
     } catch (err) {
       appendOrMergeMessage(
         {
@@ -691,6 +852,26 @@ export default function ClassroomChat({
     }
   };
 
+  const handleModeChange = (nextMode) => {
+    setChatMode(nextMode);
+    setOtherTypingName(null);
+
+    if (nextMode === "direct") {
+      if (!selectedRecipientId && directRecipients[0]) {
+        setSelectedRecipientId(directRecipients[0].id);
+      }
+      setRecipientMenuOpen(true);
+    } else {
+      setRecipientMenuOpen(false);
+    }
+  };
+
+  const handleRecipientSelect = (recipientId) => {
+    setSelectedRecipientId(recipientId);
+    setRecipientMenuOpen(false);
+    setOtherTypingName(null);
+  };
+
   useEffect(() => {
     if (isOpen && typeof onUnreadCountChange === "function") {
       onUnreadCountChange(0);
@@ -702,7 +883,8 @@ export default function ClassroomChat({
     messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [isLoadingMore, messages]);
 
-  const hasMessages = messages.length > 0;
+  const visibleMessages = messages.filter(isMessageInCurrentConversation);
+  const hasMessages = visibleMessages.length > 0;
   const transcriptStatus = historyError
     ? "Transcript unavailable"
     : isLoadingHistory
@@ -723,6 +905,82 @@ export default function ClassroomChat({
         </a>
       </div>
 
+      <div className="cr-chat__audience" ref={recipientMenuRef}>
+        <div className="cr-chat__audience-switcher" role="tablist" aria-label="Chat audience">
+          <button
+            type="button"
+            className={`cr-chat__audience-tab${chatMode === "room" ? " is-active" : ""}`}
+            onClick={() => handleModeChange("room")}
+            role="tab"
+            aria-selected={chatMode === "room"}
+          >
+            <Users size={14} />
+            <span className="cr-chat__audience-tab-label">
+              <span>Room</span>
+              <small>Everyone</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            className={`cr-chat__audience-tab${chatMode === "direct" ? " is-active is-private" : ""}`}
+            onClick={() => handleModeChange("direct")}
+            role="tab"
+            aria-selected={chatMode === "direct"}
+          >
+            <LockKeyhole size={14} />
+            <span className="cr-chat__audience-tab-label">
+              <span>Direct</span>
+              <small>1:1</small>
+            </span>
+          </button>
+        </div>
+
+        {chatMode === "direct" && (
+          <div className="cr-chat__recipient-picker">
+            <button
+              type="button"
+              className={`cr-chat__recipient-trigger${recipientMenuOpen ? " is-open" : ""}`}
+              onClick={() => setRecipientMenuOpen((open) => !open)}
+              aria-expanded={recipientMenuOpen}
+              aria-haspopup="listbox"
+              disabled={!directRecipients.length}
+            >
+              <span className="cr-chat__recipient-avatar">
+                {selectedRecipient ? getInitials(selectedRecipient.name) : <UserRound size={14} />}
+              </span>
+              <span className="cr-chat__recipient-copy">
+                <small>Private to</small>
+                <strong>{selectedRecipient?.name || "Choose someone"}</strong>
+              </span>
+              <ChevronDown size={15} className="cr-chat__recipient-chevron" />
+            </button>
+
+            {recipientMenuOpen && directRecipients.length > 0 && (
+              <div className="cr-chat__recipient-menu" role="listbox" aria-label="Choose a private recipient">
+                <div className="cr-chat__recipient-menu-label">Choose a private conversation</div>
+                {directRecipients.map((recipient) => (
+                  <button
+                    type="button"
+                    key={recipient.id}
+                    className={`cr-chat__recipient-option${selectedRecipient?.id === recipient.id ? " is-selected" : ""}`}
+                    onClick={() => handleRecipientSelect(recipient.id)}
+                    role="option"
+                    aria-selected={selectedRecipient?.id === recipient.id}
+                  >
+                    <span className="cr-chat__recipient-avatar">{getInitials(recipient.name)}</span>
+                    <span className="cr-chat__recipient-copy">
+                      <strong>{recipient.name}</strong>
+                      <small>{recipient.role === "teacher" ? "Teacher" : "Learner"}</small>
+                    </span>
+                    {selectedRecipient?.id === recipient.id && <Check size={15} />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="cr-chat__messages" data-lenis-prevent>
         {hasMoreHistory && (
           <button
@@ -736,10 +994,19 @@ export default function ClassroomChat({
         )}
 
         {historyError && (
-          <div className="cr-chat__history-error">
-            <span>{historyError}</span>
-            <button type="button" onClick={loadInitialHistory}>
-              Retry
+          <div className="cr-chat__error-state" role="alert">
+            <div className="cr-chat__error-icon">
+              <AlertCircle size={20} />
+            </div>
+            <strong className="cr-chat__error-title">We couldn’t load this conversation</strong>
+            <span className="cr-chat__error-detail">{historyError}</span>
+            <button
+              type="button"
+              className="cr-chat__error-action"
+              onClick={loadInitialHistory}
+            >
+              <RefreshCw size={14} />
+              Try again
             </button>
           </div>
         )}
@@ -748,19 +1015,26 @@ export default function ClassroomChat({
           <div className="cr-chat__loading">Loading transcript...</div>
         )}
 
-        {!isLoadingHistory && !hasMessages && (
+        {!isLoadingHistory && !historyError && !hasMessages && (
           <div className="cr-chat__empty">
-            <div className="cr-chat__empty-icon">Chat</div>
-            <p className="cr-chat__empty-text">No messages yet</p>
+            <div className="cr-chat__empty-icon" aria-hidden="true">
+              <MessageSquare size={20} />
+            </div>
+            <p className="cr-chat__empty-text">
+              {chatMode === "direct"
+                ? `Your private conversation with ${selectedRecipient?.name || "this person"} starts here.`
+                : "No messages yet"}
+            </p>
             <p className="cr-chat__empty-hint">
-              Start the conversation with your{" "}
-              {isTeacher ? "learner" : "teacher"}.
+              {chatMode === "direct"
+                ? "Only the two of you can see these messages."
+                : `Start the conversation with your ${isTeacher ? "learner" : "teacher"}.`}
             </p>
           </div>
         )}
 
-        {hasMessages &&
-          messages.map((msg) => {
+        {!historyError && hasMessages &&
+          visibleMessages.map((msg) => {
             if (msg.type === "system" || msg.type === "system_local") {
               return (
                 <div
@@ -809,6 +1083,13 @@ export default function ClassroomChat({
                       {formatTime(msg.at, locale)}
                     </span>
                   </div>
+
+                  {isDirectMessage(msg) && (
+                    <div className="cr-chat__bubble-scope">
+                      <LockKeyhole size={10} />
+                      <span>Private</span>
+                    </div>
+                  )}
 
                   <div
                     className={`cr-chat__bubble-text ${msg.isDeleted ? "cr-chat__bubble-text--deleted" : ""
@@ -864,7 +1145,7 @@ export default function ClassroomChat({
             );
           })}
 
-        {otherTypingName && (
+        {!historyError && otherTypingName && (
           <div className="cr-chat__typing">
             <div className="cr-chat__typing-dots">
               <span />
@@ -880,12 +1161,30 @@ export default function ClassroomChat({
         <div ref={messagesEndRef} />
       </div>
 
-      <form className="cr-chat__form" onSubmit={handleSubmit}>
+      <form
+        className={`cr-chat__form${chatMode === "direct" ? " cr-chat__form--private" : ""}${historyError ? " cr-chat__form--disabled" : ""}`}
+        onSubmit={handleSubmit}
+      >
+        {chatMode === "direct" && selectedRecipient && (
+          <div className="cr-chat__composer-scope">
+            <LockKeyhole size={12} />
+            <span>Only you and {selectedRecipient.name} can see this</span>
+          </div>
+        )}
         <input
           type="text"
           className="cr-chat__input"
           aria-label="Message"
-          placeholder="Type a message..."
+          disabled={Boolean(historyError)}
+          placeholder={
+            historyError
+              ? "Retry loading the conversation to continue..."
+              : chatMode === "direct"
+              ? selectedRecipient
+                ? `Message ${selectedRecipient.name} privately...`
+                : "Choose someone to message privately..."
+              : "Share with everyone..."
+          }
           value={inputValue}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
@@ -894,13 +1193,22 @@ export default function ClassroomChat({
         <button
           type="submit"
           className="cr-chat__send"
-          disabled={isSending || !inputValue.trim()}
+          disabled={
+            isSending ||
+            Boolean(historyError) ||
+            !inputValue.trim() ||
+            (chatMode === "direct" && !selectedRecipient)
+          }
           aria-label="Send message"
-          title={ready ? "Send message" : "Send when live sync reconnects"}
+          title={
+            chatMode === "direct"
+              ? "Send private message"
+              : ready
+                ? "Send message"
+                : "Send when live sync reconnects"
+          }
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M4 20L20 12L4 4V10L14 12L4 14V20Z" fill="currentColor" />
-          </svg>
+          {chatMode === "direct" ? <LockKeyhole size={17} /> : <Send size={17} />}
         </button>
       </form>
     </div>

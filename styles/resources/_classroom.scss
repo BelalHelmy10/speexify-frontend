@@ -1851,6 +1851,230 @@ body.classroom-active {
     text-transform: uppercase;
   }
 
+  &__audience {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    background: linear-gradient(135deg, rgba($cr-bg-elevated, 0.9), rgba($cr-bg-tertiary, 0.95));
+    border-bottom: 1px solid $cr-border-subtle;
+  }
+
+  &__audience-switcher {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 0 1 172px;
+    min-width: 0;
+    gap: 0.2rem;
+    padding: 0.2rem;
+    background: rgba($cr-bg-primary, 0.36);
+    border: 1px solid rgba($cr-border-default, 0.72);
+    border-radius: $cr-radius-full;
+  }
+
+  &__audience-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.3rem;
+    min-width: 0;
+    padding: 0.34rem 0.42rem;
+    color: $cr-text-muted;
+    background: transparent;
+    border: 0;
+    border-radius: $cr-radius-full;
+    cursor: pointer;
+    font-family: $cr-font-sans;
+    font-size: 0.68rem;
+    font-weight: 750;
+    transition: color $cr-transition-fast, background $cr-transition-fast, box-shadow $cr-transition-fast;
+
+    > svg {
+      flex: 0 0 auto;
+    }
+
+    &-label {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.06rem;
+      color: inherit;
+      line-height: 1;
+      text-align: left;
+
+      span {
+        overflow: hidden;
+        max-width: 100%;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      small {
+      color: inherit;
+      font-size: 0.58rem;
+      font-weight: 600;
+      opacity: 0.72;
+      }
+    }
+
+    &:hover {
+      color: $cr-text-primary;
+    }
+
+    &.is-active {
+      color: $cr-text-primary;
+      background: rgba($cr-bg-secondary, 0.95);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+      svg {
+        color: $cr-accent-primary;
+      }
+    }
+
+    &.is-private.is-active svg {
+      color: $cr-accent-teacher;
+    }
+  }
+
+  &__recipient-picker {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__recipient-trigger {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    gap: 0.45rem;
+    padding: 0.3rem 0.45rem;
+    color: $cr-text-primary;
+    text-align: left;
+    background: rgba($cr-bg-secondary, 0.82);
+    border: 1px solid $cr-border-default;
+    border-radius: $cr-radius-md;
+    cursor: pointer;
+    transition: border-color $cr-transition-fast, background $cr-transition-fast, box-shadow $cr-transition-fast;
+
+    &:hover,
+    &.is-open {
+      background: $cr-bg-secondary;
+      border-color: rgba($cr-accent-teacher, 0.55);
+      box-shadow: 0 0 0 3px rgba($cr-accent-teacher, 0.08);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+  }
+
+  &__recipient-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    color: $cr-accent-teacher;
+    background: rgba($cr-accent-teacher, 0.14);
+    border: 1px solid rgba($cr-accent-teacher, 0.25);
+    border-radius: 50%;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  &__recipient-copy {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.08rem;
+
+    small {
+      color: $cr-text-muted;
+      font-size: 0.57rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    strong {
+      overflow: hidden;
+      color: $cr-text-primary;
+      font-size: 0.7rem;
+      font-weight: 700;
+      line-height: 1.15;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &__recipient-chevron {
+    flex: 0 0 auto;
+    color: $cr-text-muted;
+    transition: transform $cr-transition-fast;
+
+    .cr-chat__recipient-trigger.is-open & {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__recipient-menu {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    left: 0;
+    z-index: 20;
+    padding: 0.35rem;
+    background: rgba($cr-bg-secondary, 0.98);
+    border: 1px solid $cr-border-default;
+    border-radius: $cr-radius-md;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(18px);
+  }
+
+  &__recipient-menu-label {
+    padding: 0.42rem 0.5rem 0.3rem;
+    color: $cr-text-muted;
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__recipient-option {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 0.5rem;
+    padding: 0.45rem 0.5rem;
+    color: $cr-text-primary;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-radius: $cr-radius-sm;
+    cursor: pointer;
+    font-family: $cr-font-sans;
+
+    &:hover,
+    &.is-selected {
+      background: rgba($cr-accent-primary, 0.1);
+    }
+
+    > svg {
+      flex: 0 0 auto;
+      margin-left: auto;
+      color: $cr-accent-primary;
+    }
+  }
+
   &__export,
   &__load-more,
   &__history-error button,
@@ -1913,6 +2137,70 @@ body.classroom-active {
     line-height: 1.4;
   }
 
+  &__error-state {
+    display: flex;
+    flex: 1;
+    min-height: 220px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 2rem 1.25rem;
+    text-align: center;
+  }
+
+  &__error-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    color: $cr-accent-danger;
+    background: rgba($cr-accent-danger, 0.1);
+    border: 1px solid rgba($cr-accent-danger, 0.22);
+    border-radius: 50%;
+  }
+
+  &__error-title {
+    color: $cr-text-primary;
+    font-size: 0.85rem;
+    font-weight: 750;
+  }
+
+  &__error-detail {
+    max-width: 280px;
+    color: $cr-text-muted;
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+
+  &__error-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+    padding: 0.45rem 0.75rem;
+    color: $cr-text-primary;
+    background: rgba($cr-accent-primary, 0.12);
+    border: 1px solid rgba($cr-accent-primary, 0.26);
+    border-radius: $cr-radius-full;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 750;
+    transition: background $cr-transition-fast, transform $cr-transition-fast;
+
+    &:hover {
+      background: rgba($cr-accent-primary, 0.2);
+      transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba($cr-accent-primary, 0.45);
+      outline-offset: 2px;
+    }
+  }
+
   &__loading {
     color: $cr-text-muted;
     background: rgba($cr-bg-elevated, 0.7);
@@ -1945,9 +2233,17 @@ body.classroom-active {
   }
 
   &__empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: $cr-accent-primary;
+    background: rgba($cr-accent-primary, 0.1);
+    border: 1px solid rgba($cr-accent-primary, 0.2);
+    border-radius: 50%;
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
-    opacity: 0.5;
   }
 
   &__empty-text {
@@ -2016,6 +2312,21 @@ body.classroom-active {
       border-style: dashed;
       box-shadow: none;
     }
+  }
+
+  &__bubble-scope {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: -0.05rem 0 0.35rem;
+    padding: 0.16rem 0.38rem;
+    color: $cr-accent-teacher;
+    background: rgba($cr-accent-teacher, 0.1);
+    border: 1px solid rgba($cr-accent-teacher, 0.2);
+    border-radius: $cr-radius-full;
+    font-size: 0.58rem;
+    font-weight: 750;
+    letter-spacing: 0.03em;
   }
 
   &__bubble-header {
@@ -2132,10 +2443,35 @@ body.classroom-active {
 
   &__form {
     display: flex;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 0.5rem;
     padding: 0.75rem;
     border-top: 1px solid $cr-border-subtle;
     background: $cr-bg-tertiary;
+  }
+
+  &__form--private {
+    background: linear-gradient(180deg, rgba($cr-accent-teacher, 0.07), $cr-bg-tertiary);
+  }
+
+  &__form--disabled {
+    opacity: 0.72;
+
+    .cr-chat__input {
+      cursor: not-allowed;
+    }
+  }
+
+  &__composer-scope {
+    display: flex;
+    align-items: center;
+    flex: 1 0 100%;
+    gap: 0.3rem;
+    padding: 0 0.2rem;
+    color: $cr-accent-teacher;
+    font-size: 0.62rem;
+    font-weight: 650;
   }
 
   &__input {
@@ -2993,6 +3329,21 @@ body.classroom-active {
     border-radius: $cr-radius-lg;
     display: flex;
     flex-direction: column;
+
+    &__audience {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    &__audience-switcher {
+      flex-basis: auto;
+      width: 100%;
+    }
+
+    &__recipient-menu {
+      right: 0;
+      left: 0;
+    }
 
     &__messages {
       flex: 1;
