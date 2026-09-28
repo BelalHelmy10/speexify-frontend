@@ -1234,7 +1234,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                     <div className="plan-xp-bar">
                       <div
                         className="plan-xp-bar__fill"
-                        style={{ width: `${totalSessions > 0 ? Math.round((usedSessions / totalSessions) * 100) : 0}%` }}
+                        style={{ width: `${progressPct}%` }}
                       />
                     </div>
                     <div className="plan-xp-bar__legend">
