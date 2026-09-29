@@ -164,7 +164,13 @@ export default function AdminPackagesModal({
 
   const activeCount  = packages.filter((p) => (p.status || "").toLowerCase() === "active").length;
   const expiredCount = packages.filter((p) => (p.status || "").toLowerCase() === "expired").length;
-  const totalRemaining = packages.reduce((s, p) => s + Number(p.remaining ?? 0), 0);
+  const totalRemaining = packages.reduce((s, p) => {
+    const eligible =
+      typeof p.creditEligible === "boolean"
+        ? p.creditEligible
+        : p.status === "active" && !p.expired;
+    return s + (eligible ? Number(p.remaining ?? 0) : 0);
+  }, 0);
 
   const displayName = selectedUser?.name || selectedUser?.email || "User";
   const initials = displayName
