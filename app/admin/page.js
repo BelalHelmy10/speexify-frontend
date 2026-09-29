@@ -19,6 +19,7 @@ import AdminNotificationDeliveriesSection from "./components/AdminNotificationDe
 import AdminAccessFallback from "./components/AdminAccessFallback";
 import AdminDashboardHeader from "./components/AdminDashboardHeader";
 import AdminUserManagementSection from "./components/AdminUserManagementSection";
+import AdminPaymentsSection from "./components/AdminPaymentsSection";
 import {
   toDateInput,
   toTimeInput,
@@ -1138,6 +1139,8 @@ function Admin() {
   return (
     <div className="adm-admin-modern">
       <AdminDashboardHeader />
+
+      <AdminPaymentsSection />
 
       {/* ═══════════════════════════════════════════════════════════════════
           USER MANAGEMENT

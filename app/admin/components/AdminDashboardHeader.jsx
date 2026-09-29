@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarClock, ClipboardCheck, MessageCircle, Package } from "lucide-react";
+import { CalendarClock, CheckCircle2, ClipboardCheck, MessageCircle, Package } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export default function AdminDashboardHeader() {
@@ -20,6 +20,10 @@ export default function AdminDashboardHeader() {
       </div>
 
       <div className="adm-admin-header__actions">
+        <a href="#admin-payments" className="adm-btn-primary">
+          <CheckCircle2 size={16} aria-hidden="true" />
+          Payments
+        </a>
         <Link href={`${prefix}/admin/free-sessions`} className="adm-btn-primary">
           <CalendarClock size={16} aria-hidden="true" />
           Free sessions

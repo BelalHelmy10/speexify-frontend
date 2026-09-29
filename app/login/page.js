@@ -122,10 +122,14 @@ function LoginInner({ dict }) {
     setSubmitting(true);
     setRedirecting(true);
     try {
-      await apiLogin(form);
+      const result = await apiLogin(form);
       // The login response already established the session cookie. Navigate
       // hard and let the server resolve the user from it — no extra /auth/me
       // round-trip, which on a cold backend doubled the wait and could fail.
+      if (result?.needsContactDetails || !result?.user?.phone) {
+        window.location.href = `${routeHref(APP_ROUTES.settings, locale)}?complete=contact`;
+        return;
+      }
       redirectAfterLogin();
     } catch (err) {
       setRedirecting(false);
@@ -144,7 +148,11 @@ function LoginInner({ dict }) {
       }
       setMsg("");
       setRedirecting(true);
-      await apiGoogleLogin(credential);
+      const result = await apiGoogleLogin(credential);
+      if (result?.needsContactDetails || !result?.user?.phone) {
+        window.location.href = `${routeHref(APP_ROUTES.settings, locale)}?complete=contact`;
+        return;
+      }
       // Session cookie is set by the response; hard-navigate and resolve the
       // user server-side instead of an extra client /auth/me round-trip.
       redirectAfterLogin();

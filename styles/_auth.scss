@@ -386,6 +386,39 @@
   line-height: 1.4;
 }
 
+.auth-page .auth-consent-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  color: $text-primary;
+  cursor: pointer;
+
+  input {
+    width: 16px;
+    height: 16px;
+    margin: 2px 0 0;
+    accent-color: $brand;
+  }
+
+  span {
+    display: grid;
+    gap: 3px;
+  }
+
+  strong {
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 650;
+  }
+
+  small {
+    color: $text-muted;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
+
 .auth-page .optional {
   font-weight: 400;
   color: $text-muted;

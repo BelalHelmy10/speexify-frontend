@@ -67,5 +67,5 @@
   "specificDates": "Specific Dates", "noName": "No Name", "availabilitySlots": "{count} slots",
   "sessionViews": "Session views", "searchSessions": "Search sessions by title or meeting link", "searchSessionsPlaceholder": "Search title or meeting link…",
   "searchPackages": "Search packages by title, description, or feature", "searchPackagesPlaceholder": "Search title, description, or features…", "searchIntake": "Search intake records by learner or email", "searchIntakePlaceholder": "Search learner or email…",
-  "userManagement": "User Management", "totalUsersCount": "{count} total users", "searchUsers": "Search users", "searchUsersPlaceholder": "Search users…", "filterUsersByRole": "Filter users by role", "allUsers": "All users", "admins": "Admins", "sortUsers": "Sort users", "newestFirst": "Newest first", "oldestFirst": "Oldest first", "nameAZ": "Name A–Z", "returnToAdmin": "Return to admin"
+  "userManagement": "User Management", "totalUsersCount": "{count} total users", "searchUsers": "Search users", "searchUsersPlaceholder": "Search users by name, email, or phone…", "filterUsersByRole": "Filter users by role", "allUsers": "All users", "admins": "Admins", "sortUsers": "Sort users", "newestFirst": "Newest first", "oldestFirst": "Oldest first", "nameAZ": "Name A–Z", "returnToAdmin": "Return to admin"
 }

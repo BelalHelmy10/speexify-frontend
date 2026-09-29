@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   Bell,
@@ -161,6 +161,7 @@ function ToggleRow({ icon: Icon, label, description, checked, onChange }) {
 export default function SettingsPage() {
   const { user, checking, refresh } = useAuth();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const dict = useMemo(() => getDictionary(locale, "settings"), [locale]);
 
@@ -171,6 +172,7 @@ export default function SettingsPage() {
 
   const [activeSection, setActiveSection] = useState("profile");
   const [me, setMe] = useState(null);
+  const [marketingPhoneConsent, setMarketingPhoneConsent] = useState(false);
   const [packages, setPackages] = useState([]);
   const [summary, setSummary] = useState(null);
   const [privacyRequests, setPrivacyRequests] = useState([]);
@@ -234,6 +236,12 @@ export default function SettingsPage() {
 
         if (meRes.status === "fulfilled") {
           setMe(meRes.value.data);
+          setMarketingPhoneConsent(
+            Boolean(
+              meRes.value.data?.marketingPhoneConsentAt &&
+                !meRes.value.data?.marketingPhoneOptOutAt
+            )
+          );
         } else {
           throw meRes.reason;
         }
@@ -269,6 +277,14 @@ export default function SettingsPage() {
       ignore = true;
     };
   }, [checking, user, dict]);
+
+  useEffect(() => {
+    if (initialLoading || !settingsReady || searchParams.get("complete") !== "contact") {
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => jumpToSection("profile"));
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialLoading, searchParams, settingsReady]);
 
   useEffect(() => {
     if (initialLoading || !settingsReady) return undefined;
@@ -373,8 +389,13 @@ export default function SettingsPage() {
         name: me.name || "",
         timezone: me.timezone || "",
         language: me.language || locale,
+        phone: me.phone || "",
+        marketingPhoneConsent,
       });
       setMe(res.data);
+      setMarketingPhoneConsent(
+        Boolean(res.data?.marketingPhoneConsentAt && !res.data?.marketingPhoneOptOutAt)
+      );
       await refresh();
       setProfileSuccess(copyText("save_success", "Profile updated successfully"));
     } catch (error) {
@@ -672,6 +693,15 @@ export default function SettingsPage() {
             icon={UserRound}
           >
             <form onSubmit={onSaveProfile} className="settings-form">
+              {!me.phone ? (
+                <div className="settings-callout" role="status">
+                  <Smartphone size={20} />
+                  <div>
+                    <strong>{copyText("contact_completion_title", "Add a phone number")}</strong>
+                    <p>{copyText("contact_completion_hint", "A phone number helps us support your account and keep you informed about important session updates.")}</p>
+                  </div>
+                </div>
+              ) : null}
               <div className="settings-field-grid">
                 <label className="settings-field">
                   <span>{copyText("email_label", "Email Address")}</span>
@@ -687,6 +717,21 @@ export default function SettingsPage() {
                     onChange={(event) =>
                       setMe((current) => ({ ...current, name: event.target.value }))
                     }
+                  />
+                </label>
+
+                <label className="settings-field">
+                  <span>{copyText("phone_label", "Phone Number")}</span>
+                  <small>{copyText("phone_hint", "Include your country code for reliable delivery.")}</small>
+                  <input
+                    type="tel"
+                    value={me.phone || ""}
+                    onChange={(event) =>
+                      setMe((current) => ({ ...current, phone: event.target.value }))
+                    }
+                    autoComplete="tel"
+                    inputMode="tel"
+                    placeholder={copyText("phone_placeholder", "+20 10 1234 5678")}
                   />
                 </label>
 
@@ -721,6 +766,16 @@ export default function SettingsPage() {
                     <option value="ar">{copyText("language_ar", "Arabic")}</option>
                   </select>
                 </label>
+              </div>
+
+              <div className="settings-toggle-stack">
+                <ToggleRow
+                  icon={Smartphone}
+                  label={copyText("marketing_consent_label", "Marketing messages")}
+                  description={copyText("marketing_consent_hint", "Receive relevant offers and learning updates by SMS or WhatsApp. You can opt out anytime.")}
+                  checked={marketingPhoneConsent}
+                  onChange={setMarketingPhoneConsent}
+                />
               </div>
 
               <div className="settings-actions">

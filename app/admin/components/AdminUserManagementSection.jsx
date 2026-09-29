@@ -129,6 +129,7 @@ export default function AdminUserManagementSection({
                   />
                 </th>
                 <th>User</th>
+                <th>Phone / marketing</th>
                 <th>Role</th>
                 <th>Hourly Rate (EGP)</th>
                 <th>Per Session (EGP)</th>
@@ -146,6 +147,16 @@ export default function AdminUserManagementSection({
                       checked={selectedUserIds.has(u.id)}
                       onChange={() => toggleUserSelection(u.id)}
                     />
+                  </td>
+                  <td>
+                    <div className="adm-user-info">
+                      <div className="adm-user-name">{u.phone || "No phone added"}</div>
+                      <div className="adm-user-email">
+                        {u.marketingPhoneConsentAt && !u.marketingPhoneOptOutAt
+                          ? "Marketing opted in"
+                          : "No marketing consent"}
+                      </div>
+                    </div>
                   </td>
                   <td>
                     <div className="adm-user-cell">

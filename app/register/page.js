@@ -56,6 +56,8 @@ function RegisterInner({ dict, locale }) {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [marketingPhoneConsent, setMarketingPhoneConsent] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -112,7 +114,14 @@ function RegisterInner({ dict, locale }) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const result = await apiRegisterComplete({ email, code, password, name });
+      const result = await apiRegisterComplete({
+        email,
+        code,
+        password,
+        name,
+        phone,
+        marketingPhoneConsent,
+      });
 
       trackEvent("signup_completed", {
         email,
@@ -141,7 +150,11 @@ function RegisterInner({ dict, locale }) {
         return;
       }
       setMsg("");
-      await apiGoogleLogin(credential);
+      const result = await apiGoogleLogin(credential);
+      if (result?.needsContactDetails || !result?.user?.phone) {
+        window.location.href = `${routeHref(APP_ROUTES.settings, locale)}?complete=contact`;
+        return;
+      }
       window.location.href = nextPath;
     } catch (err) {
       console.error(err);
@@ -385,6 +398,38 @@ function RegisterInner({ dict, locale }) {
                   />
                 </div>
               </div>
+
+              <div className="form-field">
+                <label htmlFor="phone">{t(dict, "label_phone")}</label>
+                <div className="input-wrapper">
+                  <svg className="input-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path d="M6.6 2.5h1.1c.5 0 .9.3 1 .8l.7 2.8c.1.4 0 .8-.3 1.1L7.8 8.5a11 11 0 003.7 3.7l1.3-1.3c.3-.3.7-.4 1.1-.3l2.8.7c.5.1.8.5.8 1v1.1c0 1.1-.9 2-2 2C8.5 15.4 4.6 11.5 4.6 6.5c0-1.1.9-2 2-2z" />
+                  </svg>
+                  <input
+                    id="phone"
+                    type="tel"
+                    placeholder={t(dict, "placeholder_phone")}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    autoComplete="tel"
+                    inputMode="tel"
+                  />
+                </div>
+                <p className="field-hint">{t(dict, "phone_hint")}</p>
+              </div>
+
+              <label className="auth-consent-row">
+                <input
+                  type="checkbox"
+                  checked={marketingPhoneConsent}
+                  onChange={(e) => setMarketingPhoneConsent(e.target.checked)}
+                />
+                <span>
+                  <strong>{t(dict, "marketing_consent")}</strong>
+                  <small>{t(dict, "marketing_consent_hint")}</small>
+                </span>
+              </label>
 
               <div className="form-field">
                 <label htmlFor="password">{t(dict, "label_password")}</label>

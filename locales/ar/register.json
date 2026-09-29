@@ -28,6 +28,12 @@
   "optional": "(اختياري)",
   "placeholder_name": "الاسم هنا",
 
+  "label_phone": "رقم الموبايل",
+  "placeholder_phone": "+20 10 1234 5678",
+  "phone_hint": "بنستخدمه لدعم الحساب وتحديثات الجلسات.",
+  "marketing_consent": "أوافق على استلام رسائل تسويقية عبر SMS أو واتساب.",
+  "marketing_consent_hint": "اختياري. تقدر تلغي الاشتراك في أي وقت.",
+
   "label_password": "الباسورد",
   "password_hint": "لازم تكون 6 أحرف على الأقل",
 

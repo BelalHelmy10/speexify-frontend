@@ -28,6 +28,12 @@
   "optional": "(optional)",
   "placeholder_name": "Jane Doe",
 
+  "label_phone": "Phone number",
+  "placeholder_phone": "+20 10 1234 5678",
+  "phone_hint": "Used for account support and session updates.",
+  "marketing_consent": "I agree to receive marketing messages by SMS or WhatsApp.",
+  "marketing_consent_hint": "Optional. You can unsubscribe at any time.",
+
   "label_password": "Password",
   "password_hint": "Must be at least 6 characters",
 
