@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  UserPlus,
 } from "lucide-react";
 
 export const API_LIST = "/api/notifications";
@@ -42,6 +43,8 @@ export function getNotificationIcon(type) {
       return <MessageSquare {...props} />;
     case "payment_receipt":
       return <CreditCard {...props} />;
+    case "user_registered":
+      return <UserPlus {...props} />;
     default:
       return <Bell {...props} />;
   }
@@ -51,11 +54,13 @@ export function getNotificationIconTone(type) {
   if (type === "session_canceled") return "danger";
   if (REMINDER_TYPES.has(type)) return "warning";
   if (type === "session_completed") return "success";
+  if (type === "user_registered") return "coral";
   return "default";
 }
 
-export function getNotificationHref(notification) {
+export function getNotificationHref(notification, locale = "en") {
   const data = notification?.data || {};
+  const prefix = locale === "ar" ? "/ar" : "";
 
   switch (notification?.type) {
     case "booking_confirmed":
@@ -70,6 +75,10 @@ export function getNotificationHref(notification) {
       return "/dashboard";
     case "payment_receipt":
       return "/dashboard/packages";
+    case "user_registered":
+      return data.registrationUserId
+        ? `${prefix}/admin/registrations/${data.registrationUserId}`
+        : `${prefix}/admin`;
     default:
       return "/dashboard";
   }
@@ -82,6 +91,10 @@ export function getJoinUrl(notification) {
 
 export function isSessionRelated(notification) {
   return Boolean(notification?.data?.sessionId);
+}
+
+export function isRegistrationRelated(notification) {
+  return notification?.type === "user_registered" && Boolean(notification?.data?.registrationUserId);
 }
 
 export function fmtTime(ts, locale = "en") {
@@ -225,6 +238,7 @@ export function copy(locale) {
     dismiss: "Dismiss",
     join: "Join session",
     open: "Open",
+    viewProfile: "View learner",
     retry: "Retry",
     confirmClear: "Remove all read notifications? This cannot be undone.",
     undo: "Undo",
@@ -253,6 +267,7 @@ export function copy(locale) {
     dismiss: "تجاهل",
     join: "ادخل الجلسة",
     open: "افتح",
+    viewProfile: "عرض المتعلم",
     retry: "حاول تاني",
     confirmClear: "امسح كل الإشعارات المقروءة؟ مفيش تراجع بعدين.",
     undo: "تراجع",

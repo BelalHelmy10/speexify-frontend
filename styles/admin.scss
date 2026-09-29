@@ -5013,3 +5013,443 @@
 .adm-user-management-card .adm-role-filter { flex: 0 1 auto; }
 @media (max-width: 900px) { .adm-user-management-card .adm-admin-card__actions { flex-wrap: wrap; } .adm-user-management-card .adm-search-box { flex-basis: 100%; } }
 @media (max-width: 900px) { .adm-role-filter { width: 100%; overflow-x: auto; } .adm-role-filter button { flex: 1 0 auto; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Registration detail workspace
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.adm-admin-header__notifications {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.25rem;
+}
+
+.adm-admin-header__notifications .spx-notif__btn {
+  border-color: rgba($brand, 0.2);
+  color: $brand-dark;
+  box-shadow: 0 5px 16px rgba($brand, 0.1);
+}
+
+.adm-admin-header__notifications .spx-notif__btn:hover,
+.adm-admin-header__notifications .spx-notif__btn.is-open {
+  background: rgba($brand, 0.1);
+  color: $brand-dark;
+}
+
+.adm-registration-shell {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.adm-registration-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--admin-text-secondary);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  margin: 0 0 1.25rem 0.25rem;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.adm-registration-back:hover {
+  color: $brand;
+  transform: translateX(-2px);
+  text-decoration: none;
+}
+
+.adm-registration-hero {
+  max-width: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  background: radial-gradient(circle at 100% 0%, rgba($brand, 0.14), transparent 34%), var(--admin-surface);
+}
+
+.adm-registration-hero__identity,
+.adm-registration-hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.adm-registration-avatar {
+  width: 84px;
+  height: 84px;
+  flex: 0 0 84px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 24px;
+  background: linear-gradient(135deg, $brand, $brand-dark);
+  color: #fff;
+  font-size: 1.7rem;
+  font-weight: 850;
+  box-shadow: 0 14px 32px rgba($brand, 0.25);
+}
+
+.adm-registration-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm-registration-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.adm-registration-hero h1 {
+  margin: 0;
+  color: var(--admin-text-primary);
+  font-family: $font-heading;
+  font-size: clamp(1.75rem, 3vw, 2.75rem);
+  letter-spacing: -0.035em;
+}
+
+.adm-registration-hero p {
+  margin: 0.3rem 0;
+  color: var(--admin-text-secondary);
+  font-size: 1rem;
+}
+
+.adm-registration-joined {
+  display: inline-block;
+  margin-top: 0.35rem;
+  color: var(--admin-text-secondary);
+  font-size: 0.82rem;
+}
+
+.adm-registration-status {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.adm-registration-status--success {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.adm-registration-status--danger {
+  color: #b42318;
+  background: rgba(239, 68, 68, 0.13);
+}
+
+.adm-registration-status--neutral {
+  color: var(--admin-text-secondary);
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.adm-registration-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+
+.adm-registration-stat {
+  position: relative;
+  min-height: 118px;
+  padding: 1.25rem;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow);
+}
+
+.adm-registration-stat span {
+  display: block;
+  color: var(--admin-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.adm-registration-stat strong {
+  display: block;
+  margin-top: 0.55rem;
+  color: var(--admin-text-primary);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.adm-registration-stat svg {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  color: rgba($brand, 0.7);
+}
+
+.adm-registration-panel {
+  max-width: none;
+  margin-bottom: 1rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.adm-registration-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.adm-registration-section-heading__icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  border-radius: 12px;
+  color: $brand;
+  background: rgba($brand, 0.12);
+}
+
+.adm-registration-eyebrow {
+  margin: 0 0 0.2rem;
+  color: $brand;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.adm-registration-section-heading h2 {
+  margin: 0;
+  color: var(--admin-text-primary);
+  font-size: 1.25rem;
+}
+
+.adm-registration-section-heading__count {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 0.38rem 0.68rem;
+  color: var(--admin-text-secondary);
+  background: rgba(148, 163, 184, 0.13);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.adm-registration-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+}
+
+.adm-registration-detail {
+  min-width: 0;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.adm-registration-detail dt {
+  margin-bottom: 0.28rem;
+  color: var(--admin-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.adm-registration-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--admin-text-primary);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.adm-registration-detail--wide {
+  grid-column: 1 / -1;
+}
+
+.adm-registration-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+}
+
+.adm-registration-table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.adm-registration-table th,
+.adm-registration-table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--admin-border);
+  vertical-align: top;
+}
+
+.adm-registration-table th {
+  color: var(--admin-text-secondary);
+  background: rgba($brand, 0.04);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.adm-registration-table td {
+  color: var(--admin-text-primary);
+  font-size: 0.82rem;
+}
+
+.adm-registration-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.adm-registration-table td span {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--admin-text-secondary);
+  font-size: 0.72rem;
+}
+
+.adm-registration-empty {
+  margin: 0;
+  padding: 1.25rem;
+  border: 1px dashed var(--admin-border);
+  border-radius: 12px;
+  color: var(--admin-text-secondary);
+  text-align: center;
+}
+
+.adm-registration-record {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  background: rgba($brand, 0.025);
+}
+
+.adm-registration-record__top,
+.adm-registration-assessment-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.adm-registration-record__top {
+  justify-content: space-between;
+  color: var(--admin-text-secondary);
+  font-size: 0.78rem;
+}
+
+.adm-registration-record__top strong {
+  color: var(--admin-text-primary);
+}
+
+.adm-registration-answer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1.25rem;
+  margin: 0.75rem 0 0;
+}
+
+.adm-registration-assessment-meta {
+  margin-top: 1rem;
+  color: var(--admin-text-secondary);
+  font-size: 0.82rem;
+}
+
+.adm-registration-assessment-meta strong {
+  color: var(--admin-text-primary);
+}
+
+.adm-registration-text,
+.adm-registration-feedback {
+  margin: 1rem 0 0;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--admin-text-primary);
+  font-size: 0.88rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.adm-registration-feedback {
+  background: rgba($brand, 0.08);
+}
+
+.adm-registration-state {
+  max-width: none;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.adm-registration-state h1,
+.adm-registration-state p {
+  margin: 0;
+}
+
+.adm-registration-state p {
+  margin-top: 0.25rem;
+  color: var(--admin-text-secondary);
+}
+
+.adm-registration-state--error {
+  color: #b42318;
+}
+
+@media (max-width: 900px) {
+  .adm-registration-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .adm-registration-hero__actions {
+    width: 100%;
+  }
+
+  .adm-registration-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .adm-admin-header__notifications {
+    order: -1;
+  }
+
+  .adm-registration-summary,
+  .adm-registration-detail-grid,
+  .adm-registration-answer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-registration-detail--wide {
+    grid-column: auto;
+  }
+
+  .adm-registration-hero__actions .adm-btn-primary,
+  .adm-registration-hero__actions .adm-btn-secondary {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .adm-registration-avatar {
+    width: 68px;
+    height: 68px;
+    flex-basis: 68px;
+    border-radius: 18px;
+    font-size: 1.35rem;
+  }
+}

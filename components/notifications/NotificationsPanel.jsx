@@ -38,6 +38,7 @@ import {
   groupByDateLabel,
   groupNotificationsForDisplay,
   isSessionRelated,
+  isRegistrationRelated,
 } from "@/lib/notifications";
 
 const FOCUSABLE =
@@ -150,6 +151,18 @@ function NotificationRow({
                 }}
               >
                 {t.open}
+              </button>
+            )}
+            {isRegistrationRelated(entry) && (
+              <button
+                type="button"
+                className="spx-notif__cta spx-notif__cta--primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpen(entry, e);
+                }}
+              >
+                {t.viewProfile}
               </button>
             )}
             {isUnread && (
@@ -499,12 +512,12 @@ export default function NotificationsPanel({
       onClose?.();
 
       if (entry.isStack && entry.items?.[0]) {
-        router.push(getNotificationHref(entry.items[0]));
+        router.push(getNotificationHref(entry.items[0], locale));
         return;
       }
-      router.push(getNotificationHref(entry));
+      router.push(getNotificationHref(entry, locale));
     },
-    [markRead, onClose, router]
+    [locale, markRead, onClose, router]
   );
 
   const settingsHref =

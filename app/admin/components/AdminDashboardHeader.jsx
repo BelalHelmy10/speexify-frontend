@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CalendarClock, CheckCircle2, ClipboardCheck, MessageCircle, Package } from "lucide-react";
 import { usePathname } from "next/navigation";
+import NotificationsBell from "@/components/NotificationsBell";
 
 export default function AdminDashboardHeader() {
   const pathname = usePathname();
@@ -20,6 +21,9 @@ export default function AdminDashboardHeader() {
       </div>
 
       <div className="adm-admin-header__actions">
+        <div className="adm-admin-header__notifications" aria-label="Admin notifications">
+          <NotificationsBell locale={prefix ? "ar" : "en"} />
+        </div>
         <a href="#admin-payments" className="adm-btn-primary">
           <CheckCircle2 size={16} aria-hidden="true" />
           Payments
