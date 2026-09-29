@@ -30,6 +30,9 @@
   "profile_error": "Failed to save profile",
   "contact_completion_title": "Add a phone number",
   "contact_completion_hint": "A phone number helps us support your account and keep you informed about important session updates.",
+  "contact_completion_eyebrow": "One quick step",
+  "contact_completion_required": "Add a phone number before continuing to your account. Marketing messages are always optional.",
+  "continue_to_account": "Continue to your account",
 
   "email_label": "Email Address",
   "email_hint": "Your account email is read-only.",

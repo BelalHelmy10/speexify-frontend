@@ -52,6 +52,7 @@ const PRIVATE_ROUTES = [
   "/dashboard",
   "/calendar",
   "/settings",
+  "/complete-profile",
   "/admin",
   "/classroom",
   "/resources",
@@ -170,6 +171,24 @@ export async function proxy(req) {
     const dashboardPath = isArabic ? "/ar/dashboard" : "/dashboard";
     return withCommonHeaders(
       NextResponse.redirect(new URL(dashboardPath, req.url)),
+      securityContext
+    );
+  }
+
+  const needsContactDetails =
+    sessionUser?.role === "learner" && !sessionUser?.phone;
+  if (isAuthed && needsContactDetails && onPrivatePage && basePath !== "/complete-profile") {
+    const destination = new URL(
+      isArabic ? "/ar/complete-profile" : "/complete-profile",
+      req.url
+    );
+    const currentQuery = searchParams.toString();
+    const currentPath = pathname + (currentQuery ? `?${currentQuery}` : "");
+    if (basePath !== "/settings") {
+      destination.searchParams.set("next", currentPath);
+    }
+    return withCommonHeaders(
+      NextResponse.redirect(destination),
       securityContext
     );
   }

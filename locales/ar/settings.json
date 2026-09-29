@@ -30,6 +30,9 @@
   "profile_error": "مقدرناش نحفظ الملف الشخصي",
   "contact_completion_title": "أضف رقم الموبايل",
   "contact_completion_hint": "رقم الموبايل بيساعدنا ندعم حسابك ونبعتلك تحديثات مهمة عن الجلسات.",
+  "contact_completion_eyebrow": "خطوة سريعة",
+  "contact_completion_required": "أضف رقم الموبايل قبل ما تكمل لحسابك. الرسائل التسويقية اختيارية دائمًا.",
+  "continue_to_account": "كمل لحسابك",
 
   "email_label": "الإيميل",
   "email_hint": "إيميل الحساب مش قابل للتعديل هنا.",

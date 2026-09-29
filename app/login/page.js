@@ -127,7 +127,9 @@ function LoginInner({ dict }) {
       // hard and let the server resolve the user from it — no extra /auth/me
       // round-trip, which on a cold backend doubled the wait and could fail.
       if (result?.needsContactDetails || !result?.user?.phone) {
-        window.location.href = `${routeHref(APP_ROUTES.settings, locale)}?complete=contact`;
+        const next = params.get("next");
+        const suffix = next ? `?next=${encodeURIComponent(next)}` : "";
+        window.location.href = `${routeHref(APP_ROUTES.completeProfile, locale)}${suffix}`;
         return;
       }
       redirectAfterLogin();
@@ -150,7 +152,9 @@ function LoginInner({ dict }) {
       setRedirecting(true);
       const result = await apiGoogleLogin(credential);
       if (result?.needsContactDetails || !result?.user?.phone) {
-        window.location.href = `${routeHref(APP_ROUTES.settings, locale)}?complete=contact`;
+        const next = params.get("next");
+        const suffix = next ? `?next=${encodeURIComponent(next)}` : "";
+        window.location.href = `${routeHref(APP_ROUTES.completeProfile, locale)}${suffix}`;
         return;
       }
       // Session cookie is set by the response; hard-navigate and resolve the
