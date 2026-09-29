@@ -11,7 +11,9 @@ import NotificationsPanel from "@/components/notifications/NotificationsPanel";
 import { API_LIST, copy } from "@/lib/notifications";
 
 function useIsMobile(breakpoint = 640) {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth <= breakpoint
+  );
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= breakpoint);
     check();
@@ -81,11 +83,14 @@ export default function NotificationsBell({ locale = "en" }) {
       const updatePosition = () => {
         if (!btnRef.current) return;
         const rect = btnRef.current.getBoundingClientRect();
+        const panelWidth = Math.min(420, window.innerWidth - 24);
+        const maxLeft = Math.max(12, window.innerWidth - panelWidth - 12);
+        const left = Math.max(12, Math.min(rect.right - panelWidth, maxLeft));
         setPanelStyle({
           position: "fixed",
           top: rect.bottom + 24,
-          left: "auto",
-          right: window.innerWidth - rect.right,
+          left,
+          right: "auto",
           zIndex: 9999999,
           transform: "none",
         });
