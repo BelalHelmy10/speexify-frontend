@@ -119,6 +119,10 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
       ),
     [form.selectedLearnerIds, peopleById]
   );
+  const selectedTeacher = useMemo(
+    () => teachers.find((teacher) => String(teacher.id) === String(form.teacherId)),
+    [form.teacherId, teachers]
+  );
 
   const dayOfWeek = useMemo(() => {
     if (!form.startDate) return null;
@@ -303,6 +307,10 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
     });
   };
 
+  const clearLearners = () => {
+    updateForm({ selectedLearnerIds: [] });
+  };
+
   const resetForm = () => {
     setForm(getInitialState());
     setCustomTitles({});
@@ -384,9 +392,10 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
 
   if (!isOpen) return null;
 
-  const searchResults = learners
-    .filter((learner) => !form.selectedLearnerIds.some((id) => String(id) === String(learner.id)))
-    .slice(0, 8);
+  const searchResults = learners.filter(
+    (learner) =>
+      !form.selectedLearnerIds.some((id) => String(id) === String(learner.id))
+  );
   const requestedCredits = selectedLearners.length * form.numberOfSessions;
   const availableCredits = creditRows.reduce(
     (sum, row) => sum + Number(row.remaining || 0),
@@ -491,27 +500,43 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
                   type="search"
                   value={learnerSearch}
                   onChange={(event) => setLearnerSearch(event.target.value)}
-                  placeholder="Search learners by name or email"
+                  placeholder="Search all learners by name or email"
                   aria-label="Search learners by name or email"
                 />
                 {loadingLearners && <Loader2 size={16} className="bulk-scheduler__spin" />}
               </div>
 
+              <div className="bulk-scheduler__directory-meta" aria-live="polite">
+                <span>
+                  {learnerSearch ? "Matching active learners" : "All active learners"}
+                </span>
+                <strong>
+                  {searchResults.length} available
+                  {learnerSearch ? ` of ${learners.length}` : ""}
+                </strong>
+              </div>
+
               {selectedLearners.length > 0 && (
-                <div className="bulk-scheduler__chips" aria-label="Selected learners">
-                  {selectedLearners.map((learner) => (
-                    <span className="bulk-scheduler__chip" key={learner.id}>
-                      <span className="bulk-scheduler__chip-avatar">{personLabel(learner).slice(0, 1).toUpperCase()}</span>
-                      <span>{personLabel(learner)}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeLearner(learner.id)}
-                        aria-label={`Remove ${personLabel(learner)}`}
-                      >
-                        <X size={14} />
-                      </button>
-                    </span>
-                  ))}
+                <div className="bulk-scheduler__selection-block">
+                  <div className="bulk-scheduler__selection-heading">
+                    <span>Selected {isGroup ? "learners" : "learner"}</span>
+                    <button type="button" onClick={clearLearners}>Clear all</button>
+                  </div>
+                  <div className="bulk-scheduler__chips" aria-label="Selected learners">
+                    {selectedLearners.map((learner) => (
+                      <span className="bulk-scheduler__chip" key={learner.id}>
+                        <span className="bulk-scheduler__chip-avatar">{personLabel(learner).slice(0, 1).toUpperCase()}</span>
+                        <span>{personLabel(learner)}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeLearner(learner.id)}
+                          aria-label={`Remove ${personLabel(learner)}`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -562,6 +587,36 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
                 <div>
                   <span className="bulk-scheduler__step">03</span>
                   <div>
+                    <h3>Assign the teacher</h3>
+                    <p>Choose who will teach every session, or leave it open for later.</p>
+                  </div>
+                </div>
+                <span className="bulk-scheduler__count-pill">
+                  {teachers.length} active {teachers.length === 1 ? "teacher" : "teachers"}
+                </span>
+              </div>
+
+              <div className="bulk-scheduler__assignment-card">
+                <div className="bulk-scheduler__assignment-icon"><UserRound size={18} /></div>
+                <label className="bulk-scheduler__field">
+                  <span>Teacher <em>optional</em></span>
+                  <select value={form.teacherId} onChange={(event) => updateForm({ teacherId: event.target.value })} disabled={loadingTeachers}>
+                    <option value="">No teacher assigned yet</option>
+                    {teachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name || teacher.email}</option>)}
+                  </select>
+                </label>
+                <p className="bulk-scheduler__field-note">
+                  <Users size={15} />
+                  {selectedTeacher ? `${selectedTeacher.name || selectedTeacher.email} will be added to every session.` : "You can assign a teacher later from the session details."}
+                </p>
+              </div>
+            </section>
+
+            <section className="bulk-scheduler__section">
+              <div className="bulk-scheduler__section-heading">
+                <div>
+                  <span className="bulk-scheduler__step">04</span>
+                  <div>
                     <h3>Set the weekly rhythm</h3>
                     <p>The start date anchors the same weekday for every session.</p>
                   </div>
@@ -598,13 +653,10 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
                     {DURATION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 </label>
-                <label className="bulk-scheduler__field">
-                  <span>Teacher <em>optional</em></span>
-                  <select value={form.teacherId} onChange={(event) => updateForm({ teacherId: event.target.value })} disabled={loadingTeachers}>
-                    <option value="">No teacher assigned yet</option>
-                    {teachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name || teacher.email}</option>)}
-                  </select>
-                </label>
+                <div className="bulk-scheduler__field bulk-scheduler__field--read-only">
+                  <span>Teacher</span>
+                  <div>{selectedTeacher ? selectedTeacher.name || selectedTeacher.email : "Unassigned"}</div>
+                </div>
               </div>
 
               <label className="bulk-scheduler__field">
@@ -673,6 +725,7 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
 
             <div className="bulk-scheduler__summary-card">
               <div><Users size={16} /><span>Participants</span><strong>{selectedLearners.length || "—"}</strong></div>
+              <div><UserRound size={16} /><span>Teacher</span><strong>{selectedTeacher ? selectedTeacher.name || selectedTeacher.email : "Unassigned"}</strong></div>
               <div><CalendarDays size={16} /><span>Schedule</span><strong>{form.numberOfSessions} × weekly</strong></div>
               <div><Clock3 size={16} /><span>Duration</span><strong>{form.durationMin} min</strong></div>
             </div>
