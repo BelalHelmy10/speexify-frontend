@@ -30,6 +30,8 @@ const DAYS_OF_WEEK = [
   "Saturday",
 ];
 
+const SCHEDULING_TIME_ZONE = "Africa/Cairo";
+
 const DURATION_OPTIONS = [
   { value: 30, label: "30 minutes" },
   { value: 45, label: "45 minutes" },
@@ -353,6 +355,7 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
         startDate: form.startDate,
         dayOfWeek,
         time: form.time,
+        timeZone: SCHEDULING_TIME_ZONE,
         numberOfSessions: Number(form.numberOfSessions),
         durationMin: Number(form.durationMin),
         defaultTitle: form.title.trim() || (isGroup ? "Group Session" : "Lesson"),
@@ -629,7 +632,7 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
                   <input type="date" value={form.startDate} onChange={(event) => updateForm({ startDate: event.target.value })} />
                 </label>
                 <label className="bulk-scheduler__field">
-                  <span>Time</span>
+                  <span>Time <em>(Cairo)</em></span>
                   <select value={form.time} onChange={(event) => updateForm({ time: event.target.value })}>
                     {timeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
