@@ -666,12 +666,15 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
 
               <div className="bulk-scheduler__timeline">
                 <div className="bulk-scheduler__timeline-heading">
-                  <span><Clock3 size={16} /> {DAYS_OF_WEEK[dayOfWeek] || "Select a date"} · {formatTime(form.time)}</span>
-                  <strong>{sessionDates.length} dates</strong>
+                  <div>
+                    <span><Clock3 size={16} /> {DAYS_OF_WEEK[dayOfWeek] || "Select a date"} · {formatTime(form.time)}</span>
+                    <small>Review every date and add an optional custom title.</small>
+                  </div>
+                  <strong>{sessionDates.length} {sessionDates.length === 1 ? "date" : "dates"}</strong>
                 </div>
-                <div className="bulk-scheduler__timeline-list">
-                  {sessionDates.slice(0, 6).map((date, index) => (
-                    <div className="bulk-scheduler__timeline-item" key={date.toISOString()}>
+                <div className="bulk-scheduler__timeline-list" role="list" aria-label="All scheduled session dates">
+                  {sessionDates.map((date, index) => (
+                    <div className="bulk-scheduler__timeline-item" key={date.toISOString()} role="listitem">
                       <span>{String(index + 1).padStart(2, "0")}</span>
                       <strong>{formatDate(date)}</strong>
                       <small>{formatTime(form.time)}</small>
@@ -690,7 +693,6 @@ export default function BulkSessionScheduler({ isOpen, onClose, onSuccess }) {
                       />
                     </div>
                   ))}
-                  {sessionDates.length > 6 && <div className="bulk-scheduler__timeline-more">+ {sessionDates.length - 6} more weekly sessions</div>}
                 </div>
               </div>
             </section>
