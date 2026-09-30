@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="coral" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f25c2e"/>
+      <stop offset="1" stop-color="#de4926"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#coral)"/>
+  <circle cx="1110" cy="-68" r="316" fill="#ffffff" opacity="0.06"/>
+  <circle cx="-82" cy="650" r="285" fill="#0d1b2a" opacity="0.08"/>
+  <svg x="98" y="154" width="322" height="322" viewBox="0 0 512 512">
+    <rect width="512" height="512" rx="100" fill="#0d1b2a"/>
+    <path d="M256 80 C440 80,440 256,256 256 C72 256,72 432,256 432"
+          stroke="#f25c2e" stroke-width="90" stroke-linecap="round" fill="none"/>
+  </svg>
+  <text x="464" y="283" font-family="Arial, Helvetica, sans-serif" font-size="104" font-weight="700" letter-spacing="-4" fill="#ffffff">Speexify</text>
+  <text x="468" y="360" font-family="Arial, Helvetica, sans-serif" font-size="43" font-weight="700" fill="#ffffff">Speak it. Don't study it.</text>
+  <rect x="468" y="397" width="66" height="5" rx="2.5" fill="#0d1b2a"/>
+  <text x="468" y="455" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#fff4ed">English speaking coaching</text>
+  <text x="103" y="570" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#ffffff" opacity="0.85">speexify.com</text>
+</svg>

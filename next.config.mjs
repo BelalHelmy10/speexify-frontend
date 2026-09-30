@@ -69,6 +69,13 @@ const nextConfig = {
     return [{ source: "/api/:path*", destination: `${apiBase}/api/:path*` }];
   },
 
+  async redirects() {
+    return [
+      { source: "/opengraph-image", destination: "/speexify-share-coral-v1.png", permanent: true },
+      { source: "/twitter-image", destination: "/speexify-share-coral-v1.png", permanent: true },
+    ];
+  },
+
   async headers() {
     return [
       {

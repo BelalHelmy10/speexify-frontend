@@ -7,8 +7,8 @@ import {
 export const SITE_URL = "https://speexify.com";
 export const SITE_NAME = "Speexify";
 
-const DEFAULT_OG_IMAGE = "/opengraph-image";
-const DEFAULT_TWITTER_IMAGE = "/twitter-image";
+const DEFAULT_OG_IMAGE = "/speexify-share-coral-v1.png";
+const DEFAULT_TWITTER_IMAGE = DEFAULT_OG_IMAGE;
 
 const GOOGLE_BOT = {
   index: true,
