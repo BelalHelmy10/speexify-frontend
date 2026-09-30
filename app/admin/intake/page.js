@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   BookOpenText,
+  CalendarDays,
   CheckCircle2,
   ClipboardCheck,
   Clock3,
@@ -67,7 +68,7 @@ const ONBOARDING_SECTIONS = [
     icon: UserRound,
     fields: [
       ["timezone", "Timezone"],
-      ["availability", "Availability"],
+      ["availability", "Onboarding availability preference"],
       ["preferredFormat", "Preferred format"],
       ["usageFrequency", "Practice frequency"],
       ["usageContexts", "Usage contexts"],
@@ -94,7 +95,6 @@ const ONBOARDING_SECTIONS = [
       ["challenges", "Challenges"],
       ["learningStyles", "Learning style"],
       ["confidence", "Confidence"],
-      ["writingSample", "Writing sample"],
       ["consentRecording", "Recording consent"],
     ],
   },
@@ -135,6 +135,13 @@ function statusLabel(value) {
   if (!value) return "Missing";
   return String(value)
     .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function fieldLabel(value) {
+  return String(value || "")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
@@ -201,6 +208,97 @@ function IntakeField({ label, value }) {
   );
 }
 
+const AVAILABILITY_DAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+function formatAvailabilityDate(value) {
+  if (!value) return "Specific date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function availabilitySlotLabel(slot) {
+  const day = slot?.isRecurring && Number.isInteger(slot?.dayOfWeek)
+    ? AVAILABILITY_DAY_NAMES[slot.dayOfWeek] || "Weekly"
+    : formatAvailabilityDate(slot?.specificDate);
+  const time = [slot?.startTime, slot?.endTime].filter(Boolean).join("–");
+  return { day, time: time || "Time not provided" };
+}
+
+function CalendarAvailability({ slots = [], timezone, onboardingPreference }) {
+  const normalizedSlots = Array.isArray(slots) ? slots : [];
+  const activeSlots = normalizedSlots.filter((slot) => slot?.status === "active");
+  const inactiveSlots = normalizedSlots.filter((slot) => slot?.status !== "active");
+
+  return (
+    <section className="adm-intake-answer-section adm-intake-availability-section">
+      <div className="adm-intake-answer-section__header">
+        <CalendarDays size={18} aria-hidden="true" />
+        <div>
+          <h3>Calendar availability</h3>
+          <p className="adm-intake-section-hint">
+            Separate from the onboarding preference above. These are the saved scheduling slots.
+          </p>
+        </div>
+        <span className={`adm-intake-pill ${activeSlots.length ? "adm-intake-pill--success" : "adm-intake-pill--muted"}`}>
+          {activeSlots.length ? `${activeSlots.length} active` : "Not set"}
+        </span>
+      </div>
+
+      <div className="adm-intake-availability-meta">
+        <span><strong>Timezone</strong>{timezone || "Not provided"}</span>
+        <span><strong>Onboarding preference</strong>{onboardingPreference || "Not provided"}</span>
+      </div>
+
+      {activeSlots.length ? (
+        <div className="adm-intake-availability-list">
+          {activeSlots.map((slot) => {
+            const label = availabilitySlotLabel(slot);
+            return (
+              <div className="adm-intake-availability-slot" key={slot.id}>
+                <div>
+                  <strong>{label.day}</strong>
+                  <span>{label.time}</span>
+                </div>
+                <small>{slot.isRecurring ? "Repeats weekly" : "One-time slot"}</small>
+                {slot.note && <small>{slot.note}</small>}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="adm-intake-muted adm-intake-availability-empty">
+          No active calendar availability has been saved. This learner may not have filled the calendar, or may only have the onboarding preference above.
+        </div>
+      )}
+
+      {inactiveSlots.length > 0 && (
+        <details className="adm-intake-availability-inactive">
+          <summary>{inactiveSlots.length} inactive slot{inactiveSlots.length === 1 ? "" : "s"}</summary>
+          <div className="adm-intake-availability-list">
+            {inactiveSlots.map((slot) => {
+              const label = availabilitySlotLabel(slot);
+              return <span key={slot.id}>{label.day} {label.time}</span>;
+            })}
+          </div>
+        </details>
+      )}
+    </section>
+  );
+}
+
 function OnboardingSection({ section, answers }) {
   const Icon = section.icon;
   return (
@@ -233,7 +331,7 @@ function AdditionalOnboardingFields({ answers }) {
       </div>
       <div className="adm-intake-fields">
         {entries.map(([key, value]) => (
-          <IntakeField key={key} label={key} value={value} />
+          <IntakeField key={key} label={fieldLabel(key)} value={value} />
         ))}
       </div>
     </section>
@@ -817,6 +915,12 @@ export default function AdminIntakePage() {
                     const onboarding = item.latestOnboarding;
                     const assessment = item.latestAssessment;
                     const tone = assessmentTone(assessment?.status);
+                    const onboardingStatus = onboarding?.status || "";
+                    const onboardingTone = onboardingStatus === "submitted"
+                      ? "success"
+                      : onboardingStatus === "draft"
+                        ? "pending"
+                        : "muted";
                     return (
                       <tr
                         key={learner.id}
@@ -837,11 +941,9 @@ export default function AdminIntakePage() {
                         </td>
                         <td>
                           <span
-                            className={`adm-intake-pill ${
-                              onboarding ? "adm-intake-pill--success" : "adm-intake-pill--muted"
-                            }`}
+                            className={`adm-intake-pill adm-intake-pill--${onboardingTone}`}
                           >
-                            {onboarding ? "Submitted" : "Missing"}
+                            {onboardingStatus ? statusLabel(onboardingStatus) : "Missing"}
                           </span>
                         </td>
                         <td>
@@ -958,15 +1060,23 @@ export default function AdminIntakePage() {
                       <h2>Complete needs profile</h2>
                     </div>
                     <span
-                      className={`adm-intake-pill ${
-                        activeOnboarding
-                          ? "adm-intake-pill--success"
-                          : "adm-intake-pill--muted"
+                      className={`adm-intake-pill adm-intake-pill--${
+                        activeOnboarding?.status === "submitted"
+                          ? "success"
+                          : activeOnboarding?.status === "draft"
+                            ? "pending"
+                            : "muted"
                       }`}
                     >
-                      {activeOnboarding ? "Submitted" : "Missing"}
+                      {activeOnboarding?.status ? statusLabel(activeOnboarding.status) : "Missing"}
                     </span>
                   </div>
+
+                  <CalendarAvailability
+                    slots={detail.availabilities}
+                    timezone={activeOnboardingAnswers.timezone || detail.user.timezone}
+                    onboardingPreference={activeOnboardingAnswers.availability}
+                  />
 
                   {activeOnboarding ? (
                     <div className="adm-intake-answer-stack">

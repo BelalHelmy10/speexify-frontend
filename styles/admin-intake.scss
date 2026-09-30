@@ -479,6 +479,115 @@
   }
 }
 
+.adm-intake-section-hint {
+  margin: 0.2rem 0 0;
+  color: var(--admin-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.adm-intake-availability-section {
+  border-color: rgba($brand, 0.2);
+  background: linear-gradient(135deg, rgba($brand, 0.08), rgba($color-black, 0.22));
+}
+
+.adm-intake-availability-section .adm-intake-answer-section__header {
+  align-items: flex-start;
+
+  > div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  > .adm-intake-pill {
+    flex: 0 0 auto;
+  }
+}
+
+.adm-intake-availability-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+
+  > span {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 10px;
+    background: rgba($color-white, 0.04);
+    color: var(--admin-text-primary);
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+
+    strong {
+      color: var(--admin-text-muted);
+      font-size: 0.68rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  }
+}
+
+.adm-intake-availability-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.adm-intake-availability-slot {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba($text-muted, 0.1);
+  border-radius: 10px;
+  background: rgba($color-black, 0.18);
+
+  div {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  strong {
+    color: var(--admin-text-primary);
+    font-size: 0.8rem;
+  }
+
+  span,
+  small {
+    color: var(--admin-text-secondary);
+    font-size: 0.74rem;
+  }
+
+  small {
+    text-align: right;
+  }
+}
+
+.adm-intake-availability-empty {
+  padding: 0.8rem 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.adm-intake-availability-inactive {
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba($text-muted, 0.1);
+  color: var(--admin-text-muted);
+  font-size: 0.75rem;
+
+  summary {
+    cursor: pointer;
+    font-weight: 800;
+  }
+
+  .adm-intake-availability-list {
+    margin-top: 0.6rem;
+    color: var(--admin-text-secondary);
+  }
+}
+
 .adm-intake-fields {
   display: grid;
   gap: 0.6rem;
@@ -1009,6 +1118,19 @@
   .adm-intake-field {
     grid-template-columns: 1fr;
     gap: 0.3rem;
+  }
+
+  .adm-intake-availability-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-intake-availability-slot {
+    grid-template-columns: 1fr 1fr;
+
+    small:last-child {
+      grid-column: 1 / -1;
+      text-align: left;
+    }
   }
 
   .adm-intake-assessment-summary {
