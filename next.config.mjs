@@ -71,8 +71,9 @@ const nextConfig = {
 
   async redirects() {
     return [
-      { source: "/opengraph-image", destination: "/speexify-share-coral-v1.png", permanent: true },
-      { source: "/twitter-image", destination: "/speexify-share-coral-v1.png", permanent: true },
+      { source: "/opengraph-image", destination: "/speexify-share-coral-v2.png", permanent: true },
+      { source: "/twitter-image", destination: "/speexify-share-coral-v2.png", permanent: true },
+      { source: "/speexify-share-coral-v1.png", destination: "/speexify-share-coral-v2.png", permanent: true },
     ];
   },
 

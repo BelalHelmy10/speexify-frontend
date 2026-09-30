@@ -86,7 +86,7 @@ export const metadata = {
     siteName: BRAND_NAME,
     images: [
       {
-        url: "/speexify-share-coral-v1.png",
+        url: "/speexify-share-coral-v2.png",
         width: 1200,
         height: 630,
         alt: BRAND_SITE_TITLE,
@@ -100,7 +100,7 @@ export const metadata = {
     title: BRAND_SITE_TITLE,
     description: BRAND_DESCRIPTION,
     creator: "@speexify",
-    images: ["/speexify-share-coral-v1.png"],
+    images: ["/speexify-share-coral-v2.png"],
   },
 
   // Robots directives
