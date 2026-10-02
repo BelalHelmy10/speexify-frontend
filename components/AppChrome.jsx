@@ -6,6 +6,7 @@ import Script from "next/script";
 import { usePathname } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import useAuth from "@/hooks/useAuth";
 import { normalizeLocalizedPath } from "@/lib/chromeRoutes";
 
 // These controls are useful after the page is usable, but they are not part
@@ -79,6 +80,7 @@ function shouldLoadJitsi(pathname) {
 
 export default function AppChrome({ children }) {
   const pathname = usePathname();
+  const { status: authStatus } = useAuth();
   const deferredChromeReady = useDeferredChrome();
   const focusedWorkspace = isFocusedWorkspace(pathname);
   const appPath = isAppPath(pathname);
@@ -108,6 +110,8 @@ export default function AppChrome({ children }) {
       )}
       {deferredChromeReady && showSiteChrome && <ScrollToTop />}
       {showSiteChrome &&
+        !appPath &&
+        authStatus === "unauthenticated" &&
         normalizedPath !== "/assessment" &&
         normalizedPath !== "/book-free-session" && <StickyTrialCTA />}
     </>
