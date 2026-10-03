@@ -18,14 +18,14 @@ import {
 } from "@/lib/regional-pricing";
 import { oneOnOnePlans, groupPlans, corporatePlans } from "@/lib/plans";
 import { getPricingRegion } from "@/lib/pricing-regions";
-import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
+import { APP_ROUTES, routeHref } from "@/lib/routes";
 import { formatNumber } from "@/utils/locale";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
 const DEFAULT_COUNTRY_CODE = "EG";
 const DEFAULT_CURRENCY = getPricingRegion(DEFAULT_COUNTRY_CODE).currency;
-const LEVEL_BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const STAGE_CODES = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 // Semicolons/newlines separate benefits; commas belong to the copy.
 function parseFeatures(raw) {
@@ -34,6 +34,26 @@ function parseFeatures(raw) {
     .split(/\r?\n|;/g)
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+function getPackProgressGuide(sessionsPerPack, dict) {
+  const key = {
+    4: "pack_progress_4",
+    12: "pack_progress_12",
+    24: "pack_progress_24",
+    48: "pack_progress_48",
+  }[sessionsPerPack];
+
+  if (!key) return null;
+
+  const fallback = {
+    4: "A focused start",
+    12: "About half a level",
+    24: "About one level",
+    48: "About one full stage",
+  }[sessionsPerPack];
+
+  return t(dict, key, fallback);
 }
 
 
@@ -174,48 +194,66 @@ function Packages() {
       <section className="ecp__section ecp-hero">
         <div className="ecp__container ecp-hero__inner">
           <div className="ecp-hero__copy">
-            <p className="ecp-hero__eyebrow">{t(dict, "path_eyebrow", "YOUR ENGLISH PATH")}</p>
+            <p className="ecp-hero__eyebrow">{t(dict, "path_eyebrow", "YOUR ENGLISH ROADMAP")}</p>
             <h1
               className="ecp-hero__title"
-              aria-label={t(dict, "hero_title", "12 stages across 6 levels. Start at yours.")}
+              aria-label={t(dict, "hero_title", "6 stages. 12 levels. One clear path.")}
             >
-              <span className="ecp-hero__word-carousel" aria-hidden="true">
-                <span className="ecp-hero__word-carousel-item ecp-hero__word-carousel-item--stages">
-                  {t(dict, "hero_title_stages", "12 stages.")}
-                </span>
-                <span className="ecp-hero__word-carousel-item ecp-hero__word-carousel-item--levels">
-                  {t(dict, "hero_title_levels", "6 levels.")}
-                </span>
-              </span>
+              <span>{t(dict, "hero_title_stages", "6 stages.")}</span>{" "}
+              <span className="ecp-hero__title-accent">{t(dict, "hero_title_levels", "12 levels.")}</span>
               <span className="ecp-hero__title-ending">
-                {t(dict, "hero_title_ending", "Start at yours.")}
+                {t(dict, "hero_title_ending", "One clear path.")}
               </span>
             </h1>
             <p className="ecp-hero__subtitle">
               {t(
                 dict,
                 "hero_subtitle",
-                "A clear path from A1.1 to C2.2. Find your starting point, practise with a coach, and keep moving forward."
+                "Start at the level that fits you. Practise with a coach, review your progress, and move forward when you are ready."
               )}
             </p>
 
             <div className="ecp-path" id="learning-stages">
               <div className="ecp-path__heading">
-                <strong>{t(dict, "path_title", "The full level path")}</strong>
-                <span>{t(dict, "path_count", "6 levels · 2 stages each")}</span>
+                <strong>{t(dict, "path_title", "How the path is built")}</strong>
+                <span>{t(dict, "path_count", "6 stages · 2 levels each")}</span>
               </div>
-              <ol className="ecp-path__bands" aria-label={t(dict, "path_aria", "English level path from A1.1 to C2.2")}>
-                {LEVEL_BANDS.map((band) => (
-                  <li className="ecp-path__band" key={band}>
-                    <span className="ecp-path__code" dir="ltr">{band}</span>
-                    <span className="ecp-path__stages" dir="ltr">{band}.1 <span aria-hidden="true">→</span> {band}.2</span>
-                    <span className="ecp-path__label">{t(dict, `path_${band.toLowerCase()}`, band)}</span>
+              <div className="ecp-path__equation" aria-label={t(dict, "path_equation_aria", "One level is roughly 24 sessions. Two levels make one stage, roughly 48 sessions.")}>
+                <div className="ecp-path__measure">
+                  <span>{t(dict, "path_one_level", "1 level")}</span>
+                  <strong>{t(dict, "path_level_sessions", "≈ 24 sessions")}</strong>
+                </div>
+                <span className="ecp-path__operator" aria-hidden="true">× 2</span>
+                <div className="ecp-path__measure ecp-path__measure--stage">
+                  <span>{t(dict, "path_one_stage", "1 stage")}</span>
+                  <strong>{t(dict, "path_stage_sessions", "≈ 48 sessions")}</strong>
+                </div>
+              </div>
+              <ol className="ecp-path__bands" aria-label={t(dict, "path_aria", "Six English stages from A1 to C2, with two learning levels in each stage")}>
+                {STAGE_CODES.map((stage) => (
+                  <li className="ecp-path__band" key={stage}>
+                    <span className="ecp-path__code" dir="ltr">{stage}</span>
+                    <span className="ecp-path__label">{t(dict, `path_${stage.toLowerCase()}`, stage)}</span>
+                    <span className="ecp-path__levels" dir="ltr">
+                      <span>{stage}.1</span>
+                      <span aria-hidden="true">→</span>
+                      <span>{stage}.2</span>
+                    </span>
                   </li>
                 ))}
               </ol>
-              <p className="ecp-path__explain">
-                {t(dict, "path_explain", "A placement assessment helps us find your starting stage. Your pack sets how many sessions you book.")}
-              </p>
+              <div className="ecp-path__guidance">
+                <span className="ecp-path__guidance-icon" aria-hidden="true">i</span>
+                <p>
+                  <strong>{t(dict, "path_estimate_title", "A planning guide, not a promise.")}</strong>{" "}
+                  {t(dict, "path_explain", "Your pace depends on your starting point, attendance, practice between sessions, and progress with your coach.")}
+                </p>
+              </div>
+              <Link className="ecp-path__assessment" href={routeHref(APP_ROUTES.assessment, locale)}>
+                <span>{t(dict, "path_assessment_kicker", "Not sure where you start?")}</span>
+                <strong>{t(dict, "path_assessment_cta", "Take the placement assessment")}</strong>
+                <span aria-hidden="true">{locale === "ar" ? "←" : "→"}</span>
+              </Link>
             </div>
 
             <p className="ecp-hero__choice-label">{t(dict, "path_choice", "Choose how you want to practise")}</p>
@@ -435,6 +473,24 @@ function Packages() {
             <FadeIn as="p" className="ecp-section-subtitle" delay={0.1}>{pricingSubtitle}</FadeIn>
           </div>
 
+          {isIndividual && (
+            <div className="ecp-progress-guide" aria-label={t(dict, "progress_guide_aria", "How package sizes relate to the learning path")}>
+              <div className="ecp-progress-guide__intro">
+                <span>{t(dict, "progress_guide_eyebrow", "PLAN WITH CONTEXT")}</span>
+                <strong>{t(dict, "progress_guide_title", "Match your pack to your next milestone")}</strong>
+              </div>
+              <div className="ecp-progress-guide__item">
+                <strong>{t(dict, "progress_guide_level", "24 sessions")}</strong>
+                <span>{t(dict, "progress_guide_level_desc", "roughly one level")}</span>
+              </div>
+              <div className="ecp-progress-guide__item ecp-progress-guide__item--accent">
+                <strong>{t(dict, "progress_guide_stage", "48 sessions")}</strong>
+                <span>{t(dict, "progress_guide_stage_desc", "roughly one stage · two levels")}</span>
+              </div>
+              <p>{t(dict, "progress_guide_note", "These are planning estimates. Your coach reviews your progress with you; finishing a pack does not automatically guarantee a level change.")}</p>
+            </div>
+          )}
+
           <div className={`ecp-grid ecp-grid--fade-in ${isIndividual ? "ecp-grid--shared" : ""}`}>
             {plans.map((p, idx) => (
               <PricingCard
@@ -524,29 +580,29 @@ function Packages() {
           <div className="ecp-grid-steps">
             <Step
               n="1"
-              title={t(dict, "how_step1_title", "Choose Your Plan")}
+              title={t(dict, "how_step1_title", "Find your starting level.")}
               desc={t(
                 dict,
                 "how_step1_desc",
-                "Select the package that matches your goals: private coaching, or group learning."
+                "Take the placement assessment so your journey begins in the right place."
               )}
             />
             <Step
               n="2"
-              title={t(dict, "how_step2_title", "Schedule Sessions")}
+              title={t(dict, "how_step2_title", "Choose your format and pack.")}
               desc={t(
                 dict,
                 "how_step2_desc",
-                "Book times that fit your schedule. Easy rescheduling if plans change."
+                "Pick one-on-one or small-group practice, then choose how far ahead you want to plan."
               )}
             />
             <Step
               n="3"
-              title={t(dict, "how_step3_title", "Start Improving")}
+              title={t(dict, "how_step3_title", "Practise, review, move forward.")}
               desc={t(
                 dict,
                 "how_step3_desc",
-                "Practical sessions, actionable feedback, and measurable progress from day one."
+                "Your coach follows your performance and confirms when you are ready for the next level."
               )}
             />
           </div>
@@ -570,6 +626,10 @@ function Packages() {
             {t(dict, "faq_title", "Frequently Asked Questions")}
           </FadeIn>
           <div className="ecp-faq__list">
+            <Faq
+              q={t(dict, "faq_progress_q", "Does 24 sessions guarantee that I finish a level?")}
+              a={t(dict, "faq_progress_a", "No. Twenty-four sessions per level and 48 per stage are useful planning estimates, not guarantees. Your pace depends on your starting point, attendance, practice between sessions, and demonstrated progress. Your coach reviews this with you throughout the pack.")}
+            />
             <Faq
               q={t(
                 dict,
@@ -632,9 +692,9 @@ function Packages() {
             <div className="ecp-cta__actions">
               <Link
                 className="ecp-btn ecp-btn--primary ecp-btn--lg"
-                href={getStarterSessionHref(locale)}
+                href={routeHref(APP_ROUTES.assessment, locale)}
               >
-                {t(dict, "cta_individual_primary", "Ask about a starter session")}
+                {t(dict, "cta_individual_primary", "Find my starting level")}
               </Link>
               <Link
                 className="ecp-btn ecp-btn--ghost ecp-btn--lg"
@@ -692,6 +752,9 @@ function PricingCard({
 
   const bullets = parseFeatures(plan.featuresRaw || "").slice(0, 8);
   const isCorp = audience === AUD.CORPORATE;
+  const progressGuide = !isCorp
+    ? getPackProgressGuide(sessionsPerPack, dict)
+    : null;
 
   const { totalLabel, perSessionLabel } = getPlanPriceLabels(
     plan,
@@ -745,6 +808,13 @@ function PricingCard({
       </div>
 
       {description && <p className="ecp-card__desc">{description}</p>}
+
+      {progressGuide && (
+        <div className="ecp-card__progress">
+          <span>{t(dict, "card_progress_label", "Progress guide")}</span>
+          <strong>{progressGuide}</strong>
+        </div>
+      )}
 
       <div className="ecp-card__price">
         <div className="ecp-card__value">{totalLabel}</div>

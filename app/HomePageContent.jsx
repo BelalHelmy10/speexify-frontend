@@ -681,6 +681,20 @@ function PricingSection({ dict, locale }) {
           </div>
         </div>
 
+        <div className="home-pricing__path-guide" aria-label={t(dict, "pricing_path_aria")}>
+          <div className="home-pricing__path-guide-intro">
+            <span>{t(dict, "pricing_path_eyebrow")}</span>
+            <strong>{t(dict, "pricing_path_shape")}</strong>
+          </div>
+          <div className="home-pricing__path-guide-step">
+            <strong>{t(dict, "pricing_path_level")}</strong>
+          </div>
+          <div className="home-pricing__path-guide-step home-pricing__path-guide-step--accent">
+            <strong>{t(dict, "pricing_path_stage")}</strong>
+          </div>
+          <small>{t(dict, "pricing_path_note")}</small>
+        </div>
+
         <div className="home-pricing__promise-row" aria-label={t(dict, "pricing_trust_label")}>
           <span><Check size={15} aria-hidden="true" />{t(dict, "pricing_trust_1")}</span>
           <span><Check size={15} aria-hidden="true" />{t(dict, "pricing_trust_2")}</span>

@@ -3755,6 +3755,70 @@ body.rtl .home-spx-curriculum .home-section-subtitle {
     }
   }
 
+  &__path-guide {
+    align-items: stretch;
+    display: grid;
+    gap: 1px;
+    grid-template-columns: minmax(220px, 1.2fr) minmax(170px, 0.8fr) minmax(190px, 0.9fr);
+    margin-top: 28px;
+    overflow: hidden;
+    border: 1px solid rgba($color-white, 0.28);
+    border-radius: 20px;
+    background: rgba($navy, 0.16);
+    box-shadow: 0 16px 36px rgba($navy, 0.1);
+    backdrop-filter: blur(14px);
+
+    &-intro,
+    &-step {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 82px;
+      padding: 17px 20px;
+    }
+
+    &-intro {
+      span {
+        color: rgba($color-white, 0.7);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+      }
+
+      strong {
+        color: $color-white;
+        font-family: $font-heading;
+        font-size: 20px;
+        line-height: 1.2;
+      }
+    }
+
+    &-step {
+      background: rgba($color-white, 0.08);
+
+      strong {
+        color: $color-white;
+        font-family: $font-heading;
+        font-size: 17px;
+        line-height: 1.25;
+      }
+
+      &--accent {
+        background: $navy;
+      }
+    }
+
+    > small {
+      color: rgba($color-white, 0.7);
+      font-size: 11px;
+      grid-column: 1 / -1;
+      line-height: 1.5;
+      padding: 10px 20px 12px;
+    }
+  }
+
   &__elite-footer {
     display: flex;
     align-items: center;
@@ -4102,6 +4166,14 @@ body.rtl .home-spx-curriculum .home-section-subtitle {
     &__elite-note {
       width: min(100%, 320px);
     }
+
+    &__path-guide {
+      grid-template-columns: 1fr 1fr;
+
+      &-intro {
+        grid-column: 1 / -1;
+      }
+    }
   }
 
   @media (max-width: 1080px) {
@@ -4146,6 +4218,15 @@ body.rtl .home-spx-curriculum .home-section-subtitle {
   @media (max-width: 600px) {
     &__cards {
       grid-template-columns: 1fr;
+    }
+
+    &__path-guide {
+      grid-template-columns: 1fr;
+
+      &-intro,
+      > small {
+        grid-column: auto;
+      }
     }
 
     &__from {
