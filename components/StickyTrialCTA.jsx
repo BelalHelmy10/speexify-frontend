@@ -55,7 +55,9 @@ export default function StickyTrialCTA() {
   const [dismissed, setDismissed] = useState(false);
   // "shown" = visible. The lower-right dock keeps the CTA available without
   // covering the hero content or stats.
-  const [shown, setShown] = useState(true);
+  const [shown, setShown] = useState(
+    () => normalizeLocalizedPath(pathname) !== "/packages",
+  );
   const [expanded, setExpanded] = useState(false);
   const lastPointerType = useRef(null);
 
@@ -80,7 +82,16 @@ export default function StickyTrialCTA() {
         nearFooter = rect.top < window.innerHeight - 48 && rect.bottom > 120;
       }
 
-      setShown(!nearFooter);
+      // The packages hero contains the level path and format controls. On a
+      // narrow screen, keep the floating CTA clear of those controls.
+      const packagesHero =
+        normalizeLocalizedPath(pathname) === "/packages" &&
+        window.matchMedia("(max-width: 767px)").matches
+          ? document.querySelector(".ecp-hero")
+          : null;
+      const overPackagesHero = packagesHero?.getBoundingClientRect().bottom > 0;
+
+      setShown(!nearFooter && !overPackagesHero);
     };
 
     update();

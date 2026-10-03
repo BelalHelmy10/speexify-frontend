@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarClock, CheckCircle2, ClipboardCheck, MessageCircle, Package } from "lucide-react";
+import { CalendarClock, CheckCircle2, ClipboardCheck, Film, MessageCircle, Package } from "lucide-react";
 import { usePathname } from "next/navigation";
 import NotificationsBell from "@/components/NotificationsBell";
 
@@ -43,6 +43,10 @@ export default function AdminDashboardHeader() {
         <Link href={`${prefix}/admin/packages`} className="adm-btn-secondary">
           <Package size={16} aria-hidden="true" />
           Packages
+        </Link>
+        <Link href={`${prefix}/admin/recordings`} className="adm-btn-secondary">
+          <Film size={16} aria-hidden="true" />
+          Recordings
         </Link>
       </div>
     </div>

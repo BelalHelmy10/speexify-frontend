@@ -29,6 +29,7 @@ import {
   exportAnnotatedPage,
 } from "./prepAnnotationUtils";
 import { handlePrepChannelMessage } from "./prepRealtimeSync";
+import { getAudioTargetTime, planAudioSync, shouldApplyAudioState } from "./audioSync.mjs";
 import {
   buildPrepAudioTracks,
   getPrepCurrentToolIcon,
@@ -377,6 +378,7 @@ function PrepShell({
   const audioSeqRef = useRef(0); // monotonically increasing sequence (teacher)
   const lastAppliedAudioSeqRef = useRef(-1); // last seq applied (learner)
   const lastAudioStateRef = useRef(null); // last received AUDIO_STATE for drift correction
+  const pendingAudioTrackStateRef = useRef(null);
   const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
   const audioUnlockedRef = useRef(false); // track if audio has been pre-unlocked on this device
   const channelReady = !!classroomChannel?.ready;
@@ -397,6 +399,24 @@ function PrepShell({
 
       const el = audioRef.current;
       if (!el) return;
+
+      // An already playing lesson must never be paused by the unlock probe.
+      if (!el.paused) {
+        audioUnlockedRef.current = true;
+        setNeedsAudioUnlock(false);
+        return;
+      }
+
+      // A teacher play request may have been blocked by autoplay policy.
+      // This user gesture can start it directly without a muted probe.
+      if (lastAudioStateRef.current?.playing) {
+        el.play().then(() => {
+          audioUnlockedRef.current = true;
+          setNeedsAudioUnlock(false);
+          setIsAudioPlaying(true);
+        }).catch(() => setNeedsAudioUnlock(true));
+        return;
+      }
 
       // Create a very short silent audio context to unlock audio
       try {
@@ -428,10 +448,14 @@ function PrepShell({
         const playPromise = el.play();
         if (playPromise !== undefined) {
           playPromise.then(() => {
-            el.pause();
-            el.currentTime = 0;
             el.muted = wasMuted;
             el.volume = wasVolume;
+            if (!lastAudioStateRef.current?.playing) {
+              el.pause();
+              el.currentTime = 0;
+            } else {
+              setIsAudioPlaying(true);
+            }
             audioUnlockedRef.current = true;
             setNeedsAudioUnlock(false);
           }).catch(() => {
@@ -510,14 +534,20 @@ function PrepShell({
     ]
   );
 
-  const applyAudioState = useCallback((msg, { isSnapshot = false } = {}) => {
+  const applyAudioState = useCallback((msg, { isSnapshot = false, afterTrackChange = false } = {}) => {
     const el = audioRef.current;
     if (!el || !msg) return;
 
     const seq = Number(msg.seq);
-    if (Number.isFinite(seq) && seq <= lastAppliedAudioSeqRef.current) {
-      return; // ignore old/out-of-order
-    }
+    const incomingSentAt = Number(msg.sentAt) || 0;
+    const lastSentAt = lastAudioStateRef.current?.sentAt || 0;
+    if (!shouldApplyAudioState({
+      seq,
+      sentAt: incomingSentAt,
+      lastSeq: lastAppliedAudioSeqRef.current,
+      lastSentAt,
+      afterTrackChange,
+    })) return;
     if (Number.isFinite(seq)) lastAppliedAudioSeqRef.current = seq;
 
     const nextIndex = Number(msg.trackIndex) || 0;
@@ -525,12 +555,11 @@ function PrepShell({
     const sentAt = Number(msg.sentAt) || Date.now();
     const playing = !!msg.playing;
 
-    setCurrentTrackIndex(nextIndex);
-
-    // Compute latency-compensated target time
-    const now = Date.now();
-    const latencySec = Math.max(0, (now - sentAt) / 1000);
-    const targetTime = Math.max(0, baseTime + (playing ? latencySec : 0));
+    if (nextIndex !== currentTrackIndex && !afterTrackChange) {
+      pendingAudioTrackStateRef.current = { msg, isSnapshot };
+      setCurrentTrackIndex(nextIndex);
+      return;
+    }
 
     lastAudioStateRef.current = {
       trackIndex: nextIndex,
@@ -553,11 +582,33 @@ function PrepShell({
     };
 
     runAfterLoad(() => {
-      try {
-        el.currentTime = targetTime;
-      } catch { }
+      if (sentAt < (lastAudioStateRef.current?.sentAt || 0)) return;
+      if (Number.isFinite(seq) && seq < lastAppliedAudioSeqRef.current) return;
+      // Metadata may load well after the message arrived.
+      const targetTime = getAudioTargetTime({
+        baseTime,
+        sentAt,
+        playing,
+        now: Date.now(),
+      });
+      const action = planAudioSync({
+        playing,
+        paused: el.paused,
+        currentTime: el.currentTime,
+        targetTime,
+        readyState: el.readyState,
+        isSnapshot,
+        trackChanged: afterTrackChange,
+      });
+
+      if (action.seek) {
+        try {
+          el.currentTime = targetTime;
+        } catch { }
+      }
 
       if (playing) {
+        if (!action.play) return;
         el.play().then(
           () => {
             setIsAudioPlaying(true);
@@ -570,13 +621,26 @@ function PrepShell({
           }
         );
       } else {
-        try {
-          el.pause();
-        } catch { }
+        if (action.pause) {
+          try {
+            el.pause();
+          } catch { }
+        }
         setIsAudioPlaying(false);
       }
     });
-  }, []);
+  }, [currentTrackIndex]);
+
+  useEffect(() => {
+    const pending = pendingAudioTrackStateRef.current;
+    if (!pending || Number(pending.msg.trackIndex || 0) !== currentTrackIndex) return;
+    pendingAudioTrackStateRef.current = null;
+    if (Number(pending.msg.seq) < lastAppliedAudioSeqRef.current) return;
+    applyAudioState(pending.msg, {
+      isSnapshot: pending.isSnapshot,
+      afterTrackChange: true,
+    });
+  }, [currentTrackIndex, applyAudioState]);
   const initialAudioStateKeyRef = useRef("");
 
   useEffect(() => {

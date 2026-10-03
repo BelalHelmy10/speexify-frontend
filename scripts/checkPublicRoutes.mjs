@@ -168,6 +168,19 @@ function isExpectedAbortedPrefetch(request) {
   }
 }
 
+function isLocalGoogleButtonRequest(url) {
+  try {
+    const localHost = new URL(baseUrl).hostname;
+    const isLocal = localHost === "localhost" || localHost === "127.0.0.1";
+    const target = new URL(url);
+    // Google's OAuth client does not authorize the temporary QA origin.
+    return isLocal && target.hostname === "accounts.google.com" &&
+      target.pathname === "/gsi/button";
+  } catch {
+    return false;
+  }
+}
+
 async function checkBrowserRoutes() {
   const chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
   const executablePath = fs.existsSync(chrome) ? chrome : undefined;
@@ -188,17 +201,26 @@ async function checkBrowserRoutes() {
     const failedRequests = [];
 
     page.on("console", (message) => {
-      if (message.type() === "error") consoleErrors.push(message.text());
+      if (message.type() !== "error") return;
+      const localHost = new URL(baseUrl).hostname;
+      const isLocal = localHost === "localhost" || localHost === "127.0.0.1";
+      if (isLocal && message.text() ===
+          "[GSI_LOGGER]: The given origin is not allowed for the given client ID.") return;
+      consoleErrors.push(message.text());
     });
     page.on("pageerror", (error) => pageErrors.push(String(error)));
     page.on("requestfailed", (request) => {
       if (isExpectedAbortedPrefetch(request)) return;
+      if (request.failure()?.errorText === "net::ERR_ABORTED" &&
+          isLocalGoogleButtonRequest(request.url())) return;
       failedRequests.push(
         `${request.failure()?.errorText || "failed"} ${request.url()}`,
       );
     });
     page.on("response", (response) => {
       if (response.status() >= 400) {
+        if (response.status() === 403 &&
+            isLocalGoogleButtonRequest(response.url())) return;
         failedRequests.push(`${response.status()} ${response.url()}`);
       }
     });

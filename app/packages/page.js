@@ -25,6 +25,7 @@ const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
 const DEFAULT_COUNTRY_CODE = "EG";
 const DEFAULT_CURRENCY = getPricingRegion(DEFAULT_COUNTRY_CODE).currency;
+const LEVEL_BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 // Semicolons/newlines separate benefits; commas belong to the copy.
 function parseFeatures(raw) {
@@ -173,16 +174,51 @@ function Packages() {
       <section className="ecp__section ecp-hero">
         <div className="ecp__container ecp-hero__inner">
           <div className="ecp-hero__copy">
-            <FadeIn as="h1" className="ecp-hero__title">
-              {t(dict, "hero_title", "Professional English Coaching")}
-            </FadeIn>
-            <FadeIn as="p" className="ecp-hero__subtitle" delay={0.1}>
+            <p className="ecp-hero__eyebrow">{t(dict, "path_eyebrow", "YOUR ENGLISH PATH")}</p>
+            <h1
+              className="ecp-hero__title"
+              aria-label={t(dict, "hero_title", "12 stages across 6 levels. Start at yours.")}
+            >
+              <span className="ecp-hero__word-carousel" aria-hidden="true">
+                <span className="ecp-hero__word-carousel-item ecp-hero__word-carousel-item--stages">
+                  {t(dict, "hero_title_stages", "12 stages.")}
+                </span>
+                <span className="ecp-hero__word-carousel-item ecp-hero__word-carousel-item--levels">
+                  {t(dict, "hero_title_levels", "6 levels.")}
+                </span>
+              </span>
+              <span className="ecp-hero__title-ending">
+                {t(dict, "hero_title_ending", "Start at yours.")}
+              </span>
+            </h1>
+            <p className="ecp-hero__subtitle">
               {t(
                 dict,
                 "hero_subtitle",
-                "Choose the format that works for you: private one-on-one sessions, or collaborative group learning. Flexible plans, real results."
+                "A clear path from A1.1 to C2.2. Find your starting point, practise with a coach, and keep moving forward."
               )}
-            </FadeIn>
+            </p>
+
+            <div className="ecp-path" id="learning-stages">
+              <div className="ecp-path__heading">
+                <strong>{t(dict, "path_title", "The full level path")}</strong>
+                <span>{t(dict, "path_count", "6 levels · 2 stages each")}</span>
+              </div>
+              <ol className="ecp-path__bands" aria-label={t(dict, "path_aria", "English level path from A1.1 to C2.2")}>
+                {LEVEL_BANDS.map((band) => (
+                  <li className="ecp-path__band" key={band}>
+                    <span className="ecp-path__code" dir="ltr">{band}</span>
+                    <span className="ecp-path__stages" dir="ltr">{band}.1 <span aria-hidden="true">→</span> {band}.2</span>
+                    <span className="ecp-path__label">{t(dict, `path_${band.toLowerCase()}`, band)}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="ecp-path__explain">
+                {t(dict, "path_explain", "A placement assessment helps us find your starting stage. Your pack sets how many sessions you book.")}
+              </p>
+            </div>
+
+            <p className="ecp-hero__choice-label">{t(dict, "path_choice", "Choose how you want to practise")}</p>
 
             <div className="ecp-tabs" role="tablist" aria-label="Audience">
               <button
@@ -695,7 +731,9 @@ function PricingCard({
       <div className="ecp-card__head">
         {(!isPopular || !isCorp) && (
           <div className="ecp-card__eyebrow">
-            {t(dict, "card_eyebrow_live", "Live practice")}
+            {isCorp
+              ? t(dict, "card_eyebrow_live", "Live practice")
+              : t(dict, "card_eyebrow_level", "At your level")}
           </div>
         )}
         <div className="ecp-card__title">{title}</div>

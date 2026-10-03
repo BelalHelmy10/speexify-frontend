@@ -59,6 +59,19 @@
   }
 }
 
+@keyframes ecp-word-stages {
+  0%, 42% { opacity: 1; transform: translateY(0); }
+  50%, 92% { opacity: 0; transform: translateY(-0.45em); }
+  93% { opacity: 0; transform: translateY(0.45em); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ecp-word-levels {
+  0%, 42% { opacity: 0; transform: translateY(0.45em); }
+  50%, 92% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-0.45em); }
+}
+
 // ========================================
 // BASE
 // ========================================
@@ -301,16 +314,57 @@
     margin: 0 0 18px;
     font-weight: 800;
     color: $ink;
-    animation: fadeInUp 0.8s ease 0.1s backwards;
+  }
+
+  &__word-carousel {
+    display: inline-grid;
+    isolation: isolate;
+    overflow: hidden;
+    vertical-align: bottom;
+  }
+
+  &__word-carousel-item {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+    will-change: opacity, transform;
+
+    &--stages {
+      animation: ecp-word-stages 8s ease-in-out infinite;
+    }
+
+    &--levels {
+      color: $accent-ink;
+      opacity: 0;
+      animation: ecp-word-levels 8s ease-in-out infinite;
+    }
+  }
+
+  &__title-ending {
+    display: block;
+  }
+
+  &__eyebrow {
+    color: $accent-ink;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.11em;
+    margin: 0 0 12px;
+    text-transform: uppercase;
   }
 
   &__subtitle {
     font-size: 18px;
     line-height: 1.6;
     color: $muted;
-    margin: 0 0 24px;
+    margin: 0 0 22px;
     max-width: 540px;
-    animation: fadeInUp 0.8s ease 0.2s backwards;
+  }
+
+  &__choice-label {
+    color: $ink;
+    font-size: 15px;
+    font-weight: 800;
+    margin: 22px 0 0;
   }
 
   &__media {
@@ -324,7 +378,7 @@
     margin-top: 12px;
     padding: 12px 20px;
     background: rgba($accent, 0.05);
-    border-left: 3px solid $accent;
+    border-inline-start: 3px solid $accent;
     border-radius: 8px;
     color: $ink;
     font-size: 14px;
@@ -336,6 +390,113 @@
     }
   }
 
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecp-hero__word-carousel-item--stages {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .ecp-hero__word-carousel-item--levels {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.ecp-path {
+  background: linear-gradient(135deg, rgba($accent, 0.075), rgba($accent, 0.025));
+  border: 1px solid rgba($accent, 0.2);
+  border-radius: 20px;
+  padding: 18px;
+  scroll-margin-top: 112px;
+
+  &__heading {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    justify-content: space-between;
+    margin-bottom: 12px;
+
+    strong {
+      color: $ink;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    span {
+      color: $accent-ink;
+      font-size: 12px;
+      font-weight: 800;
+    }
+  }
+
+  &__bands {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__band {
+    background: rgba($color-white, 0.9);
+    border: 1px solid rgba($ink, 0.08);
+    border-radius: 11px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 10px 5px 9px;
+    text-align: center;
+  }
+
+  &__code {
+    color: $accent-ink;
+    font-family: $font-heading;
+    font-size: 20px;
+    font-weight: 850;
+    line-height: 1.1;
+  }
+
+  &__stages {
+    color: $ink;
+    font-size: 10px;
+    font-weight: 800;
+    margin-top: 5px;
+    white-space: nowrap;
+
+    span {
+      color: $accent;
+    }
+  }
+
+  &__label {
+    color: $muted;
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.2;
+    margin-top: 5px;
+    overflow-wrap: anywhere;
+  }
+
+  &__explain {
+    color: $ink;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.45;
+    margin: 12px 0 0;
+  }
+
+  @media (max-width: $bp-sm) {
+    padding: 15px;
+
+    &__bands {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
 }
 
 .ecp-hero-pricing {
@@ -486,7 +647,7 @@
   border-radius: 999px;
   padding: 4px;
   gap: 4px;
-  margin: 18px 0;
+  margin: 12px 0 18px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
@@ -586,7 +747,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  text-align: left;
+  text-align: start;
 
   strong {
     font-size: 18px;

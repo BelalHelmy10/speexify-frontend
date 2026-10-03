@@ -33,7 +33,9 @@ function createSecurityContext() {
       "form-action 'self'",
       `script-src 'self' 'nonce-${nonce}' https://accounts.google.com https://apis.google.com https://www.googletagmanager.com https://meet.speexify.com`,
       "script-src-attr 'none'",
-      `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://accounts.google.com`,
+      // Google Identity injects this fixed button stylesheet without a nonce.
+      // Keep the exception scoped to its exact content instead of all inline CSS.
+      `style-src 'self' 'nonce-${nonce}' 'sha256-bPYX3s9ZtkBLGfQigE2LegGDbGe5nQ/S37hvxd2mbUk=' https://fonts.googleapis.com https://accounts.google.com`,
       // React uses dynamic style attributes for calendar geometry and progress
       // indicators. Inline scripts remain nonce-only; this directive is CSS-only.
       "style-src-attr 'unsafe-inline'",
