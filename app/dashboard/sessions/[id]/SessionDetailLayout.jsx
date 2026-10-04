@@ -137,7 +137,7 @@ export default function SessionDetailLayout({
           <div className="sd-hero__meta-row">
             <span className="sd-hero__type">
               {isTraining
-                ? locale === "ar" ? "تدريب المعلم · بدون أجر" : "Teacher training · unpaid"
+                ? locale === "ar" ? "جلسة تدريب · بدون أجر" : "Training session · unpaid"
                 : isGroup
                 ? txt("type_group", "Group lesson")
                 : txt("type_one_on_one", "1:1 Lesson")}
@@ -211,6 +211,16 @@ export default function SessionDetailLayout({
               <div className="sd-hero__person-card">
                 <div className="sd-hero__person-avatar sd-hero__person-avatar--learner">{getInitials(trainingAdmin.name || trainingAdmin.email)}</div>
                 <div className="sd-hero__person-info"><span className="sd-hero__person-name">{trainingAdmin.name || trainingAdmin.email}</span><span className="sd-hero__person-role">{locale === "ar" ? "مسؤول التدريب" : "Admin trainer"}</span></div>
+              </div>
+            )}
+
+            {isTraining && activeParticipants.length > 0 && (
+              <div className="sd-hero__person-card">
+                <div className="sd-hero__person-avatar sd-hero__person-avatar--group">{formatNumber(activeParticipants.length, locale)}</div>
+                <div className="sd-hero__person-info">
+                  <span className="sd-hero__person-name">{activeParticipants.map((person) => person.name || person.email).join(", ")}</span>
+                  <span className="sd-hero__person-role">{locale === "ar" ? "المشاركون" : "Participants"}</span>
+                </div>
               </div>
             )}
 

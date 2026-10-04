@@ -77,6 +77,7 @@ function Admin() {
     type: "ONE_ON_ONE",
     userId: "",
     learnerIds: [], // For GROUP sessions
+    teacherIds: [], // For TRAINING sessions
     capacity: "",
     teacherId: "",
     title: "",
@@ -98,6 +99,7 @@ function Admin() {
     type: "ONE_ON_ONE",
     userId: "",
     learnerIds: [],
+    trainingParticipantIds: [],
     capacity: "",
     teacherId: "",
     title: "",
@@ -173,6 +175,7 @@ function Admin() {
         capacity:
           typeof sess.capacity === "number" ? String(sess.capacity) : "",
         learnerIds: type === "GROUP" ? activeIds : [],
+        trainingParticipantIds: type === "TRAINING" ? activeIds : [],
         userId:
           type === "ONE_ON_ONE"
             ? String(sess.userId || sess.user?.id || "")
@@ -357,7 +360,8 @@ function Admin() {
         ...f,
         type: t,
         userId: t === "ONE_ON_ONE" ? f.userId : "",
-        learnerIds: t === "GROUP" ? f.learnerIds : [],
+        learnerIds: t === "GROUP" || t === "TRAINING" ? f.learnerIds : [],
+        teacherIds: t === "TRAINING" ? f.teacherIds : [],
         capacity: t === "GROUP" ? f.capacity : "",
         allowNoCredit: false,
         allowNoCreditReason: "",
@@ -386,8 +390,8 @@ function Admin() {
     if (!startAt) return { error: "Please select a valid date and time" };
 
     const type = normType(form.type);
-    if (type === "TRAINING" && !form.teacherId) {
-      return { error: "Please select a teacher for training" };
+    if (type === "TRAINING" && !(form.teacherIds?.length || form.learnerIds?.length)) {
+      return { error: "Please select at least one teacher or learner for training" };
     }
     if (type === "ONE_ON_ONE" && !form.userId) {
       return { error: "Please select a learner for the 1:1 session" };
@@ -417,7 +421,7 @@ function Admin() {
     const payload = {
       type,
       title:
-        form.title.trim() || (type === "GROUP" ? "Group Session" : type === "TRAINING" ? "Teacher Training" : "Lesson"),
+        form.title.trim() || (type === "GROUP" ? "Group Session" : type === "TRAINING" ? "Training Session" : "Lesson"),
       startAt: startAt.toISOString(),
       ...(form.teacherId ? { teacherId: Number(form.teacherId) } : {}),
       ...(endAt
@@ -438,6 +442,10 @@ function Admin() {
         .map((x) => Number(x))
         .filter((n) => n > 0);
       payload.capacity = form.capacity ? Number(form.capacity) : null;
+    } else if (type === "TRAINING") {
+      payload.teacherIds = (form.teacherIds || []).map(Number).filter((n) => n > 0);
+      payload.learnerIds = (form.learnerIds || []).map(Number).filter((n) => n > 0);
+      delete payload.teacherId;
     } else if (type === "ONE_ON_ONE") {
       payload.learnerId = Number(form.userId);
     }
@@ -488,6 +496,7 @@ function Admin() {
     form.type,
     form.userId,
     form.learnerIds,
+    form.teacherIds,
     form.capacity,
     form.teacherId,
     form.title,
@@ -571,7 +580,7 @@ function Admin() {
         sessionId: data?.session?.id || data?.id,
         type,
         learnerId: type === "ONE_ON_ONE" ? payload.learnerId : null,
-        learnerCount: type === "GROUP" ? payload.learnerIds?.length : type === "TRAINING" ? 0 : 1,
+        learnerCount: type === "GROUP" || type === "TRAINING" ? payload.learnerIds?.length : 1,
         teacherId: payload.teacherId || null,
       });
       toast.success(
@@ -586,6 +595,7 @@ function Admin() {
         type: "ONE_ON_ONE",
         userId: "",
         learnerIds: [],
+        teacherIds: [],
         capacity: "",
         teacherId: "",
         title: "",
@@ -643,6 +653,7 @@ function Admin() {
       type,
       userId: String(row.user?.id || row.userId || ""),
       learnerIds: type === "GROUP" ? learnerIds : [],
+      trainingParticipantIds: type === "TRAINING" ? learnerIds : [],
       capacity: typeof row.capacity === "number" ? String(row.capacity) : "",
       teacherId: String(row.teacher?.id || row.teacherId || ""),
       title: row.title || "",
@@ -661,6 +672,7 @@ function Admin() {
       type: "ONE_ON_ONE",
       userId: "",
       learnerIds: [],
+      trainingParticipantIds: [],
       capacity: "",
       teacherId: "",
       title: "",
@@ -697,14 +709,14 @@ function Admin() {
           : {}),
         joinUrl: editForm.meetingUrl || null,
         notes: editForm.notes || null,
-        ...(editForm.teacherId
+        ...(type === "TRAINING" ? {} : editForm.teacherId
           ? { teacherId: Number(editForm.teacherId) }
           : { teacherId: null }),
       };
       // Only include type-specific fields
       if (type === "GROUP") {
         payload.capacity = editForm.capacity ? Number(editForm.capacity) : null;
-      } else if (editForm.userId) {
+      } else if (type === "ONE_ON_ONE" && editForm.userId) {
         payload.userId = Number(editForm.userId);
       }
       await api.patch(`/admin/sessions/${id}`, payload);

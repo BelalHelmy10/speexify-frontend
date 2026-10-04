@@ -44,7 +44,10 @@ export const normType = (v) => String(v || "ONE_ON_ONE").toUpperCase();
 
 export const getSessionLearnerDisplay = (session) => {
   const type = normType(session.type);
-  if (type === "TRAINING") return "Teacher training · no learners";
+  if (type === "TRAINING") {
+    const people = (session.learners || []).filter((person) => person.status !== "canceled");
+    return people.length ? people.map((person) => person.name || person.email).join(", ") : `${session.participantCount ?? 0} participants`;
+  }
   if (type === "GROUP") {
     const learners = session.learners || [];
     const count =

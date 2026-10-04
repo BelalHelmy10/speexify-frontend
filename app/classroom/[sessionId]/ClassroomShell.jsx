@@ -95,7 +95,8 @@ function getParticipantsFromSession(session) {
     buildDisplayName(learnerObj) ||
     (isTraining ? "Admin trainer" : "Learner");
 
-  const learnerSources = learners.length > 0 ? learners : learnerObj ? [learnerObj] : [];
+  const learnerSources = (learners.length > 0 ? learners : learnerObj ? [learnerObj] : [])
+    .filter((person) => !isTraining || String(getParticipantId(person)) !== String(getParticipantId(teacherObj) || s.teacherId));
   const allLearnerNames = learnerSources.map(
     (l) => buildDisplayName(l) || l.email?.split("@")[0] || "Learner"
   );

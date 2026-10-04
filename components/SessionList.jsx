@@ -92,13 +92,14 @@ export default function SessionList({
 
   // Handle cancel
   const handleCancel = async (session) => {
-    if (!confirm(`Are you sure you want to cancel "${session.title}"?`)) {
+    const leavingTraining = session.type === "TRAINING" && user?.role !== "admin" && Number(session.teacherId) !== Number(user?.id);
+    if (!confirm(leavingTraining ? `Leave "${session.title}"?` : `Are you sure you want to cancel "${session.title}"?`)) {
       return;
     }
 
     try {
-      await api.post(`/sessions/${session.id}/cancel`);
-      toast?.success?.("Session canceled successfully");
+      const response = await api.post(`/sessions/${session.id}/cancel`);
+      toast?.success?.(response?.data?.scope === "participant" ? "You left the session." : "Session canceled successfully");
       fetchSessions(); // Refresh list
     } catch (err) {
       console.error("Failed to cancel session:", err);
@@ -221,6 +222,7 @@ export default function SessionList({
                 key={session.id}
                 session={session}
                 userRole={userRole}
+                currentUserId={user?.id}
                 onCancel={handleCancel}
                 locale={locale}
                 timezone={user?.timezone}

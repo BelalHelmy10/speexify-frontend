@@ -259,11 +259,11 @@ export default function SessionDetailPage() {
     user: { id: l.id, name: l.name, email: l.email },
   }));
 
-  const learnerLabel = isGroup
+  const learnerLabel = isGroup || isTraining
     ? txt("section_learners_title", "Learners")
     : txt("section_learner_title", "Learner");
 
-  const canCancelOrLeave = !!(sessionIsAdmin || sessionIsTeacher || isLearner);
+  const canCancelOrLeave = !!(sessionIsAdmin || sessionIsTeacher || (isLearner && (!isTraining || activeParticipants.length > 1)));
   const canReschedule = !!(sessionIsAdmin || sessionIsTeacher);
   const showActions = sessionStatus === "scheduled" && canCancelOrLeave;
   const canComplete =
@@ -287,13 +287,13 @@ export default function SessionDetailPage() {
   });
 
   const cancelLabel =
-    isGroup && !sessionIsTeacher && !sessionIsAdmin
+    (isGroup || isTraining) && !sessionIsTeacher && !sessionIsAdmin
       ? txt("session_leave", "Leave Session")
       : txt("session_cancel", "Cancel Session");
 
   const cancelTitle =
-    isGroup && !sessionIsTeacher && !sessionIsAdmin
-      ? txt("session_leave_title", "Leave this group session?")
+    (isGroup || isTraining) && !sessionIsTeacher && !sessionIsAdmin
+      ? isTraining ? "Leave this training session?" : txt("session_leave_title", "Leave this group session?")
       : txt("session_cancel_title", "Cancel this session?");
 
   const handleCancelOrLeave = async () => {

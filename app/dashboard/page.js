@@ -391,8 +391,12 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
 
   const handleCancel = async (s) => {
     const isGroup = String(s.type || "").toUpperCase() === "GROUP";
+    const isTraining = String(s.type || "").toUpperCase() === "TRAINING";
+    const canManageTraining = user?.role === "admin" || Number(s.teacherId) === Number(user?.id);
     const title =
-      isGroup && !isTeacher && user?.role !== "admin"
+      isTraining && !canManageTraining
+        ? "Leave this training session?"
+        : isGroup && !isTeacher && user?.role !== "admin"
         ? t(dict, "session_leave_title") || "Leave this group session?"
         : t(dict, "session_cancel_title") || "Cancel session?";
 
@@ -1487,6 +1491,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                     isTeacher={isTeacher}
                     isAdmin={isAdmin}
                     isImpersonating={isImpersonating}
+                    currentUserId={user?.id}
                     dict={dict}
                     prefix={prefix}
                   />
@@ -1556,6 +1561,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
                     onRescheduleClick={() => { }}
                     isTeacher={isTeacher}
                     isImpersonating={isImpersonating}
+                    currentUserId={user?.id}
                     dict={dict}
                     prefix={prefix}
                   />

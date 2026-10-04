@@ -121,6 +121,7 @@ export default function SessionRow({
   isTeacher = false,
   isAdmin = false,
   isImpersonating = false,
+  currentUserId = null,
   dict,
   prefix,
 }) {
@@ -143,18 +144,21 @@ export default function SessionRow({
   const participantCount =
     typeof s.participantCount === "number" ? s.participantCount : null;
 
-  const canReschedule = isTeacher || isAdmin || isImpersonating;
+  const managesTraining = isAdmin || isImpersonating || (isTeacher && Number(s.teacherId) === Number(currentUserId));
+  const canReschedule = isTraining ? managesTraining : isTeacher || isAdmin || isImpersonating;
   const normalizedStatus = String(s.status || "").trim().toLowerCase();
   const sessionTone = getSessionTone(normalizedStatus, isUpcoming);
   const badgeTone = sessionTone === "neutral" ? normalizedStatus : sessionTone;
 
   const cancelLabel =
-    isGroup && !isTeacher && !isAdmin && !isImpersonating
+    (isGroup && !isTeacher && !isAdmin && !isImpersonating) || (isTraining && !managesTraining)
       ? t(dict, "session_leave") || "Leave session"
       : t(dict, "session_cancel") || "Cancel";
 
   const cancelTitle =
-    isGroup && !isTeacher && !isAdmin && !isImpersonating
+    isTraining && !managesTraining
+      ? prefix === "/ar" ? "مغادرة جلسة التدريب؟" : "Leave this training session?"
+      : isGroup && !isTeacher && !isAdmin && !isImpersonating
       ? t(dict, "session_leave_title") || "Leave this group session"
       : t(dict, "session_cancel_title") || "Cancel session";
 
@@ -211,7 +215,7 @@ export default function SessionRow({
             )}
             {isTraining && <span className="badge badge--info">{prefix === "/ar" ? "تدريب · بدون أجر" : "Training · unpaid"}</span>}
 
-            {!isTraining && (participantCount !== null || (isGroup && s.capacity)) && (
+            {(participantCount !== null || (isGroup && s.capacity)) && (
               <span className="badge badge--neutral">
                 {t(dict, "session_participants") || "Participants"}: {" "}
                 {participantCount !== null ? participantCount : 0}
@@ -273,13 +277,13 @@ export default function SessionRow({
                 </button>
               )}
 
-              <button
+              {(isTraining && !managesTraining && participantCount === 1) ? null : <button
                 className="btn btn--ghost btn--danger"
                 onClick={() => onCancel(s)}
                 title={cancelTitle}
               >
                 {cancelLabel}
-              </button>
+              </button>}
             </>
           ) : (
             <>

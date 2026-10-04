@@ -19,6 +19,7 @@ import { formatNumber, getIntlLocale } from "@/utils/locale";
 export default function SessionCard({
   session,
   userRole = "learner",
+  currentUserId = null,
   onCancel,
   onJoin,
   locale = "en",
@@ -46,6 +47,7 @@ export default function SessionCard({
   const isTraining = type === "TRAINING";
   const isTeacher = userRole === "teacher";
   const isAdmin = userRole === "admin";
+  const managesTraining = isAdmin || (isTeacher && Number(session?.teacherId) === Number(currentUserId));
 
   // Format dates
   const { dateStr, timeStr, endTimeStr, isToday, isPast, isUpcoming, canOpenClassroom } =
@@ -290,13 +292,13 @@ export default function SessionCard({
         )}
 
         {/* Participant count for GROUP */}
-        {isGroup && (
+        {(isGroup || isTraining) && (
           <div className="session-card__capacity">
             <span className="session-card__capacity-icon">👥</span>
             <span className="session-card__capacity-text">
               {participantDisplay}
             </span>
-            {capacity && participantCount >= capacity && (
+            {isGroup && capacity && participantCount >= capacity && (
               <span className="session-card__capacity-full">FULL</span>
             )}
           </div>
@@ -325,13 +327,13 @@ export default function SessionCard({
         </Link>
 
         {/* Cancel button (if upcoming and not canceled) */}
-        {status === "scheduled" && isUpcoming && onCancel && (
+        {status === "scheduled" && isUpcoming && onCancel && !(isTraining && !managesTraining && participantCount <= 1) && (
           <button
             type="button"
             className="session-card__btn session-card__btn--danger"
             onClick={() => onCancel(session)}
           >
-            Cancel
+            {isTraining && !managesTraining ? "Leave training" : "Cancel"}
           </button>
         )}
       </div>

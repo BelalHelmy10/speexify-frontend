@@ -82,7 +82,7 @@ function downloadSessionsCsv(sessions, getSessionLearnerDisplay) {
     "Start",
     "End",
     "Duration",
-    "Learners",
+    "Participants",
     "Teacher",
     "Meeting URL",
   ];
@@ -458,7 +458,7 @@ export default function AdminSessionsSection({
                 <th>Session</th>
                 <th>Status</th>
                 <th>When</th>
-                <th>Learners</th>
+                <th>Participants</th>
                 <th>Teacher</th>
                 <th>Duration</th>
                 <th>Meeting</th>
@@ -512,7 +512,7 @@ export default function AdminSessionsSection({
                         >
                           <span className="adm-session-title-button__title">
                             {session.title ||
-                              (type === "GROUP" ? "Group Session" : type === "TRAINING" ? "Teacher Training" : "Lesson")}
+                              (type === "GROUP" ? "Group Session" : type === "TRAINING" ? "Training Session" : "Lesson")}
                           </span>
                           <span className="adm-session-title-button__meta">
                             #{session.id} - {type === "GROUP" ? "Group" : type === "TRAINING" ? "Training · unpaid" : "1:1"}
@@ -545,7 +545,7 @@ export default function AdminSessionsSection({
                         {session.teacher ? (
                           <span>{session.teacher.name || session.teacher.email}</span>
                         ) : (
-                          <span className="adm-session-warning">Unassigned</span>
+                          <span className={type === "TRAINING" ? "adm-session-muted" : "adm-session-warning"}>{type === "TRAINING" ? "Admin trainer" : "Unassigned"}</span>
                         )}
                       </td>
                       <td>{formatDuration(session)}</td>
@@ -761,16 +761,16 @@ export default function AdminSessionsSection({
                     </dd>
                   </div>
                   <div>
-                    <dt>Teacher</dt>
+                    <dt>{normType(activeSession.type) === "TRAINING" ? "Lead teacher" : "Teacher"}</dt>
                     <dd>
                       {activeSession.teacher?.name ||
                         activeSession.teacher?.email ||
-                        "Unassigned"}
+                        (normType(activeSession.type) === "TRAINING" ? "None selected" : "Unassigned")}
                     </dd>
                   </div>
                   {normType(activeSession.type) === "TRAINING" && <div><dt>Admin trainer</dt><dd>{activeSession.trainingAdmin?.name || activeSession.trainingAdmin?.email || "Admin"}</dd></div>}
                   <div>
-                    <dt>Learners</dt>
+                    <dt>{normType(activeSession.type) === "TRAINING" ? "Attendees" : "Learners"}</dt>
                     <dd>{getSessionLearnerDisplay(activeSession)}</dd>
                   </div>
                   <div>
@@ -798,7 +798,7 @@ export default function AdminSessionsSection({
                     activeSession.learners.map((learner) => (
                       <div key={learner.id} className="adm-session-participant">
                         <span>
-                          {learner.name || learner.email || `Learner ${learner.id}`}
+                          {learner.name || learner.email || `Participant ${learner.id}`}{normType(activeSession.type) === "TRAINING" ? ` · ${learner.role === "teacher" ? "Teacher" : "Learner"}` : ""}
                         </span>
                         <small>{learner.email}</small>
                       </div>
@@ -932,7 +932,31 @@ export default function AdminSessionsSection({
                     </>
                   )}
 
-                  <div className="adm-form-field">
+                  {normType(editForm.type) === "TRAINING" && (
+                    <div className="adm-form-field adm-form-field--full">
+                      <label className="adm-form-label">Teachers and learners</label>
+                      <div className="adm-session-edit-participants">
+                        {(editForm.trainingParticipantIds || []).map((id) => {
+                          const person = [...teachers, ...users].find((entry) => String(entry.id) === String(id));
+                          return <span key={id} className="adm-session-edit-participant">
+                            {person?.name || person?.email || id} {teachers.some((entry) => String(entry.id) === String(id)) ? "· Teacher" : "· Learner"}
+                            <button type="button" onClick={() => removeParticipant(activeSession.id, id)} disabled={(editForm.trainingParticipantIds || []).length <= 1} aria-label={`Remove ${person?.name || id}`}>×</button>
+                          </span>;
+                        })}
+                      </div>
+                      <div className="adm-session-add-participant">
+                        <select className="adm-form-input" value={participantDraftId} onChange={(e) => setParticipantDraftId(e.target.value)}>
+                          <option value="">Add teacher or learner...</option>
+                          {[...teachers.map((person) => ({ ...person, roleLabel: "Teacher" })), ...users.map((person) => ({ ...person, roleLabel: "Learner" }))]
+                            .filter((person) => !(editForm.trainingParticipantIds || []).includes(String(person.id)))
+                            .map((person) => <option key={`${person.roleLabel}-${person.id}`} value={person.id}>{person.roleLabel}: {person.name || person.email}</option>)}
+                        </select>
+                        <button type="button" className="adm-btn-secondary adm-btn-secondary--compact" onClick={handleAddParticipant} disabled={!participantDraftId}>Add</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {normType(editForm.type) !== "TRAINING" && <div className="adm-form-field">
                     <label className="adm-form-label">Teacher</label>
                     <select
                       name="teacherId"
@@ -947,7 +971,7 @@ export default function AdminSessionsSection({
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </div>}
 
                   <div className="adm-form-field adm-form-field--full">
                     <label className="adm-form-label">Title</label>
