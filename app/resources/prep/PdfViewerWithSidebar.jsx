@@ -131,15 +131,19 @@ export default function PdfViewerWithSidebar({
       if (requestId !== fitRequestRef.current) return;
       const viewport = page.getViewport({ scale: 1 });
       const container = mainRef.current;
+      const fitWholePage = fitMode === "page" || Boolean(
+        container?.closest(".cr-shell") &&
+        window.matchMedia("(max-width: 900px) and (max-height: 600px) and (orientation: landscape)").matches
+      );
       if (!container || !viewport.width || !viewport.height ||
-        container.clientWidth <= 0 || (fitMode === "page" && container.clientHeight <= 0)) return;
+        container.clientWidth <= 0 || (fitWholePage && container.clientHeight <= 0)) return;
       const style = window.getComputedStyle(container);
       const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
       const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
       const availableWidth = Math.max(1, container.clientWidth - horizontalPadding - 2);
       const availableHeight = Math.max(1, container.clientHeight - verticalPadding - 2);
       const widthZoom = availableWidth / viewport.width;
-      const fitZoom = fitMode === "page"
+      const fitZoom = fitWholePage
         ? Math.min(widthZoom, availableHeight / viewport.height)
         : widthZoom;
       if (Number.isFinite(fitZoom) && fitZoom > 0) {
