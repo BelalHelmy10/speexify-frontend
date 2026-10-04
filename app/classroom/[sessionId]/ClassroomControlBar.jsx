@@ -67,6 +67,8 @@ export default function ClassroomControlBar({
           <button
             className="cr-controls__btn cr-controls__btn--primary"
             onClick={() => setIsPickerOpen(true)}
+            aria-label="Choose resource"
+            title="Choose resource"
           >
             <span className="cr-controls__btn-icon"><BookOpen size={16} /></span>
             <span className="cr-controls__btn-label">Resources</span>
@@ -114,6 +116,8 @@ export default function ClassroomControlBar({
           <button
             className="cr-controls__btn cr-controls__btn--secondary"
             onClick={() => setShowParticipantList(true)}
+            aria-label={isTeacher ? "Open classroom controls" : `Show ${participantCount} participants`}
+            title={isTeacher ? "Open classroom controls" : `Show ${participantCount} participants`}
           >
             <span className="cr-controls__btn-icon"><Users size={16} /></span>
             <span className="cr-controls__btn-label">
@@ -212,6 +216,7 @@ export default function ClassroomControlBar({
               checked={learnerWantsToFollow}
               onChange={(e) => onLearnerWantsToFollowChange(e.target.checked)}
               disabled={!teacherAllowsFollowing}
+              aria-label="Follow teacher layout"
             />
             <span className="cr-controls__toggle-slider"></span>
             <span className="cr-controls__toggle-label">

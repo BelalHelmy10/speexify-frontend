@@ -1,7 +1,8 @@
 // app/classroom/[sessionId]/ClassroomShell.jsx
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
 import PrepShell from "@/app/resources/prep/PrepShell";
 import ClassroomChat from "./ClassroomChat";
@@ -389,6 +390,10 @@ export default function ClassroomShell({
   const [customSplit, setCustomSplit] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const desktopVideoTargetRef = useRef(null);
+  const mobileVideoTargetRef = useRef(null);
+  const videoHostRef = useRef(null);
+  const [videoHost, setVideoHost] = useState(null);
   const customSplitRef = useRef(customSplit);
   const pendingSplitRef = useRef(customSplit);
   const splitDragRafRef = useRef(null);
@@ -411,27 +416,36 @@ export default function ClassroomShell({
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
-  // ✅ Mobile responsive: detect screen width and manage tab state
+  // Portrait phones use tabs; landscape gets the same split classroom as desktop.
   const [isMobile, setIsMobile] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState('video'); // 'video' | 'content' | 'chat'
 
-  // Detect mobile breakpoint (< 900px)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 900;
-      setIsMobile(mobile);
-      // Reset to video tab when switching to mobile
-      if (mobile && !isMobile) {
-        setMobileActiveTab('video');
-      }
+    const portraitTabs = window.matchMedia('(max-width: 900px) and (orientation: portrait)');
+    const syncLayout = () => {
+      setIsMobile(portraitTabs.matches);
+      if (portraitTabs.matches) setMobileActiveTab('video');
     };
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, [isMobile]);
+    syncLayout();
+    portraitTabs.addEventListener('change', syncLayout);
+    return () => portraitTabs.removeEventListener('change', syncLayout);
+  }, []);
+
+  // Move the same portal host between layouts. Keeping PrepVideoCall mounted
+  // preserves the Jitsi connection and local media state across rotation.
+  useEffect(() => {
+    if (!videoHostRef.current) {
+      videoHostRef.current = document.createElement('div');
+      videoHostRef.current.className = 'cr-video-host';
+    }
+    setVideoHost(videoHostRef.current);
+  }, []);
+
+  useLayoutEffect(() => {
+    const target = isMobile ? mobileVideoTargetRef.current : desktopVideoTargetRef.current;
+    if (videoHost && target) target.appendChild(videoHost);
+  }, [isMobile, videoHost]);
 
   // ✅ Teacher: control whether learners follow (global for all learners)
   const [teacherAllowsFollowing, setTeacherAllowsFollowing] = useState(true);
@@ -1891,7 +1905,7 @@ export default function ClassroomShell({
         />
       )}
 
-      {/* Main Content - Desktop only (hidden on mobile where MobileClassroomLayout is used) */}
+      {/* Split classroom on desktop and in landscape. */}
       {!isMobile && (
         <div
           className={[
@@ -1914,26 +1928,7 @@ export default function ClassroomShell({
               data-session-type={isGroup ? "group" : "one-on-one"}
               data-participant-count={videoParticipantCount}
             >
-              <PrepVideoCall
-                roomId={sessionId}
-                userName={userName}
-                isTeacher={isTeacher}
-                sessionTitle={session?.title || "Live coaching session"}
-                coachName={teacherName}
-                onScreenShareStreamChange={handleScreenShareStreamChange}
-                onModerationStateChange={handleVideoModerationChange}
-                onNetworkQualityChange={handleNetworkQualityChange}
-                onAudioMuteChange={handleAudioMuteChange}
-                onParticipantCountChange={handleVideoParticipantCountChange}
-                suspendTileViewLock={screenShare.isSomeoneSharing}
-                locale={locale}
-              />
-              <ClassroomRaiseHandOverlay
-                raisedHands={raisedHands}
-                isTeacher={isTeacher}
-                onLowerHand={lowerHand}
-              />
-              <ClassroomCaptionsOverlay captions={captions} />
+              <div className="cr-video-target" ref={desktopVideoTargetRef} />
             </div>
 
           </aside>
@@ -2076,7 +2071,7 @@ export default function ClassroomShell({
         </aside>
       )}
 
-      {/* Bottom Control Bar - Desktop only */}
+      {/* Full classroom controls in the split layout. */}
       <ClassroomControlBar
         isMobile={isMobile}
         isTeacher={isTeacher}
@@ -2125,7 +2120,7 @@ export default function ClassroomShell({
         }
       />
 
-      {/* Mobile Layout (shown only on screens < 900px) */}
+      {/* Tabbed layout for portrait phones and narrow tablets. */}
       {isMobile && (
         <MobileClassroomLayout
           activeTab={mobileActiveTab}
@@ -2141,28 +2136,7 @@ export default function ClassroomShell({
           captionsSupported={captionsSupported}
           onToggleCaptions={toggleCaptions}
           videoComponent={
-            <>
-              <PrepVideoCall
-                roomId={sessionId}
-                userName={userName}
-                isTeacher={isTeacher}
-                sessionTitle={session?.title || "Live coaching session"}
-                coachName={teacherName}
-                onScreenShareStreamChange={handleScreenShareStreamChange}
-                onModerationStateChange={handleVideoModerationChange}
-                onNetworkQualityChange={handleNetworkQualityChange}
-                onAudioMuteChange={handleAudioMuteChange}
-                onParticipantCountChange={handleVideoParticipantCountChange}
-                suspendTileViewLock={screenShare.isSomeoneSharing}
-                locale={locale}
-              />
-              <ClassroomRaiseHandOverlay
-                raisedHands={raisedHands}
-                isTeacher={isTeacher}
-                onLowerHand={lowerHand}
-              />
-              <ClassroomCaptionsOverlay captions={captions} />
-            </>
+            <div className="cr-video-target" ref={mobileVideoTargetRef} />
           }
           contentComponent={
             isScreenShareActive ? (
@@ -2235,6 +2209,33 @@ export default function ClassroomShell({
             />
           }
         />
+      )}
+
+      {videoHost && createPortal(
+        <>
+          <PrepVideoCall
+            roomId={sessionId}
+            userName={userName}
+            isTeacher={isTeacher}
+            sessionTitle={session?.title || "Live coaching session"}
+            coachName={teacherName}
+            onScreenShareStreamChange={handleScreenShareStreamChange}
+            onModerationStateChange={handleVideoModerationChange}
+            onNetworkQualityChange={handleNetworkQualityChange}
+            onAudioMuteChange={handleAudioMuteChange}
+            onParticipantCountChange={handleVideoParticipantCountChange}
+            suspendTileViewLock={screenShare.isSomeoneSharing}
+            locale={locale}
+          />
+          <ClassroomRaiseHandOverlay
+            raisedHands={raisedHands}
+            isTeacher={isTeacher}
+            onLowerHand={lowerHand}
+          />
+          <ClassroomCaptionsOverlay captions={captions} />
+        </>,
+        videoHost,
+        'classroom-video'
       )}
 
       <ClassroomResourcePickerModal

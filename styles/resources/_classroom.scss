@@ -798,7 +798,7 @@ body.classroom-active {
     }
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 900px) and (orientation: portrait) {
     flex-direction: column;
     overflow-y: auto;
   }
@@ -812,7 +812,7 @@ body.classroom-active {
   // Spring transition — fires on pointer-up commit for satisfying snap
   transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 
-  @media (max-width: 900px) {
+  @media (max-width: 900px) and (orientation: portrait) {
     width: 100% !important;
     flex: none;
   }
@@ -827,7 +827,7 @@ body.classroom-active {
     will-change: width;
     contain: layout style;
 
-    @media (max-width: 900px) {
+    @media (max-width: 900px) and (orientation: portrait) {
       max-height: 50vh;
       border-right: none;
       border-bottom: 1px solid $cr-border-subtle;
@@ -843,7 +843,7 @@ body.classroom-active {
     will-change: width;
     contain: layout style;
 
-    @media (max-width: 900px) {
+    @media (max-width: 900px) and (orientation: portrait) {
       flex: 1;
       min-height: 400px;
     }
@@ -893,7 +893,7 @@ body.classroom-active {
     inset: 0 -8px;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 900px) and (orientation: portrait) {
     display: none;
   }
 
@@ -980,10 +980,22 @@ body.classroom-active {
     border-color: rgba($cr-border-default, 0.9);
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 900px) and (orientation: portrait) {
     min-height: 180px;
     max-height: 360px;
   }
+}
+
+.cr-video-target,
+.cr-video-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.cr-video-target {
+  flex: 1 1 auto;
 }
 
 .cr-video {
@@ -1781,7 +1793,7 @@ body.classroom-active {
     border-radius: 0;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 900px) and (orientation: portrait) {
     display: none;
   }
 }
@@ -3208,7 +3220,7 @@ body.classroom-active {
 .cr-mobile-layout {
   display: none;
 
-  @media (max-width: 900px) {
+  @media (max-width: 900px) and (orientation: portrait) {
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -3487,7 +3499,7 @@ body.classroom-active {
 }
 
 // ─── Hide Desktop Elements on Mobile ────────────────────────────────────────
-@media (max-width: 900px) {
+@media (max-width: 900px) and (orientation: portrait) {
 
   // Hide desktop layout
   .cr-main {
@@ -5163,5 +5175,104 @@ body.classroom-active {
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+  }
+}
+
+// The split classroom is also the landscape phone/tablet layout. Keep both
+// panes usable in the short viewport and preserve the desktop controls.
+@media (max-width: 900px) and (orientation: landscape) {
+  .cr-shell {
+    overflow: hidden;
+    --cr-chat-drawer-width: min(320px, calc(100vw - 2rem));
+  }
+
+  .cr-main {
+    overflow: hidden;
+  }
+
+  .cr-panel--left {
+    padding: 0.4rem 0.35rem 0.4rem calc(0.35rem + var(--spx-safe-left));
+    overflow: hidden;
+  }
+
+  .cr-panel--right {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .cr-video-container {
+    min-height: 0;
+    max-height: none;
+  }
+
+  .cr-chat-drawer {
+    right: calc(0.5rem + var(--spx-safe-right));
+    bottom: calc(50px + var(--spx-safe-bottom));
+    height: min(320px, calc(100% - 100px - var(--spx-safe-top) - var(--spx-safe-bottom)));
+  }
+
+  .cr-main--chat-open .cr-panel--right .cr-content-viewer {
+    width: 100%;
+  }
+
+  .cr-controls {
+    gap: 0.25rem;
+    height: calc(44px + var(--spx-safe-bottom));
+    min-height: calc(44px + var(--spx-safe-bottom));
+    padding: 0.25rem calc(0.35rem + var(--spx-safe-right))
+      calc(0.25rem + var(--spx-safe-bottom)) calc(0.35rem + var(--spx-safe-left));
+
+    &__left,
+    &__center,
+    &__right {
+      flex: 0 0 auto;
+      gap: 0.2rem;
+    }
+
+    &__btn {
+      justify-content: center;
+      min-width: 34px;
+      min-height: 34px;
+      padding: 0.35rem;
+    }
+
+    &__btn-label,
+    &__toggle-label,
+    &__caption-hint {
+      display: none;
+    }
+
+    &__toggle-wrapper {
+      padding: 5px;
+    }
+  }
+
+  .cr-focus-switcher {
+    padding: 2px;
+  }
+
+  .cr-focus-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  // Compact the lesson tools so their wrapped rows leave room for the canvas.
+  // Keep overflow visible for the annotation menus.
+  .cr-content-viewer .prep-annotate-toolbar {
+    gap: 0.15rem;
+    padding: 0.15rem 0.3rem;
+
+    &__btn {
+      min-height: 30px;
+      padding: 0.3rem;
+
+      span {
+        display: none;
+      }
+    }
+  }
+
+  .cr-content-viewer .prep-audio-player {
+    min-width: 0;
   }
 }
