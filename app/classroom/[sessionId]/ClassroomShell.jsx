@@ -2243,7 +2243,7 @@ export default function ClassroomShell({
         tracks={tracks}
         uploadedMaterials={uploadedMaterials}
         onUploadPdf={handleUploadPdf}
-        canUploadPdf={session?.status === "scheduled"}
+        canUploadPdf={session?.status === "scheduled" || session?.status === "completed"}
         selectedResourceId={selectedResourceId}
         handleChangeResourceId={handleChangeResourceId}
         sessionId={sessionId}
