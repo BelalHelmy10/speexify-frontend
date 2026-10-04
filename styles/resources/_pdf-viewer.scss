@@ -409,6 +409,14 @@
     border: 1px solid rgba(148, 163, 184, 0.14);
     border-radius: $cr-radius-md;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+  }
+
+  &__zoom-slider {
+    width: clamp(72px, 8vw, 120px);
+    accent-color: $cr-accent-primary;
+    cursor: ew-resize;
+    flex-shrink: 1;
   }
 
   &__pages {

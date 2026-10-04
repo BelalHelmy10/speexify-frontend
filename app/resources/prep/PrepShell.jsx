@@ -1537,7 +1537,7 @@ function PrepShell({
         window.dispatchEvent(new Event("resize"));
 
         if (isPdf) {
-          pdfNavApiRef.current?.fitToPage?.();
+          pdfNavApiRef.current?.autoFit?.();
         }
       }, 80);
     });
