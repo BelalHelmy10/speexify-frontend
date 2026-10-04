@@ -386,6 +386,9 @@ function Admin() {
     if (!startAt) return { error: "Please select a valid date and time" };
 
     const type = normType(form.type);
+    if (type === "TRAINING" && !form.teacherId) {
+      return { error: "Please select a teacher for training" };
+    }
     if (type === "ONE_ON_ONE" && !form.userId) {
       return { error: "Please select a learner for the 1:1 session" };
     }
@@ -414,7 +417,7 @@ function Admin() {
     const payload = {
       type,
       title:
-        form.title.trim() || (type === "GROUP" ? "Group Session" : "Lesson"),
+        form.title.trim() || (type === "GROUP" ? "Group Session" : type === "TRAINING" ? "Teacher Training" : "Lesson"),
       startAt: startAt.toISOString(),
       ...(form.teacherId ? { teacherId: Number(form.teacherId) } : {}),
       ...(endAt
@@ -422,7 +425,7 @@ function Admin() {
         : { durationMin: Number(form.duration || 60) }),
       joinUrl: meetingUrl || null,
       notes: form.notes || null,
-      ...(form.allowNoCredit
+      ...(type !== "TRAINING" && form.allowNoCredit
         ? {
             allowNoCredit: true,
             allowNoCreditReason: form.allowNoCreditReason.trim(),
@@ -435,7 +438,7 @@ function Admin() {
         .map((x) => Number(x))
         .filter((n) => n > 0);
       payload.capacity = form.capacity ? Number(form.capacity) : null;
-    } else {
+    } else if (type === "ONE_ON_ONE") {
       payload.learnerId = Number(form.userId);
     }
 
@@ -568,11 +571,11 @@ function Admin() {
         sessionId: data?.session?.id || data?.id,
         type,
         learnerId: type === "ONE_ON_ONE" ? payload.learnerId : null,
-        learnerCount: type === "GROUP" ? payload.learnerIds?.length : 1,
+        learnerCount: type === "GROUP" ? payload.learnerIds?.length : type === "TRAINING" ? 0 : 1,
         teacherId: payload.teacherId || null,
       });
       toast.success(
-        `${type === "GROUP" ? "Group session" : "Session"
+        `${type === "GROUP" ? "Group session" : type === "TRAINING" ? "Training session" : "Session"
         } created successfully!`
       );
       setStatus("");

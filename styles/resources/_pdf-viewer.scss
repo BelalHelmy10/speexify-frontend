@@ -42,7 +42,7 @@
 }
 
 .prep-pdf-canvas {
-  max-width: 100%;
+  max-width: none;
   height: auto;
   box-shadow: $cr-shadow-lg;
   border-radius: $cr-radius-sm;
@@ -307,6 +307,7 @@
 .cpv-page-wrapper {
   position: relative;
   display: inline-block;
+  flex-shrink: 0;
   box-shadow: $cr-shadow-lg;
   border-radius: $cr-radius-sm;
   overflow: visible; // Changed from hidden to visible (prevent clipping of tall pages)

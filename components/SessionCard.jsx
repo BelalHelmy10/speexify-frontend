@@ -43,6 +43,7 @@ export default function SessionCard({
   } = session || {};
 
   const isGroup = type === "GROUP";
+  const isTraining = type === "TRAINING";
   const isTeacher = userRole === "teacher";
   const isAdmin = userRole === "admin";
 
@@ -187,6 +188,7 @@ export default function SessionCard({
 
           <div className="session-card__compact-info">
             <span className="session-card__title">{title || "Session"}</span>
+            {isTraining && <span className="session-card__type-badge">{locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID"}</span>}
             {isGroup && (
               <span className="session-card__type-badge session-card__type-badge--group">
                 GROUP
@@ -218,7 +220,9 @@ export default function SessionCard({
         <div className="session-card__header-left">
           <h3 className="session-card__title">{title || "Session"}</h3>
           <div className="session-card__badges">
-            {isGroup ? (
+            {isTraining ? (
+              <span className="session-card__type-badge">🎓 {locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID"}</span>
+            ) : isGroup ? (
               <span className="session-card__type-badge session-card__type-badge--group">
                 👥 GROUP
               </span>
@@ -273,7 +277,7 @@ export default function SessionCard({
         )}
 
         {/* Learner info (for teacher view) */}
-        {isTeacher && (
+        {isTeacher && !isTraining && (
           <div className="session-card__person">
             <span className="session-card__person-icon">👨‍🎓</span>
             <span className="session-card__person-label">

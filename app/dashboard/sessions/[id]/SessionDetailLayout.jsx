@@ -52,11 +52,13 @@ export default function SessionDetailLayout({
   sessionStatus,
   statusConfig,
   isGroup,
+  isTraining,
   durationStr,
   timezone,
   startAt,
   endAt,
   teacher,
+  trainingAdmin,
   learnerLabel,
   legacyLearner,
   activeParticipants,
@@ -134,7 +136,9 @@ export default function SessionDetailLayout({
           {/* Meta row: type chip + status pill */}
           <div className="sd-hero__meta-row">
             <span className="sd-hero__type">
-              {isGroup
+              {isTraining
+                ? locale === "ar" ? "تدريب المعلم · بدون أجر" : "Teacher training · unpaid"
+                : isGroup
                 ? txt("type_group", "Group lesson")
                 : txt("type_one_on_one", "1:1 Lesson")}
             </span>
@@ -193,17 +197,24 @@ export default function SessionDetailLayout({
                     {teacher.name || teacher.email}
                   </span>
                   <span className="sd-hero__person-role">
-                    {txt("section_coach_title", "Coach")}
+                    {isTraining ? (locale === "ar" ? "المعلم" : "Teacher") : txt("section_coach_title", "Coach")}
                   </span>
                 </div>
               </div>
             )}
 
-            {!isGroup && primaryLearner && teacher && (
+            {!isGroup && (isTraining ? trainingAdmin : primaryLearner) && teacher && (
               <div className="sd-hero__people-sep" aria-hidden>×</div>
             )}
 
-            {!isGroup && primaryLearner && (
+            {isTraining && trainingAdmin && (
+              <div className="sd-hero__person-card">
+                <div className="sd-hero__person-avatar sd-hero__person-avatar--learner">{getInitials(trainingAdmin.name || trainingAdmin.email)}</div>
+                <div className="sd-hero__person-info"><span className="sd-hero__person-name">{trainingAdmin.name || trainingAdmin.email}</span><span className="sd-hero__person-role">{locale === "ar" ? "مسؤول التدريب" : "Admin trainer"}</span></div>
+              </div>
+            )}
+
+            {!isTraining && !isGroup && primaryLearner && (
               <div className="sd-hero__person-card">
                 <div className="sd-hero__person-avatar sd-hero__person-avatar--learner">
                   {getInitials(
@@ -252,7 +263,7 @@ export default function SessionDetailLayout({
         <div className="sd-main">
 
           {/* Attendance — teacher/admin only */}
-          {(sessionIsTeacher || sessionIsAdmin) &&
+          {!isTraining && (sessionIsTeacher || sessionIsAdmin) &&
             sessionStatus !== "canceled" && (
               <Panel icon="learners" title="Attendance" variant="subtle">
                 <AttendancePanel
@@ -270,7 +281,7 @@ export default function SessionDetailLayout({
           {/* Notes / Homework */}
           <Panel
             icon="notes"
-            title={txt("notes_title", "Notes / Homework")}
+            title={isTraining ? (locale === "ar" ? "خطة التدريب" : "Training agenda") : txt("notes_title", "Notes / Homework")}
             hint={
               !notes?.trim()
                 ? txt(
@@ -299,7 +310,7 @@ export default function SessionDetailLayout({
           </Panel>
 
           {/* Teacher Feedback */}
-          {teacherFeedback ? (
+          {!isTraining && (teacherFeedback ? (
             <Panel
               icon="feedback"
               title={txt("feedback_title", "Teacher feedback")}
@@ -390,10 +401,10 @@ export default function SessionDetailLayout({
                 />
               </Panel>
             )
-          )}
+          ))}
 
           {/* Session Summary */}
-          {showSummary && (
+          {!isTraining && showSummary && (
             <Panel
               icon="sparkles"
               title={txt("summary_title", "Session summary")}

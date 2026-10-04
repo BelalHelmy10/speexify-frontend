@@ -241,6 +241,7 @@ const toRbcEvents = (arr = [], timezone, locale = "en") =>
   arr.map((s) => {
     const type = String(s.type || "").toUpperCase();
     const isGroup = type === "GROUP";
+    const isTraining = type === "TRAINING";
     const cap = typeof s.capacity === "number" ? s.capacity : null;
     const count =
       typeof s.participantCount === "number" ? s.participantCount : null;
@@ -259,6 +260,8 @@ const toRbcEvents = (arr = [], timezone, locale = "en") =>
       joinUrl: s.joinUrl || "",
       type,
       isGroup,
+      isTraining,
+      trainingLabel: locale === "ar" ? "تدريب · بدون أجر" : "Training · unpaid",
       capacity: cap,
       participantCount: count,
       seatsLabel:
@@ -504,6 +507,7 @@ function getSessionCoachName(event) {
 }
 
 function getSessionTypeLabel(event, tone, dict) {
+  if (event.isTraining) return event.trainingLabel;
   if (tone === "live") return t(dict, "event_live");
   if (tone === "canceled") return t(dict, "event_canceled");
   return event.isGroup ? t(dict, "session_group") : t(dict, "event_scheduled");
@@ -748,7 +752,7 @@ function SessionDetailDrawer({
           </div>
           <div className="calx-session-drawer__detail">
             <CalendarClock size={17} />
-            <span>{event.isGroup ? t(dict, "session_group") : t(dict, "one_on_one_session")}</span>
+            <span>{event.isTraining ? event.trainingLabel : event.isGroup ? t(dict, "session_group") : t(dict, "one_on_one_session")}</span>
           </div>
         </div>
 
@@ -831,6 +835,7 @@ export default function CalendarPage() {
     canceled: true,
     group: true,
     oneOnOne: true,
+    training: true,
     availability: true,
   });
 
@@ -947,7 +952,8 @@ export default function CalendarPage() {
       if (isCanceled && !filters.canceled) return false;
       if (!isCanceled && !filters.scheduled) return false;
       if (event.isGroup && !filters.group) return false;
-      if (!event.isGroup && !filters.oneOnOne) return false;
+      if (event.isTraining && !filters.training) return false;
+      if (!event.isGroup && !event.isTraining && !filters.oneOnOne) return false;
       return true;
     },
     [filters]
@@ -2248,6 +2254,7 @@ export default function CalendarPage() {
                       ["canceled", t(dict, "filter_canceled")],
                       ["group", t(dict, "filter_group")],
                       ["oneOnOne", t(dict, "filter_oneOnOne")],
+                      ["training", locale === "ar" ? "تدريب · بدون أجر" : "Training · unpaid"],
                       ["availability", t(dict, "filter_availability")],
                     ].map(([key, label]) => (
                       <label key={key} className="calx-filter-item">
@@ -2567,7 +2574,7 @@ export default function CalendarPage() {
                                 </span>
                                 <span className="calx-ev-sub">
                                   {format(ev.start, "h:mm a")}
-                                  {ev.isGroup ? ` · ${t(dict, "session_group")}` : ""}
+                                  {ev.isTraining ? ` · ${ev.trainingLabel}` : ev.isGroup ? ` · ${t(dict, "session_group")}` : ""}
                                   {ev.isGroup && ev.seatsLabel ? ` · ${ev.seatsLabel}` : ""}
                                 </span>
                               </span>

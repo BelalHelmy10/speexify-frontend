@@ -10,6 +10,8 @@ export default function ClassroomLeaveConfirmModal({
   sessionId,
   summary,
   isTeacher,
+  isTraining = false,
+  isAdmin = false,
 }) {
   const modalRef = useFocusTrap(Boolean(show), {
     onEscape: () => setShowLeaveConfirm(false),
@@ -19,7 +21,9 @@ export default function ClassroomLeaveConfirmModal({
 
   const hasEnded = summary?.statusLabel?.includes("Over") || summary?.statusLabel === "Time is up";
 
-  const leaveHref = isTeacher
+  const leaveHref = isTraining && isAdmin
+    ? `${prefix}/admin`
+    : isTeacher
     ? `${prefix}/dashboard`
     : `${prefix}/dashboard/sessions/${sessionId}/feedback`;
   return (
@@ -52,6 +56,8 @@ export default function ClassroomLeaveConfirmModal({
           <p className="cr-leave-notice">
             {hasEnded
               ? "The scheduled session time has ended."
+              : isTraining
+                ? "The training will continue without you. The other participant can stay connected."
               : isTeacher
                 ? "The session will continue without you. Learners will remain connected but won\u2019t receive further guidance until you return."
                 : "The session will continue without you. Your teacher and other participants will remain connected."}

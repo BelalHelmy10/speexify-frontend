@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Clock, Search, X } from "lucide-react";
+import { Clock, FileUp, Search, X } from "lucide-react";
 import ClassroomResourcePicker from "./ClassroomResourcePicker";
 import useFocusTrap from "@/hooks/useFocusTrap";
 import {
@@ -49,17 +49,23 @@ function ClassroomResourcePickerModal({
   setIsPickerOpen,
   isTeacher,
   tracks,
+  uploadedMaterials = [],
+  onUploadPdf,
+  canUploadPdf = true,
   selectedResourceId,
   handleChangeResourceId,
   sessionId,
 }) {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [recentIds, setRecentIds] = useState(() =>
     loadRecentResourceIds(sessionId)
   );
 
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const resultRefs = useRef(new Map());
   const modalRef = useFocusTrap(Boolean(isOpen && isTeacher), {
     onEscape: () => setIsPickerOpen(false),
@@ -77,6 +83,32 @@ function ClassroomResourcePickerModal({
   const trimmedQuery = query.trim();
   const deferredQuery = useDeferredValue(trimmedQuery);
   const isSearching = trimmedQuery.length > 0;
+  const visibleUploads = uploadedMaterials.filter((material) =>
+    !isSearching || material.title.toLocaleLowerCase().includes(trimmedQuery.toLocaleLowerCase())
+  );
+
+  const handlePdfUpload = useCallback(async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!/\.pdf$/i.test(file.name) || file.size === 0) {
+      setUploadError("Choose a valid PDF file.");
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      setUploadError("PDF must be 25 MB or smaller.");
+      return;
+    }
+    setUploadError("");
+    setUploading(true);
+    try {
+      await onUploadPdf(file);
+    } catch (error) {
+      setUploadError(error?.response?.data?.error || error?.message || "Could not upload PDF.");
+    } finally {
+      setUploading(false);
+    }
+  }, [onUploadPdf]);
 
   const results = useMemo(() => {
     if (!deferredQuery) return [];
@@ -97,6 +129,7 @@ function ClassroomResourcePickerModal({
     setQuery("");
     setActiveIndex(0);
     setRecentIds(loadRecentResourceIds(sessionId));
+    setUploadError("");
     const id = window.setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
@@ -229,10 +262,46 @@ function ClassroomResourcePickerModal({
           </button>
         </div>
 
+        {canUploadPdf && (
+          <div className="cr-picker-upload">
+            <div>
+              <strong>Teach from your computer</strong>
+              <span>Upload a PDF and open it for everyone in this classroom.</span>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              onChange={handlePdfUpload}
+              hidden
+              aria-label="Choose PDF to upload"
+            />
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+              <FileUp size={16} /> {uploading ? "Uploading…" : "Upload PDF"}
+            </button>
+            {uploadError && <p role="alert" className="cr-picker-upload__error">{uploadError}</p>}
+          </div>
+        )}
+
         <div className="cr-modal__body cr-picker-body" data-lenis-prevent>
+          {visibleUploads.length > 0 && (
+            <div className="cr-picker-uploads">
+              <strong>Uploaded for this class</strong>
+              {visibleUploads.map((material) => (
+                <button
+                  type="button"
+                  key={material._id}
+                  className={material._id === selectedResourceId ? "is-selected" : ""}
+                  onClick={() => handleChangeResourceId(material._id)}
+                >
+                  <span aria-hidden="true">📄</span> {material.title}
+                </button>
+              ))}
+            </div>
+          )}
           {isSearching ? (
             results.length === 0 ? (
-              <div className="cr-picker__empty">
+              visibleUploads.length === 0 ? <div className="cr-picker__empty">
                 <span className="cr-picker__empty-icon">🔎</span>
                 <p>
                   No matches for <strong>“{trimmedQuery}”</strong>.
@@ -240,7 +309,7 @@ function ClassroomResourcePickerModal({
                 <p className="cr-picker__empty-hint">
                   Try a different word, or clear the search to browse.
                 </p>
-              </div>
+              </div> : null
             ) : (
               <ul
                 id="cr-picker-results"

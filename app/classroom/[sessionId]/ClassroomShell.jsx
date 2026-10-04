@@ -77,9 +77,11 @@ function getParticipantsFromSession(session) {
     "Teacher";
 
   const isGroup = s.type === "GROUP";
+  const isTraining = s.type === "TRAINING";
   const learners = s.learners || [];
 
   const learnerObj =
+    (isTraining ? s.trainingAdmin : null) ||
     s.learnerUser ||
     s.learner ||
     s.student ||
@@ -91,7 +93,7 @@ function getParticipantsFromSession(session) {
     s.learnerName ||
     s.learnerDisplayName ||
     buildDisplayName(learnerObj) ||
-    "Learner";
+    (isTraining ? "Admin trainer" : "Learner");
 
   const learnerSources = learners.length > 0 ? learners : learnerObj ? [learnerObj] : [];
   const allLearnerNames = learnerSources.map(
@@ -114,6 +116,7 @@ function getParticipantsFromSession(session) {
     teacherName,
     learnerName,
     isGroup,
+    isTraining,
     learners,
     allLearnerNames,
     chatParticipants,
@@ -296,6 +299,7 @@ export default function ClassroomShell({
     teacherName,
     learnerName,
     isGroup,
+    isTraining,
     learners,
     allLearnerNames,
     chatParticipants,
@@ -307,7 +311,8 @@ export default function ClassroomShell({
     session?.isTeacher === true ||
     session?.role === "teacher" ||
     session?.userType === "teacher" ||
-    (session?.currentUser && session.currentUser.role === "teacher");
+    (session?.currentUser && session.currentUser.role === "teacher") ||
+    (isTraining && session?.isAdmin === true);
 
   // Group sessions contain every learner, so the first learner in the API
   // response is not necessarily the person viewing this classroom. Resolve
@@ -324,7 +329,9 @@ export default function ClassroomShell({
     buildDisplayName(currentLearner) ||
     (localUserId != null && !isTeacher ? buildDisplayName(authUser) : "") ||
     (isGroup ? "Learner" : learnerName);
-  const userName = isTeacher ? teacherName : currentLearnerName;
+  const userName = isTraining && session?.isAdmin === true
+    ? buildDisplayName(authUser) || "Admin trainer"
+    : isTeacher ? teacherName : currentLearnerName;
   const sessionStartedAt = session?.startedAt || session?.startAt;
 
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -349,10 +356,17 @@ export default function ClassroomShell({
   /* -----------------------------------------------------------
      Resources
   ----------------------------------------------------------- */
-  const { resourcesById } = useMemo(
+  const { resourcesById: libraryResourcesById } = useMemo(
     () => buildResourceIndex(tracks || []),
     [tracks]
   );
+  const [uploadedMaterials, setUploadedMaterials] = useState([]);
+  const resourcesById = useMemo(() => {
+    const uploadedById = Object.fromEntries(
+      uploadedMaterials.map((material) => [material._id, material])
+    );
+    return { ...libraryResourcesById, ...uploadedById };
+  }, [libraryResourcesById, uploadedMaterials]);
 
   const [selectedResourceId, setSelectedResourceId] = useState(() => {
     if (typeof window === "undefined") return null;
@@ -842,15 +856,25 @@ export default function ClassroomShell({
       setClassroomStateLoaded(false);
 
       try {
-        const { data } = await api.get(`/sessions/${sessionId}/classroom-state`);
+        const [stateResult, materialsResult] = await Promise.all([
+          api.get(`/sessions/${sessionId}/classroom-state`),
+          api.get(`/sessions/${sessionId}/materials`).catch((error) => {
+            console.warn("Failed to load classroom PDFs:", error);
+            return { data: { materials: [] } };
+          }),
+        ]);
         if (cancelled) return;
 
-        const state = data?.state && typeof data.state === "object" ? data.state : {};
+        const materials = materialsResult.data?.materials || [];
+        setUploadedMaterials(materials);
+        const uploadedById = Object.fromEntries(materials.map((item) => [item._id, item]));
+        const state = stateResult.data?.state && typeof stateResult.data.state === "object"
+          ? stateResult.data.state : {};
         setClassroomStateSnapshot(state);
         setIsClassroomLocked(Boolean(state.moderation?.locked));
 
         const savedResourceId =
-          state.resourceId && resourcesById[state.resourceId]
+          state.resourceId && (libraryResourcesById[state.resourceId] || uploadedById[state.resourceId])
             ? state.resourceId
             : null;
 
@@ -907,7 +931,7 @@ export default function ClassroomShell({
     return () => {
       cancelled = true;
     };
-  }, [sessionId, resourcesById, applyPersistedContentScroll]);
+  }, [sessionId, libraryResourcesById, applyPersistedContentScroll]);
 
   useEffect(() => {
     return () => {
@@ -1350,8 +1374,17 @@ export default function ClassroomShell({
               sessionStorage.setItem(`classroom_resource_${sessionId}`, resourceId);
             } catch (_) { }
           }
-        } else {
-          console.warn("[Classroom] ⚠️ Resource NOT found in resourcesById!");
+        } else if (resourceId?.startsWith("upload-")) {
+          // A teacher may upload after this learner joined. Resolve the new
+          // material from the authenticated API before opening its viewer.
+          void api.get(`/sessions/${sessionId}/materials`).then(({ data }) => {
+            const materials = data?.materials || [];
+            setUploadedMaterials(materials);
+            if (materials.some((item) => item._id === resourceId)) {
+              selectedResourceIdRef.current = resourceId;
+              setSelectedResourceId(resourceId);
+            }
+          }).catch((error) => console.warn("Failed to load classroom PDF", error));
         }
       }
 
@@ -1446,7 +1479,9 @@ export default function ClassroomShell({
       sessionTiming.endMs && nowMs > sessionTiming.endMs
         ? Math.floor((nowMs - sessionTiming.endMs) / 1000)
         : 0;
-    const participantLabel = isGroup
+    const participantLabel = isTraining
+      ? "admin trainer"
+      : isGroup
       ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
       : participantCount === 1
         ? `${formatNumber(1, locale)} learner`
@@ -1474,6 +1509,7 @@ export default function ClassroomShell({
   }, [
     capacity,
     isGroup,
+    isTraining,
     nowMs,
     participantCount,
     resource?.name,
@@ -1504,7 +1540,7 @@ export default function ClassroomShell({
   );
 
   // ✅ Track resource usage when teacher changes resource
-  const handleChangeResourceId = useCallback(async (newId) => {
+  const handleChangeResourceId = useCallback(async (newId, resourceOverride = null) => {
     selectedResourceIdRef.current = newId;
     setSelectedResourceId(newId);
     setIsPickerOpen(false);
@@ -1524,7 +1560,7 @@ export default function ClassroomShell({
     // Track resource usage (teacher only)
     if (isTeacher && newId && sessionId) {
       try {
-        const resource = resourcesById[newId];
+        const resource = resourceOverride || resourcesById[newId];
         await api.post(`/sessions/${sessionId}/resources-used`, {
           resourceId: newId,
           resourceTitle: resource?.title || resource?.name || null,
@@ -1548,6 +1584,18 @@ export default function ClassroomShell({
       );
     }
   }, [isTeacher, resourcesById, ready, send, sessionId, persistClassroomState]);
+
+  const handleUploadPdf = useCallback(async (file) => {
+    const form = new FormData();
+    form.append("file", file);
+    const { data } = await api.post(`/sessions/${sessionId}/materials`, form, {
+      timeout: 60000,
+    });
+    const material = data?.material;
+    if (!material?._id) throw new Error("The PDF was uploaded but could not be opened");
+    setUploadedMaterials((current) => [...current, material]);
+    await handleChangeResourceId(material._id, material);
+  }, [sessionId, handleChangeResourceId]);
 
   const handleScreenShareStreamChange = useCallback((payload) => {
     // Supports both old boolean callback and richer payload shape.
@@ -1734,7 +1782,7 @@ export default function ClassroomShell({
      Header (FIXED: match SCSS classnames)
   ----------------------------------------------------------- */
   const headerTitle = session?.title || "Classroom";
-  const typeLabel = isGroup ? "GROUP" : "1:1";
+  const typeLabel = isTraining ? (locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID") : isGroup ? "GROUP" : "1:1";
   const countLabel = isGroup
     ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
     : "";
@@ -2193,6 +2241,9 @@ export default function ClassroomShell({
         setIsPickerOpen={setIsPickerOpen}
         isTeacher={isTeacher}
         tracks={tracks}
+        uploadedMaterials={uploadedMaterials}
+        onUploadPdf={handleUploadPdf}
+        canUploadPdf={session?.status === "scheduled"}
         selectedResourceId={selectedResourceId}
         handleChangeResourceId={handleChangeResourceId}
         sessionId={sessionId}
@@ -2228,6 +2279,8 @@ export default function ClassroomShell({
       />
 
       <ClassroomLeaveConfirmModal
+        isTraining={isTraining}
+        isAdmin={session?.isAdmin === true}
         show={showLeaveConfirm}
         setShowLeaveConfirm={setShowLeaveConfirm}
         prefix={prefix}

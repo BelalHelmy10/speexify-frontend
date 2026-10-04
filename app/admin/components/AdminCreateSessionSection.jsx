@@ -290,7 +290,7 @@ function SchedulerPreview({
     return (
       <div className="adm-scheduler-preview adm-scheduler-preview--empty">
         <CalendarPlus size={18} />
-        Complete learner, date, and time to preview the booking.
+        Complete the required people, date, and time to preview the booking.
       </div>
     );
   }
@@ -402,12 +402,13 @@ function SchedulerPreview({
           <div className="adm-scheduler-panel__top">
             <span>
               <CreditCard size={16} />
-              Credits
+              {preview.schedule?.type === "TRAINING" ? "Payment" : "Credits"}
             </span>
-            <PreviewBadge tone={hasCreditIssue ? "danger" : "success"}>
-              {hasCreditIssue ? "Override needed" : "Enough credits"}
+            <PreviewBadge tone={preview.schedule?.type === "TRAINING" ? "neutral" : hasCreditIssue ? "danger" : "success"}>
+              {preview.schedule?.type === "TRAINING" ? "Unpaid" : hasCreditIssue ? "Override needed" : "Enough credits"}
             </PreviewBadge>
           </div>
+          {preview.schedule?.type === "TRAINING" && <p>No learner credits are used and no teacher earnings are created.</p>}
           <div className="adm-credit-preview-list">
             {creditRows.map((row) => (
               <div key={row.userId} className="adm-credit-preview-row">
@@ -514,6 +515,7 @@ export default function AdminCreateSessionSection({
 }) {
   const sessionType = normType(form.type);
   const isGroup = sessionType === "GROUP";
+  const isTraining = sessionType === "TRAINING";
   const hasPreviewBlocker = sessionPreview && !sessionPreview.canCreate;
   const createDisabled =
     creatingSession || sessionPreviewLoading || Boolean(hasPreviewBlocker);
@@ -597,6 +599,15 @@ export default function AdminCreateSessionSection({
                     <Users size={16} />
                     Group
                   </button>
+                  <button
+                    type="button"
+                    className={isTraining ? "is-active" : ""}
+                    onClick={() => onCreateChange(emitChange("type", "TRAINING"))}
+                    aria-pressed={isTraining}
+                  >
+                    <User size={16} />
+                    Training · unpaid
+                  </button>
                 </div>
               </div>
 
@@ -609,9 +620,10 @@ export default function AdminCreateSessionSection({
                 }
                 placeholder="Search teachers by name, email, or timezone"
                 emptyText="No matching teachers"
+                required={isTraining}
               />
 
-              {!isGroup && (
+              {!isGroup && !isTraining && (
                 <PersonPicker
                   label="Learner"
                   people={users}
@@ -749,7 +761,7 @@ export default function AdminCreateSessionSection({
                   value={form.title}
                   onChange={onCreateChange}
                   placeholder={
-                    isGroup ? "Speaking Practice Group" : "Grammar Review"
+                    isGroup ? "Speaking Practice Group" : isTraining ? "Teacher Training" : "Grammar Review"
                   }
                   required
                 />
@@ -837,7 +849,7 @@ export default function AdminCreateSessionSection({
             )}
             {creatingSession
               ? "Creating..."
-              : `Create ${isGroup ? "Group " : ""}Session`}
+              : `Create ${isGroup ? "Group " : isTraining ? "Training " : ""}Session`}
           </button>
 
           <button

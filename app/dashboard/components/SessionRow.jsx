@@ -139,6 +139,7 @@ export default function SessionRow({
     : t(dict, "session_join_classroom") || "Join";
 
   const isGroup = String(s.type || "").toUpperCase() === "GROUP";
+  const isTraining = String(s.type || "").toUpperCase() === "TRAINING";
   const participantCount =
     typeof s.participantCount === "number" ? s.participantCount : null;
 
@@ -208,8 +209,9 @@ export default function SessionRow({
                 {t(dict, "session_group") || "Group"}
               </span>
             )}
+            {isTraining && <span className="badge badge--info">{prefix === "/ar" ? "تدريب · بدون أجر" : "Training · unpaid"}</span>}
 
-            {(participantCount !== null || (isGroup && s.capacity)) && (
+            {!isTraining && (participantCount !== null || (isGroup && s.capacity)) && (
               <span className="badge badge--neutral">
                 {t(dict, "session_participants") || "Participants"}: {" "}
                 {participantCount !== null ? participantCount : 0}

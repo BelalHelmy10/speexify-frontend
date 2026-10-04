@@ -200,6 +200,7 @@ export default function SessionDetailPage() {
     notes,
     user: legacyLearner,
     teacher,
+    trainingAdmin,
     status: sessionStatus,
     type,
     capacity,
@@ -213,6 +214,7 @@ export default function SessionDetailPage() {
   } = session;
 
   const isGroup = String(type || "").toUpperCase() === "GROUP";
+  const isTraining = String(type || "").toUpperCase() === "TRAINING";
   const durationStr = formatDuration(startAt, endAt);
   const joinWindow = getJoinWindow(session);
   const timezone =
@@ -321,10 +323,9 @@ export default function SessionDetailPage() {
 
   const handleComplete = async () => {
     const ok = await confirmModal(
-      txt(
-        "session_complete_confirm",
-        "Mark this session as completed? Credits will be consumed."
-      )
+      isTraining
+        ? "Mark this unpaid training session as completed?"
+        : txt("session_complete_confirm", "Mark this session as completed?")
     );
     if (!ok) return;
     try {
@@ -426,11 +427,13 @@ export default function SessionDetailPage() {
         sessionStatus={sessionStatus}
         statusConfig={currentStatus}
         isGroup={isGroup}
+        isTraining={isTraining}
         durationStr={durationStr}
         timezone={timezone}
         startAt={startAt}
         endAt={endAt}
         teacher={teacher}
+        trainingAdmin={trainingAdmin}
         learnerLabel={learnerLabel}
         legacyLearner={legacyLearner}
         activeParticipants={activeParticipants}

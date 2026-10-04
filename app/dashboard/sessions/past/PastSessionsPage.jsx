@@ -98,6 +98,7 @@ function isGroupSession(session) {
 }
 
 function getTypeLabel(dict, session) {
+  if (String(session?.type || "").toUpperCase() === "TRAINING") return text(dict, "past_archive_training", "Training · unpaid");
   return isGroupSession(session)
     ? text(dict, "past_archive_group", "Group")
     : text(dict, "past_archive_one_on_one", "1:1");
@@ -147,7 +148,11 @@ function formatTimeRange(session, locale, timezone) {
 }
 
 function getPeopleSummary(session, isTeacher, dict) {
+  if (String(session?.type || "").toUpperCase() === "TRAINING") {
+    return session.trainingAdmin?.name || session.trainingAdmin?.email || text(dict, "past_archive_training_admin", "Admin trainer");
+  }
   const isGroup = isGroupSession(session);
+  const isTraining = String(session.type || "").toUpperCase() === "TRAINING";
 
   if (isTeacher) {
     const learners = Array.isArray(session?.learners) ? session.learners : [];
@@ -266,7 +271,7 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
               {session.status || status}
             </span>
             <span className="past-session-card__type">{getTypeLabel(dict, session)}</span>
-            {participants !== null && (
+            {!isTraining && participants !== null && (
               <span className="past-session-card__meta-chip">
                 <UsersRound />
                 {participants}
@@ -292,13 +297,13 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
           </div>
 
           <div className="past-session-card__people">
-            <span>{peopleLabel}</span>
+            <span>{isTraining ? (locale === "ar" ? "مسؤول التدريب" : "Admin trainer") : peopleLabel}</span>
             <strong>{getPeopleSummary(session, isTeacher, dict)}</strong>
           </div>
         </div>
 
         <div className="past-session-card__side">
-          <div
+          {!isTraining && <div
             className={
               feedbackReady
                 ? "past-session-card__feedback is-ready"
@@ -309,7 +314,7 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
             {feedbackReady
               ? text(dict, "past_archive_feedback_ready", "Feedback ready")
               : text(dict, "past_archive_feedback_missing", "No feedback yet")}
-          </div>
+          </div>}
 
           <div className="past-session-card__actions">
             <Link
@@ -320,7 +325,7 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
               <ChevronRight />
             </Link>
 
-            {isTeacher && isCompleted && (
+            {isTeacher && isCompleted && !isTraining && (
               <Link
                 href={`${prefix}/dashboard/sessions/${session.id}/feedback`}
                 className="past-session-card__action past-session-card__action--primary"
@@ -432,6 +437,7 @@ export default function PastSessionsPage() {
     const needsFeedback = sessions.filter(
       (session) =>
         isTeacher &&
+        String(session.type || "").toUpperCase() !== "TRAINING" &&
         normalizeStatus(session.status) === "completed" &&
         !hasTeacherFeedback(session)
     ).length;
@@ -459,7 +465,7 @@ export default function PastSessionsPage() {
         }
         if (
           statusFilter === "needs-feedback" &&
-          (!isTeacher || status !== "completed" || hasTeacherFeedback(session))
+          (!isTeacher || String(session.type || "").toUpperCase() === "TRAINING" || status !== "completed" || hasTeacherFeedback(session))
         ) {
           return false;
         }
@@ -659,6 +665,7 @@ export default function PastSessionsPage() {
             <FilterButton active={typeFilter === "GROUP"} onClick={() => setTypeFilter("GROUP")}>
               {text(dict, "past_archive_group", "Group")}
             </FilterButton>
+            {isTeacher && <FilterButton active={typeFilter === "TRAINING"} onClick={() => setTypeFilter("TRAINING")}>{locale === "ar" ? "تدريب · بدون أجر" : "Training · unpaid"}</FilterButton>}
           </div>
 
           <label className="past-archive__sort">

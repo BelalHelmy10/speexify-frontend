@@ -2602,6 +2602,7 @@ function PrepShell({
                   renderAnnotationsOverlay={renderAnnotationsOverlay}
                   isPdf={isPdf}
                   pdfViewerUrl={pdfViewerUrl}
+                  pdfFitMode={resource.classroomUpload ? "page" : "width"}
                   pdfScrollRef={pdfScrollRef}
                   handlePdfNavStateChange={handlePdfNavStateChange}
                   broadcastPdfFitToPage={broadcastPdfFitToPage}

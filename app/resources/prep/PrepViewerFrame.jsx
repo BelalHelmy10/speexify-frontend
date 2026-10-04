@@ -11,6 +11,7 @@ export default function PrepViewerFrame({
   renderAnnotationsOverlay,
   isPdf,
   pdfViewerUrl,
+  pdfFitMode,
   pdfScrollRef,
   handlePdfNavStateChange,
   broadcastPdfFitToPage,
@@ -60,6 +61,7 @@ export default function PrepViewerFrame({
       >
         <PdfViewerWithSidebar
           fileUrl={pdfViewerUrl}
+          fitMode={pdfFitMode}
           onFatalError={(err) => {
             console.error("PDF failed to load in pdf.js", err);
           }}

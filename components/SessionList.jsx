@@ -111,6 +111,7 @@ export default function SessionList({
     all: sessions.length,
     ONE_ON_ONE: sessions.filter((s) => s.type === "ONE_ON_ONE").length,
     GROUP: sessions.filter((s) => s.type === "GROUP").length,
+    TRAINING: sessions.filter((s) => s.type === "TRAINING").length,
   };
 
   if (loading) {
@@ -190,6 +191,7 @@ export default function SessionList({
             >
               👥 Group ({counts.GROUP})
             </button>
+            {userRole === "teacher" && <button type="button" className={`session-list__filter-btn ${typeFilter === "TRAINING" ? "session-list__filter-btn--active" : ""}`} onClick={() => setTypeFilter("TRAINING")}>🎓 {locale === "ar" ? "تدريب" : "Training"} ({counts.TRAINING})</button>}
           </div>
         </div>
       )}

@@ -565,6 +565,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
   const teacherNeedsFeedbackSession = past.find(
     (s) =>
       String(s.status || "").toLowerCase() === "completed" &&
+      String(s.type || "").toUpperCase() !== "TRAINING" &&
       !s.teacherFeedback
   );
   const actionSessionTitle = (session) =>

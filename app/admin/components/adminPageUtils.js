@@ -44,6 +44,7 @@ export const normType = (v) => String(v || "ONE_ON_ONE").toUpperCase();
 
 export const getSessionLearnerDisplay = (session) => {
   const type = normType(session.type);
+  if (type === "TRAINING") return "Teacher training · no learners";
   if (type === "GROUP") {
     const learners = session.learners || [];
     const count =
