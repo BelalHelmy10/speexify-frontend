@@ -248,7 +248,7 @@ export default function PdfViewerWithSidebar({
         }
 
         if (typeof window !== "undefined") {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs?v=${pdfjsLib.version}`;
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.${pdfjsLib.version}.min.mjs`;
         }
 
         if (!cancelled) {

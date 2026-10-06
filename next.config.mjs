@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 import path from "path";
 import { fileURLToPath } from "url";
+import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from "next/constants.js";
+import { syncPdfWorker } from "./scripts/syncPdfWorker.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -87,4 +89,8 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default (phase) => {
+  // Also covers direct `next build`, which does not run npm's prebuild hook.
+  if (phase === PHASE_DEVELOPMENT_SERVER || phase === PHASE_PRODUCTION_BUILD) syncPdfWorker();
+  return nextConfig;
+};

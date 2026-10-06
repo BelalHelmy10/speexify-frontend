@@ -17,3 +17,5 @@ pnpm-debug.log*
 .vscode/
 
 /lib/generated/prisma
+# Generated from the installed PDF.js package during Next development/build.
+/public/pdf.worker.*.min.mjs
