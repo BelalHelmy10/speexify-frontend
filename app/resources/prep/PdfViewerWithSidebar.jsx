@@ -350,10 +350,13 @@ export default function PdfViewerWithSidebar({
 
       try {
         destroyLoadingTask(loadingTaskRef.current);
+        const isClassroomUpload = /^\/api\/sessions\/\d+\/materials\//.test(fileUrl);
         const loadingTask = pdfjs.getDocument({
           url: fileUrl,
-          disableRange: true,
+          disableRange: !isClassroomUpload,
           disableStream: true,
+          disableAutoFetch: isClassroomUpload,
+          rangeChunkSize: 256 * 1024,
           withCredentials: false,
         });
         loadingTaskRef.current = loadingTask;

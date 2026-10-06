@@ -364,6 +364,7 @@ export default function ClassroomShell({
     [tracks]
   );
   const [uploadedMaterials, setUploadedMaterials] = useState([]);
+  const [maxPdfBytes, setMaxPdfBytes] = useState(25 * 1024 * 1024);
   const resourcesById = useMemo(() => {
     const uploadedById = Object.fromEntries(
       uploadedMaterials.map((material) => [material._id, material])
@@ -908,6 +909,9 @@ export default function ClassroomShell({
         if (cancelled) return;
 
         const materials = materialsResult.data?.materials || [];
+        if (Number.isSafeInteger(materialsResult.data?.maxPdfBytes) && materialsResult.data.maxPdfBytes > 0) {
+          setMaxPdfBytes(materialsResult.data.maxPdfBytes);
+        }
         const selectionChanged = selectionVersionAtLoad !== resourceSelectionVersionRef.current;
         setUploadedMaterials((current) => selectionChanged
           ? [...new Map([...materials, ...current].map((item) => [item._id, item])).values()]
@@ -1697,11 +1701,14 @@ export default function ClassroomShell({
     />
   );
 
-  const handleUploadPdf = useCallback(async (file) => {
+  const handleUploadPdf = useCallback(async (file, onProgress) => {
     const form = new FormData();
     form.append("file", file);
     const { data } = await api.post(`/sessions/${sessionId}/materials`, form, {
-      timeout: 60000,
+      timeout: 180000,
+      onUploadProgress: (event) => {
+        if (event.total) onProgress?.(Math.round((event.loaded / event.total) * 100));
+      },
     });
     const material = data?.material;
     if (!material?._id) throw new Error("The PDF was uploaded but could not be opened");
@@ -2284,6 +2291,7 @@ export default function ClassroomShell({
         isTeacher={isTeacher}
         tracks={tracks}
         uploadedMaterials={uploadedMaterials}
+        maxPdfBytes={maxPdfBytes}
         onUploadPdf={handleUploadPdf}
         canUploadPdf={session?.status === "scheduled" || session?.status === "completed"}
         selectedResourceId={selectedResourceId}

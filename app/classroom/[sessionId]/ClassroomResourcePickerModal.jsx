@@ -50,6 +50,7 @@ function ClassroomResourcePickerModal({
   isTeacher,
   tracks,
   uploadedMaterials = [],
+  maxPdfBytes = 25 * 1024 * 1024,
   onUploadPdf,
   canUploadPdf = true,
   selectedResourceId,
@@ -59,6 +60,7 @@ function ClassroomResourcePickerModal({
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState("");
   const [recentIds, setRecentIds] = useState(() =>
     loadRecentResourceIds(sessionId)
@@ -95,20 +97,21 @@ function ClassroomResourcePickerModal({
       setUploadError("Choose a valid PDF file.");
       return;
     }
-    if (file.size > 25 * 1024 * 1024) {
-      setUploadError("PDF must be 25 MB or smaller.");
+    if (file.size > maxPdfBytes) {
+      setUploadError(`PDF must be ${Math.floor(maxPdfBytes / (1024 * 1024))} MB or smaller.`);
       return;
     }
     setUploadError("");
+    setUploadProgress(0);
     setUploading(true);
     try {
-      await onUploadPdf(file);
+      await onUploadPdf(file, setUploadProgress);
     } catch (error) {
       setUploadError(error?.response?.data?.error || error?.message || "Could not upload PDF.");
     } finally {
       setUploading(false);
     }
-  }, [onUploadPdf]);
+  }, [onUploadPdf, maxPdfBytes]);
 
   const results = useMemo(() => {
     if (!deferredQuery) return [];
@@ -266,7 +269,7 @@ function ClassroomResourcePickerModal({
           <div className="cr-picker-upload">
             <div>
               <strong>Teach from your computer</strong>
-              <span>Upload a PDF and open it for everyone in this classroom.</span>
+              <span>Upload a PDF up to {Math.floor(maxPdfBytes / (1024 * 1024))} MB and open it for everyone in this classroom.</span>
             </div>
             <input
               ref={fileInputRef}
@@ -277,8 +280,9 @@ function ClassroomResourcePickerModal({
               aria-label="Choose PDF to upload"
             />
             <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-              <FileUp size={16} /> {uploading ? "Uploading…" : "Upload PDF"}
+              <FileUp size={16} /> {uploading ? (uploadProgress >= 100 ? "Preparing PDF…" : `Uploading ${uploadProgress}%…`) : "Upload PDF"}
             </button>
+            {uploading && <p role="status" className="cr-picker-upload__status">{uploadProgress >= 100 ? "Preparing your PDF. You can keep teaching while it finishes." : `Uploading your PDF: ${uploadProgress}%. You can keep teaching.`}</p>}
             {uploadError && <p role="alert" className="cr-picker-upload__error">{uploadError}</p>}
           </div>
         )}

@@ -947,6 +947,7 @@
     &:disabled { opacity: 0.6; cursor: wait; }
   }
   &__error { width: 100%; margin: 0; color: #dc2626; font-size: 0.8rem; }
+  &__status { width: 100%; margin: 0; color: $cr-text-secondary; font-size: 0.8rem; }
 }
 
 .cr-picker-uploads {
