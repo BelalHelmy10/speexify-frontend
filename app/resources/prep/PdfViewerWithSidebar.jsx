@@ -131,10 +131,7 @@ export default function PdfViewerWithSidebar({
       if (requestId !== fitRequestRef.current) return;
       const viewport = page.getViewport({ scale: 1 });
       const container = mainRef.current;
-      const fitWholePage = fitMode === "page" || Boolean(
-        container?.closest(".cr-shell") &&
-        window.matchMedia("(max-width: 900px) and (max-height: 600px) and (orientation: landscape)").matches
-      );
+      const fitWholePage = fitMode === "page";
       if (!container || !viewport.width || !viewport.height ||
         container.clientWidth <= 0 || (fitWholePage && container.clientHeight <= 0)) return;
       const style = window.getComputedStyle(container);
