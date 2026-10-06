@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import ClassroomShell from "../../app/classroom/[sessionId]/ClassroomShell.jsx";
-const resources = ["a", "b", "c"].map((_id) => ({ _id, title: `Resource ${_id.toUpperCase()}`, type: "pdf", fileUrl: "https://example.com/lesson.pdf" }));
+const resources = ["a", "b", "c"].map((_id) => ({ _id, title: `Resource ${_id.toUpperCase()}`, type: "pdf", fileUrl: "https://example.com/lesson.pdf", audioUrl: "https://example.com/audio.mp3" }));
 const tracks = [{ levels: [{ subLevels: [{ units: [{ resources }] }] }] }];
 window.calls = [];
 window.MockCall = class {

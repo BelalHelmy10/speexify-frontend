@@ -443,13 +443,16 @@ export default function ClassroomShell({
 
   // Portrait phones retain navigation tabs; the underlying call stays mounted.
   const [isMobile, setIsMobile] = useState(false);
+  const [isCompactLandscape, setIsCompactLandscape] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState('video');
   useEffect(() => {
     const query = window.matchMedia('(max-width: 900px) and (orientation: portrait)');
-    const update = () => setIsMobile(query.matches);
+    const compact = window.matchMedia('(max-width: 1366px) and (max-height: 600px) and (orientation: landscape) and (pointer: coarse)');
+    const update = () => { setIsMobile(query.matches); setIsCompactLandscape(compact.matches); };
     update();
     query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
+    compact.addEventListener('change', update);
+    return () => { query.removeEventListener('change', update); compact.removeEventListener('change', update); };
   }, []);
 
   // Attach the portal host once. Reparenting a live iframe reloads the call.
@@ -1196,6 +1199,9 @@ export default function ClassroomShell({
 
     if (customSplit !== null) return customSplit;
 
+    if (isCompactLandscape) {
+      return focusMode === FOCUS_MODES.CONTENT ? 20 : focusMode === FOCUS_MODES.VIDEO ? 50 : 28;
+    }
     return getFocusModeSplitPercentage(focusMode);
   };
 

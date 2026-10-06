@@ -5673,14 +5673,67 @@ body.classroom-active {
 }
 
 @media (max-width: 1366px) and (pointer: coarse) {
-  // Anchor tool menus to the screen so a narrow lesson panel cannot clip them.
+  // Open below the trigger and toward the lesson so menus do not cover their toggle.
   .cr-content-viewer .prep-toolbar-dropdown__menu {
-    position: fixed; top: calc(70px + var(--spx-safe-top));
-    left: auto; right: 8px;
+    position: absolute; top: calc(100% + 6px);
+    left: auto; right: 0;
     max-width: calc(100vw - 16px); max-height: calc(100dvh - 150px);
     overflow-y: auto;
   }
   .cr-content-viewer .prep-toolbar-dropdown__item { min-height: 36px; }
   .cr-content-viewer .prep-toolbar-dropdown__trigger,
   .cr-content-viewer .prep-width-picker__trigger { min-height: 36px; }
+}
+
+// Keep the color control in the tool row; let audio use the remaining width.
+.cr-content-viewer .prep-annotate-toolbar {
+  flex-wrap: nowrap;
+  .prep-audio-player { flex: 1 1 160px; min-width: 100px; max-width: 290px; }
+  .prep-audio-player__body { min-width: 0; }
+  .prep-annotate-colors, .prep-width-picker, .prep-toolbar-dropdown { flex-shrink: 0; }
+}
+@media (max-width: 900px) and (orientation: portrait) {
+  .cr-content-viewer .prep-annotate-toolbar { flex-wrap: wrap; }
+}
+
+@media (max-width: 1366px) and (max-height: 600px) and (orientation: landscape) and (pointer: coarse) {
+  .cr-header { height: calc(28px + var(--spx-safe-top)); padding-top: var(--spx-safe-top); }
+  .cr-content-viewer .prep-annotate-toolbar {
+    height: 36px; min-height: 36px; padding: 1px 3px; gap: 2px;
+    .prep-annotate-toolbar__btn { min-width: 32px; min-height: 32px; padding: 3px; }
+    .prep-annotate-toolbar__btn span { display: none; }
+    .prep-annotate-toolbar__separator { margin-inline: 1px; }
+    .prep-audio-player { min-height: 30px; min-width: 100px; max-width: 200px; padding: 1px 3px; }
+    .prep-audio-player__meta { font-size: 10px; }
+    .prep-toolbar-dropdown__trigger, .prep-width-picker__trigger { min-height: 32px; padding: 3px; }
+    .prep-annotate-colors { padding-left: 2px; margin-left: 0; }
+    .prep-annotate-color--picker { width: 28px; height: 28px; }
+    .prep-annotate-toolbar__audio-select { width: 48px; min-width: 48px; padding-inline: 3px; }
+  }
+  .cr-resource-workspace { --cr-resource-bar-height: 32px; --cr-resource-control-height: 28px; }
+  .cr-resource-workspace .cpv-nav { height: 32px; min-height: 32px; padding: 1px 3px; }
+  .cr-resource-tabs__close, .cr-resource-tabs__add { min-width: 32px; }
+  .cr-content-viewer .prep-pdf-sidebar {
+    width: 34px; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  }
+  .cr-content-viewer .prep-pdf-sidebar__pages {
+    flex: 1; min-height: 0; overflow-y: auto; flex-wrap: nowrap; box-sizing: border-box;
+  }
+  .cr-content-viewer .prep-pdf-sidebar__page-button { width: 30px; height: 32px; flex-shrink: 0; }
+  .cr-controls {
+    box-sizing: border-box; height: calc(40px + var(--spx-safe-bottom));
+    min-height: calc(40px + var(--spx-safe-bottom));
+    padding-bottom: calc(2px + var(--spx-safe-bottom));
+    padding-left: calc(4px + var(--spx-safe-left)); padding-right: calc(4px + var(--spx-safe-right));
+  }
+  .cr-controls__btn { min-width: 36px; min-height: 36px; padding: 3px; }
+  .cr-controls .cr-controls__btn--chat { padding-inline: 6px; }
+  .cr-focus-btn { width: 30px; height: 30px; }
+  .cr-host-menu__panel { bottom: calc(44px + var(--spx-safe-bottom)); }
+  .cr-chat-drawer { bottom: calc(44px + var(--spx-safe-bottom)); }
+}
+.cr-video__device-notice {
+  position: absolute; inset: 6px 6px auto; z-index: 12;
+  padding: 6px 8px; border-radius: 6px; background: rgba(15, 23, 42, .94);
+  color: #fbbf24; font-size: 11px; line-height: 1.35;
 }

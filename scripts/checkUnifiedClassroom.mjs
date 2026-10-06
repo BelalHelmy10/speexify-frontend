@@ -36,7 +36,7 @@ function bundle(file) {
   if (['app/resources/prep/PrepBreadcrumbs.jsx','app/resources/prep/PrepInfoSidebar.jsx'].includes(rel) && (process.env.TEST_REAL_ANNOTATIONS || process.env.TEST_CLASSROOM_PDF)) source = 'module.exports={__esModule:true,default:()=>null};';
   if (rel === 'app/resources/prep/PrepViewerFrame.jsx' && process.env.TEST_REAL_ANNOTATIONS && !process.env.TEST_CLASSROOM_PDF) source = `const React=require('react');module.exports={__esModule:true,default:({containerRef,renderAnnotationsOverlay})=>React.createElement('div',{className:'prep-viewer__canvas-container',ref:containerRef,style:{height:500,width:'100%',position:'relative'}},renderAnnotationsOverlay())};`;
   if (file.endsWith('/legacy/build/pdf.min.mjs')) source = `
-exports.GlobalWorkerOptions={};exports.version='test';exports.getDocument=()=>({destroy:async()=>{},promise:Promise.resolve({numPages:2,destroy:async()=>{},getPage:async(number)=>({getViewport:({scale})=>({width:600*scale,height:840*scale}),render:()=>({promise:Promise.resolve(),cancel:()=>{}})})})});`;
+exports.GlobalWorkerOptions={};exports.version='test';exports.getDocument=()=>({destroy:async()=>{},promise:Promise.resolve({numPages:6,destroy:async()=>{},getPage:async(number)=>({getViewport:({scale})=>({width:600*scale,height:840*scale}),render:()=>({promise:Promise.resolve(),cancel:()=>{}})})})});`;
   if (file.endsWith('/app/i18n.js')) source = 'const dict={};exports.getDictionary = () => dict; exports.t = (_, key) => key;';
   if (file.endsWith('.json')) source = 'module.exports = ' + source;
 
@@ -75,7 +75,7 @@ try {
   await page.evaluate(()=>window.calls.at(-1).emit('videoConferenceJoined'));
   const count=await page.evaluate(()=>window.calls.length);
   await page.evaluate(()=>{window.originalIframe=document.querySelector('iframe');window.originalIframe.contentWindow.connectionMarker='connected';});
-  for(const [width,height] of [[844,390],[390,844],[820,1180],[1180,820],[1024,768],[1440,900]]) {
+  for(const [width,height] of [[844,390],[956,365],[390,844],[820,1180],[1180,820],[1024,768],[1440,900]]) {
    await page.setViewport({width,height,hasTouch:true});
    await page.waitForFunction(portrait=>Boolean(document.querySelector('.cr-main--portrait'))===portrait,{},width<=900&&height>width);
    if(width<=900&&height>width) {
@@ -105,9 +105,44 @@ try {
     const menu=await page.$eval('.prep-toolbar-dropdown__menu--more',el=>{const r=el.getBoundingClientRect();return {bottom:r.bottom,right:r.right,height:r.height,scroll:el.scrollHeight>el.clientHeight};});
     assert.ok(menu.bottom<=height+1&&menu.right<=width+1,'Annotation tools must remain inside the screen');
     await page.click('.prep-toolbar-dropdown__trigger.prep-toolbar-dropdown__trigger--more');
+    await page.waitForFunction(()=>!document.querySelector('.prep-toolbar-dropdown__menu--more'));
+   }
+   if(process.env.TEST_CLASSROOM_PDF && height<600) {
+    const geometry=await page.evaluate(()=>{
+     const toolbar=document.querySelector('.prep-annotate-toolbar').getBoundingClientRect(),color=document.querySelector('.prep-annotate-colors').getBoundingClientRect(),canvas=document.querySelector('.cpv-page-canvas').getBoundingClientRect(),controls=document.querySelector('.cr-controls').getBoundingClientRect();
+     return {toolbar:toolbar.height,colorFits:color.bottom<=toolbar.bottom&&color.top>=toolbar.top,pageHeight:canvas.height,controls:controls.height};
+    });
+    assert.ok(geometry.toolbar<=40,'Landscape tools must fit one compact row');
+    assert.equal(geometry.colorFits,true,'Color picker must stay in the tools row');
+    assert.ok(geometry.pageHeight>=height*.5,'The full page must receive at least half the short viewport height');
+    await page.screenshot({path:'/tmp/speexify-classroom-landscape-'+role+'.png'});
    }
    console.log('PASS '+role+' '+width+'x'+height+' stable call and layout');
   }
+  if(process.env.TEST_CLASSROOM_PDF) {
+   await page.setViewport({width:956,height:365,hasTouch:true});
+   await page.addStyleTag({content:'.cr-shell { --spx-safe-bottom:21px; }'});
+   await page.waitForFunction(()=>parseFloat(getComputedStyle(document.querySelector('.cr-controls')).paddingBottom)>=21);
+   const clearance=await page.evaluate(()=>{
+    const controls=document.querySelector('.cr-controls').getBoundingClientRect();
+    return [...document.querySelectorAll('.cr-controls__btn')].every(el=>el.getBoundingClientRect().bottom<=controls.bottom-20);
+   });
+   assert.equal(clearance,true,'Bottom controls must clear the phone home indicator');
+   // Finish the responsive panel transition before tapping a rail target.
+   await new Promise(resolve=>setTimeout(resolve,350));
+   await page.click('.prep-pdf-sidebar__page-button:last-child');
+   await new Promise(resolve=>setTimeout(resolve,100));
+   await page.waitForFunction(()=>document.querySelector('.prep-pdf-sidebar__page-button:last-child').classList.contains('is-active'));
+   const lastPageFits=await page.evaluate(()=>{const r=document.querySelector('.prep-pdf-sidebar__page-button:last-child').getBoundingClientRect(),p=document.querySelector('.prep-pdf-sidebar__pages').getBoundingClientRect();return r.top>=p.top-1&&r.bottom<=p.bottom+1;});
+   assert.equal(lastPageFits,true,'The page rail must scroll to its final page');
+  }
+  await page.evaluate(()=>window.calls.at(-1).emit('errorOccurred',{isFatal:false,type:'CONFERENCE',name:'recoverable-warning'}));
+  assert.equal(await page.$('.cr-video__error'),null,'A nonfatal warning must not hide the call');
+  await page.evaluate(()=>window.calls.at(-1).emit('cameraError',{type:'NotAllowedError'}));
+  await page.waitForSelector('.cr-video__device-notice');
+  assert.equal(await page.$eval('.cr-video__frame',el=>getComputedStyle(el).opacity),'1','Camera failure must leave the conference visible');
+  await page.evaluate(()=>window.calls.at(-1).emit('videoMuteStatusChanged',{muted:false}));
+  await page.waitForFunction(()=>!document.querySelector('.cr-video__device-notice'));
  }
  assert.deepEqual(errors,[]);
  await page.screenshot({path:'/tmp/speexify-unified-classroom-qa.png'});

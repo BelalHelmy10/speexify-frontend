@@ -3,6 +3,7 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { JITSI_DOMAIN, buildJitsiOptions } from "@/lib/jitsiConfig";
+import { acquirePreviewMedia } from '@/lib/previewMedia.mjs';
 import { loadJitsiScript } from "@/lib/loadJitsiScript.mjs";
 import { getDictionary, t } from "@/app/i18n";
 import {
@@ -268,6 +269,8 @@ function PrepVideoCall({
   const [hasJoined, setHasJoined] = useState(true);
   const [joinAudioMuted, setJoinAudioMuted] = useState(true);
   const [joinVideoMuted, setJoinVideoMuted] = useState(false);
+  const [previewVideoError, setPreviewVideoError] = useState(null);
+  const [deviceNotice, setDeviceNotice] = useState(null);
   const [prejoinError, setPrejoinError] = useState(null);
   const [devices, setDevices] = useState({
     audioInputs: [],
@@ -999,7 +1002,7 @@ function PrepVideoCall({
   );
 
   const buildPreviewConstraints = useCallback(() => {
-    const audio = selectedAudioInputId
+    const audio = joinAudioMuted ? false : selectedAudioInputId
       ? {
           deviceId: { exact: selectedAudioInputId },
           echoCancellation: true,
@@ -1026,7 +1029,7 @@ function PrepVideoCall({
           };
 
     return { audio, video };
-  }, [joinVideoMuted, selectedAudioInputId, selectedVideoInputId]);
+  }, [joinAudioMuted, joinVideoMuted, selectedAudioInputId, selectedVideoInputId]);
 
   const runNetworkCheck = useCallback(async () => {
     if (typeof window === "undefined") return;
@@ -1183,18 +1186,22 @@ function PrepVideoCall({
 
       try {
         setPrejoinError(null);
-        const stream = await navigator.mediaDevices.getUserMedia(
-          buildPreviewConstraints()
-        );
+        setPreviewVideoError(null);
+        const media = await acquirePreviewMedia(navigator.mediaDevices,
+          buildPreviewConstraints(), tracks => new MediaStream(tracks));
+        const stream = media.stream;
         if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
+          stream?.getTracks().forEach((track) => track.stop());
           return;
         }
 
         stopPreviewStream();
         previewStreamRef.current = stream;
+        if (media.audioError) setPrejoinError('Microphone unavailable. Your camera is available; you can join muted.');
+        if (media.videoError) setPreviewVideoError(media.videoError);
+        if (media.videoError) setPrejoinError('Camera unavailable. Your microphone is available; you can join without video.');
 
-        if (previewVideoRef.current && !joinVideoMuted) {
+        if (previewVideoRef.current && !joinVideoMuted && !media.videoError) {
           previewVideoRef.current.srcObject = stream;
           await previewVideoRef.current.play().catch(() => { });
         }
@@ -1203,13 +1210,13 @@ function PrepVideoCall({
         await refreshDevices();
       } catch (err) {
         stopPreviewStream();
+        setPreviewVideoError(err);
         setPrejoinError(
           err?.name === "NotAllowedError"
             ? "Allow camera and microphone access, or join with devices muted."
             : "Could not start camera or microphone preview."
         );
-        setJoinAudioMuted(true);
-        if (!joinVideoMuted) setJoinVideoMuted(true);
+        // Respect the chosen device switches; the user can retry or join muted.
         await refreshDevices().catch(() => { });
       }
     }
@@ -1519,11 +1526,23 @@ function PrepVideoCall({
         });
         api.addListener("errorOccurred", (e) => {
           console.error("Jitsi error:", e);
-          if (e?.error?.name === "conference.connectionError") {
+          // Device/other recoverable errors must not cover a connected call.
+          if (e?.isFatal === false) return;
+          const name = e?.name || e?.error?.name;
+          if (name === "conference.connectionError" || e?.type === "CONNECTION") {
             failConnection(t(dict, "classroom_video_error_connection"));
-          } else {
+          } else if (e?.isFatal === true || e?.error) {
             failConnection(t(dict, "classroom_video_error_generic"));
           }
+        });
+
+        api.addListener('cameraError', () => setDeviceNotice({kind:'video', text:'Camera unavailable. Allow camera access in your browser, then turn it on using the video controls.'}));
+        api.addListener('micError', () => setDeviceNotice({kind:'audio', text:'Microphone unavailable. Allow microphone access in your browser, then unmute using the video controls.'}));
+        api.addListener('videoMuteStatusChanged', status => {
+          if (status?.muted === false) setDeviceNotice(current => current?.kind === 'video' ? null : current);
+        });
+        api.addListener('audioMuteStatusChanged', status => {
+          if (status?.muted === false) setDeviceNotice(current => current?.kind === 'audio' ? null : current);
         });
 
         api.addListener("screenSharingStatusChanged", (status) => {
@@ -1591,6 +1610,14 @@ function PrepVideoCall({
     }
   }, [hasJoined, userName]);
 
+  useEffect(() => {
+    const video = previewVideoRef.current;
+    if (!hasJoined && video && previewStreamRef.current && !previewVideoError) {
+      video.srcObject = previewStreamRef.current;
+      void video.play().catch(() => {});
+    }
+  }, [hasJoined, joinVideoMuted, previewVideoError]);
+
   if (!hasJoined) {
     const networkClass = `cr-prejoin__network cr-prejoin__network--${networkStatus.state}`;
     const levelPercent = Math.round(micLevel * 100);
@@ -1604,7 +1631,7 @@ function PrepVideoCall({
             className={`cr-prejoin__preview ${joinVideoMuted ? "cr-prejoin__preview--camera-off" : ""}`}
             aria-label="Camera preview"
           >
-            {!joinVideoMuted && !prejoinError ? (
+            {!joinVideoMuted && !previewVideoError ? (
               <video
                 ref={previewVideoRef}
                 className="cr-prejoin__video"
@@ -1835,6 +1862,8 @@ function PrepVideoCall({
           transition: "opacity 0.3s ease",
         }}
       />
+
+      {deviceNotice && !error && <div className="cr-video__device-notice" role="status">{deviceNotice.text}</div>}
 
       {activeSpeakerName && (
         <div className="cr-video__speaker-indicator" aria-live="polite">
