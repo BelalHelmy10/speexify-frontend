@@ -417,7 +417,6 @@ export default function ClassroomShell({
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
   const desktopVideoTargetRef = useRef(null);
-  const mobileVideoTargetRef = useRef(null);
   const videoHostRef = useRef(null);
   const [videoHost, setVideoHost] = useState(null);
   const customSplitRef = useRef(customSplit);
@@ -442,24 +441,18 @@ export default function ClassroomShell({
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
-  // Portrait phones use tabs; landscape gets the same split classroom as desktop.
+  // Portrait phones retain navigation tabs; the underlying call stays mounted.
   const [isMobile, setIsMobile] = useState(false);
-  const [mobileActiveTab, setMobileActiveTab] = useState('video'); // 'video' | 'content' | 'chat'
-
+  const [mobileActiveTab, setMobileActiveTab] = useState('video');
   useEffect(() => {
-    const portraitTabs = window.matchMedia('(max-width: 900px) and (orientation: portrait)');
-    const syncLayout = () => {
-      setIsMobile(portraitTabs.matches);
-      if (portraitTabs.matches) setMobileActiveTab('video');
-    };
-
-    syncLayout();
-    portraitTabs.addEventListener('change', syncLayout);
-    return () => portraitTabs.removeEventListener('change', syncLayout);
+    const query = window.matchMedia('(max-width: 900px) and (orientation: portrait)');
+    const update = () => setIsMobile(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
   }, []);
 
-  // Reuse the host between layouts; the call below remounts after rotation.
-  // Moving a live iframe with appendChild reloads its browsing context.
+  // Attach the portal host once. Reparenting a live iframe reloads the call.
   useEffect(() => {
     if (!videoHostRef.current) {
       videoHostRef.current = document.createElement('div');
@@ -469,9 +462,9 @@ export default function ClassroomShell({
   }, []);
 
   useLayoutEffect(() => {
-    const target = isMobile ? mobileVideoTargetRef.current : desktopVideoTargetRef.current;
-    if (videoHost && target) target.appendChild(videoHost);
-  }, [isMobile, videoHost]);
+    const target = desktopVideoTargetRef.current;
+    if (videoHost && target && videoHost.parentNode !== target) target.appendChild(videoHost);
+  }, [videoHost]);
 
   // ✅ Teacher: control whether learners follow (global for all learners)
   const [teacherAllowsFollowing, setTeacherAllowsFollowing] = useState(true);
@@ -2011,10 +2004,11 @@ export default function ClassroomShell({
       )}
 
       {/* Split classroom on desktop and in landscape. */}
-      {!isMobile && (
+      {(
         <div
           className={[
             "cr-main",
+            isMobile ? `cr-main--portrait cr-main--portrait-${mobileActiveTab}` : "",
             isDragging ? "cr-main--dragging" : "",
             screenShare.isSomeoneSharing ? "cr-main--screen-share" : "",
             isChatOpen ? "cr-main--chat-open" : "",
@@ -2107,11 +2101,11 @@ export default function ClassroomShell({
 
       {/* Desktop chat drawer: anchored to the chat control so opening the
           conversation never steals height from the video or lesson canvas. */}
-      {!isMobile && (
+      {(
         <aside
           id="classroom-chat-drawer"
-          className={`cr-chat-drawer ${isChatOpen ? "cr-chat-drawer--open" : ""}`}
-          aria-hidden={!isChatOpen}
+          className={`cr-chat-drawer ${isMobile ? "cr-chat-drawer--portrait" : ""} ${(isMobile ? mobileActiveTab === "chat" : isChatOpen) ? "cr-chat-drawer--open" : ""}`}
+          aria-hidden={isMobile ? mobileActiveTab !== "chat" : !isChatOpen}
           data-lenis-prevent
         >
           <div className="cr-chat-drawer__panel">
@@ -2130,7 +2124,7 @@ export default function ClassroomShell({
               isTeacher={isTeacher}
               teacherName={teacherName}
               learnerName={isTeacher ? learnerName : userName}
-              isOpen={isChatOpen}
+              isOpen={isMobile ? mobileActiveTab === "chat" : isChatOpen}
               onUnreadCountChange={setChatUnreadCount}
               allLearnerNames={allLearnerNames}
               chatParticipants={chatParticipants}
@@ -2206,60 +2200,14 @@ export default function ClassroomShell({
           captionsEnabled={captionsEnabled}
           captionsSupported={captionsSupported}
           onToggleCaptions={toggleCaptions}
-          videoComponent={
-            <div className="cr-video-target" ref={mobileVideoTargetRef} />
-          }
-          contentComponent={
-            <>
-            {isScreenShareActive && (
-              <div className="cr-screen-share">
-                {hasScreenShareStream ? (
-                  <video
-                    ref={assignSharedScreenVideoRef}
-                    className="cr-screen-share__video"
-                    playsInline
-                    autoPlay
-                    muted
-                  />
-                ) : (
-                  <div className="cr-placeholder">
-                    <div className="cr-placeholder__icon">
-                      <Monitor size={32} />
-                    </div>
-                    <h2 className="cr-placeholder__title">Screen sharing is active</h2>
-                    <p className="cr-placeholder__text">
-                      The shared screen is being initialized. Please wait a moment.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-            {resourceWorkspace}
-            </>
-          }
-          chatComponent={
-            <ClassroomChat
-              classroomChannel={classroomChannel}
-              sessionId={sessionId}
-              isTeacher={isTeacher}
-              teacherName={teacherName}
-              learnerName={isTeacher ? learnerName : userName}
-              isOpen={true}
-              onUnreadCountChange={setChatUnreadCount}
-              allLearnerNames={allLearnerNames}
-              chatParticipants={chatParticipants}
-              currentUserId={localUserId}
-              isGroup={isGroup}
-              locale={locale}
-            />
-          }
+          chromeOnly
         />
       )}
 
       {videoHost && createPortal(
         <>
           <PrepVideoCall
-            key={isMobile ? "portrait-call" : "split-call"}
+            key="classroom-call"
             roomId={sessionId}
             userName={userName}
             isTeacher={isTeacher}

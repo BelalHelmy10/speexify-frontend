@@ -73,7 +73,7 @@ async function open(id) {
   await page.waitForFunction(id => document.querySelector(`[data-resource="${id}"]`)?.dataset.active === 'true',{},id);
 }
 async function setup(width,height,role='teacher',saved=null,locale='en') {
-  await page.setViewport({width,height});
+  await page.setViewport({width,height,hasTouch:true});
   await page.goto('http://resource-tabs.test/?role='+role+'&locale='+locale);
   await page.evaluate(saved=>{sessionStorage.clear();if(saved!==null)sessionStorage.setItem('classroom_tabs_tabs-test',JSON.stringify(saved));},saved);
   await page.setContent('<html class="classroom-active"><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body class="classroom-active"><div id="root"></div></body></html>');
@@ -141,7 +141,7 @@ try {
   assert.deepEqual(messages.at(-1).openResourceIds,['a','b']);
   console.log('PASS duplicate opens, retained comments, background/active/last close, reopen, keyboard, realtime tab state');
   for (const [width,height] of [[390,844],[820,1180],[844,390],[1440,900]]) {
-    await page.setViewport({width,height});
+    await page.setViewport({width,height,hasTouch:true});
     await page.waitForFunction(m=>Boolean(document.querySelector('.cr-mobile-layout'))===m,{},width<=900&&height>width);
     if (height>width && width<=900) await clickText('Content');
     const bounds = await page.$eval('.cr-resource-tabs',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};});

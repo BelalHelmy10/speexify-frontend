@@ -282,6 +282,10 @@ export function handlePrepChannelMessage(msg, ctx) {
 
   if (msg.type === "PDF_SCROLL" && !isTeacher && isPdf) {
     const api = pdfNavApiRef.current;
+    if (msg.view && api?.applyView) {
+      api.applyView(msg.view);
+      return;
+    }
     const targetPage = Number(msg.page) || 1;
 
     if (api?.setPage && targetPage !== pdfCurrentPage) {

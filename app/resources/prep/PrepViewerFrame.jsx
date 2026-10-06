@@ -12,6 +12,7 @@ export default function PrepViewerFrame({
   isPdf,
   pdfViewerUrl,
   pdfFitMode,
+  onPdfViewportChange,
   pdfScrollRef,
   handlePdfNavStateChange,
   broadcastPdfFitToPage,
@@ -62,6 +63,7 @@ export default function PrepViewerFrame({
         <PdfViewerWithSidebar
           fileUrl={pdfViewerUrl}
           fitMode={pdfFitMode}
+          onViewportChange={onPdfViewportChange}
           onFatalError={(err) => {
             console.error("PDF failed to load in pdf.js", err);
           }}

@@ -316,6 +316,12 @@
   background: white;
 }
 
+.cpv-page-window { flex-shrink: 0; }
+.cpv-shared-window { position: relative; flex-shrink: 0; overflow: hidden; margin: auto; }
+@media (max-width: 1366px) and (pointer: coarse) {
+  .prep-pdf-layout--adaptive .cpv-page-window { margin-block: auto; }
+}
+
 .cpv-page-canvas {
   display: block;
 }

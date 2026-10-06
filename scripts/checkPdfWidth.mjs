@@ -77,7 +77,10 @@ try {
     await fitted();
     await page.evaluate(()=>window.pdfNav.goNextPage()); await fitted();
     await page.waitForFunction(()=>window.pdfNav.currentPage===2);
-    await page.evaluate(()=>window.selectPdf('portrait.pdf')); await fitted();
+    await page.evaluate(()=>window.selectPdf('portrait.pdf'));
+    // Let the file-change reset commit before checking the replacement canvas.
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await fitted();
     await page.setViewport({width:Math.max(320,width-100),height}); await fitted();
     await page.evaluate(()=>window.pdfNav.setZoomPercent(50));
     await page.waitForFunction(()=>window.pdfNav.zoom===.5);

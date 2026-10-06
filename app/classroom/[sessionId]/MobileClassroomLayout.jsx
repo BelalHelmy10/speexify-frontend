@@ -17,6 +17,7 @@ import {
  * Shows Video/Content/Chat as fullscreen tabs with bottom navigation
  */
 export default function MobileClassroomLayout({
+    chromeOnly = false,
     activeTab,
     onTabChange,
     videoComponent,
@@ -36,9 +37,9 @@ export default function MobileClassroomLayout({
     const shouldShowVideoPip = activeTab !== "video";
 
     return (
-        <div className="cr-mobile-layout">
+        <div className={`cr-mobile-layout ${chromeOnly ? "cr-mobile-layout--chrome" : ""}`}>
             {/* Content panels - only active one is visible */}
-            <div className="cr-mobile-content" data-lenis-prevent>
+            {!chromeOnly && <div className="cr-mobile-content" data-lenis-prevent>
                 <div
                     className={[
                         "cr-mobile-content__panel",
@@ -65,7 +66,7 @@ export default function MobileClassroomLayout({
                 >
                     <div className="cr-mobile-chat-wrapper">{chatComponent}</div>
                 </div>
-            </div>
+            </div>}
 
             {/* Floating quick actions */}
             <div className="cr-mobile-quick-actions">

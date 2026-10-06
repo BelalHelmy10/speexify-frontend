@@ -5601,3 +5601,86 @@ body.classroom-active {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   }
 }
+
+// Phones/tablets in landscape retain the desktop arrangement. Laptop rules
+// above remain unchanged; coarse-pointer large tablets use this layout too.
+@media (max-width: 1366px) and (orientation: landscape) and (pointer: coarse) {
+  .cr-shell { overflow: hidden; }
+  .cr-main { flex-direction: row; overflow: hidden; }
+  .cr-panel--left {
+    flex: 0 0 auto; min-width: 0; max-height: none;
+    padding: 4px; overflow: hidden;
+  }
+  .cr-panel--right { min-width: 0; min-height: 0; overflow: hidden; }
+  .cr-video-container { min-height: 0; height: 100%; max-height: none; }
+  .cr-content-viewer { min-height: 0; overflow: hidden; }
+  .cr-content-viewer .prep-pdf-layout { flex-direction: row; }
+  .cr-content-viewer .prep-pdf-main-inner { padding: 3px; }
+  .cr-content-viewer .prep-pdf-sidebar { width: 40px; max-height: none; }
+  .cr-content-viewer .prep-pdf-sidebar__pages { flex-direction: column; padding: 2px; }
+  .cr-content-viewer .prep-pdf-sidebar__page-button { width: 36px; height: 36px; }
+  .cr-controls {
+    height: 48px; min-height: 48px; gap: 4px; padding: 2px 4px;
+    overflow-x: auto; overflow-y: hidden; justify-content: flex-start;
+  }
+  .cr-controls__left, .cr-controls__center, .cr-controls__right { flex: 0 0 auto; gap: 3px; }
+  .cr-controls__btn { min-width: 40px; min-height: 40px; padding: 4px; }
+  .cr-controls__btn-label { display: none; }
+  .cr-controls .cr-controls__btn--chat .cr-controls__btn-label { display: inline; }
+  .cr-host-menu__panel {
+    position: fixed; bottom: 52px; right: 8px; max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 100px); overflow-y: auto;
+  }
+  .prep-annotate-toolbar { flex-wrap: wrap; gap: 3px; padding: 3px; }
+  .prep-annotate-toolbar__btn { min-height: 36px; min-width: 36px; }
+  .cr-resource-workspace { --cr-resource-bar-height: 40px; --cr-resource-control-height: 32px; }
+  .cr-resource-tabs__close, .cr-resource-tabs__add { min-width: 36px; }
+  .cr-resource-workspace .cpv-nav { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; }
+  .cr-resource-workspace .cpv-nav__left, .cr-resource-workspace .cpv-nav__center { flex: 0 0 auto; }
+  .cr-resource-workspace .cpv-nav__zoom-slider { width: 60px; }
+}
+
+// Portrait retains separate Video/Lesson/Chat views without removing or moving
+// the underlying video iframe. Only CSS visibility changes during rotation.
+@media (max-width: 900px) and (orientation: portrait) {
+  .cr-main--portrait { position: relative; display: block !important; overflow: hidden; }
+  .cr-main--portrait .cr-divider { display: none; }
+  .cr-main--portrait .cr-panel--left,
+  .cr-main--portrait .cr-panel--right {
+    position: absolute; inset: 0; width: 100% !important; height: 100%;
+    min-height: 0; max-height: none; overflow: hidden;
+  }
+  .cr-main--portrait .cr-panel--left { padding: 6px; z-index: 2; }
+  .cr-main--portrait .cr-panel--right { visibility: hidden; }
+  .cr-main--portrait-content .cr-panel--right {
+    visibility: visible; height: calc(100% - 118px);
+  }
+  .cr-main--portrait-content .cr-panel--left,
+  .cr-main--portrait-chat .cr-panel--left {
+    inset: auto 8px 8px auto; width: 120px !important; height: 110px;
+    padding: 0; border-radius: 8px; z-index: 95;
+  }
+  .cr-main--portrait .cr-video-container { height: 100%; min-height: 0; max-height: none; }
+  .cr-mobile-layout--chrome {
+    position: relative; inset: auto; flex: 0 0 auto;
+    height: calc(60px + var(--spx-safe-bottom)); background: transparent; overflow: visible;
+  }
+  .cr-chat-drawer--portrait {
+    inset: calc(60px + var(--spx-safe-top)) 0 calc(60px + var(--spx-safe-bottom)) 0;
+    width: 100%; height: auto; max-height: none;
+  }
+  .cr-main--portrait .prep-pdf-main-inner { padding: 4px; }
+}
+
+@media (max-width: 1366px) and (pointer: coarse) {
+  // Anchor tool menus to the screen so a narrow lesson panel cannot clip them.
+  .cr-content-viewer .prep-toolbar-dropdown__menu {
+    position: fixed; top: calc(70px + var(--spx-safe-top));
+    left: auto; right: 8px;
+    max-width: calc(100vw - 16px); max-height: calc(100dvh - 150px);
+    overflow-y: auto;
+  }
+  .cr-content-viewer .prep-toolbar-dropdown__item { min-height: 36px; }
+  .cr-content-viewer .prep-toolbar-dropdown__trigger,
+  .cr-content-viewer .prep-width-picker__trigger { min-height: 36px; }
+}

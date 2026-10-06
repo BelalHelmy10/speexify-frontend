@@ -397,6 +397,16 @@ function PrepShell({
   const audioUnlockedRef = useRef(false); // track if audio has been pre-unlocked on this device
   const channelReady = !!classroomChannel?.ready;
   const sendOnChannel = classroomChannel?.send;
+
+  const pdfViewportPublishedRef = useRef(false);
+  const handlePdfViewportChange = useCallback((view) => {
+    if (!isActive || !isTeacher || !channelReady || !sendOnChannel) return;
+    pdfViewportPublishedRef.current = true;
+    const pdfScroll = { resourceId: resource._id, page: view.page, scrollNorm: 0, view };
+    sendOnChannel({type:'PDF_SCROLL',...pdfScroll});
+    onClassroomStateChange?.({pdfScroll},{delay:1500});
+  }, [isActive,isTeacher,channelReady,sendOnChannel,resource._id,onClassroomStateChange]);
+
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
@@ -1045,6 +1055,7 @@ function PrepShell({
             resourceId: resource._id,
             page: pdfCurrentPage,
             scrollNorm,
+            view: pdfNavApiRef.current?.getView?.(),
           });
         }
 
@@ -1055,6 +1066,7 @@ function PrepShell({
                 resourceId: resource._id,
                 page: pdfCurrentPage,
                 scrollNorm,
+                view: pdfNavApiRef.current?.getView?.(),
               },
             },
             { delay: 1500 }
@@ -1087,13 +1099,19 @@ function PrepShell({
       1,
       Math.max(0, Number(initialPdfScroll.scrollNorm) || 0)
     );
-    const key = `${initialPdfScroll.resourceId}:${targetPage}:${scrollNorm}`;
+    const key = `${initialPdfScroll.resourceId}:${targetPage}:${scrollNorm}:${JSON.stringify(initialPdfScroll.view || null)}`;
 
+    // A teacher restores once; later saved snapshots echo their own live view.
+    if (isTeacher && (pdfViewportPublishedRef.current || initialPdfScrollKeyRef.current)) return;
     if (initialPdfScrollKeyRef.current === key) return;
     initialPdfScrollKeyRef.current = key;
 
     const id = setTimeout(() => {
       const api = pdfNavApiRef.current;
+      if (initialPdfScroll.view && api?.applyView) {
+        api.applyView(initialPdfScroll.view);
+        return;
+      }
       if (api?.setPage && targetPage !== pdfCurrentPage) {
         api.setPage(targetPage);
       }
@@ -1107,7 +1125,7 @@ function PrepShell({
     }, 150);
 
     return () => clearTimeout(id);
-  }, [initialPdfScroll, resource._id, isPdf, pdfCurrentPage]);
+  }, [initialPdfScroll, resource._id, isPdf, pdfCurrentPage, isTeacher]);
 
   useEffect(() => {
     if (!isActive || !activeTextId) return;
@@ -2225,13 +2243,30 @@ function PrepShell({
   // P2-17: Touch Gesture Handlers (Zoom/Pan)
   // ─────────────────────────────────────────────────────────────
   function handleTouchStartGesture(e) {
-    return handlePrepTouchStartGesture(e, {
+    handlePrepTouchStartGesture(e, {
       gestureRef,
       viewport,
     });
+    if (isPdf && e.touches.length === 2) {
+      gestureRef.current.pdfZoom = pdfNavApiRef.current?.zoom || 1;
+      gestureRef.current.pdfScrollX = pdfScrollRef.current?.scrollLeft || 0;
+      gestureRef.current.pdfScrollY = pdfScrollRef.current?.scrollTop || 0;
+    }
   }
 
   function handleGestureMove(e) {
+    if (isPdf && gestureRef.current.active && e.touches.length === 2) {
+      e.preventDefault();
+      const [a,b]=e.touches;
+      const g=gestureRef.current;
+      const distance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+      pdfNavApiRef.current?.setZoomPercent?.(100*g.pdfZoom*distance/(g.startDist||1));
+      if (pdfScrollRef.current) {
+        pdfScrollRef.current.scrollLeft=g.pdfScrollX-((a.clientX+b.clientX)/2-g.startX);
+        pdfScrollRef.current.scrollTop=g.pdfScrollY-((a.clientY+b.clientY)/2-g.startY);
+      }
+      return;
+    }
     handlePrepGestureMove(e, {
       gestureRef,
       setViewport,
@@ -2640,7 +2675,8 @@ function PrepShell({
                   renderAnnotationsOverlay={renderAnnotationsOverlay}
                   isPdf={isPdf}
                   pdfViewerUrl={pdfViewerUrl}
-                  pdfFitMode="width"
+                  pdfFitMode={sessionId ? "classroom" : "width"}
+                  onPdfViewportChange={handlePdfViewportChange}
                   pdfScrollRef={pdfScrollRef}
                   handlePdfNavStateChange={handlePdfNavStateChange}
                   broadcastPdfFitToPage={broadcastPdfFitToPage}
