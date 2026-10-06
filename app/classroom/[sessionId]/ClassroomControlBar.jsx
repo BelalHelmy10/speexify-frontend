@@ -231,16 +231,19 @@ export default function ClassroomControlBar({
 
         <button
           className={
-            "cr-controls__btn cr-controls__btn--ghost" +
+            "cr-controls__btn cr-controls__btn--chat" +
+            (isChatOpen ? " cr-controls__btn--chat-open" : "") +
             (!isChatOpen && chatUnreadCount > 0 ? " cr-controls__btn--has-unread" : "")
           }
           onClick={() => setIsChatOpen(!isChatOpen)}
+          aria-expanded={isChatOpen}
+          aria-controls="classroom-chat-drawer"
           aria-label={
             !isChatOpen && chatUnreadCount > 0
-              ? `Show chat, ${chatUnreadCount} unread`
+              ? `Open chat, ${chatUnreadCount} unread`
               : isChatOpen
-                ? "Hide chat"
-                : "Show chat"
+                ? "Close chat"
+                : "Open chat"
           }
         >
           <span className="cr-controls__btn-icon cr-controls__btn-icon--dot-host">
@@ -251,10 +254,10 @@ export default function ClassroomControlBar({
           </span>
           <span className="cr-controls__btn-label">
             {isChatOpen
-              ? "Hide Chat"
+              ? "Close chat"
               : chatUnreadCount > 0
-                ? `Show Chat (${chatUnreadCount > 9 ? "9+" : chatUnreadCount})`
-                : "Show Chat"}
+                ? `Open chat (${chatUnreadCount > 9 ? "9+" : chatUnreadCount})`
+                : "Open chat"}
           </span>
         </button>
       </div>

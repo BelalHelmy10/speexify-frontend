@@ -5453,6 +5453,8 @@ body.classroom-active {
 
 // Persistent lesson resources, with a compact browser-style bottom tab strip.
 .cr-resource-workspace {
+  --cr-resource-bar-height: 27px;
+  --cr-resource-control-height: 20px;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -5468,6 +5470,9 @@ body.classroom-active {
 }
 
 .cr-resource-tabs {
+  box-sizing: border-box;
+  height: var(--cr-resource-bar-height);
+  min-height: var(--cr-resource-bar-height);
   font-family: $cr-font-sans;
   display: flex;
   flex: 0 0 auto;
@@ -5478,7 +5483,11 @@ body.classroom-active {
   border-top: 1px solid $cr-border-default;
   min-width: 0;
 
-  &__list { display: flex; gap: 5px; overflow-x: auto; min-width: 0; flex: 1; scrollbar-width: thin; }
+  &__list {
+    display: flex; gap: 5px; overflow-x: auto; min-width: 0; flex: 1;
+    height: 100%; scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
   &__item {
     display: flex; align-items: center; flex: 0 0 auto;
     max-width: 230px; border: 1px solid transparent; border-radius: 5px;
@@ -5488,7 +5497,7 @@ body.classroom-active {
   button {
     display: inline-flex; align-items: center; justify-content: center; gap: 5px;
     border: 0; background: transparent; color: $cr-text-secondary;
-    cursor: pointer; min-height: 20px; padding: 2px 8px; border-radius: 4px;
+    cursor: pointer; min-height: var(--cr-resource-control-height); padding: 2px 8px; border-radius: 4px;
     font: inherit; font-size: 11px; line-height: 1.2;
     &:hover { background: rgba(255, 255, 255, 0.08); color: $cr-text-primary; }
     &:focus-visible { outline: 2px solid $cr-accent-primary; outline-offset: -2px; }
@@ -5502,10 +5511,93 @@ body.classroom-active {
 }
 
 @media (max-width: 600px) {
+  .cr-resource-workspace {
+    --cr-resource-bar-height: 33px;
+    --cr-resource-control-height: 26px;
+  }
   .cr-resource-tabs {
-    button { min-height: 26px; }
     &__item { max-width: 185px; }
     &__close { min-width: 30px; }
   }
 }
 .cr-resource-workspace[hidden] { display: none; }
+
+// The PDF controls and resource tabs share a height so the lesson has one
+// consistent, compact pair of bottom bars at every screen size.
+.cr-resource-workspace .cpv-nav {
+  box-sizing: border-box;
+  height: var(--cr-resource-bar-height);
+  min-height: var(--cr-resource-bar-height);
+  padding: 2px 6px;
+  gap: 6px;
+
+  &__left,
+  &__center,
+  &__right { gap: 4px; }
+
+  &__btn,
+  &__zoom {
+    box-sizing: border-box;
+    height: var(--cr-resource-control-height);
+    min-height: var(--cr-resource-control-height);
+    padding: 0 5px;
+    border-radius: 4px;
+    font-size: 11px;
+    line-height: 1;
+  }
+  &__btn {
+    min-width: var(--cr-resource-control-height);
+    svg { width: 13px; height: 13px; }
+  }
+  &__zoom { min-width: 44px; }
+  &__zoom-slider { height: var(--cr-resource-control-height); margin-block: 0; }
+  &__pages {
+    box-sizing: border-box;
+    height: calc(var(--cr-resource-control-height) + 2px);
+    min-height: calc(var(--cr-resource-control-height) + 2px);
+    padding: 0 5px;
+    gap: 3px;
+    border-radius: 5px;
+  }
+  &__pages-current {
+    box-sizing: border-box;
+    height: calc(var(--cr-resource-control-height) - 2px);
+    min-width: calc(var(--cr-resource-control-height) - 2px);
+    padding: 0 3px;
+    border-radius: 4px;
+    font-size: 11px;
+    line-height: 1;
+  }
+  &__pages-kicker { font-size: 9px; }
+  &__pages-divider,
+  &__pages-total { font-size: 11px; line-height: 1; }
+}
+
+// Give chat a clear visual anchor among the quieter classroom controls.
+.cr-controls .cr-controls__btn--chat {
+  background: #c64521;
+  border-color: $cr-accent-primary;
+  color: #fff;
+  font-weight: 650;
+  padding-inline: 0.75rem;
+  box-shadow: 0 2px 8px rgba($cr-accent-primary, 0.2);
+
+  &:hover { background: #b53c1b; border-color: $cr-accent-primary-light; }
+  &:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .cr-controls__btn-label { display: inline; }
+  .cr-controls__btn-icon--dot-host { position: relative; display: inline-flex; }
+  .cr-controls__btn-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 2px #c64521;
+  }
+  &.cr-controls__btn--chat-open {
+    background: #9d3218;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+}

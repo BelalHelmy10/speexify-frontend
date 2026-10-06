@@ -2102,6 +2102,7 @@ export default function ClassroomShell({
           conversation never steals height from the video or lesson canvas. */}
       {!isMobile && (
         <aside
+          id="classroom-chat-drawer"
           className={`cr-chat-drawer ${isChatOpen ? "cr-chat-drawer--open" : ""}`}
           aria-hidden={!isChatOpen}
           data-lenis-prevent
