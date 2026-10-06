@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import SessionCard from "./SessionCard";
 import { useToast } from "@/components/ToastProvider";
 import useAuth from "@/hooks/useAuth";
+import { getIntlLocale } from "@/utils/locale";
 
 /**
  * SessionList - Displays a list of sessions with filtering and pagination
@@ -72,7 +73,7 @@ export default function SessionList({
   const groupedSessions = filteredSessions.reduce((groups, session) => {
     const date = session.startAt
       ? new Date(session.startAt).toLocaleDateString(
-        locale === "ar" ? "ar-EG" : "en-US",
+        getIntlLocale(locale),
         {
           weekday: "long",
           month: "long",
@@ -91,13 +92,14 @@ export default function SessionList({
 
   // Handle cancel
   const handleCancel = async (session) => {
-    if (!confirm(`Are you sure you want to cancel "${session.title}"?`)) {
+    const leavingTraining = session.type === "TRAINING" && user?.role !== "admin" && Number(session.teacherId) !== Number(user?.id);
+    if (!confirm(leavingTraining ? `Leave "${session.title}"?` : `Are you sure you want to cancel "${session.title}"?`)) {
       return;
     }
 
     try {
-      await api.post(`/sessions/${session.id}/cancel`);
-      toast?.success?.("Session canceled successfully");
+      const response = await api.post(`/sessions/${session.id}/cancel`);
+      toast?.success?.(response?.data?.scope === "participant" ? "You left the session." : "Session canceled successfully");
       fetchSessions(); // Refresh list
     } catch (err) {
       console.error("Failed to cancel session:", err);
@@ -110,13 +112,14 @@ export default function SessionList({
     all: sessions.length,
     ONE_ON_ONE: sessions.filter((s) => s.type === "ONE_ON_ONE").length,
     GROUP: sessions.filter((s) => s.type === "GROUP").length,
+    TRAINING: sessions.filter((s) => s.type === "TRAINING").length,
   };
 
   if (loading) {
     return (
-      <div className="session-list session-list--loading">
+      <div className="session-list session-list--loading" role="status" aria-live="polite">
         <div className="session-list__spinner" />
-        <p>Loading sessions...</p>
+        <p>{range === "past" ? "Loading your session history…" : "Loading your upcoming sessions…"}</p>
       </div>
     );
   }
@@ -189,6 +192,7 @@ export default function SessionList({
             >
               👥 Group ({counts.GROUP})
             </button>
+            {userRole === "teacher" && <button type="button" className={`session-list__filter-btn ${typeFilter === "TRAINING" ? "session-list__filter-btn--active" : ""}`} onClick={() => setTypeFilter("TRAINING")}>🎓 {locale === "ar" ? "تدريب" : "Training"} ({counts.TRAINING})</button>}
           </div>
         </div>
       )}
@@ -218,6 +222,7 @@ export default function SessionList({
                 key={session.id}
                 session={session}
                 userRole={userRole}
+                currentUserId={user?.id}
                 onCancel={handleCancel}
                 locale={locale}
                 timezone={user?.timezone}

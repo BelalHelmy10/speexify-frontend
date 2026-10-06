@@ -3,6 +3,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 
 /**
  * SessionCard - Displays a session with support for both ONE_ON_ONE and GROUP types
@@ -18,6 +19,7 @@ import Link from "next/link";
 export default function SessionCard({
   session,
   userRole = "learner",
+  currentUserId = null,
   onCancel,
   onJoin,
   locale = "en",
@@ -38,16 +40,17 @@ export default function SessionCard({
     participantCount = 0,
     learners = [],
     teacher,
-    joinUrl,
     hasFeedback,
   } = session || {};
 
   const isGroup = type === "GROUP";
+  const isTraining = type === "TRAINING";
   const isTeacher = userRole === "teacher";
   const isAdmin = userRole === "admin";
+  const managesTraining = isAdmin || (isTeacher && Number(session?.teacherId) === Number(currentUserId));
 
   // Format dates
-  const { dateStr, timeStr, endTimeStr, isToday, isPast, isUpcoming, canJoin } =
+  const { dateStr, timeStr, endTimeStr, isToday, isPast, isUpcoming, canOpenClassroom } =
     useMemo(() => {
       const start = startAt ? new Date(startAt) : null;
       const end = endAt ? new Date(endAt) : null;
@@ -61,12 +64,12 @@ export default function SessionCard({
           isToday: false,
           isPast: false,
           isUpcoming: false,
-          canJoin: false,
+          canOpenClassroom: false,
         };
       }
 
       const dateStr = start.toLocaleDateString(
-        locale === "ar" ? "ar-EG" : "en-US",
+        getIntlLocale(locale),
         {
           timeZone: timezone,
           weekday: "short",
@@ -76,7 +79,7 @@ export default function SessionCard({
       );
 
       const timeStr = start.toLocaleTimeString(
-        locale === "ar" ? "ar-EG" : "en-US",
+        getIntlLocale(locale),
         {
           timeZone: timezone,
           hour: "2-digit",
@@ -85,7 +88,7 @@ export default function SessionCard({
       );
 
       const endTimeStr = end
-        ? end.toLocaleTimeString(locale === "ar" ? "ar-EG" : "en-US", {
+        ? end.toLocaleTimeString(getIntlLocale(locale), {
           timeZone: timezone,
           hour: "2-digit",
           minute: "2-digit",
@@ -101,11 +104,10 @@ export default function SessionCard({
       const isPast = end ? end < now : start < now;
       const isUpcoming = start > now;
 
-      // Can join: 15 min before start until end (or 2 hours after start if no end)
+      // The scheduled end is informational. Members can reopen the classroom
+      // after it passes, while the 15-minute early-entry guard remains.
       const joinWindowStart = new Date(start.getTime() - 15 * 60 * 1000);
-      const joinWindowEnd =
-        end || new Date(start.getTime() + 2 * 60 * 60 * 1000);
-      const canJoin = now >= joinWindowStart && now <= joinWindowEnd;
+      const canOpenClassroom = status !== "canceled" && now >= joinWindowStart;
 
       return {
         dateStr,
@@ -114,9 +116,9 @@ export default function SessionCard({
         isToday,
         isPast,
         isUpcoming,
-        canJoin,
+        canOpenClassroom,
       };
-    }, [startAt, endAt, locale]);
+    }, [startAt, endAt, locale, status]);
 
   // Status badge
   const statusConfig = useMemo(() => {
@@ -129,7 +131,7 @@ export default function SessionCard({
         className: "session-card__status--completed",
       };
     }
-    if (canJoin) {
+    if (canOpenClassroom && !isPast) {
       return { label: "Live Now", className: "session-card__status--live" };
     }
     if (isToday) {
@@ -139,7 +141,11 @@ export default function SessionCard({
       return { label: "Upcoming", className: "session-card__status--upcoming" };
     }
     return { label: "Scheduled", className: "session-card__status--scheduled" };
-  }, [status, canJoin, isToday, isUpcoming]);
+  }, [status, canOpenClassroom, isPast, isToday, isUpcoming]);
+
+  const classroomActionLabel = isPast || status === "completed"
+    ? "Open Classroom"
+    : "Join Classroom";
 
   // Participant display
   const participantDisplay = useMemo(() => {
@@ -148,8 +154,8 @@ export default function SessionCard({
     const count = participantCount || learners?.length || 0;
     const cap = capacity || "∞";
 
-    return `${count}/${cap} participants`;
-  }, [isGroup, participantCount, learners, capacity]);
+    return `${formatNumber(count, locale)}/${cap === "∞" ? cap : formatNumber(cap, locale)} participants`;
+  }, [isGroup, participantCount, learners, capacity, locale]);
 
   // Learner names for teacher view
   const learnerNames = useMemo(() => {
@@ -161,10 +167,10 @@ export default function SessionCard({
       .join(", ");
 
     if (learners.length > 3) {
-      return `${names} +${learners.length - 3} more`;
+      return `${names} +${formatNumber(learners.length - 3, locale)} more`;
     }
     return names;
-  }, [learners]);
+  }, [learners, locale]);
 
   // Render compact version
   if (compact) {
@@ -184,6 +190,7 @@ export default function SessionCard({
 
           <div className="session-card__compact-info">
             <span className="session-card__title">{title || "Session"}</span>
+            {isTraining && <span className="session-card__type-badge">{locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID"}</span>}
             {isGroup && (
               <span className="session-card__type-badge session-card__type-badge--group">
                 GROUP
@@ -191,12 +198,12 @@ export default function SessionCard({
             )}
           </div>
 
-          {canJoin && status === "scheduled" && joinUrl && (
+          {canOpenClassroom && id && status !== "canceled" && (
             <a
               href={`${prefix}/classroom/${id}`}
               className="session-card__join-btn session-card__join-btn--compact"
             >
-              Join
+              {isPast || status === "completed" ? "Open" : "Join"}
             </a>
           )}
         </div>
@@ -208,14 +215,16 @@ export default function SessionCard({
   return (
     <div
       className={`session-card ${status === "canceled" ? "session-card--canceled" : ""
-        } ${canJoin ? "session-card--live" : ""}`}
+        } ${canOpenClassroom && !isPast ? "session-card--live" : ""}`}
     >
       {/* Header */}
       <div className="session-card__header">
         <div className="session-card__header-left">
           <h3 className="session-card__title">{title || "Session"}</h3>
           <div className="session-card__badges">
-            {isGroup ? (
+            {isTraining ? (
+              <span className="session-card__type-badge">🎓 {locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID"}</span>
+            ) : isGroup ? (
               <span className="session-card__type-badge session-card__type-badge--group">
                 👥 GROUP
               </span>
@@ -270,7 +279,7 @@ export default function SessionCard({
         )}
 
         {/* Learner info (for teacher view) */}
-        {isTeacher && (
+        {isTeacher && !isTraining && (
           <div className="session-card__person">
             <span className="session-card__person-icon">👨‍🎓</span>
             <span className="session-card__person-label">
@@ -283,13 +292,13 @@ export default function SessionCard({
         )}
 
         {/* Participant count for GROUP */}
-        {isGroup && (
+        {(isGroup || isTraining) && (
           <div className="session-card__capacity">
             <span className="session-card__capacity-icon">👥</span>
             <span className="session-card__capacity-text">
               {participantDisplay}
             </span>
-            {capacity && participantCount >= capacity && (
+            {isGroup && capacity && participantCount >= capacity && (
               <span className="session-card__capacity-full">FULL</span>
             )}
           </div>
@@ -299,13 +308,13 @@ export default function SessionCard({
       {/* Actions */}
       <div className="session-card__actions">
         {/* Join button */}
-        {canJoin && status === "scheduled" && (
+        {canOpenClassroom && id && status !== "canceled" && (
           <a
             href={`${prefix}/classroom/${id}`}
             className="session-card__btn session-card__btn--primary"
             onClick={onJoin}
           >
-            🎥 Join Classroom
+            🎥 {classroomActionLabel}
           </a>
         )}
 
@@ -318,13 +327,13 @@ export default function SessionCard({
         </Link>
 
         {/* Cancel button (if upcoming and not canceled) */}
-        {status === "scheduled" && isUpcoming && onCancel && (
+        {status === "scheduled" && isUpcoming && onCancel && !(isTraining && !managesTraining && participantCount <= 1) && (
           <button
             type="button"
             className="session-card__btn session-card__btn--danger"
             onClick={() => onCancel(session)}
           >
-            Cancel
+            {isTraining && !managesTraining ? "Leave training" : "Cancel"}
           </button>
         )}
       </div>

@@ -1,25 +1,52 @@
 "use client";
 
 import Link from "next/link";
+import { CalendarClock, CheckCircle2, ClipboardCheck, Film, MessageCircle, Package } from "lucide-react";
+import { usePathname } from "next/navigation";
+import NotificationsBell from "@/components/NotificationsBell";
 
 export default function AdminDashboardHeader() {
+  const pathname = usePathname();
+  const prefix = pathname?.startsWith("/ar") ? "/ar" : "";
+
   return (
     <div className="adm-admin-header">
       <div className="adm-admin-header__content">
         <h1 className="adm-admin-title">
           Admin Dashboard
           <span className="adm-admin-subtitle">
-            Manage users, sessions, and monitor teacher workload
+            Manage users, sessions, intake, and teacher workload
           </span>
         </h1>
       </div>
 
       <div className="adm-admin-header__actions">
-        <Link href="/admin/support" className="adm-btn-primary">
-          🛟 Support Inbox
+        <div className="adm-admin-header__notifications" aria-label="Admin notifications">
+          <NotificationsBell locale={prefix ? "ar" : "en"} />
+        </div>
+        <a href="#admin-payments" className="adm-btn-primary">
+          <CheckCircle2 size={16} aria-hidden="true" />
+          Payments
+        </a>
+        <Link href={`${prefix}/admin/free-sessions`} className="adm-btn-primary">
+          <CalendarClock size={16} aria-hidden="true" />
+          Free sessions
         </Link>
-        <Link href="/admin/packages" className="adm-btn-secondary">
-          📦 Packages
+        <Link href={`${prefix}/admin/intake`} className="adm-btn-primary">
+          <ClipboardCheck size={16} aria-hidden="true" />
+          Intake
+        </Link>
+        <Link href={`${prefix}/admin/support`} className="adm-btn-secondary">
+          <MessageCircle size={16} aria-hidden="true" />
+          Support Inbox
+        </Link>
+        <Link href={`${prefix}/admin/packages`} className="adm-btn-secondary">
+          <Package size={16} aria-hidden="true" />
+          Packages
+        </Link>
+        <Link href={`${prefix}/admin/recordings`} className="adm-btn-secondary">
+          <Film size={16} aria-hidden="true" />
+          Recordings
         </Link>
       </div>
     </div>

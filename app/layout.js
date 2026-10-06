@@ -1,17 +1,24 @@
 // app/layout.js
 import "./globals.scss";
 import "@/lib/sentry";
-import "react-calendar/dist/Calendar.css";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import "../styles/calendar.scss";
-import { Inter, Outfit } from "next/font/google";
-import { headers } from "next/headers";
+import { Inter, Outfit, Cairo, Space_Grotesk } from "next/font/google";
+import { cookies, headers } from "next/headers";
 
 import Providers from "@/components/Providers";
+import { getServerUser } from "./server-auth";
 import ClientProviders from "./ClientProviders";
 import LocaleShell from "./LocaleShell";
 import AppChrome from "@/components/AppChrome";
 import { organizationJsonLd, websiteJsonLd } from "./seo";
+import {
+  BRAND_DESCRIPTION,
+  BRAND_NAME,
+  BRAND_SITE_TITLE,
+} from "@/lib/brand";
+
+function safeJsonLd(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
 
 const googleSiteVerification =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
@@ -29,47 +36,60 @@ const outfit = Outfit({
   display: "swap",
 });
 
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  variable: "--font-cairo",
+  display: "swap",
+});
+
+// Display face for dashboard stat figures (big tabular numerals).
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+
 export const metadata = {
   metadataBase: new URL("https://speexify.com"),
 
   // Basic SEO
   title: {
-    default: "Speexify — Personalized Language & Communication Coaching",
+    default: BRAND_SITE_TITLE,
     template: "%s — Speexify",
   },
-  description:
-    "Personalized language and communication coaching for teams and professionals. Improve your speaking skills, communication confidence, and professional presence with expert guidance.",
+  description: BRAND_DESCRIPTION,
   keywords: [
-    "language coaching",
-    "communication coaching",
-    "speech training",
-    "professional communication",
-    "team communication",
-    "public speaking",
-    "language learning",
-    "business communication",
+    "English speaking coaching",
+    "English coaching Egypt",
+    "1-on-1 English coaching",
+    "English speaking confidence",
+    "interview English coaching",
+    "career English coaching",
+    "professional English training",
+    "business English Egypt",
+    "Speexify",
   ],
 
   // Authors and creators
-  authors: [{ name: "Speexify" }],
-  creator: "Speexify",
-  publisher: "Speexify",
+  authors: [{ name: BRAND_NAME }],
+  creator: BRAND_NAME,
+  publisher: BRAND_NAME,
 
   // Open Graph (Facebook, LinkedIn, WhatsApp)
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "https://speexify.com",
-    title: "Speexify — Personalized Language & Communication Coaching",
-    description:
-      "Personalized language and communication coaching for teams and professionals.",
-    siteName: "Speexify",
+    title: BRAND_SITE_TITLE,
+    description: BRAND_DESCRIPTION,
+    siteName: BRAND_NAME,
     images: [
       {
-        url: "/opengraph-image",
+        url: "/speexify-share-coral-v2.png",
         width: 1200,
         height: 630,
-        alt: "Speexify - Language and Communication Coaching",
+        alt: BRAND_SITE_TITLE,
       },
     ],
   },
@@ -77,11 +97,10 @@ export const metadata = {
   // Twitter Card
   twitter: {
     card: "summary_large_image",
-    title: "Speexify — Personalized Language & Communication Coaching",
-    description:
-      "Personalized language and communication coaching for teams and professionals.",
+    title: BRAND_SITE_TITLE,
+    description: BRAND_DESCRIPTION,
     creator: "@speexify",
-    images: ["/twitter-image"],
+    images: ["/speexify-share-coral-v2.png"],
   },
 
   // Robots directives
@@ -108,8 +127,23 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   const requestHeaders = await headers();
+  const cookieStore = await cookies();
   const locale = requestHeaders.get("x-speexify-locale") || "en";
+  const nonce = requestHeaders.get("x-nonce") || undefined;
+  const authState = requestHeaders.get("x-speexify-auth-state") || "available";
   const isArabic = locale === "ar";
+  const hasSessionCookie = Boolean(cookieStore.get("speexify.sid")?.value);
+
+  // When there's a session cookie, resolve the user on the server so the app
+  // renders already-authenticated and the client never has to block on an
+  // /auth/me round-trip. Bounded by a short timeout: if the backend is slow or
+  // cold-starting, we fall back to null and let the (resilient) client check
+  // take over instead of stalling the page.
+  // If the proxy already observed a transient outage, avoid a second blocking
+  // server request; the client auth provider owns the retry budget.
+  const initialUser = hasSessionCookie && authState !== "unavailable"
+    ? await getServerUser({ timeoutMs: 2500 })
+    : null;
 
   return (
     <html
@@ -126,24 +160,30 @@ export default async function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 
         {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#2563EB" />
+        <meta name="theme-color" content="#f25c2e" />
         <script
+          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd),
+            __html: safeJsonLd(organizationJsonLd),
           }}
         />
         <script
+          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(websiteJsonLd),
+            __html: safeJsonLd(websiteJsonLd),
           }}
         />
       </head>
-      <body className={`${inter.variable} ${outfit.variable}`}>
+      <body className={`${inter.variable} ${outfit.variable} ${cairo.variable} ${spaceGrotesk.variable}`}>
         <LocaleShell>
           <ClientProviders>
-            <Providers>
+            <Providers
+              initialUser={initialUser}
+              hasSessionCookie={hasSessionCookie}
+              initialAuthStatus={authState}
+            >
               <AppChrome>{children}</AppChrome>
             </Providers>
           </ClientProviders>

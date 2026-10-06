@@ -66,7 +66,7 @@ export default function AdminSessionEditCard({
                           <option value="">Select learner...</option>
                           {users.map((u) => (
                             <option key={u.id} value={u.id}>
-                              {u.name ? `${u.name} — ${u.email}` : u.email}
+                              {u.name ? `${u.name} · ${u.email}` : u.email}
                             </option>
                           ))}
                         </select>
@@ -127,7 +127,7 @@ export default function AdminSessionEditCard({
                                     }}
                                   >
                                     {u.name
-                                      ? `${u.name} — ${u.email}`
+                                      ? `${u.name} · ${u.email}`
                                       : u.email}
                                     {editForm.learnerIds.includes(String(u.id))
                                       ? " ✓"

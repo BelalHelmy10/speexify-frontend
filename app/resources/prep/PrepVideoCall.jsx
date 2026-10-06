@@ -1,12 +1,14 @@
 // app/resources/prep/PrepVideoCall.jsx
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { JITSI_DOMAIN, buildJitsiOptions } from "@/lib/jitsiConfig";
+import { loadJitsiScript } from "@/lib/loadJitsiScript.mjs";
 import { getDictionary, t } from "@/app/i18n";
 import {
   Camera,
   CameraOff,
+  ChevronDown,
   Mic,
   MicOff,
   Play,
@@ -15,17 +17,254 @@ import {
   Wifi,
 } from "lucide-react";
 
-export default function PrepVideoCall({
+const JITSI_DOMINANT_SPEAKER_STYLE_ID = "speexify-dominant-speaker-style";
+const JITSI_DOMINANT_SPEAKER_CSS = `
+  .videocontainer.dominant-speaker,
+  .dominant-speaker .videocontainer,
+  .dominant-speaker,
+  .dominant-speaker-indicator,
+  .dominant-speaker-indicator__indicator,
+  .spx-active-speaker {
+    outline: 2px solid rgba(45, 212, 191, 0.94) !important;
+    box-shadow:
+      0 0 0 2px rgba(20, 184, 166, 0.28),
+      0 0 24px rgba(20, 184, 166, 0.34) !important;
+    border-radius: 12px !important;
+  }
+`;
+
+// ─────────────────────────────────────────────────────────────
+// Teams-style adaptive tile grid
+//
+// We override Jitsi's internal tile sizing entirely. The iframe gets
+// a stylesheet that lays the tile container out as a CSS Grid whose
+// column count is supplied as a CSS variable (--spx-tile-cols). The
+// parent React tree computes the optimal column count from the live
+// participant count and container size, and writes the variable on
+// the iframe's <html> element. Result: tiles always fill the panel,
+// always pick the column count whose cell aspect ratio is closest to
+// 16:9, and recompute on every join, leave, and resize.
+// ─────────────────────────────────────────────────────────────
+const JITSI_TILE_GRID_STYLE_ID = "speexify-tile-grid-style";
+const LS_AUDIO_DEVICE = "speexify-classroom-audioInput";
+const LS_VIDEO_DEVICE = "speexify-classroom-videoInput";
+
+function getStoredDeviceId(key) {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.localStorage.getItem(key) || "";
+  } catch {
+    return "";
+  }
+}
+const JITSI_TILE_GRID_CSS = `
+  /* Make sure the filmstrip container fills the iframe in tile view */
+  .filmstrip.is-tile-view,
+  .filmstrip.tile-view,
+  div[class*="filmstrip"][class*="tile"] {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    inset: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Tile container becomes a CSS grid with our computed column count */
+  .tile-view .filmstrip__videos,
+  .is-tile-view .filmstrip__videos,
+  .filmstrip__videos.is-tile-view,
+  div[class*="tileViewContainer"],
+  div[class*="tile-view"] > div[class*="filmstrip"] {
+    display: grid !important;
+    grid-template-columns: repeat(var(--spx-tile-cols, 2), 1fr) !important;
+    grid-auto-rows: 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding: 10px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  /* Hide the stage video container in tile view — we don't use it */
+  .tile-view #largeVideoContainer,
+  .is-tile-view #largeVideoContainer,
+  #largeVideoContainer.tile-view-mode {
+    display: none !important;
+  }
+
+  /* Each tile fills its grid cell uniformly */
+  .tile-view .videocontainer,
+  .is-tile-view .videocontainer,
+  .tile-view #localVideoContainer,
+  .is-tile-view #localVideoContainer,
+  .tile-view span.videocontainer,
+  .is-tile-view span.videocontainer {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    background: #0f172a !important;
+  }
+
+  /* Video and avatar inside each tile fill the cell with cover-fit */
+  .tile-view .videocontainer video,
+  .is-tile-view .videocontainer video,
+  .tile-view .videocontainer .video-wrapper,
+  .is-tile-view .videocontainer .video-wrapper,
+  .tile-view .videocontainer .video-wrapper video,
+  .is-tile-view .videocontainer .video-wrapper video,
+  .tile-view .videocontainer .avatar-container,
+  .is-tile-view .videocontainer .avatar-container {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  /* Jitsi can briefly fall back to stage view while a conference is
+     starting or when a tile-view command races its own layout update. Keep
+     that single-person fallback framed like a real video tile instead of a
+     small 16:9 island with black bars around it. */
+  #largeVideoContainer video,
+  #largeVideoElementsContainer video,
+  #largeVideo video,
+  .videocontainer video {
+    object-fit: cover !important;
+    background: #0f172a !important;
+  }
+
+  /* A shared screen should remain fully visible. The classroom marks this
+     mode on the embedded document root while the shell is sharing. */
+  html[data-spexify-screen-share="true"] #largeVideoContainer video,
+  html[data-spexify-screen-share="true"] #largeVideoElementsContainer video,
+  html[data-spexify-screen-share="true"] #largeVideo video {
+    object-fit: contain !important;
+    background: #000 !important;
+  }
+
+  /* Center the avatar circle within its tile regardless of cell size */
+  .tile-view .avatar-container,
+  .is-tile-view .avatar-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* ─── Stage view (active during screen sharing) ─────────────────── */
+  /* The large video container should fill the entire iframe, leaving
+     no Jitsi-side padding. The video element uses object-fit contain
+     so the full screen content is visible without cropping; black bars
+     are acceptable when aspect ratios disagree. These rules are no-ops
+     in tile view because Jitsi already hides #largeVideoContainer there. */
+  #largeVideoContainer,
+  #largeVideoWrapper,
+  #largeVideoElementsContainer,
+  .videocontainer#largeVideoContainer {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #largeVideoElementsContainer {
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  #largeVideo {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  html[data-spexify-screen-share="true"] #largeVideo {
+    object-fit: contain !important;
+    background: #000 !important;
+  }
+`;
+
+/**
+ * Pick the column count for an adaptive tile grid in the Teams style.
+ *
+ * We try every cols ∈ [1, count], compute the resulting cell aspect
+ * (containerWidth/cols ÷ containerHeight/ceil(count/cols)), and score
+ * each candidate by how far it deviates from 16:9 — plus a small
+ * penalty per empty cell so 4 participants pick 2×2 instead of 3×2.
+ */
+function computeTileColumns(count, width, height) {
+  if (!Number.isFinite(count) || count <= 1) return 1;
+  if (!width || !height || width <= 0 || height <= 0) {
+    return Math.min(count, 2);
+  }
+
+  const TARGET_ASPECT = 16 / 9;
+  const EMPTY_CELL_PENALTY = 0.18;
+
+  let bestCols = 1;
+  let bestScore = Infinity;
+
+  for (let cols = 1; cols <= count; cols++) {
+    const rows = Math.ceil(count / cols);
+    const cellW = width / cols;
+    const cellH = height / rows;
+    if (cellW <= 0 || cellH <= 0) continue;
+
+    const aspect = cellW / cellH;
+    const aspectScore = Math.abs(Math.log(aspect / TARGET_ASPECT));
+    const emptyCells = cols * rows - count;
+    const score = aspectScore + emptyCells * EMPTY_CELL_PENALTY;
+
+    if (score < bestScore) {
+      bestScore = score;
+      bestCols = cols;
+    }
+  }
+
+  return bestCols;
+}
+
+function PrepVideoCall({
   roomId,
   userName,
   isTeacher,
+  sessionTitle = "Live coaching session",
+  coachName = "",
   onScreenShareStreamChange,
+  onModerationStateChange,
+  onNetworkQualityChange,
+  onConnectionStateChange,
+  onAudioMuteChange,
+  onParticipantCountChange,
+  suspendTileViewLock = false,
   locale = "en",
 }) {
   const containerRef = useRef(null);
   const apiRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
+  const connectionStateCbRef = useRef(onConnectionStateChange);
+  useEffect(() => {
+    connectionStateCbRef.current = onConnectionStateChange;
+  }, [onConnectionStateChange]);
+  // Enter the classroom immediately. Jitsi still starts with the existing
+  // safe defaults (microphone muted, camera enabled) and exposes its own
+  // controls once the call is open.
   const [hasJoined, setHasJoined] = useState(true);
   const [joinAudioMuted, setJoinAudioMuted] = useState(true);
   const [joinVideoMuted, setJoinVideoMuted] = useState(false);
@@ -40,13 +279,14 @@ export default function PrepVideoCall({
   const [selectedAudioOutputId, setSelectedAudioOutputId] = useState("");
   const [micLevel, setMicLevel] = useState(0);
   const [sessionAudioMuted, setSessionAudioMuted] = useState(true);
-  const [micMonitorUnavailable, setMicMonitorUnavailable] = useState(false);
   const [networkStatus, setNetworkStatus] = useState({
     state: "checking",
     label: "Checking network",
     detail: "Measuring connection quality...",
     latency: null,
+    reachable: null,
   });
+  const [activeSpeakerName, setActiveSpeakerName] = useState("");
   const [isTestingSpeaker, setIsTestingSpeaker] = useState(false);
   const previewVideoRef = useRef(null);
   const previewStreamRef = useRef(null);
@@ -54,6 +294,23 @@ export default function PrepVideoCall({
   const micMeterRafRef = useRef(null);
   const speakerTestRef = useRef(null);
   const speakerTestTimeoutRef = useRef(null);
+  const moderationCbRef = useRef(onModerationStateChange);
+  const networkQualityCbRef = useRef(onNetworkQualityChange);
+  const participantCountCbRef = useRef(onParticipantCountChange);
+  const jitsiParticipantsRef = useRef(new Map());
+  const localParticipantIdRef = useRef(null);
+  const activeSpeakerIdRef = useRef(null);
+
+  useEffect(() => {
+    participantCountCbRef.current = onParticipantCountChange;
+  }, [onParticipantCountChange]);
+
+  useEffect(() => {
+    // Read preferences after mount so server-rendered markup stays identical
+    // to the first client render while still restoring the user's devices.
+    setSelectedAudioInputId((current) => current || getStoredDeviceId(LS_AUDIO_DEVICE));
+    setSelectedVideoInputId((current) => current || getStoredDeviceId(LS_VIDEO_DEVICE));
+  }, []);
 
   // ─────────────────────────────────────────────
   // Page recording is handled by ClassroomShell
@@ -62,6 +319,597 @@ export default function PrepVideoCall({
 
 
   const dict = getDictionary(locale, "classroom");
+
+  useEffect(() => {
+    moderationCbRef.current = onModerationStateChange;
+  }, [onModerationStateChange]);
+
+  useEffect(() => {
+    networkQualityCbRef.current = onNetworkQualityChange;
+  }, [onNetworkQualityChange]);
+
+  const getFirstFiniteNumber = useCallback((...values) => {
+    for (const value of values) {
+      const num = Number(value);
+      if (Number.isFinite(num)) return num;
+    }
+    return null;
+  }, []);
+
+  const normalizeConnectionQuality = useCallback(
+    (payload = {}) => {
+      const quality = getFirstFiniteNumber(
+        payload.connectionQuality,
+        payload.quality,
+        payload.score,
+        payload.value
+      );
+      const latencyMs = getFirstFiniteNumber(
+        payload.jvbRTT,
+        payload.p2pRTT,
+        payload.rtt,
+        payload.latency,
+        payload.stats?.jvbRTT,
+        payload.stats?.p2pRTT,
+        payload.statistics?.jvbRTT,
+        payload.statistics?.p2pRTT
+      );
+
+      if (quality === null && latencyMs === null) return null;
+
+      const normalizedQuality =
+        quality === null ? null : Math.max(0, Math.min(100, quality));
+
+      let level = "unknown";
+      let label = "Checking";
+      if (normalizedQuality !== null) {
+        if (normalizedQuality >= 85) {
+          level = "excellent";
+          label = "Excellent";
+        } else if (normalizedQuality >= 65) {
+          level = "good";
+          label = "Good";
+        } else if (normalizedQuality >= 35) {
+          level = "fair";
+          label = "Fair";
+        } else {
+          level = "poor";
+          label = "Poor";
+        }
+      } else if (latencyMs !== null) {
+        if (latencyMs <= 90) {
+          level = "excellent";
+          label = "Excellent";
+        } else if (latencyMs <= 180) {
+          level = "good";
+          label = "Good";
+        } else if (latencyMs <= 350) {
+          level = "fair";
+          label = "Fair";
+        } else {
+          level = "poor";
+          label = "Poor";
+        }
+      }
+
+      return {
+        level,
+        label,
+        quality: normalizedQuality,
+        latencyMs: latencyMs === null ? null : Math.round(latencyMs),
+      };
+    },
+    [getFirstFiniteNumber]
+  );
+
+  const publishNetworkQuality = useCallback(
+    (payload) => {
+      const cb = networkQualityCbRef.current;
+      if (typeof cb !== "function") return;
+
+      const participantId =
+        payload?.participantId || payload?.id || payload?.endpointId || null;
+      if (
+        participantId &&
+        localParticipantIdRef.current &&
+        String(participantId) !== localParticipantIdRef.current
+      ) {
+        return;
+      }
+
+      cb(normalizeConnectionQuality(payload));
+    },
+    [normalizeConnectionQuality]
+  );
+
+  const clearNetworkQuality = useCallback(() => {
+    const cb = networkQualityCbRef.current;
+    if (typeof cb === "function") cb(null);
+  }, []);
+
+  const getJitsiIframeDocument = useCallback(() => {
+    try {
+      const iframe =
+        apiRef.current?.getIFrame?.() ||
+        containerRef.current?.querySelector?.("iframe");
+      return iframe?.contentDocument || iframe?.contentWindow?.document || null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const injectDominantSpeakerStyles = useCallback(() => {
+    const doc = getJitsiIframeDocument();
+    if (!doc?.head) return false;
+    if (doc.getElementById(JITSI_DOMINANT_SPEAKER_STYLE_ID)) return true;
+
+    const style = doc.createElement("style");
+    style.id = JITSI_DOMINANT_SPEAKER_STYLE_ID;
+    style.textContent = JITSI_DOMINANT_SPEAKER_CSS;
+    doc.head.appendChild(style);
+    return true;
+  }, [getJitsiIframeDocument]);
+
+  const injectTileGridStyles = useCallback(() => {
+    const doc = getJitsiIframeDocument();
+    if (!doc?.head) return false;
+    if (doc.getElementById(JITSI_TILE_GRID_STYLE_ID)) return true;
+
+    const style = doc.createElement("style");
+    style.id = JITSI_TILE_GRID_STYLE_ID;
+    style.textContent = JITSI_TILE_GRID_CSS;
+    doc.head.appendChild(style);
+    return true;
+  }, [getJitsiIframeDocument]);
+
+  const getAttributeSelectorValue = useCallback((value) => {
+    return String(value || "")
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"');
+  }, []);
+
+  const markDominantSpeakerTile = useCallback(
+    (participantId) => {
+      const doc = getJitsiIframeDocument();
+      if (!doc) return false;
+
+      injectDominantSpeakerStyles();
+      doc
+        .querySelectorAll(".spx-active-speaker")
+        .forEach((node) => node.classList.remove("spx-active-speaker"));
+
+      if (!participantId) return true;
+
+      const escapedId = getAttributeSelectorValue(participantId);
+      const selectors = [
+        `[data-participant-id="${escapedId}"]`,
+        `[data-participantid="${escapedId}"]`,
+        `[data-endpoint-id="${escapedId}"]`,
+        `[participantid="${escapedId}"]`,
+        `[id="${escapedId}"]`,
+        `[id="participant_${escapedId}"]`,
+        `[data-testid="participant_${escapedId}"]`,
+        `[id*="${escapedId}"]`,
+        `[data-testid*="${escapedId}"]`,
+      ];
+
+      let target = null;
+      for (const selector of selectors) {
+        target = doc.querySelector(selector);
+        if (target) break;
+      }
+
+      const tile =
+        target?.closest?.(
+          ".videocontainer, .filmstrip__tile, [class*='tile'], [class*='participant'], [class*='video-container']"
+        ) || target;
+      tile?.classList?.add("spx-active-speaker");
+      return Boolean(tile);
+    },
+    [getAttributeSelectorValue, getJitsiIframeDocument, injectDominantSpeakerStyles]
+  );
+
+  const getDominantSpeakerId = useCallback((payload) => {
+    if (typeof payload === "string") return payload || null;
+    if (!payload || typeof payload !== "object") return null;
+    return (
+      payload.id ||
+      payload.participantId ||
+      payload.participantID ||
+      payload.endpointId ||
+      null
+    );
+  }, []);
+
+  const getSpeakerDisplayName = useCallback(
+    (speakerId) => {
+      if (!speakerId) return "";
+      const normalizedSpeakerId = String(speakerId);
+      if (
+        localParticipantIdRef.current &&
+        normalizedSpeakerId === localParticipantIdRef.current
+      ) {
+        return userName || (isTeacher ? "Teacher" : "You");
+      }
+
+      return (
+        jitsiParticipantsRef.current.get(normalizedSpeakerId)?.displayName ||
+        "Speaking"
+      );
+    },
+    [isTeacher, userName]
+  );
+
+  const clearDominantSpeaker = useCallback(() => {
+    activeSpeakerIdRef.current = null;
+    setActiveSpeakerName("");
+    markDominantSpeakerTile(null);
+  }, [markDominantSpeakerTile]);
+
+  const handleDominantSpeakerChanged = useCallback(
+    (payload) => {
+      const speakerId = getDominantSpeakerId(payload);
+      activeSpeakerIdRef.current = speakerId ? String(speakerId) : null;
+      setActiveSpeakerName(getSpeakerDisplayName(speakerId));
+      markDominantSpeakerTile(speakerId);
+    },
+    [getDominantSpeakerId, getSpeakerDisplayName, markDominantSpeakerTile]
+  );
+
+  const executeJitsiCommand = useCallback((command, ...args) => {
+    const api = apiRef.current;
+    if (!api || typeof api.executeCommand !== "function") return false;
+
+    try {
+      api.executeCommand(command, ...args);
+      return true;
+    } catch (err) {
+      console.warn(`Jitsi command failed: ${command}`, err);
+      return false;
+    }
+  }, []);
+
+  // ─────────────────────────────────────────────
+  // Teams-style adaptive grid lock
+  //
+  // Jitsi defaults to stage view in 1:1 (one big remote tile + a
+  // small floating self-view that gets clipped on narrow containers).
+  // We lock the conference in tile view so every participant — self
+  // included — is always visible as a uniform tile. A short debounce
+  // coalesces rapid join/leave bursts so we don't thrash the layout.
+  // ─────────────────────────────────────────────
+  const forceTileRafRef = useRef(null);
+  const forceTileTimeoutRef = useRef(null);
+
+  // Live remote-participant count drives the adaptive grid. Stored
+  // as React state (not just a ref) so the grid recompute effect
+  // fires when participants join or leave.
+  const [remoteParticipantCount, setRemoteParticipantCount] = useState(0);
+
+  // Expose the live count to the classroom shell so it can make the outer
+  // video surface feel intentional for a pair or a growing group. Jitsi's
+  // own tile layout still owns the actual media grid.
+  useEffect(() => {
+    const cb = participantCountCbRef.current;
+    if (typeof cb !== "function") return;
+    cb(hasJoined ? Math.max(1, remoteParticipantCount + 1) : 0);
+  }, [hasJoined, remoteParticipantCount]);
+
+  // When someone shares their screen, Jitsi adds a *second* endpoint
+  // for the screen track whose displayName follows a known pattern
+  // (e.g. "Belal Helmy's screen", "Belal (Screen Sharing)"). We track
+  // its participantId so the classroom shell can pin THAT — not the
+  // human participant — when a remote share is active.
+  const screenShareEndpointIdRef = useRef(null);
+
+  const isScreenShareDisplayName = (displayName) => {
+    if (!displayName) return false;
+    const name = String(displayName);
+    return (
+      /'s screen\s*$/i.test(name) ||
+      /\(screen[^)]*\)/i.test(name) ||
+      /\(sharing\)/i.test(name) ||
+      /\(presenter\)/i.test(name) ||
+      /\bdesktop sharing\b/i.test(name)
+    );
+  };
+
+  const isScreenShareParticipant = (participant) => {
+    if (!participant) return false;
+    if (participant.videoType === "desktop") return true;
+    if (participant.role === "presenter") return true;
+    return isScreenShareDisplayName(
+      participant.displayName ||
+        participant.formattedDisplayName ||
+        participant.name
+    );
+  };
+
+  const applyTileGridLayout = useCallback(() => {
+    const doc = getJitsiIframeDocument();
+    if (!doc?.documentElement) return;
+
+    const node = containerRef.current;
+    const rect = node?.getBoundingClientRect?.();
+    const width = rect?.width || node?.clientWidth || 0;
+    const height = rect?.height || node?.clientHeight || 0;
+
+    const totalParticipants = remoteParticipantCount + 1; // +1 for self
+    const cols = computeTileColumns(totalParticipants, width, height);
+
+    doc.documentElement.style.setProperty("--spx-tile-cols", String(cols));
+  }, [getJitsiIframeDocument, remoteParticipantCount]);
+
+  const syncJitsiScreenShareMode = useCallback(() => {
+    const doc = getJitsiIframeDocument();
+    if (!doc?.documentElement) return;
+    doc.documentElement.dataset.spexifyScreenShare = suspendTileViewLock
+      ? "true"
+      : "false";
+  }, [getJitsiIframeDocument, suspendTileViewLock]);
+
+  const forceTileViewNow = useCallback(() => {
+    const api = apiRef.current;
+    if (!api || typeof api.executeCommand !== "function") return;
+    try {
+      api.executeCommand("setTileView", true);
+    } catch {
+      // Older Jitsi builds expose `toggleTileView` only; try that as a
+      // fallback after checking current state to avoid flipping off.
+      try {
+        const maybePromise = api.isTileViewEnabled?.();
+        const apply = (enabled) => {
+          if (!enabled) {
+            api.executeCommand("toggleTileView");
+          }
+        };
+        if (maybePromise && typeof maybePromise.then === "function") {
+          maybePromise.then(apply).catch(() => apply(false));
+        } else {
+          apply(Boolean(maybePromise));
+        }
+      } catch {
+        // No tile-view API available; nothing we can do here.
+      }
+    }
+  }, []);
+
+  // Keep a ref so the timer callback always reads the latest suspend flag,
+  // not whatever was captured at scheduling time.
+  const suspendTileViewLockRef = useRef(suspendTileViewLock);
+  useEffect(() => {
+    suspendTileViewLockRef.current = suspendTileViewLock;
+  }, [suspendTileViewLock]);
+
+  const scheduleForceTileView = useCallback(
+    (delayMs = 120) => {
+      if (forceTileTimeoutRef.current) {
+        clearTimeout(forceTileTimeoutRef.current);
+      }
+      forceTileTimeoutRef.current = setTimeout(() => {
+        forceTileTimeoutRef.current = null;
+        if (forceTileRafRef.current) {
+          cancelAnimationFrame(forceTileRafRef.current);
+        }
+        forceTileRafRef.current = requestAnimationFrame(() => {
+          forceTileRafRef.current = null;
+          // While someone is sharing their screen, we deliberately let
+          // Jitsi switch out of tile view into stage view (screen pinned
+          // large, others as filmstrip). The classroom shell drives this
+          // by setting `suspendTileViewLock` to true during a share.
+          if (suspendTileViewLockRef.current) return;
+          forceTileViewNow();
+        });
+      }, Math.max(0, delayMs));
+    },
+    [forceTileViewNow]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (forceTileTimeoutRef.current) {
+        clearTimeout(forceTileTimeoutRef.current);
+        forceTileTimeoutRef.current = null;
+      }
+      if (forceTileRafRef.current) {
+        cancelAnimationFrame(forceTileRafRef.current);
+        forceTileRafRef.current = null;
+      }
+    };
+  }, []);
+
+  // When the container's width changes (panel resize, focus-mode switch,
+  // mobile rotation), nudge Jitsi to recompute the tile grid and re-run
+  // our Teams-style column picker. Without this, tiles can disappear or
+  // letterbox awkwardly mid-drag.
+  useEffect(() => {
+    if (!hasJoined) return;
+    if (typeof window === "undefined" || typeof ResizeObserver === "undefined")
+      return;
+    const node = containerRef.current;
+    if (!node) return;
+
+    let layoutRaf = null;
+    const requestLayout = () => {
+      if (layoutRaf) cancelAnimationFrame(layoutRaf);
+      layoutRaf = requestAnimationFrame(() => {
+        layoutRaf = null;
+        applyTileGridLayout();
+      });
+    };
+
+    let firstObservation = true;
+    const observer = new ResizeObserver(() => {
+      requestLayout();
+      // ResizeObserver fires once on attach; skip the force-tile on that.
+      if (firstObservation) {
+        firstObservation = false;
+        return;
+      }
+      scheduleForceTileView(200);
+    });
+    observer.observe(node);
+
+    // Apply the layout once on mount/hasJoined transition.
+    requestLayout();
+
+    return () => {
+      observer.disconnect();
+      if (layoutRaf) cancelAnimationFrame(layoutRaf);
+    };
+  }, [hasJoined, scheduleForceTileView, applyTileGridLayout]);
+
+  // Recompute the grid every time the remote participant count changes
+  // (the resize observer alone won't catch joins/leaves at constant width).
+  useEffect(() => {
+    if (!hasJoined) return;
+    applyTileGridLayout();
+  }, [hasJoined, remoteParticipantCount, applyTileGridLayout]);
+
+  // Switch between tile view (default) and stage view (screen-sharing).
+  useEffect(() => {
+    if (!hasJoined) return;
+    syncJitsiScreenShareMode();
+    const api = apiRef.current;
+    if (!api || typeof api.executeCommand !== "function") return;
+
+    try {
+      api.executeCommand("setTileView", !suspendTileViewLock);
+    } catch {
+      // Older builds: fall back to toggle.
+      try {
+        const maybe = api.isTileViewEnabled?.();
+        const apply = (enabled) => {
+          if (Boolean(enabled) !== !suspendTileViewLock) {
+            api.executeCommand("toggleTileView");
+          }
+        };
+        if (maybe && typeof maybe.then === "function") {
+          maybe.then(apply).catch(() => { });
+        } else {
+          apply(Boolean(maybe));
+        }
+      } catch {
+        // No tile-view command available; nothing more to do.
+      }
+    }
+  }, [hasJoined, suspendTileViewLock, syncJitsiScreenShareMode]);
+
+  const normalizeJitsiParticipant = useCallback((participant) => {
+    if (!participant || typeof participant !== "object") return null;
+    const id =
+      participant.participantId ||
+      participant.id ||
+      participant.jid ||
+      participant.endpointId ||
+      null;
+    if (!id || id === localParticipantIdRef.current) return null;
+
+    const displayName =
+      participant.displayName ||
+      participant.formattedDisplayName ||
+      participant.name ||
+      "Participant";
+
+    return {
+      id: String(id),
+      displayName,
+      avatarUrl: participant.avatarURL || participant.avatarUrl || "",
+    };
+  }, []);
+
+  const publishModerationState = useCallback(() => {
+    const cb = moderationCbRef.current;
+    if (typeof cb !== "function") return;
+
+    const api = apiRef.current;
+    if (api && typeof api.getParticipantsInfo === "function") {
+      try {
+        const info = api.getParticipantsInfo() || [];
+        info.forEach((participant) => {
+          const normalized = normalizeJitsiParticipant(participant);
+          if (normalized) jitsiParticipantsRef.current.set(normalized.id, normalized);
+        });
+      } catch (err) {
+        console.warn("Failed to read Jitsi participants", err);
+      }
+    }
+
+    // `videoConferenceJoined` can fire after the initial participant list is
+    // already populated. Keep the adaptive grid and the shell's presence
+    // treatment in sync with that first snapshot too.
+    setRemoteParticipantCount(jitsiParticipantsRef.current.size);
+
+    cb({
+      ready: Boolean(api),
+      participants: Array.from(jitsiParticipantsRef.current.values()),
+      screenShareEndpointId: screenShareEndpointIdRef.current,
+      actions: {
+        muteAll: () => executeJitsiCommand("muteEveryone"),
+        muteParticipant: (participantId) =>
+          executeJitsiCommand("muteParticipant", participantId, "audio"),
+        pinParticipant: (participantId) => {
+          const pinned =
+            executeJitsiCommand("setLargeVideoParticipant", participantId) ||
+            executeJitsiCommand("pinParticipant", participantId);
+          if (!pinned) return false;
+          executeJitsiCommand("pinParticipant", participantId);
+          return true;
+        },
+        unpinParticipant: () => {
+          // Empty string is the documented way to clear the pin.
+          executeJitsiCommand("setLargeVideoParticipant", "");
+          executeJitsiCommand("pinParticipant", "");
+          return true;
+        },
+        kickParticipant: (participantId) =>
+          executeJitsiCommand("kickParticipant", participantId),
+        startScreenShare: () => executeJitsiCommand("toggleShareScreen"),
+        stopScreenShare: () => executeJitsiCommand("toggleShareScreen"),
+        setTileViewEnabled: (enabled) =>
+          executeJitsiCommand("setTileView", Boolean(enabled)),
+      },
+    });
+  }, [executeJitsiCommand, normalizeJitsiParticipant]);
+
+  const clearModerationState = useCallback(() => {
+    jitsiParticipantsRef.current = new Map();
+    localParticipantIdRef.current = null;
+    const cb = moderationCbRef.current;
+    if (typeof cb === "function") {
+      cb({ ready: false, participants: [], actions: null });
+    }
+    clearDominantSpeaker();
+  }, [clearDominantSpeaker]);
+
+  const updateParticipantDisplayName = useCallback(
+    (participant) => {
+      // Screen-share endpoints aren't human participants — capture their
+      // id for pinning but keep them out of the moderation/grid maps.
+      if (isScreenShareParticipant(participant)) {
+        const id = participant?.participantId || participant?.id;
+        if (id) {
+          screenShareEndpointIdRef.current = String(id);
+          // Defensive: if they slipped into the human map earlier, evict.
+          if (jitsiParticipantsRef.current.delete(String(id))) {
+            setRemoteParticipantCount(jitsiParticipantsRef.current.size);
+          }
+          publishModerationState();
+        }
+        return;
+      }
+
+      const normalized = normalizeJitsiParticipant(participant);
+      if (!normalized) return;
+
+      jitsiParticipantsRef.current.set(normalized.id, normalized);
+      if (activeSpeakerIdRef.current === normalized.id) {
+        setActiveSpeakerName(getSpeakerDisplayName(normalized.id));
+      }
+      publishModerationState();
+    },
+    [getSpeakerDisplayName, normalizeJitsiParticipant, publishModerationState]
+  );
 
   const stopMicMeter = useCallback(() => {
     if (micMeterRafRef.current) {
@@ -100,10 +948,14 @@ export default function PrepVideoCall({
 
     setDevices(nextDevices);
     setSelectedAudioInputId((current) =>
-      current || nextDevices.audioInputs[0]?.deviceId || ""
+      nextDevices.audioInputs.some((device) => device.deviceId === current)
+        ? current
+        : nextDevices.audioInputs[0]?.deviceId || ""
     );
     setSelectedVideoInputId((current) =>
-      current || nextDevices.videoInputs[0]?.deviceId || ""
+      nextDevices.videoInputs.some((device) => device.deviceId === current)
+        ? current
+        : nextDevices.videoInputs[0]?.deviceId || ""
     );
     setSelectedAudioOutputId((current) =>
       current || nextDevices.audioOutputs[0]?.deviceId || ""
@@ -176,23 +1028,6 @@ export default function PrepVideoCall({
     return { audio, video };
   }, [joinVideoMuted, selectedAudioInputId, selectedVideoInputId]);
 
-  const buildAudioMonitorConstraints = useCallback(() => {
-    const audio = selectedAudioInputId
-      ? {
-          deviceId: { exact: selectedAudioInputId },
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        }
-      : {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        };
-
-    return { audio, video: false };
-  }, [selectedAudioInputId]);
-
   const runNetworkCheck = useCallback(async () => {
     if (typeof window === "undefined") return;
 
@@ -204,11 +1039,12 @@ export default function PrepVideoCall({
     const start = performance.now();
 
     try {
-      await fetch(`/api/ws-config?prejoin=${Date.now()}`, {
+      const response = await fetch(`/api/ws-config?prejoin=${Date.now()}`, {
         method: "GET",
         cache: "no-store",
         credentials: "include",
       });
+      if (!response.ok) throw new Error(`Network check failed (${response.status})`);
 
       const latency = Math.round(performance.now() - start);
       const effectiveType = connection?.effectiveType || "";
@@ -228,19 +1064,24 @@ export default function PrepVideoCall({
         state,
         label:
           state === "good"
-            ? "Network ready"
+            ? "Connection is ready"
             : state === "fair"
-              ? "Network is usable"
-              : "Network may be unstable",
-        detail: detailParts.join(" - "),
+              ? "Connection may feel delayed"
+              : "Connection is weak",
+        detail:
+          state === "poor"
+            ? `${detailParts.join(" · ")} · Try Wi-Fi if you can.`
+            : detailParts.join(" · "),
         latency,
+        reachable: true,
       });
     } catch {
       setNetworkStatus({
         state: "poor",
-        label: "Network check failed",
-        detail: "Check your connection before joining.",
+        label: "Connection could not be checked",
+        detail: "Check your connection, then try again.",
         latency: null,
+        reachable: false,
       });
     }
   }, []);
@@ -312,9 +1153,22 @@ export default function PrepVideoCall({
   }, [isTestingSpeaker, selectedAudioOutputId, stopSpeakerTest]);
 
   const handleJoin = useCallback(() => {
+    // Save the user's explicit device choices for the next session.
+    try {
+      if (selectedAudioInputId) {
+        window.localStorage.setItem(LS_AUDIO_DEVICE, selectedAudioInputId);
+      }
+      if (selectedVideoInputId) {
+        window.localStorage.setItem(LS_VIDEO_DEVICE, selectedVideoInputId);
+      }
+    } catch {
+      // Device preference persistence is best-effort.
+    }
     stopPreviewStream();
     setHasJoined(true);
-  }, [stopPreviewStream]);
+  }, [selectedAudioInputId, selectedVideoInputId, stopPreviewStream]);
+
+  const canJoin = networkStatus.reachable === true;
 
   useEffect(() => {
     if (hasJoined) return;
@@ -389,61 +1243,23 @@ export default function PrepVideoCall({
     };
   }, [stopPreviewStream, stopSpeakerTest]);
 
-  useEffect(() => {
-    if (!hasJoined || sessionAudioMuted) {
-      stopPreviewStream();
-      setMicMonitorUnavailable(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function startSessionMicMonitor() {
-      if (typeof navigator === "undefined" || !navigator.mediaDevices) {
-        setMicMonitorUnavailable(true);
-        setMicLevel(0);
-        return;
-      }
-
-      try {
-        setMicMonitorUnavailable(false);
-        const stream = await navigator.mediaDevices.getUserMedia(
-          buildAudioMonitorConstraints()
-        );
-
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
-        stopPreviewStream();
-        previewStreamRef.current = stream;
-        startMicMeter(stream);
-      } catch {
-        setMicMonitorUnavailable(true);
-        setMicLevel(0);
-      }
-    }
-
-    startSessionMicMonitor();
-
-    return () => {
-      cancelled = true;
-      stopPreviewStream();
-    };
-  }, [
-    buildAudioMonitorConstraints,
-    hasJoined,
-    sessionAudioMuted,
-    startMicMeter,
-    stopPreviewStream,
-  ]);
-
   // keep callback stable
   const screenShareCbRef = useRef(onScreenShareStreamChange);
   useEffect(() => {
     screenShareCbRef.current = onScreenShareStreamChange;
   }, [onScreenShareStreamChange]);
+
+  const audioMuteCbRef = useRef(onAudioMuteChange);
+  useEffect(() => {
+    audioMuteCbRef.current = onAudioMuteChange;
+  }, [onAudioMuteChange]);
+
+  // Bubble the initial mute state to parent whenever it changes locally
+  // (covers the prejoin → joined transition where joinAudioMuted seeds state).
+  useEffect(() => {
+    const cb = audioMuteCbRef.current;
+    if (typeof cb === "function") cb(sessionAudioMuted);
+  }, [sessionAudioMuted]);
 
   const isMediaStreamLike = (value) =>
     !!value &&
@@ -497,38 +1313,21 @@ export default function PrepVideoCall({
     return acc;
   };
 
-  async function ensureJitsiScript() {
-    if (typeof window === "undefined") return;
-
-    if (window.JitsiMeetExternalAPI) return;
-
-    const existing = document.getElementById("jitsi-external-api");
-    if (existing) {
-      await new Promise((resolve, reject) => {
-        if (existing.getAttribute("data-loaded") === "true") return resolve();
-        existing.addEventListener("load", () => resolve(), { once: true });
-        existing.addEventListener("error", (e) => reject(e), { once: true });
-      });
-      return;
-    }
-
-    await new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.id = "jitsi-external-api";
-      script.src = `https://${JITSI_DOMAIN}/external_api.js`;
-      script.async = true;
-      script.onload = () => {
-        script.setAttribute("data-loaded", "true");
-        resolve();
-      };
-      script.onerror = (e) => reject(e);
-      document.body.appendChild(script);
-    });
-  }
-
-  // 🔧 MAIN FIX: only depend on roomId (and optionally locale if you really want)
+  // Keep lesson renders from restarting the call; rebuild on explicit Retry.
   useEffect(() => {
     let cancelled = false;
+    let joinTimer;
+    const publishConnectionState = (state) => {
+      if (!cancelled) connectionStateCbRef.current?.(state);
+    };
+    const failConnection = (message) => {
+      if (cancelled) return;
+      window.clearTimeout(joinTimer);
+      setIsLoading(false);
+      setError(message);
+      clearNetworkQuality();
+      publishConnectionState("failed");
+    };
 
     async function init() {
       if (typeof window === "undefined") return;
@@ -538,9 +1337,20 @@ export default function PrepVideoCall({
 
       setIsLoading(true);
       setError(null);
+      publishConnectionState("connecting");
+      joinTimer = window.setTimeout(() => {
+        failConnection(t(dict, "classroom_video_error_timeout"));
+        cancelled = true;
+        try {
+          apiRef.current?.dispose();
+        } catch (disposeError) {
+          console.warn("Error disposing timed-out call:", disposeError);
+        }
+        apiRef.current = null;
+      }, 30000);
 
       try {
-        await ensureJitsiScript();
+        await loadJitsiScript(JITSI_DOMAIN);
         if (cancelled) return;
 
         const JitsiAPI = window.JitsiMeetExternalAPI;
@@ -566,29 +1376,153 @@ export default function PrepVideoCall({
         apiRef.current = api;
         setSessionAudioMuted(Boolean(joinAudioMuted));
 
-        setIsLoading(false);
-        setError(null);
-
         api.addListener("videoConferenceJoined", () => {
+          if (cancelled) return;
+          window.clearTimeout(joinTimer);
+          setIsLoading(false);
           setError(null);
+          publishConnectionState("connected");
+          try {
+            const localId = api.getCurrentUserID?.();
+            if (localId) localParticipantIdRef.current = String(localId);
+          } catch {
+            // Ignore local participant lookup failures.
+          }
           const audioMutedPromise = api.isAudioMuted?.();
           if (typeof audioMutedPromise?.then === "function") {
             audioMutedPromise
               .then((muted) => setSessionAudioMuted(Boolean(muted)))
               .catch(() => { });
           }
+          injectDominantSpeakerStyles();
+          injectTileGridStyles();
+          syncJitsiScreenShareMode();
+          publishModerationState();
+
+          // Lock the conference in tile view so the learner always sees
+          // themselves and every remote participant from the moment they
+          // join. Jitsi needs a short beat after join before it accepts
+          // layout commands cleanly.
+          scheduleForceTileView(150);
+          scheduleForceTileView(900);
+
+          // Apply the adaptive grid as soon as Jitsi has rendered.
+          // The grid effect below will re-apply on participant/size change.
+          window.setTimeout(() => applyTileGridLayout(), 200);
+          window.setTimeout(() => applyTileGridLayout(), 1000);
         });
 
         api.addListener("audioMuteStatusChanged", (status) => {
-          setSessionAudioMuted(Boolean(status?.muted));
+          const muted = Boolean(status?.muted);
+          setSessionAudioMuted(muted);
+          const cb = audioMuteCbRef.current;
+          if (typeof cb === "function") cb(muted);
         });
 
+        api.addListener("participantJoined", (participant) => {
+          const id = participant?.participantId || participant?.id;
+          // If this is a screen-share endpoint (a second Jitsi participant
+          // that Jitsi spawns to carry the desktop track), remember its ID
+          // for pinning and DON'T treat it as a human participant — it
+          // shouldn't count toward the grid or show in the moderation list.
+          if (isScreenShareParticipant(participant)) {
+            if (id) {
+              screenShareEndpointIdRef.current = String(id);
+              publishModerationState();
+            }
+            return;
+          }
+
+          updateParticipantDisplayName(participant);
+          // Recompute the grid so the new tile slots in cleanly.
+          scheduleForceTileView();
+          setRemoteParticipantCount(jitsiParticipantsRef.current.size);
+        });
+
+        api.addListener("participantLeft", (participant) => {
+          const id = participant?.participantId || participant?.id;
+          // Screen endpoint left — clear the tracked id.
+          if (
+            id &&
+            String(id) === screenShareEndpointIdRef.current
+          ) {
+            screenShareEndpointIdRef.current = null;
+            publishModerationState();
+            return;
+          }
+
+          if (id) {
+            const normalizedId = String(id);
+            jitsiParticipantsRef.current.delete(normalizedId);
+            if (activeSpeakerIdRef.current === normalizedId) {
+              clearDominantSpeaker();
+            }
+            publishModerationState();
+          }
+          // Re-tile so remaining participants fill the space.
+          scheduleForceTileView();
+          setRemoteParticipantCount(jitsiParticipantsRef.current.size);
+        });
+
+        // displayNameChange fires after the screen endpoint has settled
+        // into its final name — catch late-renames here too.
+        api.addListener("displayNameChange", (info) => {
+          if (!info) return;
+          const id = info.participantId || info.id;
+          if (!id) return;
+          if (isScreenShareDisplayName(info.displayname || info.displayName)) {
+            screenShareEndpointIdRef.current = String(id);
+            // Remove it from the human map if it slipped in earlier.
+            if (jitsiParticipantsRef.current.delete(String(id))) {
+              setRemoteParticipantCount(jitsiParticipantsRef.current.size);
+            }
+            publishModerationState();
+          }
+        });
+
+        // If anything (toolbar click, internal Jitsi state) flips us out
+        // of tile view, snap right back. Treat tile view as load-bearing.
+        api.addListener("tileViewChanged", (status) => {
+          if (status && status.enabled === false) {
+            scheduleForceTileView(50);
+          }
+        });
+
+        api.addListener("displayNameChange", (participant) => {
+          updateParticipantDisplayName(participant);
+        });
+
+        const handleDominantSpeakerEvent = (payload) => {
+          handleDominantSpeakerChanged(payload);
+        };
+        if (typeof api.on === "function") {
+          api.on("dominantSpeakerChanged", handleDominantSpeakerEvent);
+        } else {
+          api.addListener("dominantSpeakerChanged", handleDominantSpeakerEvent);
+        }
+
+        const handleConnectionQualityChanged = (payload) => {
+          publishNetworkQuality(payload);
+        };
+        if (typeof api.on === "function") {
+          api.on("connectionQualityChanged", handleConnectionQualityChanged);
+        } else {
+          api.addListener("connectionQualityChanged", handleConnectionQualityChanged);
+        }
+
+        injectDominantSpeakerStyles();
+        api.addListener("videoConferenceLeft", () => {
+          failConnection(t(dict, "classroom_video_error_connection"));
+        });
+        api.addListener("peerConnectionFailure", () => {
+          failConnection(t(dict, "classroom_video_error_connection"));
+        });
         api.addListener("errorOccurred", (e) => {
           console.error("Jitsi error:", e);
           if (e?.error?.name === "conference.connectionError") {
-            setError(t(dict, "classroom_video_error_connection"));
+            failConnection(t(dict, "classroom_video_error_connection"));
           } else {
-            setError(t(dict, "classroom_video_error_generic"));
+            failConnection(t(dict, "classroom_video_error_generic"));
           }
         });
 
@@ -612,11 +1546,13 @@ export default function PrepVideoCall({
             });
           }
         });
+        publishModerationState();
       } catch (err) {
         console.error("Failed to initialize Jitsi:", err);
+        clearNetworkQuality();
+        clearModerationState();
         if (!cancelled) {
-          setError(t(dict, "classroom_video_error_generic"));
-          setIsLoading(false);
+          failConnection(t(dict, "classroom_video_error_generic"));
         }
       }
     }
@@ -625,6 +1561,7 @@ export default function PrepVideoCall({
 
     return () => {
       cancelled = true;
+      window.clearTimeout(joinTimer);
       try {
         const cb = screenShareCbRef.current;
         if (typeof cb === "function") {
@@ -635,18 +1572,38 @@ export default function PrepVideoCall({
         console.warn("Error disposing Jitsi API:", e);
       }
       apiRef.current = null;
+      clearNetworkQuality();
+      clearModerationState();
+      setRemoteParticipantCount(0);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, hasJoined]); // Jitsi mounts only after the custom prejoin lobby
+  }, [roomId, hasJoined, retryAttempt]); // Retry rebuilds only the call, preserving lesson state.
+
+  // Keep the external call identity in sync if auth data arrives after the
+  // prejoin UI mounted. This is especially important for group classrooms:
+  // each learner must remain labeled as their own account.
+  useEffect(() => {
+    if (!hasJoined || !userName || !apiRef.current) return;
+    try {
+      apiRef.current.executeCommand?.("displayName", userName);
+    } catch {
+      // Ignore transient Jitsi command errors during connection setup.
+    }
+  }, [hasJoined, userName]);
 
   if (!hasJoined) {
     const networkClass = `cr-prejoin__network cr-prejoin__network--${networkStatus.state}`;
     const levelPercent = Math.round(micLevel * 100);
+    const previewName = userName || (isTeacher ? "Coach" : "Member");
+    const previewInitial = previewName.trim().charAt(0).toUpperCase() || "S";
 
     return (
       <div className="cr-video cr-video--prejoin">
         <div className="cr-prejoin">
-          <section className="cr-prejoin__preview" aria-label="Camera preview">
+          <section
+            className={`cr-prejoin__preview ${joinVideoMuted ? "cr-prejoin__preview--camera-off" : ""}`}
+            aria-label="Camera preview"
+          >
             {!joinVideoMuted && !prejoinError ? (
               <video
                 ref={previewVideoRef}
@@ -657,22 +1614,32 @@ export default function PrepVideoCall({
               />
             ) : (
               <div className="cr-prejoin__camera-off">
-                <CameraOff size={32} />
-                <span>{joinVideoMuted ? "Camera off" : "Preview unavailable"}</span>
+                <span className="cr-prejoin__avatar" aria-hidden="true">
+                  {previewInitial}
+                </span>
+                <strong>{previewName}</strong>
+                <span>{joinVideoMuted ? "Camera off · You can still join" : "Preview unavailable"}</span>
               </div>
             )}
 
             <div className="cr-prejoin__preview-bar">
-              <span>{userName || (isTeacher ? "Teacher" : "Learner")}</span>
-              <span>{joinAudioMuted ? "Joining muted" : "Mic on"}</span>
+              <span>{previewName}</span>
+              <span>{joinAudioMuted ? "Microphone off" : "Microphone on"}</span>
             </div>
           </section>
 
           <section className="cr-prejoin__panel" aria-label="Prejoin setup">
             <div className="cr-prejoin__header">
-              <span className="cr-prejoin__eyebrow">Classroom Lobby</span>
-              <h2>Ready to join?</h2>
-              <p>Check your devices before entering the live session.</p>
+              <span className="cr-prejoin__eyebrow">Prepare to join</span>
+              <h2>Join your coaching session</h2>
+              <p>
+                {coachName
+                  ? `You’re joining ${coachName}. Check your setup, then you’re ready.`
+                  : "Check your setup, then you’re ready to join."}
+              </p>
+              <span className="cr-prejoin__session-context" title={sessionTitle}>
+                {sessionTitle}
+              </span>
             </div>
 
             {prejoinError && (
@@ -689,7 +1656,10 @@ export default function PrepVideoCall({
                 aria-pressed={!joinAudioMuted}
               >
                 {joinAudioMuted ? <MicOff size={16} /> : <Mic size={16} />}
-                {joinAudioMuted ? "Join muted" : "Mic on"}
+                <span>
+                  <strong>{joinAudioMuted ? "Microphone off" : "Microphone on"}</strong>
+                  <small>{joinAudioMuted ? "You can turn it on anytime" : "Your coach can hear you"}</small>
+                </span>
               </button>
 
               <button
@@ -699,86 +1669,98 @@ export default function PrepVideoCall({
                 aria-pressed={!joinVideoMuted}
               >
                 {joinVideoMuted ? <CameraOff size={16} /> : <Camera size={16} />}
-                {joinVideoMuted ? "Camera off" : "Camera on"}
-              </button>
-
-              <button
-                type="button"
-                className="cr-prejoin__pill"
-                onClick={refreshDevices}
-              >
-                <RefreshCw size={16} />
-                Refresh
+                <span>
+                  <strong>{joinVideoMuted ? "Camera off" : "Camera on"}</strong>
+                  <small>{joinVideoMuted ? "You can still join" : "Preview is visible"}</small>
+                </span>
               </button>
             </div>
 
-            <div className="cr-prejoin__device-grid">
-              <label className="cr-prejoin__field">
-                <span>Microphone</span>
-                <select
-                  value={selectedAudioInputId}
-                  onChange={(e) => setSelectedAudioInputId(e.target.value)}
-                >
-                  {devices.audioInputs.length ? (
-                    devices.audioInputs.map((device, index) => (
-                      <option key={device.deviceId} value={device.deviceId}>
-                        {device.label || `Microphone ${index + 1}`}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">Default microphone</option>
-                  )}
-                </select>
-              </label>
+            <button
+              type="button"
+              className="cr-prejoin__refresh"
+              onClick={() => {
+                void refreshDevices();
+                void runNetworkCheck();
+              }}
+            >
+              <RefreshCw size={14} />
+              Refresh device check
+            </button>
 
-              <label className="cr-prejoin__field">
-                <span>Camera</span>
-                <select
-                  value={selectedVideoInputId}
-                  onChange={(e) => setSelectedVideoInputId(e.target.value)}
-                >
-                  {devices.videoInputs.length ? (
-                    devices.videoInputs.map((device, index) => (
-                      <option key={device.deviceId} value={device.deviceId}>
-                        {device.label || `Camera ${index + 1}`}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">Default camera</option>
-                  )}
-                </select>
-              </label>
-
-              <label className="cr-prejoin__field cr-prejoin__field--wide">
-                <span>Speaker</span>
-                <div className="cr-prejoin__speaker-row">
+            <details className="cr-prejoin__details">
+              <summary>
+                <span>Advanced device settings</span>
+                <ChevronDown size={16} aria-hidden="true" />
+              </summary>
+              <div className="cr-prejoin__device-grid">
+                <label className="cr-prejoin__field">
+                  <span>Microphone</span>
                   <select
-                    value={selectedAudioOutputId}
-                    onChange={(e) => setSelectedAudioOutputId(e.target.value)}
+                    value={selectedAudioInputId}
+                    onChange={(e) => setSelectedAudioInputId(e.target.value)}
                   >
-                    {devices.audioOutputs.length ? (
-                      devices.audioOutputs.map((device, index) => (
+                    {devices.audioInputs.length ? (
+                      devices.audioInputs.map((device, index) => (
                         <option key={device.deviceId} value={device.deviceId}>
-                          {device.label || `Speaker ${index + 1}`}
+                          {device.label || `Microphone ${index + 1}`}
                         </option>
                       ))
                     ) : (
-                      <option value="">System default speaker</option>
+                      <option value="">Default microphone</option>
                     )}
                   </select>
+                </label>
 
-                  <button
-                    type="button"
-                    className="cr-prejoin__test"
-                    onClick={playSpeakerTest}
-                    disabled={isTestingSpeaker}
+                <label className="cr-prejoin__field">
+                  <span>Camera</span>
+                  <select
+                    value={selectedVideoInputId}
+                    onChange={(e) => setSelectedVideoInputId(e.target.value)}
                   >
-                    {isTestingSpeaker ? <Volume2 size={16} /> : <Play size={16} />}
-                    {isTestingSpeaker ? "Playing" : "Test"}
-                  </button>
-                </div>
-              </label>
-            </div>
+                    {devices.videoInputs.length ? (
+                      devices.videoInputs.map((device, index) => (
+                        <option key={device.deviceId} value={device.deviceId}>
+                          {device.label || `Camera ${index + 1}`}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Default camera</option>
+                    )}
+                  </select>
+                </label>
+
+                <label className="cr-prejoin__field cr-prejoin__field--wide">
+                  <span>Speaker</span>
+                  <div className="cr-prejoin__speaker-row">
+                    <select
+                      value={selectedAudioOutputId}
+                      onChange={(e) => setSelectedAudioOutputId(e.target.value)}
+                    >
+                      {devices.audioOutputs.length ? (
+                        devices.audioOutputs.map((device, index) => (
+                          <option key={device.deviceId} value={device.deviceId}>
+                            {device.label || `Speaker ${index + 1}`}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">System default speaker</option>
+                      )}
+                    </select>
+
+                    <button
+                      type="button"
+                      className="cr-prejoin__test"
+                      onClick={playSpeakerTest}
+                      disabled={isTestingSpeaker}
+                    >
+                      {isTestingSpeaker ? <Volume2 size={16} /> : <Play size={16} />}
+                      {isTestingSpeaker ? "Playing" : "Test"}
+                    </button>
+                  </div>
+                </label>
+              </div>
+            </details>
 
             <div className="cr-prejoin__checks">
               <div className="cr-prejoin__meter" aria-label="Microphone level">
@@ -804,8 +1786,9 @@ export default function PrepVideoCall({
               type="button"
               className="cr-prejoin__join"
               onClick={handleJoin}
+              disabled={!canJoin}
             >
-              Join classroom
+              {canJoin ? "Join coaching session" : "Checking connection…"}
             </button>
           </section>
         </div>
@@ -814,7 +1797,14 @@ export default function PrepVideoCall({
   }
 
   return (
-    <div className="cr-video">
+    <div
+      className={[
+        "cr-video",
+        activeSpeakerName ? "cr-video--active-speaker" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {isLoading && !error && (
         <div className="cr-video__loading">
           <div className="cr-video__spinner" />
@@ -823,12 +1813,12 @@ export default function PrepVideoCall({
       )}
 
       {error && (
-        <div className="cr-video__error">
+        <div className="cr-video__error" role="alert">
           <span className="cr-video__error-icon">⚠️</span>
           <p>{error}</p>
           <button
             className="cr-video__retry"
-            onClick={() => window.location.reload()}
+            onClick={() => setRetryAttempt((attempt) => attempt + 1)}
           >
             {t(dict, "classroom_video_retry")}
           </button>
@@ -846,24 +1836,15 @@ export default function PrepVideoCall({
         }}
       />
 
-      {!sessionAudioMuted && !micMonitorUnavailable && (
-        <div
-          className="cr-video__mic-status"
-          title="Live microphone level"
-          aria-label="Live microphone level"
-        >
-          <Mic size={14} />
-          <span className="cr-video__mic-bars" aria-hidden="true">
-            {[0.18, 0.38, 0.62, 0.84].map((threshold) => (
-              <span
-                key={threshold}
-                className={micLevel >= threshold ? "is-active" : ""}
-              />
-            ))}
-          </span>
-          <span className="cr-video__mic-label">Mic</span>
+      {activeSpeakerName && (
+        <div className="cr-video__speaker-indicator" aria-live="polite">
+          <span className="cr-video__speaker-dot" aria-hidden="true" />
+          <span>Speaking: {activeSpeakerName}</span>
         </div>
       )}
+
     </div>
   );
 }
+
+export default memo(PrepVideoCall);

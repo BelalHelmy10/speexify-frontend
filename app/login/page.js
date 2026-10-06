@@ -17,6 +17,39 @@ import {
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
+import BrandLogo from "@/components/brand/BrandLogo";
+import {
+  canUseGoogleAuthOnCurrentOrigin,
+  getGoogleAuthErrorKey,
+} from "@/lib/googleAuth";
+
+function getSafeNextPath(rawNext, fallbackPath) {
+  if (!rawNext) return fallbackPath;
+
+  const candidates = [rawNext];
+  try {
+    candidates.unshift(decodeURIComponent(rawNext));
+  } catch {
+    // URLSearchParams normally decodes already.
+  }
+
+  for (const candidate of candidates) {
+    if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
+      continue;
+    }
+
+    try {
+      const url = new URL(candidate, "https://speexify.local");
+      if (url.origin !== "https://speexify.local") continue;
+      if (url.pathname === "/" || url.pathname === "/ar") continue;
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      // Keep checking remaining candidates.
+    }
+  }
+
+  return fallbackPath;
+}
 
 function LoginInner({ dict }) {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -25,20 +58,29 @@ function LoginInner({ dict }) {
   const [showPassword, setShowPassword] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
 
   const router = useRouter();
   const params = useSearchParams();
   const pathname = usePathname();
 
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const registerPath = routeHref(APP_ROUTES.register, locale);
+  const nextForRegister = getSafeNextPath(params.get("next"), "");
+  const registerHref = nextForRegister
+    ? `${registerPath}?next=${encodeURIComponent(nextForRegister)}`
+    : registerPath;
 
   const { user, checking, refresh } = useAuth();
+  const adminCopy = getDictionary(locale, "admin");
 
   const redirectAfterLogin = useCallback(() => {
+    const fallbackPath = routeHref(APP_ROUTES.dashboard, locale);
+
     // 1) Try ?next= from URL
     const next = params.get("next");
     if (next) {
-      window.location.href = decodeURIComponent(next);
+      window.location.href = getSafeNextPath(next, fallbackPath);
       return;
     }
 
@@ -47,15 +89,25 @@ function LoginInner({ dict }) {
       const stored = window.sessionStorage.getItem("post_login_redirect");
       if (stored) {
         window.sessionStorage.removeItem("post_login_redirect");
-        window.location.href = stored;
+        window.location.href = getSafeNextPath(stored, fallbackPath);
         return;
       }
     }
 
-    // 3) Final fallback: locale-aware dashboard
-    router.replace(routeHref(APP_ROUTES.dashboard, locale));
-    router.refresh();
-  }, [params, router, locale]);
+    // 3) Final fallback: locale-aware dashboard.
+    // Use a hard navigation (not router.replace + router.refresh). A hard load
+    // resolves the user on the server from the freshly-set session cookie — the
+    // exact path that already works on a manual reload. The old soft navigation
+    // raced the cold-start auth check and could strand the dashboard blank.
+    window.location.assign(fallbackPath);
+  }, [params, locale]);
+
+  useEffect(() => {
+    setGoogleAvailable(canUseGoogleAuthOnCurrentOrigin());
+    // Pre-warm the (possibly asleep) backend while the user fills the form, so
+    // the cold start is already underway by the time they submit.
+    fetch("/api/health", { cache: "no-store" }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!checking && user) {
@@ -70,8 +122,16 @@ function LoginInner({ dict }) {
     setSubmitting(true);
     setRedirecting(true);
     try {
-      await apiLogin(form);
-      await refresh();
+      const result = await apiLogin(form);
+      // The login response already established the session cookie. Navigate
+      // hard and let the server resolve the user from it — no extra /auth/me
+      // round-trip, which on a cold backend doubled the wait and could fail.
+      if (result?.needsContactDetails || !result?.user?.phone) {
+        const next = params.get("next");
+        const suffix = next ? `?next=${encodeURIComponent(next)}` : "";
+        window.location.href = `${routeHref(APP_ROUTES.completeProfile, locale)}${suffix}`;
+        return;
+      }
       redirectAfterLogin();
     } catch (err) {
       setRedirecting(false);
@@ -85,24 +145,35 @@ function LoginInner({ dict }) {
     try {
       const credential = resp?.credential;
       if (!credential) {
-        setMsg(t(dict, "alert_google_no_credential"));
+        setMsg(t(adminCopy, "googleNoCredential"));
         return;
       }
       setMsg("");
       setRedirecting(true);
-      await apiGoogleLogin(credential);
-      await refresh();
+      const result = await apiGoogleLogin(credential);
+      if (result?.needsContactDetails || !result?.user?.phone) {
+        const next = params.get("next");
+        const suffix = next ? `?next=${encodeURIComponent(next)}` : "";
+        window.location.href = `${routeHref(APP_ROUTES.completeProfile, locale)}${suffix}`;
+        return;
+      }
+      // Session cookie is set by the response; hard-navigate and resolve the
+      // user server-side instead of an extra client /auth/me round-trip.
       redirectAfterLogin();
     } catch (err) {
-      console.error(err);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[login] Google sign-in failed", err?.message || err);
+      }
       setRedirecting(false);
-      setMsg(err?.message || t(dict, "alert_google_failed"));
+      setMsg(t(adminCopy, getGoogleAuthErrorKey(err)));
     }
   };
 
   const handleGoogleError = (err) => {
-    console.error(err);
-    setMsg(t(dict, "alert_google_failed"));
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[login] Google sign-in was not completed", err);
+    }
+    setMsg(t(adminCopy, getGoogleAuthErrorKey(err)));
   };
 
   const logout = async () => {
@@ -125,35 +196,11 @@ function LoginInner({ dict }) {
       <div className="auth-container">
         <section className="auth-card">
           <div className="auth-brand">
-            <div className="brand-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 2L2 7L12 12L22 7L12 2Z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M2 17L12 22L22 17"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M2 12L12 17L22 12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
+                        <BrandLogo
+              context="auth"
+              href={routeHref(APP_ROUTES.home, locale)}
+              ariaLabel="Speexify"
+            />
           </div>
 
           <header className="auth-header">
@@ -163,16 +210,22 @@ function LoginInner({ dict }) {
 
           {!user ? (
             <>
-              <div className="auth-social">
-                <GoogleButton
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                />
-              </div>
+              {googleAvailable && (
+                <>
+                  <div className="auth-social">
+                    <GoogleButton
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      localeOverride={locale}
+                      label={t(dict, "google_button_label")}
+                    />
+                  </div>
 
-              <div className="auth-divider">
-                <span>{t(dict, "social_divider")}</span>
-              </div>
+                  <div className="auth-divider">
+                    <span>{t(dict, "social_divider")}</span>
+                  </div>
+                </>
+              )}
 
               <form className="auth-form" onSubmit={login}>
                 {msg && (
@@ -312,7 +365,7 @@ function LoginInner({ dict }) {
               <footer className="auth-footer">
                 <p>
                   {t(dict, "no_account")}{" "}
-                  <Link href={routeHref(APP_ROUTES.register, locale)} className="link-primary">
+                  <Link href={registerHref} className="link-primary">
                     {t(dict, "link_create_account")}
                   </Link>
                 </p>

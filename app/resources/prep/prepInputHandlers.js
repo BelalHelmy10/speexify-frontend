@@ -407,6 +407,37 @@ export function handlePrepMouseMove(e, ctx) {
   if (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER || tool === TOOL_ERASER) {
     e.preventDefault();
     draw(e);
+    return;
+  }
+
+  // Laser pointer: broadcast position while mouse is held down with pointer tool
+  if (tool === TOOL_POINTER && e.buttons > 0) {
+    e.preventDefault();
+    const p = getNormalizedPoint(e);
+    if (!p) return;
+
+    const {
+      isPdf,
+      pdfCurrentPage,
+      isTeacher,
+      myUserId,
+      setTeacherPointerByPage,
+      setLearnerPointersByPage,
+      broadcastPointer,
+    } = ctx;
+
+    const page = isPdf ? pdfCurrentPage : 1;
+
+    if (isTeacher) {
+      setTeacherPointerByPage((prev) => ({ ...prev, [page]: p }));
+    } else if (myUserId) {
+      setLearnerPointersByPage((prev) => ({
+        ...prev,
+        [page]: { ...(prev[page] || {}), [myUserId]: p },
+      }));
+    }
+
+    broadcastPointer(p);
   }
 }
 

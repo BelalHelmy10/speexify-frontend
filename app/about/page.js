@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import "@/styles/about.scss";
 import { getDictionary, t } from "@/app/i18n";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
 
 const heroImg = "/images/about_hero.avif";
 const historyImg = "/images/about_history.avif";
@@ -225,7 +225,7 @@ export default function AboutPage() {
             <p className="hero-sub">{t(dict, "hero_sub")}</p>
 
             <div className="hero-cta">
-              <Link href={routeHref(APP_ROUTES.register, locale)} className="btn btn-primary btn-lg">
+              <Link href={getStarterSessionHref(locale)} className="btn btn-primary btn-lg">
                 {t(dict, "hero_cta_primary")}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -419,7 +419,7 @@ export default function AboutPage() {
               const name = t(dict, item.nameKey);
               return (
                 <blockquote className="quote-card" key={`${item.quoteKey}-${idx}`}>
-                  <div className="quote-stars" aria-label="5 out of 5 stars">★★★★★</div>
+                  <div className="quote-stars" role="img" aria-label="5 out of 5 stars">★★★★★</div>
                   <p className="quote-text">&ldquo;{t(dict, item.quoteKey)}&rdquo;</p>
                   <footer className="quote-footer">
                     <div className="quote-avatar">{getInitials(name)}</div>
@@ -442,7 +442,7 @@ export default function AboutPage() {
           <div className="cta-blob cta-blob-3"></div>
 
           <div className="cta-inner">
-            <div className="cta-eyebrow">✦ {t(dict, "cta_primary")}</div>
+            <div className="cta-eyebrow">✦ {t(dict, "cta_eyebrow")}</div>
             <h2 className="cta-title">{t(dict, "cta_title")}</h2>
             <p className="cta-sub">{t(dict, "cta_text")}</p>
             <p className="cta-email">

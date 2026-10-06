@@ -69,11 +69,11 @@ export default function TeacherWorkloadPanel({ teacherId, from, to }) {
             </div>
             <div className="adm-workload-stat">
               <div className="adm-workload-stat__label">Rate/Hour</div>
-              <div className="adm-workload-stat__value">${(w.rateHourlyCents / 100).toFixed(2)}</div>
+              <div className="adm-workload-stat__value">{w.rateHourlyEgpPiastres ? `EGP ${(w.rateHourlyEgpPiastres / 100).toFixed(2)}` : "—"}</div>
             </div>
             <div className="adm-workload-stat adm-workload-stat--highlight">
               <div className="adm-workload-stat__label">Total Payroll</div>
-              <div className="adm-workload-stat__value">${w.payrollAppliedUSD.toFixed(2)}</div>
+              <div className="adm-workload-stat__value">EGP {(w.payrollAppliedEGP || 0).toFixed(2)}</div>
             </div>
           </div>
           <div className="adm-workload-method">

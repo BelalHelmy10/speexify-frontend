@@ -170,7 +170,7 @@ function PersonPicker({
   );
 }
 
-function LearnerMultiPicker({ learners, selectedIds, capacity, setForm }) {
+function LearnerMultiPicker({ learners, selectedIds, capacity, setForm, field = "learnerIds", label = "Participants", roleLabel = "learners", required = true }) {
   const [query, setQuery] = useState("");
   const selectedSet = useMemo(
     () => new Set((selectedIds || []).map(String)),
@@ -190,14 +190,14 @@ function LearnerMultiPicker({ learners, selectedIds, capacity, setForm }) {
 
   const addLearner = (id) => {
     const next = Array.from(new Set([...(selectedIds || []), String(id)]));
-    setForm((current) => ({ ...current, learnerIds: next }));
+    setForm((current) => ({ ...current, [field]: next }));
     setQuery("");
   };
 
   const removeLearner = (id) => {
     setForm((current) => ({
       ...current,
-      learnerIds: current.learnerIds.filter(
+      [field]: current[field].filter(
         (learnerId) => String(learnerId) !== String(id)
       ),
     }));
@@ -207,7 +207,7 @@ function LearnerMultiPicker({ learners, selectedIds, capacity, setForm }) {
     <div className="adm-form-field adm-form-field--full adm-learner-picker">
       <div className="adm-field-heading">
         <label className="adm-form-label">
-          Participants<span className="adm-form-required">*</span>
+          {label}{required && <span className="adm-form-required">*</span>}
         </label>
         <span className={isOverCapacity ? "is-danger" : ""}>
           {selectedLearners.length}
@@ -237,22 +237,23 @@ function LearnerMultiPicker({ learners, selectedIds, capacity, setForm }) {
         <input
           type="search"
           className="adm-form-input"
+          aria-label={`Search ${roleLabel} by name, email, or timezone`}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search learners by name, email, or timezone"
+          placeholder={`Search ${roleLabel} by name, email, or timezone`}
         />
       </div>
 
       <div className="adm-person-results adm-person-results--grid">
         <div className="adm-person-results__summary">
-          Showing {results.length} available learner{results.length === 1 ? "" : "s"}
+          Showing {results.length} available {roleLabel}
         </div>
         {results.length > 0 ? (
           results.map((person) => (
             <PersonOption key={person.id} person={person} onSelect={addLearner} />
           ))
         ) : (
-          <div className="adm-person-results__empty">No matching learners</div>
+          <div className="adm-person-results__empty">No matching {roleLabel}</div>
         )}
       </div>
     </div>
@@ -289,7 +290,7 @@ function SchedulerPreview({
     return (
       <div className="adm-scheduler-preview adm-scheduler-preview--empty">
         <CalendarPlus size={18} />
-        Complete learner, date, and time to preview the booking.
+        Complete the required people, date, and time to preview the booking.
       </div>
     );
   }
@@ -401,12 +402,13 @@ function SchedulerPreview({
           <div className="adm-scheduler-panel__top">
             <span>
               <CreditCard size={16} />
-              Credits
+              {preview.schedule?.type === "TRAINING" ? "Payment" : "Credits"}
             </span>
-            <PreviewBadge tone={hasCreditIssue ? "danger" : "success"}>
-              {hasCreditIssue ? "Override needed" : "Enough credits"}
+            <PreviewBadge tone={preview.schedule?.type === "TRAINING" ? "neutral" : hasCreditIssue ? "danger" : "success"}>
+              {preview.schedule?.type === "TRAINING" ? "Unpaid" : hasCreditIssue ? "Override needed" : "Enough credits"}
             </PreviewBadge>
           </div>
+          {preview.schedule?.type === "TRAINING" && <p>No learner credits are used and no teacher earnings are created.</p>}
           <div className="adm-credit-preview-list">
             {creditRows.map((row) => (
               <div key={row.userId} className="adm-credit-preview-row">
@@ -513,6 +515,7 @@ export default function AdminCreateSessionSection({
 }) {
   const sessionType = normType(form.type);
   const isGroup = sessionType === "GROUP";
+  const isTraining = sessionType === "TRAINING";
   const hasPreviewBlocker = sessionPreview && !sessionPreview.canCreate;
   const createDisabled =
     creatingSession || sessionPreviewLoading || Boolean(hasPreviewBlocker);
@@ -596,10 +599,19 @@ export default function AdminCreateSessionSection({
                     <Users size={16} />
                     Group
                   </button>
+                  <button
+                    type="button"
+                    className={isTraining ? "is-active" : ""}
+                    onClick={() => onCreateChange(emitChange("type", "TRAINING"))}
+                    aria-pressed={isTraining}
+                  >
+                    <User size={16} />
+                    Training · unpaid
+                  </button>
                 </div>
               </div>
 
-              <PersonPicker
+              {!isTraining && <PersonPicker
                 label="Teacher"
                 people={teachers}
                 value={form.teacherId}
@@ -608,9 +620,15 @@ export default function AdminCreateSessionSection({
                 }
                 placeholder="Search teachers by name, email, or timezone"
                 emptyText="No matching teachers"
-              />
+              />}
 
-              {!isGroup && (
+              {isTraining && <>
+                <LearnerMultiPicker learners={teachers} selectedIds={form.teacherIds || []} setForm={setForm} field="teacherIds" label="Teachers" roleLabel="teachers" required={false} />
+                <LearnerMultiPicker learners={users} selectedIds={form.learnerIds || []} setForm={setForm} field="learnerIds" label="Learners" roleLabel="learners" required={false} />
+                <p className="adm-form-hint">Choose at least one teacher or learner. Everyone selected can attend; training is unpaid and uses no credits.</p>
+              </>}
+
+              {!isGroup && !isTraining && (
                 <PersonPicker
                   label="Learner"
                   people={users}
@@ -748,7 +766,7 @@ export default function AdminCreateSessionSection({
                   value={form.title}
                   onChange={onCreateChange}
                   placeholder={
-                    isGroup ? "Speaking Practice Group" : "Grammar Review"
+                    isGroup ? "Speaking Practice Group" : isTraining ? "Training Session" : "Grammar Review"
                   }
                   required
                 />
@@ -836,7 +854,7 @@ export default function AdminCreateSessionSection({
             )}
             {creatingSession
               ? "Creating..."
-              : `Create ${isGroup ? "Group " : ""}Session`}
+              : `Create ${isGroup ? "Group " : isTraining ? "Training " : ""}Session`}
           </button>
 
           <button

@@ -1,10 +1,10 @@
 // app/register/page.js
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const GoogleButton = dynamic(() => import("@/components/GoogleButton"), {
   ssr: false,
@@ -18,12 +18,46 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { getDictionary, t } from "@/app/i18n";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
+import {
+  canUseGoogleAuthOnCurrentOrigin,
+  getGoogleAuthErrorKey,
+} from "@/lib/googleAuth";
+
+function getSafeNextPath(rawNext, fallbackPath) {
+  if (!rawNext) return fallbackPath;
+
+  const candidates = [rawNext];
+  try {
+    candidates.unshift(decodeURIComponent(rawNext));
+  } catch {
+    // URLSearchParams usually decodes already.
+  }
+
+  for (const candidate of candidates) {
+    if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
+      continue;
+    }
+
+    try {
+      const url = new URL(candidate, "https://speexify.local");
+      if (url.origin !== "https://speexify.local") continue;
+      if (url.pathname === "/" || url.pathname === "/ar") continue;
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      // Keep checking remaining candidates.
+    }
+  }
+
+  return fallbackPath;
+}
 
 function RegisterInner({ dict, locale }) {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [marketingPhoneConsent, setMarketingPhoneConsent] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -32,16 +66,28 @@ function RegisterInner({ dict, locale }) {
   const [sending, setSending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
+  const searchParams = useSearchParams();
+  const adminCopy = getDictionary(locale, "admin");
 
   const loginPath = routeHref(APP_ROUTES.login, locale);
   const dashboardPath = routeHref(APP_ROUTES.dashboard, locale);
+  const nextPath = getSafeNextPath(searchParams.get("next"), dashboardPath);
+  const loginPathWithNext =
+    nextPath !== dashboardPath
+      ? `${loginPath}?next=${encodeURIComponent(nextPath)}`
+      : loginPath;
+
+  useEffect(() => {
+    setGoogleAvailable(canUseGoogleAuthOnCurrentOrigin());
+  }, []);
 
   const sendCode = async (e) => {
     e?.preventDefault?.();
     setMsg("");
     setSending(true);
     try {
-      await apiRegisterStart(email);
+      await apiRegisterStart(email, locale);
       setStep(2);
       setMsgType("success");
       setMsg(`${t(dict, "msg_code_sent_prefix")} ${email}`);
@@ -68,7 +114,14 @@ function RegisterInner({ dict, locale }) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const result = await apiRegisterComplete({ email, code, password, name });
+      const result = await apiRegisterComplete({
+        email,
+        code,
+        password,
+        name,
+        phone,
+        marketingPhoneConsent,
+      });
 
       trackEvent("signup_completed", {
         email,
@@ -78,7 +131,7 @@ function RegisterInner({ dict, locale }) {
       setMsgType("success");
       setMsg(t(dict, "msg_register_success"));
       setTimeout(() => {
-        window.location.href = loginPath;
+        window.location.href = loginPathWithNext;
       }, 1200);
     } catch (err) {
       setMsgType("error");
@@ -93,62 +146,46 @@ function RegisterInner({ dict, locale }) {
       const credential = resp?.credential;
       if (!credential) {
         setMsgType("error");
-        setMsg(t(dict, "msg_google_no_credential"));
+        setMsg(t(adminCopy, "googleNoCredential"));
         return;
       }
       setMsg("");
-      await apiGoogleLogin(credential);
-      window.location.href = dashboardPath;
+      const result = await apiGoogleLogin(credential);
+      if (result?.needsContactDetails || !result?.user?.phone) {
+        const suffix = nextPath !== dashboardPath
+          ? `?next=${encodeURIComponent(nextPath)}`
+          : "";
+        window.location.href = `${routeHref(APP_ROUTES.completeProfile, locale)}${suffix}`;
+        return;
+      }
+      window.location.href = nextPath;
     } catch (err) {
       console.error(err);
       setMsgType("error");
-      setMsg(err?.message || t(dict, "msg_google_failed"));
+      setMsg(t(adminCopy, getGoogleAuthErrorKey(err)));
     }
   };
 
   const handleGoogleError = (err) => {
     console.error(err);
     setMsgType("error");
-    setMsg(t(dict, "msg_google_failed"));
+    setMsg(t(adminCopy, getGoogleAuthErrorKey(err)));
   };
 
   return (
-    <main className="auth-page">
-      <div className="auth-container">
-        <section className="auth-card">
-          <div className="auth-brand">
-            <div className="brand-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 2L2 7L12 12L22 7L12 2Z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M2 17L12 22L22 17"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M2 12L12 17L22 12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
+    <main className="auth-page auth-page--register">
+      <div className="auth-container auth-register-container">
+        <section
+          className="auth-card auth-register-card"
+          aria-label={t(dict, "form_aria_label")}
+        >
+          <div className="auth-card-meta">
+            <span>{t(dict, "card_badge")}</span>
+            <span>{t(dict, "card_timing")}</span>
           </div>
 
           <header className="auth-header">
+            <p className="auth-register-eyebrow">{t(dict, "register_eyebrow")}</p>
             <h1>
               {step === 1 ? t(dict, "title_step1") : t(dict, "title_step2")}
             </h1>
@@ -158,6 +195,17 @@ function RegisterInner({ dict, locale }) {
                 : `${t(dict, "subtitle_step2_prefix")} ${email}`}
             </p>
           </header>
+
+          <div className="auth-register-note">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                d="M3.25 9.5a6.75 6.75 0 1111.87 4.4l1.13 2.66a.75.75 0 01-.98.98l-2.66-1.13A6.75 6.75 0 013.25 9.5zm6.75-3a.75.75 0 00-.75.75V9H7.5a.75.75 0 000 1.5h1.75v1.75a.75.75 0 001.5 0V10.5h1.75a.75.75 0 000-1.5h-1.75V7.25A.75.75 0 0010 6.5z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <p>{t(dict, "friendly_note")}</p>
+          </div>
 
           <div className="progress-steps">
             <div className={`step ${step >= 1 ? "active" : ""}`}>
@@ -206,16 +254,23 @@ function RegisterInner({ dict, locale }) {
 
           {step === 1 && (
             <>
-              <div className="auth-social">
-                <GoogleButton
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                />
-              </div>
+              {googleAvailable && (
+                <>
+                  <div className="auth-social">
+                    <GoogleButton
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      localeOverride={locale}
+                      label={t(dict, "google_button_label")}
+                      text="signup_with"
+                    />
+                  </div>
 
-              <div className="auth-divider">
-                <span>{t(dict, "social_cta")}</span>
-              </div>
+                  <div className="auth-divider">
+                    <span>{t(dict, "social_cta")}</span>
+                  </div>
+                </>
+              )}
 
               <form className="auth-form" onSubmit={sendCode}>
                 <div className="form-field">
@@ -241,6 +296,38 @@ function RegisterInner({ dict, locale }) {
                     />
                   </div>
                 </div>
+
+                <div className="form-field">
+                  <label htmlFor="phone">{t(dict, "label_phone")}</label>
+                  <div className="input-wrapper">
+                    <svg className="input-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path d="M6.6 2.5h1.1c.5 0 .9.3 1 .8l.7 2.8c.1.4 0 .8-.3 1.1L7.8 8.5a11 11 0 003.7 3.7l1.3-1.3c.3-.3.7-.4 1.1-.3l2.8.7c.5.1.8.5.8 1v1.1c0 1.1-.9 2-2 2C8.5 15.4 4.6 11.5 4.6 6.5c0-1.1.9-2 2-2z" />
+                    </svg>
+                    <input
+                      id="phone"
+                      type="tel"
+                      placeholder={t(dict, "placeholder_phone")}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      autoComplete="tel"
+                      inputMode="tel"
+                    />
+                  </div>
+                  <p className="field-hint">{t(dict, "phone_hint")}</p>
+                </div>
+
+                <label className="auth-consent-row">
+                  <input
+                    type="checkbox"
+                    checked={marketingPhoneConsent}
+                    onChange={(e) => setMarketingPhoneConsent(e.target.checked)}
+                  />
+                  <span>
+                    <strong>{t(dict, "marketing_consent")}</strong>
+                    <small>{t(dict, "marketing_consent_hint")}</small>
+                  </span>
+                </label>
 
                 <button
                   className="btn-primary"
@@ -274,9 +361,10 @@ function RegisterInner({ dict, locale }) {
               </form>
 
               <footer className="auth-footer">
-                <p>
+                <p className="auth-privacy-note">{t(dict, "privacy_note")}</p>
+                <p className="auth-switch-link">
                   {t(dict, "already_have_account")}{" "}
-                  <Link href={loginPath} className="link-primary">
+                  <Link href={loginPathWithNext} className="link-primary">
                     {t(dict, "link_sign_in")}
                   </Link>
                 </p>
@@ -477,9 +565,10 @@ function RegisterInner({ dict, locale }) {
               </div>
 
               <footer className="auth-footer">
-                <p>
+                <p className="auth-privacy-note">{t(dict, "privacy_note")}</p>
+                <p className="auth-switch-link">
                   {t(dict, "already_have_account")}{" "}
-                  <Link href={loginPath} className="link-primary">
+                  <Link href={loginPathWithNext} className="link-primary">
                     {t(dict, "link_sign_in")}
                   </Link>
                 </p>

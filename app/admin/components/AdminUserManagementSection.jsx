@@ -1,5 +1,12 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ClipboardCheck } from "lucide-react";
+import { useMemo, useState } from "react";
+import useAuth from "@/hooks/useAuth";
+import { getDictionary, t } from "@/app/i18n";
+
 export default function AdminUserManagementSection({
   usersAdmin,
   usersBusy,
@@ -18,8 +25,26 @@ export default function AdminUserManagementSection({
   onOpenPackages,
   onOpenAttendance,
 }) {
+  const { user } = useAuth();
+  const copy = getDictionary(user?.language === "ar" ? "ar" : "en", "admin");
+  const pathname = usePathname();
+  const prefix = pathname?.startsWith("/ar") ? "/ar" : "";
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [userSort, setUserSort] = useState("created_desc");
+  const visibleUsers = useMemo(() => {
+    const filtered = roleFilter === "all" ? [...usersAdmin] : usersAdmin.filter((user) => user.role === roleFilter);
+    return filtered.sort((a, b) => {
+      if (userSort === "name") return String(a.name || a.email).localeCompare(String(b.name || b.email));
+      if (userSort === "role") return String(a.role).localeCompare(String(b.role));
+      const aDate = new Date(a.createdAt || 0).getTime();
+      const bDate = new Date(b.createdAt || 0).getTime();
+      return userSort === "created_asc" ? aDate - bDate : bDate - aDate;
+    });
+  }, [roleFilter, userSort, usersAdmin]);
+  const roleCounts = useMemo(() => usersAdmin.reduce((counts, user) => { counts[user.role] = (counts[user.role] || 0) + 1; return counts; }, {}), [usersAdmin]);
+
   return (
-    <section className="adm-admin-card">
+    <section className="adm-admin-card adm-user-management-card">
       <div className="adm-admin-card__header">
         <div className="adm-admin-card__title-group">
           <div className="adm-admin-card__icon adm-admin-card__icon--primary">
@@ -34,8 +59,8 @@ export default function AdminUserManagementSection({
             </svg>
           </div>
           <div>
-            <h2 className="adm-admin-card__title">User Management</h2>
-            <p className="adm-admin-card__subtitle">{usersAdmin.length} total users</p>
+            <h2 className="adm-admin-card__title">{t(copy, "userManagement")}</h2>
+            <p className="adm-admin-card__subtitle">{t(copy, "totalUsersCount", { count: usersAdmin.length })}</p>
           </div>
         </div>
         <div className="adm-admin-card__actions">
@@ -56,13 +81,23 @@ export default function AdminUserManagementSection({
             </svg>
             <input
               type="text"
-              placeholder="Search users..."
+              aria-label={t(copy, "searchUsers")}
+              placeholder={t(copy, "searchUsersPlaceholder")}
               value={usersQ}
               onChange={(e) => setUsersQ(e.target.value)}
             />
           </div>
+          <div className="adm-role-filter" role="group" aria-label={t(copy, "filterUsersByRole")}>
+            {[['all', t(copy, "allUsers")], ['learner', t(copy, "learners")], ['teacher', t(copy, "teachers")], ['admin', t(copy, "admins")]].map(([value, label]) => <button type="button" key={value} className={roleFilter === value ? "is-active" : ""} onClick={() => setRoleFilter(value)}>{label} <span>{value === "all" ? usersAdmin.length : roleCounts[value] || 0}</span></button>)}
+          </div>
+          <select className="adm-user-sort" value={userSort} onChange={(e) => setUserSort(e.target.value)} aria-label={t(copy, "sortUsers")}>
+            <option value="created_desc">{t(copy, "newestFirst")}</option>
+            <option value="created_asc">{t(copy, "oldestFirst")}</option>
+            <option value="name">{t(copy, "nameAZ")}</option>
+            <option value="role">{t(copy, "roleFilter")}</option>
+          </select>
           <button className="adm-btn-secondary" onClick={stopImpersonate}>
-            Return to admin
+            {t(copy, "returnToAdmin")}
           </button>
         </div>
       </div>
@@ -88,21 +123,22 @@ export default function AdminUserManagementSection({
                   <input
                     type="checkbox"
                     className="adm-checkbox"
-                    checked={selectedUserIds.size === usersAdmin.length && usersAdmin.length > 0}
+                    checked={visibleUsers.length > 0 && visibleUsers.every((user) => selectedUserIds.has(user.id))}
                     onChange={toggleAllUsers}
                     title="Select all users"
                   />
                 </th>
                 <th>User</th>
+                <th>Phone / marketing</th>
                 <th>Role</th>
-                <th>Hourly Rate ($)</th>
-                <th>Per Session ($)</th>
+                <th>Hourly Rate (EGP)</th>
+                <th>Per Session (EGP)</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {usersAdmin.map((u) => (
+              {visibleUsers.map((u) => (
                 <tr key={u.id} className={selectedUserIds.has(u.id) ? "adm-row--selected" : ""}>
                   <td>
                     <input
@@ -111,6 +147,16 @@ export default function AdminUserManagementSection({
                       checked={selectedUserIds.has(u.id)}
                       onChange={() => toggleUserSelection(u.id)}
                     />
+                  </td>
+                  <td>
+                    <div className="adm-user-info">
+                      <div className="adm-user-name">{u.phone || "No phone added"}</div>
+                      <div className="adm-user-email">
+                        {u.marketingPhoneConsentAt && !u.marketingPhoneOptOutAt
+                          ? "Marketing opted in"
+                          : "No marketing consent"}
+                      </div>
+                    </div>
                   </td>
                   <td>
                     <div className="adm-user-cell">
@@ -134,13 +180,13 @@ export default function AdminUserManagementSection({
                   </td>
 
                   <td>
-                    {u.role === "teacher" || u.role === "admin" ? (
+                    {u.role === "teacher" ? (
                       <input
                         type="number"
                         className="adm-form-input adm-rate-input"
                         defaultValue={
-                          typeof u.rateHourlyCents === "number"
-                            ? (u.rateHourlyCents / 100).toFixed(2)
+                          typeof u.rateHourlyEgpPiastres === "number"
+                            ? (u.rateHourlyEgpPiastres / 100).toFixed(2)
                             : ""
                         }
                         placeholder="—"
@@ -154,13 +200,13 @@ export default function AdminUserManagementSection({
                   </td>
 
                   <td>
-                    {u.role === "teacher" || u.role === "admin" ? (
+                    {u.role === "teacher" ? (
                       <input
                         type="number"
                         className="adm-form-input adm-rate-input"
                         defaultValue={
-                          typeof u.ratePerSessionCents === "number"
-                            ? (u.ratePerSessionCents / 100).toFixed(2)
+                          typeof u.ratePerSessionEgpPiastres === "number"
+                            ? (u.ratePerSessionEgpPiastres / 100).toFixed(2)
                             : ""
                         }
                         placeholder="—"
@@ -226,6 +272,15 @@ export default function AdminUserManagementSection({
                           />
                         </svg>
                       </button>
+                      {u.role === "learner" && (
+                        <Link
+                          className="adm-btn-action"
+                          href={`${prefix}/admin/intake?userId=${u.id}`}
+                          title="View Intake"
+                        >
+                          <ClipboardCheck size={16} aria-hidden="true" />
+                        </Link>
+                      )}
                       <button className="adm-btn-action" onClick={() => onOpenPackages(u)} title="View Packages">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                           <path

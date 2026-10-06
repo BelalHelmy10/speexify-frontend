@@ -2,22 +2,44 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { fmtInTz } from "@/utils/date";
 import { getSafeExternalUrl } from "@/utils/url";
+import { fmtSessionSchedule } from "@/utils/date";
 import { t } from "@/app/i18n";
+import { getIntlLocale } from "@/utils/locale";
 
-const canJoin = (startAt, endAt, windowMins = 15) => {
-  const now = new Date();
+const canOpenClassroom = (startAt, status, windowMins = 15) => {
+  if (!startAt || String(status || "").toLowerCase() === "canceled") return false;
   const start = new Date(startAt);
-  const end = endAt
-    ? new Date(endAt)
-    : new Date(start.getTime() + 60 * 60 * 1000);
+  if (Number.isNaN(start.getTime())) return false;
   const early = new Date(start.getTime() - windowMins * 60 * 1000);
-  return now >= early && now <= end;
+  return Date.now() >= early;
 };
 
-const useCountdown = (startAt, endAt, labels = {}) => {
-  const { startsIn = "Starts in", live = "Live", ended = "Ended" } = labels;
+const interpolate = (template, values) =>
+  Object.entries(values).reduce(
+    (result, [key, value]) => result.split(`{${key}}`).join(String(value)),
+    template
+  );
+
+const getDateKey = (date, timezone) => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone || undefined,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(date);
+  const get = (type) => Number(parts.find((part) => part.type === type)?.value);
+  return Date.UTC(get("year"), get("month") - 1, get("day"));
+};
+
+const useCountdown = (startAt, endAt, labels = {}, timezone, locale = "en-US") => {
+  const {
+    startsToday = "Starts today at {time}",
+    startsTomorrow = "Starts tomorrow at {time}",
+    startsOn = "Starts {date} at {time}",
+    live = "Live",
+    ended = "Ended",
+  } = labels;
 
   const [now, setNow] = useState(Date.now());
   const timer = useRef(null);
@@ -33,21 +55,27 @@ const useCountdown = (startAt, endAt, labels = {}) => {
   const end = endAt ? new Date(endAt).getTime() : start + 60 * 60 * 1000;
 
   if (now < start) {
-    let remaining = Math.max(0, Math.floor((start - now) / 1000));
-    const days = Math.floor(remaining / 86400);
-    remaining %= 86400;
-    const hours = Math.floor(remaining / 3600);
-    remaining %= 3600;
-    const mins = Math.floor(remaining / 60);
-    const secs = remaining % 60;
+    const startDate = new Date(start);
+    const nowDate = new Date(now);
+    const dayOffset = Math.round(
+      (getDateKey(startDate, timezone) - getDateKey(nowDate, timezone)) / 86400000
+    );
+    const time = new Intl.DateTimeFormat(locale, {
+      timeZone: timezone || undefined,
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(startDate);
+    const date = new Intl.DateTimeFormat(locale, {
+      timeZone: timezone || undefined,
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    }).format(startDate);
 
-    const parts = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0 || days > 0) parts.push(`${hours}h`);
-    if (mins > 0 || hours > 0 || days > 0) parts.push(`${mins}m`);
-    parts.push(`${String(secs).padStart(2, "0")}s`);
-
-    return `${startsIn} ${parts.join(" ")}`;
+    if (dayOffset === 0) return interpolate(startsToday, { time });
+    if (dayOffset === 1) return interpolate(startsTomorrow, { time });
+    return interpolate(startsOn, { date, time });
   }
 
   if (now >= start && now <= end) return live;
@@ -93,39 +121,65 @@ export default function SessionRow({
   isTeacher = false,
   isAdmin = false,
   isImpersonating = false,
+  currentUserId = null,
   dict,
   prefix,
 }) {
+  const dateLocale = getIntlLocale(prefix === "/ar" ? "ar" : "en");
   const countdown = useCountdown(s.startAt, s.endAt, {
-    startsIn: t(dict, "countdown_starts_in"),
+    startsToday: t(dict, "countdown_starts_today"),
+    startsTomorrow: t(dict, "countdown_starts_tomorrow"),
+    startsOn: t(dict, "countdown_starts_on"),
     live: t(dict, "countdown_live"),
     ended: t(dict, "countdown_ended"),
-  });
+  }, timezone, dateLocale);
 
-  const joinable = canJoin(s.startAt, s.endAt);
+  const joinable = canOpenClassroom(s.startAt, s.status);
+  const classroomLabel = !isUpcoming
+    ? t(dict, "session_open_classroom") || "Open classroom"
+    : t(dict, "session_join_classroom") || "Join";
 
   const isGroup = String(s.type || "").toUpperCase() === "GROUP";
+  const isTraining = String(s.type || "").toUpperCase() === "TRAINING";
   const participantCount =
     typeof s.participantCount === "number" ? s.participantCount : null;
 
-  const canReschedule = isTeacher || isAdmin || isImpersonating;
+  const managesTraining = isAdmin || isImpersonating || (isTeacher && Number(s.teacherId) === Number(currentUserId));
+  const canReschedule = isTraining ? managesTraining : isTeacher || isAdmin || isImpersonating;
   const normalizedStatus = String(s.status || "").trim().toLowerCase();
   const sessionTone = getSessionTone(normalizedStatus, isUpcoming);
   const badgeTone = sessionTone === "neutral" ? normalizedStatus : sessionTone;
 
   const cancelLabel =
-    isGroup && !isTeacher && !isAdmin && !isImpersonating
+    (isGroup && !isTeacher && !isAdmin && !isImpersonating) || (isTraining && !managesTraining)
       ? t(dict, "session_leave") || "Leave session"
       : t(dict, "session_cancel") || "Cancel";
 
   const cancelTitle =
-    isGroup && !isTeacher && !isAdmin && !isImpersonating
+    isTraining && !managesTraining
+      ? prefix === "/ar" ? "مغادرة جلسة التدريب؟" : "Leave this training session?"
+      : isGroup && !isTeacher && !isAdmin && !isImpersonating
       ? t(dict, "session_leave_title") || "Leave this group session"
       : t(dict, "session_cancel_title") || "Cancel session";
+
+  const sessionDate = s.startAt ? new Date(s.startAt) : null;
+  const schedule = fmtSessionSchedule(s.startAt, s.endAt, timezone, dateLocale);
+  const dateMonth = sessionDate && !Number.isNaN(sessionDate.getTime())
+    ? sessionDate.toLocaleDateString(dateLocale, { month: "short", timeZone: timezone || undefined })
+    : "";
+  const dateDay = sessionDate && !Number.isNaN(sessionDate.getTime())
+    ? sessionDate.toLocaleDateString(dateLocale, { day: "numeric", timeZone: timezone || undefined })
+    : "";
 
   return (
     <div className={`session-item session-item--${sessionTone}`}>
       <div className="session-item__indicator"></div>
+      {dateMonth && (
+        <div className="session-item__date" aria-label={`${dateMonth} ${dateDay}`}>
+          <span>{dateMonth}</span>
+          <strong>{dateDay}</strong>
+        </div>
+      )}
       <div className="session-item__content">
         <div className="session-item__main">
           <div className="session-item__title">
@@ -133,7 +187,10 @@ export default function SessionRow({
           </div>
 
           <div className="session-item__meta">
-            <span className="session-item__time">
+            <span
+              className="session-item__time"
+              aria-label={[schedule.dateLabel, schedule.timeLabel, schedule.timezoneLabel].filter(Boolean).join(", ")}
+            >
               <svg
                 width="14"
                 height="14"
@@ -145,8 +202,10 @@ export default function SessionRow({
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
-              {fmtInTz(s.startAt, timezone)}
-              {s.endAt ? ` — ${fmtInTz(s.endAt, timezone)}` : ""}
+              <span>{schedule.dateLabel} · {schedule.timeLabel}</span>
+              {schedule.timezoneLabel && (
+                <span className="session-item__timezone">{schedule.timezoneLabel}</span>
+              )}
             </span>
 
             {isGroup && (
@@ -154,6 +213,7 @@ export default function SessionRow({
                 {t(dict, "session_group") || "Group"}
               </span>
             )}
+            {isTraining && <span className="badge badge--info">{prefix === "/ar" ? "تدريب · بدون أجر" : "Training · unpaid"}</span>}
 
             {(participantCount !== null || (isGroup && s.capacity)) && (
               <span className="badge badge--neutral">
@@ -176,7 +236,11 @@ export default function SessionRow({
             <>
               <Link
                 href={`${prefix}/dashboard/sessions/${s.id}`}
-                className="btn btn--ghost"
+                className={`btn btn--ghost session-item__details${
+                  isUpcoming && sessionTone === "scheduled" && countdown
+                    ? " session-item__details--schedule"
+                    : ""
+                }`}
                 title={t(dict, "session_view_details") || "View session details"}
               >
                 {countdown || t(dict, "session_view_details") || "View session"}
@@ -184,11 +248,11 @@ export default function SessionRow({
 
               {joinable && (
                 <Link
-                  href={`/classroom/${s.id}`}
+                  href={`${prefix}/classroom/${s.id}`}
                   className="btn btn--primary btn--glow"
-                  title={t(dict, "session_join_classroom") || "Join classroom"}
+                  title={classroomLabel}
                 >
-                  {t(dict, "session_join_classroom") || "Join"}
+                  {classroomLabel}
                 </Link>
               )}
 
@@ -206,26 +270,26 @@ export default function SessionRow({
 
               {canReschedule && (
                 <button
-                  className="btn btn--ghost"
+                  className="btn btn--ghost session-item__reschedule"
                   onClick={() => onRescheduleClick(s)}
                 >
                   {t(dict, "session_reschedule")}
                 </button>
               )}
 
-              <button
+              {(isTraining && !managesTraining && participantCount === 1) ? null : <button
                 className="btn btn--ghost btn--danger"
                 onClick={() => onCancel(s)}
                 title={cancelTitle}
               >
                 {cancelLabel}
-              </button>
+              </button>}
             </>
           ) : (
             <>
               <Link
                 href={`${prefix}/dashboard/sessions/${s.id}`}
-                className="btn btn--ghost"
+                className="btn btn--ghost session-item__details"
               >
                 {t(dict, "session_view_details")}
                 <svg
@@ -239,6 +303,16 @@ export default function SessionRow({
                   <path d="M9 18l6-6-6-6" />
                 </svg>
               </Link>
+
+              {joinable && (
+                <Link
+                  href={`${prefix}/classroom/${s.id}`}
+                  className="btn btn--primary"
+                  title={classroomLabel}
+                >
+                  {classroomLabel}
+                </Link>
+              )}
 
               {isTeacher && s.status === "completed" && (
                 <Link

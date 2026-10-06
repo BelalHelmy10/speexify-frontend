@@ -10,6 +10,11 @@ import {
 } from "@/lib/viewerHelpers";
 import { buildResourcePickerIndex } from "@/lib/resourcePickerIndex";
 
+// The classroom picker is opened and closed repeatedly during a session.
+// Keep the derived index tied to the immutable tracks array so reopening the
+// picker does not walk the entire Sanity tree again.
+const pickerIndexCache = new WeakMap();
+
 // Re-export viewer info so the rest of the classroom code does NOT need to change
 export { sharedGetViewerInfo as getViewerInfo };
 // (OPTIONAL) re-export normalizers if needed elsewhere
@@ -102,5 +107,14 @@ export function buildResourceIndex(tracks = []) {
 export function buildPickerIndex(tracks = []) {
   // This uses the same helper as the /resources page,
   // which expects the exact query shape we just matched.
-  return buildResourcePickerIndex(tracks);
+  if (!Array.isArray(tracks)) {
+    return buildResourcePickerIndex([]);
+  }
+
+  const cached = pickerIndexCache.get(tracks);
+  if (cached) return cached;
+
+  const index = buildResourcePickerIndex(tracks);
+  pickerIndexCache.set(tracks, index);
+  return index;
 }

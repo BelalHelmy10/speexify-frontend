@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { getDictionary, t } from "../i18n";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
 import "@/styles/contact.scss";
 
 const DEFAULT_ROLE = "INDIVIDUAL";
@@ -221,7 +221,7 @@ function Contact() {
                     <label htmlFor="role">{t(dict, "form_role_label")}</label>
                     <select id="role" name="role" value={form.role} onChange={onChange}>
                       <option value="INDIVIDUAL">{t(dict, "form_role_option_individual")}</option>
-                      <option value="TEACHER">{t(dict, "form_role_option_teacher")}</option>
+                      <option value="TEACHER">{t(dict, "form_role_option_coach")}</option>
                       <option value="COMPANY">{t(dict, "form_role_option_company")}</option>
                     </select>
                   </div>
@@ -387,7 +387,7 @@ function Contact() {
               </div>
               <h3>{t(dict, "lanes_individual_title")}</h3>
               <p>{t(dict, "lanes_individual_body")}</p>
-              <Link className="lane-btn" href={routeHref(APP_ROUTES.individualTraining, locale)}>
+              <Link className="lane-btn" href={getStarterSessionHref(locale)}>
                 {t(dict, "lanes_individual_cta")}
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

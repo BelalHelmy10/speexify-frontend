@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import "@/styles/packages.scss";
 import { getDictionary, t } from "@/app/i18n";
 import FadeIn from "@/components/FadeIn";
+import PackageComparison from "@/components/PackageComparison";
 // import { guessCurrencyFromNavigator } from "@/lib/currency"; // no longer needed
-import { detectUserCountry } from "@/lib/geo";
+import { usePricingCatalog, mergeCatalogPlans } from "@/hooks/usePricingCatalog";
+import { isPurchaseReadyPlan, isValidPricingCatalog } from "@/lib/pricing-catalog.mjs";
 import {
   calculatePackagePrice,
   calculatePerSessionPrice,
@@ -17,35 +19,73 @@ import {
 import { oneOnOnePlans, groupPlans, corporatePlans } from "@/lib/plans";
 import { getPricingRegion } from "@/lib/pricing-regions";
 import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { formatNumber } from "@/utils/locale";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
 const LESSON_TYPE = { ONE_ON_ONE: "ONE_ON_ONE", GROUP: "GROUP" };
-const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || "manual"; // "manual" | "paymob"
+const DEFAULT_COUNTRY_CODE = "EG";
+const DEFAULT_CURRENCY = getPricingRegion(DEFAULT_COUNTRY_CODE).currency;
+const STAGE_CODES = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
-// Split features by newline/semicolon/comma and trim
+// Semicolons/newlines separate benefits; commas belong to the copy.
 function parseFeatures(raw) {
   if (!raw) return [];
   return String(raw)
-    .split(/\r?\n|;|,/g)
+    .split(/\r?\n|;/g)
     .map((s) => s.trim())
     .filter(Boolean);
 }
 
-// Build a feature matrix from given plans (limit rows to keep it readable)
-function buildFeatureMatrix(plans, maxRows = 10) {
-  const map = new Map();
-  plans.forEach((p, i) => {
-    const feats = parseFeatures(p.featuresRaw || "").concat(p.features || []);
-    new Set(feats).forEach((f) => {
-      if (!map.has(f)) map.set(f, new Set());
-      map.get(f).add(i);
-    });
-  });
-  const rows = Array.from(map.keys()).slice(0, maxRows);
-  return rows.map((label) => ({
-    label,
-    checks: plans.map((_p, i) => map.get(label)?.has(i) || false),
-  }));
+function getPackProgressGuide(sessionsPerPack, dict) {
+  const key = {
+    4: "pack_progress_4",
+    12: "pack_progress_12",
+    24: "pack_progress_24",
+    48: "pack_progress_48",
+  }[sessionsPerPack];
+
+  if (!key) return null;
+
+  const fallback = {
+    4: "A focused start",
+    12: "About half a level",
+    24: "About one level",
+    48: "About one full stage",
+  }[sessionsPerPack];
+
+  return t(dict, key, fallback);
+}
+
+
+function getPlanPriceLabels(plan, countryCode, locale, dict) {
+  const resolvedCountry = countryCode || DEFAULT_COUNTRY_CODE;
+  const regionalPrice = calculatePackagePrice(plan, resolvedCountry);
+  const perSessionPrice = calculatePerSessionPrice(plan, resolvedCountry);
+
+  const totalLabel = (() => {
+    if (plan.priceType === "CUSTOM" || regionalPrice.isCustomPricing) {
+      return t(dict, "price_custom", "Custom Pricing");
+    }
+
+    if (regionalPrice.displayAmount > 0) {
+      return formatRegionalPrice(regionalPrice, locale);
+    }
+
+    return t(dict, "price_custom", "Custom Pricing");
+  })();
+
+  const perSessionLabel = (() => {
+    return perSessionPrice
+      ? formatRegionalPrice(perSessionPrice, locale)
+      : null;
+  })();
+
+  return {
+    regionalPrice,
+    perSessionPrice,
+    totalLabel,
+    perSessionLabel,
+  };
 }
 
 function Packages() {
@@ -55,13 +95,11 @@ function Packages() {
 
   const [tab, setTab] = useState(AUD.INDIVIDUAL);
   const [lessonType, setLessonType] = useState(LESSON_TYPE.ONE_ON_ONE);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const {catalog, error: err, loading, retry} = usePricingCatalog();
 
   // Regional pricing
-  const [currency, setCurrency] = useState("EGP");
-  const [countryCode, setCountryCode] = useState(null);
-  const [pricingReady, setPricingReady] = useState(false);
+  const countryCode = catalog?.countryCode || DEFAULT_COUNTRY_CODE;
+  const currency = catalog?.packages?.[0]?.pricing?.displayCurrency || DEFAULT_CURRENCY;
 
   // Seats estimator for corporate
   const [seats, setSeats] = useState(15);
@@ -73,32 +111,27 @@ function Packages() {
       setTab(AUD.CORPORATE);
   }, []);
 
-  // Detect viewer country and LOCK currency based on pricing region
-  useEffect(() => {
-    (async () => {
-      const detectedCountry = await detectUserCountry();
-      setCountryCode(detectedCountry);
-
-      const region = getPricingRegion(detectedCountry);
-      setCurrency(region.currency);
-
-      setPricingReady(true);
-
-      console.log(
-        "🌍 Using pricing for country:",
-        detectedCountry || "DEFAULT"
-      );
-      console.log("💱 Currency locked to pricing region:", region.currency);
-    })();
-  }, []);
-
   // Get current plans based on selection
-  const plans = useMemo(() => {
+  const rawPlans = useMemo(() => {
     if (tab === AUD.CORPORATE) return corporatePlans;
-    return lessonType === LESSON_TYPE.ONE_ON_ONE ? oneOnOnePlans : groupPlans;
-  }, [tab, lessonType]);
+    return mergeCatalogPlans(lessonType === LESSON_TYPE.ONE_ON_ONE ? oneOnOnePlans : groupPlans, catalog);
+  }, [tab, lessonType, catalog]);
 
-  const matrix = useMemo(() => buildFeatureMatrix(plans), [plans]);
+  // Localize display strings while keeping the English title as the backend identifier.
+  const plans = useMemo(() => {
+    return rawPlans.map((p) => {
+      const localizedTitle = dict[`plan_${p.id}_title`];
+      const localizedDesc = dict[`plan_${p.id}_desc`];
+      const localizedFeatures = dict[`plan_${p.id}_features`];
+      return {
+        ...p,
+        _backendTitle: p.title,
+        title: localizedTitle || p.title,
+        description: localizedDesc || p.description,
+        featuresRaw: localizedFeatures || p.featuresRaw,
+      };
+    });
+  }, [rawPlans, dict]);
 
   // Corporate estimate
   const corpEstimate = useMemo(() => {
@@ -108,6 +141,33 @@ function Packages() {
 
   const isIndividual = tab === AUD.INDIVIDUAL;
   const isOneOnOne = lessonType === LESSON_TYPE.ONE_ON_ONE;
+  const catalogReady = isValidPricingCatalog(catalog) && !loading && !err;
+  const pricePreview = useMemo(() => {
+    const pricedPlans = plans.map((plan) => ({
+      plan,
+      ...getPlanPriceLabels(plan, countryCode, locale, dict),
+    }));
+    const plansWithPerSession = pricedPlans.filter(
+      (item) => item.perSessionPrice?.displayAmount > 0
+    );
+    const lowestPerSession = plansWithPerSession.reduce(
+      (best, item) =>
+        !best || item.perSessionPrice.displayAmount < best.perSessionPrice.displayAmount
+          ? item
+          : best,
+      null
+    );
+
+    const lowestTotal = pricedPlans.reduce(
+      (best, item) =>
+        !best || item.regionalPrice.displayAmount < best.regionalPrice.displayAmount
+          ? item
+          : best,
+      null,
+    );
+
+    return { pricedPlans, lowestPerSession, lowestTotal };
+  }, [plans, countryCode, locale, dict]);
 
   // Section title/subtitle logic with translations
   const pricingTitle = isIndividual
@@ -119,7 +179,7 @@ function Packages() {
   const pricingSubtitle = isIndividual
     ? t(
       dict,
-      "pricing_subtitle_individual",
+      isOneOnOne ? "pricing_subtitle_1on1" : "pricing_subtitle_group",
       "Choose the package that fits your learning goals and schedule"
     )
     : t(
@@ -134,16 +194,69 @@ function Packages() {
       <section className="ecp__section ecp-hero">
         <div className="ecp__container ecp-hero__inner">
           <div className="ecp-hero__copy">
-            <FadeIn as="h1" className="ecp-hero__title">
-              {t(dict, "hero_title", "Professional English Coaching")}
-            </FadeIn>
-            <FadeIn as="p" className="ecp-hero__subtitle" delay={0.1}>
+            <p className="ecp-hero__eyebrow">{t(dict, "path_eyebrow", "YOUR ENGLISH ROADMAP")}</p>
+            <h1
+              className="ecp-hero__title"
+              aria-label={t(dict, "hero_title", "6 stages. 12 levels. One clear path.")}
+            >
+              <span>{t(dict, "hero_title_stages", "6 stages.")}</span>{" "}
+              <span className="ecp-hero__title-accent">{t(dict, "hero_title_levels", "12 levels.")}</span>
+              <span className="ecp-hero__title-ending">
+                {t(dict, "hero_title_ending", "One clear path.")}
+              </span>
+            </h1>
+            <p className="ecp-hero__subtitle">
               {t(
                 dict,
                 "hero_subtitle",
-                "Choose the format that works for you—private one-on-one sessions or collaborative group learning. Flexible plans, real results."
+                "Start at the level that fits you. Practise with a coach, review your progress, and move forward when you are ready."
               )}
-            </FadeIn>
+            </p>
+
+            <div className="ecp-path" id="learning-stages">
+              <div className="ecp-path__heading">
+                <strong>{t(dict, "path_title", "How the path is built")}</strong>
+                <span>{t(dict, "path_count", "6 stages · 2 levels each")}</span>
+              </div>
+              <div className="ecp-path__equation" aria-label={t(dict, "path_equation_aria", "One level is roughly 24 sessions. Two levels make one stage, roughly 48 sessions.")}>
+                <div className="ecp-path__measure">
+                  <span>{t(dict, "path_one_level", "1 level")}</span>
+                  <strong>{t(dict, "path_level_sessions", "≈ 24 sessions")}</strong>
+                </div>
+                <span className="ecp-path__operator" aria-hidden="true">× 2</span>
+                <div className="ecp-path__measure ecp-path__measure--stage">
+                  <span>{t(dict, "path_one_stage", "1 stage")}</span>
+                  <strong>{t(dict, "path_stage_sessions", "≈ 48 sessions")}</strong>
+                </div>
+              </div>
+              <ol className="ecp-path__bands" aria-label={t(dict, "path_aria", "Six English stages from A1 to C2, with two learning levels in each stage")}>
+                {STAGE_CODES.map((stage) => (
+                  <li className="ecp-path__band" key={stage}>
+                    <span className="ecp-path__code" dir="ltr">{stage}</span>
+                    <span className="ecp-path__label">{t(dict, `path_${stage.toLowerCase()}`, stage)}</span>
+                    <span className="ecp-path__levels" dir="ltr">
+                      <span>{stage}.1</span>
+                      <span aria-hidden="true">→</span>
+                      <span>{stage}.2</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <div className="ecp-path__guidance">
+                <span className="ecp-path__guidance-icon" aria-hidden="true">i</span>
+                <p>
+                  <strong>{t(dict, "path_estimate_title", "A planning guide, not a promise.")}</strong>{" "}
+                  {t(dict, "path_explain", "Your pace depends on your starting point, attendance, practice between sessions, and progress with your coach.")}
+                </p>
+              </div>
+              <Link className="ecp-path__assessment" href={routeHref(APP_ROUTES.assessment, locale)}>
+                <span>{t(dict, "path_assessment_kicker", "Not sure where you start?")}</span>
+                <strong>{t(dict, "path_assessment_cta", "Take the placement assessment")}</strong>
+                <span aria-hidden="true">{locale === "ar" ? "←" : "→"}</span>
+              </Link>
+            </div>
+
+            <p className="ecp-hero__choice-label">{t(dict, "path_choice", "Choose how you want to practise")}</p>
 
             <div className="ecp-tabs" role="tablist" aria-label="Audience">
               <button
@@ -176,10 +289,10 @@ function Packages() {
                   <span className="ecp-lesson-icon">👤</span>
                   <span className="ecp-lesson-text">
                     <strong>
-                      {t(dict, "lesson_one_on_one_title", "One-on-One")}
+                      {t(dict, "mode_one_on_one_title", "One-on-One")}
                     </strong>
                     <small>
-                      {t(dict, "lesson_one_on_one_sub", "Private sessions")}
+                      {t(dict, "mode_one_on_one_sub", "Private sessions")}
                     </small>
                   </span>
                 </button>
@@ -190,8 +303,8 @@ function Packages() {
                 >
                   <span className="ecp-lesson-icon">👥</span>
                   <span className="ecp-lesson-text">
-                    <strong>{t(dict, "lesson_group_title", "Group")}</strong>
-                    <small>{t(dict, "lesson_group_sub", "2-5 learners")}</small>
+                    <strong>{t(dict, "mode_group_title", "Group")}</strong>
+                    <small>{t(dict, "mode_group_sub", "2-5 members")}</small>
                   </span>
                 </button>
               </div>
@@ -236,13 +349,96 @@ function Packages() {
             )}
           </div>
 
-          <figure className="ecp-media ecp-hero__media">
-            <img
-              src="/images/english-coaching-in-action.avif"
-              alt={t(dict, "hero_media_alt", "English coaching in action")}
-              loading="eager"
-            />
-          </figure>
+          <aside className="ecp-hero-pricing" aria-label="Current package pricing">
+            <div className="ecp-hero-pricing__eyebrow">
+              {isIndividual
+                ? t(dict, "hero_pricing_eyebrow", "Prices visible upfront")
+                : t(dict, "hero_pricing_corp_eyebrow", "Team pricing")}
+            </div>
+            {isIndividual && !catalog ? (
+              <div className="ecp-hero-pricing__availability" role={err ? "alert" : "status"}>
+                <span>
+                  {err
+                    ? t(dict, "pricing_unavailable", "Prices are temporarily unavailable.")
+                    : t(dict, "pricing_loading", "Loading prices…")}
+                </span>
+                {err && (
+                  <button type="button" className="ecp-pricing-retry" onClick={retry}>
+                    {t(dict, "pricing_retry", "Retry")}
+                  </button>
+                )}
+              </div>
+            ) : isIndividual && pricePreview.lowestPerSession ? (
+              <>
+                <h2 className="ecp-hero-pricing__title">
+                  {t(dict, "hero_pricing_from", "From")}{" "}
+                  <strong>
+                    {pricePreview.lowestTotal?.totalLabel || pricePreview.lowestPerSession.perSessionLabel}
+                  </strong>
+                  <span className="ecp-hero-pricing__unit">
+                    {t(dict, "hero_pricing_upfront", "upfront")}
+                  </span>
+                </h2>
+                <p className="ecp-hero-pricing__copy">
+                  {t(dict, "hero_pricing_lowest_per_session", "Best value")}:{" "}
+                  <strong>
+                    {pricePreview.lowestPerSession.perSessionLabel}/
+                    {t(dict, "label_per_session", "session")}
+                  </strong>{" "}
+                  {t(
+                    dict,
+                    "hero_pricing_copy",
+                    "Paid upfront. Details and full comparison are below."
+                  )}
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="ecp-hero-pricing__title">
+                  {t(dict, "hero_pricing_custom", "Custom team programs")}
+                </h2>
+                <p className="ecp-hero-pricing__copy">
+                  {t(
+                    dict,
+                    "hero_pricing_custom_copy",
+                    "See the program tiers now, then request a proposal for your team size."
+                  )}
+                </p>
+              </>
+            )}
+
+            <div className="ecp-hero-pricing__list">
+              {pricePreview.pricedPlans.map((item) => (
+                <a
+                  className="ecp-hero-pricing__row"
+                  href={`#package-${item.plan.id}`}
+                  key={item.plan.id || item.plan.title}
+                >
+                  <span>
+                    <strong>{item.plan.title}</strong>
+                    <small>
+                      {item.plan.sessionsPerPack
+                        ? `${item.plan.sessionsPerPack} ${t(dict, "label_sessions", "sessions")}`
+                        : t(dict, "hero_pricing_custom_scope", "Custom scope")}
+                    </small>
+                  </span>
+                  <span>
+                    <strong>{item.totalLabel}</strong>
+                    {item.perSessionLabel && (
+                      <small>
+                        {item.perSessionLabel}/
+                        {t(dict, "label_per_session", "session")}
+                      </small>
+                    )}
+                  </span>
+                </a>
+              ))}
+            </div>
+
+            <a className="ecp-btn ecp-btn--primary" href="#packages-pricing">
+              {t(dict, "hero_pricing_cta", "Compare packages")}
+            </a>
+          </aside>
         </div>
       </section>
 
@@ -250,8 +446,8 @@ function Packages() {
       {loading && (
         <section className="ecp__section">
           <div className="ecp__container">
-            <div className="ecp-status">
-              {t(dict, "status_loading", "Loading packages…")}
+            <div className="ecp-status" role="status">
+              {t(dict, "pricing_loading", "Loading prices…")}
             </div>
           </div>
         </section>
@@ -259,22 +455,43 @@ function Packages() {
       {!loading && err && (
         <section className="ecp__section">
           <div className="ecp__container">
-            <div className="ecp-status ecp-status--warn">
-              {t(dict, "status_error", err || "Something went wrong.")}
+            <div className="ecp-status ecp-status--warn" role="alert">
+              <span>{t(dict, "pricing_unavailable", "Prices are temporarily unavailable.")}</span>
+              <button type="button" className="ecp-pricing-retry" onClick={retry}>
+                {t(dict, "pricing_retry", "Retry")}
+              </button>
             </div>
           </div>
         </section>
       )}
 
       {/* PRICING GRID */}
-      <section className="ecp__section ecp-pricing-section">
+      <section className="ecp__section ecp-pricing-section" id="packages-pricing">
         <div className="ecp__container">
-          <div className="ecp-section-header">
+          <div className="ecp-section-header ecp-section-header--pricing">
             <FadeIn as="h2" className="ecp-section-title">{pricingTitle}</FadeIn>
             <FadeIn as="p" className="ecp-section-subtitle" delay={0.1}>{pricingSubtitle}</FadeIn>
           </div>
 
-          <div className="ecp-grid ecp-grid--fade-in">
+          {isIndividual && (
+            <div className="ecp-progress-guide" aria-label={t(dict, "progress_guide_aria", "How package sizes relate to the learning path")}>
+              <div className="ecp-progress-guide__intro">
+                <span>{t(dict, "progress_guide_eyebrow", "PLAN WITH CONTEXT")}</span>
+                <strong>{t(dict, "progress_guide_title", "Match your pack to your next milestone")}</strong>
+              </div>
+              <div className="ecp-progress-guide__item">
+                <strong>{t(dict, "progress_guide_level", "24 sessions")}</strong>
+                <span>{t(dict, "progress_guide_level_desc", "roughly one level")}</span>
+              </div>
+              <div className="ecp-progress-guide__item ecp-progress-guide__item--accent">
+                <strong>{t(dict, "progress_guide_stage", "48 sessions")}</strong>
+                <span>{t(dict, "progress_guide_stage_desc", "roughly one stage · two levels")}</span>
+              </div>
+              <p>{t(dict, "progress_guide_note", "These are planning estimates. Your coach reviews your progress with you; finishing a pack does not automatically guarantee a level change.")}</p>
+            </div>
+          )}
+
+          <div className={`ecp-grid ecp-grid--fade-in ${isIndividual ? "ecp-grid--shared" : ""}`}>
             {plans.map((p, idx) => (
               <PricingCard
                 key={p.id || idx}
@@ -284,7 +501,9 @@ function Packages() {
                 locale={locale}
                 currency={currency}
                 countryCode={countryCode}
-                pricingReady={pricingReady}
+                catalog={catalog}
+                loading={loading}
+                catalogError={err}
               />
             ))}
           </div>
@@ -321,12 +540,12 @@ function Packages() {
                 onChange={(e) => setSeats(Number(e.target.value))}
               />
               <div className="ecp-estimator__value">
-                {seats} {t(dict, "estimator_employees", "employees")}
+                {formatNumber(seats, locale)} {t(dict, "estimator_employees", "employees")}
               </div>
             </div>
             <div className="ecp-estimator__result">
               <div className="ecp-estimator__number">
-                ~${corpEstimate.toLocaleString()}/
+                ~${formatNumber(corpEstimate, locale)}/
                 {t(dict, "estimator_period", "mo")}
               </div>
               <Link
@@ -361,88 +580,44 @@ function Packages() {
           <div className="ecp-grid-steps">
             <Step
               n="1"
-              title={t(dict, "how_step1_title", "Choose Your Plan")}
+              title={t(dict, "how_step1_title", "Find your starting level.")}
               desc={t(
                 dict,
                 "how_step1_desc",
-                "Select the package that matches your goals—private coaching or group learning."
+                "Take the placement assessment so your journey begins in the right place."
               )}
             />
             <Step
               n="2"
-              title={t(dict, "how_step2_title", "Schedule Sessions")}
+              title={t(dict, "how_step2_title", "Choose your format and pack.")}
               desc={t(
                 dict,
                 "how_step2_desc",
-                "Book times that fit your schedule. Easy rescheduling if plans change."
+                "Pick one-on-one or small-group practice, then choose how far ahead you want to plan."
               )}
             />
             <Step
               n="3"
-              title={t(dict, "how_step3_title", "Start Improving")}
+              title={t(dict, "how_step3_title", "Practise, review, move forward.")}
               desc={t(
                 dict,
                 "how_step3_desc",
-                "Practical lessons, actionable feedback, and measurable progress from day one."
+                "Your coach follows your performance and confirms when you are ready for the next level."
               )}
             />
           </div>
         </div>
       </section>
 
-      {/* FEATURE COMPARISON */}
-      <section className="ecp__section">
-        <div className="ecp__container ecp-compare ecp-card">
-          <div className="ecp-compare__header">
-            <FadeIn as="h2" className="ecp-compare__title">
-              {t(dict, "compare_title", "What's Included")}
-            </FadeIn>
-            <FadeIn as="p" className="ecp-compare__subtitle" delay={0.1}>
-              {t(
-                dict,
-                "compare_subtitle",
-                "Compare features across all packages"
-              )}
-            </FadeIn>
-          </div>
-          <div className="ecp-compare__tablewrap">
-            <table className="ecp-compare__table">
-              <thead>
-                <tr>
-                  <th>{t(dict, "compare_col_features", "Features")}</th>
-                  {plans.map((p, i) => (
-                    <th key={i}>{p.title}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {matrix.length === 0 ? (
-                  <tr>
-                    <td colSpan={1 + plans.length} className="empty">
-                      {t(
-                        dict,
-                        "compare_empty",
-                        "All packages include personalized coaching, flexible scheduling, and progress tracking."
-                      )}
-                    </td>
-                  </tr>
-                ) : (
-                  matrix.map((row, rIdx) => (
-                    <tr key={rIdx}>
-                      <td className="feat">{row.label}</td>
-                      {row.checks.map((has, cIdx) => (
-                        <td key={cIdx} className="check">
-                          {has ? "✓" : "—"}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+      <PackageComparison
+        key={isIndividual ? lessonType : tab}
+        kind={isIndividual ? (isOneOnOne ? "individual" : "group") : "corporate"}
+        plans={plans}
+        locale={locale}
+        prices={pricePreview.pricedPlans}
+        loading={loading}
+        ready={catalogReady}
+      />
 
       {/* FAQ */}
       <section className="ecp__section ecp-faq">
@@ -452,10 +627,14 @@ function Packages() {
           </FadeIn>
           <div className="ecp-faq__list">
             <Faq
+              q={t(dict, "faq_progress_q", "Does 24 sessions guarantee that I finish a level?")}
+              a={t(dict, "faq_progress_a", "No. Twenty-four sessions per level and 48 per stage are useful planning estimates, not guarantees. Your pace depends on your starting point, attendance, practice between sessions, and demonstrated progress. Your coach reviews this with you throughout the pack.")}
+            />
+            <Faq
               q={t(
                 dict,
                 "faq1_q",
-                "Can I switch between One-on-One and Group lessons?"
+                "Can I switch between one-on-one and group sessions?"
               )}
               a={t(
                 dict,
@@ -480,7 +659,7 @@ function Packages() {
               a={t(
                 dict,
                 "faq3_a",
-                "We match learners with similar proficiency levels and learning goals to ensure productive, balanced sessions."
+                "We match members with similar practice bands and learning goals to ensure productive, balanced sessions."
               )}
             />
             <Faq
@@ -513,13 +692,13 @@ function Packages() {
             <div className="ecp-cta__actions">
               <Link
                 className="ecp-btn ecp-btn--primary ecp-btn--lg"
-                href={routeHref(APP_ROUTES.individualTraining, locale, "#trial")}
+                href={routeHref(APP_ROUTES.assessment, locale)}
               >
-                {t(dict, "cta_individual_primary", "Book Free Consultation")}
+                {t(dict, "cta_individual_primary", "Find my starting level")}
               </Link>
               <Link
                 className="ecp-btn ecp-btn--ghost ecp-btn--lg"
-                href={routeHref(APP_ROUTES.packages, locale)}
+                href="#packages-comparison"
               >
                 {t(dict, "cta_individual_secondary", "View All Plans")}
               </Link>
@@ -558,12 +737,13 @@ function PricingCard({
   locale,
   currency,
   countryCode,
-  pricingReady,
+  catalog,
+  loading,
+  catalogError,
 }) {
   const {
     title,
     description,
-    priceType,
     isPopular,
     sessionsPerPack,
     durationMin,
@@ -572,42 +752,38 @@ function PricingCard({
 
   const bullets = parseFeatures(plan.featuresRaw || "").slice(0, 8);
   const isCorp = audience === AUD.CORPORATE;
+  const progressGuide = !isCorp
+    ? getPackProgressGuide(sessionsPerPack, dict)
+    : null;
 
-  // Calculate regional pricing
-  const regionalPrice = calculatePackagePrice(plan, countryCode);
-  const perSessionPrice = calculatePerSessionPrice(plan, countryCode);
-
-  // Format total price label
-  const totalLabel = (() => {
-    if (!pricingReady) return "—";
-
-    if (priceType === "CUSTOM" || regionalPrice.isCustomPricing) {
-      return t(dict, "price_custom", "Custom Pricing");
-    }
-
-    if (regionalPrice.displayAmount > 0) {
-      return formatRegionalPrice(regionalPrice, locale);
-    }
-
-    return t(dict, "price_custom", "Custom Pricing");
-  })();
-
-  // Format per-session price label
-  const perSessionLabel = (() => {
-    if (!pricingReady) return "—";
-    return perSessionPrice
-      ? formatRegionalPrice(perSessionPrice, locale)
-      : null;
-  })();
+  const { totalLabel, perSessionLabel } = getPlanPriceLabels(
+    plan,
+    countryCode,
+    locale,
+    dict
+  );
 
   // inside function PricingCard({ plan, ... })
-  const paymentRoute = PAYMENT_MODE === "paymob" ? APP_ROUTES.checkout : APP_ROUTES.manualPayment;
-  const target = `${routeHref(paymentRoute, locale)}?plan=${encodeURIComponent(plan.title)}&cc=${encodeURIComponent(
+  const paymentRoute = APP_ROUTES.checkout;
+  const canPurchase = !isCorp && !loading && !catalogError && isPurchaseReadyPlan(plan, catalog);
+  // Pass planId (stable, locale-independent identifier) plus the English
+  // backend title as a fallback for backward compatibility.
+  const urlTitle = plan._backendTitle || plan.title;
+  const target = canPurchase
+    ? `${routeHref(paymentRoute, locale)}?planId=${encodeURIComponent(
+      plan.id
+    )}&plan=${encodeURIComponent(urlTitle)}&cc=${encodeURIComponent(
       countryCode || ""
-    )}&cur=${encodeURIComponent(currency || "")}`;
+    )}&cur=${encodeURIComponent(currency || "")}&region=${encodeURIComponent(
+      plan.regionToken
+    )}&packageId=${encodeURIComponent(plan.backendId)}`
+    : null;
 
   return (
-    <div className={`ecp-card ecp-card--plan ${isPopular ? "is-popular" : ""}`}>
+    <div
+      id={`package-${plan.id}`}
+      className={`ecp-card ecp-card--plan ${isPopular ? "is-popular" : ""}`}
+    >
       {isPopular && (
         <div className="ecp-badge">
           {t(dict, "badge_most_popular", "MOST POPULAR")}
@@ -616,15 +792,29 @@ function PricingCard({
       {savings && <div className="ecp-savings">{savings.toUpperCase()}</div>}
 
       <div className="ecp-card__head">
+        {(!isPopular || !isCorp) && (
+          <div className="ecp-card__eyebrow">
+            {isCorp
+              ? t(dict, "card_eyebrow_live", "Live practice")
+              : t(dict, "card_eyebrow_level", "At your level")}
+          </div>
+        )}
         <div className="ecp-card__title">{title}</div>
         {sessionsPerPack && (
           <div className="ecp-card__sessions">
-            {sessionsPerPack} {t(dict, "label_sessions", "sessions")}
+            {!isCorp ? (plan.id.startsWith("1on1-") ? t(dict, "card_format_1on1", "One-on-one coaching") : t(dict, "card_format_group", "Small-group coaching")) : <>{sessionsPerPack} {t(dict, "label_sessions", "sessions")}</>}
           </div>
         )}
       </div>
 
       {description && <p className="ecp-card__desc">{description}</p>}
+
+      {progressGuide && (
+        <div className="ecp-card__progress">
+          <span>{t(dict, "card_progress_label", "Progress guide")}</span>
+          <strong>{progressGuide}</strong>
+        </div>
+      )}
 
       <div className="ecp-card__price">
         <div className="ecp-card__value">{totalLabel}</div>
@@ -643,7 +833,10 @@ function PricingCard({
       {bullets.length > 0 && (
         <ul className="ecp-card__bullets">
           {bullets.map((b, i) => (
-            <li key={i}>{b}</li>
+            <li key={i}>
+              <span className="ecp-card__bullet-icon" aria-hidden="true">✓</span>
+              <span>{b}</span>
+            </li>
           ))}
         </ul>
       )}
@@ -676,12 +869,26 @@ function PricingCard({
               {t(dict, "cta_buy_now", "Buy Now")}
             </Link> */}
 
-            <Link
-              href={`${routeHref(APP_ROUTES.login, locale)}?next=${encodeURIComponent(target)}`}
-              className="ecp-btn ecp-btn--primary"
-            >
-              {t(dict, "cta_buy_now", "Buy Now")}
-            </Link>
+            {target ? (
+              <Link
+                href={`${routeHref(APP_ROUTES.login, locale)}?next=${encodeURIComponent(target)}`}
+                className="ecp-btn ecp-btn--primary"
+                aria-label={`${t(dict, "cta_buy_plan", "Choose")} ${title}`}
+              >
+                {t(dict, "cta_buy_plan", "Choose")} {title}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="ecp-btn ecp-btn--primary ecp-btn--disabled"
+                disabled
+                aria-label={`${t(dict, "cta_unavailable", "Unavailable")} ${title}`}
+              >
+                {loading
+                  ? t(dict, "cta_loading", "Loading price…")
+                  : t(dict, "cta_unavailable", "Unavailable")}
+              </button>
+            )}
           </>
         )}
       </div>
@@ -701,17 +908,27 @@ function Step({ n, title, desc }) {
 
 function Faq({ q, a }) {
   const [open, setOpen] = useState(false);
+  const id = useId();
+  const panelId = `faq-${id.replace(/:/g, "")}`;
   return (
     <div className={`ecp-faq__item ${open ? "is-open" : ""}`}>
       <button
         className="ecp-faq__q"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-controls={panelId}
       >
         {q}
         <span className="ecp-faq__icon">{open ? "−" : "+"}</span>
       </button>
-      <div className="ecp-faq__a">{a}</div>
+      <div
+        id={panelId}
+        className="ecp-faq__a"
+        role="region"
+        aria-hidden={!open}
+      >
+        {a}
+      </div>
     </div>
   );
 }

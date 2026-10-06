@@ -51,7 +51,15 @@ async function collectResponsiveMetrics(page) {
     const scrollWidth = Math.max(root.scrollWidth, body?.scrollWidth || 0);
     const overflowX = scrollWidth - window.innerWidth;
     const fixedOffscreen = Array.from(document.querySelectorAll("*"))
-      .filter((node) => getComputedStyle(node).position === "fixed")
+      .filter((node) => {
+        const style = getComputedStyle(node);
+        return (
+          style.position === "fixed" &&
+          style.visibility !== "hidden" &&
+          style.display !== "none" &&
+          Number(style.opacity) > 0
+        );
+      })
       .map((node) => {
         const rect = node.getBoundingClientRect();
         return {

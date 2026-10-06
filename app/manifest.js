@@ -1,14 +1,15 @@
 // app/manifest.js
+import { BRAND_DESCRIPTION, BRAND_NAME, BRAND_SITE_TITLE } from "@/lib/brand";
+
 export default function manifest() {
   return {
-    name: "Speexify - Language & Communication Coaching",
-    short_name: "Speexify",
-    description:
-      "Personalized language and communication coaching for teams and professionals",
+    name: BRAND_SITE_TITLE,
+    short_name: BRAND_NAME,
+    description: BRAND_DESCRIPTION,
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#2563EB", // Brand blue
+    theme_color: "#f25c2e", // Brand coral
     orientation: "portrait-primary",
     icons: [
       {

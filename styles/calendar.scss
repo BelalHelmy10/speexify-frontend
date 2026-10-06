@@ -240,6 +240,7 @@
 
   .react-calendar__navigation {
     margin-bottom: 10px;
+    gap: 5px;
 
     button {
       min-width: 28px;
@@ -426,6 +427,43 @@
 .calx-week-metrics {
   display: grid;
   gap: 7px;
+}
+
+.calx-set-availability-btn {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 10px;
+  padding: 0 12px;
+  border: 1px solid rgba($color-secondary-dark, 0.28) !important;
+  border-radius: 11px !important;
+  background: rgba($success, 0.08) !important;
+  color: $color-secondary-dark !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    background: rgba($success, 0.14) !important;
+    border-color: rgba($color-secondary-dark, 0.44) !important;
+    box-shadow: 0 8px 18px rgba($navy, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: $color-secondary-dark !important;
+    box-shadow: 0 0 0 4px rgba($success, 0.14);
+  }
 }
 
 .calx-week-metric {
@@ -713,10 +751,12 @@
   justify-content: center;
   min-width: 0;
   text-align: center;
+  padding: 0 5%;
 }
 
 .calx-toolbar__right {
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .calx-toolbar-nav {
@@ -730,8 +770,8 @@
 }
 
 .calx-nav-btn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 9px;
   border: 1px solid transparent;
   background: transparent;
@@ -766,7 +806,7 @@
 }
 
 .calx-today-btn {
-  height: 40px;
+  height: 44px;
   padding: 0 18px;
   border-radius: 10px;
   border: 1px solid $border;
@@ -836,6 +876,63 @@
   box-shadow: inset 0 0 0 1px rgba($border, 0.7);
 }
 
+.calx-toolbar-mode-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba($color-white, 0.72);
+  box-shadow: inset 0 0 0 1px rgba($border, 0.7);
+}
+
+.calx-toolbar-mode-tab {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 9px !important;
+  color: $text-secondary !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+
+  &:hover:not(.is-active) {
+    background: rgba($color-white, 0.82);
+    color: $navy-mid !important;
+    border-color: rgba($border, 0.72);
+  }
+
+  &.is-active {
+    background: $color-white !important;
+    color: $navy !important;
+    border-color: $border;
+    box-shadow: 0 7px 18px rgba($navy, 0.11),
+      0 1px 0 rgba($color-white, 0.9) inset;
+    transform: translateY(-1px);
+  }
+
+  &.is-active.is-availability {
+    color: $color-secondary-dark !important;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: $calendar-primary;
+    box-shadow: 0 0 0 4px rgba($calendar-primary, 0.16);
+  }
+}
+
+.calx-toolbar-mode-tab__availability-label {
+  color: $calendar-primary !important;
+}
+
 .calx-view-tab {
   min-width: 68px;
   height: 34px;
@@ -885,7 +982,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 40px;
+  height: 44px;
   padding: 0 14px;
   border-radius: 10px;
   border: 1px solid $border;
@@ -994,8 +1091,9 @@
 }
 
 .calx-availability-banner {
-  margin: 16px 24px 0;
+  margin: 16px 24px;
   padding: 14px 18px;
+  box-sizing: border-box;
   border-radius: 14px;
   background: rgba($success, 0.08);
   border: 1px solid rgba($success, 0.22);
@@ -1011,19 +1109,36 @@
 
 .calx-availability-banner__text {
   flex: 1;
-  font-size: 13px;
   color: color-mix(in srgb, $success 72%, $color-black);
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
   line-height: 1.45;
 
   strong {
+    color: $color-secondary-dark;
+    font-size: 14px;
     font-weight: 800;
   }
+}
+
+.calx-availability-banner__primary {
+  color: $color-secondary-dark;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.calx-availability-banner__secondary {
+  color: color-mix(in srgb, $success 70%, $color-black);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .calx-availability-banner__close {
   width: 24px;
   height: 24px;
+  flex-shrink: 0;
   border-radius: 6px;
   background: rgba($success, 0.15);
   color: $color-secondary-dark;
@@ -1045,6 +1160,25 @@
   color: $color-white;
   font-size: 13px;
   font-weight: 700;
+}
+
+.calx-session-mode-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 14px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(31, 91, 139, .18);
+  border-radius: 12px;
+  background: rgba(239, 246, 255, .9);
+  color: #17324d;
+}
+
+.calx-session-mode-banner--loading {
+  justify-content: flex-start;
+  color: #526579;
+  background: rgba(248, 250, 252, .92);
 }
 
 .calx-week-wrap {
@@ -1077,6 +1211,15 @@
   top: 0;
   background: $bg-light;
   z-index: 12;
+}
+
+.calx-week-header-time {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 14;
+  background: $bg-light;
+  border-inline-end: 1px solid $border;
+  box-shadow: 4px 0 10px rgba($navy, 0.04);
 }
 
 .calx-week-header-day {
@@ -1157,7 +1300,12 @@
 }
 
 .calx-week-time-col {
-  border-right: 1px solid $border;
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 8;
+  background: $bg-light;
+  border-inline-end: 1px solid $border;
+  box-shadow: 4px 0 10px rgba($navy, 0.04);
 }
 
 .calx-week-time-slot {
@@ -1165,8 +1313,8 @@
   border-bottom: 1px solid $border;
   display: flex;
   align-items: flex-start;
-  justify-content: flex-end;
-  padding: 4px 8px 0 0;
+  justify-content: center;
+  padding: 4px 0 0;
 }
 
 .calx-week-time-label {
@@ -1206,7 +1354,7 @@
 
   &.is-clickable:hover {
     background: rgba($success, 0.06);
-    cursor: crosshair;
+    cursor: pointer;
   }
 
   &:hover {
@@ -1388,34 +1536,35 @@
   }
 
   &.is-dimmed {
-    opacity: 0.35;
+    // Session cards stay readable while availability mode is active.
+    opacity: 1;
   }
 
   &.is-scheduled {
-    background: rgba($calendar-primary, 0.12);
-    border: 1px solid rgba($calendar-primary, 0.28);
-    color: $calendar-secondary;
+    background: #ffe0d6;
+    border: 1px solid $calendar-primary;
+    color: #a83a18;
   }
 
   &.is-group {
-    background: rgba($color-tertiary-dark, 0.1);
-    border: 1px solid rgba($color-tertiary-dark, 0.26);
-    color: $color-tertiary-dark;
+    background: #ffedbf;
+    border: 1px solid $color-tertiary-dark;
+    color: #855400;
   }
 
   &.is-live {
-    background: rgba($success, 0.12);
-    border: 1px solid rgba($success, 0.3);
-    color: color-mix(in srgb, $success 72%, $color-black);
+    background: #c9f0dc;
+    border: 1px solid $success;
+    color: #0f5f42;
     animation: calx-live-pulse 2s ease-in-out infinite;
   }
 
   &.is-canceled {
-    background: rgba($navy, 0.06);
-    border: 1px solid rgba($navy, 0.1);
+    background: #e2e8f0;
+    border: 1px solid #64748b;
     color: $text-secondary;
     text-decoration: line-through;
-    opacity: 0.65;
+    opacity: 1;
   }
 }
 
@@ -1524,13 +1673,16 @@
 
   .rbc-time-gutter .rbc-timeslot-group {
     min-height: 60px;
-    padding: 4px 8px 0 0;
+    padding: 0 8px;
     border-bottom: 1px solid $border;
     color: $text-secondary;
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.04em;
     text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .rbc-timeslot-group,
@@ -1732,43 +1884,43 @@
     }
 
     &.calx-rbc-event--scheduled {
-      background: rgba($calendar-primary, 0.12);
-      color: $calendar-secondary;
-      border: 1px solid rgba($calendar-primary, 0.28);
+      background: #ffe0d6;
+      color: #a83a18;
+      border: 1px solid $calendar-primary;
     }
 
     &.calx-rbc-event--group {
-      background: rgba($color-tertiary-dark, 0.1);
-      color: $color-tertiary-dark;
-      border: 1px solid rgba($color-tertiary-dark, 0.26);
+      background: #ffedbf;
+      color: #855400;
+      border: 1px solid $color-tertiary-dark;
     }
 
     &.calx-rbc-event--live {
-      background: rgba($success, 0.12);
-      color: color-mix(in srgb, $success 72%, $color-black);
-      border: 1px solid rgba($success, 0.3);
+      background: #c9f0dc;
+      color: #0f5f42;
+      border: 1px solid $success;
     }
 
     &.calx-rbc-event--canceled {
-      background: rgba($navy, 0.06);
+      background: #e2e8f0;
       color: $text-secondary;
-      border: 1px solid rgba($navy, 0.1);
-      opacity: 0.65;
+      border: 1px solid #64748b;
+      opacity: 1;
       text-decoration: line-through;
     }
 
     &.calx-rbc-event--availability {
-      background: rgba($success, 0.12);
+      background: #c9f0dc;
       color: $color-secondary-dark;
-      border: 1px solid rgba($success, 0.3);
+      border: 1px solid $success;
 
       &.is-faded {
-        opacity: 0.35;
+        opacity: 1;
       }
     }
 
     &.is-dimmed {
-      opacity: 0.35;
+      opacity: 1;
     }
   }
 
@@ -1831,7 +1983,7 @@
   .calx-rbc-pill__meta {
     font-size: 10px;
     font-weight: 650;
-    opacity: 0.72;
+    opacity: 1;
   }
 
   .rbc-show-more {
@@ -1881,7 +2033,8 @@
 }
 
 .calx-availability-actions {
-  padding: 0 24px 24px;
+  padding: 24px;
+  box-sizing: border-box;
   display: flex;
   gap: 10px;
   justify-content: flex-end;
@@ -1901,13 +2054,18 @@
 }
 
 .calx-availability-action {
+  min-height: 44px;
   padding: 10px 14px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.2;
   border: 1px solid $ring;
   color: $text-primary;
   background: $card-bg;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s;
 
   &:hover:not(:disabled) {
@@ -2249,8 +2407,8 @@
 
 .calx-event-popover__close,
 .calx-session-drawer__close {
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   border-radius: 9px;
   display: grid;
   place-items: center;
@@ -2524,6 +2682,57 @@
   }
 }
 
+@media (max-width: 1440px) {
+  .calx-toolbar {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "left center"
+      "right right";
+    align-items: center;
+  }
+
+  .calx-toolbar__left {
+    grid-area: left;
+  }
+
+  .calx-toolbar__center {
+    grid-area: center;
+    padding: 0;
+  }
+
+  .calx-toolbar__right {
+    grid-area: right;
+    width: 100%;
+    justify-content: flex-end;
+    min-width: 0;
+    row-gap: 8px;
+  }
+}
+
+@media (min-width: 861px) and (max-width: 1440px) {
+  .calx-toolbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    grid-template-areas: none;
+  }
+
+  .calx-toolbar__left {
+    grid-area: 2 / 1;
+    z-index: 1;
+  }
+
+  .calx-toolbar__center {
+    grid-area: 1 / 1 / 2 / 4;
+    justify-self: center;
+    padding: 0;
+  }
+
+  .calx-toolbar__right {
+    grid-area: 2 / 2 / 3 / 4;
+    width: auto;
+  }
+}
+
 @media (max-width: 860px) {
   .calx-page {
     width: 100%;
@@ -2545,12 +2754,25 @@
     min-width: 620px;
   }
 
+  .calx-rbc-panel {
+    overflow-x: hidden;
+
+    .rbc-calendar {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+
   .calendar-layout {
     grid-template-columns: 1fr;
   }
 
   .calx-toolbar {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "center"
+      "left"
+      "right";
     align-items: stretch;
   }
 
@@ -2567,13 +2789,32 @@
     flex-wrap: wrap;
   }
 
+  .calx-toolbar__left {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .calx-today-btn {
+    width: 100%;
+  }
+
   .calx-view-tabs {
+    flex: 1 1 220px;
+  }
+
+  .calx-toolbar-mode-tabs {
     flex: 1 1 220px;
   }
 
   .calx-view-tab {
     flex: 1;
     min-width: 0;
+  }
+
+  .calx-week-wrap {
+    padding-inline: 16px;
   }
 }
 
@@ -2599,10 +2840,27 @@
     font-size: 10px;
   }
 
+  .calx-toolbar-mode-tabs,
+  .calx-view-tabs {
+    flex: 1 1 100%;
+  }
+
+  .calx-toolbar-mode-tab,
+  .calx-view-tab {
+    flex: 1;
+    min-height: 44px;
+  }
+
+  .calx-availability-banner {
+    margin: 12px 16px;
+    padding: 12px 14px;
+    align-items: center;
+  }
+
   .calx-today-btn,
   .calx-filter-btn,
   .calx-toolbar-support {
-    height: 38px;
+    height: 44px;
   }
 
   .calx-toolbar-support {
@@ -2647,17 +2905,135 @@
     min-width: 560px;
   }
 
+  .calx-week-header,
+  .calx-week-body {
+    grid-template-columns: 46px repeat(7, minmax(76px, 1fr));
+  }
+
+  .calx-week-header-day {
+    padding: 12px 4px 14px;
+    margin: 6px 4px 8px;
+    border-radius: 12px;
+  }
+
+  .calx-week-header-dow {
+    margin-bottom: 8px;
+    font-size: 9px;
+  }
+
+  .calx-week-header-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    font-size: 19px;
+  }
+
+  .calx-week-time-slot {
+    padding: 4px 0 0;
+  }
+
+  .calx-week-time-label {
+    font-size: 10px;
+  }
+
   .calx-rbc-panel {
     padding: 12px;
     max-height: calc(var(--spx-mobile-shell) - 196px);
 
     .rbc-calendar {
-      min-width: 620px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .rbc-header,
+    .rbc-time-header-content .rbc-header {
+      min-height: 54px;
+    }
+
+    .calx-rbc-header-cell {
+      min-height: 54px;
+      padding: 8px 3px;
+      gap: 5px;
+    }
+
+    .calx-rbc-header-dow {
+      font-size: 9px;
+    }
+
+    .calx-rbc-header-num {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      font-size: 18px;
+    }
+
+    .rbc-month-row {
+      min-height: 84px;
+    }
+
+    .rbc-row-segment {
+      padding-inline: 2px;
+    }
+
+    .rbc-date-cell {
+      padding: 4px 4px 2px;
+    }
+
+    .calx-rbc-month-date {
+      min-width: 26px;
+      height: 26px;
+      padding: 0 4px;
+      border-radius: 8px;
+      font-size: 11px;
+    }
+
+    .calx-rbc-pill {
+      gap: 3px;
+      padding: 3px 4px;
+      font-size: 10px;
+    }
+
+    .calx-rbc-pill__accent {
+      width: 5px;
+      height: 5px;
+      margin-top: 3px;
+    }
+
+    .rbc-month-view .calx-rbc-pill__meta {
+      display: none;
+    }
+
+    .rbc-time-header-gutter,
+    .rbc-time-gutter {
+      width: 44px;
+      flex-basis: 44px;
+    }
+
+    .rbc-time-gutter .rbc-timeslot-group {
+      padding-inline: 4px;
+      font-size: 10px;
     }
   }
 
   .calx-availability-actions {
-    padding: 0 12px 12px;
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .calx-availability-status {
+    flex: 1 1 100%;
+    margin-right: 0;
+    line-height: 1.35;
+  }
+
+  .calx-availability-action {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    padding-inline: 10px;
+  }
+
+  .calx-availability-action.is-primary {
+    flex-basis: 100%;
   }
 
   .calx-impersonate-bar {

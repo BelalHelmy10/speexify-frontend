@@ -1,7 +1,7 @@
 // app/classroom/[sessionId]/ClassroomResourcePicker.jsx
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { memo, useMemo, useState, useEffect, useCallback } from "react";
 import { buildPickerIndex } from "./classroomHelpers";
 
 /**
@@ -43,7 +43,7 @@ function savePickerState(sessionId, state) {
   }
 }
 
-export default function ClassroomResourcePicker({
+function ClassroomResourcePicker({
   tracks,
   selectedResourceId,
   onChangeResourceId,
@@ -359,6 +359,8 @@ export default function ClassroomResourcePicker({
     </div>
   );
 }
+
+export default memo(ClassroomResourcePicker);
 
 /* -----------------------------------------------------------
    Helper: Get icon for resource based on real fields

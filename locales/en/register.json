@@ -2,8 +2,16 @@
   "title_step1": "Create account",
   "title_step2": "Verify your email",
 
-  "subtitle_step1": "Get started with your free account",
+  "subtitle_step1": "Join with Google or email. No card required.",
   "subtitle_step2_prefix": "We sent a code to",
+
+  "form_aria_label": "Create your Speexify account",
+  "register_eyebrow": "Start speaking sooner",
+  "friendly_note": "Create your account now. Book coaching only when you're ready.",
+  "google_button_label": "Continue with Google",
+  "card_badge": "Free account",
+  "card_timing": "Takes 30 seconds",
+  "privacy_note": "No payment required. We use your contact details for account support; marketing messages are always opt-in.",
 
   "step1_label": "Email",
   "step2_label": "Verify",
@@ -19,6 +27,12 @@
   "label_name": "Full name",
   "optional": "(optional)",
   "placeholder_name": "Jane Doe",
+
+  "label_phone": "Phone number",
+  "placeholder_phone": "+20 10 1234 5678",
+  "phone_hint": "Used for account support and session updates.",
+  "marketing_consent": "I agree to receive marketing messages by SMS or WhatsApp.",
+  "marketing_consent_hint": "Optional. You can unsubscribe at any time.",
 
   "label_password": "Password",
   "password_hint": "Must be at least 6 characters",

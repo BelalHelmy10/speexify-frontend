@@ -1,17 +1,23 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import api from "@/lib/api";
 import { me } from "@/lib/auth";
 import "@/styles/checkout.scss";
 import { useToast } from "@/components/ToastProvider";
+import BrandLogo from "@/components/brand/BrandLogo";
 import { getDictionary, t } from "@/app/i18n";
-import { detectUserCountry } from "@/lib/geo";
+import { usePricingCatalog, useCheckoutQuote } from "@/hooks/usePricingCatalog";
+import { oneOnOnePlans, groupPlans } from "@/lib/plans";
 import {
-  calculatePackagePrice,
   formatRegionalPrice,
+  formatEgpCharge,
 } from "@/lib/regional-pricing";
+import {
+  buildOrderId,
+  confirmationFromResponse,
+} from "@/lib/payment-contract";
 import {
   getNetworkProfile,
   subscribeToNetworkProfileChanges,
@@ -19,44 +25,46 @@ import {
 import { APP_ROUTES, routeHref } from "@/lib/routes";
 
 export default function CheckoutPage() {
-  const { toast, confirmModal } = useToast();
+  const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  // Locale & dictionary
   const locale = pathname && pathname.startsWith("/ar") ? "ar" : "en";
   const dict = useMemo(() => getDictionary(locale, "checkout"), [locale]);
 
-  const [pkg, setPkg] = useState(null);
+  const {catalog, error: catalogError, retry: retryCatalog} = usePricingCatalog();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [loadingPkg, setLoadingPkg] = useState(true);
+
   const [loadingUser, setLoadingUser] = useState(true);
-  const [countryCode, setCountryCode] = useState(null);
+
   const [discountCode, setDiscountCode] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [discountLoading, setDiscountLoading] = useState(false);
-  const [networkProfile, setNetworkProfile] = useState(() =>
-    getNetworkProfile(),
-  );
+  const [appliedDiscount, setAppliedDiscount] = useState("");
+
+  const [networkProfile, setNetworkProfile] = useState(() => getNetworkProfile());
   const [recoveryOrder, setRecoveryOrder] = useState(null);
   const [recoveringOrderId, setRecoveringOrderId] = useState(null);
 
-  const planTitle = searchParams.get("plan");
+  // Confirmation step state — populated after a successful create-intent.
+  // While this is set, the user sees a confirmation card with the locked
+  // EGP charge amount before being redirected to Paymob.
+  const [pendingIntent, setPendingIntent] = useState(null);
+
+  // Stable orderId timestamp for the current attempt. We capture this
+  // when the user first clicks "Review" and reuse it for retries within
+  // the same attempt, so double-clicks don't create duplicate intents.
+  // It resets when the user cancels the confirmation card.
+  const orderTimestampRef = useRef(null);
+
+  // Accept either ?planId= (preferred) or ?plan= (legacy, by title).
+  const planIdParam = searchParams.get("planId");
+  const planTitleParam = searchParams.get("plan");
 
   useEffect(() => {
     return subscribeToNetworkProfileChanges((nextProfile) => {
       setNetworkProfile(nextProfile);
     });
-  }, []);
-
-  // Detect country
-  useEffect(() => {
-    (async () => {
-      const detected = await detectUserCountry();
-      setCountryCode(detected);
-    })();
   }, []);
 
   // Fetch current user
@@ -65,8 +73,7 @@ export default function CheckoutPage() {
       try {
         const userData = await me();
         setUser(userData?.user || null);
-      } catch (err) {
-        console.log("User not logged in:", err);
+      } catch {
         setUser(null);
       } finally {
         setLoadingUser(false);
@@ -74,70 +81,36 @@ export default function CheckoutPage() {
     })();
   }, []);
 
-  // Fetch package details
-  useEffect(() => {
-    if (!planTitle) {
-      setLoadingPkg(false);
-      return;
-    }
-
-    (async () => {
-      try {
-        const res = await api.get("/api/packages?audience=INDIVIDUAL");
-        const packages = res.data || [];
-
-        console.log("🔍 Looking for package:", planTitle);
-        console.log(
-          "📦 Available packages:",
-          packages.map((p) => p.title),
-        );
-
-        const decodedTitle = decodeURIComponent(planTitle).trim();
-
-        let selected = packages.find(
-          (p) => p.title.toLowerCase() === decodedTitle.toLowerCase(),
-        );
-
-        if (!selected) {
-          selected = packages.find(
-            (p) =>
-              p.title.toLowerCase().includes(decodedTitle.toLowerCase()) ||
-              decodedTitle.toLowerCase().includes(p.title.toLowerCase()),
-          );
-        }
-
-        console.log("✅ Found package:", selected);
-        setPkg(selected);
-      } catch (err) {
-        console.error("Failed to load package:", err);
-      } finally {
-        setLoadingPkg(false);
-      }
-    })();
-  }, [planTitle]);
-
-  // Apply discount code
-  async function applyDiscount() {
-    if (!discountCode) return;
-
-    try {
-      setDiscountLoading(true);
-
-      const res = await api.post("/discounts/validate", {
-        code: discountCode,
-      });
-
-      setDiscountPercent(res.data.percentage);
-      toast.success(
-        t(dict, "discount_toast_applied", { percent: res.data.percentage }),
-      );
-    } catch (e) {
-      setDiscountPercent(0);
-      toast.error(t(dict, "discount_toast_invalid"));
-    } finally {
-      setDiscountLoading(false);
-    }
+  const pkg = useMemo(() => {
+    if (!catalog) return null;
+    const numericId = Number(searchParams.get("packageId"));
+    const editorial = [...oneOnOnePlans, ...groupPlans].find(p =>
+      p.id === planIdParam || p.title.toLowerCase() === (planTitleParam || "").trim().toLowerCase());
+    const item = numericId ? catalog.packages.find(p => p.id === numericId)
+      : catalog.packages.find(p => p.catalogKey === editorial?.id);
+    if (!item) return null;
+    const content = [...oneOnOnePlans, ...groupPlans].find(p => p.id === item.catalogKey);
+    const packageDict = getDictionary(locale, "packages");
+    return {...item, title: packageDict[`plan_${item.catalogKey}_title`] || content?.title || item.title,
+      description: packageDict[`plan_${item.catalogKey}_desc`] || content?.description || item.description};
+  }, [catalog, searchParams, planIdParam, planTitleParam, locale]);
+  const regionToken = searchParams.get("region") || catalog?.regionToken;
+  const quote = useCheckoutQuote(pkg?.id, regionToken, appliedDiscount);
+  const regionalPrice = quote.pricing;
+  const discountPercent = regionalPrice?.discountPercentage || 0;
+  const discountLoading = quote.loading;
+  const loadingPkg = !catalog && !catalogError;
+  const geoFailed = catalog?.countrySource === "default";
+  function applyDiscount() {
+    setPendingIntent(null);
+    orderTimestampRef.current = null;
+    setAppliedDiscount(discountCode.trim().toUpperCase());
   }
+
+  // Recovery flow — show banner for a pending/failed previous order.
+  // We only surface orders from the last 24 hours so stale unfinished
+  // attempts from days/weeks ago don't keep nagging the user.
+  const RECOVERY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
   useEffect(() => {
     if (!user?.id || !pkg?.id) {
@@ -152,14 +125,25 @@ export default function CheckoutPage() {
         const { data } = await api.get("/api/payments/orders/recovery", {
           params: { packageId: Number(pkg.id), limit: 1 },
         });
+        const candidate = data?.items?.[0] || null;
 
-        if (!cancelled) {
-          setRecoveryOrder(data?.items?.[0] || null);
-        }
-      } catch {
-        if (!cancelled) {
+        if (cancelled) return;
+        if (!candidate) {
           setRecoveryOrder(null);
+          return;
         }
+
+        // Filter out old orders. The backend may not yet enforce this so
+        // we double-check on the client.
+        const orderTs = Date.parse(candidate.createdAt || candidate.created_at || "");
+        if (Number.isFinite(orderTs) && Date.now() - orderTs > RECOVERY_MAX_AGE_MS) {
+          setRecoveryOrder(null);
+          return;
+        }
+
+        setRecoveryOrder(candidate);
+      } catch {
+        if (!cancelled) setRecoveryOrder(null);
       }
     })();
 
@@ -168,61 +152,78 @@ export default function CheckoutPage() {
     };
   }, [user?.id, pkg?.id]);
 
+  function dismissRecoveryBanner() {
+    setRecoveryOrder(null);
+  }
+
   async function resumeRecoverableOrder(orderId) {
     if (!orderId) return;
 
     try {
       setRecoveringOrderId(orderId);
       const { data } = await api.post(
-        `/api/payments/orders/${encodeURIComponent(orderId)}/retry-intent`,
+        `/api/payments/orders/${encodeURIComponent(orderId)}/retry-intent`
       );
 
       if (!data?.ok || !data?.iframeUrl) {
-        throw new Error(data?.error || t(dict, "toast_payment_failed"));
+        throw new Error(data?.error || t(dict, "recovery_retry_failed"));
       }
 
-      window.location.href = data.iframeUrl;
+      setPendingIntent(confirmationFromResponse(data, regionalPrice));
     } catch (e) {
+      // Retry failed — the stored intent is unusable (expired, price
+      // changed, backend rejected, etc.). Dismiss the banner so the user
+      // can start a fresh checkout below rather than being stuck.
       const message =
-        e?.response?.data?.error || e?.message || t(dict, "toast_payment_failed");
+        e?.response?.data?.error || e?.message || t(dict, "recovery_retry_failed");
       toast.error(message);
+      setRecoveryOrder(null);
     } finally {
       setRecoveringOrderId(null);
     }
   }
 
-  // Calculate regional pricing
-  const regionalPrice = useMemo(() => {
-    if (!pkg) return null;
-    return calculatePackagePrice(pkg, countryCode, discountPercent);
-  }, [pkg, countryCode, discountPercent]);
-
-  async function startPayment() {
+  // Create the payment intent on the backend. The response includes the
+  // locked EGP amount that will actually be charged at Paymob. We show
+  // that to the user on a confirmation card before redirecting.
+  async function reviewPayment() {
     if (!pkg) return;
+    if (!quote.quoteToken) return;
+    if (!regionalPrice) return;
+
+    // The backend payment API requires a numeric package id. If the local
+    // plan exists but isn't synced to the backend yet, we cannot proceed.
+    if (pkg.id == null || Number.isNaN(Number(pkg.id))) {
+      toast.error(t(dict, "error_package_not_synced"));
+      return;
+    }
+
+    if (!user) {
+      const currentUrl = encodeURIComponent(window.location.href);
+      router.push(`${routeHref(APP_ROUTES.login, locale)}?next=${currentUrl}`);
+      return;
+    }
 
     try {
       setLoading(true);
-
-      if (!user) {
-        const shouldLogin = await confirmModal(
-          t(dict, "confirm_login_message"),
-        );
-        if (shouldLogin) {
-          const currentUrl = encodeURIComponent(window.location.href);
-          router.push(`${routeHref(APP_ROUTES.login, locale)}?next=${currentUrl}`);
-        }
-        return;
-      }
 
       const nameParts = (user.name || "User").split(" ");
       const firstName = nameParts[0] || "User";
       const lastName = nameParts.slice(1).join(" ") || "";
 
+      if (orderTimestampRef.current == null) {
+        orderTimestampRef.current = Date.now();
+      }
+
       const body = {
-        orderId: `order_${Date.now()}_${pkg.id}_user${user.id}`,
+        orderId: buildOrderId({
+          userId: user.id,
+          packageId: Number(pkg.id),
+          timestamp: orderTimestampRef.current,
+        }),
         packageId: Number(pkg.id),
-        countryCode,
-        discountCode: discountCode || null,
+        quoteToken: quote.quoteToken,
+        discountCode: appliedDiscount || null,
         customer: {
           firstName,
           lastName,
@@ -231,36 +232,72 @@ export default function CheckoutPage() {
         },
       };
 
-      // Call our new Intention API endpoint
       const { data } = await api.post("/payments/create-intent", body);
 
-      if (!data?.ok) {
-        throw new Error(data?.message || "Failed to init payment");
-      }
-
-      // REDIRECT to Paymob Unified Checkout
-      if (data.iframeUrl) {
-        window.location.href = data.iframeUrl;
-      } else {
-        throw new Error("No checkout URL received");
-      }
+      setPendingIntent(confirmationFromResponse(data, regionalPrice));
     } catch (e) {
-      console.error("startPayment error:", e);
-      const resp = e?.response?.data;
+      // Log everything we can find about the failure as separate args so
+      // dev-tools doesn't collapse it. Also stringify the response for
+      // copy-paste sharing.
+      // eslint-disable-next-line no-console
+      console.error(
+        "[checkout] create-intent failed",
+        "status:", e?.response?.status,
+        "data:", e?.response?.data,
+        "message:", e?.message,
+        "raw:", JSON.stringify(e?.response?.data ?? null)
+      );
 
+      // Failed attempt — reset the orderId timestamp so the next click
+      // starts a brand-new order rather than re-sending the same id the
+      // backend may have already rejected.
+      orderTimestampRef.current = null;
+
+      const resp = e?.response?.data;
+      if (["PRICE_CHANGED", "QUOTE_EXPIRED"].includes(resp?.code)) quote.refresh();
+      const status = e?.response?.status;
+
+      // Surface the most specific message the backend gave us. If it's
+      // a validation error with a "fields" or "details" array, include
+      // those so we know which field the backend objected to.
+      let detail;
       if (resp?.code === "ALREADY_SUBSCRIBED") {
-        toast.error(t(dict, "toast_already_subscribed"));
+        detail = t(dict, "toast_already_subscribed");
       } else if (resp?.message) {
-        toast.error(resp.message);
+        detail = resp.message;
+      } else if (resp?.error) {
+        const fields = Array.isArray(resp?.fields) ? resp.fields.join(", ")
+          : Array.isArray(resp?.details) ? resp.details.map(d => d?.path || d?.field || d?.message).filter(Boolean).join(", ")
+          : null;
+        detail = fields ? `${resp.error}: ${fields}` : String(resp.error);
+      } else if (status) {
+        detail = `${t(dict, "toast_payment_failed")} (HTTP ${status})`;
       } else {
-        toast.error(t(dict, "toast_payment_failed"));
+        detail = t(dict, "toast_payment_failed");
       }
+      toast.error(detail);
     } finally {
       setLoading(false);
     }
   }
 
-  // Show loading while fetching user and package
+  function confirmAndRedirect() {
+    if (!pendingIntent?.iframeUrl || !pendingIntent.accepted) return;
+    window.location.href = pendingIntent.iframeUrl;
+  }
+
+  function cancelConfirmation() {
+    // Clear the orderId timestamp so the next "Review" mints a fresh
+    // orderId rather than colliding with the abandoned intent.
+    orderTimestampRef.current = null;
+    setPendingIntent(null);
+  }
+
+  function continueToLogin() {
+    const currentUrl = encodeURIComponent(window.location.href);
+    router.push(`${routeHref(APP_ROUTES.login, locale)}?next=${currentUrl}`);
+  }
+
   if (loadingPkg || loadingUser) {
     return (
       <div className="checkout__loading">
@@ -272,7 +309,8 @@ export default function CheckoutPage() {
     );
   }
 
-  // Package not found
+  if (catalogError) return (<div className="checkout__error" role="alert"><p>{locale === "ar" ? "تعذّر تحميل الأسعار." : catalogError}</p><button onClick={retryCatalog}>{locale === "ar" ? "حاول مرة أخرى" : "Try again"}</button></div>);
+
   if (!pkg) {
     return (
       <div className="checkout__error">
@@ -284,9 +322,7 @@ export default function CheckoutPage() {
             {t(dict, "error_message_not_found")}
           </p>
           <button
-            onClick={() =>
-              router.push(routeHref(APP_ROUTES.packages, locale))
-            }
+            onClick={() => router.push(routeHref(APP_ROUTES.packages, locale))}
             className="checkout__error-button"
           >
             {t(dict, "error_button_view_packages")}
@@ -296,16 +332,53 @@ export default function CheckoutPage() {
     );
   }
 
-  // Format prices for display
-  // Use regionalPrice calculated in memo above
-  if (!regionalPrice) return null; // Logic check
+  // Still waiting on geo resolution — show a friendly loading state so the
+  // Pay button never appears with a null countryCode.
+  if (quote.error) return (<div className="checkout__error" role="alert">
+    <p>{locale === "ar" ? "تعذّر تأكيد السعر أو كود الخصم. حدّث السعر وحاول مرة أخرى." : quote.error}</p>
+    <button onClick={() => {setAppliedDiscount(""); setDiscountCode(""); router.replace(`${pathname}?packageId=${pkg.id}`); retryCatalog(); quote.refresh();}}>{locale === "ar" ? "تحديث السعر" : "Refresh price"}</button>
+  </div>);
+
+  if (!regionalPrice) {
+    return (
+      <div className="checkout__loading">
+        <div className="checkout__loading-content">
+          <div className="checkout__loading-spinner"></div>
+          <p className="checkout__loading-text">{t(dict, "geo_loading")}</p>
+        </div>
+      </div>
+    );
+  }
 
   const displayPrice = formatRegionalPrice(regionalPrice, locale);
+  const baseAmount = Number(pkg.priceEGP);
+  const discountAmount = discountPercent > 0 && Number.isFinite(baseAmount)
+    ? Math.max(0, baseAmount - Number(regionalPrice.displayAmount || 0))
+    : 0;
+  const originalPrice = discountAmount > 0
+    ? formatRegionalPrice({ ...regionalPrice, displayAmount: baseAmount }, locale)
+    : null;
+  const discountDisplay = discountAmount > 0
+    ? formatRegionalPrice({ ...regionalPrice, displayAmount: discountAmount }, locale)
+    : null;
+  const lockedEgpDisplay = pendingIntent
+    ? formatEgpCharge(pendingIntent.chargeAmountEGP, locale)
+    : null;
 
   return (
     <div className="checkout">
+      <div className="checkout__topbar">
+        <BrandLogo
+          context="header"
+          href={routeHref(APP_ROUTES.home, locale)}
+          ariaLabel="Speexify"
+          className="checkout__brand"
+        />
+        <a className="checkout__support-link" href="mailto:support@speexify.com">
+          {t(dict, "support_link")}
+        </a>
+      </div>
       <div className="checkout__container">
-        {/* Header with User Info */}
         <div className="checkout__header">
           <h1 className="checkout__header-title">{t(dict, "header_title")}</h1>
           {user && (
@@ -315,13 +388,18 @@ export default function CheckoutPage() {
           )}
         </div>
 
+        {geoFailed && (
+          <div className="checkout__exchange-note">
+            {t(dict, "geo_failed_note")}
+          </div>
+        )}
+
         {networkProfile.isLowBandwidth && (
           <div className="checkout__exchange-note">
             {t(dict, "low_bandwidth_note")}
           </div>
         )}
 
-        {/* Login Warning (if not logged in) */}
         {!user && (
           <div className="checkout__warning">
             <div className="checkout__warning-content">
@@ -346,6 +424,14 @@ export default function CheckoutPage() {
 
         {user && recoveryOrder && (
           <div className="checkout__warning">
+            <button
+              type="button"
+              className="checkout__warning-dismiss"
+              onClick={dismissRecoveryBanner}
+              aria-label={t(dict, "recovery_dismiss_aria")}
+            >
+              ×
+            </button>
             <div className="checkout__warning-content">
               <svg
                 className="checkout__warning-icon"
@@ -361,32 +447,36 @@ export default function CheckoutPage() {
               <div className="checkout__warning-text">
                 <h3>{t(dict, "recovery_title")}</h3>
                 <p>
-                  {t(dict, "recovery_message", {
-                    orderId: recoveryOrder.id,
-                  })}
+                  {t(dict, "recovery_message", { orderId: recoveryOrder.id })}
                 </p>
-                <button
-                  type="button"
-                  className="checkout__error-button"
-                  onClick={() => resumeRecoverableOrder(recoveryOrder.id)}
-                  disabled={recoveringOrderId === recoveryOrder.id}
-                  style={{ marginTop: "0.75rem" }}
-                >
-                  {recoveringOrderId === recoveryOrder.id
-                    ? t(dict, "recovery_button_processing")
-                    : t(dict, "recovery_button")}
-                </button>
+                <div className="checkout__warning-actions">
+                  <button
+                    type="button"
+                    className="checkout__error-button"
+                    onClick={() => resumeRecoverableOrder(recoveryOrder.id)}
+                    disabled={recoveringOrderId === recoveryOrder.id}
+                  >
+                    {recoveringOrderId === recoveryOrder.id
+                      ? t(dict, "recovery_button_processing")
+                      : t(dict, "recovery_button")}
+                  </button>
+                  <button
+                    type="button"
+                    className="checkout__warning-secondary"
+                    onClick={dismissRecoveryBanner}
+                  >
+                    {t(dict, "recovery_start_fresh")}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Package Summary */}
         <div className="checkout__package">
           <h2 className="checkout__package-title">{pkg.title}</h2>
           <p className="checkout__package-description">{pkg.description}</p>
 
-          {/* Package Details */}
           <div className="checkout__details">
             {pkg.sessionsPerPack && (
               <div className="checkout__details-row">
@@ -410,14 +500,25 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Discount Code */}
-          <div className="checkout__discount">
-            <input
-              value={discountCode}
-              onChange={(e) => setDiscountCode(e.target.value)}
-              placeholder={t(dict, "discount_placeholder")}
-            />
-            <button onClick={applyDiscount} disabled={discountLoading}>
+          <form
+            className="checkout__discount"
+            onSubmit={(event) => {
+              event.preventDefault();
+              applyDiscount();
+            }}
+          >
+            <div className="checkout__discount-field">
+              <label htmlFor="discount-code">{t(dict, "discount_label")}</label>
+              <input
+                id="discount-code"
+                value={discountCode}
+                onChange={(e) => {setDiscountCode(e.target.value); setAppliedDiscount(""); setPendingIntent(null); orderTimestampRef.current = null;}}
+                placeholder={t(dict, "discount_placeholder")}
+                autoComplete="off"
+                inputMode="text"
+              />
+            </div>
+            <button type="submit" disabled={discountLoading}>
               {t(dict, "discount_apply")}
             </button>
 
@@ -426,16 +527,47 @@ export default function CheckoutPage() {
                 {t(dict, "discount_applied", { percent: discountPercent })}
               </div>
             )}
-          </div>
+          </form>
 
-          {/* Pricing */}
           <div className="checkout__pricing">
+            {originalPrice ? (
+              <div className="checkout__pricing-row">
+                <span className="checkout__pricing-label">
+                  {t(dict, "pricing_label_original_price")}
+                </span>
+                <span className="checkout__pricing-value checkout__pricing-value--struck">
+                  {originalPrice}
+                </span>
+              </div>
+            ) : null}
             <div className="checkout__pricing-row">
               <span className="checkout__pricing-label">
                 {t(dict, "pricing_label_package_price")}
               </span>
               <span className="checkout__pricing-value">{displayPrice}</span>
             </div>
+
+            {regionalPrice.displayCurrency !== "EGP" && (
+              <div className="checkout__pricing-row">
+                <span className="checkout__pricing-label">
+                  {t(dict, "pricing_label_egp_equivalent")}
+                </span>
+                <span className="checkout__pricing-value">
+                  {formatEgpCharge(regionalPrice.egpAmount, locale)}
+                </span>
+              </div>
+            )}
+
+            {discountDisplay ? (
+              <div className="checkout__pricing-row checkout__pricing-row--discount">
+                <span className="checkout__pricing-label">
+                  {t(dict, "pricing_label_discount", { percent: discountPercent })}
+                </span>
+                <span className="checkout__pricing-value">
+                  −{discountDisplay}
+                </span>
+              </div>
+            ) : null}
 
             <div className="checkout__pricing-row checkout__pricing-row--total">
               <span className="checkout__pricing-label checkout__pricing-label--total">
@@ -448,7 +580,6 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Customer Information Preview (if logged in) */}
         {user && (
           <div className="checkout__customer">
             <h3 className="checkout__customer-title">
@@ -473,33 +604,117 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        {/* Payment Button */}
-        <button
-          onClick={startPayment}
-          disabled={loading}
-          className="checkout__pay-button"
-        >
-          {loading ? (
-            <span className="checkout__pay-button-loading">
-              <span className="checkout__pay-button-spinner"></span>
-              {t(dict, "pay_button_processing")}
-            </span>
-          ) : (
-            <>
-              {t(dict, "pay_button_label")} {displayPrice}
-            </>
-          )}
-        </button>
+        {/* Either the Review button OR the Confirmation card — not both. */}
+        {pendingIntent ? (
+          <div className="checkout__confirm" role="dialog" aria-live="polite">
+            <h3 className="checkout__confirm-title">
+              {t(dict, "confirm_title")}
+            </h3>
 
-        {/* Security Note */}
-        <div className="checkout__security">{t(dict, "security_note")}</div>
+            {pendingIntent.mismatch && (
+              <div className="checkout__confirm-mismatch" role="alert">
+                <div className="checkout__confirm-mismatch-title">
+                  {t(dict, "confirm_mismatch_title")}
+                </div>
+                <p className="checkout__confirm-mismatch-body">
+                  {t(dict, "confirm_mismatch_body", {
+                    expected: formatEgpCharge(
+                      pendingIntent.expectedEgpAmount,
+                      locale
+                    ),
+                    actual: formatEgpCharge(
+                      pendingIntent.chargeAmountEGP,
+                      locale
+                    ),
+                  })}
+                </p>
+                <label className="checkout__confirm-mismatch-ack">
+                  <input
+                    type="checkbox"
+                    checked={pendingIntent.accepted}
+                    onChange={(e) =>
+                      setPendingIntent((prev) =>
+                        prev ? { ...prev, accepted: e.target.checked } : prev
+                      )
+                    }
+                  />
+                  <span>
+                    {t(dict, "confirm_mismatch_acknowledge", {
+                      amount: formatEgpCharge(
+                        pendingIntent.chargeAmountEGP,
+                        locale
+                      ),
+                    })}
+                  </span>
+                </label>
+              </div>
+            )}
 
-        {/* Back Link */}
+            <div className="checkout__confirm-amount">
+              <div className="checkout__confirm-amount-label">
+                {t(dict, "confirm_charge_amount_label")}
+              </div>
+              <div className="checkout__confirm-amount-value">
+                {lockedEgpDisplay}
+              </div>
+            </div>
+            {regionalPrice.displayCurrency !== "EGP" && (
+              <p className="checkout__confirm-note">
+                {t(dict, "confirm_currency_note", {
+                  currency: regionalPrice.displayCurrency,
+                })}
+              </p>
+            )}
+            <div className="checkout__confirm-actions">
+              <button
+                onClick={confirmAndRedirect}
+                className="checkout__pay-button"
+                disabled={!pendingIntent.accepted}
+              >
+                {t(dict, "confirm_btn_proceed")}
+              </button>
+              <button
+                onClick={cancelConfirmation}
+                className="checkout__confirm-cancel"
+                type="button"
+              >
+                {t(dict, "confirm_btn_cancel")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={user ? reviewPayment : continueToLogin}
+            disabled={loading || (Boolean(user) && !quote.quoteToken)}
+            className="checkout__pay-button"
+          >
+            {loading ? (
+              <span className="checkout__pay-button-loading">
+                <span className="checkout__pay-button-spinner"></span>
+                {t(dict, "pay_button_processing")}
+              </span>
+            ) : (
+              t(dict, user ? "pay_button_review_with_amount" : "pay_button_login_with_amount", { amount: displayPrice })
+            )}
+          </button>
+        )}
+
+        <div className="checkout__trust">
+          <div className="checkout__trust-item">🔒 {t(dict, "security_note")}</div>
+          <div className="checkout__trust-item">{t(dict, "activation_note")}</div>
+          <div className="checkout__trust-links">
+            <a href={routeHref(APP_ROUTES.refundPolicy, locale)}>
+              {t(dict, "refund_policy_link")}
+            </a>
+            <a href={routeHref(APP_ROUTES.terms, locale)}>
+              {t(dict, "terms_link")}
+            </a>
+          </div>
+        </div>
+
         <div className="checkout__back">
           <button
-            onClick={() =>
-              router.push(routeHref(APP_ROUTES.packages, locale))
-            }
+            onClick={() => router.push(routeHref(APP_ROUTES.packages, locale))}
           >
             {t(dict, "back_to_packages")}
           </button>

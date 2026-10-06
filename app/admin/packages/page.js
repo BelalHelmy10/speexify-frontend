@@ -1,4 +1,11 @@
 // app/admin/packages/page.js
+//
+// NOTE on field naming:
+// The API fields `priceUSD` and `startingAtUSD` actually carry EGP values.
+// The UI is now labeled "Price (EGP)" / "Starting At (EGP)" to match
+// reality. A future backend migration should rename these columns to
+// `priceEGP` and `startingAtEGP`. See lib/payment-contract.js for the
+// full pricing data model.
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -6,6 +13,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import { useToast, useConfirm } from "@/components/ToastProvider";
+import { getDictionary, t } from "@/app/i18n";
 import "@/styles/admin.scss";
 
 const normAudience = (v) => String(v || "INDIVIDUAL").toUpperCase();
@@ -23,6 +31,7 @@ export default function AdminPackagesPage() {
   const { user, checking } = useAuth();
 
   const isAdmin = user?.role === "admin";
+  const copy = getDictionary(user?.language === "ar" ? "ar" : "en", "admin");
 
   // Filters
   const [q, setQ] = useState("");
@@ -261,7 +270,7 @@ export default function AdminPackagesPage() {
             <div>
               <h2 className="adm-admin-card__title">Catalog</h2>
               <p className="adm-admin-card__subtitle">
-                {busy ? "Loading…" : `${items.length} packages`}
+                {busy ? "Loading package catalog…" : `${items.length} packages`}
               </p>
             </div>
           </div>
@@ -284,7 +293,8 @@ export default function AdminPackagesPage() {
               </svg>
               <input
                 type="text"
-                placeholder="Search title/description/features…"
+                aria-label={t(copy, "searchPackages")}
+                placeholder={t(copy, "searchPackagesPlaceholder")}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
@@ -331,8 +341,8 @@ export default function AdminPackagesPage() {
                   <th>Title</th>
                   <th>Audience</th>
                   <th>Price Type</th>
-                  <th>Price ($)</th>
-                  <th>Starting At ($)</th>
+                  <th>Price (EGP)</th>
+                  <th>Starting At (EGP)</th>
                   <th>Sessions</th>
                   <th>Duration (min)</th>
                   <th>Sort</th>
@@ -655,7 +665,7 @@ export default function AdminPackagesPage() {
                   </div>
 
                   <div className="adm-form-field">
-                    <label className="adm-form-label">Price ($)</label>
+                    <label className="adm-form-label">Price (EGP)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -668,12 +678,12 @@ export default function AdminPackagesPage() {
                           priceUSD: e.target.value,
                         }))
                       }
-                      placeholder="e.g. 99"
+                      placeholder="e.g. 1100"
                     />
                   </div>
 
                   <div className="adm-form-field">
-                    <label className="adm-form-label">Starting At ($)</label>
+                    <label className="adm-form-label">Starting At (EGP)</label>
                     <input
                       type="number"
                       step="0.01"

@@ -28,11 +28,14 @@ import {
   createSupportTicket,
   replyToSupportTicket,
   uploadSupportAttachment,
+  getSupportAttachmentUrl,
   getSupportWebSocketToken,
   rateSupportTicket,
 } from "@/lib/supportApi";
+import useAuth from "@/hooks/useAuth";
 import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
 import SpeexifyLogoMark from "@/components/SpeexifyLogoMark";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 import "@/styles/support-widget.scss";
 
 const CATEGORIES = [
@@ -77,15 +80,15 @@ function isImageFile(mimeType, fileName) {
 }
 
 // Format file size
-function formatFileSize(bytes) {
-  if (bytes === 0) return "0 B";
+function formatFileSize(bytes, locale = "en") {
+  if (bytes === 0) return `${formatNumber(0, locale)} B`;
   const k = 1024;
   const sizes = ["B", "KB", "MB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  return `${formatNumber(Math.round((bytes / Math.pow(k, i)) * 100) / 100, locale)} ${sizes[i]}`;
 }
 
-const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick }) => {
+const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick, locale = "en" }) => {
   const hasAttachments = message.attachments?.length > 0;
   const [failedImages, setFailedImages] = useState(() => new Set());
 
@@ -145,7 +148,7 @@ const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick }) => {
                   </div>
                   {a.fileSize && (
                     <div className="sw-message__file-size">
-                      {formatFileSize(a.fileSize)}
+                      {formatFileSize(a.fileSize, locale)}
                     </div>
                   )}
                 </div>
@@ -157,7 +160,7 @@ const Message = memo(({ message, isUser, getAttachmentUrl, onImageClick }) => {
       )}
 
       <div className="sw-message__time">
-        {new Date(message.createdAt).toLocaleTimeString([], {
+        {new Date(message.createdAt).toLocaleTimeString(getIntlLocale(locale), {
           hour: "2-digit",
           minute: "2-digit",
         })}
@@ -222,16 +225,29 @@ const ImageLightbox = memo(({ imageUrl, fileName, onClose }) => {
 
 ImageLightbox.displayName = "ImageLightbox";
 
-export default function SupportWidget() {
+export default function SupportWidget({ hideMobileFab = false }) {
   const pathname = usePathname();
+  const { user, checking } = useAuth();
+  const isArabic = pathname?.startsWith("/ar");
+  const currentPath = pathname || (isArabic ? "/ar" : "/");
+  const loginHref = `${isArabic ? "/ar/login" : "/login"}?next=${encodeURIComponent(
+    currentPath
+  )}`;
+  const contactHref = isArabic ? "/ar/contact" : "/contact";
 
   // Hide support widget in focused workspaces.
   const isHiddenWorkspace =
-    pathname?.startsWith("/classroom") || isFocusedWorkspacePath(pathname);
+    pathname?.startsWith("/classroom") ||
+    pathname === "/onboarding" ||
+    pathname === "/ar/onboarding" ||
+    pathname?.startsWith("/dashboard/sessions/") ||
+    pathname?.startsWith("/ar/dashboard/sessions/") ||
+    isFocusedWorkspacePath(pathname);
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [footerInView, setFooterInView] = useState(false);
 
   const [tickets, setTickets] = useState([]);
   const [activeTicket, setActiveTicket] = useState(null);
@@ -249,6 +265,8 @@ export default function SupportWidget() {
   // WebSocket
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
+  const wsShouldReconnectRef = useRef(false);
+  const handleWebSocketMessageRef = useRef(() => {});
   const [wsConnected, setWsConnected] = useState(false);
 
   // Typing
@@ -267,12 +285,6 @@ export default function SupportWidget() {
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
-
-  const getAttachmentUrl = useCallback((attachmentId) => {
-    const id = Number(attachmentId);
-    if (!Number.isFinite(id)) return "#";
-    return `/api/support/attachments/${id}`;
-  }, []);
 
   // ============================================================================
   // LocalStorage helpers
@@ -327,8 +339,37 @@ export default function SupportWidget() {
     }
   }, []);
 
+  const closeWebSocket = useCallback(() => {
+    wsShouldReconnectRef.current = false;
+
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
+    const ws = wsRef.current;
+    if (ws) {
+      ws.onclose = null;
+      ws.close();
+      wsRef.current = null;
+    }
+
+    setWsConnected(false);
+  }, []);
+
   const connectWebSocket = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (!wsShouldReconnectRef.current) return;
+    if (
+      wsRef.current?.readyState === WebSocket.OPEN ||
+      wsRef.current?.readyState === WebSocket.CONNECTING
+    ) {
+      return;
+    }
+
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
 
     (async () => {
       let wsUrl = buildSupportWsUrl();
@@ -340,44 +381,50 @@ export default function SupportWidget() {
       }
 
       try {
+        if (!wsShouldReconnectRef.current) return;
         const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
+        wsRef.current = ws;
 
-      ws.onopen = () => {
-        if (process.env.NODE_ENV !== "production") {
-          console.info("[Support WS] Connected");
-        }
-        setWsConnected(true);
-      };
+        ws.onopen = () => {
+          if (process.env.NODE_ENV !== "production") {
+            console.info("[Support WS] Connected");
+          }
+          setWsConnected(true);
+        };
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          handleWebSocketMessage(data);
-        } catch (err) {
-          console.error("[Support WS] Failed to parse message:", err);
-        }
-      };
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessageRef.current(data);
+          } catch (err) {
+            console.error("[Support WS] Failed to parse message:", err);
+          }
+        };
 
-      ws.onerror = (error) => {
-        if (process.env.NODE_ENV !== "production") {
-          console.warn("[Support WS] Connection error", error?.message || "");
-        }
-      };
+        ws.onerror = (error) => {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[Support WS] Connection error", error?.message || "");
+          }
+        };
 
-      ws.onclose = (event) => {
-        if (process.env.NODE_ENV !== "production") {
-          console.info("[Support WS] Disconnected", {
-            code: event.code,
-            reason: event.reason,
-          });
-        }
-        setWsConnected(false);
+        ws.onclose = (event) => {
+          if (process.env.NODE_ENV !== "production") {
+            console.info("[Support WS] Disconnected", {
+              code: event.code,
+              reason: event.reason,
+            });
+          }
+          if (wsRef.current === ws) {
+            wsRef.current = null;
+          }
+          setWsConnected(false);
 
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connectWebSocket();
-        }, 3000);
-      };
+          if (wsShouldReconnectRef.current) {
+            reconnectTimeoutRef.current = setTimeout(() => {
+              if (wsShouldReconnectRef.current) connectWebSocket();
+            }, 3000);
+          }
+        };
       } catch (err) {
         if (process.env.NODE_ENV !== "production") {
           console.warn("[Support WS] Connection failed:", err?.message || err);
@@ -386,37 +433,13 @@ export default function SupportWidget() {
     })();
   }, [appendWsToken, buildSupportWsUrl]);
 
-  const handleWebSocketMessage = useCallback(
-    (data) => {
-      const { type } = data;
-
-      switch (type) {
-        case "connected":
-          break;
-
-        case "new_message":
-          handleNewMessage(data);
-          break;
-
-        case "ticket_status_change":
-          handleTicketStatusChange(data);
-          break;
-
-        case "typing":
-          handleTypingIndicator(data);
-          break;
-
-        case "pong":
-          break;
-
-        default:
-          if (process.env.NODE_ENV !== "production") {
-            console.warn("[Support WS] Unknown message type:", type);
-          }
-      }
-    },
-    [activeTicket, open]
-  );
+  const playNotificationSound = useCallback(() => {
+    try {
+      const audio = new Audio("/sounds/notification.mp3");
+      audio.volume = 0.3;
+      audio.play().catch(() => { });
+    } catch (err) { }
+  }, []);
 
   const handleNewMessage = useCallback(
     (data) => {
@@ -460,7 +483,7 @@ export default function SupportWidget() {
 
       setMessageStatus("delivered");
     },
-    [activeTicket, open, getStoredSeen, setStoredSeen]
+    [activeTicket, open, getStoredSeen, playNotificationSound, setStoredSeen]
   );
 
   const handleTicketStatusChange = useCallback(
@@ -528,16 +551,47 @@ export default function SupportWidget() {
     [activeTicket]
   );
 
-  const playNotificationSound = useCallback(() => {
-    try {
-      const audio = new Audio("/sounds/notification.mp3");
-      audio.volume = 0.3;
-      audio.play().catch(() => { });
-    } catch (err) { }
-  }, []);
+  const handleWebSocketMessage = useCallback(
+    (data) => {
+      const { type } = data;
+
+      switch (type) {
+        case "connected":
+          break;
+
+        case "new_message":
+          handleNewMessage(data);
+          break;
+
+        case "ticket_status_change":
+          handleTicketStatusChange(data);
+          break;
+
+        case "typing":
+          handleTypingIndicator(data);
+          break;
+
+        case "pong":
+          break;
+
+        default:
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[Support WS] Unknown message type:", type);
+          }
+      }
+    },
+    [handleNewMessage, handleTicketStatusChange, handleTypingIndicator]
+  );
 
   useEffect(() => {
-    if (open) {
+    handleWebSocketMessageRef.current = handleWebSocketMessage;
+  }, [handleWebSocketMessage]);
+
+  useEffect(() => {
+    const shouldConnect = open && Boolean(user && activeTicket);
+    wsShouldReconnectRef.current = shouldConnect;
+
+    if (shouldConnect) {
       connectWebSocket();
 
       const heartbeat = setInterval(() => {
@@ -549,33 +603,62 @@ export default function SupportWidget() {
       return () => {
         clearInterval(heartbeat);
       };
-    } else {
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
     }
-  }, [open, connectWebSocket]);
+
+    closeWebSocket();
+    return undefined;
+  }, [open, user, activeTicket, connectWebSocket, closeWebSocket]);
 
   useEffect(() => {
     return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
+      closeWebSocket();
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
     };
-  }, []);
+  }, [closeWebSocket]);
 
   // ============================================================================
   // Ticket Loading
   // ============================================================================
+  const refreshTickets = useCallback(async () => {
+    if (!user) {
+      setTickets([]);
+      setUnreadCount(0);
+      return [];
+    }
+
+    try {
+      const res = await listSupportTickets();
+      const t = res?.tickets || [];
+      setTickets(t);
+
+      const seen = getStoredSeen();
+      const unread = t.filter((ticket) => {
+        const lm = ticket.lastMessage;
+        if (!lm) return false;
+
+        const isStaffMsg = lm.authorId !== ticket.userId;
+        if (!isStaffMsg) return false;
+
+        const lastSeenId = Number(seen[ticket.id] || 0);
+        return Number(lm.id) > lastSeenId;
+      });
+
+      setUnreadCount(unread.length);
+      return t;
+    } catch (err) { }
+    return [];
+  }, [getStoredSeen, user]);
+
   const loadTicket = useCallback(
     async (id) => {
+      if (!user) {
+        setError("Log in to view support conversations.");
+        setView("home");
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
@@ -606,43 +689,48 @@ export default function SupportWidget() {
         setLoading(false);
       }
     },
-    [getStoredSeen, setStoredSeen]
+    [getStoredSeen, refreshTickets, setStoredSeen, user]
   );
 
-  const refreshTickets = useCallback(async () => {
+  const openConversationList = useCallback(async () => {
+    setActiveTicket(null);
+    setCategory(null);
+    setView("list");
+
+    if (!user) {
+      setTickets([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
     try {
-      const res = await listSupportTickets();
-      const t = res?.tickets || [];
-      setTickets(t);
-
-      const seen = getStoredSeen();
-      const unread = t.filter((ticket) => {
-        const lm = ticket.lastMessage;
-        if (!lm) return false;
-
-        const isStaffMsg = lm.authorId !== ticket.userId;
-        if (!isStaffMsg) return false;
-
-        const lastSeenId = Number(seen[ticket.id] || 0);
-        return Number(lm.id) > lastSeenId;
-      });
-
-      setUnreadCount(unread.length);
-    } catch (err) { }
-  }, [getStoredSeen]);
+      await refreshTickets();
+    } finally {
+      setLoading(false);
+    }
+  }, [refreshTickets, user]);
 
   useEffect(() => {
-    if (open) {
-      setLoading(true);
-      refreshTickets().finally(() => setLoading(false));
-    }
-  }, [open, refreshTickets]);
+    if (user || checking) return;
+    setActiveTicket(null);
+    setCategory(null);
+    setView("home");
+    setTickets([]);
+    setUnreadCount(0);
+    setWsConnected(false);
+  }, [checking, user]);
 
   // ============================================================================
   // Message Sending
   // ============================================================================
   const sendMessage = useCallback(async () => {
     if (!message.trim() || sending) return;
+    if (!user) {
+      setError("Log in to start a support conversation.");
+      return;
+    }
     if (!activeTicket && !category) return;
 
     setSending(true);
@@ -691,6 +779,7 @@ export default function SupportWidget() {
     sending,
     activeTicket,
     category,
+    user,
     subject,
     selectedFile,
     loadTicket,
@@ -807,7 +896,40 @@ export default function SupportWidget() {
     }
   }, [open, view, category]);
 
+  useEffect(() => {
+    const footer = document.querySelector(".site-footer-wrapper");
+
+    if (!footer) {
+      setFooterInView(false);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setFooterInView(entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: "0px 0px -96px 0px",
+        threshold: 0.02,
+      }
+    );
+
+    observer.observe(footer);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [pathname]);
+
   const showBack = activeTicket || category || view === "list";
+  const realtimeSupportActive = Boolean(user && activeTicket);
+  const supportStatusLabel = realtimeSupportActive
+    ? wsConnected
+      ? "Online"
+      : "Connecting"
+    : "Ready";
+  const hideClosedFabForFooter = footerInView && !open;
 
   // Don't render support widget in focused workspaces.
   if (isHiddenWorkspace) {
@@ -817,25 +939,28 @@ export default function SupportWidget() {
   return (
     <>
       {/* FIXED: FAB Button with proper toggle */}
-      <button
-        className="sw-fab"
-        onClick={toggleWidget}
-        aria-label={open ? "Close support" : "Contact support"}
-      >
-        <span className="sw-fab__icon">
-          {open ? (
-            <X size={20} />
-          ) : (
-            <SpeexifyLogoMark className="sw-logo-mark sw-logo-mark--fab" />
-          )}
-        </span>
-        {!open && <span className="sw-fab__label">Help</span>}
-        {!open && unreadCount > 0 && (
-          <span className="sw-fab__badge">
-            {unreadCount > 9 ? "9+" : unreadCount}
+      {!hideClosedFabForFooter && (
+        <button
+          type="button"
+          className={`sw-fab${hideMobileFab ? " sw-fab--hide-mobile" : ""}`}
+          onClick={toggleWidget}
+          aria-label={open ? "Close support" : "Contact support"}
+        >
+          <span className="sw-fab__icon">
+            {open ? (
+              <X size={20} />
+            ) : (
+              <SpeexifyLogoMark className="sw-logo-mark sw-logo-mark--fab" />
+            )}
           </span>
-        )}
-      </button>
+          {!open && <span className="sw-fab__label">Help</span>}
+          {!open && unreadCount > 0 && (
+            <span className="sw-fab__badge">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* FIXED: Widget Panel with proper positioning */}
       {open && (
@@ -856,10 +981,10 @@ export default function SupportWidget() {
                 <div className="sw-header__title">Support</div>
                 <div className="sw-header__status">
                   <span
-                    className={`sw-status-dot ${wsConnected ? "" : "sw-status-dot--muted"
+                    className={`sw-status-dot ${realtimeSupportActive && !wsConnected ? "sw-status-dot--muted" : ""
                       }`}
                   ></span>
-                  {wsConnected ? "Online" : "Connecting"}
+                  {supportStatusLabel}
                 </div>
               </div>
             </div>
@@ -905,10 +1030,11 @@ export default function SupportWidget() {
                       key={m.id}
                       message={m}
                       isUser={m.authorId === activeTicket.userId}
-                      getAttachmentUrl={getAttachmentUrl}
+                      getAttachmentUrl={getSupportAttachmentUrl}
                       onImageClick={(url, name) =>
                         setLightboxImage({ url, name })
                       }
+                      locale={isArabic ? "ar" : "en"}
                     />
                   ))}
 
@@ -1037,7 +1163,17 @@ export default function SupportWidget() {
               <>
                 <div className="sw-section-title">Your conversations</div>
 
-                {tickets.length === 0 ? (
+                {!user ? (
+                  <div className="sw-empty">
+                    <MessageCircle size={48} />
+                    <p>Log in to view support conversations.</p>
+                    <div className="sw-support-actions">
+                      <a className="sw-secondary-action" href={loginHref}>
+                        Log in
+                      </a>
+                    </div>
+                  </div>
+                ) : tickets.length === 0 ? (
                   <div className="sw-empty">
                     <MessageCircle size={48} />
                     <p>No conversations yet</p>
@@ -1075,7 +1211,7 @@ export default function SupportWidget() {
                         )}
 
                         <div className="sw-ticket-card__time">
-                          {new Date(t.updatedAt).toLocaleDateString()}
+                          {new Date(t.updatedAt).toLocaleDateString(getIntlLocale(isArabic ? "ar" : "en"))}
                         </div>
                       </button>
                     ))}
@@ -1102,43 +1238,68 @@ export default function SupportWidget() {
                   </div>
                 </div>
 
-                <div className="sw-service-card">
-                  <Clock3 size={16} />
-                  <span>Support is available for payments, scheduling, and live classroom issues.</span>
-                </div>
+                {checking && !user ? (
+                  <div className="sw-service-card">
+                    <Clock3 size={16} />
+                    <span>Support conversations will be ready in a moment.</span>
+                  </div>
+                ) : user ? (
+                  <>
+                    <div className="sw-service-card">
+                      <Clock3 size={16} />
+                      <span>Support is available for payments, scheduling, and live classroom issues.</span>
+                    </div>
 
-                <button
-                  className="sw-my-chats-btn"
-                  onClick={() => setView("list")}
-                >
-                  <MessageCircle size={18} />
-                  My conversations
-                  {unreadCount > 0 && (
-                    <span className="sw-badge">{unreadCount}</span>
-                  )}
-                </button>
-
-                <div className="sw-categories">
-                  {CATEGORIES.map((c) => (
                     <button
-                      key={c.key}
-                      className="sw-category-btn"
-                      onClick={() => setCategory(c.key)}
+                      className="sw-my-chats-btn"
+                      onClick={openConversationList}
                     >
-                      <span className="sw-category-btn__icon">
-                        <c.Icon size={18} />
-                      </span>
-                      <span>
-                        <span className="sw-category-btn__label">
-                          {c.label}
-                        </span>
-                        <span className="sw-category-btn__description">
-                          {c.description}
-                        </span>
-                      </span>
+                      <MessageCircle size={18} />
+                      My conversations
+                      {unreadCount > 0 && (
+                        <span className="sw-badge">{unreadCount}</span>
+                      )}
                     </button>
-                  ))}
-                </div>
+
+                    <div className="sw-categories">
+                      {CATEGORIES.map((c) => (
+                        <button
+                          key={c.key}
+                          className="sw-category-btn"
+                          onClick={() => setCategory(c.key)}
+                        >
+                          <span className="sw-category-btn__icon">
+                            <c.Icon size={18} />
+                          </span>
+                          <span>
+                            <span className="sw-category-btn__label">
+                              {c.label}
+                            </span>
+                            <span className="sw-category-btn__description">
+                              {c.description}
+                            </span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="sw-service-card">
+                      <Clock3 size={16} />
+                      <span>Log in to start or view a support conversation.</span>
+                    </div>
+                    <div className="sw-support-actions">
+                      <a className="sw-my-chats-btn" href={loginHref}>
+                        <MessageCircle size={18} />
+                        Log in for support
+                      </a>
+                      <a className="sw-secondary-action" href={contactHref}>
+                        Contact us
+                      </a>
+                    </div>
+                  </>
+                )}
 
                 {error && (
                   <div className="sw-error">

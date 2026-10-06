@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getDictionary, t } from "@/app/i18n";
+import useFocusTrap from "@/hooks/useFocusTrap";
 
 function Careers({ dict }) {
   const [jobs, setJobs] = useState([]);
@@ -105,7 +106,7 @@ function Careers({ dict }) {
     }
     const mail = "careers@speexify.com";
     const subject = encodeURIComponent(
-      `Application — ${job.title} (ID: ${job.id})`
+      `Application: ${job.title} (ID: ${job.id})`
     );
     const body = encodeURIComponent(
       `Hi Speexify team,
@@ -454,6 +455,8 @@ Thanks!`
 }
 
 function JobModal({ job, onClose, onApply, dict }) {
+  const modalRef = useFocusTrap(true, { onEscape: onClose });
+
   useEffect(() => {
     const onEsc = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onEsc);
@@ -468,7 +471,7 @@ function JobModal({ job, onClose, onApply, dict }) {
       aria-labelledby="job-title"
     >
       <div className="careers-modal__backdrop" onClick={onClose} />
-      <div className="careers-modal__panel" role="document">
+      <div ref={modalRef} className="careers-modal__panel">
         <button
           className="careers-modal__close"
           onClick={onClose}
@@ -568,9 +571,9 @@ function JobModal({ job, onClose, onApply, dict }) {
   );
 }
 
-export default function CareersPage() {
+export default function CareersPage({ forcedLocale } = {}) {
   const pathname = usePathname();
-  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const locale = forcedLocale || (pathname?.startsWith("/ar") ? "ar" : "en");
   const dict = getDictionary(locale, "careers");
 
   return <Careers dict={dict} />;

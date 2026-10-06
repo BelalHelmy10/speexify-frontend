@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import api from "@/lib/api";
+import ClassroomErrorBoundary from "./ClassroomErrorBoundary";
 import ClassroomShell from "./ClassroomShell";
 
 export default function ClassroomPageClient({ sessionId, tracks, initialSession = null }) {
@@ -42,7 +43,9 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
         setStatus("loading");
         setError("");
 
-        const { data } = await api.get(`/sessions/${sessionId}`);
+        const { data } = await api.get(`/sessions/${sessionId}`, {
+          params: { classroomJoin: 1 },
+        });
         if (cancelled) return;
 
         const loadedSession = data?.session || null;
@@ -105,12 +108,14 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
   }
 
   return (
-    <ClassroomShell
-      session={session}
-      sessionId={String(sessionId)}
-      tracks={tracks}
-      locale={locale}
-      prefix={prefix}
-    />
+    <ClassroomErrorBoundary sessionId={String(sessionId)} prefix={prefix}>
+      <ClassroomShell
+        session={session}
+        sessionId={String(sessionId)}
+        tracks={tracks}
+        locale={locale}
+        prefix={prefix}
+      />
+    </ClassroomErrorBoundary>
   );
 }

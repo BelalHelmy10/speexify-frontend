@@ -5,11 +5,11 @@ export const landingPages = {
     en: {
       path: "/english-speaking-coach-egypt",
       eyebrow: "English speaking coach in Egypt",
-      title: "Speak English with a real coach, not another passive course.",
+      title: "Your English should match your ambition. We make sure it does.",
       subtitle:
-        "Speexify gives learners in Egypt live 1-on-1 English speaking coaching focused on confidence, fluency, pronunciation, and real conversations.",
-      primaryCta: "Start speaking",
-      secondaryCta: "View packages",
+        "1-on-1 coaching with expert coaches who turn what you already know into real confidence — for interviews, meetings, and every moment that matters.",
+      primaryCta: "Ask about a starter session",
+      secondaryCta: "See what's inside",
       proof: ["Live 1-on-1 sessions", "Arabic-aware coaching", "Clear speaking goals"],
       sections: [
         {
@@ -41,15 +41,15 @@ export const landingPages = {
     ar: {
       path: "/ar/english-speaking-coach-egypt",
       eyebrow: "مدرب محادثة إنجليزية في مصر",
-      title: "تحدث الإنجليزية مع مدرب حقيقي وليس كورسًا سلبيًا آخر.",
+      title: "اتكلم إنجليزي مع مدرّب حقيقي، مش كورس تاني تتابعه لوحدك.",
       subtitle:
-        "تقدم Speexify تدريب محادثة إنجليزية مباشرًا وفرديًا للمتعلمين في مصر مع تركيز على الثقة والطلاقة والنطق والمواقف الواقعية.",
-      primaryCta: "ابدأ التحدث",
+        "Speexify بتقدملك تدريب محادثة مباشر وفردي في مصر، مع تركيز على الثقة والطلاقة والنطق والمواقف الواقعية.",
+      primaryCta: "اسأل عن جلسة تعريفية",
       secondaryCta: "عرض الباقات",
       proof: ["جلسات مباشرة فردية", "تدريب مناسب للناطقين بالعربية", "أهداف تحدث واضحة"],
       sections: [
         {
-          title: "مصمم للحظة التي تحتاج فيها إلى التحدث",
+          title: "مصمم للحظة اللي لازم تتكلم فيها",
           body: "كثير من المتعلمين يعرفون الإنجليزية لكنهم لا يستخدمونها بثقة تحت الضغط. جلسات Speexify تحول المعرفة السلبية إلى ثقة في التحدث من خلال المحادثة والتصحيح والتكرار العملي.",
         },
         {
@@ -117,9 +117,9 @@ export const landingPages = {
     ar: {
       path: "/ar/business-english-training-companies",
       eyebrow: "إنجليزي أعمال للشركات",
-      title: "تدريب إنجليزي أعمال يحسن المحادثات الحقيقية في العمل.",
+      title: "تدريب إنجليزي أعمال يحسّن كلام الفريق في الشغل الحقيقي.",
       subtitle:
-        "ساعد فريقك على التواصل بوضوح في الاجتماعات والعروض ومكالمات العملاء والبريد الإلكتروني والتعاون مع فرق دولية.",
+        "ساعد فريقك يتواصل بوضوح في الاجتماعات والعروض ومكالمات العملاء والإيميلات.",
       primaryCta: "تواصل معنا",
       secondaryCta: "تدريب الشركات",
       proof: ["برامج للفرق", "مواقف عمل واقعية", "تقارير تقدم"],
@@ -157,11 +157,11 @@ export const landingPages = {
     en: {
       path: "/online-english-conversation-practice",
       eyebrow: "Online English conversation practice",
-      title: "Practice English conversation online with structure and feedback.",
+      title: "Stop practising alone. Start speaking with someone who gets it.",
       subtitle:
-        "Speexify gives you live conversation practice with a coach who corrects, guides, and helps you speak naturally.",
-      primaryCta: "Practice online",
-      secondaryCta: "Compare packages",
+        "Live conversation practice with a coach who corrects, guides, and helps you sound like yourself — in English.",
+      primaryCta: "Ask about a starter session",
+      secondaryCta: "See what's inside",
       proof: ["Real conversations", "Coach feedback", "Flexible online sessions"],
       sections: [
         {
@@ -193,10 +193,10 @@ export const landingPages = {
     ar: {
       path: "/ar/online-english-conversation-practice",
       eyebrow: "تدريب محادثة إنجليزية أونلاين",
-      title: "تمرّن على المحادثة الإنجليزية أونلاين بتوجيه وملاحظات.",
+      title: "اتمرّن على المحادثة الإنجليزية أونلاين مع توجيه وملاحظات واضحة.",
       subtitle:
-        "تمنحك Speexify تدريب محادثة مباشرًا مع مدرب يصحح ويوجه ويساعدك على التحدث بشكل طبيعي.",
-      primaryCta: "ابدأ التدريب",
+        "Speexify بتديك تدريب محادثة مباشر مع مدرّب يصحح ويوجّه ويساعدك تتكلم بطبيعتك.",
+      primaryCta: "اسأل عن جلسة تعريفية",
       secondaryCta: "قارن الباقات",
       proof: ["محادثات واقعية", "ملاحظات من مدرب", "جلسات أونلاين مرنة"],
       sections: [
@@ -236,7 +236,7 @@ export const landingPages = {
       title: "Deliver English presentations with clearer structure and confidence.",
       subtitle:
         "Prepare your message, delivery, pronunciation, transitions, and Q&A with a coach before the moment matters.",
-      primaryCta: "Prepare a presentation",
+      primaryCta: "Ask about a starter session",
       secondaryCta: "View coaching plans",
       proof: ["Message structure", "Delivery practice", "Q&A confidence"],
       sections: [
@@ -269,15 +269,15 @@ export const landingPages = {
     ar: {
       path: "/ar/english-presentation-coaching",
       eyebrow: "تدريب العروض بالإنجليزية",
-      title: "قدم عروضك بالإنجليزية بتنظيم أوضح وثقة أكبر.",
+      title: "قدّم عروضك بالإنجليزي بتنظيم أوضح وثقة أكبر.",
       subtitle:
         "حضّر الرسالة والإلقاء والنطق والانتقالات والأسئلة مع مدرب قبل اللحظة المهمة.",
-      primaryCta: "حضّر عرضك",
+      primaryCta: "اسأل عن جلسة تعريفية",
       secondaryCta: "عرض الخطط",
       proof: ["تنظيم الرسالة", "تدريب على الإلقاء", "ثقة في الأسئلة"],
       sections: [
         {
-          title: "اجعل رسالتك أسهل في المتابعة",
+          title: "خلي رسالتك أسهل في المتابعة",
           body: "العرض الجيد بالإنجليزية ليس مجرد قواعد. يساعدك Speexify على تنظيم الأفكار والانتقالات والأمثلة والخاتمة حتى يفهم المستمعون النقطة بسرعة.",
         },
         {
@@ -348,7 +348,7 @@ export const landingPages = {
       title: "تدريب إنجليزي للشركات في مصر بتقدم قابل للقياس.",
       subtitle:
         "يساعد Speexify الشركات في مصر على بناء تواصل إنجليزي واثق من خلال تدريب مباشر وبرامج للفرق ونتائج عملية في العمل.",
-      primaryCta: "خطط برنامجًا لفريقك",
+      primaryCta: "خطّط برنامج لفريقك",
       secondaryCta: "اكتشف تدريب الشركات",
       proof: ["احتياجات السوق المصري", "مجموعات للفرق", "وضوح في التقدم"],
       sections: [
@@ -525,14 +525,14 @@ export const hubPages = {
     ar: {
       path: "/ar/help-center",
       eyebrow: "مركز المساعدة",
-      title: "كيف يعمل Speexify.",
+      title: "Speexify بيشتغل إزاي.",
       subtitle:
         "إجابات بسيطة عن الجلسات وتحديد المستوى والباقات والجدولة وأدوات الفصل والمدفوعات والدعم.",
       cards: [
         {
           title: "كيف تعمل الجلسات",
           description:
-            "انضم إلى جلسة مباشرة، تدرب مع مدرب حقيقي، احصل على ملاحظات، واستمر في البناء من جلسة إلى أخرى.",
+            "ادخل جلسة مباشرة، اتمرّن مع مدرّب حقيقي، وخد ملاحظات تكمل عليها.",
           href: "/ar/individual-training",
         },
         {

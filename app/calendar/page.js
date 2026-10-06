@@ -6,7 +6,9 @@ import Link from "next/link";
 import api, { clearCsrfToken } from "@/lib/api";
 import MiniCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import "react-big-calendar/lib/css/react-big-calendar.css";
 import useAuth from "@/hooks/useAuth";
+import useFocusTrap from "@/hooks/useFocusTrap";
 import { Calendar as BigCalendar, dateFnsLocalizer } from "react-big-calendar";
 import {
   addDays,
@@ -26,7 +28,9 @@ import {
   subMonths,
   subWeeks,
 } from "date-fns";
+import { ar as dateFnsAr } from "date-fns/locale";
 import { shiftDateToTimezone } from "@/utils/date";
+import { getIntlLocale, formatNumber } from "@/utils/locale";
 import { usePathname, useRouter } from "next/navigation";
 import { getDictionary, t } from "@/app/i18n";
 import { useToast } from "@/components/ToastProvider";
@@ -39,20 +43,33 @@ import {
   Clock3,
   Copy,
   ExternalLink,
-  LifeBuoy,
+  Headphones,
   PanelRightOpen,
+  PanelRightClose,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   SlidersHorizontal,
   UserRound,
   X,
 } from "lucide-react";
 
 const locales = {};
+const CALENDAR_WEEK_START_DAY = 0;
+const ARABIC_WEEKDAY_LABELS = [
+  "الأحد",
+  "الإثنين",
+  "الثلاثاء",
+  "الأربعاء",
+  "الخميس",
+  "الجمعة",
+  "السبت",
+];
+
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }),
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: CALENDAR_WEEK_START_DAY }),
   getDay,
   locales,
 });
@@ -100,10 +117,10 @@ function formatAvailabilityTime(totalMinutes) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
-function formatMinuteLabel(totalMinutes) {
+function formatMinuteLabel(totalMinutes, locale) {
   const date = new Date();
   date.setHours(Math.floor(totalMinutes / 60), totalMinutes % 60, 0, 0);
-  return format(date, "h:mm a");
+  return date.toLocaleTimeString(getIntlLocale(locale), { hour: "numeric", minute: "2-digit", hour12: true });
 }
 
 function timeToMinutesValue(time = "00:00") {
@@ -220,10 +237,11 @@ function availabilitySlotChangedTimeOrNote(before, after) {
   );
 }
 
-const toRbcEvents = (arr = [], timezone) =>
+const toRbcEvents = (arr = [], timezone, locale = "en") =>
   arr.map((s) => {
     const type = String(s.type || "").toUpperCase();
     const isGroup = type === "GROUP";
+    const isTraining = type === "TRAINING";
     const cap = typeof s.capacity === "number" ? s.capacity : null;
     const count =
       typeof s.participantCount === "number" ? s.participantCount : null;
@@ -242,11 +260,13 @@ const toRbcEvents = (arr = [], timezone) =>
       joinUrl: s.joinUrl || "",
       type,
       isGroup,
+      isTraining,
+      trainingLabel: locale === "ar" ? "تدريب · بدون أجر" : "Training · unpaid",
       capacity: cap,
       participantCount: count,
       seatsLabel:
         isGroup && (count !== null || cap !== null)
-          ? `${count ?? 0}${cap ? `/${cap}` : ""}`
+          ? `${formatNumber(count ?? 0, locale)}${cap ? `/${formatNumber(cap, locale)}` : ""}`
           : "",
       _raw: s,
       isAvailability: false,
@@ -256,16 +276,16 @@ const toRbcEvents = (arr = [], timezone) =>
 function getVisibleRange(date, view) {
   if (view === "week") {
     return {
-      start: startOfWeek(date, { weekStartsOn: 1 }),
-      end: endOfWeek(date, { weekStartsOn: 1 }),
+      start: startOfWeek(date, { weekStartsOn: CALENDAR_WEEK_START_DAY }),
+      end: endOfWeek(date, { weekStartsOn: CALENDAR_WEEK_START_DAY }),
     };
   }
   if (view === "day") {
     return { start: startOfDay(date), end: endOfDay(date) };
   }
   return {
-    start: startOfWeek(startOfMonth(date), { weekStartsOn: 1 }),
-    end: endOfWeek(endOfMonth(date), { weekStartsOn: 1 }),
+    start: startOfWeek(startOfMonth(date), { weekStartsOn: CALENDAR_WEEK_START_DAY }),
+    end: endOfWeek(endOfMonth(date), { weekStartsOn: CALENDAR_WEEK_START_DAY }),
   };
 }
 
@@ -384,6 +404,13 @@ const canJoin = (startAt, endAt, windowMins = 15) => {
   return now >= early && now <= end;
 };
 
+const canOpenClassroom = (startAt, status, windowMins = 15) => {
+  if (!startAt || String(status || "").toLowerCase() === "canceled") return false;
+  const start = new Date(startAt);
+  if (Number.isNaN(start.getTime())) return false;
+  return Date.now() >= start.getTime() - windowMins * 60 * 1000;
+};
+
 function buildDayLayout(events, dayDate) {
   const dayStart = new Date(dayDate);
   dayStart.setHours(SLOT_START_HOUR, 0, 0, 0);
@@ -454,13 +481,19 @@ function getEventTone(event) {
   return "scheduled";
 }
 
-function getViewRangeLabel(currentDate, view) {
-  if (view === "month") return format(currentDate, "MMMM yyyy");
-  if (view === "day") return format(currentDate, "EEEE, MMM d, yyyy");
+function getViewRangeLabel(currentDate, view, locale) {
+  const dtfLocale = getIntlLocale(locale);
+  if (view === "month") return currentDate.toLocaleDateString(dtfLocale, { month: "long", year: "numeric" });
+  if (view === "day") return currentDate.toLocaleDateString(dtfLocale, { weekday: "long", month: "short", day: "numeric", year: "numeric" });
 
-  const start = startOfWeek(currentDate, { weekStartsOn: 1 });
-  const end = endOfWeek(currentDate, { weekStartsOn: 1 });
-  return `${format(start, "MMM d")} - ${format(end, "MMM d, yyyy")}`;
+  const start = startOfWeek(currentDate, { weekStartsOn: CALENDAR_WEEK_START_DAY });
+  const end = endOfWeek(currentDate, { weekStartsOn: CALENDAR_WEEK_START_DAY });
+  return `${start.toLocaleDateString(dtfLocale, { month: "short", day: "numeric" })} - ${end.toLocaleDateString(dtfLocale, { month: "short", day: "numeric", year: "numeric" })}`;
+}
+
+function getCalendarWeekdayLabel(day, locale) {
+  if (locale === "ar") return ARABIC_WEEKDAY_LABELS[getDay(day)];
+  return format(day, "EEE");
 }
 
 function getSessionCoachName(event) {
@@ -474,17 +507,18 @@ function getSessionCoachName(event) {
 }
 
 function getSessionTypeLabel(event, tone, dict) {
-  if (tone === "live") return "Live";
-  if (tone === "canceled") return "Canceled";
-  return event.isGroup ? t(dict, "session_group") : "Scheduled";
+  if (event.isTraining) return event.trainingLabel;
+  if (tone === "live") return t(dict, "event_live");
+  if (tone === "canceled") return t(dict, "event_canceled");
+  return event.isGroup ? t(dict, "session_group") : t(dict, "event_scheduled");
 }
 
 function getSessionDetailsHref(prefix, event) {
   return `${prefix}/dashboard/sessions/${event.id}`;
 }
 
-function getSessionJoinHref(event) {
-  return event.joinUrl || event.meetingUrl || "";
+function getSessionJoinHref(event, prefix = "") {
+  return event.joinUrl || event.meetingUrl || `${prefix}/classroom/${event.id}`;
 }
 
 function getAnchoredPopoverStyle(anchor) {
@@ -522,34 +556,44 @@ function SessionQuickPopover({
   onCopyLink,
   dict,
   prefix,
+  locale,
 }) {
+  const popoverRef = useFocusTrap(Boolean(event), { onEscape: onClose });
   const countdown = useCountdown(event.start, event.end, {
-    startsIn: t(dict, "countdown_starts_in") || "Starts in",
-    live: t(dict, "countdown_live") || "Live",
-    ended: t(dict, "countdown_ended") || "Ended",
+    startsIn: t(dict, "countdown_starts_in"),
+    live: t(dict, "countdown_live"),
+    ended: t(dict, "countdown_ended"),
   });
 
   const tone = getEventTone(event);
   const coachName = getSessionCoachName(event);
   const duration = Math.max(1, differenceInMinutes(event.end, event.start));
-  const joinHref = getSessionJoinHref(event);
-  const joinable = tone !== "canceled" && joinHref && canJoin(event.start, event.end);
+  const joinHref = getSessionJoinHref(event, prefix);
+  const joinable = tone !== "canceled" && canOpenClassroom(event.start, event.status);
   const detailHref = getSessionDetailsHref(prefix, event);
   const style = getAnchoredPopoverStyle(anchor);
+  const dtfLocale = getIntlLocale(locale);
 
   return createPortal(
     <>
       <button
         type="button"
         className="calx-event-popover-scrim"
-        aria-label="Close session preview"
+        aria-label={t(dict, "popover_details")}
         onClick={onClose}
       />
-      <div className="calx-event-popover" role="dialog" style={style}>
+      <div
+        ref={popoverRef}
+        className="calx-event-popover"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calx-event-popover-title"
+        style={style}
+      >
         <div className="calx-event-popover__header">
           <div className={`calx-event-popover__mark is-${tone}`} />
           <div className="calx-event-popover__head-copy">
-            <div className="calx-event-popover__title">
+            <div id="calx-event-popover-title" className="calx-event-popover__title">
               {event.title || t(dict, "session_default_title")}
             </div>
             <div className={`calx-event-popover__type is-${tone}`}>
@@ -557,7 +601,12 @@ function SessionQuickPopover({
               {event.isGroup && event.seatsLabel ? ` · ${event.seatsLabel}` : ""}
             </div>
           </div>
-          <button className="calx-event-popover__close" onClick={onClose}>
+          <button
+            type="button"
+            className="calx-event-popover__close"
+            onClick={onClose}
+            aria-label={t(dict, "modal_close") || "Close details"}
+          >
             <X size={15} />
           </button>
         </div>
@@ -565,11 +614,15 @@ function SessionQuickPopover({
         <div className="calx-event-popover__body">
           <div className="calx-event-popover__row">
             <CalendarDays size={15} />
-            <span>{format(event.start, "EEEE, MMM d · h:mm a")}</span>
+            <span>
+              {event.start.toLocaleDateString(dtfLocale, { weekday: "long", month: "short", day: "numeric" })}
+              {" · "}
+              {event.start.toLocaleTimeString(dtfLocale, { hour: "numeric", minute: "2-digit", hour12: true })}
+            </span>
           </div>
           <div className="calx-event-popover__row">
             <Clock3 size={15} />
-            <span>{duration} min</span>
+            <span>{formatNumber(duration, locale)} {t(dict, "min")}</span>
           </div>
           <div className="calx-event-popover__row">
             <UserRound size={15} />
@@ -589,14 +642,14 @@ function SessionQuickPopover({
               target="_blank"
               rel="noreferrer"
             >
-              Join <ExternalLink size={14} />
+              {t(dict, "go_to_session")} <ExternalLink size={14} />
             </a>
           ) : (
             <Link
               className="calx-event-popover__btn is-primary"
               href={detailHref}
             >
-              Open <ExternalLink size={14} />
+              {t(dict, "popover_open")} <ExternalLink size={14} />
             </Link>
           )}
 
@@ -604,13 +657,13 @@ function SessionQuickPopover({
             className="calx-event-popover__btn"
             onClick={() => onOpenDrawer(event)}
           >
-            Details <PanelRightOpen size={14} />
+            {t(dict, "popover_details")} <PanelRightOpen size={14} />
           </button>
 
           <button
             className="calx-event-popover__btn is-icon"
             onClick={() => onCopyLink(event)}
-            aria-label="Copy session link"
+            aria-label={t(dict, "drawer_copy_link")}
           >
             <Copy size={15} />
           </button>
@@ -629,38 +682,52 @@ function SessionDetailDrawer({
   canceling,
   dict,
   prefix,
+  locale,
 }) {
+  const drawerRef = useFocusTrap(Boolean(event), { onEscape: onClose });
   const countdown = useCountdown(event.start, event.end, {
-    startsIn: t(dict, "countdown_starts_in") || "Starts in",
-    live: t(dict, "countdown_live") || "Live",
-    ended: t(dict, "countdown_ended") || "Ended",
+    startsIn: t(dict, "countdown_starts_in"),
+    live: t(dict, "countdown_live"),
+    ended: t(dict, "countdown_ended"),
   });
   const tone = getEventTone(event);
   const coachName = getSessionCoachName(event);
   const duration = Math.max(1, differenceInMinutes(event.end, event.start));
-  const joinHref = getSessionJoinHref(event);
+  const joinHref = getSessionJoinHref(event, prefix);
   const detailHref = getSessionDetailsHref(prefix, event);
-  const joinable = tone !== "canceled" && joinHref && canJoin(event.start, event.end);
+  const joinable = tone !== "canceled" && canOpenClassroom(event.start, event.status);
   const canCancelSession = event.status !== "canceled" && event.start > new Date();
+  const dtfLocale = getIntlLocale(locale);
 
   return createPortal(
     <>
       <button
         type="button"
         className="calx-session-drawer-backdrop"
-        aria-label="Close session details"
+        aria-label={t(dict, "popover_details")}
         onClick={onClose}
       />
-      <aside className="calx-session-drawer" role="dialog" aria-modal="true">
+      <aside
+        ref={drawerRef}
+        className="calx-session-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calx-session-drawer-title"
+      >
         <div className="calx-session-drawer__header">
           <div>
             <div className={`calx-session-drawer__type is-${tone}`}>
               {getSessionTypeLabel(event, tone, dict)}
               {event.isGroup && event.seatsLabel ? ` · ${event.seatsLabel}` : ""}
             </div>
-            <h2>{event.title || t(dict, "session_default_title")}</h2>
+            <h2 id="calx-session-drawer-title">{event.title || t(dict, "session_default_title")}</h2>
           </div>
-          <button className="calx-session-drawer__close" onClick={onClose}>
+          <button
+            type="button"
+            className="calx-session-drawer__close"
+            onClick={onClose}
+            aria-label={t(dict, "modal_close") || "Close details"}
+          >
             <X size={17} />
           </button>
         </div>
@@ -670,13 +737,13 @@ function SessionDetailDrawer({
         <div className="calx-session-drawer__details">
           <div className="calx-session-drawer__detail">
             <CalendarDays size={17} />
-            <span>{format(event.start, "EEEE, MMMM d, yyyy")}</span>
+            <span>{event.start.toLocaleDateString(dtfLocale, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</span>
           </div>
           <div className="calx-session-drawer__detail">
             <Clock3 size={17} />
             <span>
-              {format(event.start, "h:mm a")}
-              {event.end ? ` - ${format(event.end, "h:mm a")}` : ""} · {duration} min
+              {event.start.toLocaleTimeString(dtfLocale, { hour: "numeric", minute: "2-digit", hour12: true })}
+              {event.end ? ` - ${event.end.toLocaleTimeString(dtfLocale, { hour: "numeric", minute: "2-digit", hour12: true })}` : ""} · {formatNumber(duration, locale)} {t(dict, "min")}
             </span>
           </div>
           <div className="calx-session-drawer__detail">
@@ -685,7 +752,7 @@ function SessionDetailDrawer({
           </div>
           <div className="calx-session-drawer__detail">
             <CalendarClock size={17} />
-            <span>{event.isGroup ? t(dict, "session_group") : "1:1 session"}</span>
+            <span>{event.isTraining ? event.trainingLabel : event.isGroup ? t(dict, "session_group") : t(dict, "one_on_one_session")}</span>
           </div>
         </div>
 
@@ -697,30 +764,30 @@ function SessionDetailDrawer({
               target="_blank"
               rel="noreferrer"
             >
-              Join Session <ExternalLink size={15} />
+              {t(dict, "drawer_join_session")} <ExternalLink size={15} />
             </a>
           ) : (
             <Link className="calx-session-drawer__action is-primary" href={detailHref}>
-              Open Details <ExternalLink size={15} />
+              {t(dict, "drawer_open_details")} <ExternalLink size={15} />
             </Link>
           )}
 
           <Link className="calx-session-drawer__action" href={detailHref}>
-            Details
+            {t(dict, "drawer_details")}
           </Link>
           <Link className="calx-session-drawer__action" href={detailHref}>
-            Reschedule
+            {t(dict, "drawer_reschedule")}
           </Link>
           <button className="calx-session-drawer__action" onClick={() => onCopyLink(event)}>
-            Copy link <Copy size={15} />
+            {t(dict, "drawer_copy_link")} <Copy size={15} />
           </button>
           <button
             className="calx-session-drawer__action is-danger"
             disabled={!canCancelSession || canceling}
             onClick={() => onCancelSession(event)}
-            title={canCancelSession ? "Cancel session" : "This session cannot be canceled"}
+            title={canCancelSession ? t(dict, "drawer_cancel_session") : t(dict, "drawer_cannot_cancel")}
           >
-            {canceling ? "Canceling..." : "Cancel"} <Ban size={15} />
+            {canceling ? `${t(dict, "modal_cancel")}...` : t(dict, "session_cancel")} <Ban size={15} />
           </button>
         </div>
       </aside>
@@ -747,6 +814,7 @@ export default function CalendarPage() {
   const [calendarMode, setCalendarMode] = useState("sessions");
 
   const [events, setEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
   const [availabilitySlots, setAvailabilitySlots] = useState([]);
   const [availabilityBaseline, setAvailabilityBaseline] = useState([]);
   const [availabilityUndoStack, setAvailabilityUndoStack] = useState([]);
@@ -767,6 +835,7 @@ export default function CalendarPage() {
     canceled: true,
     group: true,
     oneOnOne: true,
+    training: true,
     availability: true,
   });
 
@@ -809,15 +878,18 @@ export default function CalendarPage() {
     if (checking || !user) return;
 
     const { start, end } = getVisibleRange(currentDate, view);
+    setLoadingEvents(true);
     (async () => {
       try {
         const sessions = await fetchEvents(start.toISOString(), end.toISOString());
-        setEvents(toRbcEvents(sessions, user?.timezone));
+        setEvents(toRbcEvents(sessions, user?.timezone, locale));
       } catch (e) {
         setError(e?.response?.data?.error || t(dict, "error_failed"));
+      } finally {
+        setLoadingEvents(false);
       }
     })();
-  }, [checking, user, currentDate, view, fetchEvents, dict]);
+  }, [checking, user, currentDate, view, fetchEvents, dict, locale]);
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -880,7 +952,8 @@ export default function CalendarPage() {
       if (isCanceled && !filters.canceled) return false;
       if (!isCanceled && !filters.scheduled) return false;
       if (event.isGroup && !filters.group) return false;
-      if (!event.isGroup && !filters.oneOnOne) return false;
+      if (event.isTraining && !filters.training) return false;
+      if (!event.isGroup && !event.isTraining && !filters.oneOnOne) return false;
       return true;
     },
     [filters]
@@ -911,12 +984,12 @@ export default function CalendarPage() {
   }, [filteredSessions, filteredAvailabilityEvents]);
 
   const weekStart = useMemo(
-    () => startOfWeek(currentDate, { weekStartsOn: 1 }),
+    () => startOfWeek(currentDate, { weekStartsOn: CALENDAR_WEEK_START_DAY }),
     [currentDate]
   );
 
   const selectedWeekStart = useMemo(
-    () => startOfWeek(selectedDate, { weekStartsOn: 1 }),
+    () => startOfWeek(selectedDate, { weekStartsOn: CALENDAR_WEEK_START_DAY }),
     [selectedDate]
   );
 
@@ -925,10 +998,10 @@ export default function CalendarPage() {
     [selectedWeekStart]
   );
 
-  const selectedWeekLabel = useMemo(
-    () => `${format(selectedWeekStart, "MMM d")} - ${format(selectedWeekEnd, "MMM d")}`,
-    [selectedWeekEnd, selectedWeekStart]
-  );
+  const selectedWeekLabel = useMemo(() => {
+    const dtfLocale = getIntlLocale(locale);
+    return `${selectedWeekStart.toLocaleDateString(dtfLocale, { month: "short", day: "numeric" })} - ${selectedWeekEnd.toLocaleDateString(dtfLocale, { month: "short", day: "numeric" })}`;
+  }, [selectedWeekEnd, selectedWeekStart, locale]);
 
   const weekDays = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -959,9 +1032,9 @@ export default function CalendarPage() {
         const hour = SLOT_START_HOUR + i;
         const date = new Date();
         date.setHours(hour, 0, 0, 0);
-        return format(date, "h a");
+        return date.toLocaleTimeString(getIntlLocale(locale), { hour: "numeric", hour12: true });
       }),
-    []
+    [locale]
   );
 
   const currentTimeTop = useMemo(() => {
@@ -1036,12 +1109,12 @@ export default function CalendarPage() {
 
   const eventToneLabels = useMemo(
     () => ({
-      scheduled: "Scheduled",
-      group: "Group",
-      live: "Live",
-      canceled: "Canceled",
+      scheduled: t(dict, "event_scheduled"),
+      group: t(dict, "event_group"),
+      live: t(dict, "event_live"),
+      canceled: t(dict, "event_canceled"),
     }),
-    []
+    [dict]
   );
 
   const updateAvailabilityDraft = useCallback((updater) => {
@@ -1251,7 +1324,7 @@ export default function CalendarPage() {
         (slot) =>
           slot.status === "active" &&
           slot.isRecurring &&
-          slot.dayOfWeek === dayOfWeek &&
+          Number(slot.dayOfWeek) === dayOfWeek &&
           slot.startTime === startTime &&
           slot.endTime === endTime
       );
@@ -1290,12 +1363,17 @@ export default function CalendarPage() {
     (e, dayDate, dayIdx) => {
       if (calendarMode !== "availability" || savingAvailability) return;
       if (e.button !== 0) return;
-      if (!e.target.closest(".calx-week-cell")) return;
+      const cell = e.target.closest(".calx-week-cell");
+      if (!cell) return;
+
+      const anchorHour = Number(cell.dataset.hour);
+      if (!Number.isInteger(anchorHour)) return;
 
       dragSelectionRef.current = {
         pointerId: e.pointerId,
         dayDate,
         dayIdx,
+        anchorHour,
         anchorMinute: getSnappedMinuteFromPointer(e.clientY, e.currentTarget),
         startY: e.clientY,
         hasMoved: false,
@@ -1336,7 +1414,14 @@ export default function CalendarPage() {
       dragSelectionRef.current = null;
       setDragSelection(null);
 
-      if (!drag.hasMoved) return;
+      if (!drag.hasMoved) {
+        suppressWeekCellClickRef.current = true;
+        window.setTimeout(() => {
+          suppressWeekCellClickRef.current = false;
+        }, 120);
+        toggleWeekCellAvailability(drag.dayDate, drag.anchorHour);
+        return;
+      }
 
       const selection = drag.selection || getWeekDragSelection(drag, e.clientY, e.currentTarget);
       if (!selection || selection.endMinute <= selection.startMinute) return;
@@ -1352,7 +1437,7 @@ export default function CalendarPage() {
         formatAvailabilityTime(selection.endMinute)
       );
     },
-    [addAvailabilitySlot, getWeekDragSelection]
+    [addAvailabilitySlot, getWeekDragSelection, toggleWeekCellAvailability]
   );
 
   const handleWeekDayPointerCancel = useCallback((e) => {
@@ -1618,8 +1703,8 @@ export default function CalendarPage() {
 
     const { start, end } = getVisibleRange(currentDate, view);
     const sessions = await fetchEvents(start.toISOString(), end.toISOString());
-    setEvents(toRbcEvents(sessions, user?.timezone));
-  }, [currentDate, fetchEvents, user, view]);
+    setEvents(toRbcEvents(sessions, user?.timezone, locale));
+  }, [currentDate, fetchEvents, user, view, locale]);
 
   const getEventAnchor = useCallback((target) => {
     if (!target || !target.getBoundingClientRect) {
@@ -1666,40 +1751,40 @@ export default function CalendarPage() {
 
   const copySessionLink = useCallback(
     async (event) => {
-      const joinHref = getSessionJoinHref(event);
+      const joinHref = getSessionJoinHref(event, prefix);
       const fallbackHref = `${window.location.origin}${getSessionDetailsHref(prefix, event)}`;
       const href = joinHref || fallbackHref;
 
       try {
         await navigator.clipboard.writeText(href);
-        toast.success("Session link copied");
+        toast.success(t(dict, "toast_copy_success"));
       } catch {
-        toast.error("Could not copy session link");
+        toast.error(t(dict, "toast_copy_failed"));
       }
     },
-    [prefix, toast]
+    [prefix, toast, dict]
   );
 
   const cancelSessionFromCalendar = useCallback(
     async (event) => {
       if (!event || cancelingSessionId) return;
-      if (!confirm("Cancel this session?")) return;
+      if (!confirm(t(dict, "session_cancel_title"))) return;
 
       try {
         setCancelingSessionId(event.id);
         await api.post(`/sessions/${event.id}/cancel`);
-        toast.success("Session canceled");
+        toast.success(t(dict, "toast_session_canceled"));
         await refreshVisibleEvents();
         setActiveEvent(null);
         setActiveEventAnchor(null);
         setDrawerEvent(null);
       } catch (e) {
-        toast.error(e?.response?.data?.error || "Failed to cancel session");
+        toast.error(e?.response?.data?.error || t(dict, "error_cancel_session"));
       } finally {
         setCancelingSessionId(null);
       }
     },
-    [cancelingSessionId, refreshVisibleEvents, toast]
+    [cancelingSessionId, refreshVisibleEvents, toast, dict]
   );
 
   const handleStopImpersonate = useCallback(async () => {
@@ -1796,19 +1881,20 @@ export default function CalendarPage() {
     ({ date, label }) => {
       const headerDate = date instanceof Date ? date : null;
       const isToday = headerDate ? isSameDay(headerDate, new Date()) : false;
+      const dateLocale = locale === "ar" ? dateFnsAr : undefined;
 
       return (
         <div className={`calx-rbc-header-cell ${isToday ? "is-today" : ""}`}>
           <span className="calx-rbc-header-dow">
-            {headerDate ? format(headerDate, "EEE") : label}
+            {headerDate ? format(headerDate, "EEE", { locale: dateLocale }) : label}
           </span>
           {view === "day" && headerDate && (
-            <span className="calx-rbc-header-num">{format(headerDate, "d")}</span>
+            <span className="calx-rbc-header-num">{format(headerDate, "d", { locale: dateLocale })}</span>
           )}
         </div>
       );
     },
-    [view]
+    [view, locale]
   );
 
   const rbcMonthDateHeader = useCallback(
@@ -1868,7 +1954,7 @@ export default function CalendarPage() {
   );
 
   if (checking) {
-    return <div className="calx-state">{t(dict, "loading")}</div>;
+    return <div className="calx-state" role="status" aria-live="polite">{t(dict, "loading_calendar")}</div>;
   }
 
   if (!user) {
@@ -1895,18 +1981,24 @@ export default function CalendarPage() {
         <aside className={`calx-sidebar ${isSidebarCollapsed ? "is-collapsed" : ""}`}>
           <div className="calx-sidebar-header">
             <div className="calx-sidebar-heading">
-              <span className="calx-sidebar-title">Calendar</span>
+              <span className="calx-sidebar-title">{t(dict, "title")}</span>
               <span className="calx-sidebar-range">{selectedWeekLabel}</span>
             </div>
             <button
               type="button"
               className="calx-sidebar-toggle"
               onClick={() => setIsSidebarCollapsed((value) => !value)}
-              aria-label={isSidebarCollapsed ? "Expand calendar sidebar" : "Collapse calendar sidebar"}
+              aria-label={isSidebarCollapsed ? t(dict, "aria_expand_sidebar") : t(dict, "aria_collapse_sidebar")}
               aria-expanded={!isSidebarCollapsed}
             >
               {isSidebarCollapsed ? (
-                <PanelLeftOpen size={17} strokeWidth={2.4} />
+                locale === "ar" ? (
+                  <PanelRightOpen size={17} strokeWidth={2.4} />
+                ) : (
+                  <PanelLeftOpen size={17} strokeWidth={2.4} />
+                )
+              ) : locale === "ar" ? (
+                <PanelRightClose size={17} strokeWidth={2.4} />
               ) : (
                 <PanelLeftClose size={17} strokeWidth={2.4} />
               )}
@@ -1918,11 +2010,11 @@ export default function CalendarPage() {
               type="button"
               className="calx-sidebar-rail"
               onClick={() => setIsSidebarCollapsed(false)}
-              aria-label="Expand calendar sidebar"
+              aria-label={t(dict, "aria_expand_sidebar")}
             >
               <CalendarDays size={18} strokeWidth={2.4} />
-              <span>{format(selectedDate, "MMM")}</span>
-              <strong>{format(selectedDate, "d")}</strong>
+              <span>{selectedDate.toLocaleDateString(getIntlLocale(locale), { month: "short" })}</span>
+              <strong>{selectedDate.toLocaleDateString(getIntlLocale(locale), { day: "numeric" })}</strong>
             </button>
           ) : (
             <div className="calx-sidebar-content">
@@ -1934,6 +2026,7 @@ export default function CalendarPage() {
                   showNeighboringMonth={true}
                   next2Label={null}
                   prev2Label={null}
+                  locale={locale === "ar" ? "ar" : "en"}
                   className="calx-mini-cal"
                   tileClassName={({ date, view: miniView }) => {
                     if (miniView !== "month") return "";
@@ -1952,7 +2045,7 @@ export default function CalendarPage() {
               </section>
 
               <section className="calx-sidebar-section">
-                <div className="calx-sidebar-label">View Mode</div>
+                <div className="calx-sidebar-label">{t(dict, "view_mode")}</div>
                 <div className="calx-mode-toggle">
                   <button
                     type="button"
@@ -1961,7 +2054,7 @@ export default function CalendarPage() {
                     aria-pressed={calendarMode === "sessions"}
                   >
                     <CalendarDays size={17} strokeWidth={2.4} />
-                    {t(dict, "mode_sessions") || "Sessions"}
+                    {t(dict, "mode_sessions")}
                   </button>
                   <button
                     type="button"
@@ -1970,38 +2063,49 @@ export default function CalendarPage() {
                     aria-pressed={calendarMode === "availability"}
                   >
                     <Clock3 size={17} strokeWidth={2.4} />
-                    {t(dict, "mode_availability") || "Availability"}
-                    <span className="calx-mode-count">{activeSlotCount}</span>
+                    {t(dict, "mode_availability")}
+            <span className="calx-mode-count">{formatNumber(activeSlotCount, locale)}</span>
                   </button>
                 </div>
               </section>
 
               <section className="calx-sidebar-section">
-                <div className="calx-sidebar-label">This Week</div>
+                <div className="calx-sidebar-label">{t(dict, "this_week")}</div>
                 <div className="calx-week-metrics">
                   <div className="calx-week-metric">
-                    <span>Sessions</span>
-                    <strong className="is-primary">{weekSessionCount}</strong>
+                    <span>{t(dict, "mode_sessions")}</span>
+                    <strong className="is-primary">{formatNumber(weekSessionCount, locale)}</strong>
                   </div>
                   <div className="calx-week-metric">
                     <span>{t(dict, "slots")}</span>
-                    <strong className="is-green">{activeSlotCount}</strong>
+                    <strong className="is-green">{formatNumber(activeSlotCount, locale)}</strong>
                   </div>
                   <div className="calx-week-metric">
                     <span>{t(dict, "weekly")}</span>
-                    <strong>{totalAvailabilityHours}h</strong>
+                    <strong>
+                      {formatNumber(totalAvailabilityHours, locale)} {t(dict, "hours_unit")}
+                    </strong>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  className="calx-set-availability-btn"
+                  onClick={() => setCalendarMode("availability")}
+                  aria-pressed={calendarMode === "availability"}
+                >
+                  <Plus size={16} strokeWidth={2.7} />
+                  {t(dict, "set_availability")}
+                </button>
               </section>
 
               <section className="calx-sidebar-section">
-                <div className="calx-sidebar-label">Upcoming</div>
+                <div className="calx-sidebar-label">{t(dict, "sidebar_upcoming")}</div>
                 <div className="calx-upcoming-list">
                   {upcomingEvents.length === 0 ? (
                     <div className="calx-empty-small">
-                      <strong>No sessions scheduled</strong>
-                      <span>Your coach or admin will schedule sessions for you.</span>
-                      <Link href={`${prefix}/contact`}>Contact support</Link>
+                      <strong>{t(dict, "empty_no_sessions")}</strong>
+                      <span>{t(dict, "empty_coach_will_schedule")}</span>
+                      <Link href={`${prefix}/contact`}>{t(dict, "contact_support")}</Link>
                     </div>
                   ) : (
                     upcomingEvents.map((ev) => {
@@ -2019,12 +2123,12 @@ export default function CalendarPage() {
                                 {ev.title || t(dict, "session_default_title")}
                               </span>
                               <span className={`calx-upcoming-status is-${tone}`}>
-                                {eventToneLabels[tone] || "Session"}
+                                {eventToneLabels[tone] || t(dict, "session_default_title")}
                               </span>
                             </span>
                             <span className="calx-upcoming-time">
-                              {format(ev.start, "EEE · h:mm a")}
-                              {ev.end ? ` - ${format(ev.end, "h:mm a")}` : ""}
+                              {ev.start.toLocaleDateString(getIntlLocale(locale), { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true })}
+                              {ev.end ? ` - ${ev.end.toLocaleTimeString(getIntlLocale(locale), { hour: "numeric", minute: "2-digit", hour12: true })}` : ""}
                             </span>
                           </span>
                         </button>
@@ -2036,10 +2140,10 @@ export default function CalendarPage() {
 
               <div className="calx-sidebar-note">
                 <div>
-                  <strong>Need a schedule change?</strong>
-                  <span>Sessions are managed by your coach or admin.</span>
+                  <strong>{t(dict, "schedule_change_title")}</strong>
+                  <span>{t(dict, "schedule_change_body")}</span>
                 </div>
-                <Link href={`${prefix}/contact`}>Get help</Link>
+                <Link href={`${prefix}/contact`}>{t(dict, "get_help")}</Link>
               </div>
             </div>
           )}
@@ -2052,44 +2156,67 @@ export default function CalendarPage() {
                 type="button"
                 className="calx-today-btn"
                 onClick={() => handleNavigate("today")}
-                aria-label="Jump to today"
+                aria-label={t(dict, "today")}
               >
-                Today
+                {t(dict, "today")}
               </button>
-              <div className="calx-toolbar-nav" role="group" aria-label="Calendar navigation">
+              <div className="calx-toolbar-nav" role="group" aria-label={t(dict, "aria_calendar_navigation")}>
                 <button
                   type="button"
                   className="calx-nav-btn"
                   onClick={() => handleNavigate("prev")}
-                  aria-label="Previous period"
+                  aria-label={t(dict, "aria_previous_period")}
                 >
-                  <ChevronLeft size={17} strokeWidth={2.8} />
+                  {locale === "ar" ? <ChevronRight size={17} strokeWidth={2.8} /> : <ChevronLeft size={17} strokeWidth={2.8} />}
                 </button>
                 <button
                   type="button"
                   className="calx-nav-btn"
                   onClick={() => handleNavigate("next")}
-                  aria-label="Next period"
+                  aria-label={t(dict, "aria_next_period")}
                 >
-                  <ChevronRight size={17} strokeWidth={2.8} />
+                  {locale === "ar" ? <ChevronLeft size={17} strokeWidth={2.8} /> : <ChevronRight size={17} strokeWidth={2.8} />}
                 </button>
               </div>
             </div>
 
             <div className="calx-toolbar__center" aria-live="polite">
-              <div className="calx-toolbar-range">{getViewRangeLabel(currentDate, view)}</div>
-              <div className="calx-toolbar-timezone">{user?.timezone || "Local timezone"}</div>
+              <div className="calx-toolbar-range">{getViewRangeLabel(currentDate, view, locale)}</div>
+              <div className="calx-toolbar-timezone">{user?.timezone || t(dict, "timezone_local")}</div>
             </div>
 
             <div className="calx-toolbar__right">
-              <div className="calx-view-tabs" role="group" aria-label="Calendar view">
+              <div className="calx-toolbar-mode-tabs" role="group" aria-label={t(dict, "view_mode")}>
+                <button
+                  type="button"
+                  className={`calx-toolbar-mode-tab ${calendarMode === "sessions" ? "is-active" : ""}`}
+                  onClick={() => setCalendarMode("sessions")}
+                  aria-pressed={calendarMode === "sessions"}
+                >
+                  <CalendarDays size={14} strokeWidth={2.5} />
+                  {t(dict, "mode_sessions")}
+                </button>
+                <button
+                  type="button"
+                  className={`calx-toolbar-mode-tab ${calendarMode === "availability" ? "is-active is-availability" : ""}`}
+                  onClick={() => setCalendarMode("availability")}
+                  aria-pressed={calendarMode === "availability"}
+                >
+                  <Clock3 size={14} strokeWidth={2.5} />
+                  <span className="calx-toolbar-mode-tab__availability-label">
+                    {t(dict, "mode_availability")}
+                  </span>
+                </button>
+              </div>
+
+              <div className="calx-view-tabs" role="group" aria-label={t(dict, "aria_calendar_view")}>
                 <button
                   type="button"
                   className={`calx-view-tab ${view === "week" ? "is-active" : ""}`}
                   onClick={() => setView("week")}
                   aria-pressed={view === "week"}
                 >
-                  Week
+                  {t(dict, "week")}
                 </button>
                 <button
                   type="button"
@@ -2097,7 +2224,7 @@ export default function CalendarPage() {
                   onClick={() => setView("month")}
                   aria-pressed={view === "month"}
                 >
-                  Month
+                  {t(dict, "month")}
                 </button>
                 <button
                   type="button"
@@ -2105,7 +2232,7 @@ export default function CalendarPage() {
                   onClick={() => setView("day")}
                   aria-pressed={view === "day"}
                 >
-                  Day
+                  {t(dict, "day")}
                 </button>
               </div>
 
@@ -2117,17 +2244,18 @@ export default function CalendarPage() {
                   aria-expanded={showFilters}
                 >
                   <SlidersHorizontal size={15} strokeWidth={2.5} />
-                  Filter
+                  {t(dict, "filter")}
                 </button>
 
                 {showFilters && (
                   <div className="calx-filter-menu">
                     {[
-                      ["scheduled", "Scheduled"],
-                      ["canceled", "Canceled"],
-                      ["group", "Group"],
-                      ["oneOnOne", "1:1"],
-                      ["availability", "Availability"],
+                      ["scheduled", t(dict, "filter_scheduled")],
+                      ["canceled", t(dict, "filter_canceled")],
+                      ["group", t(dict, "filter_group")],
+                      ["oneOnOne", t(dict, "filter_oneOnOne")],
+                      ["training", locale === "ar" ? "تدريب · بدون أجر" : "Training · unpaid"],
+                      ["availability", t(dict, "filter_availability")],
                     ].map(([key, label]) => (
                       <label key={key} className="calx-filter-item">
                         <input
@@ -2145,21 +2273,23 @@ export default function CalendarPage() {
               </div>
 
               <Link className="calx-toolbar-support" href={`${prefix}/contact`}>
-                <LifeBuoy size={15} strokeWidth={2.5} />
-                Support
+                <Headphones size={15} strokeWidth={2.5} />
+                {t(dict, "support")}
               </Link>
             </div>
           </div>
 
           {calendarMode === "availability" && showAvailabilityHint && (
-            <div className="calx-availability-banner">
+            <div className="calx-availability-banner" role="status" aria-live="polite">
               <span className="calx-availability-banner__icon">💡</span>
               <span className="calx-availability-banner__text">
-                <strong>{t(dict, "instructions_title") || "Availability Editing Mode"}:</strong>{" "}
-                {t(dict, "instructions_drag") ||
-                  "Drag on a day column to create an availability range."}{" "}
-                Drag a block to move it, drag its edges to resize, and hold Option/Alt
-                while dragging to copy.
+                <strong>{t(dict, "instructions_title")}</strong>
+                <span className="calx-availability-banner__primary">
+                  {t(dict, "instructions_drag")}
+                </span>
+                <span className="calx-availability-banner__secondary">
+                  {t(dict, "instructions_click")} {t(dict, "instructions_copy")}
+                </span>
               </span>
               <button
                 className="calx-availability-banner__close"
@@ -2170,7 +2300,13 @@ export default function CalendarPage() {
             </div>
           )}
 
-          {error && <div className="calx-error-banner">⚠️ {error}</div>}
+          {error && <div className="calx-error-banner" role="alert">⚠️ {error}</div>}
+
+          {loadingEvents && calendarMode === "sessions" && (
+            <div className="calx-session-mode-banner calx-session-mode-banner--loading" role="status" aria-live="polite">
+              <strong>{t(dict, "loading_sessions")}</strong>
+            </div>
+          )}
 
           {view === "week" ? (
             <div
@@ -2185,6 +2321,7 @@ export default function CalendarPage() {
                   {weekDays.map((day) => {
                     const isToday = isSameDay(day, new Date());
                     const isSel = isSameDay(day, selectedDate);
+                    const dateLocale = locale === "ar" ? dateFnsAr : undefined;
                     return (
                       <button
                         type="button"
@@ -2195,14 +2332,16 @@ export default function CalendarPage() {
                           setCurrentDate(day);
                         }}
                         aria-pressed={isSel}
-                        aria-label={`Select ${format(day, "EEEE, MMMM d")}`}
+                        aria-label={t(dict, "select_day", {
+                          date: `${getCalendarWeekdayLabel(day, locale)}, ${format(day, "MMMM d", { locale: dateLocale })}`,
+                        })}
                       >
-                        <div className="calx-week-header-dow">{format(day, "EEE")}</div>
+                        <div className="calx-week-header-dow">{getCalendarWeekdayLabel(day, locale)}</div>
                         <div
                           className={`calx-week-header-num ${isToday ? "is-today" : ""} ${!isToday && isSel ? "is-selected" : ""
                             }`}
                         >
-                          {format(day, "d")}
+                          {format(day, "d", { locale: dateLocale })}
                         </div>
                       </button>
                     );
@@ -2271,6 +2410,7 @@ export default function CalendarPage() {
                               key={`cell-${day.toISOString()}-${hour}`}
                               className={`calx-week-cell ${calendarMode === "availability" ? "is-clickable" : ""
                                 }`}
+                              data-hour={hour}
                               onClick={(e) => {
                                 if (suppressWeekCellClickRef.current) {
                                   e.preventDefault();
@@ -2434,7 +2574,7 @@ export default function CalendarPage() {
                                 </span>
                                 <span className="calx-ev-sub">
                                   {format(ev.start, "h:mm a")}
-                                  {ev.isGroup ? ` · ${t(dict, "session_group")}` : ""}
+                                  {ev.isTraining ? ` · ${ev.trainingLabel}` : ev.isGroup ? ` · ${t(dict, "session_group")}` : ""}
                                   {ev.isGroup && ev.seatsLabel ? ` · ${ev.seatsLabel}` : ""}
                                 </span>
                               </span>
@@ -2550,6 +2690,7 @@ export default function CalendarPage() {
           onCopyLink={copySessionLink}
           dict={dict}
           prefix={prefix}
+          locale={locale}
         />
       )}
 
@@ -2562,6 +2703,7 @@ export default function CalendarPage() {
           canceling={String(cancelingSessionId) === String(drawerEvent.id)}
           dict={dict}
           prefix={prefix}
+          locale={locale}
         />
       )}
     </div>

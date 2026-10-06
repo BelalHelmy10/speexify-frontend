@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { getSupportWebSocketToken } from "@/lib/supportApi";
+import {
+  getSupportAttachmentUrl,
+  getSupportWebSocketToken,
+} from "@/lib/supportApi";
 import useAuth from "@/hooks/useAuth";
 import {
   MessageCircle,
@@ -87,7 +90,7 @@ function getInitials(name, email) {
 }
 
 export default function AdminSupportInboxPage() {
-  const { user, checking } = useAuth();
+  const { user, status: authStatus, checking } = useAuth();
   const isAdmin = user?.role === "admin";
   const router = useRouter();
 
@@ -128,12 +131,6 @@ export default function AdminSupportInboxPage() {
   const [wsConnected, setWsConnected] = useState(false);
   const reconnectTimeoutRef = useRef(null);
   const bottomRef = useRef(null);
-
-  const getAttachmentUrl = useCallback((attachmentId) => {
-    const id = Number(attachmentId);
-    if (!Number.isFinite(id)) return "#";
-    return `/api/support/attachments/${id}`;
-  }, []);
 
   // Debounce search
   useEffect(() => {
@@ -648,10 +645,12 @@ export default function AdminSupportInboxPage() {
 
   // Redirect if not admin
   useEffect(() => {
-    if (checking) return;
-    if (!user) router.push("/login");
+    // Don't bounce to login on a failed/in-flight check — only when the
+    // session is confirmed invalid.
+    if (authStatus === "checking" || authStatus === "error") return;
+    if (authStatus === "unauthenticated" || !user) router.push("/login");
     else if (!isAdmin) router.push("/dashboard");
-  }, [checking, user, isAdmin, router]);
+  }, [authStatus, user, isAdmin, router]);
 
   async function requestNotifications() {
     if (typeof Notification === "undefined") return;
@@ -668,47 +667,73 @@ export default function AdminSupportInboxPage() {
   const totalPages = Math.max(1, Math.ceil(ticketTotal / PAGE_SIZE));
   const pageStart = ticketTotal === 0 ? 0 : page * PAGE_SIZE + 1;
   const pageEnd = Math.min(ticketTotal, (page + 1) * PAGE_SIZE);
+  const activeCount = Number(ticketSummary?.active ?? ticketTotal);
+  const unassignedCount = Number(ticketSummary?.unassigned || 0);
+  const urgentCount = Number(ticketSummary?.urgent || 0);
 
   return (
     <main className="asp-admin-support">
       {/* Header */}
       <header className="asp-header">
-        <div className="asp-header__left">
-          <div className="asp-header__icon">
-            <MessageCircle size={28} />
-          </div>
-          <div>
-            <h1 className="asp-header__title">Support Inbox</h1>
-            <p className="asp-header__subtitle">
-              {wsConnected ? (
-                <>
+        <div className="asp-header__content">
+          <div className="asp-header__topline">
+            <div className="asp-header__left">
+              <div className="asp-header__icon" aria-hidden="true">
+                <MessageCircle size={28} />
+              </div>
+              <div className="asp-header__copy">
+                <span className="asp-header__eyebrow">
+                  Customer care · control room
+                </span>
+                <h1 className="asp-header__title">Support, at a glance</h1>
+                <p className="asp-header__description">
+                  Keep every conversation moving with one clear view of what
+                  needs attention.
+                </p>
+                <p className="asp-header__subtitle">
                   <span className="asp-status-dot"></span>
-                  Real-time updates enabled
-                </>
-              ) : (
-                <>Connecting...</>
-              )}
-            </p>
-          </div>
-        </div>
+                  {wsConnected
+                    ? "Live updates are on"
+                    : "Connecting to live updates..."}
+                </p>
+              </div>
+            </div>
 
-        <div className="asp-header__actions">
-          <button
-            className="asp-btn asp-btn--secondary"
-            onClick={requestNotifications}
-            type="button"
-          >
-            <Bell size={16} />
-            Notifications
-          </button>
-          <button
-            className="asp-btn asp-btn--secondary"
-            onClick={loadTickets}
-            disabled={loadingList}
-          >
-            <RefreshCw size={16} className={loadingList ? "asp-spin" : ""} />
-            Refresh
-          </button>
+            <div className="asp-header__actions">
+              <button
+                className="asp-btn asp-btn--secondary"
+                onClick={requestNotifications}
+                type="button"
+              >
+                <Bell size={16} />
+                Notifications
+              </button>
+              <button
+                className="asp-btn asp-btn--secondary"
+                onClick={loadTickets}
+                disabled={loadingList}
+                type="button"
+              >
+                <RefreshCw size={16} className={loadingList ? "asp-spin" : ""} />
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div className="asp-header__metrics" aria-label="Support overview">
+            <div className="asp-header__metric">
+              <strong>{activeCount}</strong>
+              <span>Active conversations</span>
+            </div>
+            <div className="asp-header__metric">
+              <strong>{unassignedCount}</strong>
+              <span>Waiting for an owner</span>
+            </div>
+            <div className="asp-header__metric">
+              <strong>{urgentCount}</strong>
+              <span>Urgent today</span>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -748,6 +773,7 @@ export default function AdminSupportInboxPage() {
           <Search size={18} />
           <input
             type="text"
+            aria-label="Search support tickets"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search tickets..."
@@ -931,7 +957,7 @@ export default function AdminSupportInboxPage() {
           savingAssignment={savingAssignment}
           staffMembers={staffMembers}
           updateTags={updateTags}
-          getAttachmentUrl={getAttachmentUrl}
+          getAttachmentUrl={getSupportAttachmentUrl}
           typingUsers={typingUsers}
           bottomRef={bottomRef}
           showNoteInput={showNoteInput}

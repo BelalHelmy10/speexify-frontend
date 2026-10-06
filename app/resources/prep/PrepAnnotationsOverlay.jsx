@@ -16,7 +16,7 @@ import PrepTextBoxesLayer from "./PrepTextBoxesLayer";
 import PrepStickyNotesLayer from "./PrepStickyNotesLayer";
 import PrepMasksLayer from "./PrepMasksLayer";
 import PrepShapePreviewLayer from "./PrepShapePreviewLayer";
-import PrepPointersLayer from "./PrepPointersLayer";
+import PrepLaserPointerLayer from "./PrepLaserPointerLayer";
 
 export default function PrepAnnotationsOverlay({ ctx }) {
   const {
@@ -248,7 +248,7 @@ export default function PrepAnnotationsOverlay({ ctx }) {
         TOOL_BOX={TOOL_BOX}
       />
 
-      <PrepPointersLayer
+      <PrepLaserPointerLayer
         menusOpen={menusOpen}
         teacherPointer={teacherPointer}
         learnerPointers={learnerPointers}

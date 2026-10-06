@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import api from "@/lib/api";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 
 /**
  * SessionNotes - Teacher's notes panel for the live classroom
@@ -28,6 +29,7 @@ export default function SessionNotes({
   initialNotes = "",
   isOpen = true,
   onToggle,
+  locale = "en",
 }) {
   const [notes, setNotes] = useState(initialNotes);
   const [saveStatus, setSaveStatus] = useState("saved"); // "saved" | "saving" | "unsaved" | "error"
@@ -169,7 +171,7 @@ export default function SessionNotes({
       default:
         return {
           text: lastSaved
-            ? `Saved ${lastSaved.toLocaleTimeString([], {
+            ? `Saved ${lastSaved.toLocaleTimeString(getIntlLocale(locale), {
                 hour: "2-digit",
                 minute: "2-digit",
               })}`
@@ -241,8 +243,8 @@ export default function SessionNotes({
               />
               <div className="session-notes__footer">
                 <span className="session-notes__count">
-                  {characterCount.toLocaleString()} /{" "}
-                  {maxCharacters.toLocaleString()}
+                  {formatNumber(characterCount, locale)} /{" "}
+                  {formatNumber(maxCharacters, locale)}
                 </span>
                 <div className="session-notes__actions">
                   {saveStatus === "unsaved" && (

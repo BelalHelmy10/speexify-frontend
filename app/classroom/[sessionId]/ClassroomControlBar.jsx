@@ -1,13 +1,27 @@
 "use client";
 
-import { BookOpen, Circle, MessageSquare, Square, Users } from "lucide-react";
+import {
+  BookOpen,
+  Circle,
+  Download,
+  MessageSquare,
+  RotateCcw,
+  Square,
+  Users,
+  X,
+} from "lucide-react";
 import { ClassroomRaiseHandButton } from "./ClassroomRaiseHand";
+import { ClassroomCaptionsButton } from "./ClassroomCaptions";
+import { ClassroomScreenShareButton } from "./ClassroomScreenShare";
+import ClassroomHostMenu from "./ClassroomHostMenu";
 
 export default function ClassroomControlBar({
   isMobile,
   isTeacher,
   setIsPickerOpen,
   isPageRecording,
+  pageRecError,
+  clearPageRecError,
   pageRecWarning,
   stopPageRecording,
   startPageRecording,
@@ -30,6 +44,19 @@ export default function ClassroomControlBar({
   chatUnreadCount,
   isHandRaised,
   toggleHand,
+  captionsEnabled,
+  captionsSupported,
+  onToggleCaptions,
+  captionsPausedForMute,
+  onExportPage,
+  hasResource,
+  screenShareIsLocalSharer,
+  screenShareIsRemoteSharing,
+  screenShareBlockedByTeacher,
+  onRequestStartScreenShare,
+  onStopScreenShare,
+  teacherAllowsScreenShare,
+  onTeacherAllowsScreenShareChange,
 }) {
   if (isMobile) return null;
 
@@ -40,6 +67,8 @@ export default function ClassroomControlBar({
           <button
             className="cr-controls__btn cr-controls__btn--primary"
             onClick={() => setIsPickerOpen(true)}
+            aria-label="Choose resource"
+            title="Choose resource"
           >
             <span className="cr-controls__btn-icon"><BookOpen size={16} /></span>
             <span className="cr-controls__btn-label">Resources</span>
@@ -48,14 +77,17 @@ export default function ClassroomControlBar({
 
         {isTeacher && (
           <button
-            className="cr-controls__btn cr-controls__btn--secondary"
+            className="cr-controls__btn cr-controls__btn--secondary cr-controls__btn--icon-only"
             onClick={isPageRecording ? stopPageRecording : startPageRecording}
+            title={isPageRecording ? "Stop recording" : "Record class"}
+            aria-label={isPageRecording ? "Stop recording" : "Record class"}
           >
             <span className="cr-controls__btn-icon">
-              {isPageRecording ? <Square size={16} fill="currentColor" /> : <Circle size={16} fill="#ef4444" />}
-            </span>
-            <span className="cr-controls__btn-label">
-              {isPageRecording ? "Stop recording" : "Record class"}
+              {isPageRecording ? (
+                <Square size={16} fill="currentColor" />
+              ) : (
+                <Circle size={16} fill="#ef4444" />
+              )}
             </span>
           </button>
         )}
@@ -66,17 +98,41 @@ export default function ClassroomControlBar({
           </span>
         )}
 
-        {isGroup && (
+        {isTeacher && pageRecError && (
+          <span className="cr-controls__recording-notice" role="status">
+            {pageRecError}
+            <button
+              type="button"
+              className="cr-controls__recording-notice-dismiss"
+              onClick={clearPageRecError}
+              aria-label="Dismiss recording error"
+            >
+              <X size={12} />
+            </button>
+          </span>
+        )}
+
+        {(isTeacher || isGroup) && (
           <button
             className="cr-controls__btn cr-controls__btn--secondary"
             onClick={() => setShowParticipantList(true)}
+            aria-label={isTeacher ? "Open classroom controls" : `Show ${participantCount} participants`}
+            title={isTeacher ? "Open classroom controls" : `Show ${participantCount} participants`}
           >
             <span className="cr-controls__btn-icon"><Users size={16} /></span>
             <span className="cr-controls__btn-label">
-              Participants ({participantCount})
+              {isTeacher ? "Controls" : `Participants (${participantCount})`}
             </span>
           </button>
         )}
+
+        <ClassroomScreenShareButton
+          isLocalSharer={Boolean(screenShareIsLocalSharer)}
+          isRemoteSharing={Boolean(screenShareIsRemoteSharing)}
+          blockedByTeacher={Boolean(screenShareBlockedByTeacher)}
+          onRequestStart={onRequestStartScreenShare}
+          onStop={onStopScreenShare}
+        />
       </div>
 
       <div className="cr-controls__center">
@@ -103,30 +159,53 @@ export default function ClassroomControlBar({
 
         {customSplit !== null && (
           <button
-            className="cr-controls__reset"
+            className="cr-controls__btn cr-controls__btn--ghost cr-controls__btn--icon-only"
             onClick={() => setCustomSplit(null)}
             title="Reset to preset layout"
+            aria-label="Reset to preset layout"
           >
-            Reset
+            <span className="cr-controls__btn-icon">
+              <RotateCcw size={16} />
+            </span>
           </button>
         )}
       </div>
 
       <div className="cr-controls__right">
+        <ClassroomCaptionsButton
+          enabled={captionsEnabled}
+          supported={captionsSupported}
+          onToggle={onToggleCaptions}
+          iconOnly
+        />
+        {captionsEnabled && captionsPausedForMute && (
+          <span
+            className="cr-controls__caption-hint"
+            title="Captions resume when you unmute"
+          >
+            Captions paused (muted)
+          </span>
+        )}
+        {hasResource && onExportPage && (
+          <button
+            className="cr-controls__btn cr-controls__btn--export cr-controls__btn--icon-only"
+            onClick={() => onExportPage("png")}
+            title="Save annotated page as PNG"
+            aria-label="Save annotated page as PNG"
+          >
+            <span className="cr-controls__btn-icon">
+              <Download size={16} />
+            </span>
+          </button>
+        )}
         <ClassroomRaiseHandButton isHandRaised={isHandRaised} onToggleHand={toggleHand} />
         {isTeacher && (
-          <label className="cr-controls__toggle-wrapper">
-            <input
-              type="checkbox"
-              className="cr-controls__toggle-input"
-              checked={teacherAllowsFollowing}
-              onChange={(e) => onTeacherAllowsFollowingChange(e.target.checked)}
-            />
-            <span className="cr-controls__toggle-slider"></span>
-            <span className="cr-controls__toggle-label">
-              Learners follow layout
-            </span>
-          </label>
+          <ClassroomHostMenu
+            teacherAllowsFollowing={teacherAllowsFollowing}
+            onTeacherAllowsFollowingChange={onTeacherAllowsFollowingChange}
+            teacherAllowsScreenShare={teacherAllowsScreenShare}
+            onTeacherAllowsScreenShareChange={onTeacherAllowsScreenShareChange}
+          />
         )}
 
         {!isTeacher && (
@@ -137,6 +216,7 @@ export default function ClassroomControlBar({
               checked={learnerWantsToFollow}
               onChange={(e) => onLearnerWantsToFollowChange(e.target.checked)}
               disabled={!teacherAllowsFollowing}
+              aria-label="Follow teacher layout"
             />
             <span className="cr-controls__toggle-slider"></span>
             <span className="cr-controls__toggle-label">
@@ -150,15 +230,30 @@ export default function ClassroomControlBar({
         )}
 
         <button
-          className="cr-controls__btn cr-controls__btn--ghost"
+          className={
+            "cr-controls__btn cr-controls__btn--ghost" +
+            (!isChatOpen && chatUnreadCount > 0 ? " cr-controls__btn--has-unread" : "")
+          }
           onClick={() => setIsChatOpen(!isChatOpen)}
+          aria-label={
+            !isChatOpen && chatUnreadCount > 0
+              ? `Show chat, ${chatUnreadCount} unread`
+              : isChatOpen
+                ? "Hide chat"
+                : "Show chat"
+          }
         >
-          <span className="cr-controls__btn-icon"><MessageSquare size={16} /></span>
+          <span className="cr-controls__btn-icon cr-controls__btn-icon--dot-host">
+            <MessageSquare size={16} />
+            {!isChatOpen && chatUnreadCount > 0 && (
+              <span className="cr-controls__btn-dot" aria-hidden="true" />
+            )}
+          </span>
           <span className="cr-controls__btn-label">
             {isChatOpen
               ? "Hide Chat"
               : chatUnreadCount > 0
-                ? `Show Chat (${chatUnreadCount})`
+                ? `Show Chat (${chatUnreadCount > 9 ? "9+" : chatUnreadCount})`
                 : "Show Chat"}
           </span>
         </button>

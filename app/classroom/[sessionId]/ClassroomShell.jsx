@@ -1,21 +1,41 @@
 // app/classroom/[sessionId]/ClassroomShell.jsx
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
+import ClassroomResourceWorkspace from "./ClassroomResourceWorkspace";
 import PrepShell from "@/app/resources/prep/PrepShell";
 import ClassroomChat from "./ClassroomChat";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 import MobileClassroomLayout from "./MobileClassroomLayout";
 import ClassroomHeaderBar from "./ClassroomHeaderBar";
 import ClassroomControlBar from "./ClassroomControlBar";
 import ClassroomResourcePickerModal from "./ClassroomResourcePickerModal";
 import ClassroomParticipantsModal from "./ClassroomParticipantsModal";
 import ClassroomLeaveConfirmModal from "./ClassroomLeaveConfirmModal";
+import ClassroomConnectionBanner from "./ClassroomConnectionBanner";
+import ClassroomTimeWarning from "./ClassroomTimeWarning";
+import ClassroomWaitingRoom from "./ClassroomWaitingRoom";
+import ClassroomLobbyPanel from "./ClassroomLobbyPanel";
+import ClassroomLateJoinBanner from "./ClassroomLateJoinBanner";
+import { useClassroomLobby } from "./useClassroomLobby";
 import { ClassroomRaiseHandOverlay, useClassroomRaiseHand } from "./ClassroomRaiseHand";
+import {
+  ClassroomCaptionsOverlay,
+  useClassroomCaptions,
+} from "./ClassroomCaptions";
+import {
+  ClassroomScreenShareBanner,
+  ClassroomScreenShareConfirmModal,
+  useClassroomScreenShare,
+} from "./ClassroomScreenShare";
 import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
+import useAuth from "@/hooks/useAuth";
+import { formatCompactDuration, getSessionTiming } from "./classroomTime";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import api from "@/lib/api";
-import { Video, Scale, FileText, MessageSquare, BookOpen, Monitor } from "lucide-react";
+import { MessageCircle, MessageSquare, BookOpenText, Target, BookOpen, Monitor } from "lucide-react";
 
 /* -----------------------------------------------------------
    Utility: Safely generate a display name
@@ -31,6 +51,10 @@ function buildDisplayName(source) {
   const last = source.lastName || source.familyName || source.last_name || "";
 
   return [first, last].filter(Boolean).join(" ") || "";
+}
+
+function getParticipantId(source) {
+  return source?._id || source?.id || source?.userId || null;
 }
 
 /* -----------------------------------------------------------
@@ -55,9 +79,11 @@ function getParticipantsFromSession(session) {
     "Teacher";
 
   const isGroup = s.type === "GROUP";
+  const isTraining = s.type === "TRAINING";
   const learners = s.learners || [];
 
   const learnerObj =
+    (isTraining ? s.trainingAdmin : null) ||
     s.learnerUser ||
     s.learner ||
     s.student ||
@@ -69,18 +95,34 @@ function getParticipantsFromSession(session) {
     s.learnerName ||
     s.learnerDisplayName ||
     buildDisplayName(learnerObj) ||
-    "Learner";
+    (isTraining ? "Admin trainer" : "Learner");
 
-  const allLearnerNames = learners.map(
+  const learnerSources = (learners.length > 0 ? learners : learnerObj ? [learnerObj] : [])
+    .filter((person) => !isTraining || String(getParticipantId(person)) !== String(getParticipantId(teacherObj) || s.teacherId));
+  const allLearnerNames = learnerSources.map(
     (l) => buildDisplayName(l) || l.email?.split("@")[0] || "Learner"
   );
+  const chatParticipants = [
+    {
+      id: getParticipantId(teacherObj) || s.teacherId || s.teacherUserId || null,
+      name: teacherName,
+      role: "teacher",
+    },
+    ...learnerSources.map((learner) => ({
+      id: getParticipantId(learner),
+      name: buildDisplayName(learner) || learner.email?.split("@")[0] || "Learner",
+      role: "learner",
+    })),
+  ].filter((participant) => participant.id != null);
 
   return {
     teacherName,
     learnerName,
     isGroup,
+    isTraining,
     learners,
     allLearnerNames,
+    chatParticipants,
     participantCount:
       s.participantCount || learners.length || (learnerObj ? 1 : 0),
     capacity: s.capacity,
@@ -97,15 +139,15 @@ const FOCUS_MODES = {
 };
 
 const focusModeLabel = {
-  [FOCUS_MODES.BALANCED]: "Balanced",
-  [FOCUS_MODES.VIDEO]: "Video Focus",
-  [FOCUS_MODES.CONTENT]: "Content Focus",
+  [FOCUS_MODES.VIDEO]: "Conversation",
+  [FOCUS_MODES.BALANCED]: "Reading",
+  [FOCUS_MODES.CONTENT]: "Drilling",
 };
 
 const focusModeIcon = {
-  [FOCUS_MODES.BALANCED]: <Scale size={20} />,
-  [FOCUS_MODES.VIDEO]: <Video size={20} />,
-  [FOCUS_MODES.CONTENT]: <FileText size={20} />,
+  [FOCUS_MODES.VIDEO]: <MessageCircle size={20} />,
+  [FOCUS_MODES.BALANCED]: <BookOpenText size={20} />,
+  [FOCUS_MODES.CONTENT]: <Target size={20} />,
 };
 
 const FOCUS_MODE_ORDER = [
@@ -117,6 +159,71 @@ const CLASSROOM_FOCUS_MODES = new Set(Object.values(FOCUS_MODES));
 
 const MIN_SPLIT_PERCENT = 12;
 const MAX_SPLIT_PERCENT = 88;
+// While someone is sharing their screen, the resource viewer on the right
+// is hidden entirely and the Jitsi stage view fills the full classroom
+// width — same as Zoom / Teams when content is being shared.
+const SCREEN_SHARE_LEFT_PERCENT = 100;
+const PAGE_RECORDING_UNSUPPORTED_MESSAGE =
+  "Recording is currently supported in Chrome and Edge";
+const PAGE_RECORDING_MIME_TYPES = [
+  "video/webm;codecs=vp9,opus",
+  "video/webm;codecs=vp8,opus",
+  "video/webm;codecs=h264,opus",
+  "video/webm",
+];
+
+function getBrowserBrands() {
+  if (typeof navigator === "undefined") return [];
+  return Array.isArray(navigator.userAgentData?.brands)
+    ? navigator.userAgentData.brands.map((brand) => brand.brand || "")
+    : [];
+}
+
+function getPageRecordingSupport() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return { supported: false, reason: "unknown" };
+  }
+
+  const ua = navigator.userAgent || "";
+  const brands = getBrowserBrands();
+  const hasBrand = (pattern) => brands.some((brand) => pattern.test(brand));
+  const isEdge = /\bEdg\//.test(ua) || hasBrand(/Microsoft Edge/i);
+  const isFirefox = /Firefox|FxiOS/i.test(ua) || hasBrand(/Firefox/i);
+  const isSafari =
+    /Safari/i.test(ua) &&
+    !/Chrome|CriOS|Chromium|Edg|OPR|Opera|Firefox|FxiOS|Android/i.test(ua);
+  const isChrome =
+    !isEdge &&
+    !isFirefox &&
+    !isSafari &&
+    (/Chrome|CriOS|Chromium/i.test(ua) || hasBrand(/Google Chrome|Chromium/i));
+  const hasRecordingApis =
+    typeof navigator.mediaDevices?.getDisplayMedia === "function" &&
+    typeof navigator.mediaDevices?.getUserMedia === "function" &&
+    typeof window.MediaRecorder === "function";
+
+  if (!hasRecordingApis) {
+    return { supported: false, reason: "missing-api" };
+  }
+
+  if (isSafari) return { supported: false, reason: "safari" };
+  if (isFirefox) return { supported: false, reason: "firefox" };
+  if (!isChrome && !isEdge) return { supported: false, reason: "browser" };
+
+  return { supported: true, reason: isEdge ? "edge" : "chrome" };
+}
+
+function pickSupportedPageRecordingMime() {
+  if (typeof window === "undefined" || typeof window.MediaRecorder !== "function") {
+    return null;
+  }
+
+  return (
+    PAGE_RECORDING_MIME_TYPES.find((type) =>
+      window.MediaRecorder.isTypeSupported(type)
+    ) || null
+  );
+}
 
 function clampSplitPercent(value) {
   const num = Number(value);
@@ -130,6 +237,29 @@ function clampScrollNorm(value) {
   return Math.min(1, Math.max(0, num));
 }
 
+function getContentScrollForResource(contentScroll, resourceId) {
+  if (!resourceId || !contentScroll || typeof contentScroll !== "object") {
+    return null;
+  }
+
+  if (contentScroll.resourceId !== resourceId) return null;
+
+  const scrollNorm = clampScrollNorm(contentScroll.scrollNorm);
+  return scrollNorm === null ? null : { scrollNorm };
+}
+
+function getFocusModeSplitPercentage(mode) {
+  switch (mode) {
+    case FOCUS_MODES.VIDEO:
+      return 55;
+    case FOCUS_MODES.CONTENT:
+      return 28;
+    case FOCUS_MODES.BALANCED:
+    default:
+      return 38;
+  }
+}
+
 function mergeClassroomStatePatch(current, patch) {
   return {
     ...(current || {}),
@@ -140,7 +270,21 @@ function mergeClassroomStatePatch(current, patch) {
     contentScroll: patch?.contentScroll || current?.contentScroll,
     pdfScroll: patch?.pdfScroll || current?.pdfScroll,
     audio: patch?.audio || current?.audio,
+    moderation: patch?.moderation
+      ? { ...(current?.moderation || {}), ...patch.moderation }
+      : current?.moderation,
   };
+}
+
+function formatSessionEndLabel(endMs, locale = "en") {
+  if (!endMs) return "";
+
+  const time = new Date(endMs).toLocaleTimeString(getIntlLocale(locale), {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return `Scheduled end ${time}`;
 }
 
 /* -----------------------------------------------------------
@@ -153,12 +297,15 @@ export default function ClassroomShell({
   locale = "en",
   prefix = "",
 }) {
+  const { user: authUser } = useAuth();
   const {
     teacherName,
     learnerName,
     isGroup,
+    isTraining,
     learners,
     allLearnerNames,
+    chatParticipants,
     participantCount,
     capacity,
   } = getParticipantsFromSession(session);
@@ -167,17 +314,62 @@ export default function ClassroomShell({
     session?.isTeacher === true ||
     session?.role === "teacher" ||
     session?.userType === "teacher" ||
-    (session?.currentUser && session.currentUser.role === "teacher");
+    (session?.currentUser && session.currentUser.role === "teacher") ||
+    (isTraining && session?.isAdmin === true);
 
-  const userName = isTeacher ? teacherName : learnerName;
+  // Group sessions contain every learner, so the first learner in the API
+  // response is not necessarily the person viewing this classroom. Resolve
+  // the local identity from the authenticated account for all participant
+  // labels, chat messages, lobby events, video, and private annotations.
+  const authUserId = authUser?._id || authUser?.id || null;
+  const sessionUserId = session?.currentUser?._id || session?.currentUser?.id || null;
+  const localUserId = authUserId || sessionUserId || null;
+  const currentLearner = learners.find((learner) => {
+    const learnerId = learner?._id || learner?.id || learner?.userId || null;
+    return localUserId != null && learnerId != null && String(learnerId) === String(localUserId);
+  });
+  const currentLearnerName =
+    buildDisplayName(currentLearner) ||
+    (localUserId != null && !isTeacher ? buildDisplayName(authUser) : "") ||
+    (isGroup ? "Learner" : learnerName);
+  const userName = isTraining && session?.isAdmin === true
+    ? buildDisplayName(authUser) || "Admin trainer"
+    : isTeacher ? teacherName : currentLearnerName;
+  const sessionStartedAt = session?.startedAt || session?.startAt;
+
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const intervalId = setInterval(() => setNowMs(Date.now()), 1000);
+    setNowMs(Date.now());
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const sessionTiming = useMemo(
+    () =>
+      getSessionTiming({
+        startedAt: sessionStartedAt,
+        endAt: session?.endAt,
+        nowMs,
+        locale,
+      }),
+    [sessionStartedAt, session?.endAt, nowMs, locale]
+  );
 
   /* -----------------------------------------------------------
      Resources
   ----------------------------------------------------------- */
-  const { resourcesById } = useMemo(
+  const { resourcesById: libraryResourcesById } = useMemo(
     () => buildResourceIndex(tracks || []),
     [tracks]
   );
+  const [uploadedMaterials, setUploadedMaterials] = useState([]);
+  const resourcesById = useMemo(() => {
+    const uploadedById = Object.fromEntries(
+      uploadedMaterials.map((material) => [material._id, material])
+    );
+    return { ...libraryResourcesById, ...uploadedById };
+  }, [libraryResourcesById, uploadedMaterials]);
 
   const [selectedResourceId, setSelectedResourceId] = useState(() => {
     if (typeof window === "undefined") return null;
@@ -189,6 +381,30 @@ export default function ClassroomShell({
       return null;
     }
   });
+  const [openResourceIds, setOpenResourceIds] = useState(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(`classroom_tabs_${sessionId}`));
+      return Array.isArray(saved) ? [...new Set(saved.filter((id) => typeof id === "string"))] : [];
+    } catch { return []; }
+  });
+  const openResourceIdsRef = useRef(openResourceIds);
+  const resourceSelectionVersionRef = useRef(0);
+  const didInitializeResourceRef = useRef(false);
+  const hasSavedTabsRef = useRef(false);
+  useEffect(() => {
+    try { hasSavedTabsRef.current = sessionStorage.getItem(`classroom_tabs_${sessionId}`) !== null; } catch { }
+  }, [sessionId]);
+  const updateOpenResources = useCallback((ids) => {
+    const next = [...new Set(ids.filter((id) => typeof id === "string" && id))];
+    openResourceIdsRef.current = next;
+    setOpenResourceIds(next);
+    try { sessionStorage.setItem(`classroom_tabs_${sessionId}`, JSON.stringify(next)); } catch { }
+  }, [sessionId]);
+  useEffect(() => {
+    if (selectedResourceId && !openResourceIdsRef.current.includes(selectedResourceId)) {
+      updateOpenResources([...openResourceIdsRef.current, selectedResourceId]);
+    }
+  }, [selectedResourceId, updateOpenResources]);
   const [isScreenShareActive, setIsScreenShareActive] = useState(false);
   const [screenShareStream, setScreenShareStream] = useState(null);
 
@@ -199,9 +415,17 @@ export default function ClassroomShell({
   const [customSplit, setCustomSplit] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const desktopVideoTargetRef = useRef(null);
+  const mobileVideoTargetRef = useRef(null);
+  const videoHostRef = useRef(null);
+  const [videoHost, setVideoHost] = useState(null);
   const customSplitRef = useRef(customSplit);
   const pendingSplitRef = useRef(customSplit);
   const splitDragRafRef = useRef(null);
+  const activePointerIdRef = useRef(null);
+  const dragStartSplitRef = useRef(null);   // panel width when drag began
+  const dividerRef = useRef(null);           // divider element for transform preview
+  const selectedResourceIdRef = useRef(selectedResourceId);
 
   // ✅ Layout sync throttling (teacher -> learners)
   const lastLayoutSentAtRef = useRef(0);
@@ -212,30 +436,41 @@ export default function ClassroomShell({
   const lastContentScrollSentAtRef = useRef(0);
   const contentScrollRafPendingRef = useRef(false);
 
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  // Chat defaults to closed; a red unread dot announces new messages.
+  // The classroom should feel calm by default — chat is opt-in.
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
-  // ✅ Mobile responsive: detect screen width and manage tab state
+  // Portrait phones use tabs; landscape gets the same split classroom as desktop.
   const [isMobile, setIsMobile] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState('video'); // 'video' | 'content' | 'chat'
 
-  // Detect mobile breakpoint (< 900px)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 900;
-      setIsMobile(mobile);
-      // Reset to video tab when switching to mobile
-      if (mobile && !isMobile) {
-        setMobileActiveTab('video');
-      }
+    const portraitTabs = window.matchMedia('(max-width: 900px) and (orientation: portrait)');
+    const syncLayout = () => {
+      setIsMobile(portraitTabs.matches);
+      if (portraitTabs.matches) setMobileActiveTab('video');
     };
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, [isMobile]);
+    syncLayout();
+    portraitTabs.addEventListener('change', syncLayout);
+    return () => portraitTabs.removeEventListener('change', syncLayout);
+  }, []);
+
+  // Reuse the host between layouts; the call below remounts after rotation.
+  // Moving a live iframe with appendChild reloads its browsing context.
+  useEffect(() => {
+    if (!videoHostRef.current) {
+      videoHostRef.current = document.createElement('div');
+      videoHostRef.current.className = 'cr-video-host';
+    }
+    setVideoHost(videoHostRef.current);
+  }, []);
+
+  useLayoutEffect(() => {
+    const target = isMobile ? mobileVideoTargetRef.current : desktopVideoTargetRef.current;
+    if (videoHost && target) target.appendChild(videoHost);
+  }, [isMobile, videoHost]);
 
   // ✅ Teacher: control whether learners follow (global for all learners)
   const [teacherAllowsFollowing, setTeacherAllowsFollowing] = useState(true);
@@ -289,23 +524,199 @@ export default function ClassroomShell({
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showParticipantList, setShowParticipantList] = useState(false);
+  const exportFnRef = useRef(null);
+  const handleExportReady = useCallback((fn) => {
+    exportFnRef.current = fn;
+  }, []);
+  const [isClassroomLocked, setIsClassroomLocked] = useState(() =>
+    Boolean(session?.classroomState?.moderation?.locked)
+  );
+  const [moderationNotice, setModerationNotice] = useState("");
+  const [videoModeration, setVideoModeration] = useState({
+    ready: false,
+    participants: [],
+    screenShareEndpointId: null,
+    actions: null,
+  });
+  const [liveVideoParticipantCount, setLiveVideoParticipantCount] = useState(
+    () => Math.max(1, Number(participantCount) || 1)
+  );
+  const [networkQuality, setNetworkQuality] = useState(null);
+  const [videoConnectionState, setVideoConnectionState] = useState("connecting");
+
+  const handleVideoParticipantCountChange = useCallback((count) => {
+    const nextCount = Math.max(0, Number(count) || 0);
+    setLiveVideoParticipantCount(nextCount);
+  }, []);
 
   /* -----------------------------------------------------------
-     Realtime sync (classroom channel) - MUST be before handleMouseUp
-     which uses ready and send
+     Realtime sync (classroom channel) - MUST be before resize handlers
+     which use ready and send
   ----------------------------------------------------------- */
   const classroomChannel = useClassroomChannel(String(sessionId));
   const ready = classroomChannel?.ready ?? false;
   const send = classroomChannel?.send ?? (() => { });
   const subscribe = classroomChannel?.subscribe ?? (() => () => { });
 
+  const handleHardRejoin = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  }, []);
+
   /* -----------------------------------------------------------
      Raise Hand
   ----------------------------------------------------------- */
-  const { raisedHands, isHandRaised, toggleHand } = useClassroomRaiseHand(
+  const { raisedHands, isHandRaised, toggleHand, lowerHand } = useClassroomRaiseHand(
     classroomChannel,
-    userName
+    userName,
+    { isTeacher }
   );
+
+  /* -----------------------------------------------------------
+     Lobby / Waiting Room (group sessions)
+  ----------------------------------------------------------- */
+  const lobby = useClassroomLobby({
+    sessionId,
+    isTeacher,
+    classroomChannel,
+    userName,
+    userId: localUserId,
+  });
+
+  /* -----------------------------------------------------------
+     Late-Join Experience — show catch-up banner for learners
+     who join after the session has started
+  ----------------------------------------------------------- */
+  const [showLateJoinBanner, setShowLateJoinBanner] = useState(false);
+  const [lateJoinMessages, setLateJoinMessages] = useState([]);
+  const lateJoinCheckedRef = useRef(false);
+
+  useEffect(() => {
+    if (isTeacher || lateJoinCheckedRef.current) return;
+    lateJoinCheckedRef.current = true;
+
+    // Only show if session has started and learner is joining > 1 min late
+    const elapsedMin = Math.floor((sessionTiming.elapsedSeconds || 0) / 60);
+    if (!sessionTiming.hasStarted || elapsedMin < 1) return;
+
+    setShowLateJoinBanner(true);
+
+    // Fetch last 5 chat messages for context
+    api
+      .get(`/sessions/${sessionId}/chat/messages`, { params: { limit: 5 } })
+      .then((res) => {
+        const msgs = (res.data?.messages || [])
+          .filter((m) => !m.isDeleted && m.type !== "system")
+          .slice(-5)
+          .map((m) => ({
+            id: m.id,
+            senderName: m.senderName || m.sender || "Someone",
+            text:
+              (m.text || m.content || "").length > 80
+                ? (m.text || m.content || "").slice(0, 80) + "…"
+                : m.text || m.content || "",
+          }));
+        setLateJoinMessages(msgs);
+      })
+      .catch(() => {});
+  }, [isTeacher, sessionId, sessionTiming.hasStarted, sessionTiming.elapsedSeconds]);
+
+  /* -----------------------------------------------------------
+     Live Captions (browser SpeechRecognition + WS broadcast)
+     - Each participant transcribes their own mic locally.
+     - Final and interim results are streamed over the classroom WS.
+     - Auto-pauses when the user is muted so we never broadcast
+       silently.
+  ----------------------------------------------------------- */
+  const [localAudioMuted, setLocalAudioMuted] = useState(true);
+  const handleAudioMuteChange = useCallback((muted) => {
+    setLocalAudioMuted(Boolean(muted));
+  }, []);
+
+  const {
+    captions,
+    enabled: captionsEnabled,
+    supported: captionsSupported,
+    toggle: toggleCaptions,
+    pausedForMute: captionsPausedForMute,
+  } = useClassroomCaptions(classroomChannel, userName, {
+    locale,
+    storageKey: `classroom_captions_${sessionId}`,
+    micMuted: localAudioMuted,
+  });
+
+  /* -----------------------------------------------------------
+     Screen Sharing (cross-side state + UI gates)
+  ----------------------------------------------------------- */
+  const screenShare = useClassroomScreenShare(classroomChannel, {
+    userName,
+    userId: localUserId,
+    isTeacher,
+    isLocalSharing: isScreenShareActive,
+  });
+
+  const [showScreenShareConfirm, setShowScreenShareConfirm] = useState(false);
+
+  const requestStartScreenShare = useCallback(() => {
+    if (screenShare.isSomeoneSharing) return;
+    if (!isTeacher && !screenShare.teacherAllowsScreenShare) return;
+    setShowScreenShareConfirm(true);
+  }, [
+    screenShare.isSomeoneSharing,
+    screenShare.teacherAllowsScreenShare,
+    isTeacher,
+  ]);
+
+  const confirmStartScreenShare = useCallback(() => {
+    setShowScreenShareConfirm(false);
+    const action = videoModeration.actions?.startScreenShare;
+    if (typeof action === "function") {
+      action();
+    }
+  }, [videoModeration.actions]);
+
+  const stopScreenShare = useCallback(() => {
+    const action = videoModeration.actions?.stopScreenShare;
+    if (typeof action === "function") {
+      action();
+    }
+  }, [videoModeration.actions]);
+
+  // When *anyone* is sharing, pin Jitsi's screen-share endpoint (a
+  // separate participant Jitsi spawns to carry the desktop track —
+  // displayName like "Belal Helmy's screen"). Pinning that endpoint
+  // makes the actual screen content the large video on every side.
+  //
+  // Pinning the human participant would show their camera/avatar
+  // instead — which is the bug we saw in v1.
+  const lastPinnedRef = useRef(null);
+  useEffect(() => {
+    if (!videoModeration.ready) return;
+
+    const screenId = videoModeration.screenShareEndpointId || null;
+
+    if (screenShare.isSomeoneSharing) {
+      if (screenId && screenId !== lastPinnedRef.current) {
+        videoModeration.actions?.pinParticipant?.(screenId);
+        lastPinnedRef.current = screenId;
+      }
+      // If we don't have the endpoint id yet (it may arrive a tick
+      // after the WS broadcast), do nothing — when it lands, this
+      // effect re-runs because screenShareEndpointId changed.
+      return;
+    }
+
+    if (!screenShare.isSomeoneSharing && lastPinnedRef.current) {
+      videoModeration.actions?.unpinParticipant?.();
+      lastPinnedRef.current = null;
+    }
+  }, [
+    videoModeration.ready,
+    videoModeration.actions,
+    videoModeration.screenShareEndpointId,
+    screenShare.isSomeoneSharing,
+  ]);
 
   const [classroomStateLoaded, setClassroomStateLoaded] = useState(false);
   const [classroomStateSnapshot, setClassroomStateSnapshot] = useState(null);
@@ -339,8 +750,9 @@ export default function ClassroomShell({
 
   const persistClassroomState = useCallback(
     (patch, options = {}) => {
-      if (!isTeacher || !sessionId || !classroomStateLoadedRef.current) return;
+      if (!isTeacher || !sessionId) return;
       if (!patch || typeof patch !== "object") return;
+      if (!classroomStateLoadedRef.current && !patch.moderation) return;
 
       pendingClassroomStatePatchRef.current = mergeClassroomStatePatch(
         pendingClassroomStatePatchRef.current,
@@ -378,18 +790,90 @@ export default function ClassroomShell({
     };
   }, [flushClassroomStatePatch]);
 
+  const handleVideoModerationChange = useCallback((nextState) => {
+    setVideoModeration({
+      ready: Boolean(nextState?.ready),
+      participants: Array.isArray(nextState?.participants)
+        ? nextState.participants
+        : [],
+      screenShareEndpointId: nextState?.screenShareEndpointId || null,
+      actions: nextState?.actions || null,
+    });
+  }, []);
+
+  const handleNetworkQualityChange = useCallback((nextQuality) => {
+    setNetworkQuality(nextQuality || null);
+  }, []);
+
+  const runVideoModerationAction = useCallback(
+    (actionName, ...args) => {
+      const action = videoModeration.actions?.[actionName];
+      if (typeof action !== "function") {
+        setModerationNotice("Video controls are still connecting.");
+        return false;
+      }
+
+      const ok = action(...args);
+      if (!ok) {
+        setModerationNotice("That video control is not available yet.");
+        return false;
+      }
+
+      setModerationNotice("");
+      return true;
+    },
+    [videoModeration.actions]
+  );
+
+  const handleToggleClassroomLock = useCallback(
+    (locked) => {
+      if (!isTeacher) return;
+      const nextLocked = Boolean(locked);
+      setIsClassroomLocked(nextLocked);
+      setModerationNotice(
+        nextLocked
+          ? "Classroom locked. Late joins are now blocked."
+          : "Classroom unlocked. Learners can join again."
+      );
+
+      if (ready) {
+        send({
+          type: "CLASSROOM_LOCK",
+          locked: nextLocked,
+        });
+      }
+
+      persistClassroomState(
+        {
+          moderation: {
+            locked: nextLocked,
+          },
+        },
+        { immediate: true }
+      );
+    },
+    [isTeacher, persistClassroomState, ready, send]
+  );
+
   useEffect(() => {
     customSplitRef.current = customSplit;
     pendingSplitRef.current = customSplit;
   }, [customSplit]);
 
-  const applyPersistedContentScroll = useCallback((scrollNorm) => {
+  useEffect(() => {
+    selectedResourceIdRef.current = selectedResourceId;
+  }, [selectedResourceId]);
+
+  const applyPersistedContentScroll = useCallback((scrollNorm, resourceId) => {
+    if (!resourceId) return;
     const norm = clampScrollNorm(scrollNorm);
     if (norm === null) return;
 
-    pendingContentScrollNormRef.current = norm;
+    pendingContentScrollNormRef.current = { resourceId, scrollNorm: norm };
 
     requestAnimationFrame(() => {
+      if (selectedResourceIdRef.current !== resourceId) return;
+
       const el = contentScrollRef.current;
       if (!el) return;
 
@@ -402,7 +886,7 @@ export default function ClassroomShell({
   useEffect(() => {
     const pending = pendingContentScrollNormRef.current;
     if (pending === null || pending === undefined) return;
-    applyPersistedContentScroll(pending);
+    applyPersistedContentScroll(pending.scrollNorm, pending.resourceId);
   }, [applyPersistedContentScroll, selectedResourceId, isMobile, mobileActiveTab]);
 
   useEffect(() => {
@@ -413,17 +897,40 @@ export default function ClassroomShell({
       setClassroomStateLoaded(false);
 
       try {
-        const { data } = await api.get(`/sessions/${sessionId}/classroom-state`);
+        const selectionVersionAtLoad = resourceSelectionVersionRef.current;
+        const [stateResult, materialsResult] = await Promise.all([
+          api.get(`/sessions/${sessionId}/classroom-state`),
+          api.get(`/sessions/${sessionId}/materials`).catch((error) => {
+            console.warn("Failed to load classroom PDFs:", error);
+            return { data: { materials: [] } };
+          }),
+        ]);
         if (cancelled) return;
 
-        const state = data?.state && typeof data.state === "object" ? data.state : {};
+        const materials = materialsResult.data?.materials || [];
+        const selectionChanged = selectionVersionAtLoad !== resourceSelectionVersionRef.current;
+        setUploadedMaterials((current) => selectionChanged
+          ? [...new Map([...materials, ...current].map((item) => [item._id, item])).values()]
+          : materials);
+        const uploadedById = Object.fromEntries(materials.map((item) => [item._id, item]));
+        if (!selectionChanged) {
+          updateOpenResources(openResourceIdsRef.current.filter((id) => libraryResourcesById[id] || uploadedById[id]));
+        }
+        const state = stateResult.data?.state && typeof stateResult.data.state === "object"
+          ? stateResult.data.state : {};
         setClassroomStateSnapshot(state);
+        setIsClassroomLocked(Boolean(state.moderation?.locked));
 
-        const savedResourceId =
-          state.resourceId && resourcesById[state.resourceId]
+        const savedResourceId = selectionChanged ? selectedResourceIdRef.current :
+          state.resourceId && (libraryResourcesById[state.resourceId] || uploadedById[state.resourceId])
             ? state.resourceId
-            : null;
+            : isTeacher
+              ? ((libraryResourcesById[selectedResourceIdRef.current] || uploadedById[selectedResourceIdRef.current])
+                ? selectedResourceIdRef.current
+                : openResourceIdsRef.current[0] || null)
+              : null;
 
+        selectedResourceIdRef.current = savedResourceId;
         setSelectedResourceId(savedResourceId);
 
         if (typeof window !== "undefined") {
@@ -454,8 +961,15 @@ export default function ClassroomShell({
           setTeacherAllowsFollowing(!!layout.teacherAllowsFollowing);
         }
 
-        if (state.contentScroll?.scrollNorm !== undefined) {
-          applyPersistedContentScroll(state.contentScroll.scrollNorm);
+        const savedContentScroll = getContentScrollForResource(
+          state.contentScroll,
+          savedResourceId
+        );
+        if (savedContentScroll) {
+          applyPersistedContentScroll(
+            savedContentScroll.scrollNorm,
+            savedResourceId
+          );
         }
       } catch (err) {
         console.warn("Failed to load classroom state:", err);
@@ -469,7 +983,7 @@ export default function ClassroomShell({
     return () => {
       cancelled = true;
     };
-  }, [sessionId, resourcesById, applyPersistedContentScroll]);
+  }, [sessionId, libraryResourcesById, applyPersistedContentScroll, isTeacher, updateOpenResources]);
 
   useEffect(() => {
     return () => {
@@ -482,54 +996,50 @@ export default function ClassroomShell({
   /* -----------------------------------------------------------
      Drag-to-resize logic
   ----------------------------------------------------------- */
-  const handleMouseDown = useCallback(
-    (e) => {
-      // ✅ Learners can drag only if they turned follow OFF
-      if (!isTeacher && followTeacherLayout) return;
+  // While a screen share is active the layout is force-locked to the
+  // share split, so dragging the divider must be inert for both sides.
+  const canResizePanels =
+    !screenShare.isSomeoneSharing && (isTeacher || !followTeacherLayout);
 
-      e.preventDefault();
-      setIsDragging(true);
-    },
-    [isTeacher, followTeacherLayout]
-  );
+  const updateCustomSplit = useCallback((nextSplit, { defer = true } = {}) => {
+    if (nextSplit === null || nextSplit === undefined) return;
+    const roundedSplit = Math.round(nextSplit * 10) / 10;
+    if (!Number.isFinite(roundedSplit)) return;
 
-  const handleMouseMove = useCallback(
-    (e) => {
-      if (!isDragging || !containerRef.current) return;
+    customSplitRef.current = roundedSplit;
+    pendingSplitRef.current = roundedSplit;
 
-      // ✅ If learner is following, ignore local resizing
-      if (!isTeacher && followTeacherLayout) return;
-
-      const container = containerRef.current;
-      const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const percentage = Math.min(
-        Math.max((x / rect.width) * 100, MIN_SPLIT_PERCENT),
-        MAX_SPLIT_PERCENT
-      );
-      const nextSplit = Math.round(percentage * 10) / 10;
-
-      customSplitRef.current = nextSplit;
-      pendingSplitRef.current = nextSplit;
-
-      if (splitDragRafRef.current) return;
-      splitDragRafRef.current = requestAnimationFrame(() => {
+    if (!defer) {
+      if (splitDragRafRef.current) {
+        cancelAnimationFrame(splitDragRafRef.current);
         splitDragRafRef.current = null;
-        setCustomSplit(pendingSplitRef.current);
-      });
-    },
-    [isDragging, isTeacher, followTeacherLayout]
-  );
-
-  const handleMouseUp = useCallback(() => {
-    if (splitDragRafRef.current) {
-      cancelAnimationFrame(splitDragRafRef.current);
-      splitDragRafRef.current = null;
-      setCustomSplit(pendingSplitRef.current);
+      }
+      setCustomSplit(roundedSplit);
+      return;
     }
 
-    setIsDragging(false);
-    // ✅ Immediately broadcast final position on drag end for snappier sync
+    if (splitDragRafRef.current) return;
+    splitDragRafRef.current = requestAnimationFrame(() => {
+      splitDragRafRef.current = null;
+      setCustomSplit(pendingSplitRef.current);
+    });
+  }, []);
+
+  const updateSplitFromClientX = useCallback(
+    (clientX) => {
+      if (!canResizePanels || !containerRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const nextSplit = clampSplitPercent(
+        ((clientX - rect.left) / rect.width) * 100
+      );
+
+      updateCustomSplit(nextSplit);
+    },
+    [canResizePanels, updateCustomSplit]
+  );
+
+  const commitCurrentSplitLayout = useCallback(() => {
     if (isTeacher && ready) {
       send({
         type: "LAYOUT_STATE",
@@ -552,41 +1062,161 @@ export default function ClassroomShell({
     }
   }, [isTeacher, ready, send, focusMode, teacherAllowsFollowing, persistClassroomState]);
 
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
+  const finishResize = useCallback(() => {
+    if (splitDragRafRef.current) {
+      cancelAnimationFrame(splitDragRafRef.current);
+      splitDragRafRef.current = null;
     }
 
+    // Reset divider transform
+    const divEl = dividerRef.current;
+    if (divEl) divEl.style.transform = '';
+
+    // Commit the final width from the preview — spring transition kicks in via CSS
+    const finalSplit = pendingSplitRef.current;
+    if (finalSplit !== null && finalSplit !== undefined) {
+      customSplitRef.current = finalSplit;
+      setCustomSplit(finalSplit);
+    }
+
+    setIsDragging(false);
+    activePointerIdRef.current = null;
+    dragStartSplitRef.current = null;
+    // ✅ Immediately broadcast final position on drag end for snappier sync
+    commitCurrentSplitLayout();
+  }, [commitCurrentSplitLayout]);
+
+  const handlePointerDown = useCallback(
+    (e) => {
+      if (!canResizePanels) return;
+      if (e.button !== undefined && e.button !== 0) return;
+
+      e.preventDefault();
+      activePointerIdRef.current = e.pointerId;
+      if (e.currentTarget?.setPointerCapture && e.pointerId !== undefined) {
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        } catch (_) { }
+      }
+
+      // Freeze panels at current width; only divider moves during drag
+      const currentSplit = customSplitRef.current ?? getFocusModeSplitPercentage(focusMode);
+      dragStartSplitRef.current = currentSplit;
+      pendingSplitRef.current = currentSplit;
+      setIsDragging(true);
+    },
+    [canResizePanels, focusMode]
+  );
+
+  const handlePointerMove = useCallback(
+    (e) => {
+      if (!isDragging || activePointerIdRef.current === null) return;
+      if (e.pointerId !== activePointerIdRef.current) return;
+
+      e.preventDefault();
+
+      // Compute target split but don't commit to panels
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const nextSplit = clampSplitPercent(
+        ((e.clientX - rect.left) / rect.width) * 100
+      );
+      if (nextSplit === null) return;
+
+      pendingSplitRef.current = nextSplit;
+
+      // Move divider visually via transform (no panel relayout)
+      const divEl = dividerRef.current;
+      if (divEl) {
+        const startSplit = dragStartSplitRef.current ?? nextSplit;
+        const deltaPercent = nextSplit - startSplit;
+        const deltaPx = (deltaPercent / 100) * rect.width;
+        divEl.style.transform = `translateX(${deltaPx}px)`;
+      }
+    },
+    [isDragging]
+  );
+
+  const handlePointerUp = useCallback(
+    (e) => {
+      if (activePointerIdRef.current === null) return;
+      if (e.pointerId !== activePointerIdRef.current) return;
+
+      finishResize();
+    },
+    [finishResize]
+  );
+
+  const handleDividerKeyDown = useCallback(
+    (e) => {
+      if (!canResizePanels) return;
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+
+      e.preventDefault();
+      const currentSplit =
+        customSplitRef.current ?? getFocusModeSplitPercentage(focusMode);
+      const step = e.shiftKey ? 5 : 2;
+      const direction = e.key === "ArrowLeft" ? -1 : 1;
+      const nextSplit = clampSplitPercent(currentSplit + direction * step);
+      updateCustomSplit(nextSplit, { defer: false });
+      commitCurrentSplitLayout();
+    },
+    [canResizePanels, commitCurrentSplitLayout, focusMode, updateCustomSplit]
+  );
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const listenerOptions = { passive: false };
+    document.addEventListener("pointermove", handlePointerMove, listenerOptions);
+    document.addEventListener("pointerup", handlePointerUp);
+    document.addEventListener("pointercancel", handlePointerUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", handlePointerUp);
+      document.removeEventListener("pointercancel", handlePointerUp);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging, handlePointerMove, handlePointerUp]);
+
+  useEffect(() => {
+    if (canResizePanels || !isDragging) return;
+    finishResize();
+  }, [canResizePanels, finishResize, isDragging]);
 
   useEffect(() => {
     if (isChatOpen) setChatUnreadCount(0);
   }, [isChatOpen]);
 
   const getSplitPercentage = () => {
+    // While sharing, the screen-share stage takes priority over the
+    // teacher/learner focus-mode + custom-drag selection.
+    if (screenShare.isSomeoneSharing) return SCREEN_SHARE_LEFT_PERCENT;
+
     if (customSplit !== null) return customSplit;
 
-    switch (focusMode) {
-      case FOCUS_MODES.VIDEO:
-        return 55;
-      case FOCUS_MODES.CONTENT:
-        return 28;
-      case FOCUS_MODES.BALANCED:
-      default:
-        return 38;
-    }
+    return getFocusModeSplitPercentage(focusMode);
   };
 
   const leftPanelWidth = getSplitPercentage();
+
+  // The media surface adapts its framing to the live room shape. A group
+  // session keeps the group treatment even while people are still joining;
+  // the live count then updates the data attribute as Jitsi reports joins and
+  // leaves so the video panel never feels like an empty fixed placeholder.
+  const videoParticipantCount = Math.max(
+    1,
+    Number(liveVideoParticipantCount) || Number(participantCount) || 1
+  );
+  const videoLayoutClass = isGroup
+    ? "cr-video-container--group"
+    : videoParticipantCount > 1
+      ? "cr-video-container--pair"
+      : "cr-video-container--solo";
 
   const resetToMode = (mode) => {
     setFocusMode(mode);
@@ -675,19 +1305,22 @@ export default function ClassroomShell({
           target.scrollHeight - target.clientHeight
         );
         const scrollNorm = target.scrollTop / maxScroll;
+        const resourceId = selectedResourceIdRef.current;
+        if (!resourceId) return;
 
         lastContentScrollSentAtRef.current = Date.now();
 
         if (ready) {
           send({
             type: "CONTENT_SCROLL",
+            resourceId,
             scrollNorm,
           });
         }
 
         persistClassroomState(
           {
-            contentScroll: { scrollNorm },
+            contentScroll: { resourceId, scrollNorm },
           },
           { delay: 1500 }
         );
@@ -696,7 +1329,7 @@ export default function ClassroomShell({
 
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, [ready, isTeacher, send, persistClassroomState]);
+  }, [ready, isTeacher, send, persistClassroomState, selectedResourceId, isMobile, isScreenShareActive]);
 
   useEffect(() => {
     if (!ready) return;
@@ -704,8 +1337,15 @@ export default function ClassroomShell({
     const unsub = subscribe((msg) => {
       if (!msg) return;
 
+      if (msg.type === "CLASSROOM_LOCK") {
+        setIsClassroomLocked(Boolean(msg.locked));
+        return;
+      }
+
       // ✅ Learner: follow teacher content scroll (PDF + any resource)
       if (msg.type === "CONTENT_SCROLL" && !isTeacher) {
+        if (msg.resourceId !== selectedResourceIdRef.current) return;
+
         const norm = Math.min(1, Math.max(0, Number(msg.scrollNorm) || 0));
 
         // ✅ Apply immediately for snappier sync (removed setTimeout)
@@ -777,26 +1417,44 @@ export default function ClassroomShell({
       }
 
       if (msg.type === "SET_RESOURCE") {
+        resourceSelectionVersionRef.current += 1;
         const { resourceId } = msg;
-        if (resourceId && resourcesById[resourceId]) {
+        if (Array.isArray(msg.openResourceIds)) updateOpenResources(msg.openResourceIds);
+        if (resourceId === null) {
+          selectedResourceIdRef.current = null;
+          setSelectedResourceId(null);
+          try { sessionStorage.removeItem(`classroom_resource_${sessionId}`); } catch { }
+        } else if (resourceId && resourcesById[resourceId]) {
+          selectedResourceIdRef.current = resourceId;
           setSelectedResourceId(resourceId);
           if (typeof window !== "undefined") {
             try {
               sessionStorage.setItem(`classroom_resource_${sessionId}`, resourceId);
             } catch (_) { }
           }
-        } else {
-          console.warn("[Classroom] ⚠️ Resource NOT found in resourcesById!");
+        } else if (resourceId?.startsWith("upload-")) {
+          selectedResourceIdRef.current = resourceId;
+        }
+        const incomingIds = Array.isArray(msg.openResourceIds) ? msg.openResourceIds : [resourceId];
+        if (incomingIds.some((id) => typeof id === "string" && id.startsWith("upload-") && !resourcesById[id])) {
+          // Resolve every open PDF for late joiners, including background tabs.
+          // A delayed material response must not undo a more recent selection.
+          void api.get(`/sessions/${sessionId}/materials`).then(({ data }) => {
+            const materials = data?.materials || [];
+            setUploadedMaterials(materials);
+            if (selectedResourceIdRef.current === resourceId && materials.some((item) => item._id === resourceId)) {
+              setSelectedResourceId(resourceId);
+              try { sessionStorage.setItem(`classroom_resource_${sessionId}`, resourceId); } catch { }
+            }
+          }).catch((error) => console.warn("Failed to load classroom PDFs", error));
         }
       }
 
       if (
         msg.type === "REQUEST_RESOURCE" &&
-        isTeacher &&
-        selectedResourceId &&
-        resourcesById[selectedResourceId]
+        isTeacher
       ) {
-        send({ type: "SET_RESOURCE", resourceId: selectedResourceId });
+        send({ type: "SET_RESOURCE", resourceId: selectedResourceIdRef.current, openResourceIds: openResourceIdsRef.current });
       }
     });
 
@@ -806,6 +1464,7 @@ export default function ClassroomShell({
     resourcesById,
     isTeacher,
     selectedResourceId,
+    updateOpenResources,
     send,
     subscribe,
     focusMode,
@@ -839,15 +1498,25 @@ export default function ClassroomShell({
   }, [ready, isTeacher, learnerWantsToFollow, teacherAllowsFollowing, send]);
 
   useEffect(() => {
-    if (!isTeacher || selectedResourceId) return;
-    if (!classroomStateLoaded) return;
+    if (!isTeacher || !classroomStateLoaded || didInitializeResourceRef.current) return;
+    if (selectedResourceId || openResourceIdsRef.current.length || hasSavedTabsRef.current) {
+      didInitializeResourceRef.current = true;
+      return;
+    }
+    didInitializeResourceRef.current = true;
 
     const all = Object.values(resourcesById || {});
     if (all.length && all[0]?._id) {
-      setSelectedResourceId(all[0]._id);
+      const firstResourceId = all[0]._id;
+      selectedResourceIdRef.current = firstResourceId;
+      setSelectedResourceId(firstResourceId);
       persistClassroomState(
         {
-          resourceId: all[0]._id,
+          resourceId: firstResourceId,
+          contentScroll: {
+            resourceId: firstResourceId,
+            scrollNorm: 0,
+          },
         },
         { immediate: true }
       );
@@ -866,7 +1535,53 @@ export default function ClassroomShell({
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId]
     : null;
-  const viewer = resource ? getViewerInfo(resource) : null;
+  const leaveSummary = useMemo(() => {
+    const overBySeconds =
+      sessionTiming.endMs && nowMs > sessionTiming.endMs
+        ? Math.floor((nowMs - sessionTiming.endMs) / 1000)
+        : 0;
+    const participantLabel = isTraining
+      ? "admin trainer"
+      : isGroup
+      ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
+      : participantCount === 1
+        ? `${formatNumber(1, locale)} learner`
+        : `${formatNumber(participantCount || 1, locale)} learners`;
+    const resourceLabel =
+      resource?.title || resource?.name || "No resource selected";
+
+    let statusLabel = "No scheduled end";
+    if (sessionTiming.endMs) {
+      statusLabel = sessionTiming.hasEnded
+        ? overBySeconds > 0
+          ? `Over by ${formatCompactDuration(overBySeconds, locale)}`
+          : "Time is up"
+        : `Ends in ${sessionTiming.remainingLabel}`;
+    }
+
+    return {
+      statusLabel,
+      elapsedLabel: sessionTiming.elapsedLabel,
+      scheduledLabel: sessionTiming.scheduledLabel || "Open-ended",
+      participantLabel,
+      resourceLabel,
+      endLabel: formatSessionEndLabel(sessionTiming.endMs, locale),
+    };
+  }, [
+    capacity,
+    isGroup,
+    isTraining,
+    nowMs,
+    participantCount,
+    resource?.name,
+    resource?.title,
+    locale,
+    sessionTiming.elapsedLabel,
+    sessionTiming.endMs,
+    sessionTiming.hasEnded,
+    sessionTiming.remainingLabel,
+    sessionTiming.scheduledLabel,
+  ]);
   const hasScreenShareStream =
     !!(screenShareStream && typeof screenShareStream.getTracks === "function");
 
@@ -886,7 +1601,12 @@ export default function ClassroomShell({
   );
 
   // ✅ Track resource usage when teacher changes resource
-  const handleChangeResourceId = async (newId) => {
+  const handleChangeResourceId = useCallback(async (newId, resourceOverride = null, tabsOverride = null) => {
+    const nextTabs = tabsOverride || (newId ? [...openResourceIdsRef.current, newId] : openResourceIdsRef.current);
+    updateOpenResources(nextTabs);
+    const previousId = selectedResourceIdRef.current;
+    resourceSelectionVersionRef.current += 1;
+    selectedResourceIdRef.current = newId;
     setSelectedResourceId(newId);
     setIsPickerOpen(false);
 
@@ -902,10 +1622,24 @@ export default function ClassroomShell({
       } catch { }
     }
 
+
+    if (ready && isTeacher) {
+      send({ type: "SET_RESOURCE", resourceId: newId, openResourceIds: openResourceIdsRef.current });
+    }
+
+    if (isTeacher) {
+      persistClassroomState(
+        {
+          resourceId: newId || null,
+          contentScroll: { resourceId: newId || null, scrollNorm: 0 },
+        },
+        { immediate: true }
+      );
+    }
     // Track resource usage (teacher only)
-    if (isTeacher && newId && sessionId) {
+    if (isTeacher && newId && newId !== previousId && sessionId) {
       try {
-        const resource = resourcesById[newId];
+        const resource = resourceOverride || resourcesById[newId];
         await api.post(`/sessions/${sessionId}/resources-used`, {
           resourceId: newId,
           resourceTitle: resource?.title || resource?.name || null,
@@ -915,20 +1649,65 @@ export default function ClassroomShell({
       }
     }
 
-    if (ready && isTeacher) {
-      send({ type: "SET_RESOURCE", resourceId: newId });
-    }
+  }, [isTeacher, resourcesById, ready, send, sessionId, persistClassroomState, updateOpenResources]);
 
-    if (isTeacher) {
-      persistClassroomState(
-        {
-          resourceId: newId || null,
-          contentScroll: { scrollNorm: 0 },
-        },
-        { immediate: true }
-      );
-    }
-  };
+  const handleCloseResource = useCallback((id) => {
+    const current = openResourceIdsRef.current;
+    const index = current.indexOf(id);
+    const next = current.filter((resourceId) => resourceId !== id);
+    const nextId = selectedResourceIdRef.current === id
+      ? next[Math.min(index, next.length - 1)] || null
+      : selectedResourceIdRef.current;
+    void handleChangeResourceId(nextId, null, next);
+  }, [handleChangeResourceId]);
+
+  const resourceWorkspace = (
+    <ClassroomResourceWorkspace
+      resources={openResourceIds.map((id) => resourcesById[id]).filter(Boolean)}
+      selectedResourceId={selectedResourceId}
+      onSelect={handleChangeResourceId}
+      onClose={handleCloseResource}
+      onOpenPicker={() => setIsPickerOpen(true)}
+      canManage={isTeacher}
+      locale={locale}
+      suspended={isScreenShareActive}
+      scrollContainerRef={contentScrollRef}
+      emptyContent={
+        <div className="cr-placeholder">
+          <div className="cr-placeholder__icon"><BookOpen size={32} /></div>
+          <h2 className="cr-placeholder__title">{locale === "ar" ? "لا توجد موارد مفتوحة" : "No resources open"}</h2>
+          <p className="cr-placeholder__text">{isTeacher
+            ? (locale === "ar" ? "اختر موردًا لبدء العمل." : "Choose a resource to start working.")
+            : (locale === "ar" ? "في انتظار المعلم لفتح مورد." : "Waiting for the teacher to open a resource.")}</p>
+          {isTeacher && <button className="cr-placeholder__action" onClick={() => setIsPickerOpen(true)}>
+            <BookOpen size={16} /> {locale === "ar" ? "فتح مورد" : "Open resource"}
+          </button>}
+        </div>
+      }
+      renderResource={(item, active) => (
+        <PrepShell resource={item} viewer={getViewerInfo(item)}
+          isActive={active} hideSidebar hideBreadcrumbs
+          classroomChannel={classroomChannel} isTeacher={isTeacher}
+          sessionId={sessionId} locale={locale}
+          initialAudioState={classroomStateSnapshot?.audio || null}
+          initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
+          onClassroomStateChange={persistClassroomState}
+          onExportReady={active ? handleExportReady : undefined} />
+      )}
+    />
+  );
+
+  const handleUploadPdf = useCallback(async (file) => {
+    const form = new FormData();
+    form.append("file", file);
+    const { data } = await api.post(`/sessions/${sessionId}/materials`, form, {
+      timeout: 60000,
+    });
+    const material = data?.material;
+    if (!material?._id) throw new Error("The PDF was uploaded but could not be opened");
+    setUploadedMaterials((current) => [...current, material]);
+    await handleChangeResourceId(material._id, material);
+  }, [sessionId, handleChangeResourceId]);
 
   const handleScreenShareStreamChange = useCallback((payload) => {
     // Supports both old boolean callback and richer payload shape.
@@ -964,34 +1743,44 @@ export default function ClassroomShell({
   const [pageRecError, setPageRecError] = useState(null);
   const [pageRecWarning, setPageRecWarning] = useState(null);
 
+  useEffect(() => {
+    if (!pageRecError) return;
+    const t = setTimeout(() => setPageRecError(null), 6000);
+    return () => clearTimeout(t);
+  }, [pageRecError]);
+
   const pageRecorderRef = useRef(null);
   const pageStreamRef = useRef(null);
   const pageChunksRef = useRef([]);
 
-  function pickSupportedMime() {
-    const types = [
-      "video/webm;codecs=vp9,opus",
-      "video/webm;codecs=vp8,opus",
-      "video/webm",
-    ];
-    for (const t of types) {
-      if (window.MediaRecorder?.isTypeSupported(t)) return t;
-    }
-    return "video/webm";
-  }
-
   async function startPageRecording() {
+    let displayStream = null;
+    let micStream = null;
+    let audioContext = null;
+
     try {
       setPageRecError(null);
       setPageRecWarning(null);
 
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+      const support = getPageRecordingSupport();
+      if (!support.supported) {
+        setPageRecError(PAGE_RECORDING_UNSUPPORTED_MESSAGE);
+        return;
+      }
+
+      const mimeType = pickSupportedPageRecordingMime();
+      if (!mimeType) {
+        setPageRecError(PAGE_RECORDING_UNSUPPORTED_MESSAGE);
+        return;
+      }
+
+      displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: 30 },
         audio: true, // tab/system audio
         preferCurrentTab: true,
       });
 
-      const micStream = await navigator.mediaDevices.getUserMedia({
+      micStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -1000,7 +1789,7 @@ export default function ClassroomShell({
       });
 
       // ✅ SOLUTION: Use Web Audio API to properly mix audio sources
-      const audioContext = new AudioContext();
+      audioContext = new AudioContext();
       const baseLatency = Number(audioContext.baseLatency || 0);
       if (baseLatency > 0.03) {
         setPageRecWarning(
@@ -1032,7 +1821,7 @@ export default function ClassroomShell({
       pageChunksRef.current = [];
 
       const recorder = new MediaRecorder(mixedStream, {
-        mimeType: pickSupportedMime(),
+        mimeType,
       });
 
       pageRecorderRef.current = recorder;
@@ -1066,7 +1855,15 @@ export default function ClassroomShell({
       setIsPageRecording(true);
     } catch (err) {
       console.error("Page recording failed:", err);
-      setPageRecError("Failed to start recording");
+      displayStream?.getTracks().forEach((track) => track.stop());
+      micStream?.getTracks().forEach((track) => track.stop());
+      audioContext?.close();
+      const support = getPageRecordingSupport();
+      setPageRecError(
+        support.supported
+          ? "Recording could not start. Check screen and microphone permissions, then try again."
+          : PAGE_RECORDING_UNSUPPORTED_MESSAGE
+      );
       setPageRecWarning(null);
     }
   }
@@ -1097,13 +1894,63 @@ export default function ClassroomShell({
      Header (FIXED: match SCSS classnames)
   ----------------------------------------------------------- */
   const headerTitle = session?.title || "Classroom";
-  const typeLabel = isGroup ? "GROUP" : "1:1";
+  const typeLabel = isTraining ? (locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID") : isGroup ? "GROUP" : "1:1";
   const countLabel = isGroup
-    ? `${participantCount}${capacity ? `/${capacity}` : ""}`
+    ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
     : "";
+  const sessionEnded =
+    session?.status === "canceled";
+
+  // ─── Waiting Room: block classroom until admitted ───
+  if (sessionEnded || lobby.isInWaitingRoom || lobby.isDenied || lobby.isEnded) {
+    return (
+      <ClassroomWaitingRoom
+        sessionId={sessionId}
+        sessionInfo={{
+          teacherName,
+          sessionTitle: headerTitle,
+          startTime: session?.startAt,
+          participantCount,
+          capacity,
+        }}
+        userName={userName}
+        locale={locale}
+        status={
+          sessionEnded || lobby.isEnded
+            ? "ended"
+            : lobby.isDenied
+              ? "denied"
+              : lobby.isError
+                ? "error"
+                : "waiting"
+        }
+        wsConnected={classroomChannel?.ready || false}
+        onRetry={lobby.retryJoin}
+        onLeave={() => {
+          if (typeof window !== "undefined") {
+            window.location.href = `${prefix}/dashboard`;
+          }
+        }}
+      />
+    );
+  }
 
   return (
     <div className="cr-shell">
+      {/* Lobby Panel (teacher only, for admitting waiting learners) */}
+      {isTeacher && (
+        <ClassroomLobbyPanel
+          waitingLearners={lobby.waitingLearners}
+          onAdmit={lobby.admitLearner}
+          onDeny={lobby.denyLearner}
+          onAdmitAll={lobby.admitAll}
+          isOpen={lobby.isLobbyPanelOpen}
+          onToggle={lobby.togglePanel}
+          onClose={lobby.closePanel}
+          locale={locale}
+        />
+      )}
+
       {/* Header */}
       <ClassroomHeaderBar
         prefix={prefix}
@@ -1114,15 +1961,59 @@ export default function ClassroomShell({
         countLabel={countLabel}
         isTeacher={isTeacher}
         teacherName={teacherName}
-        learnerName={learnerName}
+        learnerName={isTeacher ? learnerName : userName}
         setShowParticipantList={setShowParticipantList}
         wsStatus={classroomChannel?.status}
+        networkQuality={networkQuality}
+        videoConnectionState={videoConnectionState}
+        sessionTiming={sessionTiming}
       />
 
-      {/* Main Content - Desktop only (hidden on mobile where MobileClassroomLayout is used) */}
+      <ClassroomConnectionBanner
+        channel={classroomChannel}
+        onRejoin={handleHardRejoin}
+      />
+
+      <ClassroomTimeWarning
+        warningLevel={isTeacher ? sessionTiming.warningLevel : null}
+        remainingLabel={sessionTiming.remainingLabel}
+      />
+
+      <ClassroomScreenShareBanner
+        visible={screenShare.isSomeoneSharing}
+        sharerName={screenShare.sharerName}
+        isLocalSharer={screenShare.isLocalSharer}
+        onStop={stopScreenShare}
+      />
+
+      <ClassroomScreenShareConfirmModal
+        isOpen={showScreenShareConfirm}
+        onConfirm={confirmStartScreenShare}
+        onCancel={() => setShowScreenShareConfirm(false)}
+      />
+
+      {/* Late-Join Banner (learner only, when joining mid-session) */}
+      {showLateJoinBanner && !isTeacher && (
+        <ClassroomLateJoinBanner
+          elapsedMinutes={Math.floor((sessionTiming.elapsedSeconds || 0) / 60)}
+          currentResourceTitle={resource?.title || resource?.name || null}
+          recentMessages={lateJoinMessages}
+          onDismiss={() => setShowLateJoinBanner(false)}
+          onOpenChat={() => setIsChatOpen(true)}
+        />
+      )}
+
+      {/* Split classroom on desktop and in landscape. */}
       {!isMobile && (
         <div
-          className={`cr-main ${isDragging ? "cr-main--dragging" : ""}`}
+          className={[
+            "cr-main",
+            isDragging ? "cr-main--dragging" : "",
+            screenShare.isSomeoneSharing ? "cr-main--screen-share" : "",
+            isChatOpen ? "cr-main--chat-open" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
           ref={containerRef}
         >
           {/* Left Panel: Video + Chat */}
@@ -1130,70 +2021,40 @@ export default function ClassroomShell({
             className="cr-panel cr-panel--left"
             style={{ width: `${leftPanelWidth}%` }}
           >
-            <div className="cr-video-container">
-              <PrepVideoCall
-                roomId={sessionId}
-                userName={userName}
-                isTeacher={isTeacher}
-                onScreenShareStreamChange={handleScreenShareStreamChange}
-              />
-              <ClassroomRaiseHandOverlay
-                raisedHands={raisedHands}
-              />
-            </div>
-
             <div
-              className={`cr-chat-container ${!isChatOpen ? "cr-chat-container--collapsed" : ""
-                }`}
-              data-lenis-prevent
+              className={`cr-video-container ${videoLayoutClass}`}
+              data-session-type={isGroup ? "group" : "one-on-one"}
+              data-participant-count={videoParticipantCount}
             >
-              <button
-                className="cr-chat-toggle"
-                onClick={() => setIsChatOpen(!isChatOpen)}
-                aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
-              >
-                <span className="cr-chat-toggle__label">
-                  <MessageSquare size={14} /> Chat
-                  {chatUnreadCount > 0 && !isChatOpen && (
-                    <span className="cr-chat-toggle__unread">
-                      {chatUnreadCount}
-                    </span>
-                  )}
-                </span>
-                <span
-                  className={`cr-chat-toggle__icon ${isChatOpen ? "cr-chat-toggle__icon--open" : ""
-                    }`}
-                >
-                  ▼
-                </span>
-              </button>
-
-              <ClassroomChat
-                classroomChannel={classroomChannel}
-                sessionId={sessionId}
-                isTeacher={isTeacher}
-                teacherName={teacherName}
-                learnerName={learnerName}
-                isOpen={isChatOpen}
-                onUnreadCountChange={setChatUnreadCount}
-                allLearnerNames={allLearnerNames}
-                isGroup={isGroup}
-              />
+              <div className="cr-video-target" ref={desktopVideoTargetRef} />
             </div>
+
           </aside>
 
           {/* Drag Handle */}
           <div
-            className={`cr-divider ${isDragging ? "cr-divider--active" : ""}`}
-            onMouseDown={
-              isTeacher || (!isTeacher && !followTeacherLayout)
-                ? handleMouseDown
-                : undefined
-            }
+            ref={dividerRef}
+            className={[
+              "cr-divider",
+              isDragging ? "cr-divider--active" : "",
+              !canResizePanels ? "cr-divider--disabled" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onKeyDown={handleDividerKeyDown}
             role="separator"
             aria-orientation="vertical"
             aria-label="Resize panels"
-            aria-disabled={isTeacher ? false : followTeacherLayout}
+            aria-disabled={!canResizePanels}
+            aria-valuemin={MIN_SPLIT_PERCENT}
+            aria-valuemax={MAX_SPLIT_PERCENT}
+            aria-valuenow={Math.round(leftPanelWidth)}
+            aria-valuetext={`Left panel ${Math.round(leftPanelWidth)} percent`}
+            tabIndex={canResizePanels ? 0 : -1}
           >
             <div className="cr-divider__handle">
               <span></span>
@@ -1207,8 +2068,8 @@ export default function ClassroomShell({
             className="cr-panel cr-panel--right"
             style={{ width: `${100 - leftPanelWidth}%` }}
           >
-            <div className="cr-content-viewer" ref={contentScrollRef} data-lenis-prevent>
-              {isScreenShareActive ? (
+            <div className="cr-content-viewer" data-lenis-prevent>
+              {isScreenShareActive && (
                 <div className="cr-screen-share">
                   {hasScreenShareStream ? (
                     <video
@@ -1230,52 +2091,57 @@ export default function ClassroomShell({
                     </div>
                   )}
                 </div>
-              ) : resource ? (
-                <PrepShell
-                  resource={resource}
-                  viewer={viewer}
-                  hideSidebar={true}
-                  hideBreadcrumbs={true}
-                  classroomChannel={classroomChannel}
-                  isTeacher={isTeacher}
-                  locale={locale}
-                  initialAudioState={classroomStateSnapshot?.audio || null}
-                  initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
-                  onClassroomStateChange={persistClassroomState}
-                  className="cr-prep-shell-fullsize"
-                />
-              ) : (
-                <div className="cr-placeholder">
-                  <div className="cr-placeholder__icon">
-                    <BookOpen size={32} />
-                  </div>
-                  <h2 className="cr-placeholder__title">No resource selected</h2>
-                  <p className="cr-placeholder__text">
-                    {isTeacher
-                      ? "Click the resource picker below to choose content."
-                      : "Waiting for the teacher to select a resource."}
-                  </p>
-                  {isTeacher && (
-                    <button
-                      className="cr-placeholder__action"
-                      onClick={() => setIsPickerOpen(true)}
-                    >
-                      <BookOpen size={16} /> Choose Resource
-                    </button>
-                  )}
-                </div>
               )}
+              {resourceWorkspace}
             </div>
           </section>
         </div>
       )}
 
-      {/* Bottom Control Bar - Desktop only */}
+      {/* Desktop chat drawer: anchored to the chat control so opening the
+          conversation never steals height from the video or lesson canvas. */}
+      {!isMobile && (
+        <aside
+          className={`cr-chat-drawer ${isChatOpen ? "cr-chat-drawer--open" : ""}`}
+          aria-hidden={!isChatOpen}
+          data-lenis-prevent
+        >
+          <div className="cr-chat-drawer__panel">
+            <header className="cr-chat-drawer__header">
+              <div className="cr-chat-drawer__title">
+                <MessageSquare size={16} aria-hidden="true" />
+                <span>Conversation</span>
+              </div>
+              <span className="cr-chat-drawer__context">
+                {isGroup ? "Group thread" : "Private thread"}
+              </span>
+            </header>
+            <ClassroomChat
+              classroomChannel={classroomChannel}
+              sessionId={sessionId}
+              isTeacher={isTeacher}
+              teacherName={teacherName}
+              learnerName={isTeacher ? learnerName : userName}
+              isOpen={isChatOpen}
+              onUnreadCountChange={setChatUnreadCount}
+              allLearnerNames={allLearnerNames}
+              chatParticipants={chatParticipants}
+              currentUserId={localUserId}
+              isGroup={isGroup}
+              locale={locale}
+            />
+          </div>
+        </aside>
+      )}
+
+      {/* Full classroom controls in the split layout. */}
       <ClassroomControlBar
         isMobile={isMobile}
         isTeacher={isTeacher}
         setIsPickerOpen={setIsPickerOpen}
         isPageRecording={isPageRecording}
+        pageRecError={pageRecError}
+        clearPageRecError={() => setPageRecError(null)}
         pageRecWarning={pageRecWarning}
         stopPageRecording={stopPageRecording}
         startPageRecording={startPageRecording}
@@ -1298,34 +2164,46 @@ export default function ClassroomShell({
         chatUnreadCount={chatUnreadCount}
         isHandRaised={isHandRaised}
         toggleHand={toggleHand}
+        captionsEnabled={captionsEnabled}
+        captionsSupported={captionsSupported}
+        onToggleCaptions={toggleCaptions}
+        captionsPausedForMute={captionsPausedForMute}
+        onExportPage={(format) => exportFnRef.current?.(format)}
+        hasResource={Boolean(resource)}
+        screenShareIsLocalSharer={screenShare.isLocalSharer}
+        screenShareIsRemoteSharing={screenShare.isRemoteSharing}
+        screenShareBlockedByTeacher={
+          !isTeacher && !screenShare.teacherAllowsScreenShare
+        }
+        onRequestStartScreenShare={requestStartScreenShare}
+        onStopScreenShare={stopScreenShare}
+        teacherAllowsScreenShare={screenShare.teacherAllowsScreenShare}
+        onTeacherAllowsScreenShareChange={
+          screenShare.setTeacherAllowsScreenShare
+        }
       />
 
-      {/* Mobile Layout (shown only on screens < 900px) */}
+      {/* Tabbed layout for portrait phones and narrow tablets. */}
       {isMobile && (
         <MobileClassroomLayout
           activeTab={mobileActiveTab}
           onTabChange={setMobileActiveTab}
           isTeacher={isTeacher}
           onOpenPicker={() => setIsPickerOpen(true)}
+          onOpenParticipants={() => setShowParticipantList(true)}
           chatUnreadCount={chatUnreadCount}
           hasResource={!!resource}
           isHandRaised={isHandRaised}
           toggleHand={toggleHand}
+          captionsEnabled={captionsEnabled}
+          captionsSupported={captionsSupported}
+          onToggleCaptions={toggleCaptions}
           videoComponent={
-            <>
-              <PrepVideoCall
-                roomId={sessionId}
-                userName={userName}
-                isTeacher={isTeacher}
-                onScreenShareStreamChange={handleScreenShareStreamChange}
-              />
-              <ClassroomRaiseHandOverlay
-                raisedHands={raisedHands}
-              />
-            </>
+            <div className="cr-video-target" ref={mobileVideoTargetRef} />
           }
           contentComponent={
-            isScreenShareActive ? (
+            <>
+            {isScreenShareActive && (
               <div className="cr-screen-share">
                 {hasScreenShareStream ? (
                   <video
@@ -1347,34 +2225,9 @@ export default function ClassroomShell({
                   </div>
                 )}
               </div>
-            ) : resource ? (
-              <PrepShell
-                resource={resource}
-                viewer={viewer}
-                hideSidebar={true}
-                hideBreadcrumbs={true}
-                classroomChannel={classroomChannel}
-                isTeacher={isTeacher}
-                locale={locale}
-                initialAudioState={classroomStateSnapshot?.audio || null}
-                initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
-                onClassroomStateChange={persistClassroomState}
-              />
-            ) : (
-              <div className="cr-placeholder">
-                <div className="cr-placeholder__icon">
-                  <BookOpen size={32} />
-                </div>
-                <h2 className="cr-placeholder__title">
-                  No resource selected
-                </h2>
-                <p className="cr-placeholder__text">
-                  {isTeacher
-                    ? "Tap the Resources button to choose content."
-                    : "Waiting for the teacher to select a resource."}
-                </p>
-              </div>
-            )
+            )}
+            {resourceWorkspace}
+            </>
           }
           chatComponent={
             <ClassroomChat
@@ -1382,14 +2235,46 @@ export default function ClassroomShell({
               sessionId={sessionId}
               isTeacher={isTeacher}
               teacherName={teacherName}
-              learnerName={learnerName}
+              learnerName={isTeacher ? learnerName : userName}
               isOpen={true}
               onUnreadCountChange={setChatUnreadCount}
               allLearnerNames={allLearnerNames}
+              chatParticipants={chatParticipants}
+              currentUserId={localUserId}
               isGroup={isGroup}
+              locale={locale}
             />
           }
         />
+      )}
+
+      {videoHost && createPortal(
+        <>
+          <PrepVideoCall
+            key={isMobile ? "portrait-call" : "split-call"}
+            roomId={sessionId}
+            userName={userName}
+            isTeacher={isTeacher}
+            sessionTitle={session?.title || "Live coaching session"}
+            coachName={teacherName}
+            onScreenShareStreamChange={handleScreenShareStreamChange}
+            onModerationStateChange={handleVideoModerationChange}
+            onNetworkQualityChange={handleNetworkQualityChange}
+            onConnectionStateChange={setVideoConnectionState}
+            onAudioMuteChange={handleAudioMuteChange}
+            onParticipantCountChange={handleVideoParticipantCountChange}
+            suspendTileViewLock={screenShare.isSomeoneSharing}
+            locale={locale}
+          />
+          <ClassroomRaiseHandOverlay
+            raisedHands={raisedHands}
+            isTeacher={isTeacher}
+            onLowerHand={lowerHand}
+          />
+          <ClassroomCaptionsOverlay captions={captions} />
+        </>,
+        videoHost,
+        'classroom-video'
       )}
 
       <ClassroomResourcePickerModal
@@ -1397,6 +2282,9 @@ export default function ClassroomShell({
         setIsPickerOpen={setIsPickerOpen}
         isTeacher={isTeacher}
         tracks={tracks}
+        uploadedMaterials={uploadedMaterials}
+        onUploadPdf={handleUploadPdf}
+        canUploadPdf={session?.status === "scheduled" || session?.status === "completed"}
         selectedResourceId={selectedResourceId}
         handleChangeResourceId={handleChangeResourceId}
         sessionId={sessionId}
@@ -1407,15 +2295,39 @@ export default function ClassroomShell({
         setShowParticipantList={setShowParticipantList}
         participantCount={participantCount}
         capacity={capacity}
+        locale={locale}
         teacherName={teacherName}
         learners={learners}
         buildDisplayName={buildDisplayName}
+        isTeacher={isTeacher}
+        raisedHands={raisedHands}
+        videoParticipants={videoModeration.participants}
+        videoControlsReady={videoModeration.ready}
+        isClassroomLocked={isClassroomLocked}
+        moderationNotice={moderationNotice}
+        onMuteAll={() => runVideoModerationAction("muteAll")}
+        onMuteParticipant={(participantId) =>
+          runVideoModerationAction("muteParticipant", participantId)
+        }
+        onPinParticipant={(participantId) =>
+          runVideoModerationAction("pinParticipant", participantId)
+        }
+        onRemoveParticipant={(participantId) =>
+          runVideoModerationAction("kickParticipant", participantId)
+        }
+        onLowerHand={lowerHand}
+        onToggleClassroomLock={handleToggleClassroomLock}
       />
 
       <ClassroomLeaveConfirmModal
+        isTraining={isTraining}
+        isAdmin={session?.isAdmin === true}
         show={showLeaveConfirm}
         setShowLeaveConfirm={setShowLeaveConfirm}
         prefix={prefix}
+        sessionId={sessionId}
+        summary={leaveSummary}
+        isTeacher={isTeacher}
       />
     </div>
   );

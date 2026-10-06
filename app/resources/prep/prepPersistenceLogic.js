@@ -59,6 +59,7 @@ export function schedulePrepSaveAnnotations(partial, ctx) {
 
   if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
   saveDebounceRef.current = setTimeout(() => {
+    saveDebounceRef.current = null;
     const payload = pendingSaveRef.current;
     pendingSaveRef.current = {};
     saveAnnotations(payload, { includeCanvas: false });

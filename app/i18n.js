@@ -74,6 +74,19 @@ import arWhySpeexify from "@/locales/ar/why-speexify.json";
 import enPayment from "@/locales/en/payment.json";
 import arPayment from "@/locales/ar/payment.json";
 
+import enFeedback from "@/locales/en/feedback.json";
+import arFeedback from "@/locales/ar/feedback.json";
+
+import enClassroom from "@/locales/en/classroom.json";
+import arClassroom from "@/locales/ar/classroom.json";
+import enEarnings from "@/locales/en/earnings.json";
+import arEarnings from "@/locales/ar/earnings.json";
+
+import enMemberStories from "@/locales/en/member-stories.json";
+import arMemberStories from "@/locales/ar/member-stories.json";
+import enAdmin from "@/locales/en/admin.json";
+import arAdmin from "@/locales/ar/admin.json";
+
 const dictionaries = {
   en: {
     home: enHome,
@@ -102,6 +115,11 @@ const dictionaries = {
     "why-speexify": enWhySpeexify,
     payment: enPayment,
     "payment-result": enPayment,
+    feedback: enFeedback,
+    classroom: enClassroom,
+    earnings: enEarnings,
+    "member-stories": enMemberStories,
+    admin: enAdmin,
   },
   ar: {
     home: arHome,
@@ -130,6 +148,11 @@ const dictionaries = {
     "why-speexify": arWhySpeexify,
     payment: arPayment,
     "payment-result": arPayment,
+    feedback: arFeedback,
+    classroom: arClassroom,
+    earnings: arEarnings,
+    "member-stories": arMemberStories,
+    admin: arAdmin,
   },
 };
 

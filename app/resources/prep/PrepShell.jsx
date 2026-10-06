@@ -1,7 +1,8 @@
 // app/resources/prep/PrepShell.jsx
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { memo, useEffect, useRef, useState, useCallback } from "react";
+import { resizePrepTextEditor } from "./prepTextEditorDOM";
 import PrepBreadcrumbs from "./PrepBreadcrumbs";
 import PrepInfoSidebar from "./PrepInfoSidebar";
 import PrepViewerFrame from "./PrepViewerFrame";
@@ -28,6 +29,7 @@ import {
   exportAnnotatedPage,
 } from "./prepAnnotationUtils";
 import { handlePrepChannelMessage } from "./prepRealtimeSync";
+import { getAudioTargetTime, planAudioSync, shouldApplyAudioState } from "./audioSync.mjs";
 import {
   buildPrepAudioTracks,
   getPrepCurrentToolIcon,
@@ -101,20 +103,24 @@ import {
 } from "./prepInputHandlers";
 import { getDictionary, t } from "@/app/i18n";
 import useAuth from "@/hooks/useAuth";
+import api from "@/lib/api";
 
-export default function PrepShell({
+function PrepShell({
   resource,
   viewer,
+  isActive = true,
   hideSidebar = false,
   hideBreadcrumbs = false,
   classroomChannel,
   isScreenShareActive = false,
   screenShareStream = null,
   isTeacher = false,
+  sessionId = null,
   locale = "en",
   initialAudioState = null,
   initialPdfScroll = null,
   onClassroomStateChange,
+  onExportReady,
 }) {
   const dict = getDictionary(locale, "resources");
   const prefix = locale === "ar" ? "/ar" : "";
@@ -122,6 +128,8 @@ export default function PrepShell({
   // ✅ Auth hook must be called before any early returns (React Rules of Hooks)
   const { user } = useAuth();
   const myUserId = user?._id || user?.id || null;
+  const isActiveRef = useRef(isActive);
+  isActiveRef.current = isActive;
 
   // ─────────────────────────────────────────────────────────────
   // SAFETY GUARD
@@ -139,7 +147,10 @@ export default function PrepShell({
     );
   }
 
-  const storageKey = `prep_annotations_${resource._id}`;
+  const annotationScope = sessionId
+    ? `session_${sessionId}_user_${myUserId || "anonymous"}`
+    : "resource";
+  const storageKey = `prep_annotations_${annotationScope}_${resource._id}`;
 
   // ✅ define viewerUrl FIRST
   const viewerUrl = viewer?.viewerUrl || null;
@@ -362,6 +373,17 @@ export default function PrepShell({
     }
   }, [screenShareStream]);
 
+  useEffect(() => {
+    if (!isActive) {
+      audioRef.current?.pause();
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isActive]);
+
   // ✅ TEXTAREA REFS (for real-time autosize)
   const textAreaRefs = useRef({}); // { [textId]: HTMLTextAreaElement }
   const measureSpanRef = useRef(null); // shared measurer for auto width
@@ -370,6 +392,7 @@ export default function PrepShell({
   const audioSeqRef = useRef(0); // monotonically increasing sequence (teacher)
   const lastAppliedAudioSeqRef = useRef(-1); // last seq applied (learner)
   const lastAudioStateRef = useRef(null); // last received AUDIO_STATE for drift correction
+  const pendingAudioTrackStateRef = useRef(null);
   const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
   const audioUnlockedRef = useRef(false); // track if audio has been pre-unlocked on this device
   const channelReady = !!classroomChannel?.ready;
@@ -381,7 +404,7 @@ export default function PrepShell({
   // Mobile browsers require user interaction before audio can play.
   // This effect listens for the first touch/click and "warms up" the audio.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!isActive || typeof window === "undefined") return;
     if (isTeacher) return; // Only needed for learners
     if (audioUnlockedRef.current) return; // Already unlocked
 
@@ -390,6 +413,24 @@ export default function PrepShell({
 
       const el = audioRef.current;
       if (!el) return;
+
+      // An already playing lesson must never be paused by the unlock probe.
+      if (!el.paused) {
+        audioUnlockedRef.current = true;
+        setNeedsAudioUnlock(false);
+        return;
+      }
+
+      // A teacher play request may have been blocked by autoplay policy.
+      // This user gesture can start it directly without a muted probe.
+      if (lastAudioStateRef.current?.playing) {
+        el.play().then(() => {
+          audioUnlockedRef.current = true;
+          setNeedsAudioUnlock(false);
+          setIsAudioPlaying(true);
+        }).catch(() => setNeedsAudioUnlock(true));
+        return;
+      }
 
       // Create a very short silent audio context to unlock audio
       try {
@@ -421,10 +462,14 @@ export default function PrepShell({
         const playPromise = el.play();
         if (playPromise !== undefined) {
           playPromise.then(() => {
-            el.pause();
-            el.currentTime = 0;
             el.muted = wasMuted;
             el.volume = wasVolume;
+            if (!lastAudioStateRef.current?.playing) {
+              el.pause();
+              el.currentTime = 0;
+            } else {
+              setIsAudioPlaying(true);
+            }
             audioUnlockedRef.current = true;
             setNeedsAudioUnlock(false);
           }).catch(() => {
@@ -451,7 +496,7 @@ export default function PrepShell({
         document.removeEventListener(evt, unlockAudio);
       });
     };
-  }, [isTeacher]);
+  }, [isTeacher, isActive]);
 
   const sendAudioState = useCallback(
     ({ trackIndex, time, playing } = {}) => {
@@ -503,14 +548,20 @@ export default function PrepShell({
     ]
   );
 
-  const applyAudioState = useCallback((msg, { isSnapshot = false } = {}) => {
+  const applyAudioState = useCallback((msg, { isSnapshot = false, afterTrackChange = false } = {}) => {
     const el = audioRef.current;
-    if (!el || !msg) return;
+    if (!isActiveRef.current || !el || !msg) return;
 
     const seq = Number(msg.seq);
-    if (Number.isFinite(seq) && seq <= lastAppliedAudioSeqRef.current) {
-      return; // ignore old/out-of-order
-    }
+    const incomingSentAt = Number(msg.sentAt) || 0;
+    const lastSentAt = lastAudioStateRef.current?.sentAt || 0;
+    if (!shouldApplyAudioState({
+      seq,
+      sentAt: incomingSentAt,
+      lastSeq: lastAppliedAudioSeqRef.current,
+      lastSentAt,
+      afterTrackChange,
+    })) return;
     if (Number.isFinite(seq)) lastAppliedAudioSeqRef.current = seq;
 
     const nextIndex = Number(msg.trackIndex) || 0;
@@ -518,12 +569,11 @@ export default function PrepShell({
     const sentAt = Number(msg.sentAt) || Date.now();
     const playing = !!msg.playing;
 
-    setCurrentTrackIndex(nextIndex);
-
-    // Compute latency-compensated target time
-    const now = Date.now();
-    const latencySec = Math.max(0, (now - sentAt) / 1000);
-    const targetTime = Math.max(0, baseTime + (playing ? latencySec : 0));
+    if (nextIndex !== currentTrackIndex && !afterTrackChange) {
+      pendingAudioTrackStateRef.current = { msg, isSnapshot };
+      setCurrentTrackIndex(nextIndex);
+      return;
+    }
 
     lastAudioStateRef.current = {
       trackIndex: nextIndex,
@@ -546,11 +596,34 @@ export default function PrepShell({
     };
 
     runAfterLoad(() => {
-      try {
-        el.currentTime = targetTime;
-      } catch { }
+      if (!isActiveRef.current) return;
+      if (sentAt < (lastAudioStateRef.current?.sentAt || 0)) return;
+      if (Number.isFinite(seq) && seq < lastAppliedAudioSeqRef.current) return;
+      // Metadata may load well after the message arrived.
+      const targetTime = getAudioTargetTime({
+        baseTime,
+        sentAt,
+        playing,
+        now: Date.now(),
+      });
+      const action = planAudioSync({
+        playing,
+        paused: el.paused,
+        currentTime: el.currentTime,
+        targetTime,
+        readyState: el.readyState,
+        isSnapshot,
+        trackChanged: afterTrackChange,
+      });
+
+      if (action.seek) {
+        try {
+          el.currentTime = targetTime;
+        } catch { }
+      }
 
       if (playing) {
+        if (!action.play) return;
         el.play().then(
           () => {
             setIsAudioPlaying(true);
@@ -563,17 +636,30 @@ export default function PrepShell({
           }
         );
       } else {
-        try {
-          el.pause();
-        } catch { }
+        if (action.pause) {
+          try {
+            el.pause();
+          } catch { }
+        }
         setIsAudioPlaying(false);
       }
     });
-  }, []);
+  }, [currentTrackIndex]);
+
+  useEffect(() => {
+    const pending = pendingAudioTrackStateRef.current;
+    if (!pending || Number(pending.msg.trackIndex || 0) !== currentTrackIndex) return;
+    pendingAudioTrackStateRef.current = null;
+    if (Number(pending.msg.seq) < lastAppliedAudioSeqRef.current) return;
+    applyAudioState(pending.msg, {
+      isSnapshot: pending.isSnapshot,
+      afterTrackChange: true,
+    });
+  }, [currentTrackIndex, applyAudioState]);
   const initialAudioStateKeyRef = useRef("");
 
   useEffect(() => {
-    if (!initialAudioState || initialAudioState.resourceId !== resource._id) return;
+    if (!isActive || !initialAudioState || initialAudioState.resourceId !== resource._id) return;
 
     const key = [
       initialAudioState.resourceId,
@@ -592,7 +678,7 @@ export default function PrepShell({
     }, 0);
 
     return () => clearTimeout(id);
-  }, [initialAudioState, resource._id, applyAudioState]);
+  }, [isActive, initialAudioState, resource._id, applyAudioState]);
 
   const toolMenuRef = useRef(null);
   const colorMenuRef = useRef(null);
@@ -645,14 +731,7 @@ export default function PrepShell({
     if (!el) return;
     const box = textBoxesRef.current.find((tbox) => tbox.id === id);
 
-    if (box?.height) {
-      el.style.height = "100%";
-      return;
-    }
-
-    // Height
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    resizePrepTextEditor(el, Boolean(box?.height));
   }, []);
 
   const autoFitTextBoxWidthIfNeeded = useCallback(
@@ -701,7 +780,14 @@ export default function PrepShell({
       }
 
       // Measure the actual text content width
-      const measured = measureTextWidthPx(text, { fontSize });
+      const editor = textAreaRefs.current?.[box.id];
+      const metrics = editor ? getComputedStyle(editor) : null;
+      const measured = measureTextWidthPx(text, {
+        fontSize,
+        fontFamily: metrics?.fontFamily,
+        fontWeight: metrics?.fontWeight || "600",
+        letterSpacing: metrics?.letterSpacing,
+      });
       // padding + caret room + extra buffer
       const desired = measured + 40;
       // CHANGED: Increase max width significantly
@@ -905,7 +991,7 @@ export default function PrepShell({
 
   // ✅ Teacher: broadcast PDF page changes
   useEffect(() => {
-    if (!isPdf) return;
+    if (!isActive || !isPdf) return;
     if (!isTeacher) return;
     if (!channelReady || !sendOnChannel) return;
 
@@ -915,6 +1001,7 @@ export default function PrepShell({
       page: pdfCurrentPage,
     });
   }, [
+    isActive,
     isPdf,
     isTeacher,
     channelReady,
@@ -925,7 +1012,7 @@ export default function PrepShell({
 
   // ✅ Teacher: broadcast PDF scroll position (normalized)
   useEffect(() => {
-    if (!isPdf) return;
+    if (!isActive || !isPdf) return;
     if (!isTeacher) return;
 
     const el = pdfScrollRef.current;
@@ -979,6 +1066,7 @@ export default function PrepShell({
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, [
+    isActive,
     isPdf,
     isTeacher,
     channelReady,
@@ -1022,25 +1110,28 @@ export default function PrepShell({
   }, [initialPdfScroll, resource._id, isPdf, pdfCurrentPage]);
 
   useEffect(() => {
-    if (!activeTextId) return;
+    if (!isActive || !activeTextId) return;
     const el = document.querySelector(`[data-textbox-id="${activeTextId}"]`);
-    if (el) el.focus();
-  }, [activeTextId]);
+    if (el) el.focus({ preventScroll: true });
+  }, [activeTextId, isActive]);
 
   useEffect(() => {
     const audioEl = audioRef.current;
     if (!audioEl) return;
 
-    // Fix #21: Separate handlers for ended and pause
     const handleEnded = () => {
       setIsAudioPlaying(false);
-      // Audio track finished completely
+      if (isTeacher) {
+        sendAudioState({ playing: false, time: audioEl.currentTime || 0 });
+      }
     };
 
     const handlePause = () => {
-      // Only update state if not seeking (paused explicitly)
       if (!audioEl.seeking) {
         setIsAudioPlaying(false);
+        if (isTeacher) {
+          sendAudioState({ playing: false, time: audioEl.currentTime || 0 });
+        }
       }
     };
 
@@ -1051,11 +1142,11 @@ export default function PrepShell({
       audioEl.removeEventListener("ended", handleEnded);
       audioEl.removeEventListener("pause", handlePause);
     };
-  }, [resource._id]);
+  }, [resource._id, isTeacher, sendAudioState]);
 
   // ✅ Teacher: periodically broadcast audio state while playing (keeps learners in sync)
   useEffect(() => {
-    if (!isTeacher) return;
+    if (!isActive || !isTeacher) return;
     if (!channelReady || !sendOnChannel) return;
     if (!isAudioPlaying) return;
 
@@ -1067,7 +1158,28 @@ export default function PrepShell({
     }, 750);
 
     return () => clearInterval(id);
-  }, [isTeacher, channelReady, sendOnChannel, isAudioPlaying, sendAudioState]);
+  }, [isActive, isTeacher, channelReady, sendOnChannel, isAudioPlaying, sendAudioState]);
+
+  // ✅ Teacher: after a pause, send a few follow-up "paused" pings so a single
+  // dropped packet doesn't leave learners playing while the teacher is stopped.
+  useEffect(() => {
+    if (!isActive || !isTeacher) return;
+    if (!channelReady || !sendOnChannel) return;
+    if (isAudioPlaying) return;
+
+    let count = 0;
+    const id = setInterval(() => {
+      const el = audioRef.current;
+      if (!el || !el.paused) {
+        clearInterval(id);
+        return;
+      }
+      sendAudioState({ time: el.currentTime || 0, playing: false });
+      if (++count >= 3) clearInterval(id);
+    }, 400);
+
+    return () => clearInterval(id);
+  }, [isActive, isTeacher, channelReady, sendOnChannel, isAudioPlaying, sendAudioState]);
 
   // ─────────────────────────────────────────────────────────────
   // Close tool / color menus when clicking outside
@@ -1107,6 +1219,7 @@ export default function PrepShell({
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     function handleKeyDown(e) {
+      if (!isActive) return;
       // Skip if user is typing in an input/textarea
       const tag = e.target?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea") return;
@@ -1202,7 +1315,7 @@ export default function PrepShell({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, isActive]);
 
   // ─────────────────────────────────────────────────────────────
   // Utility: normalized point relative to containerRef
@@ -1251,6 +1364,11 @@ export default function PrepShell({
     }
   }
 
+  // Expose export to parent (e.g. ClassroomShell control bar)
+  useEffect(() => {
+    if (isActive && onExportReady) onExportReady(handleExport);
+  });
+
   // REDRAW: render all strokes (normalized) onto canvas (legacy bitmap)
   function redrawCanvasFromStrokes(strokesToDraw) {
     const canvas = canvasRef.current;
@@ -1272,7 +1390,7 @@ export default function PrepShell({
   }, [strokes, isPdf, pdfCurrentPage]);
 
   // ─────────────────────────────────────────────────────────────
-  // Load annotations from localStorage
+  // Load the local annotation cache first, then merge the durable classroom snapshot.
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!storageKey) return;
@@ -1322,6 +1440,59 @@ export default function PrepShell({
       console.warn("Failed to load annotations", err);
     }
   }, [storageKey]);
+
+  // Restore the durable classroom snapshot after the local cache loads. The
+  // teacher's snapshot is shared with learners, while each user keeps their
+  // own private annotation record.
+  useEffect(() => {
+    if (!sessionId || !resource?._id) return undefined;
+    let cancelled = false;
+
+    api
+      .get(`/sessions/${sessionId}/annotations`, {
+        params: { resourceId: resource._id },
+      })
+      .then(({ data }) => {
+        if (cancelled) return;
+        const rows = Array.isArray(data?.annotations) ? data.annotations : [];
+        const ownId = myUserId == null ? null : String(myUserId);
+        const annotation = isTeacher
+          ? rows.find((row) => String(row.userId) === ownId) || rows[0]
+          : rows.find((row) => String(row.userId) !== ownId) || rows[0];
+        const snapshot = annotation?.payload;
+        if (!snapshot) return;
+
+        // The teacher snapshot is authoritative for the shared page. Clear
+        // any legacy bitmap restored from this learner's local cache before
+        // applying the structured snapshot, otherwise stale pixels can sit
+        // underneath the current annotations.
+        const snapshotCanvas = canvasRef.current;
+        const snapshotContext = snapshotCanvas?.getContext?.("2d");
+        if (snapshotContext && snapshotCanvas) {
+          snapshotContext.clearRect(0, 0, snapshotCanvas.width, snapshotCanvas.height);
+        }
+
+        if (Array.isArray(snapshot.stickyNotes)) setStickyNotes(snapshot.stickyNotes);
+        if (Array.isArray(snapshot.textBoxes)) setTextBoxes(snapshot.textBoxes);
+        if (Array.isArray(snapshot.masks)) setMasks(snapshot.masks);
+        if (Array.isArray(snapshot.lines)) setLines(snapshot.lines);
+        if (Array.isArray(snapshot.boxes)) setBoxes(snapshot.boxes);
+        if (Array.isArray(snapshot.strokes)) {
+          setStrokes(
+            snapshot.strokes.filter(
+              (stroke) => stroke.tool === TOOL_PEN || stroke.tool === TOOL_HIGHLIGHTER
+            )
+          );
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) console.warn("Failed to load server annotations", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, resource?._id, myUserId, isTeacher]);
 
   // ─────────────────────────────────────────────────────────────
   // Resize canvas with container (and redraw strokes)
@@ -1384,7 +1555,7 @@ export default function PrepShell({
         window.dispatchEvent(new Event("resize"));
 
         if (isPdf) {
-          pdfNavApiRef.current?.fitToPage?.();
+          pdfNavApiRef.current?.autoFit?.();
         }
       }, 80);
     });
@@ -1417,7 +1588,41 @@ export default function PrepShell({
       linesRef,
       boxesRef,
     });
+
+    if (sessionId && isTeacher) {
+      const payload = {
+        canvasData: saveOpts?.includeCanvas ? opts.canvasData : null,
+        strokes: opts.strokes ?? strokesRef.current,
+        stickyNotes: opts.stickyNotes ?? stickyNotesRef.current,
+        textBoxes: opts.textBoxes ?? textBoxesRef.current,
+        masks: opts.masks ?? masksRef.current,
+        lines: opts.lines ?? linesRef.current,
+        boxes: opts.boxes ?? boxesRef.current,
+      };
+      api
+        .put(`/sessions/${sessionId}/annotations`, {
+          resourceId: resource._id,
+          payload,
+        })
+        .catch((err) => console.warn("Failed to save server annotations", err));
+    }
   }
+
+  const saveAnnotationsRef = useRef(saveAnnotations);
+  saveAnnotationsRef.current = saveAnnotations;
+  useEffect(() => {
+    const flush = () => {
+      if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+      saveDebounceRef.current = null;
+      const pending = pendingSaveRef.current;
+      if (Object.keys(pending).length) {
+        pendingSaveRef.current = {};
+        saveAnnotationsRef.current(pending, { includeCanvas: false });
+      }
+    };
+    if (!isActive) flush();
+    return flush;
+  }, [isActive, storageKey]);
 
   const pendingBroadcastRef = useRef({});
   const broadcastRafRef = useRef(false);
@@ -1454,7 +1659,13 @@ export default function PrepShell({
     });
   }
 
+  const lastPointerBroadcastRef = useRef(0);
   function broadcastPointer(normalizedPosOrNull) {
+    // Throttle pointer broadcasts to ~30/sec for efficient WS usage
+    const now = performance.now();
+    if (normalizedPosOrNull && now - lastPointerBroadcastRef.current < 33) return;
+    lastPointerBroadcastRef.current = now;
+
     broadcastPrepPointer(normalizedPosOrNull, {
       channelReady,
       sendOnChannel,
@@ -1509,6 +1720,9 @@ export default function PrepShell({
     if (typeof classroomChannel?.subscribe !== "function") return;
 
     const unsubscribe = classroomChannel.subscribe((msg) => {
+      // Hidden tabs continue receiving comments, but must not play media or
+      // scroll/focus a viewer that the participant is no longer looking at.
+      if (!isActive && msg?.type !== "ANNOTATION_STATE") return;
       handlePrepChannelMessage(msg, {
         resourceId: resource._id,
         applyRemoteAnnotationState,
@@ -1530,6 +1744,7 @@ export default function PrepShell({
   }, [
     classroomChannel?.ready,
     classroomChannel?.subscribe,
+    isActive,
     resource._id,
     isTeacher,
     isPdf,
@@ -2103,6 +2318,13 @@ export default function PrepShell({
       dragState,
       draw,
       tool,
+      isPdf,
+      pdfCurrentPage,
+      isTeacher,
+      myUserId,
+      setTeacherPointerByPage,
+      setLearnerPointersByPage,
+      broadcastPointer,
     });
   }
 
@@ -2418,6 +2640,7 @@ export default function PrepShell({
                   renderAnnotationsOverlay={renderAnnotationsOverlay}
                   isPdf={isPdf}
                   pdfViewerUrl={pdfViewerUrl}
+                  pdfFitMode={resource.classroomUpload ? "page" : "width"}
                   pdfScrollRef={pdfScrollRef}
                   handlePdfNavStateChange={handlePdfNavStateChange}
                   broadcastPdfFitToPage={broadcastPdfFitToPage}
@@ -2454,3 +2677,5 @@ export default function PrepShell({
     </>
   );
 }
+
+export default memo(PrepShell);

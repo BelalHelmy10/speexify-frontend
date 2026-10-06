@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import TimePicker from "@/components/ui/TimePicker";
+import useAuth from "@/hooks/useAuth";
+import { getDictionary, t } from "@/app/i18n";
 
 const SESSION_VIEWS = [
   { key: "all", label: "All" },
@@ -12,6 +14,7 @@ const SESSION_VIEWS = [
   { key: "completed", label: "Completed" },
   { key: "canceled", label: "Canceled" },
   { key: "groups", label: "Groups" },
+  { key: "training", label: "Training" },
 ];
 
 function todayInputValue() {
@@ -79,7 +82,7 @@ function downloadSessionsCsv(sessions, getSessionLearnerDisplay) {
     "Start",
     "End",
     "Duration",
-    "Learners",
+    "Participants",
     "Teacher",
     "Meeting URL",
   ];
@@ -87,7 +90,7 @@ function downloadSessionsCsv(sessions, getSessionLearnerDisplay) {
     s.id,
     s.title || "",
     statusLabel(s.status),
-    s.type === "GROUP" ? "Group" : "1:1",
+    s.type === "GROUP" ? "Group" : s.type === "TRAINING" ? "Training · unpaid" : "1:1",
     formatDate(s.startAt),
     formatTime(s.startAt),
     s.endAt ? formatTime(s.endAt) : "",
@@ -118,6 +121,8 @@ export default function AdminSessionsSection({
   setQ,
   teacherIdFilter,
   setTeacherIdFilter,
+  learnerIdFilter,
+  setLearnerIdFilter,
   sessionRangeFilter,
   setSessionRangeFilter,
   sessionTypeFilter,
@@ -154,6 +159,8 @@ export default function AdminSessionsSection({
   fmt,
   getSessionLearnerDisplay,
 }) {
+  const { user } = useAuth();
+  const copy = getDictionary(user?.language === "ar" ? "ar" : "en", "admin");
   const [drawerSessionId, setDrawerSessionId] = useState(null);
   const [drawerMode, setDrawerMode] = useState("overview");
   const [participantDraftId, setParticipantDraftId] = useState("");
@@ -186,6 +193,7 @@ export default function AdminSessionsSection({
     setSessionNeedsTeacher(false);
     setSessionNeedsFeedback(false);
     setTeacherIdFilter("");
+    setLearnerIdFilter("");
     setFrom("");
     setTo("");
   };
@@ -210,6 +218,8 @@ export default function AdminSessionsSection({
       setSessionStatusFilter("canceled");
     } else if (view === "groups") {
       setSessionTypeFilter("GROUP");
+    } else if (view === "training") {
+      setSessionTypeFilter("TRAINING");
     }
   };
 
@@ -222,6 +232,7 @@ export default function AdminSessionsSection({
     if (sessionStatusFilter === "completed") return "completed";
     if (sessionStatusFilter === "canceled") return "canceled";
     if (sessionTypeFilter === "GROUP") return "groups";
+    if (sessionTypeFilter === "TRAINING") return "training";
     return "all";
   }, [
     from,
@@ -296,7 +307,7 @@ export default function AdminSessionsSection({
             <h2 className="adm-admin-card__title">Session Operations</h2>
             <p className="adm-admin-card__subtitle">
               {loading
-                ? "Loading sessions..."
+                ? "Loading the session queue…"
                 : `Showing ${visibleStart}-${visibleEnd} of ${total} sessions`}
             </p>
           </div>
@@ -322,7 +333,7 @@ export default function AdminSessionsSection({
         </div>
       </div>
 
-      <div className="adm-session-views" aria-label="Session views">
+      <div className="adm-session-views" aria-label={t(copy, "sessionViews")}>
         {SESSION_VIEWS.map((view) => (
           <button
             key={view.key}
@@ -333,7 +344,7 @@ export default function AdminSessionsSection({
             onClick={() => applyView(view.key)}
             aria-pressed={activeView === view.key}
           >
-            {view.label}
+            {view.label === "All" ? t(copy, "all") : view.label}
           </button>
         ))}
       </div>
@@ -356,7 +367,8 @@ export default function AdminSessionsSection({
           </svg>
           <input
             type="text"
-            placeholder="Search title or meeting link..."
+            aria-label={t(copy, "searchSessions")}
+            placeholder={t(copy, "searchSessionsPlaceholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -375,6 +387,11 @@ export default function AdminSessionsSection({
           ))}
         </select>
 
+        <select className="adm-filter-select" value={learnerIdFilter} onChange={(e) => setLearnerIdFilter(e.target.value)}>
+          <option value="">All learners</option>
+          {users.filter((user) => user.role === "learner").map((learner) => <option key={learner.id} value={learner.id}>{learner.name || learner.email}</option>)}
+        </select>
+
         <select
           className="adm-filter-select"
           value={sessionTypeFilter}
@@ -383,6 +400,7 @@ export default function AdminSessionsSection({
           <option value="">All types</option>
           <option value="ONE_ON_ONE">1:1</option>
           <option value="GROUP">Group</option>
+          <option value="TRAINING">Training · unpaid</option>
         </select>
 
         <select
@@ -440,7 +458,7 @@ export default function AdminSessionsSection({
                 <th>Session</th>
                 <th>Status</th>
                 <th>When</th>
-                <th>Learners</th>
+                <th>Participants</th>
                 <th>Teacher</th>
                 <th>Duration</th>
                 <th>Meeting</th>
@@ -494,10 +512,10 @@ export default function AdminSessionsSection({
                         >
                           <span className="adm-session-title-button__title">
                             {session.title ||
-                              (type === "GROUP" ? "Group Session" : "Lesson")}
+                              (type === "GROUP" ? "Group Session" : type === "TRAINING" ? "Training Session" : "Lesson")}
                           </span>
                           <span className="adm-session-title-button__meta">
-                            #{session.id} - {type === "GROUP" ? "Group" : "1:1"}
+                            #{session.id} - {type === "GROUP" ? "Group" : type === "TRAINING" ? "Training · unpaid" : "1:1"}
                           </span>
                         </button>
                       </td>
@@ -527,7 +545,7 @@ export default function AdminSessionsSection({
                         {session.teacher ? (
                           <span>{session.teacher.name || session.teacher.email}</span>
                         ) : (
-                          <span className="adm-session-warning">Unassigned</span>
+                          <span className={type === "TRAINING" ? "adm-session-muted" : "adm-session-warning"}>{type === "TRAINING" ? "Admin trainer" : "Unassigned"}</span>
                         )}
                       </td>
                       <td>{formatDuration(session)}</td>
@@ -739,19 +757,20 @@ export default function AdminSessionsSection({
                     <dd>
                       {normType(activeSession.type) === "GROUP"
                         ? "Group"
-                        : "1:1"}
+                        : normType(activeSession.type) === "TRAINING" ? "Training · unpaid" : "1:1"}
                     </dd>
                   </div>
                   <div>
-                    <dt>Teacher</dt>
+                    <dt>{normType(activeSession.type) === "TRAINING" ? "Lead teacher" : "Teacher"}</dt>
                     <dd>
                       {activeSession.teacher?.name ||
                         activeSession.teacher?.email ||
-                        "Unassigned"}
+                        (normType(activeSession.type) === "TRAINING" ? "None selected" : "Unassigned")}
                     </dd>
                   </div>
+                  {normType(activeSession.type) === "TRAINING" && <div><dt>Admin trainer</dt><dd>{activeSession.trainingAdmin?.name || activeSession.trainingAdmin?.email || "Admin"}</dd></div>}
                   <div>
-                    <dt>Learners</dt>
+                    <dt>{normType(activeSession.type) === "TRAINING" ? "Attendees" : "Learners"}</dt>
                     <dd>{getSessionLearnerDisplay(activeSession)}</dd>
                   </div>
                   <div>
@@ -779,7 +798,7 @@ export default function AdminSessionsSection({
                     activeSession.learners.map((learner) => (
                       <div key={learner.id} className="adm-session-participant">
                         <span>
-                          {learner.name || learner.email || `Learner ${learner.id}`}
+                          {learner.name || learner.email || `Participant ${learner.id}`}{normType(activeSession.type) === "TRAINING" ? ` · ${learner.role === "teacher" ? "Teacher" : "Learner"}` : ""}
                         </span>
                         <small>{learner.email}</small>
                       </div>
@@ -913,7 +932,31 @@ export default function AdminSessionsSection({
                     </>
                   )}
 
-                  <div className="adm-form-field">
+                  {normType(editForm.type) === "TRAINING" && (
+                    <div className="adm-form-field adm-form-field--full">
+                      <label className="adm-form-label">Teachers and learners</label>
+                      <div className="adm-session-edit-participants">
+                        {(editForm.trainingParticipantIds || []).map((id) => {
+                          const person = [...teachers, ...users].find((entry) => String(entry.id) === String(id));
+                          return <span key={id} className="adm-session-edit-participant">
+                            {person?.name || person?.email || id} {teachers.some((entry) => String(entry.id) === String(id)) ? "· Teacher" : "· Learner"}
+                            <button type="button" onClick={() => removeParticipant(activeSession.id, id)} disabled={(editForm.trainingParticipantIds || []).length <= 1} aria-label={`Remove ${person?.name || id}`}>×</button>
+                          </span>;
+                        })}
+                      </div>
+                      <div className="adm-session-add-participant">
+                        <select className="adm-form-input" value={participantDraftId} onChange={(e) => setParticipantDraftId(e.target.value)}>
+                          <option value="">Add teacher or learner...</option>
+                          {[...teachers.map((person) => ({ ...person, roleLabel: "Teacher" })), ...users.map((person) => ({ ...person, roleLabel: "Learner" }))]
+                            .filter((person) => !(editForm.trainingParticipantIds || []).includes(String(person.id)))
+                            .map((person) => <option key={`${person.roleLabel}-${person.id}`} value={person.id}>{person.roleLabel}: {person.name || person.email}</option>)}
+                        </select>
+                        <button type="button" className="adm-btn-secondary adm-btn-secondary--compact" onClick={handleAddParticipant} disabled={!participantDraftId}>Add</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {normType(editForm.type) !== "TRAINING" && <div className="adm-form-field">
                     <label className="adm-form-label">Teacher</label>
                     <select
                       name="teacherId"
@@ -928,7 +971,7 @@ export default function AdminSessionsSection({
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </div>}
 
                   <div className="adm-form-field adm-form-field--full">
                     <label className="adm-form-label">Title</label>

@@ -28,6 +28,8 @@ import {
 import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 import "@/styles/profile.scss";
+import { getIntlLocale } from "@/utils/locale";
+import ResilientAvatar from "@/components/ResilientAvatar";
 
 const COPY = {
   en: {
@@ -99,72 +101,72 @@ const COPY = {
     photoError: "Failed to update profile photo.",
   },
   ar: {
-    loading: "جار تحميل ملفك...",
-    notAuthed: "يرجى تسجيل الدخول لعرض ملفك.",
+    loading: "بيتحمّل ملفك...",
+    notAuthed: "سجّل دخول عشان تشوف ملفك.",
     titleFallback: "ملفك في Speexify",
     eyebrow: "مركز الحساب الشخصي",
     subtitle:
-      "مساحة مركزة لجلساتك وأرصدة حسابك وتفضيلاتك والخطوة التالية.",
+      "مساحة واحدة واضحة لجلساتك وأرصدة حسابك وتفضيلاتك والخطوة الجاية.",
     profile: "الملف الشخصي",
-    learner: "متعلم",
-    teacher: "مدرب",
+    learner: "متدرب",
+    teacher: "مدرّب",
     admin: "مسؤول",
     memberSince: "عضو منذ",
     timezone: "المنطقة الزمنية",
     language: "اللغة",
-    notSet: "غير محدد",
-    nextAction: "الخطوة التالية",
-    liveNow: "الجلسة الآن",
-    readyToJoin: "الجلسة مفتوحة. ادخل الغرفة وأكمل من السياق.",
-    joinSession: "دخول الجلسة",
+    notSet: "محددش",
+    nextAction: "الخطوة الجاية",
+    liveNow: "الجلسة دلوقتي",
+    readyToJoin: "الجلسة مفتوحة. خش الغرفة وكمل من السياق.",
+    joinSession: "خش الجلسة",
     prepare: "التحضير",
-    upcomingSession: "جلسة قادمة",
-    upcomingBody: "لديك جلسة مجدولة. راجع التفاصيل قبل أن تبدأ.",
-    openDetails: "فتح التفاصيل",
-    noSession: "لا توجد جلسة مجدولة",
+    upcomingSession: "جلسة جاية",
+    upcomingBody: "عندك جلسة مجدولة. شوف التفاصيل قبل ما تبدأ.",
+    openDetails: "افتح التفاصيل",
+    noSession: "مفيش جلسة مجدولة",
     noSessionBody:
-      "لا يوجد شيء ينتظرك الآن. استخدم التقويم أو التقدم أو الإعدادات لتجهيز الحساب.",
-    openCalendar: "فتح التقويم",
+      "مفيش إجراء مطلوب منك دلوقتي. استخدم التقويم أو التقدم أو الإعدادات عشان تجهّز الحساب.",
+    openCalendar: "افتح التقويم",
     credits: "الأرصدة",
     creditsHint: "أرصدة الجلسات المتبقية",
     activePackages: "الباقات النشطة",
-    upcoming: "القادمة",
-    completed: "المكتملة",
-    readiness: "جاهزية الملف",
+    upcoming: "اللي جاي",
+    completed: "اللي خلصت",
+    readiness: "اكتمال الملف",
     readinessBody:
-      "هذه أساسيات الحساب التي تجعل الجدولة والتذكيرات والتحضير أكثر سلاسة.",
+      "الأساسيات دي بتخلي الجدولة والتذكيرات والتحضير أسهل.",
     complete: "مكتمل",
-    needsWork: "يحتاج ضبط",
+    needsWork: "محتاج ضبط",
     identity: "الهوية",
     schedule: "الجدولة",
     plan: "الباقة",
     security: "الأمان",
     accountDetails: "تفاصيل الحساب",
-    manageSettings: "إدارة الإعدادات",
-    email: "البريد الإلكتروني",
+    manageSettings: "نظّم الإعدادات",
+    email: "الإيميل",
     role: "الدور",
-    quickActions: "إجراءات سريعة",
+    quickActions: "حاجات سريعة",
     dashboard: "لوحة التحكم",
     calendar: "التقويم",
     progress: "التقدم",
-    resources: "المصادر",
+    resources: "المواد",
     adminPanel: "الإدارة",
     support: "الدعم",
-    packageTitle: "باقة التعلم",
-    noPackage: "لا توجد باقة نشطة مرتبطة بالحساب بعد.",
-    expires: "تنتهي",
+    packageTitle: "باقة التمرين",
+    noPackage: "مفيش باقة نشطة مرتبطة بالحساب لسه.",
+    expires: "بتخلص",
     used: "مستخدم",
     recentActivity: "النشاط الأخير",
-    recentEmpty: "لا توجد جلسات حديثة بعد.",
-    viewCalendar: "عرض التقويم",
+    recentEmpty: "مفيش جلسات حديثة لسه.",
+    viewCalendar: "شوف التقويم",
     accountSecurity: "أمان الحساب",
-    passwordUpdated: "تم تحديث كلمة المرور.",
-    reviewSecurity: "راجع إعدادات الأمان.",
-    addPhoto: "إضافة صورة",
-    changePhoto: "تغيير الصورة",
-    removePhoto: "حذف الصورة",
+    passwordUpdated: "الباسورد اتحدّث.",
+    reviewSecurity: "شوف إعدادات الأمان.",
+    addPhoto: "ضيف صورة",
+    changePhoto: "غيّر الصورة",
+    removePhoto: "امسح الصورة",
     photoHint: "JPG أو PNG أو WEBP أو GIF. الحد الأقصى 3 ميجابايت.",
-    photoError: "تعذر تحديث صورة الملف.",
+    photoError: "مقدرناش نحدّث صورة الملف.",
   },
 };
 
@@ -181,10 +183,13 @@ function getInitials(user) {
 }
 
 function AvatarVisual({ user }) {
-  if (user?.avatarUrl) {
-    return <img src={user.avatarUrl} alt="" />;
-  }
-  return <span>{getInitials(user)}</span>;
+  return (
+    <ResilientAvatar
+      src={user?.avatarUrl}
+      alt=""
+      fallback={<span>{getInitials(user)}</span>}
+    />
+  );
 }
 
 function displayName(user) {
@@ -209,7 +214,7 @@ function pickList(payload, key) {
 function formatDate(value, locale) {
   if (!value) return "—";
   try {
-    return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+    return new Intl.DateTimeFormat(getIntlLocale(locale), {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -222,7 +227,7 @@ function formatDate(value, locale) {
 function formatDateTime(value, locale, timezone) {
   if (!value) return "—";
   try {
-    return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+    return new Intl.DateTimeFormat(getIntlLocale(locale), {
       month: "short",
       day: "numeric",
       hour: "numeric",
@@ -234,12 +239,10 @@ function formatDateTime(value, locale, timezone) {
   }
 }
 
-function canJoin(startAt, endAt) {
-  if (!startAt) return false;
-  const now = Date.now();
+function canOpenClassroom(startAt, status) {
+  if (!startAt || String(status || "").toLowerCase() === "canceled") return false;
   const start = new Date(startAt).getTime();
-  const end = endAt ? new Date(endAt).getTime() : start + 60 * 60 * 1000;
-  return now >= start - 15 * 60 * 1000 && now <= end;
+  return Number.isFinite(start) && Date.now() >= start - 15 * 60 * 1000;
 }
 
 function packageTotals(packages) {
@@ -452,7 +455,7 @@ export default function ProfileHub() {
   const readinessScore = Math.round(
     (readinessItems.filter((item) => item.complete).length / readinessItems.length) * 100
   );
-  const joinable = nextSession && canJoin(nextSession.startAt, nextSession.endAt);
+  const joinable = nextSession && canOpenClassroom(nextSession.startAt, nextSession.status);
   const primaryNextHref = joinable
     ? `/classroom/${nextSession.id}`
     : nextSession?.id

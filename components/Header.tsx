@@ -22,7 +22,8 @@ import { APP_ROUTES } from "@/lib/routes";
 import { getDictionary, t } from "@/app/i18n";
 import NotificationsBell from "@/components/NotificationsBell";
 import DigitalClock from "@/components/DigitalClock";
-import SpeexifyLogoMark from "@/components/SpeexifyLogoMark";
+import BrandLogo from "@/components/brand/BrandLogo";
+import ResilientAvatar from "@/components/ResilientAvatar";
 
 /* ------------------------------------------------------------------
    Locale helpers
@@ -79,10 +80,13 @@ function getInitials(user) {
 }
 
 function AvatarContent({ user }) {
-  if (user?.avatarUrl) {
-    return <img src={user.avatarUrl} alt="" />;
-  }
-  return getInitials(user);
+  return (
+    <ResilientAvatar
+      src={user?.avatarUrl}
+      alt=""
+      fallback={getInitials(user)}
+    />
+  );
 }
 
 /* ------------------------------------------------------------------
@@ -131,7 +135,12 @@ function LanguageSwitcher({ locale, pathname }) {
 ------------------------------------------------------------------ */
 
 export default function Header() {
-  const { user, checking, logout: authLogout } = useAuth();
+  const {
+    user,
+    checking,
+    hasSessionCookie,
+    logout: authLogout,
+  } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
@@ -168,8 +177,11 @@ export default function Header() {
     const onScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          const next = window.scrollY > 20;
-          setScrolled((prev) => (prev !== next ? next : prev));
+          const scrollY = window.scrollY || 0;
+          setScrolled((prev) => {
+            const next = prev ? scrollY > 8 : scrollY > 32;
+            return prev !== next ? next : prev;
+          });
           ticking = false;
         });
         ticking = true;
@@ -191,6 +203,17 @@ export default function Header() {
     return () => {
       document.body.classList.remove("spx-mobile-menu-open");
     };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
   useEffect(() => {
@@ -219,7 +242,10 @@ export default function Header() {
     };
   }, [accountOpen]);
 
-  const baseLogoTo = checking ? APP_ROUTES.home : user ? APP_ROUTES.dashboard : APP_ROUTES.home;
+  const authPending = checking && hasSessionCookie && !user;
+  const loggedOutReady = !user && !authPending;
+
+  const baseLogoTo = user ? APP_ROUTES.dashboard : APP_ROUTES.home;
   const logoTo = localizeHref(baseLogoTo, locale);
 
   const handleLogout = async () => {
@@ -238,7 +264,7 @@ export default function Header() {
 
   const roleLabel = (role) => {
     if (role === "admin") return navText("role_admin", "Admin");
-    if (role === "teacher") return navText("role_teacher", "Teacher");
+    if (role === "teacher") return navText("role_coach", "Coach");
     return navText("role_learner", "Learner");
   };
 
@@ -246,6 +272,7 @@ export default function Header() {
     { to: APP_ROUTES.home, label: t(navDict, "home") },
     { to: APP_ROUTES.individualTraining, label: t(navDict, "individual") },
     { to: APP_ROUTES.corporateTraining, label: t(navDict, "corporate") },
+    { to: APP_ROUTES.kidsTraining, label: t(navDict, "kids") },
     { to: APP_ROUTES.packages, label: t(navDict, "packages") },
     { to: APP_ROUTES.about, label: t(navDict, "about") },
     { to: APP_ROUTES.contact, label: t(navDict, "contact") },
@@ -276,7 +303,9 @@ export default function Header() {
   ];
 
   const links =
-    checking || !user
+    authPending
+      ? []
+      : !user
       ? loggedOut
       : user.role === "admin"
         ? admin
@@ -327,38 +356,7 @@ export default function Header() {
     : [];
 
   const RightCTA = () =>
-    checking ? (
-      <span className="spx-nav-status">
-        <span className="spx-status-pulse"></span>
-        <span className="spx-status-text">Checking…</span>
-      </span>
-    ) : !user ? (
-      <Link
-        href={localizeHref(APP_ROUTES.login, locale)}
-        className="spx-nav-cta"
-        onClick={() => setOpen(false)}
-      >
-        <span className="spx-cta-bg"></span>
-        <span className="spx-cta-content">
-          <span className="spx-cta-text">{t(navDict, "login")}</span>
-          <svg
-            className="spx-cta-arrow"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <path
-              d="M6 12L10 8L6 4"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      </Link>
-    ) : (
+    user ? (
       <div
         className={`spx-account-menu${accountOpen ? " spx-is-open" : ""}${isActive("/profile") || isActive("/settings") ? " spx-is-active" : ""
           }`}
@@ -431,6 +429,40 @@ export default function Header() {
           </div>
         )}
       </div>
+    ) : authPending ? (
+      <span className="spx-auth-placeholder" aria-hidden="true">
+        <span className="spx-auth-placeholder__avatar" />
+        <span className="spx-auth-placeholder__lines">
+          <span />
+          <span />
+        </span>
+      </span>
+    ) : (
+      <Link
+        href={localizeHref(APP_ROUTES.login, locale)}
+        className="spx-nav-cta"
+        onClick={() => setOpen(false)}
+      >
+        <span className="spx-cta-bg"></span>
+        <span className="spx-cta-content">
+          <span className="spx-cta-text">{t(navDict, "login")}</span>
+          <svg
+            className="spx-cta-arrow"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <path
+              d="M6 12L10 8L6 4"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </Link>
     );
 
   if (isFocusedWorkspace) return null;
@@ -441,20 +473,23 @@ export default function Header() {
     >
       <div className="spx-header-glow"></div>
       <div className="spx-header-container container">
-        <Link
+        <BrandLogo
+          context="header"
           href={logoTo}
-          className="spx-brand"
-          aria-label="Speexify"
+          ariaLabel="Speexify"
           onClick={() => setOpen(false)}
-        >
-          <SpeexifyLogoMark className="spx-brand-mark" />
-          <span className="spx-brand-text">Speexify</span>
-        </Link>
+        />
 
         <nav className="spx-nav">
+          {authPending && (
+            <span className="spx-auth-restoring" role="status" aria-live="polite">
+              {isArabic ? "جارٍ استعادة جلستك…" : "Restoring your session…"}
+            </span>
+          )}
           <ul className="spx-nav-list">
             {links.map((item, idx) => {
               const href = localizeHref(item.to, locale);
+              const isKids = !user && item.to === APP_ROUTES.kidsTraining;
               return (
                 <li
                   key={item.to}
@@ -465,18 +500,41 @@ export default function Header() {
                     href={href}
                     className={
                       "spx-nav-link" +
+                      (isKids ? " spx-nav-link--kids" : "") +
                       (isActive(item.to) ? " spx-is-active" : "")
                     }
                     onClick={() => setOpen(false)}
                   >
                     <span className="spx-link-bg"></span>
-                    <span className="spx-link-text">{item.label}</span>
+                    {isKids && (
+                      <span className="spx-kids-shapes" aria-hidden="true">
+                        {/* Sparkle doodle — top left */}
+                        <svg className="spx-kids-doodle spx-kids-doodle--sparkle" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                          <path d="M10 1.5 C10.3 5.5, 8 8, 4.5 8.5 C8 9, 10.3 11.5, 10 15.5 C9.7 11.5, 12 9, 15.5 8.5 C12 8, 9.7 5.5, 10 1.5Z" fill="currentColor" />
+                        </svg>
+                        {/* Spiral doodle — top right, hides behind text */}
+                        <svg className="spx-kids-doodle spx-kids-doodle--spiral" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                          <path d="M12 5 C16 5, 18 8, 18 11.5 C18 15, 15.5 17.5, 12 17.5 C9.5 17.5, 8 16, 8 14.5 C8 13, 9.5 11.5, 12 11.5 C13.5 11.5, 14.5 12.3, 14.5 13.3 C14.5 14.3, 13.5 15, 12 15" />
+                        </svg>
+                        {/* Zigzag doodle — bottom */}
+                        <svg className="spx-kids-doodle spx-kids-doodle--zigzag" width="22" height="10" viewBox="0 0 24 10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M2 5 L5 1.5 L8 8.5 L11 1.5 L14 8.5 L17 1.5 L20 5" />
+                        </svg>
+                      </span>
+                    )}
+                    <span className="spx-link-text">
+                      {isKids ? (
+                        <span className="spx-kids-word">{item.label}</span>
+                      ) : (
+                        item.label
+                      )}
+                    </span>
                   </Link>
                 </li>
               );
             })}
 
-            {!checking && !user && (
+            {loggedOutReady && (
               <li
                 className="spx-nav-item spx-nav-item-special"
                 style={itemIndexStyle(links.length)}
@@ -506,7 +564,7 @@ export default function Header() {
             </li>
 
             {/* Digital Clock (only when logged in) */}
-            {!checking && user && (
+            {user && (
               <li
                 className="spx-nav-item spx-nav-item-clock"
                 style={itemIndexStyle(links.length + 0.75)}
@@ -516,7 +574,7 @@ export default function Header() {
             )}
 
             {/* Desktop notifications bell (only when logged in) */}
-            {!checking && user && (
+            {user && (
               <li
                 className="spx-nav-item spx-nav-item-notif"
                 style={itemIndexStyle(links.length + 0.5)}
@@ -530,9 +588,11 @@ export default function Header() {
         <RightCTA />
 
         <button
+          type="button"
           className={"spx-nav-toggle" + (open ? " spx-is-open" : "")}
           aria-label="Toggle menu"
           aria-expanded={open ? "true" : "false"}
+          aria-controls="spx-mobile-menu"
           onClick={() => setOpen((v) => !v)}
         >
           <span className="spx-toggle-box">
@@ -547,10 +607,15 @@ export default function Header() {
 
       {/* Mobile drawer */}
       <div
+        id="spx-mobile-menu"
         className={"spx-mobile-drawer" + (open ? " spx-is-open" : "")}
         aria-hidden={!open}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) setOpen(false);
+        }}
       >
-        <div className="spx-mobile-drawer-inner">
+        {open ? (
+        <nav className="spx-mobile-drawer-inner" aria-label="Mobile navigation">
           <ul className="spx-mobile-list">
             {links.map((item, idx) => {
               const href = localizeHref(item.to, locale);
@@ -564,6 +629,7 @@ export default function Header() {
                     href={href}
                     className={
                       "spx-mobile-link" +
+                      (item.to === APP_ROUTES.kidsTraining ? " spx-mobile-link--kids" : "") +
                       (isActive(item.to) ? " spx-is-active" : "")
                     }
                     onClick={() => setOpen(false)}
@@ -592,7 +658,7 @@ export default function Header() {
               );
             })}
 
-            {!checking && !user && (
+            {loggedOutReady && (
               <>
                 <li
                   className="spx-mobile-item"
@@ -661,7 +727,7 @@ export default function Header() {
               </>
             )}
 
-            {!checking && user && (
+            {user && (
               <>
                 <li
                   className="spx-mobile-item spx-mobile-account"
@@ -768,13 +834,14 @@ export default function Header() {
             <li
               className="spx-mobile-item spx-mobile-item-lang"
               style={itemIndexStyle(
-                links.length + (!checking && user ? accountLinks.length + 3 : 2)
+                links.length + (user ? accountLinks.length + 3 : 2)
               )}
             >
               <LanguageSwitcher locale={locale} pathname={pathname} />
             </li>
           </ul>
-        </div>
+        </nav>
+        ) : null}
       </div>
     </header>
   );

@@ -6,22 +6,44 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import api, { clearCsrfToken } from "@/lib/api";
-import { fmtInTz } from "@/utils/date";
+import { fmtInTz, fmtSessionSchedule } from "@/utils/date";
+import { formatNumber, getIntlLocale } from "@/utils/locale";
 import { useToast } from "@/components/ToastProvider";
 import { getDictionary, t } from "@/app/i18n";
 import SessionRow from "./components/SessionRow";
 import DashboardModal from "./components/DashboardModal";
 import DashboardKpiCard from "./components/DashboardKpiCard";
 import ImpersonationBanner from "./components/ImpersonationBanner";
+import LearnerFeedbackPanel from "./components/LearnerFeedbackPanel";
+import TeacherEarningsCard from "./components/TeacherEarningsCard";
 
-const canJoin = (startAt, endAt, windowMins = 15) => {
-  const now = new Date();
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Retry GETs that fail transiently (network error / timeout / 5xx) within a
+// time budget. A definitive client error (4xx, e.g. 401/403) is rethrown right
+// away — retrying won't help. This mirrors the resilient auth check so the
+// dashboard survives a cold-starting backend instead of dying on attempt one.
+async function withRetry(fn, { tries = 4, baseDelay = 1200, budgetMs = 30000 } = {}) {
+  const deadline = Date.now() + budgetMs;
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await fn();
+    } catch (e) {
+      const httpStatus = e?.response?.status;
+      const transient = !httpStatus || httpStatus >= 500;
+      const timeLeft = deadline - Date.now();
+      if (!transient || attempt >= tries - 1 || timeLeft <= 0) throw e;
+      await sleep(Math.min(baseDelay * 2 ** attempt, 6000, timeLeft));
+    }
+  }
+}
+
+const canOpenClassroom = (startAt, status, windowMins = 15) => {
+  if (!startAt || String(status || "").toLowerCase() === "canceled") return false;
   const start = new Date(startAt);
-  const end = endAt
-    ? new Date(endAt)
-    : new Date(start.getTime() + 60 * 60 * 1000);
+  if (Number.isNaN(start.getTime())) return false;
   const early = new Date(start.getTime() - windowMins * 60 * 1000);
-  return now >= early && now <= end;
+  return Date.now() >= early;
 };
 
 function DashboardNextActionIcon({ tone }) {
@@ -109,7 +131,7 @@ function DashboardNextAction({ action }) {
   );
 }
 
-function DashboardInner({ dict, prefix }) {
+function DashboardInner({ dict, navDict, locale, prefix }) {
   const { toast, confirmModal } = useToast();
   const router = useRouter();
 
@@ -118,7 +140,8 @@ function DashboardInner({ dict, prefix }) {
 
   const [status, setStatus] = useState(() => t(dict, "status_loading"));
   const [summary, setSummary] = useState(null);
-  const { user, checking, refresh } = useAuth();
+  const [summaryError, setSummaryError] = useState(false);
+  const { user, status: authStatus, checking, refresh } = useAuth();
   // ...
 
   // ─────────────────────────────────────────────
@@ -167,10 +190,14 @@ function DashboardInner({ dict, prefix }) {
 
   const fetchSummary = useCallback(async () => {
     try {
-      const res = await api.get("/me/summary", { params: { t: Date.now() } });
+      const res = await withRetry(() =>
+        api.get("/me/summary", { params: { t: Date.now() } })
+      );
       setSummary(res.data);
+      setSummaryError(false);
       setStatus("");
     } catch (e) {
+      setSummaryError(true);
       setStatus(e?.response?.data?.error || t(dict, "status_failed"));
     }
   }, [dict]);
@@ -178,12 +205,16 @@ function DashboardInner({ dict, prefix }) {
   const fetchSessions = useCallback(async () => {
     try {
       const [u, p] = await Promise.all([
-        api.get("/me/sessions", {
-          params: { range: "upcoming", limit: 20, t: Date.now() },
-        }),
-        api.get("/me/sessions", {
-          params: { range: "past", limit: 20, t: Date.now() },
-        }),
+        withRetry(() =>
+          api.get("/me/sessions", {
+            params: { range: "upcoming", limit: 20, t: Date.now() },
+          })
+        ),
+        withRetry(() =>
+          api.get("/me/sessions", {
+            params: { range: "past", limit: 20, t: Date.now() },
+          })
+        ),
       ]);
 
       const pickList = (payload, preferredKey) => {
@@ -207,9 +238,9 @@ function DashboardInner({ dict, prefix }) {
 
   const fetchPackages = useCallback(async () => {
     try {
-      const { data } = await api.get("/me/packages", {
-        params: { t: Date.now() },
-      });
+      const { data } = await withRetry(() =>
+        api.get("/me/packages", { params: { t: Date.now() } })
+      );
       const list = Array.isArray(data)
         ? data
         : Array.isArray(data?.items)
@@ -247,11 +278,21 @@ function DashboardInner({ dict, prefix }) {
   }, [fetchSummary, fetchSessions, fetchPackages]);
 
   useEffect(() => {
-    if (checking) return;
-    if (!user) {
-      setStatus(t(dict, "status_not_auth"));
+    // A verification is genuinely in progress: wait for it to settle.
+    if (authStatus === "checking") return;
+    // Couldn't reach the backend AND no cached user (e.g. it's cold-starting):
+    // never log out for a failed check — the retry UI below handles this.
+    // Bailing here whenever authStatus was "error" is what used to strand a
+    // logged-in user on a blank dashboard until they manually reloaded.
+    if (authStatus === "error" && !user) return;
+    if (authStatus === "unauthenticated" || !user) {
+      api.post("/auth/logout").catch(() => {}).finally(() => {
+        window.location.replace(`${prefix}/login`);
+      });
       return;
     }
+    // From here a user is present (authenticated, or "error" with a still-valid
+    // cached session) — load their data; the fetches retry transient failures.
 
     // ─────────────────────────────────────────────
     // FIXED: When impersonating, DO fetch user data (we want to see their view)
@@ -283,7 +324,7 @@ function DashboardInner({ dict, prefix }) {
       fetchAssessment();
     }
   }, [
-    checking,
+    authStatus,
     user,
     isAdmin,
     isLearner,
@@ -350,8 +391,12 @@ function DashboardInner({ dict, prefix }) {
 
   const handleCancel = async (s) => {
     const isGroup = String(s.type || "").toUpperCase() === "GROUP";
+    const isTraining = String(s.type || "").toUpperCase() === "TRAINING";
+    const canManageTraining = user?.role === "admin" || Number(s.teacherId) === Number(user?.id);
     const title =
-      isGroup && !isTeacher && user?.role !== "admin"
+      isTraining && !canManageTraining
+        ? "Leave this training session?"
+        : isGroup && !isTeacher && user?.role !== "admin"
         ? t(dict, "session_leave_title") || "Leave this group session?"
         : t(dict, "session_cancel_title") || "Cancel session?";
 
@@ -405,17 +450,75 @@ function DashboardInner({ dict, prefix }) {
     }
   };
 
-  if (status) return <p className="loading-state">{status}</p>;
-  if (!summary) return null;
+  if (authStatus === "error" && !user) {
+    return (
+      <div className="loading-state" role="status" aria-live="polite">
+        <p>{t(dict, "status_unreachable")}</p>
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => refresh()}
+        >
+          {t(dict, "retry")}
+        </button>
+      </div>
+    );
+  }
+
+  // Data load failed (after retries) but the session is valid: offer a retry
+  // instead of leaving the user staring at a dead/blank screen.
+  if (summaryError && !summary) {
+    return (
+      <div className="loading-state" role="alert">
+        <p>{status || t(dict, "status_failed")}</p>
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => {
+            setSummaryError(false);
+            setStatus(t(dict, "status_loading"));
+            refreshAll();
+          }}
+        >
+          {t(dict, "retry")}
+        </button>
+      </div>
+    );
+  }
+
+  if (status) return <p className="loading-state" role="status" aria-live="polite">{status}</p>;
+  // Safety net: never render a silent blank — show the loading state instead.
+  if (!summary) return <p className="loading-state" role="status" aria-live="polite">{t(dict, "status_loading")}</p>;
 
   const visibleNext =
     summary?.nextSession?.status === "canceled" ? null : summary?.nextSession;
   const { upcomingCount, completedCount } = summary;
+  const kpiTotal = upcomingCount + completedCount;
+  // Each KPI ring fills to its share of the learner's total sessions
+  const kpiPct = (n) =>
+    kpiTotal > 0 ? Math.round((Number(n) / kpiTotal) * 100) : 0;
   const timezone = user?.timezone || summary?.timezone;
 
   const joinableTeach =
     teachSummary.nextTeach &&
-    canJoin(teachSummary.nextTeach.startAt, teachSummary.nextTeach.endAt);
+    canOpenClassroom(teachSummary.nextTeach.startAt, teachSummary.nextTeach.status);
+
+  const teachingLearners = Array.isArray(teachSummary.nextTeach?.learners)
+    ? teachSummary.nextTeach.learners
+    : [];
+  const teachingParticipantCount = Number(
+    teachSummary.nextTeach?.participantCount || teachingLearners.length || 0
+  );
+  const teachingLearnerLabel =
+    teachingParticipantCount > 1
+      ? t(dict, "teaching_learner_count", { count: formatNumber(teachingParticipantCount, locale) })
+      : teachingLearners[0]
+        ? [teachingLearners[0].name, teachingLearners[0].email]
+            .filter(Boolean)
+            .join(" · ")
+        : teachingParticipantCount === 1
+          ? t(dict, "teaching_one_learner")
+          : t(dict, "teaching_no_learner");
 
   const activePacks = packs.filter((p) => p.status === "active" && !p.expired);
   const totalSessions = activePacks.reduce(
@@ -434,18 +537,18 @@ function DashboardInner({ dict, prefix }) {
 
   const primaryPack = activePacks[0];
   const expiryLabel = primaryPack?.expiresAt
-    ? new Date(primaryPack.expiresAt).toLocaleDateString()
+    ? new Date(primaryPack.expiresAt).toLocaleDateString(getIntlLocale(locale))
     : null;
 
   const outOfCredits = remainingSessions <= 0;
 
-  const onbComplete = !!onboarding;
+  const onbComplete = onboarding?.status === "submitted" || (!!onboarding && !onboarding.status);
   const assComplete = !!assessment;
   const pendingActionsCount = [!onbComplete, !assComplete].filter(
     Boolean
   ).length;
 
-  const subtitleText = t(dict, "subtitle", {
+  const subtitleText = t(dict, isAdmin ? "admin_dashboard_subtitle" : "subtitle", {
     name: user?.name || user?.email || "",
   });
 
@@ -459,17 +562,22 @@ function DashboardInner({ dict, prefix }) {
     upcoming.find((s) => String(s.status || "").toLowerCase() !== "canceled");
   const nextLearnerJoinable =
     nextLearnerSession &&
-    canJoin(nextLearnerSession.startAt, nextLearnerSession.endAt);
+    canOpenClassroom(nextLearnerSession.startAt, nextLearnerSession.status);
+  const pastArchiveHref = `${prefix}/dashboard/sessions/past`;
+  const pastArchiveCount = Math.max(Number(completedCount || 0), past.length);
   const latestFeedbackSession = past.find((s) => s.teacherFeedback);
   const teacherNeedsFeedbackSession = past.find(
     (s) =>
       String(s.status || "").toLowerCase() === "completed" &&
+      String(s.type || "").toUpperCase() !== "TRAINING" &&
       !s.teacherFeedback
   );
   const actionSessionTitle = (session) =>
     session?.title || t(dict, "session_title_default");
   const actionSessionTime = (session) =>
-    session?.startAt ? fmtInTz(session.startAt, timezone) : "";
+    session?.startAt
+      ? fmtSessionSchedule(session.startAt, session.endAt, timezone, locale).label
+      : "";
 
   const nextAction = (() => {
     if (showTeacherContent) {
@@ -502,8 +610,8 @@ function DashboardInner({ dict, prefix }) {
           tone: "feedback",
           kicker: t(dict, "next_action_label"),
           meta: t(dict, "next_action_meta_feedback"),
-          title: t(dict, "next_action_teacher_feedback_title"),
-          body: t(dict, "next_action_teacher_feedback_body", {
+          title: t(dict, "next_action_coach_feedback_title"),
+          body: t(dict, "next_action_coach_feedback_body", {
             title: actionSessionTitle(teacherNeedsFeedbackSession),
           }),
           primary: {
@@ -546,8 +654,8 @@ function DashboardInner({ dict, prefix }) {
         tone: "schedule",
         kicker: t(dict, "next_action_label"),
         meta: t(dict, "next_action_meta_schedule"),
-        title: t(dict, "next_action_teacher_empty_title"),
-        body: t(dict, "next_action_teacher_empty_body"),
+        title: t(dict, "next_action_coach_empty_title"),
+        body: t(dict, "next_action_coach_empty_body"),
         primary: {
           href: `${prefix}/calendar`,
           label: t(dict, "next_action_cta_calendar"),
@@ -596,6 +704,12 @@ function DashboardInner({ dict, prefix }) {
             label: t(dict, "next_action_cta_onboarding"),
           },
           secondary: [
+            ...(!assComplete
+              ? [{
+                  href: `${prefix}/assessment`,
+                  label: t(dict, "next_action_cta_assessment"),
+                }]
+              : []),
             {
               href: `${prefix}/dashboard/progress`,
               label: t(dict, "next_action_secondary_progress"),
@@ -657,7 +771,7 @@ function DashboardInner({ dict, prefix }) {
             title: actionSessionTitle(latestFeedbackSession),
           }),
           primary: {
-            href: `${prefix}/dashboard/sessions/${latestFeedbackSession.id}`,
+            href: `${prefix}/dashboard/sessions/${latestFeedbackSession.id}/feedback`,
             label: t(dict, "next_action_cta_feedback"),
           },
           secondary: [
@@ -740,7 +854,7 @@ function DashboardInner({ dict, prefix }) {
         <ImpersonationBanner user={user} onStop={handleStopImpersonate} />
       )}
 
-      <div className="container-narrow dashboard">
+      <div className="dashboard">
         {notice ? (
           <div
             style={{
@@ -757,7 +871,7 @@ function DashboardInner({ dict, prefix }) {
 
         <div className="dashboard__header">
           <div>
-            <h2>{t(dict, "title")}</h2>
+            <h2>{t(dict, isAdmin ? "admin_dashboard_title" : "title")}</h2>
             <p className="dashboard__subtitle">{subtitleText}</p>
 
             {isImpersonating && (
@@ -773,65 +887,241 @@ function DashboardInner({ dict, prefix }) {
               </p>
             )}
           </div>
+          <div className="dashboard__header-meta">
+            <time
+              className="dashboard__date"
+              dateTime={new Date().toISOString().slice(0, 10)}
+            >
+              <span className="dashboard__date-weekday">
+                {new Date().toLocaleDateString(getIntlLocale(locale), { weekday: "long" })}
+              </span>
+              <span className="dashboard__date-main">
+                {new Date().toLocaleDateString(getIntlLocale(locale), { month: "long", day: "numeric" })}
+              </span>
+            </time>
+            {isTeacher && (
+              <span className="dashboard__role-badge dashboard__role-badge--teacher">
+                <svg className="dashboard__role-icon" width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+                </svg>
+                {t(navDict, "role_coach")}
+              </span>
+            )}
+            {isLearner && (
+              <span className="dashboard__role-badge dashboard__role-badge--learner">
+                <svg className="dashboard__role-icon" width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+                {t(navDict, "role_learner")}
+              </span>
+            )}
+            {isAdmin && (
+              <span className="dashboard__role-badge dashboard__role-badge--admin">
+                <svg className="dashboard__role-icon" width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                {t(navDict, "role_admin")}
+              </span>
+            )}
+          </div>
         </div>
 
-        <DashboardNextAction action={nextAction} />
+        <nav className="dashboard__quicknav" aria-label="Dashboard navigation">
+          <Link href={`${prefix}/dashboard`} className="is-active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
+            </svg>
+            {t(dict, "quicknav_overview")}
+          </Link>
+          <Link href={`${prefix}/calendar`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            {t(dict, "quicknav_calendar")}
+          </Link>
+          {showLearnerContent && (
+            <Link href={`${prefix}/dashboard/progress`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M3 3v18h18" /><path d="M7 15l4-4 4 3 5-7" />
+              </svg>
+              {t(dict, "quicknav_progress")}
+            </Link>
+          )}
+          <Link href={`${prefix}/resources`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            {t(dict, "quicknav_resources")}
+          </Link>
+          {showTeacherContent && (
+            <Link href={`${prefix}/dashboard/earnings`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v10M15 9.5c-.8-.8-1.8-1.2-3-1.2-1.7 0-2.8.8-2.8 2s1 1.8 2.8 2.2 2.8 1.1 2.8 2.2-1.1 2-2.8 2c-1.2 0-2.3-.4-3-1.2" />
+              </svg>
+              {t(getDictionary(locale, "earnings"), "eyebrow")}
+            </Link>
+          )}
+          <Link href={`${prefix}/dashboard/notifications`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {t(dict, "quicknav_notifications")}
+          </Link>
+        </nav>
 
-        <div className="grid-3">
-          <DashboardKpiCard
-            title={t(dict, "kpi_upcoming")}
-            value={upcomingCount}
-            icon={
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-            }
-            gradient="blue"
-          />
-          <DashboardKpiCard
-            title={t(dict, "kpi_completed")}
-            value={completedCount}
-            icon={
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            }
-            gradient="green"
-          />
-          <DashboardKpiCard
-            title={t(dict, "kpi_total")}
-            value={upcomingCount + completedCount}
-            icon={
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            }
-            gradient="purple"
-          />
-        </div>
+        {isAdmin ? (
+          <section className="dashboard-admin-command" aria-labelledby="admin-command-title">
+            <div className="dashboard-admin-command__copy">
+              <span className="dashboard-admin-command__eyebrow">{t(dict, "admin_dashboard_eyebrow")}</span>
+              <h3 id="admin-command-title">{t(dict, "admin_dashboard_panel_title")}</h3>
+              <p>{t(dict, "admin_dashboard_panel_body")}</p>
+            </div>
+            <div className="dashboard-admin-command__actions">
+              <Link href="/admin" className="btn btn--primary">{t(dict, "admin_dashboard_open_admin")}</Link>
+              <Link href={`${prefix}/calendar`} className="btn btn--ghost">{t(dict, "admin_dashboard_calendar")}</Link>
+            </div>
+          </section>
+        ) : (
+          <>
+          <DashboardNextAction action={nextAction} />
+
+        <section
+          className="dashboard__stats"
+          aria-label={t(dict, "kpi_section_title")}
+        >
+          <div className="dashboard__stats-head">
+            <div>
+              <div className="dashboard__stats-eyebrow">
+              {t(dict, isTeacher ? "teacher_kpi_section_eyebrow" : "kpi_section_eyebrow")}
+              </div>
+              <h3 className="dashboard__stats-title">
+                {t(dict, isTeacher ? "teacher_kpi_section_title" : "kpi_section_title")}
+              </h3>
+            </div>
+            <span className="dashboard__stats-scope">
+              <span className="dashboard__stat-dot dashboard__stat-dot--green" />
+              {t(dict, "kpi_section_scope")}
+            </span>
+          </div>
+
+          <div className="dashboard__kpis">
+            <DashboardKpiCard
+              eyebrow={t(dict, "kpi_upcoming")}
+              value={upcomingCount}
+              locale={locale}
+              tone="upcoming"
+              index={0}
+              icon={
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="4.5" width="18" height="16" rx="2.6" />
+                  <line x1="3" y1="9.3" x2="21" y2="9.3" />
+                  <line x1="8" y1="2.5" x2="8" y2="6.4" />
+                  <line x1="16" y1="2.5" x2="16" y2="6.4" />
+                </svg>
+              }
+              footer={
+                <span className="dashboard__stat-status">
+                  <span
+                    className={`dashboard__stat-dot dashboard__stat-dot--orange${
+                      upcomingCount === 0 ? " dashboard__stat-dot--pulse" : ""
+                    }`}
+                  />
+                  <span className="dashboard__stat-status-text">
+                    {upcomingCount === 0
+                      ? t(dict, "kpi_foot_none_scheduled")
+                      : t(dict, "kpi_foot_scheduled", { count: formatNumber(upcomingCount, locale) })}
+                  </span>
+                </span>
+              }
+            />
+
+            <DashboardKpiCard
+              eyebrow={t(dict, "kpi_completed")}
+              value={completedCount}
+              locale={locale}
+              tone="completed"
+              index={1}
+              icon={
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="5 12.5 10 17.5 19 7" />
+                </svg>
+              }
+              footer={
+                <span className="dashboard__stat-status">
+                  <span className="dashboard__stat-dot dashboard__stat-dot--green" />
+                  <span className="dashboard__stat-status-text">
+                    {t(dict, "kpi_foot_completion_rate", {
+                      pct: kpiPct(completedCount),
+                    })}
+                  </span>
+                </span>
+              }
+            />
+
+            <DashboardKpiCard
+              eyebrow={t(dict, "kpi_total")}
+              value={kpiTotal}
+              locale={locale}
+              tone="total"
+              index={2}
+              icon={
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3.5" y="3.5" width="7" height="7" rx="1.8" />
+                  <rect x="13.5" y="3.5" width="7" height="7" rx="1.8" />
+                  <rect x="3.5" y="13.5" width="7" height="7" rx="1.8" />
+                  <rect x="13.5" y="13.5" width="7" height="7" rx="1.8" />
+                </svg>
+              }
+              footer={
+                <>
+                  <span className="dashboard__stat-status">
+                    <span className="dashboard__stat-dot dashboard__stat-dot--green" />
+                    <span className="dashboard__stat-status-text">
+                      {t(dict, "kpi_foot_completed_count", {
+                        count: formatNumber(completedCount, locale),
+                      })}
+                    </span>
+                  </span>
+                  <span className="dashboard__stat-status">
+                    <span className="dashboard__stat-dot dashboard__stat-dot--orange" />
+                    <span className="dashboard__stat-status-text">
+                      {t(dict, "kpi_foot_upcoming_count", {
+                        count: formatNumber(upcomingCount, locale),
+                      })}
+                    </span>
+                  </span>
+                </>
+              }
+            />
+          </div>
+        </section>
+
+        {/* Two-column body: aside (plan/teacher/feedback) + main (sessions) */}
+        <div className="dashboard__body">
+          <aside className="dashboard__aside">
+
+        {showTeacherContent && <TeacherEarningsCard prefix={prefix} locale={locale} />}
 
         {/* ═══════════════════════════════════════════════════════════════════
             FIXED: Out-of-credits warning – learners only, NOT when impersonating
@@ -890,166 +1180,146 @@ function DashboardInner({ dict, prefix }) {
 
         {/* Plan / packages panel – learners only (or impersonating learner) */}
         {showLearnerContent && (
-          <div className="panel panel--featured">
-            <div className="panel__badge">{t(dict, "plan_badge")}</div>
+          <div className="plan-card">
 
             {activePacks.length === 0 ? (
-              <div className="empty-state">
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-                <p>{t(dict, "plan_no_active")}</p>
-                <p style={{ opacity: 0.8, marginTop: 4 }}>
-                  {t(dict, "plan_no_active_body")}
-                </p>
-                <div className="button-row">
-                  <Link
-                    href={`${prefix}/packages`}
-                    className="btn btn--primary"
-                  >
-                    {t(dict, "plan_browse_packages")}
-                  </Link>
+              /* ── No active pack ── */
+              <div className="plan-card__empty">
+                <div className="plan-card__empty-icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+                  </svg>
                 </div>
+                <p className="plan-card__empty-title">{t(dict, "plan_no_active")}</p>
+                <p className="plan-card__empty-sub">{t(dict, "plan_no_active_body")}</p>
+                <Link href={`${prefix}/packages`} className="plan-card__cta">
+                  {t(dict, "plan_browse_packages")}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </Link>
               </div>
             ) : (
               <>
-                <h3 className="next-session__title">
-                  {primaryPack?.title || t(dict, "plan_default_title")}
-                </h3>
-                <div className="next-session__time" style={{ marginTop: 6 }}>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  {primaryPack?.minutesPerSession
-                    ? `${primaryPack.minutesPerSession} min / session`
-                    : t(dict, "plan_flexible_duration")}
-                  {expiryLabel
-                    ? ` · ${t(dict, "plan_expires_label")} ${expiryLabel}`
-                    : ""}
-                </div>
-
-                <div className="progress" style={{ margin: "16px 0 8px" }}>
-                  <div
-                    className="progress__bar"
-                    style={{
-                      height: 8,
-                      borderRadius: 999,
-                      background: "var(--surface-3, #eef1f4)",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${progressPct}%`,
-                        height: "100%",
-                        borderRadius: 999,
-                        background:
-                          "linear-gradient(90deg, rgba(58,123,213,1) 0%, rgba(58,213,180,1) 100%)",
-                        transition: "width .3s ease",
-                      }}
-                    />
-                  </div>
-                  <div
-                    className="progress__label"
-                    style={{ fontSize: 12, marginTop: 6, opacity: 0.8 }}
-                  >
-                    {t(dict, "plan_progress_label", {
-                      remaining: remainingSessions,
-                      total: totalSessions,
-                    })}
+                {/* ── Header ── */}
+                <div className="plan-card__top">
+                  <span className="plan-card__badge">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    {t(dict, "plan_badge") || "Your Plan"}
+                  </span>
+                  <h3 className="plan-card__title">
+                    {primaryPack?.title || t(dict, "plan_default_title")}
+                  </h3>
+                  <div className="plan-card__meta">
+                    {primaryPack?.minutesPerSession && (
+                      <span className="plan-card__meta-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        {t(dict, "plan_minutes_per_session", {
+                          minutes: formatNumber(primaryPack.minutesPerSession, locale),
+                        })}
+                      </span>
+                    )}
+                    {expiryLabel && (
+                      <span className="plan-card__meta-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        {t(dict, "plan_expires_with_date", { date: expiryLabel })}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {pendingActionsCount > 0 && !isImpersonating && (
-                  <div className="alert-badge">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-                    </svg>
-                    {pendingActionsCount === 2
-                      ? t(dict, "actions_two")
-                      : t(dict, "actions_one")}
+                {/* ── Sessions counter + XP bar ── */}
+                <div className="plan-xp-block">
+                  <div className="plan-xp-block__counter">
+                    <span className="plan-xp-block__num">{formatNumber(remainingSessions, locale)}</span>
+                    <span className="plan-xp-block__lbl">
+                      {t(dict, "plan_sessions_label")}<br />{t(dict, "plan_remaining_label")}
+                    </span>
+                  </div>
+                  <div className="plan-xp-block__bar-wrap">
+                    <div className="plan-xp-bar">
+                      <div
+                        className="plan-xp-bar__fill"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                    <div className="plan-xp-bar__legend">
+                      <span>{t(dict, "plan_used_label", { count: formatNumber(usedSessions, locale) })}</span>
+                      <span>{t(dict, "plan_total_label", { count: formatNumber(totalSessions, locale) })}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Quests (incomplete actions) ── */}
+                {(!onbComplete || !assComplete) && !isImpersonating && (
+                  <div className="plan-quests">
+                    <div className="plan-quests__header">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                      {t(dict, pendingActionsCount === 1 ? "plan_quest_available_one" : "plan_quests_available_many", {
+                        count: formatNumber(pendingActionsCount, locale),
+                      })}
+                    </div>
+
+                    {!onbComplete && (
+                      <Link href={`${prefix}/onboarding`} className="plan-quest">
+                        <div className="plan-quest__icon plan-quest__icon--profile" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div className="plan-quest__body">
+                          <span className="plan-quest__name">{t(dict, "onboarding_complete") || "Complete onboarding form"}</span>
+                          <span className="plan-quest__sub">{t(dict, "onboarding_quest_sub")}</span>
+                        </div>
+                        <svg className="plan-quest__arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                      </Link>
+                    )}
+
+                    {!assComplete && (
+                      <Link href={`${prefix}/assessment`} className="plan-quest">
+                        <div className="plan-quest__icon plan-quest__icon--brain" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                        </div>
+                        <div className="plan-quest__body">
+                          <span className="plan-quest__name">{t(dict, "assessment_take") || "Take written assessment"}</span>
+                          <span className="plan-quest__sub">{t(dict, "assessment_quest_sub")}</span>
+                        </div>
+                        <svg className="plan-quest__arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                      </Link>
+                    )}
                   </div>
                 )}
 
-                <div
-                  className="button-row"
-                  style={{ gap: 12, flexWrap: "wrap" }}
-                >
-                  <Link
-                    href={`${prefix}/onboarding`}
-                    className={`btn ${onbComplete ? "btn--ghost" : "btn--primary btn--pulse"
-                      }`}
-                  >
-                    {!onbComplete && (
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 8v4m0 4h.01" />
-                      </svg>
+                {/* ── Completed action ghost links ── */}
+                {(onbComplete || assComplete) && (
+                  <div className="plan-done-links">
+                    {onbComplete && (
+                      <Link href={`${prefix}/onboarding`} className="plan-done-link">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                        {t(dict, "onboarding_view")}
+                      </Link>
                     )}
-                    {onbComplete
-                      ? t(dict, "onboarding_view")
-                      : t(dict, "onboarding_complete")}
-                  </Link>
-
-                  <Link
-                    href={`${prefix}/assessment`}
-                    className={`btn ${assComplete ? "btn--ghost" : "btn--primary btn--pulse"
-                      }`}
-                  >
-                    {!assComplete && (
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 8v4m0 4h.01" />
-                      </svg>
+                    {assComplete && (
+                      <Link href={`${prefix}/assessment`} className="plan-done-link">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                        {t(dict, "assessment_view")}
+                      </Link>
                     )}
-                    {assComplete
-                      ? t(dict, "assessment_view")
-                      : t(dict, "assessment_take")}
-                  </Link>
+                  </div>
+                )}
 
-                  <Link href={`${prefix}/packages`} className="btn btn--ghost">
+                {/* ── Footer ── */}
+                <div className="plan-card__footer">
+                  <Link href={`${prefix}/packages`} className="plan-card__explore">
                     {t(dict, "view_all_plans")}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   </Link>
                 </div>
               </>
             )}
           </div>
+        )}
+
+        {/* Feedback panel - show for learners or when impersonating a learner */}
+        {showLearnerContent && (
+          <LearnerFeedbackPanel dict={dict} prefix={prefix} timezone={timezone} />
         )}
 
         {/* Teacher panel - show for teachers or when impersonating a teacher */}
@@ -1080,23 +1350,33 @@ function DashboardInner({ dict, prefix }) {
                   <div className="next-session__title">
                     {teachSummary.nextTeach.title}
                   </div>
-                  <div className="next-session__time">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    {fmtInTz(teachSummary.nextTeach.startAt, timezone)}
-                    {teachSummary.nextTeach.endAt
-                      ? ` — ${fmtInTz(teachSummary.nextTeach.endAt, timezone)}`
-                      : ""}
-                  </div>
+                  {(() => {
+                    const schedule = fmtSessionSchedule(
+                      teachSummary.nextTeach.startAt,
+                      teachSummary.nextTeach.endAt,
+                      timezone,
+                      locale
+                    );
+                    return (
+                      <div className="next-session__time" aria-label={[schedule.label, schedule.timezoneLabel].filter(Boolean).join(", ")}>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span>{schedule.label}</span>
+                        {schedule.timezoneLabel && (
+                          <span className="session-item__timezone">{schedule.timezoneLabel}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="next-session__learner">
                     <svg
                       width="16"
@@ -1109,9 +1389,7 @@ function DashboardInner({ dict, prefix }) {
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
-                    {teachSummary.nextTeach.user?.name
-                      ? `${teachSummary.nextTeach.user.name} — ${teachSummary.nextTeach.user.email}`
-                      : teachSummary.nextTeach.user?.email || "—"}
+                    {teachingLearnerLabel}
                   </div>
                 </div>
                 <div className="button-row">
@@ -1156,6 +1434,9 @@ function DashboardInner({ dict, prefix }) {
           </div>
         )}
 
+          </aside>
+          <div className="dashboard__main">
+
         {/* =========================================================================
             UPCOMING SESSIONS
            ========================================================================= */}
@@ -1165,7 +1446,7 @@ function DashboardInner({ dict, prefix }) {
               <h3>{t(dict, "upcoming_title")}</h3>
               {upcoming.length > 0 && (
                 <span className="session-count">
-                  {upcoming.length}{" "}
+                  {formatNumber(upcoming.length, locale)}{" "}
                   {upcoming.length === 1 ? "session" : "sessions"}
                 </span>
               )}
@@ -1210,6 +1491,7 @@ function DashboardInner({ dict, prefix }) {
                     isTeacher={isTeacher}
                     isAdmin={isAdmin}
                     isImpersonating={isImpersonating}
+                    currentUserId={user?.id}
                     dict={dict}
                     prefix={prefix}
                   />
@@ -1222,7 +1504,7 @@ function DashboardInner({ dict, prefix }) {
                     href={`${prefix}/calendar`}
                     className="btn btn--secondary btn--full"
                   >
-                    View all sessions in calendar →
+                    {t(dict, "upcoming_view_all_calendar")}
                   </Link>
                 </div>
               )}
@@ -1239,13 +1521,13 @@ function DashboardInner({ dict, prefix }) {
               <h3>{t(dict, "past_title")}</h3>
               {past.length > 0 && (
                 <span className="session-count">
-                  {past.length} {past.length === 1 ? "session" : "sessions"}
+                  {formatNumber(past.length, locale)} {past.length === 1 ? "session" : "sessions"}
                 </span>
               )}
             </div>
 
             <Link
-              href={`${prefix}/calendar`}
+              href={pastArchiveHref}
               className="btn btn--ghost btn--sm"
             >
               {t(dict, "past_view_all")}
@@ -1279,6 +1561,7 @@ function DashboardInner({ dict, prefix }) {
                     onRescheduleClick={() => { }}
                     isTeacher={isTeacher}
                     isImpersonating={isImpersonating}
+                    currentUserId={user?.id}
                     dict={dict}
                     prefix={prefix}
                   />
@@ -1288,10 +1571,14 @@ function DashboardInner({ dict, prefix }) {
               {past.length >= 10 && (
                 <div className="panel__footer">
                   <Link
-                    href={`${prefix}/calendar`}
+                    href={pastArchiveHref}
                     className="btn btn--secondary btn--full dashboard-past__view-all"
                   >
-                    <span>View all {past.length} past sessions</span>
+                    <span>
+                      {t(dict, "past_archive_view_all_count", {
+                        count: formatNumber(pastArchiveCount, locale),
+                      })}
+                    </span>
                     <svg
                       width="16"
                       height="16"
@@ -1310,6 +1597,11 @@ function DashboardInner({ dict, prefix }) {
             </>
           )}
         </div>
+
+          </div>{/* dashboard__main */}
+        </div>{/* dashboard__body */}
+          </>
+        )}
 
         {reschedOpen && (
           <DashboardModal
@@ -1357,5 +1649,6 @@ export default function DashboardPage() {
   const locale = pathname?.startsWith("/ar") ? "ar" : "en";
   const prefix = locale === "ar" ? "/ar" : "";
   const dict = getDictionary(locale, "dashboard");
-  return <DashboardInner dict={dict} prefix={prefix} />;
+  const navDict = getDictionary(locale, "nav");
+  return <DashboardInner dict={dict} navDict={navDict} locale={locale} prefix={prefix} />;
 }

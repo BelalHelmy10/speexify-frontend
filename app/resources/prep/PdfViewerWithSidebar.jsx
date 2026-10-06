@@ -27,8 +27,25 @@ function PdfPageIndicator({ dict, currentPage, numPages }) {
   );
 }
 
+function PdfZoomSlider({ zoom, onChange, min = 0.1, max = 5 }) {
+  return (
+    <input
+      className="cpv-nav__zoom-slider"
+      type="range"
+      min={Math.round(min * 100)}
+      max={Math.round(max * 100)}
+      step="1"
+      value={Math.min(max * 100, Math.max(min * 100, Math.round(zoom * 100)))}
+      onChange={(event) => onChange(Number(event.target.value))}
+      aria-label="Adjust PDF zoom"
+      title="Drag to calibrate PDF size"
+    />
+  );
+}
+
 export default function PdfViewerWithSidebar({
   fileUrl,
+  fitMode = "width",
   onFatalError,
   children,
   onContainerReady,
@@ -53,9 +70,9 @@ export default function PdfViewerWithSidebar({
   // - a PDF is first loaded
   // - the container resizes (window resize, sidebar open/close, rotation, etc.)
   // - a new material loads (fileUrl changes)
-  const didAutoFitRef = useRef(false);
   const autoFitRafRef = useRef(null);
-  const lastAutoFitAtRef = useRef(0);
+  const fitRequestRef = useRef(0);
+  const manualZoomRef = useRef(false);
   const resizeAutoFitTimeoutRef = useRef(null);
 
   const [pdfjs, setPdfjs] = useState(null);
@@ -68,14 +85,31 @@ export default function PdfViewerWithSidebar({
 
   const dict = getDictionary(locale, "resources");
   const renderTaskRef = useRef(null);
+  const loadingTaskRef = useRef(null);
   const onFatalErrorRef = useRef(onFatalError);
   const onContainerReadyRef = useRef(onContainerReady);
   const onScrollContainerReadyRef = useRef(onScrollContainerReady);
 
-  // Updated (after change) - 10% steps, min 10%
-  const MIN_ZOOM = 0.1; // 10%
-  const MAX_ZOOM = 3.0; // Keep 300% max, or adjust if needed (e.g., to 5.0 for 500%)
-  const ZOOM_STEP = 0.1; // 10% steps
+  const MIN_ZOOM = 0.1;
+  const MAX_ZOOM = 5;
+  const ZOOM_STEP = 0.1;
+
+  const setManualZoom = useCallback((value) => {
+    manualZoomRef.current = true;
+    fitRequestRef.current += 1;
+    setZoom((previous) => {
+      const next = typeof value === "function" ? value(previous) : value;
+      return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
+    });
+  }, []);
+
+  useEffect(() => {
+    // A newly selected material starts fitted; subsequent manual calibration
+    // stays in place until the teacher explicitly presses Fit.
+    manualZoomRef.current = false;
+    fitRequestRef.current += 1;
+    setZoom(1);
+  }, [fileUrl]);
 
   useEffect(() => {
     onFatalErrorRef.current = onFatalError;
@@ -89,37 +123,57 @@ export default function PdfViewerWithSidebar({
     onScrollContainerReadyRef.current = onScrollContainerReady;
   }, [onScrollContainerReady]);
 
-  // UPDATED: Function to fit the PDF to the width (fits width to container)
-  const fitToPage = useCallback(() => {
+  // Fit each page from its actual PDF dimensions and the current visible panel.
+  const applyFit = useCallback(() => {
     if (!pdfDoc || !pageWrapperRef.current || !mainRef.current) return;
-
+    const requestId = ++fitRequestRef.current;
     pdfDoc.getPage(currentPage).then((page) => {
+      if (requestId !== fitRequestRef.current) return;
       const viewport = page.getViewport({ scale: 1 });
-      const containerWidth = mainRef.current.clientWidth - 20;
-      const fitZoom = containerWidth / viewport.width;
-      setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fitZoom)));
-    });
-  }, [pdfDoc, currentPage]);
+      const container = mainRef.current;
+      const fitWholePage = fitMode === "page" || Boolean(
+        container?.closest(".cr-shell") &&
+        window.matchMedia("(max-width: 900px) and (max-height: 600px) and (orientation: landscape)").matches
+      );
+      if (!container || !viewport.width || !viewport.height ||
+        container.clientWidth <= 0 || (fitWholePage && container.clientHeight <= 0)) return;
+      const style = window.getComputedStyle(container);
+      const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+      const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      const availableWidth = Math.max(1, container.clientWidth - horizontalPadding - 2);
+      const availableHeight = Math.max(1, container.clientHeight - verticalPadding - 2);
+      const widthZoom = availableWidth / viewport.width;
+      const fitZoom = fitWholePage
+        ? Math.min(widthZoom, availableHeight / viewport.height)
+        : widthZoom;
+      if (Number.isFinite(fitZoom) && fitZoom > 0) {
+        setZoom((previous) => Math.abs(previous - fitZoom) < 0.002 ? previous : fitZoom);
+      }
+    }).catch(() => {});
+  }, [pdfDoc, currentPage, fitMode]);
 
-  // ✅ Auto-fit driver (throttled) so you don't have to click "Fit to page".
+  const fitToPage = useCallback(() => {
+    manualZoomRef.current = false;
+    applyFit();
+  }, [applyFit]);
+
+  const autoFit = useCallback(() => {
+    if (!manualZoomRef.current) applyFit();
+  }, [applyFit]);
+
+  // Schedule fitting after layout has settled.
   // - Runs automatically on load
   // - Runs automatically on resize
   // - Runs automatically when fileUrl changes (new material)
   const requestAutoFit = useCallback(() => {
     if (!pdfDoc) return;
 
-    const now = Date.now();
-    if (now - lastAutoFitAtRef.current < 80) return; // throttle
-    lastAutoFitAtRef.current = now;
-
     if (autoFitRafRef.current) cancelAnimationFrame(autoFitRafRef.current);
 
     autoFitRafRef.current = requestAnimationFrame(() => {
-      // Don’t wait for user click — fit immediately
-      fitToPage();
-      didAutoFitRef.current = true;
+      autoFit();
     });
-  }, [pdfDoc, fitToPage]);
+  }, [pdfDoc, autoFit]);
 
   // Expose the page wrapper element to parent
   const updateContainerRef = useCallback(() => {
@@ -156,21 +210,19 @@ export default function PdfViewerWithSidebar({
         canGoNext: currentPage < numPages,
         goPrevPage: () => setCurrentPage((p) => Math.max(1, p - 1)),
         goNextPage: () => setCurrentPage((p) => Math.min(numPages, p + 1)),
-        zoomIn: () =>
-          setZoom((z) =>
-            Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100)
-          ),
-        zoomOut: () =>
-          setZoom((z) =>
-            Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100)
-          ),
-        zoomFit: () => setZoom(1.0),
+        zoomIn: () => setManualZoom((z) => Math.round((z + ZOOM_STEP) * 100) / 100),
+        zoomOut: () => setManualZoom((z) => Math.round((z - ZOOM_STEP) * 100) / 100),
+        setZoomPercent: (percent) => setManualZoom(Number(percent) / 100),
+        minZoom: MIN_ZOOM,
+        maxZoom: MAX_ZOOM,
+        zoomFit: fitToPage,
         fitToPage, // NEW: Expose fitToPage
+        autoFit,
         setPage: (page) =>
           setCurrentPage(Math.max(1, Math.min(numPages, page))),
       });
     }
-  }, [currentPage, numPages, zoom, onNavStateChange, fitToPage]);
+  }, [currentPage, numPages, zoom, onNavStateChange, fitToPage, autoFit, setManualZoom]);
 
   // Load pdf.js lazily
   useEffect(() => {
@@ -180,11 +232,23 @@ export default function PdfViewerWithSidebar({
 
     async function loadPdfJs() {
       try {
-        const mod = await import("pdfjs-dist/build/pdf");
-        const pdfjsLib = mod.default || mod;
+        // PDF.js v5 is ESM-only. Use the explicit browser module path so
+        // Next's dev and production bundlers do not resolve the extensionless
+        // entrypoint as an empty CommonJS module (which causes
+        // `Object.defineProperty called on non-object` locally).
+        // The minified ESM entrypoint avoids a known Webpack 5.98 runtime
+        // bug in Next 16 dev that can throw `Object.defineProperty called
+        // on non-object` while evaluating the unminified PDF.js bundle.
+        const mod = await import("pdfjs-dist/legacy/build/pdf.min.mjs");
+        const pdfjsLib =
+          mod && typeof mod.default === "object" ? mod.default : mod;
+
+        if (!pdfjsLib || typeof pdfjsLib.getDocument !== "function") {
+          throw new Error("PDF.js loaded without a usable getDocument API");
+        }
 
         if (typeof window !== "undefined") {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs?v=${pdfjsLib.version}`;
         }
 
         if (!cancelled) {
@@ -209,9 +273,6 @@ export default function PdfViewerWithSidebar({
 
   // ✅ Auto-fit when a new PDF loads (or when the URL changes)
   useEffect(() => {
-    // reset so each new material auto-fits again
-    didAutoFitRef.current = false;
-
     // wait a tick for layout to stabilize
     const id = setTimeout(() => {
       requestAutoFit();
@@ -268,6 +329,18 @@ export default function PdfViewerWithSidebar({
 
     let cancelled = false;
 
+    const destroyLoadingTask = (task) => {
+      if (!task || typeof task.destroy !== "function") return;
+      try {
+        const result = task.destroy();
+        if (result && typeof result.catch === "function") {
+          result.catch(() => {});
+        }
+      } catch {
+        // A task may already have completed or been canceled.
+      }
+    };
+
     async function loadDocument() {
       setLoading(true);
       setError(null);
@@ -276,21 +349,24 @@ export default function PdfViewerWithSidebar({
       setCurrentPage(1);
 
       try {
+        destroyLoadingTask(loadingTaskRef.current);
         const loadingTask = pdfjs.getDocument({
           url: fileUrl,
           disableRange: true,
           disableStream: true,
           withCredentials: false,
         });
+        loadingTaskRef.current = loadingTask;
 
         const doc = await loadingTask.promise;
         if (cancelled) {
-          try {
-            doc.destroy();
-          } catch (_) { }
+          try { doc.destroy(); } catch (_) { }
           return;
         }
 
+        if (loadingTaskRef.current === loadingTask) {
+          loadingTaskRef.current = null;
+        }
         setPdfDoc(doc);
         setNumPages(doc.numPages || 0);
         setLoading(false);
@@ -323,6 +399,10 @@ export default function PdfViewerWithSidebar({
 
     return () => {
       cancelled = true;
+      if (loadingTaskRef.current) {
+        destroyLoadingTask(loadingTaskRef.current);
+        loadingTaskRef.current = null;
+      }
     };
   }, [pdfjs, fileUrl]);
 
@@ -376,10 +456,6 @@ export default function PdfViewerWithSidebar({
         if (!cancelled) {
           setLoading(false);
           updateContainerRef();
-
-          // ✅ Auto-fit after the canvas has real dimensions
-          // This is the reliable moment for initial load and after page renders.
-          requestAutoFit();
         }
       } catch (err) {
         if (cancelled) return;
@@ -403,17 +479,20 @@ export default function PdfViewerWithSidebar({
         } catch (_) { }
       }
     };
-  }, [pdfDoc, currentPage, zoom, updateContainerRef, dict, requestAutoFit]);
-
-  // ✅ Auto-fit when page changes (optional but matches "always fitted" behavior)
-  useEffect(() => {
-    if (!pdfDoc) return;
-    requestAutoFit();
-  }, [pdfDoc, currentPage, requestAutoFit]);
+  }, [pdfDoc, currentPage, zoom, updateContainerRef, dict]);
 
   // ✅ Cleanup auto-fit RAF on unmount
   useEffect(() => {
     return () => {
+      if (loadingTaskRef.current) {
+        try {
+          const result = loadingTaskRef.current.destroy?.();
+          if (result && typeof result.catch === "function") result.catch(() => {});
+        } catch {
+          // no-op
+        }
+        loadingTaskRef.current = null;
+      }
       if (autoFitRafRef.current) {
         cancelAnimationFrame(autoFitRafRef.current);
         autoFitRafRef.current = null;
@@ -451,15 +530,16 @@ export default function PdfViewerWithSidebar({
   }
 
   function zoomOut() {
-    setZoom((z) => Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100));
+    setManualZoom((z) => Math.round((z - ZOOM_STEP) * 100) / 100);
   }
 
   function zoomIn() {
-    setZoom((z) => Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100));
+    setManualZoom((z) => Math.round((z + ZOOM_STEP) * 100) / 100);
   }
 
   function zoomFit() {
-    setZoom(1.0);
+    fitToPage();
+    onFitToPage?.();
   }
 
   // Scroll to top on page change
@@ -549,14 +629,20 @@ export default function PdfViewerWithSidebar({
               >
                 −
               </button>
-              <div
+              <PdfZoomSlider
+                zoom={zoom}
+                onChange={(percent) => setManualZoom(percent / 100)}
+                min={MIN_ZOOM}
+                max={MAX_ZOOM}
+              />
+              <button
+                type="button"
                 className="cpv-nav__zoom"
                 onClick={zoomFit}
-                style={{ cursor: "pointer" }}
                 title={t(dict, "resources_pdf_zoom_reset")}
               >
                 {Math.round(zoom * 100)}%
-              </div>
+              </button>
               <button
                 type="button"
                 className="cpv-nav__btn"
@@ -570,10 +656,7 @@ export default function PdfViewerWithSidebar({
               <button
                 type="button"
                 className="cpv-nav__btn"
-                onClick={() => {
-                  fitToPage();
-                  onFitToPage?.();
-                }}
+                onClick={zoomFit}
                 title={t(dict, "resources_pdf_fit_to_page")}
               >
                 <svg
@@ -704,6 +787,9 @@ export function PdfNavBar({ navState, locale = "en", className = "" }) {
     zoomIn,
     zoomOut,
     zoomFit,
+    setZoomPercent,
+    minZoom = 0.1,
+    maxZoom = 5,
     fitToPage, // NEW
   } = navState;
 
@@ -714,24 +800,25 @@ export function PdfNavBar({ navState, locale = "en", className = "" }) {
           type="button"
           className="cpv-nav__btn"
           onClick={zoomOut}
-          disabled={zoom <= 0.1}
+          disabled={zoom <= minZoom}
           title={t(dict, "resources_pdf_zoom_out")}
         >
           −
         </button>
-        <div
+        <PdfZoomSlider zoom={zoom} onChange={setZoomPercent} min={minZoom} max={maxZoom} />
+        <button
+          type="button"
           className="cpv-nav__zoom"
           onClick={zoomFit}
-          style={{ cursor: "pointer" }}
           title={t(dict, "resources_pdf_zoom_reset")}
         >
           {Math.round(zoom * 100)}%
-        </div>
+        </button>
         <button
           type="button"
           className="cpv-nav__btn"
           onClick={zoomIn}
-          disabled={zoom >= 3.0}
+          disabled={zoom >= maxZoom}
           title={t(dict, "resources_pdf_zoom_in")}
         >
           +

@@ -2,8 +2,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Info, Star, X } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
+import { getIntlLocale } from "@/utils/locale";
+import useFocusTrap from "@/hooks/useFocusTrap";
 
 /**
  * LearnerFeedbackForm - Post-session feedback form for learners
@@ -29,7 +32,10 @@ export default function LearnerFeedbackForm({
   sessionDate,
   onSubmit,
   onClose,
+  locale = "en",
 }) {
+  const modalRef = useFocusTrap(Boolean(isOpen), { onEscape: onClose });
+
   const toast = useToast();
 
   const [rating, setRating] = useState(0);
@@ -128,7 +134,7 @@ export default function LearnerFeedbackForm({
     return (
       <div className="learner-feedback__rating">
         <label className="learner-feedback__label">
-          How was your session? <span className="required">*</span>
+          Your rating <span className="required">*</span>
         </label>
         <div className="learner-feedback__stars">
           {stars.map((star) => (
@@ -143,7 +149,12 @@ export default function LearnerFeedbackForm({
               onMouseLeave={() => setHoverRating(0)}
               aria-label={`${star} star${star > 1 ? "s" : ""}`}
             >
-              {star <= displayRating ? "★" : "☆"}
+              <Star
+                aria-hidden="true"
+                size={30}
+                strokeWidth={2}
+                fill={star <= displayRating ? "currentColor" : "none"}
+              />
             </button>
           ))}
           <span className="learner-feedback__rating-label">
@@ -156,7 +167,7 @@ export default function LearnerFeedbackForm({
 
   // Format session date
   const formattedDate = sessionDate
-    ? new Date(sessionDate).toLocaleDateString(undefined, {
+    ? new Date(sessionDate).toLocaleDateString(getIntlLocale(locale), {
         weekday: "long",
         month: "long",
         day: "numeric",
@@ -177,7 +188,7 @@ export default function LearnerFeedbackForm({
   return (
     <div className="learner-feedback">
       <div className="learner-feedback__header">
-        <h2 className="learner-feedback__title">
+        <h2 id="learner-feedback-title" className="learner-feedback__title">
           {existingFeedback ? "Update Your Feedback" : "How was your session?"}
         </h2>
         <p className="learner-feedback__subtitle">
@@ -194,7 +205,7 @@ export default function LearnerFeedbackForm({
             onClick={onClose}
             aria-label="Close"
           >
-            ✕
+            <X aria-hidden="true" size={18} strokeWidth={2.4} />
           </button>
         )}
       </div>
@@ -276,9 +287,12 @@ export default function LearnerFeedbackForm({
 
         {existingFeedback && (
           <p className="learner-feedback__update-note">
-            ℹ️ You submitted feedback on{" "}
-            {new Date(existingFeedback.createdAt).toLocaleDateString()}. You can
-            update it anytime.
+            <Info aria-hidden="true" size={16} strokeWidth={2.2} />
+            <span>
+              You submitted feedback on{" "}
+              {new Date(existingFeedback.createdAt).toLocaleDateString(getIntlLocale(locale))}. You
+              can update it anytime.
+            </span>
           </p>
         )}
       </form>
@@ -297,13 +311,37 @@ export function LearnerFeedbackModal({
   sessionDate,
   onSubmit,
   onClose,
+  locale = "en",
 }) {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div className="learner-feedback-modal-overlay" onClick={onClose}>
       <div
+        ref={modalRef}
         className="learner-feedback-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="learner-feedback-title"
         onClick={(e) => e.stopPropagation()}
       >
         <LearnerFeedbackForm
@@ -311,6 +349,7 @@ export function LearnerFeedbackModal({
           sessionTitle={sessionTitle}
           teacherName={teacherName}
           sessionDate={sessionDate}
+          locale={locale}
           onSubmit={() => {
             if (typeof onSubmit === "function") onSubmit();
             if (typeof onClose === "function") onClose();
