@@ -1,6 +1,7 @@
 // ============================================================================
 // SITE-WIDE STICKY FIRST-SESSION CTA
-// Hidden over the hero, then docked above the support FAB after the user scrolls.
+// Docked in the unused gutter on wide, tall screens only. Compact and short
+// layouts use the inline/header conversion actions so page content stays clear.
 // ============================================================================
 
 @use "variables" as *;
@@ -31,6 +32,15 @@ $stc-live: #2ecc8c;
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
+}
+
+// Fixed promotional UI needs a genuine side gutter. Hiding it below this
+// boundary prevents it from covering headings, copy, and controls on phones,
+// tablets, landscape devices, laptops, and narrower desktop windows.
+@media (max-width: 1919px), (max-height: 959px) {
+  .spx-trial-cta {
+    display: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -280,22 +290,34 @@ $stc-live: #2ecc8c;
   transform: translateY(1px);
 }
 
-// ---- Dismiss button (small × in corner) ----
+// ---- Dismiss button: 44px target with a compact 24px visual circle ----
 .spx-trial-cta__close {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 24px;
-  height: 24px;
+  top: -18px;
+  right: -18px;
+  width: 44px;
+  height: 44px;
+  border: 0;
   border-radius: 50%;
-  background: #fff;
-  border: 1px solid rgba($navy, 0.14);
+  background: transparent;
   display: grid;
   place-items: center;
   cursor: pointer;
   color: $navy;
-  box-shadow: 0 4px 12px rgba($navy, 0.14);
   padding: 0;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    z-index: -1;
+    border: 1px solid rgba($navy, 0.14);
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba($navy, 0.14);
+  }
+
   // Always visible — the way out is obvious, never hidden behind a hover.
   transition:
     transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -303,46 +325,9 @@ $stc-live: #2ecc8c;
 
   &:hover {
     transform: scale(1.12);
-    background: #f7f2ec;
-  }
-}
-
-// ---- Very narrow phones (≤520px) ----
-@media (max-width: 520px) {
-  .spx-trial-cta__pill {
-    min-height: 52px;
-    padding: 5px;
-  }
-  .spx-trial-cta:hover .spx-trial-cta__expandable,
-  .spx-trial-cta:focus-within .spx-trial-cta__expandable,
-  .spx-trial-cta.is-expanded .spx-trial-cta__expandable {
-    max-width: calc(100vw - 198px);
-    margin-inline-start: 10px;
-    padding-inline-end: 8px;
-  }
-  .spx-trial-cta__copy {
-    strong {
-      font-size: 0.82rem;
+    &::before {
+      background: #f7f2ec;
     }
-    small {
-      font-size: 0.68rem;
-    }
-  }
-  .spx-trial-cta__btn {
-    min-height: 42px;
-    font-size: 0.88rem;
-    padding: 0 18px 0 20px;
-  }
-}
-
-// Keep the CTA in the same lower-right dock as the support button on phones.
-// The support FAB is 46px tall and sits 14px from the bottom, so this leaves a
-// small, deliberate gap between the two controls.
-@media (max-width: 760px) {
-  .spx-trial-cta {
-    right: calc(var(--spx-mobile-gutter) + var(--spx-safe-right, 0px) + 58px);
-    bottom: calc(72px + var(--spx-safe-bottom, 0px));
-    max-width: calc(100vw - 92px);
   }
 }
 
@@ -376,6 +361,6 @@ html[lang="ar"] {
   // Close button moves to top-LEFT of the pill in RTL
   .spx-trial-cta__close {
     right: auto;
-    left: -8px;
+    left: -18px;
   }
 }

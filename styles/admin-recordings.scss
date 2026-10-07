@@ -29,7 +29,12 @@
   p { margin: 0; color: var(--admin-text-secondary); }
 }
 
-.adm-recordings__back { color: var(--admin-text-secondary); }
+.adm-recordings__back {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--admin-text-secondary);
+}
 
 .adm-recordings__notice,
 .adm-recordings__error {

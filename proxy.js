@@ -19,9 +19,16 @@ function createNonce() {
 
 function createSecurityContext() {
   const nonce = createNonce();
+  const isDevelopment = process.env.NODE_ENV === "development";
   const websocketBase = apiBase
     .replace(/^http:/, "ws:")
     .replace(/^https:/, "wss:");
+  const scriptSource = isDevelopment
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://www.googletagmanager.com https://meet.speexify.com"
+    : `script-src 'self' 'nonce-${nonce}' https://accounts.google.com https://apis.google.com https://www.googletagmanager.com https://meet.speexify.com`;
+  const styleSource = isDevelopment
+    ? "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com"
+    : `style-src 'self' 'nonce-${nonce}' 'sha256-bPYX3s9ZtkBLGfQigE2LegGDbGe5nQ/S37hvxd2mbUk=' https://fonts.googleapis.com https://accounts.google.com`;
 
   return {
     nonce,
@@ -31,11 +38,11 @@ function createSecurityContext() {
       "object-src 'none'",
       "frame-ancestors 'self'",
       "form-action 'self'",
-      `script-src 'self' 'nonce-${nonce}' https://accounts.google.com https://apis.google.com https://www.googletagmanager.com https://meet.speexify.com`,
+      scriptSource,
       "script-src-attr 'none'",
       // Google Identity injects this fixed button stylesheet without a nonce.
       // Keep the exception scoped to its exact content instead of all inline CSS.
-      `style-src 'self' 'nonce-${nonce}' 'sha256-bPYX3s9ZtkBLGfQigE2LegGDbGe5nQ/S37hvxd2mbUk=' https://fonts.googleapis.com https://accounts.google.com`,
+      styleSource,
       // React uses dynamic style attributes for calendar geometry and progress
       // indicators. Inline scripts remain nonce-only; this directive is CSS-only.
       "style-src-attr 'unsafe-inline'",

@@ -750,8 +750,10 @@
 
 .spx-notif-page__back {
   display: inline-flex;
+  min-height: 44px;
   align-items: center;
   gap: 6px;
+  padding-block: 8px;
   font-size: 14px;
   font-weight: 600;
   color: rgba(0, 0, 0, 0.6);

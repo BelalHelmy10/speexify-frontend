@@ -501,6 +501,7 @@
 .learning-journey__text-link,
 .learning-journey__back-link {
   display: inline-flex;
+  min-height: 44px;
   align-items: center;
   gap: 7px;
   color: $coral-dark;

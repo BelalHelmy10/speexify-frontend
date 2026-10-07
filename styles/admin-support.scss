@@ -8,6 +8,8 @@
 // ============================================================================
 .asp-admin-support {
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: clip;
   background: $asp-bg;
   padding: 2rem;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -542,9 +544,11 @@
 
   input {
     min-width: 120px;
+    min-height: 44px;
     flex: 1;
     border: 0;
     outline: 0;
+    padding: 0.5rem;
     color: $asp-text;
     font: inherit;
     font-size: 0.813rem;
@@ -1634,6 +1638,19 @@
 }
 
 @media (max-width: 900px) {
+  .asp-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .asp-sidebar,
+  .asp-main,
+  .asp-ticket-body,
+  .asp-conversation,
+  .asp-customer-panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .asp-header {
     &__topline {
       flex-direction: column;
@@ -1646,6 +1663,19 @@
 }
 
 @media (max-width: 640px) {
+  .asp-admin-support {
+    padding: 1rem;
+  }
+
+  .asp-search-box {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .asp-filter-select {
+    width: 100%;
+  }
+
   .asp-header {
     border-radius: 22px;
 

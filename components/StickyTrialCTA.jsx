@@ -13,10 +13,12 @@ import { normalizeLocalizedPath } from "@/lib/chromeRoutes";
  * Visual: compact coral pill that expands on hover/focus/tap to reveal a live
  * dot + two-line first-session detail.
  *
- * Placement: lower-right above the SupportWidget FAB, visible from the start.
+ * Placement: lower-right above the SupportWidget FAB on wide, tall screens.
  *
  * Behavior:
- *  - Visible from the first viewport without covering the main content.
+ *  - Kept off compact and short viewports where a fixed card would cover
+ *    page content. Those layouts retain their inline/header booking actions.
+ *  - Revealed only after the visitor leaves the opening hero viewport.
  *  - Steps aside only when the footer's own CTA section is in view, so two
  *    trial CTAs never stack.
  *  - Dismiss (×) persists for the tab session via sessionStorage.
@@ -37,6 +39,7 @@ const SUPPRESS_PREFIXES = [
   "/login",
   "/register",
   "/forgot-password",
+  "/book-free-session",
 ];
 
 function shouldSuppress(pathname) {
@@ -53,11 +56,9 @@ export default function StickyTrialCTA() {
   // Dismiss persists for the tab session (sessionStorage), so a user who
   // closes it isn't nagged again on every navigation. Resets in a new tab.
   const [dismissed, setDismissed] = useState(false);
-  // "shown" = visible. The lower-right dock keeps the CTA available without
-  // covering the hero content or stats.
-  const [shown, setShown] = useState(
-    () => normalizeLocalizedPath(pathname) !== "/packages",
-  );
+  // Start hidden so the server/client hand-off never flashes the card over a
+  // compact layout before the viewport guard has run.
+  const [shown, setShown] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const lastPointerType = useRef(null);
 
@@ -73,6 +74,15 @@ export default function StickyTrialCTA() {
 
   useEffect(() => {
     const update = () => {
+      // At smaller desktop, tablet, phone, and short landscape sizes there is
+      // no reliable empty gutter for a fixed promotional card. Keep it to the
+      // wide-screen gutter and preserve the page's normal inline CTAs below.
+      const hasSafeGutter = window.matchMedia(
+        "(min-width: 1920px) and (min-height: 960px)",
+      ).matches;
+      const hasLeftOpeningViewport =
+        window.scrollY > Math.min(560, window.innerHeight * 0.55);
+
       // Step aside when the footer's own CTA section comes into view, to avoid
       // stacking two conversion prompts.
       let nearFooter = false;
@@ -91,7 +101,9 @@ export default function StickyTrialCTA() {
           : null;
       const overPackagesHero = packagesHero?.getBoundingClientRect().bottom > 0;
 
-      setShown(!nearFooter && !overPackagesHero);
+      setShown(
+        hasSafeGutter && hasLeftOpeningViewport && !nearFooter && !overPackagesHero,
+      );
     };
 
     update();

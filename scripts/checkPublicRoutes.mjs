@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import puppeteer from "puppeteer";
+import { publicRoutes } from "./publicRoutes.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 const shouldStartServer = process.argv.includes("--start-server");
@@ -10,59 +11,6 @@ const baseUrl = (process.env.BASE_URL || `http://127.0.0.1:${port}`).replace(
   /\/$/,
   "",
 );
-
-const publicRoutes = [
-  "/",
-  "/individual-training",
-  "/corporate-training",
-  "/kids",
-  "/packages",
-  "/assessment",
-  "/about",
-  "/why-speexify",
-  "/contact",
-  "/blog",
-  "/guides",
-  "/help-center",
-  "/member-stories",
-  "/business-english-training-companies",
-  "/corporate-english-training-egypt",
-  "/english-presentation-coaching",
-  "/english-speaking-coach-egypt",
-  "/online-english-conversation-practice",
-  "/careers",
-  "/privacy",
-  "/terms",
-  "/refund-policy",
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/ar",
-  "/ar/individual-training",
-  "/ar/corporate-training",
-  "/ar/kids",
-  "/ar/packages",
-  "/ar/assessment",
-  "/ar/about",
-  "/ar/why-speexify",
-  "/ar/contact",
-  "/ar/blog",
-  "/ar/guides",
-  "/ar/help-center",
-  "/ar/member-stories",
-  "/ar/business-english-training-companies",
-  "/ar/corporate-english-training-egypt",
-  "/ar/english-presentation-coaching",
-  "/ar/english-speaking-coach-egypt",
-  "/ar/online-english-conversation-practice",
-  "/ar/careers",
-  "/ar/privacy",
-  "/ar/terms",
-  "/ar/refund-policy",
-  "/ar/login",
-  "/ar/register",
-  "/ar/forgot-password",
-];
 
 const publicAssets = [
   "/audio/placement/balance-check.wav",

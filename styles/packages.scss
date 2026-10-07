@@ -187,6 +187,17 @@
     .ecp-pricing-retry {
       margin-inline-start: 12px;
     }
+
+    @media (max-width: 480px) {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+
+      .ecp-pricing-retry {
+        margin-inline-start: 0;
+      }
+    }
   }
 
   &-hero-pricing__availability {
@@ -202,14 +213,22 @@
   }
 
   &-pricing-retry {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: max-content;
+    max-inline-size: 100%;
+    min-height: 44px;
     border: 0;
-    padding: 0;
+    padding: 8px 10px;
     color: $accent-ink;
     background: transparent;
     font: inherit;
     font-weight: 800;
     text-decoration: underline;
     cursor: pointer;
+    line-height: 1.25;
+    white-space: nowrap;
 
     &:hover {
       color: $accent;

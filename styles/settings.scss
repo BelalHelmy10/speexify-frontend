@@ -164,6 +164,7 @@
 
 .settings-content {
   display: grid;
+  min-width: 0;
   gap: 18px;
 }
 
@@ -327,6 +328,7 @@
 
 .settings-field {
   display: grid;
+  min-width: 0;
   gap: 7px;
   position: relative;
 
@@ -343,6 +345,9 @@
 
   input,
   select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     min-height: 46px;
     border: 1px solid rgba(15, 23, 42, 0.13);
     border-radius: 10px;
@@ -965,6 +970,7 @@
   }
 
   .settings-card {
+    min-width: 0;
     padding: 18px;
   }
 

@@ -6,6 +6,7 @@ build/
 .cache/
 coverage/
 .responsive-qa/
+/tmp/
 
 .env*
 *.log

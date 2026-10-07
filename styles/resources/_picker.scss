@@ -686,6 +686,7 @@
 // ─── Shared Buttons ─────────────────────────────────────────────────────────
 .resources-button {
   display: inline-flex;
+  max-width: 100%;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
@@ -698,7 +699,9 @@
   cursor: pointer;
   text-decoration: none;
   transition: all $cr-transition-fast;
-  white-space: nowrap;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
   &:hover {
     text-decoration: none;
   }

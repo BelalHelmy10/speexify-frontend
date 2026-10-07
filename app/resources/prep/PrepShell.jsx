@@ -105,7 +105,27 @@ import { getDictionary, t } from "@/app/i18n";
 import useAuth from "@/hooks/useAuth";
 import api from "@/lib/api";
 
-function PrepShell({
+function PrepShell(props) {
+  const { resource, locale = "en" } = props;
+
+  if (!resource) {
+    const dict = getDictionary(locale, "resources");
+    return (
+      <div className="prep-empty-card">
+        <h2 className="prep-empty-card__title">
+          {t(dict, "resources_prep_empty_title")}
+        </h2>
+        <p className="prep-empty-card__text">
+          {t(dict, "resources_prep_empty_text")}
+        </p>
+      </div>
+    );
+  }
+
+  return <PrepShellContent {...props} />;
+}
+
+function PrepShellContent({
   resource,
   viewer,
   isActive = true,
@@ -130,22 +150,6 @@ function PrepShell({
   const myUserId = user?._id || user?.id || null;
   const isActiveRef = useRef(isActive);
   isActiveRef.current = isActive;
-
-  // ─────────────────────────────────────────────────────────────
-  // SAFETY GUARD
-  // ─────────────────────────────────────────────────────────────
-  if (!resource) {
-    return (
-      <div className="prep-empty-card">
-        <h2 className="prep-empty-card__title">
-          {t(dict, "resources_prep_empty_title")}
-        </h2>
-        <p className="prep-empty-card__text">
-          {t(dict, "resources_prep_empty_text")}
-        </p>
-      </div>
-    );
-  }
 
   const annotationScope = sessionId
     ? `session_${sessionId}_user_${myUserId || "anonymous"}`

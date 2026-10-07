@@ -176,7 +176,10 @@ export default async function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className={`${inter.variable} ${outfit.variable} ${cairo.variable} ${spaceGrotesk.variable}`}>
+      <body
+        className={`${inter.variable} ${outfit.variable} ${cairo.variable} ${spaceGrotesk.variable}`}
+        suppressHydrationWarning
+      >
         <LocaleShell>
           <ClientProviders>
             <Providers

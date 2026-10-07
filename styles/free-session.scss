@@ -160,3 +160,48 @@
 
 @media (max-width: 930px) { .starter-layout { grid-template-columns: 1fr; max-width: 690px; } .starter-intro { text-align: center; } .starter-brand-lockup { margin-bottom: 54px; } .starter-intro h1, .starter-intro__body { margin-inline: auto; } .starter-promises { display: flex; justify-content: center; flex-wrap: wrap; gap: 16px 24px; } .starter-steps { justify-content: center; } }
 @media (max-width: 620px) { .starter-page { padding: 28px 14px 58px; } .starter-card { padding: 20px 17px; border-radius: 21px; } .starter-card__heading { display: block; } .starter-free-pill { display: inline-block; margin-top: 14px; } .starter-fields--two, .starter-choice-row, .starter-goal-grid, .starter-slot-grid, .starter-time-grid { grid-template-columns: 1fr; } .starter-day-grid { grid-template-columns: repeat(3, 1fr); } .starter-submit-row { display: block; } .starter-submit-row .starter-button { width: 100%; } .starter-submit-row p { justify-content: center; margin-top: 12px; text-align: center; } .starter-brand-lockup { margin-bottom: 45px; } .starter-intro h1 { font-size: clamp(49px, 16vw, 70px); } }
+
+// The availability table can scroll horizontally, but its navigation must
+// always remain fully reachable. Stack the bilingual labels on narrow phones.
+@media (max-width: 430px) {
+  .starter-availability-toolbar {
+    align-items: stretch;
+  }
+
+  .starter-availability-toolbar__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .starter-availability-toolbar button,
+  .starter-availability-toolbar button.starter-availability-nav {
+    min-width: 0;
+    min-height: 44px;
+    justify-content: center;
+    padding: 8px 6px;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .starter-availability-toolbar__actions > button:last-child {
+    grid-column: 1 / -1;
+    width: max-content;
+    max-width: 100%;
+    justify-self: start;
+    padding-inline: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .starter-availability-toolbar__actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .starter-availability-toolbar__actions > button:last-child {
+    grid-column: auto;
+  }
+}
