@@ -18,7 +18,7 @@ import {
 } from "@/lib/regional-pricing";
 import { oneOnOnePlans, groupPlans, corporatePlans } from "@/lib/plans";
 import { getPricingRegion } from "@/lib/pricing-regions";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getPrimaryConversionHref, routeHref } from "@/lib/routes";
 import { formatNumber } from "@/utils/locale";
 
 const AUD = { INDIVIDUAL: "INDIVIDUAL", CORPORATE: "CORPORATE" };
@@ -249,9 +249,9 @@ function Packages() {
                   {t(dict, "path_explain", "Your pace depends on your starting point, attendance, practice between sessions, and progress with your coach.")}
                 </p>
               </div>
-              <Link className="ecp-path__assessment" href={routeHref(APP_ROUTES.assessment, locale)}>
+              <Link className="ecp-path__assessment" href={getPrimaryConversionHref(locale)}>
                 <span>{t(dict, "path_assessment_kicker", "Not sure where you start?")}</span>
-                <strong>{t(dict, "path_assessment_cta", "Take the placement assessment")}</strong>
+                <strong>{t(dict, "path_assessment_cta", "Book your free live session")}</strong>
                 <span aria-hidden="true">{locale === "ar" ? "←" : "→"}</span>
               </Link>
             </div>
@@ -584,7 +584,7 @@ function Packages() {
               desc={t(
                 dict,
                 "how_step1_desc",
-                "Take the placement assessment so your journey begins in the right place."
+                "Share your goal and availability so your coach can prepare."
               )}
             />
             <Step
@@ -692,7 +692,7 @@ function Packages() {
             <div className="ecp-cta__actions">
               <Link
                 className="ecp-btn ecp-btn--primary ecp-btn--lg"
-                href={routeHref(APP_ROUTES.assessment, locale)}
+                href={getPrimaryConversionHref(locale)}
               >
                 {t(dict, "cta_individual_primary", "Find my starting level")}
               </Link>
@@ -778,6 +778,7 @@ function PricingCard({
       plan.regionToken
     )}&packageId=${encodeURIComponent(plan.backendId)}`
     : null;
+  const conversionTarget = getPrimaryConversionHref(locale, { planId: plan.id });
 
   return (
     <div
@@ -870,13 +871,22 @@ function PricingCard({
             </Link> */}
 
             {target ? (
+              <>
+              <Link
+                href={conversionTarget}
+                className="ecp-btn ecp-btn--primary"
+                aria-label={`${t(dict, "cta_start_free_session", "Start with a free session")} — ${title}`}
+              >
+                {t(dict, "cta_start_free_session", "Start with a free session")}
+              </Link>
               <Link
                 href={`${routeHref(APP_ROUTES.login, locale)}?next=${encodeURIComponent(target)}`}
-                className="ecp-btn ecp-btn--primary"
-                aria-label={`${t(dict, "cta_buy_plan", "Choose")} ${title}`}
+                className="ecp-btn ecp-btn--ghost"
+                aria-label={`${t(dict, "cta_after_free_session", "Already had your free session? Choose")} ${title}`}
               >
-                {t(dict, "cta_buy_plan", "Choose")} {title}
+                {t(dict, "cta_after_free_session", "Already had your free session? Choose")} {title}
               </Link>
+              </>
             ) : (
               <button
                 type="button"

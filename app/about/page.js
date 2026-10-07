@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import "@/styles/about.scss";
 import { getDictionary, t } from "@/app/i18n";
-import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getPrimaryConversionHref, routeHref } from "@/lib/routes";
 
 const heroImg = "/images/about_hero.avif";
 const historyImg = "/images/about_history.avif";
@@ -225,7 +225,7 @@ export default function AboutPage() {
             <p className="hero-sub">{t(dict, "hero_sub")}</p>
 
             <div className="hero-cta">
-              <Link href={getStarterSessionHref(locale)} className="btn btn-primary btn-lg">
+              <Link href={getPrimaryConversionHref(locale)} className="btn btn-primary btn-lg">
                 {t(dict, "hero_cta_primary")}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
-import { getStarterSessionHref } from "@/lib/routes";
+import { getPrimaryConversionHref } from "@/lib/routes";
 import { normalizeLocalizedPath } from "@/lib/chromeRoutes";
 
 /**
@@ -131,17 +131,17 @@ export default function StickyTrialCTA() {
   const copy =
     locale === "ar"
       ? {
-          title: "أول جلسة ليك مجانًا",
-          sub: "من غير أي التزام",
-          cta: "احجز أول جلسة مجانًا",
-          aria: "احجز أول جلسة مجانية",
+          title: "جلسة مباشرة مجانية",
+          sub: "هنفهم مستواك خلال الجلسة",
+          cta: "احجز جلستك المجانية",
+          aria: "احجز جلسة مباشرة مجانية",
           dismiss: "إخفاء",
         }
       : {
-          title: "Your first session is free",
-          sub: "No commitment required",
-          cta: "Book your free first session",
-          aria: "Book your free first session",
+          title: "Your free live session",
+          sub: "We’ll understand your level live",
+          cta: "Book free session",
+          aria: "Book a free live session",
           dismiss: "Dismiss",
         };
 
@@ -170,7 +170,7 @@ export default function StickyTrialCTA() {
       }}
     >
       <Link
-        href={getStarterSessionHref(locale)}
+        href={getPrimaryConversionHref(locale)}
         className="spx-trial-cta__pill"
         aria-label={copy.aria}
         onClick={handleClick}

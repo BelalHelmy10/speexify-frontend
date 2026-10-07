@@ -16,8 +16,7 @@ import {
   calculatePerSessionPrice,
   formatRegionalPrice,
 } from "@/lib/regional-pricing";
-import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
-import { isPurchaseReadyPlan } from "@/lib/pricing-catalog.mjs";
+import { APP_ROUTES, getPrimaryConversionHref, routeHref } from "@/lib/routes";
 
 const MARKETING_IMAGE_VERSION = "20260519";
 const marketingImage = (src) => `${src}?v=${MARKETING_IMAGE_VERSION}`;
@@ -159,7 +158,7 @@ function Home({ locale = "en" }) {
             <FadeIn as="div" className="home-hero__cta" delay={0.4}>
               <Link
                 className="spx-btn spx-btn--primary spx-btn--shine"
-                href={getStarterSessionHref(locale)}
+                href={getPrimaryConversionHref(locale)}
               >
                 <span>{t(dict, "ctaPrimary")}</span>
                 <svg
@@ -516,7 +515,7 @@ function Home({ locale = "en" }) {
           <div className="home-cta__actions">
             <Link
               className="spx-btn spx-btn--primary spx-btn--lg"
-              href={getStarterSessionHref(locale)}
+              href={getPrimaryConversionHref(locale)}
             >
               <span>{t(dict, "cta_primary")}</span>
               <svg
@@ -537,7 +536,7 @@ function Home({ locale = "en" }) {
             </Link>
             <Link
               className="spx-btn spx-btn--ghost-white spx-btn--lg"
-              href={routeHref(APP_ROUTES.contact, locale)}
+              href={routeHref(APP_ROUTES.packages, locale)}
             >
               {t(dict, "cta_secondary")}
             </Link>
@@ -577,22 +576,8 @@ function getHomePlanPriceLabels(plan, countryCode, locale) {
   };
 }
 
-function buildPlanStartHref(plan, locale, countryCode, catalog) {
-  if (!isPurchaseReadyPlan(plan, catalog)) return null;
-  const resolvedCountry = countryCode || DEFAULT_COUNTRY_CODE;
-  const currency = getPricingRegion(resolvedCountry).currency;
-  const paymentRoute = APP_ROUTES.checkout;
-  const paymentTarget = `${routeHref(paymentRoute, locale)}?planId=${encodeURIComponent(
-    plan.id,
-  )}&plan=${encodeURIComponent(
-    plan._backendTitle || plan.title,
-  )}&cc=${encodeURIComponent(resolvedCountry)}&cur=${encodeURIComponent(
-    currency,
-  )}&region=${encodeURIComponent(plan.regionToken)}&packageId=${encodeURIComponent(plan.backendId)}`;
-
-  return `${routeHref(APP_ROUTES.register, locale)}?next=${encodeURIComponent(
-    paymentTarget,
-  )}`;
+function buildPlanStartHref(plan, locale) {
+  return getPrimaryConversionHref(locale, { planId: plan.id });
 }
 
 function PricingSection({ dict, locale }) {
@@ -716,7 +701,7 @@ function PricingSection({ dict, locale }) {
 
               <div className="home-pricing__cards">
                 {group.plans.map((item) => {
-                  const startHref = buildPlanStartHref(item.plan, locale, countryCode, catalog);
+                  const startHref = buildPlanStartHref(item.plan, locale);
                   return (
                     <article
                       className={`home-price-card${item.plan.isPopular ? " home-price-card--featured" : ""}`}
@@ -1373,7 +1358,7 @@ function TransformationDemo({ dict, locale }) {
         <div className="home-shift__cta">
           <Link
             className="spx-btn spx-btn--primary spx-btn--shine"
-            href={getStarterSessionHref(locale)}
+            href={getPrimaryConversionHref(locale)}
           >
             <span>{t(dict, "shift_cta")}</span>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -1678,9 +1663,9 @@ function HowItWorksSection({ dict, locale }) {
         <div className="home-spx-how__cta">
           <Link
             className="spx-btn spx-btn--primary spx-btn--shine"
-            href={getStarterSessionHref(locale)}
+            href={getPrimaryConversionHref(locale)}
           >
-            <span>{t(dict, "how_cta_primary") || "Book your free first session"}</span>
+            <span>{t(dict, "how_cta_primary") || "Book your free session"}</span>
             <svg
               className="spx-btn__arrow"
               width="16"
@@ -1700,9 +1685,9 @@ function HowItWorksSection({ dict, locale }) {
           </Link>
           <Link
             className="spx-btn spx-btn--ghost-navy"
-            href={routeHref(APP_ROUTES.contact, locale)}
+            href={routeHref(APP_ROUTES.packages, locale)}
           >
-            {t(dict, "how_cta_secondary") || "Ask us anything"}
+            {t(dict, "how_cta_secondary") || "View packages"}
           </Link>
         </div>
       </div>

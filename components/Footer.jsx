@@ -15,7 +15,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { isFocusedWorkspacePath } from "@/lib/chromeRoutes";
-import { APP_ROUTES, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getPrimaryConversionHref, routeHref } from "@/lib/routes";
 import api from "@/lib/api";
 import { getDictionary, t } from "@/app/i18n";
 import BrandLogo from "@/components/brand/BrandLogo";
@@ -125,7 +125,6 @@ function Footer() {
           href: hrefFor(APP_ROUTES.kidsTraining),
         },
         { label: $t("packages"), href: hrefFor(APP_ROUTES.packages) },
-        { label: $t("assessment"), href: hrefFor(APP_ROUTES.assessment) },
       ],
     },
     {
@@ -238,7 +237,7 @@ function Footer() {
           </div>
           <div className="footer-cta__actions">
             <Link
-              href={hrefFor(APP_ROUTES.assessment)}
+              href={getPrimaryConversionHref(locale)}
               className="footer-action footer-action--primary"
             >
               <span>{$t("ctaPrimary")}</span>

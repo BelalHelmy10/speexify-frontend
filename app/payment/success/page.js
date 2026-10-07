@@ -130,7 +130,6 @@ export default function PaymentSuccessPage() {
     setPollSeed((prev) => prev + 1);
   }
 
-  const onboardingPath = routeHref(APP_ROUTES.onboarding, locale);
   const dashboardPath = routeHref(APP_ROUTES.dashboard, locale);
   const packagesPath = routeHref(APP_ROUTES.packages, locale);
   const resultBrand = (
@@ -197,14 +196,8 @@ export default function PaymentSuccessPage() {
 
             <div className="payment-result__actions">
               <button
-                onClick={() => router.push(onboardingPath)}
-                className="payment-result__btn payment-result__btn--primary"
-              >
-                {t(dict, "btn_start_onboarding")}
-              </button>
-              <button
                 onClick={() => router.push(dashboardPath)}
-                className="payment-result__btn payment-result__btn--ghost"
+                className="payment-result__btn payment-result__btn--primary"
               >
                 {t(dict, "btn_go_dashboard")}
               </button>

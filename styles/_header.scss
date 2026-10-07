@@ -174,7 +174,7 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .spx-nav-item {
@@ -1455,8 +1455,11 @@ $flip-crease: rgba(13, 27, 42, 0.09);
 
 @media (min-width: 1400px) {
   .spx-header-container {
-    gap: 30px;
-    padding: 10px 24px;
+    // The header container is capped at 1200px, so desktop spacing must stay
+    // compact even when the viewport itself is wider. Larger values here made
+    // the language control wrap onto a second row around 1440px.
+    gap: 24px;
+    padding: 10px 22px;
   }
 
   .spx-brand {
@@ -1470,7 +1473,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   }
 
   .spx-nav-link {
-    padding: 8px 14px;
+    padding: 8px 12px;
     font-size: 14px;
   }
 }
@@ -1521,7 +1524,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   }
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1120px) {
   body.spx-mobile-menu-open {
     overflow: hidden;
   }
@@ -1962,10 +1965,10 @@ $flip-crease: rgba(13, 27, 42, 0.09);
 
 /* Refined desktop navigation: calm active state and clearer utility controls. */
 @media (min-width: 1024px) {
-  .spx-nav-list { gap: 8px; }
+  .spx-nav-list { gap: 4px; }
   .spx-nav-link.spx-is-active { color: $brand-dark; }
   .spx-nav-link.spx-is-active .spx-link-bg { background: rgba($brand, .09); border: 1px solid rgba($brand, .18); box-shadow: 0 3px 10px rgba($brand, .08); }
-  .spx-nav-item-lang { margin-left: 10px; }
+  .spx-nav-item-lang { margin-left: 4px; }
   .spx-nav-item-clock { opacity: .78; transform: scale(.94); transform-origin: center; }
   .spx-nav-item-notif { margin-left: 2px; }
 }

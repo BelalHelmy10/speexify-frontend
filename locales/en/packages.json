@@ -21,8 +21,8 @@
   "path_c2": "Proficient",
   "path_estimate_title": "A planning guide, not a promise.",
   "path_explain": "Your pace depends on your starting point, attendance, practice between sessions, and progress with your coach.",
-  "path_assessment_kicker": "Not sure where you start?",
-  "path_assessment_cta": "Take the placement assessment",
+  "path_assessment_kicker": "Want help choosing?",
+  "path_assessment_cta": "Book your free live session",
   "path_choice": "Choose how you want to practise",
 
   "tab_individual": "For yourself",
@@ -76,12 +76,12 @@
 
   "how_title": "How it works.",
   "how_subtitle": "Three steps. No drama.",
-  "how_step1_title": "Find your starting level.",
-  "how_step1_desc": "Take the placement assessment so your journey begins in the right place.",
-  "how_step2_title": "Choose your format and pack.",
-  "how_step2_desc": "Pick one-on-one or small-group practice, then choose how far ahead you want to plan.",
-  "how_step3_title": "Practise, review, move forward.",
-  "how_step3_desc": "Your coach follows your performance and confirms when you are ready for the next level.",
+  "how_step1_title": "Tell us what you need.",
+  "how_step1_desc": "Share your goal and availability in a short onboarding so your coach can prepare.",
+  "how_step2_title": "Meet your coach for free.",
+  "how_step2_desc": "Use English in a real conversation while your coach assesses your level, priorities, and best next step.",
+  "how_step3_title": "Choose the right package.",
+  "how_step3_desc": "After the session, continue with a personalised recommendation instead of guessing which package fits.",
 
   "compare_title": "What's in each pack.",
   "compare_subtitle": "Side by side.",
@@ -104,7 +104,7 @@
   "faq5_a": "Yes. Tailored programs with reporting your leadership will read. See the team tab above to start the conversation.",
 
   "cta_title": "Stop studying. Start using.",
-  "cta_individual_primary": "Find my starting level",
+  "cta_individual_primary": "Book my free session",
   "cta_individual_secondary": "Compare all features",
   "cta_corp_primary": "Request a plan",
   "cta_corp_secondary": "See team programs",
@@ -134,6 +134,8 @@
   "cta_corp_card_secondary": "See how it works",
   "cta_buy_now": "Choose this plan",
   "cta_buy_plan": "Choose",
+  "cta_start_free_session": "Start with a free session",
+  "cta_after_free_session": "Had your free session? Choose",
   "cta_loading": "Loading price…",
   "cta_unavailable": "Unavailable",
 

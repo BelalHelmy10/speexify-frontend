@@ -3,8 +3,8 @@
   "title_main": "Speak it.",
   "title_accent": " Don't study it.",
   "subtitle": "Speexify is a practice ground for adults who want to actually use a language. Not study one more time. Live sessions with a coach. Real conversations, not drills. Just the reps you've been missing.",
-  "ctaPrimary": "Book your free first session",
-  "ctaSecondary": "See pricing",
+  "ctaPrimary": "Book your free session",
+  "ctaSecondary": "View packages",
 
   "pricing_eyebrow": "Transparent packages",
   "pricing_title": "Choose the next milestone you want to plan for.",
@@ -25,7 +25,7 @@
   "pricing_path_note": "A planning guide, not a guarantee. Your pace depends on your starting point, attendance, practice between sessions, and progress with your coach.",
   "pricing_cards_label": "All Speexify packages",
   "pricing_popular": "Best value",
-  "pricing_card_cta": "Choose this package",
+  "pricing_card_cta": "Start with a free session",
   "pricing_unavailable": "Unavailable",
   "pricing_region_note": "Showing {currency} pricing for {region}. Full regional pricing is available on the packages page.",
   "pricing_all_packages": "Compare every package",
@@ -63,22 +63,22 @@
   "feature4_text": "Prepping for an interview next week? Leading your first meeting in English next month? Your practice plan starts from your real life, not a textbook.",
 
   "how_title": "How it works",
-  "how_subtitle": "From your first session to sounding like yourself in another language.",
+  "how_subtitle": "One clear path from telling us what you need to choosing the right plan.",
 
-  "how_step1_label": "Tell us what you need to say",
-  "how_step1_title": "Tell us what you need to say.",
-  "how_step1_text": "A short call. We listen for what you actually need: at work, in interviews, in life. Then we shape your practice plan around it.",
+  "how_step1_label": "Tell us what you need",
+  "how_step1_title": "Start with a short onboarding.",
+  "how_step1_text": "Share the situations you want English for and the times that work for you, so your coach can prepare.",
 
-  "how_step2_label": "Meet your coach",
-  "how_step2_title": "Meet your coach.",
-  "how_step2_text": "We pair you with a coach who fits your goals, your industry, your voice. Not random. Chosen.",
+  "how_step2_label": "Free live session",
+  "how_step2_title": "Meet your coach for free.",
+  "how_step2_text": "Use English in a real conversation while your coach assesses your level, priorities, and best next step.",
 
-  "how_step3_label": "Show up. Speak. Repeat.",
-  "how_step3_title": "Show up. Speak. Repeat.",
-  "how_step3_text": "Live sessions, one or two a week. Real conversations, every time. Within a month you'll hear the change. Soon after, so will everyone else.",
+  "how_step3_label": "Choose your package",
+  "how_step3_title": "Continue with the right plan.",
+  "how_step3_text": "After the session, choose from a personalised recommendation instead of guessing which package fits.",
 
-  "how_cta_primary": "Book your free first session",
-  "how_cta_secondary": "Ask us anything",
+  "how_cta_primary": "Book your free session",
+  "how_cta_secondary": "View packages",
 
   "curr_title": "What you'll actually practice.",
   "curr_subtitle": "Not grammar drills. Not vocabulary lists. The conversations you've been avoiding, turned into reps.",
@@ -111,7 +111,7 @@
 
   "shift_title": "The shift, in real time.",
   "shift_subtitle": "Watch what happens when you stop studying and start speaking.",
-  "shift_cta": "Book your free first session",
+  "shift_cta": "Book your free session",
   "shift_window_label": "Live practice session",
   "shift_live_tag": "Live",
   "shift_tag_before": "Before Speexify",
@@ -164,9 +164,9 @@
   "newsletter_button": "Join the letter",
 
   "cta_title": "Stop studying. Start using.",
-  "cta_sub": "Book your free first session, then choose the practice plan that fits your week.",
-  "cta_primary": "Book your free first session",
-  "cta_secondary": "Ask us anything",
+  "cta_sub": "Tell us what you need, meet a coach for free, then choose the package that fits.",
+  "cta_primary": "Book your free session",
+  "cta_secondary": "View packages",
 
   "hero_stat1_num": "98%",
   "hero_stat1_label": "of members would recommend us",

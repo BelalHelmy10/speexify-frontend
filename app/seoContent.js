@@ -8,8 +8,8 @@ export const landingPages = {
       title: "Your English should match your ambition. We make sure it does.",
       subtitle:
         "1-on-1 coaching with expert coaches who turn what you already know into real confidence — for interviews, meetings, and every moment that matters.",
-      primaryCta: "Ask about a starter session",
-      secondaryCta: "See what's inside",
+      primaryCta: "Book your free session",
+      secondaryCta: "View packages",
       proof: ["Live 1-on-1 sessions", "Arabic-aware coaching", "Clear speaking goals"],
       sections: [
         {
@@ -44,8 +44,8 @@ export const landingPages = {
       title: "اتكلم إنجليزي مع مدرّب حقيقي، مش كورس تاني تتابعه لوحدك.",
       subtitle:
         "Speexify بتقدملك تدريب محادثة مباشر وفردي في مصر، مع تركيز على الثقة والطلاقة والنطق والمواقف الواقعية.",
-      primaryCta: "اسأل عن جلسة تعريفية",
-      secondaryCta: "عرض الباقات",
+      primaryCta: "احجز جلستك المجانية",
+      secondaryCta: "شوف الباقات",
       proof: ["جلسات مباشرة فردية", "تدريب مناسب للناطقين بالعربية", "أهداف تحدث واضحة"],
       sections: [
         {
@@ -160,8 +160,8 @@ export const landingPages = {
       title: "Stop practising alone. Start speaking with someone who gets it.",
       subtitle:
         "Live conversation practice with a coach who corrects, guides, and helps you sound like yourself — in English.",
-      primaryCta: "Ask about a starter session",
-      secondaryCta: "See what's inside",
+      primaryCta: "Book your free session",
+      secondaryCta: "View packages",
       proof: ["Real conversations", "Coach feedback", "Flexible online sessions"],
       sections: [
         {
@@ -196,8 +196,8 @@ export const landingPages = {
       title: "اتمرّن على المحادثة الإنجليزية أونلاين مع توجيه وملاحظات واضحة.",
       subtitle:
         "Speexify بتديك تدريب محادثة مباشر مع مدرّب يصحح ويوجّه ويساعدك تتكلم بطبيعتك.",
-      primaryCta: "اسأل عن جلسة تعريفية",
-      secondaryCta: "قارن الباقات",
+      primaryCta: "احجز جلستك المجانية",
+      secondaryCta: "شوف الباقات",
       proof: ["محادثات واقعية", "ملاحظات من مدرب", "جلسات أونلاين مرنة"],
       sections: [
         {
@@ -236,8 +236,8 @@ export const landingPages = {
       title: "Deliver English presentations with clearer structure and confidence.",
       subtitle:
         "Prepare your message, delivery, pronunciation, transitions, and Q&A with a coach before the moment matters.",
-      primaryCta: "Ask about a starter session",
-      secondaryCta: "View coaching plans",
+      primaryCta: "Book your free session",
+      secondaryCta: "View packages",
       proof: ["Message structure", "Delivery practice", "Q&A confidence"],
       sections: [
         {
@@ -272,8 +272,8 @@ export const landingPages = {
       title: "قدّم عروضك بالإنجليزي بتنظيم أوضح وثقة أكبر.",
       subtitle:
         "حضّر الرسالة والإلقاء والنطق والانتقالات والأسئلة مع مدرب قبل اللحظة المهمة.",
-      primaryCta: "اسأل عن جلسة تعريفية",
-      secondaryCta: "عرض الخطط",
+      primaryCta: "احجز جلستك المجانية",
+      secondaryCta: "شوف الباقات",
       proof: ["تنظيم الرسالة", "تدريب على الإلقاء", "ثقة في الأسئلة"],
       sections: [
         {

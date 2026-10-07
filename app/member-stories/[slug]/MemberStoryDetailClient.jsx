@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 import { ArrowLeft, ArrowRight, Quote } from "lucide-react";
 import "@/styles/member-stories.scss";
 import { getDictionary, t } from "@/app/i18n";
-import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getPrimaryConversionHref, routeHref } from "@/lib/routes";
 
 const storyMap = {
   sara: {
@@ -164,14 +164,14 @@ export default function MemberStoryDetailClient({ slug }) {
           <p>{t(dict, "detail_cta_sub")}</p>
           <div className="ms__cta-actions">
             <Link
-              href={getStarterSessionHref(locale)}
+              href={getPrimaryConversionHref(locale)}
               className="ms-btn ms-btn--primary"
             >
               <span>{t(dict, "detail_cta_primary")}</span>
               <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
             </Link>
             <Link
-              href={routeHref(APP_ROUTES.contact, locale)}
+              href={routeHref(APP_ROUTES.packages, locale)}
               className="ms-btn ms-btn--ghost"
             >
               {t(dict, "detail_cta_secondary")}

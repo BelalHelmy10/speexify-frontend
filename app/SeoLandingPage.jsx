@@ -6,7 +6,7 @@ import {
   faqJsonLd,
   serviceJsonLd,
 } from "./seo";
-import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getPrimaryConversionHref, routeHref } from "@/lib/routes";
 
 export default function SeoLandingPage({ pageKey, locale = "en" }) {
   const config = landingPages[pageKey];
@@ -22,7 +22,7 @@ export default function SeoLandingPage({ pageKey, locale = "en" }) {
     "englishPresentationCoaching",
   ]);
   const primaryPath = individualConversionKeys.has(pageKey)
-    ? getStarterSessionHref(locale)
+    ? getPrimaryConversionHref(locale)
     : contactPath;
   const homeLabel = locale === "ar" ? "الرئيسية" : "Home";
 

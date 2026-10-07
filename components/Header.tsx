@@ -18,7 +18,7 @@ import {
   isFocusedWorkspacePath,
   normalizeLocalizedPath,
 } from "@/lib/chromeRoutes";
-import { APP_ROUTES } from "@/lib/routes";
+import { APP_ROUTES, getPrimaryConversionHref } from "@/lib/routes";
 import { getDictionary, t } from "@/app/i18n";
 import NotificationsBell from "@/components/NotificationsBell";
 import DigitalClock from "@/components/DigitalClock";
@@ -540,16 +540,16 @@ export default function Header() {
                 style={itemIndexStyle(links.length)}
               >
                 <Link
-                  href={localizeHref(APP_ROUTES.register, locale)}
+                  href={getPrimaryConversionHref(locale)}
                   className={
                     "spx-nav-link" +
-                    (isActive(APP_ROUTES.register) ? " spx-is-active" : "")
+                    (isActive(APP_ROUTES.starterSession) ? " spx-is-active" : "")
                   }
                   onClick={() => setOpen(false)}
                 >
                   <span className="spx-link-bg"></span>
                   <span className="spx-link-text">
-                    {t(navDict, "register")}
+                    {t(navDict, "startFreeSession")}
                   </span>
                 </Link>
               </li>
@@ -665,17 +665,17 @@ export default function Header() {
                   style={itemIndexStyle(links.length)}
                 >
                   <Link
-                    href={localizeHref(APP_ROUTES.register, locale)}
+                    href={getPrimaryConversionHref(locale)}
                     className={
                       "spx-mobile-link" +
-                      (isActive(APP_ROUTES.register) ? " spx-is-active" : "")
+                      (isActive(APP_ROUTES.starterSession) ? " spx-is-active" : "")
                     }
                     onClick={() => setOpen(false)}
                   >
                     <span className="spx-mobile-link-bg"></span>
                     <span className="spx-mobile-link-content">
                       <span className="spx-mobile-link-text">
-                        {t(navDict, "register")}
+                        {t(navDict, "startFreeSession")}
                       </span>
                       <svg
                         className="spx-mobile-link-arrow"

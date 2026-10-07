@@ -1,15 +1,11 @@
 // app/individual-training/page.js
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import useAuth from "@/hooks/useAuth";
-import api from "@/lib/api";
 import "@/styles/individual.scss";
 import { getDictionary, t } from "@/app/i18n";
-import { getDefaultTimezones, getSupportedTimezones } from "../../lib/timezones";
-import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getPrimaryConversionHref, routeHref } from "@/lib/routes";
 
 const MARKETING_IMAGE_VERSION = "20260519";
 const marketingImage = (src) => {
@@ -49,101 +45,6 @@ const goalIcons = {
 };
 
 function IndividualInner({ dict, locale }) {
-  const { user } = useAuth();
-  const formRef = useRef(null);
-
-  const [sending, setSending] = useState(false);
-  const [status, setStatus] = useState("");
-  const [statusTone, setStatusTone] = useState("");
-  const [timezoneOptions, setTimezoneOptions] = useState(getDefaultTimezones);
-  const [form, setForm] = useState(() => ({
-    name: "",
-    email: "",
-    timezone: "",
-    level: t(dict, "band_a2"),
-    goal: t(dict, "goal_confidence"),
-    availability: t(dict, "availability_weekdays"),
-    message: "",
-    agree: false,
-  }));
-
-  useEffect(() => {
-    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const supportedTimezones = getSupportedTimezones();
-    const hasBrowserTimezone = supportedTimezones.some(
-      ({ value }) => value === browserTimezone,
-    );
-
-    setTimezoneOptions(
-      hasBrowserTimezone || !browserTimezone
-        ? supportedTimezones
-        : [
-            ...supportedTimezones,
-            {
-              value: browserTimezone,
-              label: browserTimezone.replace(/_/g, " "),
-            },
-          ].sort((a, b) => a.value.localeCompare(b.value)),
-    );
-
-    if (!browserTimezone) return;
-
-    setForm((f) => ({
-      ...f,
-      timezone: f.timezone || browserTimezone,
-    }));
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    setForm((f) => ({
-      ...f,
-      name: f.name || user.name || "",
-      email: f.email || user.email || "",
-    }));
-  }, [user]);
-
-  const onChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
-  };
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setStatus("");
-    setStatusTone("");
-    if (!form.name || !form.email || !form.agree) {
-      setStatus(t(dict, "status_required"));
-      setStatusTone("error");
-      return;
-    }
-    setSending(true);
-    try {
-      await api.post("/api/contact", {
-        name: form.name,
-        email: form.email,
-        role: "Individual",
-        topic: "Individual Session Request",
-        budget: "",
-        message: `Band: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone}\nAvailability: ${form.availability}\n\n${form.message || ""}`,
-      });
-      setStatus(t(dict, "status_sent"));
-      setStatusTone("success");
-      formRef.current?.reset();
-      setForm((f) => ({ ...f, message: "", agree: false }));
-    } catch (_err) {
-      const subject = encodeURIComponent(`[Individual] ${form.goal}`);
-      const body = encodeURIComponent(
-        `Name: ${form.name}\nEmail: ${form.email}\nBand: ${form.level}\nGoal: ${form.goal}\nTimezone: ${form.timezone}\nAvailability: ${form.availability}\n\n${form.message}`
-      );
-      window.location.href = `mailto:hello@speexify.com?subject=${subject}&body=${body}`;
-      setStatus(t(dict, "status_email_fallback"));
-      setStatusTone("info");
-    } finally {
-      setSending(false);
-    }
-  };
-
   return (
     <div className="individual-page-wrapper">
       {/* ═══════════════════════════════════════
@@ -174,12 +75,12 @@ function IndividualInner({ dict, locale }) {
                 {t(dict, "hero_subtitle") || "Private one-on-one sessions with a coach picked for you. Real conversations, every time. The reps you've been missing, booked when you're ready."}
               </Reveal>
               <Reveal delay={0.4} className="hero-cta">
-                <a href={getStarterSessionHref(locale)} className="btn btn-primary btn-lg">
+                <Link href={getPrimaryConversionHref(locale)} className="btn btn-primary btn-lg">
                   {t(dict, "hero_cta_primary")}
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
                   </svg>
-                </a>
+                </Link>
                 <Link href={routeHref(APP_ROUTES.packages, locale)} className="btn btn-ghost btn-lg">
                   {t(dict, "hero_cta_secondary")}
                 </Link>
@@ -343,7 +244,7 @@ function IndividualInner({ dict, locale }) {
             />
           </div>
           <div className="goals-cta">
-            <a href={getStarterSessionHref(locale)} className="btn btn-ghost">{t(dict, "goals_cta") || "Tell us yours"}</a>
+            <Link href={getPrimaryConversionHref(locale)} className="btn btn-ghost">{t(dict, "goals_cta") || "Book your free session"}</Link>
           </div>
         </div>
       </section>
@@ -453,180 +354,6 @@ function IndividualInner({ dict, locale }) {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════
-         TRIAL FORM
-      ════════════════════════════════════════ */}
-      <section id="trial" className="trial">
-        <div className="container">
-          <div className="section-header trial-intro">
-            <div className="section-label">{t(dict, "trial_intro_label")}</div>
-            <Reveal as="h2" className="section-title">{t(dict, "trial_intro_title")}</Reveal>
-            <Reveal as="p" delay={0.1} className="section-sub">{t(dict, "trial_intro_subtitle")}</Reveal>
-          </div>
-
-          <div className="trial-card">
-            <aside className="trial-proof">
-              <span className="trial-proof-kicker">{t(dict, "trial_proof_kicker")}</span>
-              <h3>{t(dict, "trial_proof_title")}</h3>
-              <p>{t(dict, "trial_proof_body")}</p>
-              <ul>
-                <li>{t(dict, "trial_proof_bullet1")}</li>
-                <li>{t(dict, "trial_proof_bullet2")}</li>
-                <li>{t(dict, "trial_proof_bullet3")}</li>
-              </ul>
-            </aside>
-
-            <div className="trial-form-panel">
-              <div className="trial-head">
-                <Reveal as="h2" className="trial-title">{t(dict, "trial_title") || "Tell us about you."}</Reveal>
-                <Reveal as="p" delay={0.1} className="trial-sub">{t(dict, "trial_subtitle") || "One of us will be back within a business day to set the time."}</Reveal>
-              </div>
-
-            <form ref={formRef} onSubmit={submit} className={statusTone === "error" ? "form-has-error" : ""}>
-              <div className="form-row">
-                <div className="form-field">
-                  <label className="form-label" htmlFor="individual-name">{t(dict, "field_name")}</label>
-                  <input
-                    id="individual-name"
-                    className="form-input"
-                    name="name"
-                    value={form.name}
-                    onChange={onChange}
-                    required
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-label" htmlFor="individual-email">{t(dict, "field_email")}</label>
-                  <input
-                    id="individual-email"
-                    className="form-input"
-                    type="email"
-                    name="email"
-                    value={form.email}
-                    onChange={onChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-field">
-                  <label className="form-label" htmlFor="individual-timezone">{t(dict, "field_timezone")}</label>
-                  <select
-                    id="individual-timezone"
-                    className="form-select"
-                    name="timezone"
-                    value={form.timezone}
-                    onChange={onChange}
-                  >
-                    <option value="" disabled>{t(dict, "timezone_placeholder_text")}</option>
-                    {timezoneOptions.map(({ value, label }) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-field">
-                  <label className="form-label" htmlFor="individual-level">{t(dict, "field_band")}</label>
-                  <select
-                    id="individual-level"
-                    className="form-select"
-                    name="level"
-                    value={form.level}
-                    onChange={onChange}
-                  >
-                    <option>{t(dict, "band_a2")}</option>
-                    <option>{t(dict, "band_b1")}</option>
-                    <option>{t(dict, "band_b2")}</option>
-                    <option>{t(dict, "band_c1")}</option>
-                    <option>{t(dict, "band_c2")}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-field">
-                  <label className="form-label" htmlFor="individual-availability">{t(dict, "field_availability")}</label>
-                  <select
-                    id="individual-availability"
-                    className="form-select"
-                    name="availability"
-                    value={form.availability}
-                    onChange={onChange}
-                  >
-                    <option>{t(dict, "availability_weekdays")}</option>
-                    <option>{t(dict, "availability_weeknights")}</option>
-                    <option>{t(dict, "availability_weekends")}</option>
-                  </select>
-                </div>
-                <div className="form-field">
-                  <label className="form-label" htmlFor="individual-goal">{t(dict, "field_goal")}</label>
-                  <select
-                    id="individual-goal"
-                    className="form-select"
-                    name="goal"
-                    value={form.goal}
-                    onChange={onChange}
-                  >
-                    <option>{t(dict, "goal_confidence")}</option>
-                    <option>{t(dict, "goal_interview")}</option>
-                    <option>{t(dict, "goal_pronunciation")}</option>
-                    <option>{t(dict, "goal_writing")}</option>
-                    <option>{t(dict, "goal_exam")}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row full">
-                <div className="form-field">
-                  <label className="form-label" htmlFor="individual-message">{t(dict, "field_message")}</label>
-                  <input
-                    id="individual-message"
-                    className="form-input"
-                    name="message"
-                    placeholder={t(dict, "message_placeholder")}
-                    value={form.message}
-                    onChange={onChange}
-                  />
-                </div>
-              </div>
-
-              <label className="form-checkbox">
-                <input
-                  id="individual-agree"
-                  type="checkbox"
-                  name="agree"
-                  checked={form.agree}
-                  onChange={onChange}
-                />
-                <span>
-                  {t(dict, "checkbox_prefix")}
-                  {" "}
-                  <Link href={routeHref(APP_ROUTES.privacy, locale)} className="form-link">
-                    {t(dict, "checkbox_link")}
-                  </Link>
-                  .
-                </span>
-              </label>
-
-              <div className="form-actions">
-                <button
-                  className="btn btn-primary"
-                  type="submit"
-                  disabled={sending}
-                >
-                  {sending ? t(dict, "btn_sending") : t(dict, "btn_request_consult")}
-                </button>
-                {status && (
-                  <span className={`form-note ${statusTone}`} role="status" aria-live="polite">
-                    {status}
-                  </span>
-                )}
-              </div>
-            </form>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ═══════════════════════════════════════
          FINAL CTA
@@ -640,9 +367,9 @@ function IndividualInner({ dict, locale }) {
               <h2 className="cta-title">{t(dict, "final_title")}</h2>
               <p className="cta-sub">{t(dict, "final_subtitle")}</p>
               <div className="cta-btns">
-                <a href={getStarterSessionHref(locale)} className="btn btn-cta-white btn-lg">
+                <Link href={getPrimaryConversionHref(locale)} className="btn btn-cta-white btn-lg">
                   {t(dict, "final_btn_primary")}
-                </a>
+                </Link>
                 <Link href={routeHref(APP_ROUTES.packages, locale)} className="btn btn-ghost-white btn-lg">
                   {t(dict, "final_btn_secondary")}
                 </Link>

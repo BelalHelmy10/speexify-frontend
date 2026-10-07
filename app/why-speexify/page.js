@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import "@/styles/why-speexify.scss";
 import { getDictionary, t } from "@/app/i18n";
-import { APP_ROUTES, getStarterSessionHref, routeHref } from "@/lib/routes";
+import { APP_ROUTES, getPrimaryConversionHref, routeHref } from "@/lib/routes";
 
 const valuesConfig = [
     { num: "01", titleKey: "value1_title", descKey: "value1_desc", detailKey: "value1_detail", icon: Target },
@@ -244,7 +244,7 @@ export default function WhySpeexifyPage() {
                     <p>{t(dict, "cta_sub")}</p>
 
                     <div className="why__cta-buttons">
-                        <Link href={getStarterSessionHref(locale)} className="why-btn why-btn--primary why-btn--lg">
+                        <Link href={getPrimaryConversionHref(locale)} className="why-btn why-btn--primary why-btn--lg">
                             <span>{t(dict, "cta_primary")}</span>
                             <ArrowRight className="why-btn__arrow" size={18} strokeWidth={2.4} aria-hidden="true" />
                         </Link>

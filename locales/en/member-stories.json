@@ -10,9 +10,9 @@
   "index_card_read": "Read the story",
 
   "index_cta_title": "Your story is one decision away.",
-  "index_cta_sub": "Ask about a starter session, availability, and terms before you choose a plan.",
-  "index_cta_primary": "Ask about a starter session",
-  "index_cta_secondary": "Ask us anything",
+  "index_cta_sub": "Tell us what you need, meet a coach for free, then continue with a personalised package recommendation.",
+  "index_cta_primary": "Book your free session",
+  "index_cta_secondary": "View packages",
 
   "back": "All member stories",
 
@@ -85,7 +85,7 @@
   "detail_age_label": "Based",
 
   "detail_cta_title": "Curious about the fit?",
-  "detail_cta_sub": "Ask about a starter session and we’ll explain the format and current terms.",
-  "detail_cta_primary": "Ask about a starter session",
-  "detail_cta_secondary": "Contact Speexify"
+  "detail_cta_sub": "Meet a coach for free, get assessed in a real conversation, then choose the package that fits.",
+  "detail_cta_primary": "Book your free session",
+  "detail_cta_secondary": "View packages"
 }

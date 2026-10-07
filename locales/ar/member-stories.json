@@ -7,9 +7,9 @@
   "index_sub": "ثلاثة أعضاء. ثلاث لحظات بطّلت فيها اللغة تكون العائق.",
   "index_card_read": "اقرأ القصة",
   "index_cta_title": "قصتك بتبدأ بقرار واحد.",
-  "index_cta_sub": "اسأل عن جلسة تعريفية والتوفر والشروط قبل اختيار الخطة.",
-  "index_cta_primary": "اسأل عن جلسة تعريفية",
-  "index_cta_secondary": "اسألنا أي حاجة",
+  "index_cta_sub": "قولنا محتاج إيه، قابل مدرّب مجانًا، وبعدها كمّل بترشيح باقة مناسب ليك.",
+  "index_cta_primary": "احجز جلستك المجانية",
+  "index_cta_secondary": "شوف الباقات",
   "back": "كل قصص الأعضاء",
   "story1_slug": "sara",
   "story1_name": "سارة م.",
@@ -76,7 +76,7 @@
   "detail_industry_label": "المجال",
   "detail_age_label": "المكان",
   "detail_cta_title": "عايز تعرف هل الطريقة مناسبة؟",
-  "detail_cta_sub": "اسأل عن جلسة تعريفية ونشرح لك شكل الجلسة والشروط الحالية.",
-  "detail_cta_primary": "اسأل عن جلسة تعريفية",
-  "detail_cta_secondary": "تواصل مع Speexify"
+  "detail_cta_sub": "قابل مدرّب مجانًا، اتقيّم في محادثة حقيقية، وبعدها اختار الباقة المناسبة.",
+  "detail_cta_primary": "احجز جلستك المجانية",
+  "detail_cta_secondary": "شوف الباقات"
 }

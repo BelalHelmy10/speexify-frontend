@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowRight, Check, CheckCircle2, Clock3, MessageCircle, ShieldCheck } from "lucide-react";
 import api from "@/lib/api";
+import { getDictionary } from "@/app/i18n";
 import "@/styles/free-session.scss";
 
 const AVAILABILITY_DAYS = [
@@ -38,18 +40,21 @@ const GOAL_OPTIONS = [
 
 const COPY = {
   en: {
-    eyebrow: "YOUR FIRST REP IS ON US",
-    title: "Start speaking.",
-    titleAccent: "For real.",
-    intro: "Tell us a little about yourself and we’ll match you with a coach for one free, live conversation.",
-    time: "2 minutes",
+    eyebrow: "START WITH A FREE LIVE SESSION",
+    title: "Tell us what matters.",
+    titleAccent: "We’ll listen live.",
+    intro: "Share what you want English to help you do. Your coach will assess your level in a real conversation, then recommend the right next step.",
+    time: "2-minute onboarding",
     noPayment: "No payment details",
     whatsapp: "Confirmation by WhatsApp",
-    formTitle: "Book your free first session",
-    formSubtitle: "Tell us which days and times usually work for you. We’ll confirm the exact slot on WhatsApp.",
+    formTitle: "Book your free session",
+    formSubtitle: "Tell us your goal and availability now. Your level will be assessed live—not through a long test.",
     step1: "About you",
-    step2: "What you want",
+    step2: "Your goal",
     step3: "Your availability",
+    journey1: "Quick onboarding",
+    journey2: "Free live session",
+    journey3: "Plan recommendation",
     name: "Your name",
     namePlaceholder: "e.g. Ahmed Hassan",
     phone: "Mobile / WhatsApp number",
@@ -66,33 +71,40 @@ const COPY = {
     availabilityClear: "Clear all",
     availabilityEmpty: "No hours selected yet",
     availabilitySelected: "selected",
-    note: "Anything we should know?",
-    notePlaceholder: "A goal, an upcoming interview, or anything else…",
+    note: "What do you want to be able to do in English?",
+    notePlaceholder: "For example: lead meetings without freezing, pass an interview, or speak more naturally while travelling…",
     submit: "Request my free session",
     submitting: "Sending your request…",
     privacy: "We’ll only use these details to arrange your session.",
-    required: "Please complete your name, WhatsApp number, goal, and at least one available hour.",
+    required: "Please add your name, WhatsApp number, goal, what you want to achieve, and at least one available hour.",
     error: "Something went wrong. Please try again in a moment.",
     successEyebrow: "YOU’RE IN",
     successTitle: "Your free session is on its way.",
-    successBody: "Thanks, {name}. We’ll message you on WhatsApp to confirm a time that works.",
-    successNote: "Keep an eye on your phone — we usually reply within one business day.",
+    successBody: "Thanks, {name}. We’ll message you on WhatsApp to confirm a time with a coach who can understand your goal and assess your English live.",
+    successNote: "After the session, you’ll receive a clear starting level and a personalised package recommendation.",
+    successStep1: "We confirm your time",
+    successStep2: "You meet your coach for free",
+    successStep3: "You choose the recommended plan",
+    planContext: "You were viewing {plan}. No need to decide yet—your coach will confirm the best fit after the free session.",
     back: "Back to home",
     chooseGoal: "Choose one",
   },
   ar: {
-    eyebrow: "أول جلسة مجانية علينا",
-    title: "اتكلم إنجليزي.",
-    titleAccent: "بثقة.",
-    intro: "جاوبنا على كام سؤال بسيط، وهنظبطلك جلسة مجانية مع مدرّب تتكلم معاه لايف.",
-    time: "دقيقتين بس",
+    eyebrow: "ابدأ بجلسة مباشرة مجانية",
+    title: "قولنا إيه المهم ليك.",
+    titleAccent: "وهنسمعك لايف.",
+    intro: "شاركنا إنت عايز الإنجليزي يساعدك في إيه. المدرّب هيقيّم مستواك في محادثة حقيقية، وبعدها يرشحلك الخطوة الأنسب.",
+    time: "بداية في دقيقتين",
     noPayment: "من غير بيانات دفع",
     whatsapp: "هنأكد معاك على واتساب",
-    formTitle: "احجز أول جلسة مجانية ليك",
-    formSubtitle: "اختار الأيام والأوقات اللي تناسبك، وهنكلمك على واتساب عشان نحدد معاك المعاد.",
+    formTitle: "احجز جلستك المجانية",
+    formSubtitle: "قولنا هدفك ومواعيدك دلوقتي. تقييم المستوى هيكون لايف، مش اختبار طويل.",
     step1: "بياناتك",
     step2: "هدفك",
     step3: "مواعيدك",
+    journey1: "تعريف سريع",
+    journey2: "جلسة مباشرة مجانية",
+    journey3: "ترشيح الخطة المناسبة",
     name: "اسمك",
     namePlaceholder: "مثال: أحمد حسن",
     phone: "رقم الموبايل (واتساب)",
@@ -109,17 +121,21 @@ const COPY = {
     availabilityClear: "مسح الكل",
     availabilityEmpty: "لسه مفيش مواعيد متختارة",
     availabilitySelected: "اختيارات",
-    note: "في حاجة مهمة تحب تعرفنا بيها؟",
-    notePlaceholder: "هدف واضح، مقابلة عمل قريبة، أو أي حاجة تانية…",
-    submit: "احجز جلستي المجانية",
+    note: "عايز تقدر تعمل إيه بالإنجليزي؟",
+    notePlaceholder: "مثال: أقود ميتنج من غير ما أتردد، أنجح في مقابلة، أو أتكلم بطبيعية أكتر في السفر…",
+    submit: "اطلب جلستي المجانية",
     submitting: "بنجهّز طلبك…",
     privacy: "هنستخدم البيانات دي بس عشان نرتّب جلستك.",
-    required: "كمّل اسمك ورقم واتساب والهدف واختار ساعة مناسبة على الأقل.",
+    required: "كمّل اسمك ورقم واتساب وهدفك والنتيجة اللي عايز توصل لها، واختار ساعة مناسبة على الأقل.",
     error: "حصلت مشكلة. جرّب تاني كمان شوية.",
     successEyebrow: "وصلنا طلبك",
-    successTitle: "تمام، هنرتّب لك جلستك المجانية.",
-    successBody: "شكرًا يا {name}. هنبعتلك على واتساب عشان نحدد معاك المعاد المناسب.",
-    successNote: "خلي موبايلك قريب — هنتواصل معاك عادةً خلال يوم عمل.",
+    successTitle: "تمام، هنرتّب جلستك المجانية.",
+    successBody: "شكرًا يا {name}. هنبعتلك على واتساب عشان نحدد معاد مع مدرّب يفهم هدفك ويقيّم مستواك لايف.",
+    successNote: "بعد الجلسة، هتعرف مستوى البداية وهتاخد ترشيح شخصي للباقة المناسبة.",
+    successStep1: "بنأكد معاك المعاد",
+    successStep2: "بتقابل المدرّب مجانًا",
+    successStep3: "بتختار الخطة الموصى بيها",
+    planContext: "كنت بتشوف باقة {plan}. مش لازم تقرر دلوقتي—المدرّب هيأكد أنسب اختيار بعد الجلسة المجانية.",
     back: "ارجع للرئيسية",
     chooseGoal: "اختار هدفك",
   },
@@ -130,8 +146,17 @@ function getLabel(option, locale, key = "en") {
 }
 
 export default function StarterSessionPage({ locale = "en" }) {
+  const searchParams = useSearchParams();
   const isArabic = locale === "ar";
   const copy = COPY[isArabic ? "ar" : "en"];
+  const packageDict = useMemo(() => getDictionary(locale, "packages"), [locale]);
+  const planId = useMemo(() => {
+    const value = String(searchParams.get("plan") || "").trim();
+    return /^[a-z0-9-]{1,40}$/i.test(value) ? value : "";
+  }, [searchParams]);
+  const selectedPlanLabel = planId
+    ? packageDict[`plan_${planId}_title`] || ""
+    : "";
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -146,7 +171,7 @@ export default function StarterSessionPage({ locale = "en" }) {
 
   const selectedAvailabilityCount = form.availabilitySlots.length;
   const canSubmit = useMemo(
-    () => Boolean(form.name.trim() && form.phone.trim() && form.goal && selectedAvailabilityCount),
+    () => Boolean(form.name.trim() && form.phone.trim() && form.goal && form.notes.trim() && selectedAvailabilityCount),
     [form, selectedAvailabilityCount],
   );
 
@@ -186,6 +211,12 @@ export default function StarterSessionPage({ locale = "en" }) {
     try {
       await api.post("/free-session-requests", {
         ...form,
+        notes: [
+          form.notes.trim(),
+          selectedPlanLabel
+            ? `Package viewed before booking: ${selectedPlanLabel} (${planId})`
+            : "",
+        ].filter(Boolean).join("\n\n"),
         locale: isArabic ? "ar" : "en",
       });
       setState("success");
@@ -204,6 +235,11 @@ export default function StarterSessionPage({ locale = "en" }) {
           <h1>{copy.successTitle}</h1>
           <p>{copy.successBody.replace("{name}", form.name.trim())}</p>
           <div className="starter-success__note"><MessageCircle size={18} aria-hidden="true" />{copy.successNote}</div>
+          <div className="starter-success__steps">
+            {[copy.successStep1, copy.successStep2, copy.successStep3].map((step, index) => (
+              <div key={step}><span>{index + 1}</span><strong>{step}</strong></div>
+            ))}
+          </div>
           <a className="starter-button starter-button--secondary" href={isArabic ? "/ar" : "/"}>{copy.back}<ArrowRight size={17} aria-hidden="true" /></a>
         </section>
       </main>
@@ -230,9 +266,9 @@ export default function StarterSessionPage({ locale = "en" }) {
           </div>
 
           <div className="starter-steps" aria-label="Booking steps">
-            <div><span>1</span>{copy.step1}</div>
-            <div><span>2</span>{copy.step2}</div>
-            <div><span>3</span>{copy.step3}</div>
+            <div><span>1</span>{copy.journey1}</div>
+            <div><span>2</span>{copy.journey2}</div>
+            <div><span>3</span>{copy.journey3}</div>
           </div>
         </section>
 
@@ -242,6 +278,11 @@ export default function StarterSessionPage({ locale = "en" }) {
             <div><h2 id="starter-form-title">{copy.formTitle}</h2><p>{copy.formSubtitle}</p></div>
             <span className="starter-free-pill">FREE</span>
           </div>
+          {selectedPlanLabel && (
+            <p className="starter-plan-context">
+              {copy.planContext.replace("{plan}", selectedPlanLabel)}
+            </p>
+          )}
 
           <form onSubmit={submit} noValidate>
             <div className="starter-form-section">
@@ -256,12 +297,12 @@ export default function StarterSessionPage({ locale = "en" }) {
             <div className="starter-form-section">
               <div className="starter-section-label"><span>2</span><div><strong>{copy.step2}</strong><small>{isArabic ? "عشان نخلي الجلسة مناسبة ليك" : "So we can make it useful"}</small></div></div>
               <fieldset className="starter-fieldset"><legend>{copy.goal} <em>*</em></legend><div className="starter-goal-grid" role="radiogroup" aria-label={copy.goal}>{GOAL_OPTIONS.map((option) => { const selected = form.goal === option.value; return <button type="button" role="radio" aria-checked={selected} className={`starter-choice starter-choice--goal ${selected ? "is-selected" : ""}`} key={option.value} onClick={() => update("goal", selected ? "" : option.value)}><span>{getLabel(option, locale)}</span><Check size={16} aria-hidden="true" /></button>; })}</div></fieldset>
+              <label className="starter-field"><span>{copy.note} <em>*</em></span><textarea rows="3" value={form.notes} onChange={(event) => update("notes", event.target.value)} placeholder={copy.notePlaceholder} required /></label>
             </div>
 
             <div className="starter-form-section">
               <div className="starter-section-label"><span>3</span><div><strong>{copy.step3}</strong><small>{isArabic ? "اختار الأيام والساعات اللي تناسبك" : "Choose the days and hours that suit you"}</small></div></div>
               <fieldset className="starter-fieldset"><legend>{copy.availability} <em>*</em></legend><p className="starter-fieldset__hint">{copy.availabilityHint}<span>{availabilitySummary}</span></p><div className="starter-availability-grid"><div className="starter-availability-toolbar"><span>{copy.availabilityInstruction}</span><div className="starter-availability-toolbar__actions"><button className="starter-availability-nav" type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: -420, behavior: "smooth" })} aria-label={isArabic ? "عرض الساعات السابقة" : "Show earlier hours"}>{isArabic ? "→" : "←"} {copy.availabilityEarlier}</button><button className="starter-availability-nav" type="button" onClick={() => availabilityGridRef.current?.scrollBy({ left: 420, behavior: "smooth" })} aria-label={isArabic ? "عرض الساعات التالية" : "Show later hours"}>{copy.availabilityLater} {isArabic ? "←" : <ArrowRight size={13} aria-hidden="true" />}</button><button type="button" onClick={clearAvailability} disabled={!form.availabilitySlots.length}>{copy.availabilityClear}</button></div></div><div className="starter-availability-scroll" ref={availabilityGridRef}><div className="starter-availability-head"><span />{AVAILABILITY_HOURS.map((hour) => <span key={hour}>{formatAvailabilityHour(hour, isArabic)}</span>)}</div>{AVAILABILITY_DAYS.map((day) => <div className="starter-availability-row" key={day.value}><strong>{isArabic ? day.shortAr : day.shortEn}</strong>{AVAILABILITY_HOURS.map((hour) => { const value = availabilitySlot(day.value, hour); const selected = form.availabilitySlots.includes(value); return <label className={selected ? "is-selected" : ""} key={value} title={`${getLabel(day, locale)} · ${formatAvailabilityHour(hour, isArabic)}`}><input type="checkbox" name="availabilitySlots" value={value} checked={selected} aria-label={`${getLabel(day, locale)} ${formatAvailabilityHour(hour, isArabic)}`} onChange={() => toggleAvailability(value)} /><span aria-hidden="true" /></label>; })}</div>)}</div></div><p className="starter-availability-summary">{availabilitySummary}</p></fieldset>
-              <label className="starter-field"><span>{copy.note} <small>{copy.optional}</small></span><textarea rows="3" value={form.notes} onChange={(event) => update("notes", event.target.value)} placeholder={copy.notePlaceholder} /></label>
             </div>
 
             {error && <p className="starter-form-error" role="alert">{error}</p>}
