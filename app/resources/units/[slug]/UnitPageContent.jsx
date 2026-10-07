@@ -85,6 +85,13 @@ function getPrimaryUrl(resource) {
   return null;
 }
 
+function getUnitTopicTitle(title) {
+  return String(title || "").replace(
+    /^unit\s+\d+\s*[\u00b7:\u2014–-]\s*/i,
+    ""
+  );
+}
+
 export default async function UnitPageContent({ params, locale = "en" }) {
   const resolvedParams = await params;
   const slug = resolvedParams?.slug;
@@ -123,6 +130,7 @@ export default async function UnitPageContent({ params, locale = "en" }) {
   }
 
   const { title, summary, order, bookLevel, subLevel, resources } = unit;
+  const displayTitle = getUnitTopicTitle(title);
 
   // Derive track / book / level info for breadcrumbs
   const book = bookLevel?.book || null;
@@ -165,7 +173,7 @@ export default async function UnitPageContent({ params, locale = "en" }) {
             </>
           )}
 
-          <span className="unit-breadcrumbs__crumb">{title}</span>
+          <span className="unit-breadcrumbs__crumb">{displayTitle}</span>
         </nav>
 
         {/* Unit header card */}
@@ -182,7 +190,7 @@ export default async function UnitPageContent({ params, locale = "en" }) {
             )}
           </div>
 
-          <h1 className="unit-header-card__title">{title}</h1>
+          <h1 className="unit-header-card__title">{displayTitle}</h1>
 
           {summary && <p className="unit-header-card__summary">{summary}</p>}
 

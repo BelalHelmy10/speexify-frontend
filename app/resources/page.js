@@ -5,7 +5,6 @@ import ResourcesUnavailableState from "./ResourcesUnavailableState";
 import { getDictionary, t } from "@/app/i18n";
 import { getIntlLocale } from "@/utils/locale";
 import { requireResourceAccess } from "@/app/protected-access";
-import { unstable_cache } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -79,37 +78,37 @@ const RESOURCES_PICKER_QUERY = `
         },
 
         // All resources attached to this unit
-        // All resources attached to this unit
-"resources": *[_type == "resource" && references(^._id)] | order(order asc) {
-  _id,
-  title,
-  description,
-  kind,
-  cecrLevel,
-  tags,
-  sourceType,
-  "fileUrl": file.asset->url,
-  "fileName": file.asset->originalFilename,
-  "audioUrl": audio.asset->url,
-  "audioTracks": audioTracks[]{
-    label,
-    "url": file.asset->url
-  },
-  externalUrl,
-  googleSlidesUrl,
-  youtubeUrl
-}
-
-
+        "resources": *[_type == "resource" && references(^._id)] | order(order asc) {
+          _id,
+          title,
+          description,
+          kind,
+          cecrLevel,
+          tags,
+          sourceType,
+          "fileUrl": file.asset->url,
+          "fileName": file.asset->originalFilename,
+          "audioUrl": audio.asset->url,
+          "audioTracks": audioTracks[]{
+            label,
+            "url": file.asset->url
+          },
+          externalUrl,
+          googleSlidesUrl,
+          youtubeUrl
+        }
       }
     }
   }
 }
 `;
 
-const getCachedResourcesTree = unstable_cache(
-  async () =>
-    fetchSanity(RESOURCES_PICKER_QUERY, {}, {
+async function getResourcesTree() {
+  try {
+    // The complete library is larger than Next.js's 2 MB per-entry data-cache
+    // limit. Keep this request-scoped until the picker is split into smaller,
+    // independently cached queries.
+    const data = await fetchSanity(RESOURCES_PICKER_QUERY, {}, {
       queryName: "resources.picker",
       validate: (value) => {
         if (!Array.isArray(value)) {
@@ -118,14 +117,7 @@ const getCachedResourcesTree = unstable_cache(
           throw error;
         }
       },
-    }),
-  ["resources-picker-tree-v1"],
-  { revalidate: 300, tags: ["resources-picker"] }
-);
-
-async function getResourcesTree() {
-  try {
-    const data = await getCachedResourcesTree();
+    });
 
     return { tracks: data, unavailable: false };
   } catch {
