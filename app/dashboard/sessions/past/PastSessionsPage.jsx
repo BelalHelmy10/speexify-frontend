@@ -336,6 +336,16 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
               </Link>
             )}
 
+            {!isTeacher && isCompleted && !isTraining && (
+              <Link
+                href={`${prefix}/classroom/${session.id}`}
+                className="past-session-card__action past-session-card__action--primary"
+              >
+                <BookOpenCheck />
+                {locale === "ar" ? "مراجعة المواد" : "Review materials"}
+              </Link>
+            )}
+
             {!isTeacher && feedbackReady && (
               <Link
                 href={`${prefix}/dashboard/sessions/${session.id}/feedback`}

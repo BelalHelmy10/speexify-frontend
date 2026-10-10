@@ -30,7 +30,11 @@ import {
   ClassroomScreenShareConfirmModal,
   useClassroomScreenShare,
 } from "./ClassroomScreenShare";
-import { buildResourceIndex, getViewerInfo } from "./classroomHelpers";
+import {
+  buildResourceIndex,
+  buildReviewResourceSnapshot,
+  getViewerInfo,
+} from "./classroomHelpers";
 import useAuth from "@/hooks/useAuth";
 import { formatCompactDuration, getSessionTiming } from "./classroomTime";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
@@ -1646,6 +1650,7 @@ export default function ClassroomShell({
         await api.post(`/sessions/${sessionId}/resources-used`, {
           resourceId: newId,
           resourceTitle: resource?.title || resource?.name || null,
+          resourceSnapshot: buildReviewResourceSnapshot(resource),
         });
       } catch (err) {
         console.warn("Failed to track resource:", err);

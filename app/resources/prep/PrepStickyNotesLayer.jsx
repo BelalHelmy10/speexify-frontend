@@ -12,6 +12,7 @@ export default function PrepStickyNotesLayer({
   tool,
   TOOL_SELECT,
   notePlaceholder,
+  readOnly = false,
 }) {
   return (
     <>
@@ -32,26 +33,30 @@ export default function PrepStickyNotesLayer({
                 zIndex: getZIndexFromId(note.id),
               }}
             >
-              <div
-                className="prep-sticky-note__header"
-                onMouseDown={(e) => startNoteDrag(e, note)}
-              >
-                <button
-                  type="button"
-                  className="prep-sticky-note__close"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteNote(note.id);
-                  }}
+              {!readOnly && (
+                <div
+                  className="prep-sticky-note__header"
+                  onMouseDown={(e) => startNoteDrag(e, note)}
                 >
-                  ×
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    className="prep-sticky-note__close"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteNote(note.id);
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
               <textarea
                 className="prep-sticky-note__textarea"
                 dir="auto"
                 placeholder={notePlaceholder}
                 value={note.text}
+                readOnly={readOnly}
+                tabIndex={readOnly ? -1 : undefined}
                 onChange={(e) => updateNoteText(note.id, e.target.value)}
                 onMouseDown={(e) => tool !== TOOL_SELECT && e.stopPropagation()}
               />

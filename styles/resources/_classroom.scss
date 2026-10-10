@@ -1038,19 +1038,25 @@ body.classroom-active {
       inset 0 0 24px rgba(20, 184, 166, 0.12);
   }
 
+  // Connecting must never cover Jitsi's join/lobby/device controls.
   &__loading {
     position: absolute;
-    inset: 0;
+    top: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    background: $cr-bg-primary;
+    gap: 0.5rem;
+    padding: 0.4rem;
+    border-radius: 8px;
+    background: rgba($cr-bg-primary, 0.75);
     color: $cr-text-secondary;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     z-index: 10;
+    pointer-events: none;
   }
+
 
   &__spinner {
     width: 32px;
@@ -1075,6 +1081,18 @@ body.classroom-active {
     text-align: center;
     padding: 1.5rem;
     z-index: 10;
+  }
+
+  &__error--waiting {
+    inset: 0.5rem 0.5rem auto;
+    padding: 0.5rem;
+    gap: 0.25rem;
+    background: rgba($cr-bg-primary, 0.85);
+    pointer-events: none;
+
+    .cr-video__error-icon { display: none; }
+    p { margin: 0; }
+    .cr-video__retry { pointer-events: auto; }
   }
 
   &__error-icon {
@@ -5521,6 +5539,235 @@ body.classroom-active {
   }
 }
 .cr-resource-workspace[hidden] { display: none; }
+
+// ─── Learner Session Review ─────────────────────────────────────────────────
+.cr-review {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  color: $cr-text-primary;
+  background:
+    radial-gradient(circle at 14% -20%, rgba($cr-accent-primary, 0.2), transparent 35%),
+    $cr-bg-primary;
+  font-family: $cr-font-sans;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+    flex: 0 0 auto;
+    padding: clamp(1rem, 2.5vw, 1.75rem) clamp(1rem, 4vw, 3.5rem);
+    border-bottom: 1px solid $cr-border-default;
+    background: rgba($cr-bg-secondary, 0.92);
+    backdrop-filter: blur(18px);
+  }
+
+  &__heading {
+    min-width: 0;
+
+    h1 {
+      margin: 0.3rem 0 0.35rem;
+      overflow: hidden;
+      color: $cr-text-primary;
+      font-family: $cr-font-display;
+      font-size: clamp(1.45rem, 3vw, 2.25rem);
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    p {
+      margin: 0;
+      color: $cr-text-secondary;
+      font-size: 0.9rem;
+    }
+  }
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: $cr-text-secondary;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover { color: $cr-text-primary; }
+    &:focus-visible { outline: 2px solid $cr-accent-primary; outline-offset: 4px; }
+  }
+
+  &[dir="rtl"] &__back svg { transform: rotate(180deg); }
+
+  &__eyebrow {
+    display: block;
+    margin-top: 0.75rem;
+    color: $cr-accent-primary;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    color: $cr-text-muted;
+    font-size: 0.75rem;
+
+    > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.65rem;
+      border: 1px solid $cr-border-default;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+
+  &__readonly { color: $cr-accent-primary !important; }
+
+  &__stage {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  &__material-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex: 0 0 auto;
+    min-height: 54px;
+    padding: 0.55rem clamp(0.75rem, 2.5vw, 2rem);
+    border-bottom: 1px solid $cr-border-default;
+    background: $cr-bg-secondary;
+
+    > div:first-child {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    strong {
+      overflow: hidden;
+      font-size: 0.92rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      color: $cr-text-muted;
+      font-size: 0.7rem;
+    }
+  }
+
+  &__material-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    button,
+    a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      min-height: 34px;
+      padding: 0.4rem 0.75rem;
+      border: 1px solid rgba($cr-accent-primary, 0.55);
+      border-radius: 7px;
+      color: $cr-text-primary;
+      background: rgba($cr-accent-primary, 0.13);
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 750;
+      text-decoration: none;
+      cursor: pointer;
+
+      &:hover { background: rgba($cr-accent-primary, 0.23); }
+      &:focus-visible { outline: 2px solid $cr-accent-primary; outline-offset: 2px; }
+      &:disabled { opacity: 0.55; cursor: wait; }
+    }
+
+    a {
+      border-color: $cr-border-default;
+      color: $cr-text-secondary;
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+
+  &__notice {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid rgba($cr-accent-danger, 0.35);
+    color: $cr-accent-danger-light;
+    background: rgba($cr-accent-danger, 0.09);
+    font-size: 0.78rem;
+    text-align: center;
+  }
+
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 2rem;
+    color: $cr-text-secondary;
+    text-align: center;
+
+    h2 { margin: 0; color: $cr-text-primary; }
+    p { max-width: 34rem; margin: 0; }
+  }
+
+  .cr-resource-workspace { flex: 1; min-height: 0; }
+  .prep-layout { border: 0; border-radius: 0; }
+  .prep-viewer { min-height: 0; }
+  .prep-annotate-layer[data-read-only="true"],
+  .prep-annotate-layer[data-read-only="true"] * { pointer-events: none !important; }
+}
+
+@media (max-width: 720px) {
+  .cr-review {
+    &__header {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.7rem;
+      padding: 0.8rem 1rem;
+    }
+
+    &__heading p { display: none; }
+    &__eyebrow { margin-top: 0.45rem; }
+    &__meta { justify-content: flex-start; }
+    &__meta time { display: none; }
+
+    &__material-bar {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    &__material-actions { width: 100%; }
+    &__material-actions button,
+    &__material-actions a { flex: 1; }
+  }
+}
 
 // The PDF controls and resource tabs share a height so the lesson has one
 // consistent, compact pair of bottom bars at every screen size.

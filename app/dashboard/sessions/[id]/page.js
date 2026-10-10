@@ -358,8 +358,13 @@ export default function SessionDetailPage() {
     if (sessionStatus === "completed") {
       return (
         <div className="sd-actions-stack">
-            <Link href={classroomHref} className="btn btn--ghost">
-              {txt("join_view_classroom", "View classroom")}
+            <Link
+              href={classroomHref}
+              className={`btn ${isLearner && !sessionIsTeacher ? "btn--primary" : "btn--ghost"}`}
+            >
+              {isLearner && !sessionIsTeacher
+                ? locale === "ar" ? "مراجعة مواد الجلسة" : "Review session materials"
+                : txt("join_view_classroom", "View classroom")}
             </Link>
             {hasExternal && (
               <a

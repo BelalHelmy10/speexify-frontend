@@ -69,6 +69,7 @@ export default function PrepAnnotationsOverlay({ ctx }) {
     notePlaceholder,
     startMaskMove,
     shapeDrag,
+    readOnly,
   } = ctx;
 
   const menusOpen = toolMenuOpen || colorMenuOpen;
@@ -78,6 +79,7 @@ export default function PrepAnnotationsOverlay({ ctx }) {
   const learnerPointers = learnerPointersByPage[pointerPage] || {};
 
   const needsInteraction =
+    !readOnly &&
     !menusOpen &&
     (tool !== TOOL_NONE ||
       stickyNotes.length > 0 ||
@@ -107,6 +109,7 @@ export default function PrepAnnotationsOverlay({ ctx }) {
   return (
     <div
       className={`prep-annotate-layer tool-${tool}`}
+      data-read-only={readOnly ? "true" : undefined}
       style={{
         position: "absolute",
         inset: 0,
@@ -214,6 +217,7 @@ export default function PrepAnnotationsOverlay({ ctx }) {
         startFontSizeResize={startFontSizeResize}
         setActiveTextId={setActiveTextId}
         textPlaceholder={textPlaceholder}
+        readOnly={readOnly}
       />
 
       <PrepStickyNotesLayer
@@ -228,6 +232,7 @@ export default function PrepAnnotationsOverlay({ ctx }) {
         tool={tool}
         TOOL_SELECT={TOOL_SELECT}
         notePlaceholder={notePlaceholder}
+        readOnly={readOnly}
       />
 
       <PrepMasksLayer

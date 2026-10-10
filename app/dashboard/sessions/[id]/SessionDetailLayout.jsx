@@ -440,15 +440,21 @@ export default function SessionDetailLayout({
             variant="join"
             title={
               sessionStatus === "completed"
-                ? txt("join_title_completed", "Classroom")
+                ? isLearner && !sessionIsTeacher
+                  ? locale === "ar" ? "مراجعة الجلسة" : "Session review"
+                  : txt("join_title_completed", "Classroom")
                 : txt("join_title", "Join")
             }
             description={
               sessionStatus === "completed"
-                ? txt(
-                    "join_session_ended",
-                    "This session has ended. You can review the summary below."
-                  )
+                ? isLearner && !sessionIsTeacher
+                  ? locale === "ar"
+                    ? "راجع المواد التي فتحها معلمك أثناء الجلسة وقم بتنزيلها."
+                    : "Reopen the materials your teacher used and download them for study."
+                  : txt(
+                      "join_session_ended",
+                      "This session has ended. You can review the summary below."
+                    )
                 : joinWindow.canJoin
                   ? undefined
                   : joinWindow.isBeforeWindow

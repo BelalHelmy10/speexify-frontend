@@ -6,6 +6,7 @@ import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 import ts from 'typescript';
 import puppeteer from 'puppeteer';
+import * as sass from 'sass';
 
 const root = path.resolve(import.meta.dirname, '..');
 const modules = [];
@@ -45,10 +46,17 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 try {
   await page.setContent('<div id="root"></div><div id="portrait"></div><div id="split"></div>');
-  await page.addStyleTag({content: '.cr-video{height:300px;width:400px}.cr-video__loading,.cr-video__error{position:absolute;z-index:10}iframe{height:100%;width:100%}'});
+  await page.addStyleTag({content:sass.compile(path.join(root,'styles/resources.scss'),{logger:sass.Logger.silent}).css + '.cr-video{height:300px;width:400px}'});
   await page.addScriptTag({content:js});
   await page.waitForFunction(() => window.calls?.length === 1);
   assert.ok(await page.$('.cr-video__loading'), 'Loading stays visible before conference join');
+  const blocker = await page.$eval('iframe', iframe => {
+    const r = iframe.getBoundingClientRect();
+    const element = document.elementFromPoint(r.x + r.width/2, r.y + r.height/2);
+    return {className:element.className, blocked:element !== iframe};
+  });
+  console.log('Prejoin iframe hit test:', blocker);
+  assert.equal(blocker.blocked, false, 'Jitsi join/permission controls must remain clickable while connecting');
   assert.match(await page.$eval('.cr-header__pill-signal', e => e.getAttribute('aria-label')), /connecting/);
   await page.evaluate(() => window.calls.at(-1).emit('videoConferenceJoined'));
   await page.waitForFunction(() => !document.querySelector('.cr-video__loading'));
@@ -81,10 +89,14 @@ try {
   await page.waitForSelector('.cr-video__retry');
   await page.click('.cr-video__retry');
   await page.waitForFunction(() => document.querySelector('.cr-video__error')?.textContent.includes('classroom_video_error_timeout'));
-  assert.equal(await page.evaluate(() => window.calls.at(-1).disposed), true);
+  assert.notEqual(await page.evaluate(() => window.calls.at(-1).disposed), true, 'Slow join must not destroy the call');
+  assert.equal(await page.$eval('.cr-video__frame', e => getComputedStyle(e).opacity), '1');
+  assert.equal(await page.$eval('iframe', e => { const r=e.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===e; }), true);
   await page.evaluate(() => window.calls.at(-1).emit('videoConferenceJoined'));
-  assert.ok(await page.$('.cr-video__error'), 'Late join must not erase timeout failure');
-  console.log('PASS stalled join times out and ignores late join events');
+  await page.waitForFunction(() => !document.querySelector('.cr-video__error'));
+  console.log('PASS delayed permission/lobby join survives timeout and recovers');
+  await page.evaluate(() => window.calls.at(-1).emit('videoConferenceLeft'));
+  await page.waitForSelector('.cr-video__retry');
 
   await page.setRequestInterception(true);
   let failScript = true;

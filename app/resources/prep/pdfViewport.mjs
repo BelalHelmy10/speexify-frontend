@@ -19,5 +19,7 @@ export function visiblePdfRegion(page, panel) {
 export function regionFitZoom(page, panel, region) {
   const valid = normalizePdfRegion(region);
   if (!valid || page.width <= 0 || page.height <= 0 || panel.width <= 0 || panel.height <= 0) return null;
-  return Math.min(panel.width/(page.width*valid.width), panel.height/(page.height*valid.height));
+  // A tiny visible corner must not expand the full backing canvas without limit.
+  // Match the viewer's 500% maximum even when the crop is fitted remotely.
+  return Math.min(5, panel.width/(page.width*valid.width), panel.height/(page.height*valid.height));
 }

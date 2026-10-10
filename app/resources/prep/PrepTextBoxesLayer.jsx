@@ -32,6 +32,7 @@ export default function PrepTextBoxesLayer({
   startFontSizeResize,
   setActiveTextId,
   textPlaceholder,
+  readOnly = false,
 }) {
   const pendingEdit = useRef(null);
   useLayoutEffect(() => {
@@ -61,7 +62,7 @@ export default function PrepTextBoxesLayer({
       {textBoxes
         .filter((box) => !isPdf || box.page === pdfCurrentPage || !box.page)
         .map((box) => {
-          const isEditing = activeTextId === box.id;
+          const isEditing = !readOnly && activeTextId === box.id;
           const isResizing = resizeState?.id === box.id;
           const isWidthResizing = widthResizeState?.id === box.id;
           const isHeightResizing = heightResizeState?.id === box.id;
@@ -137,7 +138,9 @@ export default function PrepTextBoxesLayer({
                 top: `${box.y * 100}%`,
                 transform: "translate(-50%, -50%)",
                 pointerEvents:
-                  tool === TOOL_TEXT || tool === TOOL_SELECT ? "auto" : "none",
+                  !readOnly && (tool === TOOL_TEXT || tool === TOOL_SELECT)
+                    ? "auto"
+                    : "none",
                 zIndex: getZIndexFromId(box.id),
               }}
             >

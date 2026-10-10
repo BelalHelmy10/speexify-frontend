@@ -156,7 +156,8 @@ export default function PdfViewerWithSidebar({
         ? Math.min(widthZoom, availableHeight / viewport.height)
         : widthZoom;
       if (Number.isFinite(fitZoom) && fitZoom > 0) {
-        setZoom((previous) => Math.abs(previous - fitZoom) < 0.002 ? previous : fitZoom);
+        const boundedZoom = Math.min(MAX_ZOOM, fitZoom);
+        setZoom((previous) => Math.abs(previous - boundedZoom) < 0.002 ? previous : boundedZoom);
       }
     }).catch(() => {});
   }, [pdfDoc, currentPage, fitMode]);

@@ -20,6 +20,32 @@ export { sharedGetViewerInfo as getViewerInfo };
 // (OPTIONAL) re-export normalizers if needed elsewhere
 export { normalizeYouTubeEmbed, normalizeGoogleSlidesEmbed };
 
+const REVIEW_SNAPSHOT_FIELDS = [
+  "title",
+  "description",
+  "kind",
+  "sourceType",
+  "fileUrl",
+  "fileName",
+  "externalUrl",
+  "googleSlidesUrl",
+  "youtubeUrl",
+];
+
+export function buildReviewResourceSnapshot(resource) {
+  if (!resource || typeof resource !== "object") return null;
+
+  const snapshot = {};
+  REVIEW_SNAPSHOT_FIELDS.forEach((field) => {
+    if (typeof resource[field] === "string" && resource[field].trim()) {
+      snapshot[field] = resource[field].trim();
+    }
+  });
+  if (resource.classroomUpload === true) snapshot.classroomUpload = true;
+
+  return Object.keys(snapshot).length ? snapshot : null;
+}
+
 // ─────────────────────────────────────────────────────────────
 // Resource index builder – matches the RESOURCES query shape
 // ─────────────────────────────────────────────────────────────

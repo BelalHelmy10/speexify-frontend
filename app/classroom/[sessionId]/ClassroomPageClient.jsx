@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import ClassroomErrorBoundary from "./ClassroomErrorBoundary";
 import ClassroomShell from "./ClassroomShell";
+import ClassroomReviewShell from "./ClassroomReviewShell";
 
 export default function ClassroomPageClient({ sessionId, tracks, initialSession = null }) {
   const pathname = usePathname();
@@ -107,15 +108,30 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
     );
   }
 
+  const isLearnerReview =
+    session.isLearner === true &&
+    session.isTeacher !== true &&
+    session.reviewAvailable === true;
+
   return (
     <ClassroomErrorBoundary sessionId={String(sessionId)} prefix={prefix}>
-      <ClassroomShell
-        session={session}
-        sessionId={String(sessionId)}
-        tracks={tracks}
-        locale={locale}
-        prefix={prefix}
-      />
+      {isLearnerReview ? (
+        <ClassroomReviewShell
+          session={session}
+          sessionId={String(sessionId)}
+          tracks={tracks}
+          locale={locale}
+          prefix={prefix}
+        />
+      ) : (
+        <ClassroomShell
+          session={session}
+          sessionId={String(sessionId)}
+          tracks={tracks}
+          locale={locale}
+          prefix={prefix}
+        />
+      )}
     </ClassroomErrorBoundary>
   );
 }

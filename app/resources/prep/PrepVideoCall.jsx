@@ -259,6 +259,7 @@ function PrepVideoCall({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryAttempt, setRetryAttempt] = useState(0);
+  const [joinDelayed, setJoinDelayed] = useState(false);
   const connectionStateCbRef = useRef(onConnectionStateChange);
   useEffect(() => {
     connectionStateCbRef.current = onConnectionStateChange;
@@ -1331,6 +1332,7 @@ function PrepVideoCall({
       if (cancelled) return;
       window.clearTimeout(joinTimer);
       setIsLoading(false);
+      setJoinDelayed(false);
       setError(message);
       clearNetworkQuality();
       publishConnectionState("failed");
@@ -1345,15 +1347,14 @@ function PrepVideoCall({
       setIsLoading(true);
       setError(null);
       publishConnectionState("connecting");
+      setJoinDelayed(false);
       joinTimer = window.setTimeout(() => {
-        failConnection(t(dict, "classroom_video_error_timeout"));
-        cancelled = true;
-        try {
-          apiRef.current?.dispose();
-        } catch (disposeError) {
-          console.warn("Error disposing timed-out call:", disposeError);
-        }
-        apiRef.current = null;
+        if (cancelled) return;
+        // Permission prompts/lobby admission can legitimately take longer.
+        // Keep the iframe usable and allow a later join to complete.
+        setIsLoading(false);
+        setJoinDelayed(true);
+        setError(t(dict, "classroom_video_error_timeout"));
       }, 30000);
 
       try {
@@ -1387,6 +1388,7 @@ function PrepVideoCall({
           if (cancelled) return;
           window.clearTimeout(joinTimer);
           setIsLoading(false);
+          setJoinDelayed(false);
           setError(null);
           publishConnectionState("connected");
           try {
@@ -1833,14 +1835,14 @@ function PrepVideoCall({
         .join(" ")}
     >
       {isLoading && !error && (
-        <div className="cr-video__loading">
+        <div className="cr-video__loading" role="status">
           <div className="cr-video__spinner" />
           <span>{t(dict, "classroom_video_connecting")}</span>
         </div>
       )}
 
       {error && (
-        <div className="cr-video__error" role="alert">
+        <div className={`cr-video__error${joinDelayed ? " cr-video__error--waiting" : ""}`} role="alert">
           <span className="cr-video__error-icon">⚠️</span>
           <p>{error}</p>
           <button
@@ -1858,7 +1860,7 @@ function PrepVideoCall({
         style={{
           width: "100%",
           height: "100%",
-          opacity: error ? 0.2 : 1,
+          opacity: error && !joinDelayed ? 0.2 : 1,
           transition: "opacity 0.3s ease",
         }}
       />

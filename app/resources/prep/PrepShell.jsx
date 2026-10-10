@@ -141,6 +141,8 @@ function PrepShellContent({
   initialPdfScroll = null,
   onClassroomStateChange,
   onExportReady,
+  readOnly = false,
+  annotationsEndpoint = null,
 }) {
   const dict = getDictionary(locale, "resources");
   const prefix = locale === "ar" ? "/ar" : "";
@@ -1430,6 +1432,7 @@ function PrepShellContent({
       if (ctx)
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
+    if (readOnly) return;
     try {
       const raw = window.localStorage.getItem(storageKey);
       // ✅ If no saved annotations for this resource, we keep the reset (empty) state
@@ -1461,17 +1464,18 @@ function PrepShellContent({
     } catch (err) {
       console.warn("Failed to load annotations", err);
     }
-  }, [storageKey]);
+  }, [storageKey, readOnly]);
 
   // Restore the durable classroom snapshot after the local cache loads. The
   // teacher's snapshot is shared with learners, while each user keeps their
   // own private annotation record.
   useEffect(() => {
     if (!sessionId || !resource?._id) return undefined;
+    if (readOnly && !isActive) return undefined;
     let cancelled = false;
 
     api
-      .get(`/sessions/${sessionId}/annotations`, {
+      .get(annotationsEndpoint || `/sessions/${sessionId}/annotations`, {
         params: { resourceId: resource._id },
       })
       .then(({ data }) => {
@@ -1514,7 +1518,15 @@ function PrepShellContent({
     return () => {
       cancelled = true;
     };
-  }, [sessionId, resource?._id, myUserId, isTeacher]);
+  }, [
+    sessionId,
+    resource?._id,
+    myUserId,
+    isTeacher,
+    annotationsEndpoint,
+    readOnly,
+    isActive,
+  ]);
 
   // ─────────────────────────────────────────────────────────────
   // Resize canvas with container (and redraw strokes)
@@ -1600,6 +1612,7 @@ function PrepShellContent({
   const pendingSaveRef = useRef({});
 
   function saveAnnotations(opts = {}, saveOpts = { includeCanvas: false }) {
+    if (readOnly) return;
     savePrepAnnotations(opts, saveOpts, {
       storageKey,
       canvasRef,
@@ -2543,6 +2556,7 @@ function PrepShellContent({
           notePlaceholder: t(dict, "resources_prep_note_placeholder"),
           startMaskMove,
           shapeDrag,
+          readOnly,
         }}
       />
     );
@@ -2610,7 +2624,7 @@ function PrepShellContent({
           {viewerIsActive ? (
             <>
               {/* Toolbar */}
-              <PrepToolbar
+              {!readOnly && <PrepToolbar
                 hideSidebar={hideSidebar}
                 sidebarCollapsed={sidebarCollapsed}
                 setSidebarCollapsed={setSidebarCollapsed}
@@ -2667,7 +2681,7 @@ function PrepShellContent({
                 colorMenuOpen={colorMenuOpen}
                 PEN_COLORS={PEN_COLORS}
                 setPenColor={handlePenColorChange}
-              />
+              />}
 
               <div className="prep-viewer__frame-wrapper">
                 <PrepViewerFrame
