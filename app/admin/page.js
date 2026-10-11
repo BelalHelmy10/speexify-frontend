@@ -133,6 +133,29 @@ function Admin() {
   const [attendanceData, setAttendanceData] = useState(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const attendanceModalRef = useRef(null);
+  const [linkedSessionId, setLinkedSessionId] = useState("");
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const search = new URLSearchParams(window.location.search);
+    const section = search.get("section");
+    const sessionId = search.get("sessionId")?.trim();
+    if (section === "sessions" && sessionId && /^[1-9]\d*$/.test(sessionId)) {
+      setLinkedSessionId(sessionId);
+    }
+    const sectionIds = {
+      payments: "admin-payments",
+      users: "admin-users",
+      sessions: "admin-sessions",
+      "teacher-earnings": "admin-teacher-workload",
+    };
+    const targetId = sectionIds[section];
+    if (!targetId) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isAdmin]);
   // ─────────────────────────────────────────────
   // BULK SELECTION STATE
   // ─────────────────────────────────────────────
@@ -271,6 +294,7 @@ function Admin() {
     if (sessionStatusFilter) p.set("status", sessionStatusFilter);
     if (sessionNeedsTeacher) p.set("needsTeacher", "1");
     if (sessionNeedsFeedback) p.set("needsFeedback", "1");
+    if (linkedSessionId) p.set("sessionId", linkedSessionId);
     p.set(
       "sort",
       sessionRangeFilter === "upcoming" ? "start_asc" : "start_desc"
@@ -289,6 +313,7 @@ function Admin() {
     sessionStatusFilter,
     sessionNeedsTeacher,
     sessionNeedsFeedback,
+    linkedSessionId,
     sessionLimit,
     sessionOffset,
   ]);

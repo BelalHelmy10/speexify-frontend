@@ -131,6 +131,16 @@ export default function AdminSupportInboxPage() {
   const [wsConnected, setWsConnected] = useState(false);
   const reconnectTimeoutRef = useRef(null);
   const bottomRef = useRef(null);
+  const deepLinkedTicketIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!isAdmin || deepLinkedTicketIdRef.current) return;
+    const ticketId = Number(new URLSearchParams(window.location.search).get("ticket"));
+    if (Number.isSafeInteger(ticketId) && ticketId > 0) {
+      deepLinkedTicketIdRef.current = ticketId;
+      setActiveId(ticketId);
+    }
+  }, [isAdmin]);
 
   // Debounce search
   useEffect(() => {
@@ -428,8 +438,11 @@ export default function AdminSupportInboxPage() {
       setTicketTotal(Number(data?.total || 0));
       setTicketSummary(data?.summary || {});
 
+      const linkedTicketId = deepLinkedTicketIdRef.current;
       const activeStillVisible = items.some((item) => item.id === activeId);
-      if ((!activeId || !activeStillVisible) && items.length > 0) {
+      if (linkedTicketId) {
+        setActiveId(linkedTicketId);
+      } else if ((!activeId || !activeStillVisible) && items.length > 0) {
         setActiveId(items[0].id);
       } else if (!items.length) {
         setActiveId(null);

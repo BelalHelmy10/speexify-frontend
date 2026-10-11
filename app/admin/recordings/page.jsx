@@ -43,6 +43,14 @@ export default function AdminRecordingsPage() {
   const [playUrl, setPlayUrl] = useState("");
   const [playBusy, setPlayBusy] = useState(false);
 
+  useEffect(() => {
+    const linkedSessionId = new URLSearchParams(window.location.search).get("sessionId")?.trim();
+    if (linkedSessionId && /^[1-9]\d*$/.test(linkedSessionId)) {
+      setSessionIdInput(linkedSessionId);
+      setSessionId(linkedSessionId);
+    }
+  }, []);
+
   const load = useCallback(async () => {
     if (!isAdmin) return;
     setBusy(true);

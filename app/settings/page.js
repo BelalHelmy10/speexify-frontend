@@ -43,6 +43,9 @@ const DEFAULT_NOTIFICATION_PREFERENCES = {
   weeklyProgressDigest: true,
   productUpdates: false,
   reminderLeadTime: "24h",
+  adminInAppOperationalAlerts: true,
+  adminEmailCriticalAlerts: true,
+  adminDailyDigest: true,
 };
 
 const SECTION_IDS = [
@@ -937,6 +940,31 @@ export default function SettingsPage() {
                 checked={notifications.weeklyProgressDigest}
                 onChange={(value) => updateNotificationPreference("weeklyProgressDigest", value)}
               />
+              {me?.role === "admin" ? (
+                <>
+                  <ToggleRow
+                    icon={ShieldCheck}
+                    label={copyText("notify_admin_in_app", "Admin operational alerts")}
+                    description={copyText("notify_admin_in_app_hint", "Show payments, support, sessions, credits, intake, recordings, payroll, and system alerts in the notification bell")}
+                    checked={notifications.adminInAppOperationalAlerts}
+                    onChange={(value) => updateNotificationPreference("adminInAppOperationalAlerts", value)}
+                  />
+                  <ToggleRow
+                    icon={AlertCircle}
+                    label={copyText("notify_admin_critical_email", "Critical admin email alerts")}
+                    description={copyText("notify_admin_critical_email_hint", "Email me when an urgent operational issue needs action")}
+                    checked={notifications.adminEmailCriticalAlerts}
+                    onChange={(value) => updateNotificationPreference("adminEmailCriticalAlerts", value)}
+                  />
+                  <ToggleRow
+                    icon={Database}
+                    label={copyText("notify_admin_daily_digest", "Daily admin digest")}
+                    description={copyText("notify_admin_daily_digest_hint", "Send one daily summary of payments, learners, sessions, support, reviews, earnings, and expiring packages")}
+                    checked={notifications.adminDailyDigest}
+                    onChange={(value) => updateNotificationPreference("adminDailyDigest", value)}
+                  />
+                </>
+              ) : null}
             </div>
 
             <div className="settings-inline-panel">

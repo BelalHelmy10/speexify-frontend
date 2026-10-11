@@ -44,7 +44,7 @@ export default function AdminUserManagementSection({
   const roleCounts = useMemo(() => usersAdmin.reduce((counts, user) => { counts[user.role] = (counts[user.role] || 0) + 1; return counts; }, {}), [usersAdmin]);
 
   return (
-    <section className="adm-admin-card adm-user-management-card">
+    <section className="adm-admin-card adm-user-management-card" id="admin-users">
       <div className="adm-admin-card__header">
         <div className="adm-admin-card__title-group">
           <div className="adm-admin-card__icon adm-admin-card__icon--primary">

@@ -14,7 +14,7 @@ export default function AdminTeacherWorkloadSection({
   setTo,
 }) {
   return (
-    <section className="adm-admin-card">
+    <section className="adm-admin-card" id="admin-teacher-workload">
       <div className="adm-admin-card__header">
         <div className="adm-admin-card__title-group">
           <div className="adm-admin-card__icon adm-admin-card__icon--warning">

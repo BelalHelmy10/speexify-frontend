@@ -238,6 +238,11 @@ export default function AdminPaymentsSection() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
+    const orderId = new URLSearchParams(window.location.search).get("orderId")?.trim();
+    if (orderId) setSelectedOrderId(orderId);
+  }, []);
+
+  useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setFilters((current) => ({ ...current, search: searchDraft }));
       setOffset(0);

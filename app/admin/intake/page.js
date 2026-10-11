@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -589,6 +589,7 @@ export default function AdminIntakePage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeOnboardingId, setActiveOnboardingId] = useState(null);
   const [activeAssessmentId, setActiveAssessmentId] = useState(null);
+  const deepLinkedAssessmentIdRef = useRef(null);
   const [reviewDraft, setReviewDraft] = useState({
     score: "",
     cefr: "",
@@ -609,6 +610,10 @@ export default function AdminIntakePage() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const userId = Number(params.get("userId"));
+    const assessmentId = Number(params.get("assessmentId"));
+    if (Number.isInteger(assessmentId) && assessmentId > 0) {
+      deepLinkedAssessmentIdRef.current = assessmentId;
+    }
     if (Number.isInteger(userId) && userId > 0) {
       setFocusedUserId(userId);
       setActiveUserId(userId);
@@ -657,15 +662,20 @@ export default function AdminIntakePage() {
       setDetail(data || null);
       const latestOnboarding = data?.latestOnboarding || null;
       const latestAssessment = data?.latestAssessment || null;
+      const linkedAssessmentId = deepLinkedAssessmentIdRef.current;
+      const linkedAssessment = Array.isArray(data?.assessments)
+        ? data.assessments.find((assessment) => assessment.id === linkedAssessmentId)
+        : null;
+      const selectedAssessment = linkedAssessment || latestAssessment;
       setActiveOnboardingId(latestOnboarding?.id || null);
-      setActiveAssessmentId(latestAssessment?.id || null);
+      setActiveAssessmentId(selectedAssessment?.id || null);
       setReviewDraft({
         score:
-          typeof latestAssessment?.score === "number"
-            ? String(latestAssessment.score)
+          typeof selectedAssessment?.score === "number"
+            ? String(selectedAssessment.score)
             : "",
-        cefr: latestAssessment?.cefr || "",
-        feedback: latestAssessment?.feedback || "",
+        cefr: selectedAssessment?.cefr || "",
+        feedback: selectedAssessment?.feedback || "",
       });
     } catch (err) {
       toast.error(err?.response?.data?.error || "Failed to load learner intake");

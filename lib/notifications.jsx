@@ -9,7 +9,12 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  Banknote,
+  ClipboardCheck,
+  Headphones,
+  ShieldAlert,
   UserPlus,
+  Video,
 } from "lucide-react";
 
 export const API_LIST = "/api/notifications";
@@ -45,22 +50,67 @@ export function getNotificationIcon(type) {
       return <CreditCard {...props} />;
     case "user_registered":
       return <UserPlus {...props} />;
+    case "admin_payment_succeeded":
+    case "admin_payment_attention":
+    case "admin_credit_attention":
+    case "admin_payroll_alert":
+      return <Banknote {...props} />;
+    case "admin_session_activity":
+    case "admin_session_attention":
+      return <Calendar {...props} />;
+    case "admin_support_ticket":
+    case "admin_support_reply":
+    case "admin_support_sla":
+      return <Headphones {...props} />;
+    case "admin_intake_submitted":
+    case "admin_assessment_submitted":
+    case "admin_daily_digest":
+      return <ClipboardCheck {...props} />;
+    case "admin_recording_ready":
+    case "admin_recording_failed":
+      return <Video {...props} />;
+    case "admin_security_alert":
+    case "admin_system_alert":
+      return <ShieldAlert {...props} />;
     default:
       return <Bell {...props} />;
   }
 }
 
-export function getNotificationIconTone(type) {
+export function getNotificationIconTone(notificationOrType) {
+  const notification = typeof notificationOrType === "object" ? notificationOrType : null;
+  const type = notification?.type || notificationOrType;
+  const severity = notification?.data?.severity;
+  if (severity === "critical") return "danger";
+  if (severity === "warning") return "warning";
+  if (severity === "success") return "success";
   if (type === "session_canceled") return "danger";
   if (REMINDER_TYPES.has(type)) return "warning";
   if (type === "session_completed") return "success";
   if (type === "user_registered") return "coral";
+  if (type === "admin_payment_succeeded" || type === "admin_recording_ready") return "success";
+  if ([
+    "admin_payment_attention",
+    "admin_session_attention",
+    "admin_credit_attention",
+    "admin_support_sla",
+    "admin_recording_failed",
+    "admin_security_alert",
+    "admin_payroll_alert",
+    "admin_system_alert",
+  ].includes(type)) return "danger";
   return "default";
 }
 
 export function getNotificationHref(notification, locale = "en") {
   const data = notification?.data || {};
   const prefix = locale === "ar" ? "/ar" : "";
+  const adminPath = typeof data.adminPath === "string" ? data.adminPath.trim() : "";
+  if (adminPath.startsWith("/") && !adminPath.startsWith("//")) {
+    return locale === "ar" && adminPath.startsWith("/admin")
+      ? `/ar${adminPath}`
+      : adminPath;
+  }
 
   switch (notification?.type) {
     case "booking_confirmed":

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarClock,
   CheckCircle2,
@@ -105,6 +105,15 @@ export default function FreeSessionRequestsPage() {
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState("");
+  const deepLinkedRequestIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!isAdmin || deepLinkedRequestIdRef.current) return;
+    const requestId = Number(new URLSearchParams(window.location.search).get("requestId"));
+    if (Number.isSafeInteger(requestId) && requestId > 0) {
+      deepLinkedRequestIdRef.current = requestId;
+    }
+  }, [isAdmin]);
 
   const activeItem = useMemo(() => items.find((item) => item.id === activeId) || null, [items, activeId]);
 
@@ -119,7 +128,12 @@ export default function FreeSessionRequestsPage() {
       setItems(data?.items || []);
       setCounts(data?.counts || {});
       setTotal(data?.total || 0);
-      if (activeId && !(data?.items || []).some((item) => item.id === activeId)) setActiveId(null);
+      const linkedRequestId = deepLinkedRequestIdRef.current;
+      if (linkedRequestId && (data?.items || []).some((item) => item.id === linkedRequestId)) {
+        setActiveId(linkedRequestId);
+      } else if (activeId && !(data?.items || []).some((item) => item.id === activeId)) {
+        setActiveId(null);
+      }
     } catch (loadError) {
       setError(loadError?.response?.data?.error || "Failed to load free-session requests.");
     } finally {

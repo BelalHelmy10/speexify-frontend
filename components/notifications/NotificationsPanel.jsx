@@ -92,7 +92,7 @@ function NotificationRow({
   const isUnread = !entry.readAt;
   const title = entry.title || "";
   const body = entry.body || "";
-  const tone = getNotificationIconTone(entry.type);
+  const tone = getNotificationIconTone(entry);
   const joinUrl = getJoinUrl(entry);
   const stackItems = entry.isStack ? entry.items : null;
 
