@@ -145,6 +145,9 @@ export default function SessionRow({
     typeof s.participantCount === "number" ? s.participantCount : null;
 
   const managesTraining = isAdmin || isImpersonating || (isTeacher && Number(s.teacherId) === Number(currentUserId));
+  const trainingLabel = isTeacher || isAdmin
+    ? prefix === "/ar" ? "تدريب · بدون أجر" : "Training · unpaid"
+    : prefix === "/ar" ? "تدريب" : "Training";
   const canReschedule = isTraining ? managesTraining : isTeacher || isAdmin || isImpersonating;
   const normalizedStatus = String(s.status || "").trim().toLowerCase();
   const sessionTone = getSessionTone(normalizedStatus, isUpcoming);
@@ -213,7 +216,7 @@ export default function SessionRow({
                 {t(dict, "session_group") || "Group"}
               </span>
             )}
-            {isTraining && <span className="badge badge--info">{prefix === "/ar" ? "تدريب · بدون أجر" : "Training · unpaid"}</span>}
+            {isTraining && <span className="badge badge--info">{trainingLabel}</span>}
 
             {(participantCount !== null || (isGroup && s.capacity)) && (
               <span className="badge badge--neutral">

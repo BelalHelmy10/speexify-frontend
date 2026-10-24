@@ -137,7 +137,9 @@ export default function SessionDetailLayout({
           <div className="sd-hero__meta-row">
             <span className="sd-hero__type">
               {isTraining
-                ? locale === "ar" ? "جلسة تدريب · بدون أجر" : "Training session · unpaid"
+                ? sessionIsTeacher || sessionIsAdmin
+                  ? locale === "ar" ? "جلسة تدريب · بدون أجر" : "Training session · unpaid"
+                  : locale === "ar" ? "جلسة تدريب" : "Training session"
                 : isGroup
                 ? txt("type_group", "Group lesson")
                 : txt("type_one_on_one", "1:1 Lesson")}

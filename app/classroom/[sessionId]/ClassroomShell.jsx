@@ -326,6 +326,9 @@ export default function ClassroomShell({
   // the local identity from the authenticated account for all participant
   // labels, chat messages, lobby events, video, and private annotations.
   const authUserId = authUser?._id || authUser?.id || null;
+  const showUnpaidTraining =
+    authUser?.role === "teacher" ||
+    (authUser?.role === "admin" && !authUser?._impersonating);
   const sessionUserId = session?.currentUser?._id || session?.currentUser?.id || null;
   const localUserId = authUserId || sessionUserId || null;
   const currentLearner = learners.find((learner) => {
@@ -1905,7 +1908,11 @@ export default function ClassroomShell({
      Header (FIXED: match SCSS classnames)
   ----------------------------------------------------------- */
   const headerTitle = session?.title || "Classroom";
-  const typeLabel = isTraining ? (locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID") : isGroup ? "GROUP" : "1:1";
+  const typeLabel = isTraining
+    ? showUnpaidTraining
+      ? locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID"
+      : locale === "ar" ? "تدريب" : "TRAINING"
+    : isGroup ? "GROUP" : "1:1";
   const countLabel = isGroup
     ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
     : "";

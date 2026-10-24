@@ -97,8 +97,12 @@ function isGroupSession(session) {
   return String(session?.type || "").toUpperCase() === "GROUP";
 }
 
-function getTypeLabel(dict, session) {
-  if (String(session?.type || "").toUpperCase() === "TRAINING") return text(dict, "past_archive_training", "Training · unpaid");
+function getTypeLabel(dict, session, isTeacher) {
+  if (String(session?.type || "").toUpperCase() === "TRAINING") {
+    return isTeacher
+      ? text(dict, "past_archive_training", "Training · unpaid")
+      : "Training";
+  }
   return isGroupSession(session)
     ? text(dict, "past_archive_group", "Group")
     : text(dict, "past_archive_one_on_one", "1:1");
@@ -247,6 +251,7 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
   const isCanceled = status === "canceled";
   const isCompleted = status === "completed";
   const isGroup = isGroupSession(session);
+  const isTraining = String(session?.type || "").toUpperCase() === "TRAINING";
   const feedbackReady = hasTeacherFeedback(session);
   const duration = getDurationMinutes(session);
   const participants =
@@ -270,7 +275,7 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
               {isCompleted ? <CheckCircle2 /> : isCanceled ? <XCircle /> : <Clock3 />}
               {session.status || status}
             </span>
-            <span className="past-session-card__type">{getTypeLabel(dict, session)}</span>
+            <span className="past-session-card__type">{getTypeLabel(dict, session, isTeacher)}</span>
             {!isTraining && participants !== null && (
               <span className="past-session-card__meta-chip">
                 <UsersRound />

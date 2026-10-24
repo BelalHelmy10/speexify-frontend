@@ -237,7 +237,7 @@ function availabilitySlotChangedTimeOrNote(before, after) {
   );
 }
 
-const toRbcEvents = (arr = [], timezone, locale = "en") =>
+const toRbcEvents = (arr = [], timezone, locale = "en", showUnpaidTraining = false) =>
   arr.map((s) => {
     const type = String(s.type || "").toUpperCase();
     const isGroup = type === "GROUP";
@@ -261,7 +261,9 @@ const toRbcEvents = (arr = [], timezone, locale = "en") =>
       type,
       isGroup,
       isTraining,
-      trainingLabel: locale === "ar" ? "تدريب · بدون أجر" : "Training · unpaid",
+      trainingLabel: showUnpaidTraining
+        ? locale === "ar" ? "تدريب · بدون أجر" : "Training · unpaid"
+        : locale === "ar" ? "تدريب" : "Training",
       capacity: cap,
       participantCount: count,
       seatsLabel:
@@ -849,6 +851,7 @@ export default function CalendarPage() {
   const suppressAvailabilityBlockClickRef = useRef(false);
 
   const isImpersonating = !!user?._impersonating;
+  const showUnpaidTraining = user?.role === "teacher" || (user?.role === "admin" && !isImpersonating);
 
   const fetchAvailability = useCallback(async () => {
     try {
@@ -882,14 +885,14 @@ export default function CalendarPage() {
     (async () => {
       try {
         const sessions = await fetchEvents(start.toISOString(), end.toISOString());
-        setEvents(toRbcEvents(sessions, user?.timezone, locale));
+        setEvents(toRbcEvents(sessions, user?.timezone, locale, showUnpaidTraining));
       } catch (e) {
         setError(e?.response?.data?.error || t(dict, "error_failed"));
       } finally {
         setLoadingEvents(false);
       }
     })();
-  }, [checking, user, currentDate, view, fetchEvents, dict, locale]);
+  }, [checking, user, currentDate, view, fetchEvents, dict, locale, showUnpaidTraining]);
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -1703,8 +1706,8 @@ export default function CalendarPage() {
 
     const { start, end } = getVisibleRange(currentDate, view);
     const sessions = await fetchEvents(start.toISOString(), end.toISOString());
-    setEvents(toRbcEvents(sessions, user?.timezone, locale));
-  }, [currentDate, fetchEvents, user, view, locale]);
+    setEvents(toRbcEvents(sessions, user?.timezone, locale, showUnpaidTraining));
+  }, [currentDate, fetchEvents, user, view, locale, showUnpaidTraining]);
 
   const getEventAnchor = useCallback((target) => {
     if (!target || !target.getBoundingClientRect) {
@@ -2254,7 +2257,9 @@ export default function CalendarPage() {
                       ["canceled", t(dict, "filter_canceled")],
                       ["group", t(dict, "filter_group")],
                       ["oneOnOne", t(dict, "filter_oneOnOne")],
-                      ["training", locale === "ar" ? "تدريب · بدون أجر" : "Training · unpaid"],
+                      ["training", showUnpaidTraining
+                        ? locale === "ar" ? "تدريب · بدون أجر" : "Training · unpaid"
+                        : locale === "ar" ? "تدريب" : "Training"],
                       ["availability", t(dict, "filter_availability")],
                     ].map(([key, label]) => (
                       <label key={key} className="calx-filter-item">

@@ -48,6 +48,9 @@ export default function SessionCard({
   const isTeacher = userRole === "teacher";
   const isAdmin = userRole === "admin";
   const managesTraining = isAdmin || (isTeacher && Number(session?.teacherId) === Number(currentUserId));
+  const trainingLabel = isTeacher || isAdmin
+    ? locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID"
+    : locale === "ar" ? "تدريب" : "TRAINING";
 
   // Format dates
   const { dateStr, timeStr, endTimeStr, isToday, isPast, isUpcoming, canOpenClassroom } =
@@ -190,7 +193,7 @@ export default function SessionCard({
 
           <div className="session-card__compact-info">
             <span className="session-card__title">{title || "Session"}</span>
-            {isTraining && <span className="session-card__type-badge">{locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID"}</span>}
+            {isTraining && <span className="session-card__type-badge">{trainingLabel}</span>}
             {isGroup && (
               <span className="session-card__type-badge session-card__type-badge--group">
                 GROUP
@@ -223,7 +226,7 @@ export default function SessionCard({
           <h3 className="session-card__title">{title || "Session"}</h3>
           <div className="session-card__badges">
             {isTraining ? (
-              <span className="session-card__type-badge">🎓 {locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID"}</span>
+              <span className="session-card__type-badge">🎓 {trainingLabel}</span>
             ) : isGroup ? (
               <span className="session-card__type-badge session-card__type-badge--group">
                 👥 GROUP
