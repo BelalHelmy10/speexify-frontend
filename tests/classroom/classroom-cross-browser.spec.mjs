@@ -18,14 +18,13 @@ async function mountClassroom(page, {
   await page.goto(`http://classroom.test/?role=${role}&media=${media}&network=${network}`);
   await page.addStyleTag({ content: harness.css });
   await page.addScriptTag({ content: harness.script });
-  await expect(page.locator(".cr-prejoin__panel")).toBeVisible();
-  await expect(page.locator(".cr-prejoin__join")).toBeEnabled();
+  await expect(page.locator("iframe")).toBeVisible();
+  await expect(page.locator(".cr-prejoin")).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.calls.length)).toBe(1);
   return errors;
 }
 
 async function joinClassroom(page) {
-  await page.locator(".cr-prejoin__join").click();
-  await expect(page.locator("iframe")).toBeVisible();
   await page.evaluate(() => window.calls.at(-1).emit("videoConferenceJoined"));
   await expect(page.locator(".cr-video__loading")).toHaveCount(0);
   await expect(page.locator(".cr-header__pill-signal")).toHaveAttribute(
@@ -83,17 +82,12 @@ for (const role of ["teacher", "learner"]) {
 
 test("permission denial fails soft and mid-call revocation keeps the classroom usable", async ({ page }) => {
   const errors = await mountClassroom(page, { media: "denied" });
-  await expect(page.locator(".cr-prejoin__notice")).toContainText(
-    "Allow camera and microphone access"
-  );
-  await expect(page.locator(".cr-prejoin__join")).toBeEnabled();
-
   await joinClassroom(page);
-  const mutedOptions = await page.evaluate(() => ({
+  const initialOptions = await page.evaluate(() => ({
     audio: window.calls.at(-1).options.configOverwrite.startWithAudioMuted,
     video: window.calls.at(-1).options.configOverwrite.startWithVideoMuted,
   }));
-  expect(mutedOptions).toEqual({ audio: true, video: true });
+  expect(initialOptions).toEqual({ audio: true, video: false });
 
   await page.evaluate(() => window.calls.at(-1).emit("cameraError", { name: "NotAllowedError" }));
   await expect(page.locator(".cr-video__device-notice")).toContainText("Camera unavailable");
@@ -107,48 +101,24 @@ test("permission denial fails soft and mid-call revocation keeps the classroom u
   expect(errors).toEqual([]);
 });
 
-test("Bluetooth and camera hot-plug refresh device choices without a reload", async ({ page }) => {
+test("Bluetooth and camera hot-plug do not restart the live classroom", async ({ page }) => {
   const errors = await mountClassroom(page);
-  await page.locator(".cr-prejoin__details summary").click();
-
-  const microphone = page.locator(".cr-prejoin__field").filter({ hasText: "Microphone" }).locator("select");
-  const camera = page.locator(".cr-prejoin__field").filter({ hasText: "Camera" }).locator("select");
-  const speaker = page.locator(".cr-prejoin__field").filter({ hasText: "Speaker" }).locator("select");
-  await expect(microphone.locator("option")).toContainText(["Built-in Microphone"]);
-  await expect(camera.locator("option")).toContainText(["Front Camera"]);
+  await joinClassroom(page);
+  await page.evaluate(() => { window.originalClassroomFrame = document.querySelector("iframe"); });
 
   await page.evaluate(() => window.classroomTestMedia.connectBluetooth());
-  await expect(microphone.locator("option")).toContainText([
-    "Built-in Microphone",
-    "Bluetooth Headset",
-  ]);
-  await expect(speaker.locator("option")).toContainText([
-    "Built-in Speakers",
-    "Bluetooth Headset",
-  ]);
-  await microphone.selectOption("mic-bluetooth");
-  await speaker.selectOption("speaker-bluetooth");
-  await expect(microphone).toHaveValue("mic-bluetooth");
-  await expect(speaker).toHaveValue("speaker-bluetooth");
-
   await page.evaluate(() => window.classroomTestMedia.disconnectBluetooth());
-  await expect(microphone).toHaveValue("mic-built-in");
-  await expect(speaker).toHaveValue("speaker-built-in");
-
   await page.evaluate(() => window.classroomTestMedia.disconnectBuiltInCamera());
-  await expect(camera).toHaveValue("");
-  await expect(camera.locator("option")).toHaveText(["Default camera"]);
+  expect(await page.evaluate(() => window.calls.length)).toBe(1);
+  expect(await page.evaluate(
+    () => document.querySelector("iframe") === window.originalClassroomFrame
+  )).toBe(true);
+  await expect(page.locator("iframe")).toBeVisible();
   expect(errors).toEqual([]);
 });
 
 test("network loss, restoration, and backgrounding preserve the live iframe", async ({ page, context }) => {
   const errors = await mountClassroom(page, { network: "offline" });
-  await expect(page.locator(".cr-prejoin__checks")).toContainText("Connection could not be checked");
-  await expect(page.locator(".cr-prejoin__join")).toHaveText("Join anyway");
-
-  await page.evaluate(() => window.classroomTestNetwork.setReachable(true));
-  await page.locator(".cr-prejoin__refresh").click();
-  await expect(page.locator(".cr-prejoin__checks")).toContainText("Connection is ready");
   await joinClassroom(page);
   await page.evaluate(() => { window.originalClassroomFrame = document.querySelector("iframe"); });
 

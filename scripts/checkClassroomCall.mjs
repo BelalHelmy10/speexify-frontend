@@ -49,18 +49,16 @@ try {
   await page.setContent('<div id="root"></div><div id="portrait"></div><div id="split"></div>');
   await page.addStyleTag({content:sass.compile(path.join(root,'styles/resources.scss'),{logger:sass.Logger.silent}).css + '.cr-video{height:300px;width:400px}'});
   await page.addScriptTag({content:js});
-  await page.waitForSelector('.cr-prejoin__join:not([disabled])');
-  assert.equal(await page.evaluate(() => window.calls.length), 0, 'Call must wait for an explicit join action');
-  await page.click('.cr-prejoin__join');
   await page.waitForFunction(() => window.calls?.length === 1);
-  console.log('PASS explicit prejoin gates call startup');
+  assert.equal(await page.$('.cr-prejoin'), null, 'Redundant prejoin UI must not render after admission');
+  console.log('PASS admitted classroom starts exactly one call without a second join gate');
   assert.ok(await page.$('.cr-video__loading'), 'Loading stays visible before conference join');
   const blocker = await page.$eval('iframe', iframe => {
     const r = iframe.getBoundingClientRect();
     const element = document.elementFromPoint(r.x + r.width/2, r.y + r.height/2);
     return {className:element.className, blocked:element !== iframe};
   });
-  console.log('Prejoin iframe hit test:', blocker);
+  console.log('Connecting iframe hit test:', blocker);
   assert.equal(blocker.blocked, false, 'Jitsi join/permission controls must remain clickable while connecting');
   assert.match(await page.$eval('.cr-header__pill-signal', e => e.getAttribute('aria-label')), /connecting/);
   await page.evaluate(() => window.calls.at(-1).emit('videoConferenceJoined'));

@@ -105,7 +105,7 @@ async function addConfiguredCookies(sessionId) {
 
 async function assertClassroomGeometry(sessionId, label) {
   const geometry = await execute(sessionId, `return (() => {
-    const shell = document.querySelector('.cr-shell, .cr-prejoin');
+    const shell = document.querySelector('.cr-shell');
     const frame = document.querySelector('iframe');
     return {
       ready: Boolean(shell),
@@ -161,23 +161,13 @@ async function runDevice(device) {
 
     await addConfiguredCookies(sessionId);
     await webdriver(sessionId, "POST", "/url", { url: classroomUrl });
-    await waitFor(sessionId, "return document.readyState === 'complete' && Boolean(document.querySelector('.cr-prejoin, .cr-shell'));", 45_000);
-    await waitFor(sessionId, `return Boolean(
-      document.querySelector('.cr-prejoin__video')?.srcObject ||
-      document.querySelector('.cr-prejoin__notice')
-    );`, 30_000);
+    await waitFor(sessionId, "return document.readyState === 'complete' && Boolean(document.querySelector('.cr-shell'));", 45_000);
     await assertClassroomGeometry(sessionId, `${device.name} portrait`);
 
-    const mediaNotice = await execute(sessionId, `return Array.from(document.querySelectorAll('.cr-prejoin__notice'))
-      .map((node) => (node.textContent || '').trim()).filter(Boolean).join(' | ');`);
-    if (mediaNotice) {
-      throw new Error(`${device.name}: physical-device media check failed: ${mediaNotice}`);
-    }
-
     if (shouldJoin) {
-      const clicked = await execute(sessionId, `const button=document.querySelector('.cr-prejoin__join');if(button&&!button.disabled){button.click();return true;}return false;`);
-      if (!clicked) throw new Error(`${device.name}: join control was not available`);
       await waitFor(sessionId, "return Boolean(document.querySelector('iframe'));", 45_000);
+      const hasRedundantPrejoin = await execute(sessionId, "return Boolean(document.querySelector('.cr-prejoin')); ");
+      if (hasRedundantPrejoin) throw new Error(`${device.name}: redundant prejoin screen was rendered`);
       await assertClassroomGeometry(sessionId, `${device.name} joined portrait`);
 
       await execute(sessionId, "window.__classroomFrameBeforeBackground=document.querySelector('iframe');return true;");

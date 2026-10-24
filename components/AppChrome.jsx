@@ -93,12 +93,12 @@ export default function AppChrome({ children }) {
   useEffect(() => {
     if (!shouldLoadJitsi(pathname)) return;
 
-    // Warm the classroom dependency during prejoin. PrepVideoCall calls the
-    // same window-scoped loader when the user joins, so both paths share one
-    // request, one script element, and one retry lifecycle.
+    // Warm the classroom dependency while the classroom shell initializes.
+    // PrepVideoCall calls the same window-scoped loader as the call starts, so
+    // both paths share one request, one script element, and one retry lifecycle.
     void loadJitsiScript(JITSI_DOMAIN).catch(() => {
       // Preloading is best-effort. The call surface owns user-visible failure
-      // handling and can retry a failed generation on the explicit join.
+      // handling and can retry a failed generation in place.
     });
   }, [pathname]);
 

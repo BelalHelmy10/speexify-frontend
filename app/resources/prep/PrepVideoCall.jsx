@@ -3,21 +3,9 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { JITSI_DOMAIN, buildJitsiOptions } from "@/lib/jitsiConfig";
-import { acquirePreviewMedia } from '@/lib/previewMedia.mjs';
 import { loadJitsiScript } from "@/lib/loadJitsiScript.mjs";
 import api from "@/lib/api";
 import { getDictionary, t } from "@/app/i18n";
-import {
-  Camera,
-  CameraOff,
-  ChevronDown,
-  Mic,
-  MicOff,
-  Play,
-  RefreshCw,
-  Volume2,
-  Wifi,
-} from "lucide-react";
 
 const JITSI_DOMINANT_SPEAKER_STYLE_ID = "speexify-dominant-speaker-style";
 const JITSI_DOMINANT_SPEAKER_CSS = `
@@ -48,17 +36,8 @@ const JITSI_DOMINANT_SPEAKER_CSS = `
 // 16:9, and recompute on every join, leave, and resize.
 // ─────────────────────────────────────────────────────────────
 const JITSI_TILE_GRID_STYLE_ID = "speexify-tile-grid-style";
-const LS_AUDIO_DEVICE = "speexify-classroom-audioInput";
-const LS_VIDEO_DEVICE = "speexify-classroom-videoInput";
-
-function getStoredDeviceId(key) {
-  if (typeof window === "undefined") return "";
-  try {
-    return window.localStorage.getItem(key) || "";
-  } catch {
-    return "";
-  }
-}
+const START_WITH_AUDIO_MUTED = true;
+const START_WITH_VIDEO_MUTED = false;
 const JITSI_TILE_GRID_CSS = `
   /* Make sure the filmstrip container fills the iframe in tile view */
   .filmstrip.is-tile-view,
@@ -244,8 +223,6 @@ function PrepVideoCall({
   roomId,
   userName,
   isTeacher,
-  sessionTitle = "Live coaching session",
-  coachName = "",
   onScreenShareStreamChange,
   onModerationStateChange,
   onNetworkQualityChange,
@@ -265,40 +242,9 @@ function PrepVideoCall({
   useEffect(() => {
     connectionStateCbRef.current = onConnectionStateChange;
   }, [onConnectionStateChange]);
-  // Require a deliberate join action. Besides giving people a truthful device
-  // check, this keeps camera, microphone and audio startup inside a user
-  // gesture on browsers that restrict autoplay or embedded media acquisition.
-  const [hasJoined, setHasJoined] = useState(false);
-  const [joinAudioMuted, setJoinAudioMuted] = useState(true);
-  const [joinVideoMuted, setJoinVideoMuted] = useState(false);
-  const [previewVideoError, setPreviewVideoError] = useState(null);
   const [deviceNotice, setDeviceNotice] = useState(null);
-  const [prejoinError, setPrejoinError] = useState(null);
-  const [devices, setDevices] = useState({
-    audioInputs: [],
-    videoInputs: [],
-    audioOutputs: [],
-  });
-  const [selectedAudioInputId, setSelectedAudioInputId] = useState("");
-  const [selectedVideoInputId, setSelectedVideoInputId] = useState("");
-  const [selectedAudioOutputId, setSelectedAudioOutputId] = useState("");
-  const [micLevel, setMicLevel] = useState(0);
   const [sessionAudioMuted, setSessionAudioMuted] = useState(true);
-  const [networkStatus, setNetworkStatus] = useState({
-    state: "checking",
-    label: "Checking network",
-    detail: "Measuring connection quality...",
-    latency: null,
-    reachable: null,
-  });
   const [activeSpeakerName, setActiveSpeakerName] = useState("");
-  const [isTestingSpeaker, setIsTestingSpeaker] = useState(false);
-  const previewVideoRef = useRef(null);
-  const previewStreamRef = useRef(null);
-  const micAudioContextRef = useRef(null);
-  const micMeterRafRef = useRef(null);
-  const speakerTestRef = useRef(null);
-  const speakerTestTimeoutRef = useRef(null);
   const moderationCbRef = useRef(onModerationStateChange);
   const networkQualityCbRef = useRef(onNetworkQualityChange);
   const participantCountCbRef = useRef(onParticipantCountChange);
@@ -309,13 +255,6 @@ function PrepVideoCall({
   useEffect(() => {
     participantCountCbRef.current = onParticipantCountChange;
   }, [onParticipantCountChange]);
-
-  useEffect(() => {
-    // Read preferences after mount so server-rendered markup stays identical
-    // to the first client render while still restoring the user's devices.
-    setSelectedAudioInputId((current) => current || getStoredDeviceId(LS_AUDIO_DEVICE));
-    setSelectedVideoInputId((current) => current || getStoredDeviceId(LS_VIDEO_DEVICE));
-  }, []);
 
   // ─────────────────────────────────────────────
   // Page recording is handled by ClassroomShell
@@ -616,8 +555,8 @@ function PrepVideoCall({
   useEffect(() => {
     const cb = participantCountCbRef.current;
     if (typeof cb !== "function") return;
-    cb(hasJoined ? Math.max(1, remoteParticipantCount + 1) : 0);
-  }, [hasJoined, remoteParticipantCount]);
+    cb(Math.max(1, remoteParticipantCount + 1));
+  }, [remoteParticipantCount]);
 
   // When someone shares their screen, Jitsi adds a *second* endpoint
   // for the screen track whose displayName follows a known pattern
@@ -747,7 +686,6 @@ function PrepVideoCall({
   // our Teams-style column picker. Without this, tiles can disappear or
   // letterbox awkwardly mid-drag.
   useEffect(() => {
-    if (!hasJoined) return;
     if (typeof window === "undefined" || typeof ResizeObserver === "undefined")
       return;
     const node = containerRef.current;
@@ -774,25 +712,23 @@ function PrepVideoCall({
     });
     observer.observe(node);
 
-    // Apply the layout once on mount/hasJoined transition.
+    // Apply the layout once when the classroom mounts.
     requestLayout();
 
     return () => {
       observer.disconnect();
       if (layoutRaf) cancelAnimationFrame(layoutRaf);
     };
-  }, [hasJoined, scheduleForceTileView, applyTileGridLayout]);
+  }, [scheduleForceTileView, applyTileGridLayout]);
 
   // Recompute the grid every time the remote participant count changes
   // (the resize observer alone won't catch joins/leaves at constant width).
   useEffect(() => {
-    if (!hasJoined) return;
     applyTileGridLayout();
-  }, [hasJoined, remoteParticipantCount, applyTileGridLayout]);
+  }, [remoteParticipantCount, applyTileGridLayout]);
 
   // Switch between tile view (default) and stage view (screen-sharing).
   useEffect(() => {
-    if (!hasJoined) return;
     syncJitsiScreenShareMode();
     const api = apiRef.current;
     if (!api || typeof api.executeCommand !== "function") return;
@@ -817,7 +753,7 @@ function PrepVideoCall({
         // No tile-view command available; nothing more to do.
       }
     }
-  }, [hasJoined, suspendTileViewLock, syncJitsiScreenShareMode]);
+  }, [suspendTileViewLock, syncJitsiScreenShareMode]);
 
   const normalizeJitsiParticipant = useCallback((participant) => {
     if (!participant || typeof participant !== "object") return null;
@@ -935,415 +871,6 @@ function PrepVideoCall({
     [getSpeakerDisplayName, normalizeJitsiParticipant, publishModerationState]
   );
 
-  const stopMicMeter = useCallback(() => {
-    if (micMeterRafRef.current) {
-      cancelAnimationFrame(micMeterRafRef.current);
-      micMeterRafRef.current = null;
-    }
-
-    if (micAudioContextRef.current) {
-      micAudioContextRef.current.close().catch(() => { });
-      micAudioContextRef.current = null;
-    }
-
-    setMicLevel(0);
-  }, []);
-
-  const stopPreviewStream = useCallback(() => {
-    stopMicMeter();
-
-    if (previewVideoRef.current) {
-      previewVideoRef.current.srcObject = null;
-    }
-
-    previewStreamRef.current?.getTracks().forEach((track) => track.stop());
-    previewStreamRef.current = null;
-  }, [stopMicMeter]);
-
-  const refreshDevices = useCallback(async () => {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices) return;
-
-    const allDevices = await navigator.mediaDevices.enumerateDevices();
-    const nextDevices = {
-      audioInputs: allDevices.filter((device) => device.kind === "audioinput"),
-      videoInputs: allDevices.filter((device) => device.kind === "videoinput"),
-      audioOutputs: allDevices.filter((device) => device.kind === "audiooutput"),
-    };
-
-    setDevices(nextDevices);
-    setSelectedAudioInputId((current) =>
-      nextDevices.audioInputs.some((device) => device.deviceId === current)
-        ? current
-        : nextDevices.audioInputs[0]?.deviceId || ""
-    );
-    setSelectedVideoInputId((current) =>
-      nextDevices.videoInputs.some((device) => device.deviceId === current)
-        ? current
-        : nextDevices.videoInputs[0]?.deviceId || ""
-    );
-    setSelectedAudioOutputId((current) =>
-      nextDevices.audioOutputs.some((device) => device.deviceId === current)
-        ? current
-        : nextDevices.audioOutputs[0]?.deviceId || ""
-    );
-  }, []);
-
-  useEffect(() => {
-    if (hasJoined || typeof navigator === "undefined") return undefined;
-    const mediaDevices = navigator.mediaDevices;
-    if (!mediaDevices) return undefined;
-
-    const handleDeviceChange = () => {
-      void refreshDevices().catch(() => {
-        // A device can disappear while the browser is rebuilding its media
-        // inventory. The next devicechange event or manual refresh will retry.
-      });
-    };
-
-    if (typeof mediaDevices.addEventListener === "function") {
-      mediaDevices.addEventListener("devicechange", handleDeviceChange);
-      return () => mediaDevices.removeEventListener("devicechange", handleDeviceChange);
-    }
-
-    const previousHandler = mediaDevices.ondevicechange;
-    mediaDevices.ondevicechange = handleDeviceChange;
-    return () => {
-      if (mediaDevices.ondevicechange === handleDeviceChange) {
-        mediaDevices.ondevicechange = previousHandler || null;
-      }
-    };
-  }, [hasJoined, refreshDevices]);
-
-  const startMicMeter = useCallback(
-    (stream) => {
-      stopMicMeter();
-
-      const audioTrack = stream?.getAudioTracks?.()[0];
-      const AudioContextImpl =
-        window.AudioContext || window.webkitAudioContext;
-      if (!audioTrack || !AudioContextImpl) {
-        setMicLevel(0);
-        return;
-      }
-
-      const audioContext = new AudioContextImpl();
-      const source = audioContext.createMediaStreamSource(
-        new MediaStream([audioTrack])
-      );
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      micAudioContextRef.current = audioContext;
-
-      const data = new Uint8Array(analyser.frequencyBinCount);
-
-      const tick = () => {
-        analyser.getByteFrequencyData(data);
-        const average =
-          data.reduce((total, value) => total + value, 0) / data.length;
-        setMicLevel(Math.min(1, average / 110));
-        micMeterRafRef.current = requestAnimationFrame(tick);
-      };
-
-      tick();
-    },
-    [stopMicMeter]
-  );
-
-  const buildPreviewConstraints = useCallback(() => {
-    const audio = joinAudioMuted ? false : selectedAudioInputId
-      ? {
-          deviceId: { exact: selectedAudioInputId },
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        }
-      : {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        };
-
-    const video = joinVideoMuted
-      ? false
-      : selectedVideoInputId
-        ? {
-            deviceId: { exact: selectedVideoInputId },
-            width: { ideal: 960 },
-            height: { ideal: 540 },
-          }
-        : {
-            width: { ideal: 960 },
-            height: { ideal: 540 },
-          };
-
-    return { audio, video };
-  }, [joinAudioMuted, joinVideoMuted, selectedAudioInputId, selectedVideoInputId]);
-
-  const runNetworkCheck = useCallback(async () => {
-    if (typeof window === "undefined") return;
-
-    const connection =
-      navigator.connection ||
-      navigator.mozConnection ||
-      navigator.webkitConnection ||
-      null;
-    const start = performance.now();
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
-
-    try {
-      const response = await fetch(`/api/ws-config?prejoin=${Date.now()}`, {
-        method: "GET",
-        cache: "no-store",
-        credentials: "include",
-        signal: controller.signal,
-      });
-      if (!response.ok) throw new Error(`Network check failed (${response.status})`);
-
-      const latency = Math.round(performance.now() - start);
-      const effectiveType = connection?.effectiveType || "";
-      const downlink = Number(connection?.downlink || 0);
-      const detailParts = [`${latency} ms`];
-      if (effectiveType) detailParts.push(effectiveType.toUpperCase());
-      if (downlink) detailParts.push(`${downlink} Mbps`);
-
-      const state =
-        latency < 180 && (!downlink || downlink >= 2)
-          ? "good"
-          : latency < 450
-            ? "fair"
-            : "poor";
-
-      setNetworkStatus({
-        state,
-        label:
-          state === "good"
-            ? "Connection is ready"
-            : state === "fair"
-              ? "Connection may feel delayed"
-              : "Connection is weak",
-        detail:
-          state === "poor"
-            ? `${detailParts.join(" · ")} · Try Wi-Fi if you can.`
-            : detailParts.join(" · "),
-        latency,
-        reachable: true,
-      });
-    } catch {
-      setNetworkStatus({
-        state: "poor",
-        label: "Connection could not be checked",
-        detail: "Check your connection, then try again.",
-        latency: null,
-        reachable: false,
-      });
-    } finally {
-      window.clearTimeout(timeoutId);
-    }
-  }, []);
-
-  const stopSpeakerTest = useCallback((shouldUpdateState = true) => {
-    if (speakerTestTimeoutRef.current) {
-      window.clearTimeout(speakerTestTimeoutRef.current);
-      speakerTestTimeoutRef.current = null;
-    }
-
-    const currentSpeakerTest = speakerTestRef.current;
-    if (currentSpeakerTest) {
-      try {
-        currentSpeakerTest.oscillator.stop();
-      } catch {
-        // already stopped
-      }
-
-      currentSpeakerTest.audio.pause();
-      currentSpeakerTest.audio.srcObject
-        ?.getTracks?.()
-        .forEach((track) => track.stop());
-      currentSpeakerTest.audio.srcObject = null;
-      currentSpeakerTest.audioContext.close().catch(() => { });
-      speakerTestRef.current = null;
-    }
-
-    if (shouldUpdateState) {
-      setIsTestingSpeaker(false);
-    }
-  }, []);
-
-  const playSpeakerTest = useCallback(async () => {
-    if (typeof window === "undefined") return;
-    const AudioContextImpl = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextImpl || isTestingSpeaker) return;
-
-    setIsTestingSpeaker(true);
-
-    try {
-      const audioContext = new AudioContextImpl();
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      const destination = audioContext.createMediaStreamDestination();
-      const audio = new Audio();
-
-      oscillator.type = "sine";
-      oscillator.frequency.value = 660;
-      gain.gain.value = 0.08;
-      oscillator.connect(gain);
-      gain.connect(destination);
-
-      audio.srcObject = destination.stream;
-      speakerTestRef.current = { audio, audioContext, oscillator };
-
-      if (selectedAudioOutputId && typeof audio.setSinkId === "function") {
-        await audio.setSinkId(selectedAudioOutputId);
-      }
-
-      oscillator.start();
-      await audio.play();
-
-      speakerTestTimeoutRef.current = window.setTimeout(() => {
-        stopSpeakerTest();
-      }, 900);
-    } catch {
-      stopSpeakerTest();
-    }
-  }, [isTestingSpeaker, selectedAudioOutputId, stopSpeakerTest]);
-
-  const handleJoin = useCallback(() => {
-    // Save the user's explicit device choices for the next session.
-    try {
-      if (selectedAudioInputId) {
-        window.localStorage.setItem(LS_AUDIO_DEVICE, selectedAudioInputId);
-      }
-      if (selectedVideoInputId) {
-        window.localStorage.setItem(LS_VIDEO_DEVICE, selectedVideoInputId);
-      }
-    } catch {
-      // Device preference persistence is best-effort.
-    }
-    reportCallEvent("join_requested", {
-      audioMuted: joinAudioMuted,
-      videoMuted: joinVideoMuted,
-      networkState: networkStatus.state,
-      networkReachable: networkStatus.reachable,
-    });
-    stopPreviewStream();
-    setHasJoined(true);
-  }, [
-    joinAudioMuted,
-    joinVideoMuted,
-    networkStatus.reachable,
-    networkStatus.state,
-    reportCallEvent,
-    selectedAudioInputId,
-    selectedVideoInputId,
-    stopPreviewStream,
-  ]);
-
-  // A failed Speexify health probe is useful guidance, not proof that Jitsi is
-  // unreachable. Let the user continue after the finite check completes.
-  const canJoin = networkStatus.state !== "checking";
-
-  useEffect(() => {
-    if (hasJoined) return;
-
-    let cancelled = false;
-
-    async function initPrejoinPreview() {
-      if (typeof navigator === "undefined" || !navigator.mediaDevices) {
-        setPrejoinError("Camera and microphone are not available in this browser.");
-        return;
-      }
-
-      try {
-        const constraints = buildPreviewConstraints();
-        if (!constraints.audio && !constraints.video) {
-          // Keep an existing permission/device notice visible after we fail
-          // soft into a fully-muted join. Clearing it here makes a denial
-          // flash briefly and then disappear on the state-driven rerender.
-          stopPreviewStream();
-          await refreshDevices();
-          return;
-        }
-
-        setPrejoinError(null);
-        setPreviewVideoError(null);
-        const media = await acquirePreviewMedia(navigator.mediaDevices,
-          constraints, tracks => new MediaStream(tracks));
-        const stream = media.stream;
-        if (cancelled) {
-          stream?.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
-        stopPreviewStream();
-        previewStreamRef.current = stream;
-        if (media.audioError) setPrejoinError('Microphone unavailable. Your camera is available; you can join muted.');
-        if (media.videoError) setPreviewVideoError(media.videoError);
-        if (media.videoError) setPrejoinError('Camera unavailable. Your microphone is available; you can join without video.');
-
-        // Device selection must not depend on HTMLMediaElement.play(). Mobile
-        // browsers can intentionally leave that promise pending until a user
-        // gesture, which previously left every selector on "Default" forever.
-        await refreshDevices();
-
-        if (previewVideoRef.current && !joinVideoMuted && !media.videoError) {
-          previewVideoRef.current.srcObject = stream;
-          await previewVideoRef.current.play().catch(() => { });
-        }
-
-        startMicMeter(stream);
-      } catch (err) {
-        stopPreviewStream();
-        setPreviewVideoError(err);
-        if (err?.name === "NotAllowedError" || err?.name === "NotFoundError") {
-          setJoinAudioMuted(true);
-          setJoinVideoMuted(true);
-        }
-        setPrejoinError(
-          err?.name === "NotAllowedError"
-            ? "Allow camera and microphone access, or join with devices muted."
-            : "Could not start camera or microphone preview."
-        );
-        reportCallEvent("prejoin_media_failed", {
-          name: err?.name || "Error",
-          message: err?.message || "Media preview failed",
-        });
-        // Respect the chosen device switches; the user can retry or join muted.
-        await refreshDevices().catch(() => { });
-      }
-    }
-
-    initPrejoinPreview();
-
-    return () => {
-      cancelled = true;
-      stopPreviewStream();
-    };
-  }, [
-    buildPreviewConstraints,
-    hasJoined,
-    joinVideoMuted,
-    refreshDevices,
-    startMicMeter,
-    stopPreviewStream,
-    reportCallEvent,
-  ]);
-
-  useEffect(() => {
-    if (hasJoined) return;
-    runNetworkCheck();
-    const intervalId = window.setInterval(runNetworkCheck, 30000);
-    return () => window.clearInterval(intervalId);
-  }, [hasJoined, runNetworkCheck]);
-
-  useEffect(() => {
-    return () => {
-      stopPreviewStream();
-      stopSpeakerTest(false);
-    };
-  }, [stopPreviewStream, stopSpeakerTest]);
-
   // keep callback stable
   const screenShareCbRef = useRef(onScreenShareStreamChange);
   useEffect(() => {
@@ -1355,8 +882,7 @@ function PrepVideoCall({
     audioMuteCbRef.current = onAudioMuteChange;
   }, [onAudioMuteChange]);
 
-  // Bubble the initial mute state to parent whenever it changes locally
-  // (covers the prejoin → joined transition where joinAudioMuted seeds state).
+  // Bubble the current mute state to the classroom shell.
   useEffect(() => {
     const cb = audioMuteCbRef.current;
     if (typeof cb === "function") cb(sessionAudioMuted);
@@ -1440,7 +966,6 @@ function PrepVideoCall({
     async function init() {
       if (typeof window === "undefined") return;
       if (!roomId) return;
-      if (!hasJoined) return;
       if (!containerRef.current) return;
 
       setIsLoading(true);
@@ -1475,18 +1000,13 @@ function PrepVideoCall({
           userName,
           isTeacher: !!isTeacher,
           parentNode: containerRef.current,
-          devices: {
-            audioInput: selectedAudioInputId,
-            audioOutput: selectedAudioOutputId,
-            videoInput: selectedVideoInputId,
-          },
-          startWithAudioMuted: joinAudioMuted,
-          startWithVideoMuted: joinVideoMuted,
+          startWithAudioMuted: START_WITH_AUDIO_MUTED,
+          startWithVideoMuted: START_WITH_VIDEO_MUTED,
         });
 
         const api = new JitsiAPI(JITSI_DOMAIN, options);
         apiRef.current = api;
-        setSessionAudioMuted(Boolean(joinAudioMuted));
+        setSessionAudioMuted(START_WITH_AUDIO_MUTED);
 
         api.addListener("videoConferenceJoined", () => {
           if (cancelled) return;
@@ -1735,236 +1255,19 @@ function PrepVideoCall({
       setRemoteParticipantCount(0);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, hasJoined, retryAttempt]); // Retry rebuilds only the call, preserving lesson state.
+  }, [roomId, retryAttempt]); // Retry rebuilds only the call, preserving lesson state.
 
   // Keep the external call identity in sync if auth data arrives after the
-  // prejoin UI mounted. This is especially important for group classrooms:
+  // call starts. This is especially important for group classrooms:
   // each learner must remain labeled as their own account.
   useEffect(() => {
-    if (!hasJoined || !userName || !apiRef.current) return;
+    if (!userName || !apiRef.current) return;
     try {
       apiRef.current.executeCommand?.("displayName", userName);
     } catch {
       // Ignore transient Jitsi command errors during connection setup.
     }
-  }, [hasJoined, userName]);
-
-  useEffect(() => {
-    const video = previewVideoRef.current;
-    if (!hasJoined && video && previewStreamRef.current && !previewVideoError) {
-      video.srcObject = previewStreamRef.current;
-      void video.play().catch(() => {});
-    }
-  }, [hasJoined, joinVideoMuted, previewVideoError]);
-
-  if (!hasJoined) {
-    const networkClass = `cr-prejoin__network cr-prejoin__network--${networkStatus.state}`;
-    const levelPercent = Math.round(micLevel * 100);
-    const previewName = userName || (isTeacher ? "Coach" : "Member");
-    const previewInitial = previewName.trim().charAt(0).toUpperCase() || "S";
-
-    return (
-      <div className="cr-video cr-video--prejoin">
-        <div className="cr-prejoin">
-          <section
-            className={`cr-prejoin__preview ${joinVideoMuted ? "cr-prejoin__preview--camera-off" : ""}`}
-            aria-label="Camera preview"
-          >
-            {!joinVideoMuted && !previewVideoError ? (
-              <video
-                ref={previewVideoRef}
-                className="cr-prejoin__video"
-                autoPlay
-                muted
-                playsInline
-              />
-            ) : (
-              <div className="cr-prejoin__camera-off">
-                <span className="cr-prejoin__avatar" aria-hidden="true">
-                  {previewInitial}
-                </span>
-                <strong>{previewName}</strong>
-                <span>{joinVideoMuted ? "Camera off · You can still join" : "Preview unavailable"}</span>
-              </div>
-            )}
-
-            <div className="cr-prejoin__preview-bar">
-              <span>{previewName}</span>
-              <span>{joinAudioMuted ? "Microphone off" : "Microphone on"}</span>
-            </div>
-          </section>
-
-          <section className="cr-prejoin__panel" aria-label="Prejoin setup">
-            <div className="cr-prejoin__header">
-              <span className="cr-prejoin__eyebrow">Prepare to join</span>
-              <h2>Join your coaching session</h2>
-              <p>
-                {coachName
-                  ? `You’re joining ${coachName}. Check your setup, then you’re ready.`
-                  : "Check your setup, then you’re ready to join."}
-              </p>
-              <span className="cr-prejoin__session-context" title={sessionTitle}>
-                {sessionTitle}
-              </span>
-            </div>
-
-            {prejoinError && (
-              <div className="cr-prejoin__notice" role="status">
-                {prejoinError}
-              </div>
-            )}
-
-            <div className="cr-prejoin__quick-actions">
-              <button
-                type="button"
-                className={`cr-prejoin__pill ${joinAudioMuted ? "" : "cr-prejoin__pill--active"}`}
-                onClick={() => setJoinAudioMuted((value) => !value)}
-                aria-pressed={!joinAudioMuted}
-              >
-                {joinAudioMuted ? <MicOff size={16} /> : <Mic size={16} />}
-                <span>
-                  <strong>{joinAudioMuted ? "Microphone off" : "Microphone on"}</strong>
-                  <small>{joinAudioMuted ? "You can turn it on anytime" : "Your coach can hear you"}</small>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className={`cr-prejoin__pill ${joinVideoMuted ? "" : "cr-prejoin__pill--active"}`}
-                onClick={() => setJoinVideoMuted((value) => !value)}
-                aria-pressed={!joinVideoMuted}
-              >
-                {joinVideoMuted ? <CameraOff size={16} /> : <Camera size={16} />}
-                <span>
-                  <strong>{joinVideoMuted ? "Camera off" : "Camera on"}</strong>
-                  <small>{joinVideoMuted ? "You can still join" : "Preview is visible"}</small>
-                </span>
-              </button>
-            </div>
-
-            <button
-              type="button"
-              className="cr-prejoin__refresh"
-              onClick={() => {
-                void refreshDevices();
-                void runNetworkCheck();
-              }}
-            >
-              <RefreshCw size={14} />
-              Refresh device check
-            </button>
-
-            <details className="cr-prejoin__details">
-              <summary>
-                <span>Advanced device settings</span>
-                <ChevronDown size={16} aria-hidden="true" />
-              </summary>
-              <div className="cr-prejoin__device-grid">
-                <label className="cr-prejoin__field">
-                  <span>Microphone</span>
-                  <select
-                    value={selectedAudioInputId}
-                    onChange={(e) => setSelectedAudioInputId(e.target.value)}
-                  >
-                    {devices.audioInputs.length ? (
-                      devices.audioInputs.map((device, index) => (
-                        <option key={device.deviceId} value={device.deviceId}>
-                          {device.label || `Microphone ${index + 1}`}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">Default microphone</option>
-                    )}
-                  </select>
-                </label>
-
-                <label className="cr-prejoin__field">
-                  <span>Camera</span>
-                  <select
-                    value={selectedVideoInputId}
-                    onChange={(e) => setSelectedVideoInputId(e.target.value)}
-                  >
-                    {devices.videoInputs.length ? (
-                      devices.videoInputs.map((device, index) => (
-                        <option key={device.deviceId} value={device.deviceId}>
-                          {device.label || `Camera ${index + 1}`}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">Default camera</option>
-                    )}
-                  </select>
-                </label>
-
-                <label className="cr-prejoin__field cr-prejoin__field--wide">
-                  <span>Speaker</span>
-                  <div className="cr-prejoin__speaker-row">
-                    <select
-                      value={selectedAudioOutputId}
-                      onChange={(e) => setSelectedAudioOutputId(e.target.value)}
-                    >
-                      {devices.audioOutputs.length ? (
-                        devices.audioOutputs.map((device, index) => (
-                          <option key={device.deviceId} value={device.deviceId}>
-                            {device.label || `Speaker ${index + 1}`}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="">System default speaker</option>
-                      )}
-                    </select>
-
-                    <button
-                      type="button"
-                      className="cr-prejoin__test"
-                      onClick={playSpeakerTest}
-                      disabled={isTestingSpeaker}
-                    >
-                      {isTestingSpeaker ? <Volume2 size={16} /> : <Play size={16} />}
-                      {isTestingSpeaker ? "Playing" : "Test"}
-                    </button>
-                  </div>
-                </label>
-              </div>
-            </details>
-
-            <div className="cr-prejoin__checks">
-              <div className="cr-prejoin__meter" aria-label="Microphone level">
-                <div className="cr-prejoin__meter-header">
-                  <span>Mic level</span>
-                  <span>{levelPercent}%</span>
-                </div>
-                <div className="cr-prejoin__meter-track">
-                  <span style={{ width: `${levelPercent}%` }} />
-                </div>
-              </div>
-
-              <div className={networkClass}>
-                <Wifi size={16} />
-                <div>
-                  <strong>{networkStatus.label}</strong>
-                  <span>{networkStatus.detail}</span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className="cr-prejoin__join"
-              onClick={handleJoin}
-              disabled={!canJoin}
-            >
-              {!canJoin
-                ? "Checking connection…"
-                : networkStatus.reachable === false
-                  ? "Join anyway"
-                  : "Join coaching session"}
-            </button>
-          </section>
-        </div>
-      </div>
-    );
-  }
+  }, [userName]);
 
   return (
     <div

@@ -76,10 +76,6 @@ try {
       await page.addScriptTag({content:js});
     }
     await page.waitForFunction(m => Boolean(document.querySelector('.cr-mobile-layout')) === m, {}, mobile);
-    if (await page.$('.cr-prejoin__join')) {
-      await page.waitForSelector('.cr-prejoin__join:not([disabled])');
-      await page.click('.cr-prejoin__join');
-    }
     await page.waitForFunction(() => document.querySelector('iframe')?.isConnected);
     await page.evaluate(() => window.calls.at(-1).emit('videoConferenceJoined'));
     const result = await page.evaluate(() => {
