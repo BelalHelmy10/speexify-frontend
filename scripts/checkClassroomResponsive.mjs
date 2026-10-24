@@ -18,6 +18,7 @@ function bundle(file) {
   const req = createRequire(file);
   let source = fs.readFileSync(file,'utf8');
   if (file.endsWith('/app/i18n.js')) source = 'exports.getDictionary = () => ({}); exports.t = (_, key) => key;';
+  if (file.endsWith('/lib/api.js')) source = 'module.exports={__esModule:true,default:{post:async()=>({data:{ok:true}})}};';
   if (file.endsWith('.json')) source = 'module.exports = ' + source;
 
   if (!file.includes('node_modules')) source = ts.transpileModule(source, {
@@ -75,6 +76,10 @@ try {
       await page.addScriptTag({content:js});
     }
     await page.waitForFunction(m => Boolean(document.querySelector('.cr-mobile-layout')) === m, {}, mobile);
+    if (await page.$('.cr-prejoin__join')) {
+      await page.waitForSelector('.cr-prejoin__join:not([disabled])');
+      await page.click('.cr-prejoin__join');
+    }
     await page.waitForFunction(() => document.querySelector('iframe')?.isConnected);
     await page.evaluate(() => window.calls.at(-1).emit('videoConferenceJoined'));
     const result = await page.evaluate(() => {

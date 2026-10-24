@@ -5,6 +5,15 @@ import PrepVideoCall from "../../app/resources/prep/PrepVideoCall.jsx";
 import MobileClassroomLayout from "../../app/classroom/[sessionId]/MobileClassroomLayout.jsx";
 import ClassroomHeaderBar from "../../app/classroom/[sessionId]/ClassroomHeaderBar.jsx";
 
+window.fetch = async () => ({ ok: true });
+Object.defineProperty(navigator, "mediaDevices", {
+  configurable: true,
+  value: {
+    enumerateDevices: async () => [],
+    getUserMedia: async () => new MediaStream(),
+  },
+});
+
 window.calls = [];
 window.MockCall = class {
   constructor(domain, options) {

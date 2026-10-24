@@ -4,6 +4,15 @@ import { createPortal } from "react-dom";
 import PrepVideoCall from "../../app/resources/prep/PrepVideoCall.jsx";
 import ClassroomHeaderBar from "../../app/classroom/[sessionId]/ClassroomHeaderBar.jsx";
 
+window.fetch = async () => ({ ok: true });
+Object.defineProperty(navigator, "mediaDevices", {
+  configurable: true,
+  value: {
+    enumerateDevices: async () => [],
+    getUserMedia: async () => new MediaStream(),
+  },
+});
+
 window.calls = [];
 window.MockCall = class {
   constructor(domain, options) {
@@ -30,11 +39,12 @@ function Harness() {
   const [host] = useState(() => document.createElement("div"));
   window.rotate = () => setPortrait(p => !p);
   useLayoutEffect(() => {
-    document.getElementById(portrait ? "portrait" : "split").appendChild(host);
-  }, [portrait, host]);
+    document.getElementById("split").appendChild(host);
+  }, [host]);
   return <>
     <ClassroomHeaderBar wsStatus="ready" videoConnectionState={state} />
-    {createPortal(<PrepVideoCall key={portrait ? "portrait-call" : "split-call"}
+    <span data-layout={portrait ? "portrait" : "split"} />
+    {createPortal(<PrepVideoCall key="classroom-call"
       roomId="test" userName="Test" onConnectionStateChange={setState} />, host)}
   </>;
 }

@@ -2,12 +2,13 @@
 
 import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import Script from "next/script";
 import { usePathname } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import useAuth from "@/hooks/useAuth";
 import { normalizeLocalizedPath } from "@/lib/chromeRoutes";
+import { JITSI_DOMAIN } from "@/lib/jitsiConfig";
+import { loadJitsiScript } from "@/lib/loadJitsiScript.mjs";
 
 // These controls are useful after the page is usable, but they are not part
 // of the critical render path. Keep their sizeable client dependencies out of
@@ -89,15 +90,20 @@ export default function AppChrome({ children }) {
   const hideMobileSupportFab =
     normalizedPath === "/" || normalizedPath === "/why-speexify";
 
+  useEffect(() => {
+    if (!shouldLoadJitsi(pathname)) return;
+
+    // Warm the classroom dependency during prejoin. PrepVideoCall calls the
+    // same window-scoped loader when the user joins, so both paths share one
+    // request, one script element, and one retry lifecycle.
+    void loadJitsiScript(JITSI_DOMAIN).catch(() => {
+      // Preloading is best-effort. The call surface owns user-visible failure
+      // handling and can retry a failed generation on the explicit join.
+    });
+  }, [pathname]);
+
   return (
     <>
-      {shouldLoadJitsi(pathname) && (
-        <Script
-          src="https://meet.speexify.com/external_api.js"
-          strategy="afterInteractive"
-        />
-      )}
-
       {deferredChromeReady && !appPath && <SmoothScroll />}
 
       {showSiteChrome && <Header />}

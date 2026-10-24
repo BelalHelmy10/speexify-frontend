@@ -71,6 +71,8 @@ try {
   await page.goto('http://classroom.test/?role='+role);
   await page.setContent('<html class="classroom-active"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body class="classroom-active"><div id="root"></div></body></html>');
   await page.addStyleTag({content:css});await page.addScriptTag({content:js});
+  await page.waitForSelector('.cr-prejoin__join:not([disabled])');
+  await page.click('.cr-prejoin__join');
   await page.waitForSelector('iframe');
   await page.evaluate(()=>window.calls.at(-1).emit('videoConferenceJoined'));
   const count=await page.evaluate(()=>window.calls.length);

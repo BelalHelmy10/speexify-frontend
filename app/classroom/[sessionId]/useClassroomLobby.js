@@ -31,6 +31,7 @@ export function useClassroomLobby({
   // Shared state
   const [lobbyEnabled, setLobbyEnabled] = useState(null); // null = unknown
   const [lobbyStatus, setLobbyStatus] = useState("checking"); // "checking" | "admitted" | "waiting" | "denied" | "not_joined" | "error"
+  const [joinAttempt, setJoinAttempt] = useState(0);
 
   // Teacher state
   const [waitingLearners, setWaitingLearners] = useState([]);
@@ -87,7 +88,7 @@ export function useClassroomLobby({
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, joinAttempt]);
 
   // ─── Learner: join lobby automatically when status is "not_joined" ───
   useEffect(() => {
@@ -136,13 +137,25 @@ export function useClassroomLobby({
     return () => {
       cancelled = true;
     };
-  }, [isTeacher, lobbyStatus, lobbyEnabled, sessionId, userName, classroomChannel]);
+  }, [
+    isTeacher,
+    lobbyStatus,
+    lobbyEnabled,
+    sessionId,
+    userName,
+    userId,
+    classroomChannel,
+    joinAttempt,
+  ]);
 
   // ─── Learner: poll status while waiting ───
   useEffect(() => {
     if (isTeacher || !["waiting", "error"].includes(lobbyStatus)) return;
 
-    const interval = setInterval(async () => {
+    let requestInFlight = false;
+    const refreshStatus = async () => {
+      if (requestInFlight) return;
+      requestInFlight = true;
       try {
         const { data } = await api.get(`/sessions/${sessionId}/lobby/status`);
         if (!mountedRef.current) return;
@@ -152,10 +165,29 @@ export function useClassroomLobby({
         setLobbyStatus(data.status || "not_joined");
       } catch {
         // Ignore polling errors
+      } finally {
+        requestInFlight = false;
       }
-    }, LOBBY_STATUS_POLL_INTERVAL_MS);
+    };
 
-    return () => clearInterval(interval);
+    // Admission should not wait for the first timer tick. Browsers can also
+    // throttle intervals while backgrounded, so refresh when the learner
+    // returns to the tab or regains connectivity.
+    void refreshStatus();
+    const interval = setInterval(refreshStatus, LOBBY_STATUS_POLL_INTERVAL_MS);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") void refreshStatus();
+    };
+    window.addEventListener("focus", refreshStatus);
+    window.addEventListener("online", refreshStatus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", refreshStatus);
+      window.removeEventListener("online", refreshStatus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [isTeacher, lobbyStatus, sessionId]);
 
   // ─── Learner: listen for WS admission events ───
@@ -317,7 +349,8 @@ export function useClassroomLobby({
   );
 
   const retryJoin = useCallback(() => {
-    setLobbyStatus("not_joined");
+    setLobbyStatus("checking");
+    setJoinAttempt((attempt) => attempt + 1);
   }, []);
 
   const togglePanel = useCallback(() => {

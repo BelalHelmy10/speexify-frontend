@@ -8,6 +8,8 @@ on:
       - "hooks/**"
       - "lib/**"
       - "styles/**"
+      - "tests/**"
+      - "scripts/**"
       - "utils/**"
       - "public/**"
       - "middleware.js"
@@ -16,7 +18,9 @@ on:
       - ".eslintignore"
       - "package.json"
       - "package-lock.json"
+      - "playwright.classroom.config.mjs"
       - ".github/workflows/ci.yml"
+      - ".github/workflows/classroom-real-devices.yml"
   pull_request:
     paths:
       - "app/**"
@@ -24,6 +28,8 @@ on:
       - "hooks/**"
       - "lib/**"
       - "styles/**"
+      - "tests/**"
+      - "scripts/**"
       - "utils/**"
       - "public/**"
       - "middleware.js"
@@ -32,7 +38,9 @@ on:
       - ".eslintignore"
       - "package.json"
       - "package-lock.json"
+      - "playwright.classroom.config.mjs"
       - ".github/workflows/ci.yml"
+      - ".github/workflows/classroom-real-devices.yml"
 
 jobs:
   quality-gates:
@@ -60,3 +68,41 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  classroom-browser-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Classroom browser and device matrix
+        run: npm run qa:classroom:browsers
+        env:
+          TURN_URL: ${{ secrets.TURN_URL }}
+          TURN_USERNAME: ${{ secrets.TURN_USERNAME }}
+          TURN_CREDENTIAL: ${{ secrets.TURN_CREDENTIAL }}
+
+      - name: Upload classroom diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classroom-playwright-${{ github.run_id }}
+          path: |
+            playwright-report/classroom
+            test-results/classroom
+          if-no-files-found: ignore
+          retention-days: 14

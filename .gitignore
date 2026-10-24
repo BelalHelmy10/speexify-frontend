@@ -6,6 +6,8 @@ build/
 .cache/
 coverage/
 .responsive-qa/
+playwright-report/
+test-results/
 /tmp/
 
 .env*

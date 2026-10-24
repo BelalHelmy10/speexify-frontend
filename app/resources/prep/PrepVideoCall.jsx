@@ -5,6 +5,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { JITSI_DOMAIN, buildJitsiOptions } from "@/lib/jitsiConfig";
 import { acquirePreviewMedia } from '@/lib/previewMedia.mjs';
 import { loadJitsiScript } from "@/lib/loadJitsiScript.mjs";
+import api from "@/lib/api";
 import { getDictionary, t } from "@/app/i18n";
 import {
   Camera,
@@ -264,10 +265,10 @@ function PrepVideoCall({
   useEffect(() => {
     connectionStateCbRef.current = onConnectionStateChange;
   }, [onConnectionStateChange]);
-  // Enter the classroom immediately. Jitsi still starts with the existing
-  // safe defaults (microphone muted, camera enabled) and exposes its own
-  // controls once the call is open.
-  const [hasJoined, setHasJoined] = useState(true);
+  // Require a deliberate join action. Besides giving people a truthful device
+  // check, this keeps camera, microphone and audio startup inside a user
+  // gesture on browsers that restrict autoplay or embedded media acquisition.
+  const [hasJoined, setHasJoined] = useState(false);
   const [joinAudioMuted, setJoinAudioMuted] = useState(true);
   const [joinVideoMuted, setJoinVideoMuted] = useState(false);
   const [previewVideoError, setPreviewVideoError] = useState(null);
@@ -323,6 +324,25 @@ function PrepVideoCall({
 
 
   const dict = getDictionary(locale, "classroom");
+  const reportCallEvent = useCallback((event, details = {}) => {
+    if (!roomId || typeof window === "undefined") return;
+    const payload = {
+      event,
+      details,
+      userAgent: window.navigator?.userAgent || "",
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio || 1,
+      },
+      online: window.navigator?.onLine !== false,
+      visibility: document.visibilityState,
+      occurredAt: new Date().toISOString(),
+    };
+    void api.post(`/sessions/${roomId}/classroom-event`, payload).catch(() => {
+      // Telemetry is best-effort and must never prevent someone joining.
+    });
+  }, [roomId]);
 
   useEffect(() => {
     moderationCbRef.current = onModerationStateChange;
@@ -962,9 +982,37 @@ function PrepVideoCall({
         : nextDevices.videoInputs[0]?.deviceId || ""
     );
     setSelectedAudioOutputId((current) =>
-      current || nextDevices.audioOutputs[0]?.deviceId || ""
+      nextDevices.audioOutputs.some((device) => device.deviceId === current)
+        ? current
+        : nextDevices.audioOutputs[0]?.deviceId || ""
     );
   }, []);
+
+  useEffect(() => {
+    if (hasJoined || typeof navigator === "undefined") return undefined;
+    const mediaDevices = navigator.mediaDevices;
+    if (!mediaDevices) return undefined;
+
+    const handleDeviceChange = () => {
+      void refreshDevices().catch(() => {
+        // A device can disappear while the browser is rebuilding its media
+        // inventory. The next devicechange event or manual refresh will retry.
+      });
+    };
+
+    if (typeof mediaDevices.addEventListener === "function") {
+      mediaDevices.addEventListener("devicechange", handleDeviceChange);
+      return () => mediaDevices.removeEventListener("devicechange", handleDeviceChange);
+    }
+
+    const previousHandler = mediaDevices.ondevicechange;
+    mediaDevices.ondevicechange = handleDeviceChange;
+    return () => {
+      if (mediaDevices.ondevicechange === handleDeviceChange) {
+        mediaDevices.ondevicechange = previousHandler || null;
+      }
+    };
+  }, [hasJoined, refreshDevices]);
 
   const startMicMeter = useCallback(
     (stream) => {
@@ -1041,12 +1089,15 @@ function PrepVideoCall({
       navigator.webkitConnection ||
       null;
     const start = performance.now();
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
 
     try {
       const response = await fetch(`/api/ws-config?prejoin=${Date.now()}`, {
         method: "GET",
         cache: "no-store",
         credentials: "include",
+        signal: controller.signal,
       });
       if (!response.ok) throw new Error(`Network check failed (${response.status})`);
 
@@ -1087,6 +1138,8 @@ function PrepVideoCall({
         latency: null,
         reachable: false,
       });
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   }, []);
 
@@ -1168,11 +1221,28 @@ function PrepVideoCall({
     } catch {
       // Device preference persistence is best-effort.
     }
+    reportCallEvent("join_requested", {
+      audioMuted: joinAudioMuted,
+      videoMuted: joinVideoMuted,
+      networkState: networkStatus.state,
+      networkReachable: networkStatus.reachable,
+    });
     stopPreviewStream();
     setHasJoined(true);
-  }, [selectedAudioInputId, selectedVideoInputId, stopPreviewStream]);
+  }, [
+    joinAudioMuted,
+    joinVideoMuted,
+    networkStatus.reachable,
+    networkStatus.state,
+    reportCallEvent,
+    selectedAudioInputId,
+    selectedVideoInputId,
+    stopPreviewStream,
+  ]);
 
-  const canJoin = networkStatus.reachable === true;
+  // A failed Speexify health probe is useful guidance, not proof that Jitsi is
+  // unreachable. Let the user continue after the finite check completes.
+  const canJoin = networkStatus.state !== "checking";
 
   useEffect(() => {
     if (hasJoined) return;
@@ -1186,10 +1256,20 @@ function PrepVideoCall({
       }
 
       try {
+        const constraints = buildPreviewConstraints();
+        if (!constraints.audio && !constraints.video) {
+          // Keep an existing permission/device notice visible after we fail
+          // soft into a fully-muted join. Clearing it here makes a denial
+          // flash briefly and then disappear on the state-driven rerender.
+          stopPreviewStream();
+          await refreshDevices();
+          return;
+        }
+
         setPrejoinError(null);
         setPreviewVideoError(null);
         const media = await acquirePreviewMedia(navigator.mediaDevices,
-          buildPreviewConstraints(), tracks => new MediaStream(tracks));
+          constraints, tracks => new MediaStream(tracks));
         const stream = media.stream;
         if (cancelled) {
           stream?.getTracks().forEach((track) => track.stop());
@@ -1202,21 +1282,33 @@ function PrepVideoCall({
         if (media.videoError) setPreviewVideoError(media.videoError);
         if (media.videoError) setPrejoinError('Camera unavailable. Your microphone is available; you can join without video.');
 
+        // Device selection must not depend on HTMLMediaElement.play(). Mobile
+        // browsers can intentionally leave that promise pending until a user
+        // gesture, which previously left every selector on "Default" forever.
+        await refreshDevices();
+
         if (previewVideoRef.current && !joinVideoMuted && !media.videoError) {
           previewVideoRef.current.srcObject = stream;
           await previewVideoRef.current.play().catch(() => { });
         }
 
         startMicMeter(stream);
-        await refreshDevices();
       } catch (err) {
         stopPreviewStream();
         setPreviewVideoError(err);
+        if (err?.name === "NotAllowedError" || err?.name === "NotFoundError") {
+          setJoinAudioMuted(true);
+          setJoinVideoMuted(true);
+        }
         setPrejoinError(
           err?.name === "NotAllowedError"
             ? "Allow camera and microphone access, or join with devices muted."
             : "Could not start camera or microphone preview."
         );
+        reportCallEvent("prejoin_media_failed", {
+          name: err?.name || "Error",
+          message: err?.message || "Media preview failed",
+        });
         // Respect the chosen device switches; the user can retry or join muted.
         await refreshDevices().catch(() => { });
       }
@@ -1235,6 +1327,7 @@ function PrepVideoCall({
     refreshDevices,
     startMicMeter,
     stopPreviewStream,
+    reportCallEvent,
   ]);
 
   useEffect(() => {
@@ -1325,10 +1418,11 @@ function PrepVideoCall({
   useEffect(() => {
     let cancelled = false;
     let joinTimer;
+    const joinStartedAt = Date.now();
     const publishConnectionState = (state) => {
       if (!cancelled) connectionStateCbRef.current?.(state);
     };
-    const failConnection = (message) => {
+    const failConnection = (message, reason = "unknown", details = {}) => {
       if (cancelled) return;
       window.clearTimeout(joinTimer);
       setIsLoading(false);
@@ -1336,6 +1430,11 @@ function PrepVideoCall({
       setError(message);
       clearNetworkQuality();
       publishConnectionState("failed");
+      reportCallEvent("connection_failed", {
+        reason,
+        elapsedMs: Date.now() - joinStartedAt,
+        ...details,
+      });
     };
 
     async function init() {
@@ -1348,6 +1447,7 @@ function PrepVideoCall({
       setError(null);
       publishConnectionState("connecting");
       setJoinDelayed(false);
+      reportCallEvent("jitsi_initializing", { retryAttempt });
       joinTimer = window.setTimeout(() => {
         if (cancelled) return;
         // Permission prompts/lobby admission can legitimately take longer.
@@ -1355,6 +1455,10 @@ function PrepVideoCall({
         setIsLoading(false);
         setJoinDelayed(true);
         setError(t(dict, "classroom_video_error_timeout"));
+        reportCallEvent("join_delayed", {
+          elapsedMs: Date.now() - joinStartedAt,
+          retryAttempt,
+        });
       }, 30000);
 
       try {
@@ -1391,6 +1495,10 @@ function PrepVideoCall({
           setJoinDelayed(false);
           setError(null);
           publishConnectionState("connected");
+          reportCallEvent("conference_joined", {
+            elapsedMs: Date.now() - joinStartedAt,
+            retryAttempt,
+          });
           try {
             const localId = api.getCurrentUserID?.();
             if (localId) localParticipantIdRef.current = String(localId);
@@ -1419,6 +1527,20 @@ function PrepVideoCall({
           // The grid effect below will re-apply on participant/size change.
           window.setTimeout(() => applyTileGridLayout(), 200);
           window.setTimeout(() => applyTileGridLayout(), 1000);
+        });
+
+        api.addListener("connectionInterrupted", () => {
+          if (cancelled) return;
+          publishConnectionState("reconnecting");
+          clearNetworkQuality();
+        });
+
+        api.addListener("connectionRestored", () => {
+          if (cancelled) return;
+          setError(null);
+          setJoinDelayed(false);
+          setIsLoading(false);
+          publishConnectionState("connected");
         });
 
         api.addListener("audioMuteStatusChanged", (status) => {
@@ -1521,10 +1643,10 @@ function PrepVideoCall({
 
         injectDominantSpeakerStyles();
         api.addListener("videoConferenceLeft", () => {
-          failConnection(t(dict, "classroom_video_error_connection"));
+          failConnection(t(dict, "classroom_video_error_connection"), "conference_left");
         });
         api.addListener("peerConnectionFailure", () => {
-          failConnection(t(dict, "classroom_video_error_connection"));
+          failConnection(t(dict, "classroom_video_error_connection"), "peer_connection_failure");
         });
         api.addListener("errorOccurred", (e) => {
           console.error("Jitsi error:", e);
@@ -1532,14 +1654,26 @@ function PrepVideoCall({
           if (e?.isFatal === false) return;
           const name = e?.name || e?.error?.name;
           if (name === "conference.connectionError" || e?.type === "CONNECTION") {
-            failConnection(t(dict, "classroom_video_error_connection"));
+            failConnection(t(dict, "classroom_video_error_connection"), "jitsi_connection_error", {
+              name,
+              type: e?.type || "",
+            });
           } else if (e?.isFatal === true || e?.error) {
-            failConnection(t(dict, "classroom_video_error_generic"));
+            failConnection(t(dict, "classroom_video_error_generic"), "jitsi_fatal_error", {
+              name,
+              type: e?.type || "",
+            });
           }
         });
 
-        api.addListener('cameraError', () => setDeviceNotice({kind:'video', text:'Camera unavailable. Allow camera access in your browser, then turn it on using the video controls.'}));
-        api.addListener('micError', () => setDeviceNotice({kind:'audio', text:'Microphone unavailable. Allow microphone access in your browser, then unmute using the video controls.'}));
+        api.addListener('cameraError', (event) => {
+          setDeviceNotice({kind:'video', text:'Camera unavailable. Allow camera access in your browser, then turn it on using the video controls.'});
+          reportCallEvent("camera_error", { name: event?.name || event?.type || "camera_error" });
+        });
+        api.addListener('micError', (event) => {
+          setDeviceNotice({kind:'audio', text:'Microphone unavailable. Allow microphone access in your browser, then unmute using the video controls.'});
+          reportCallEvent("microphone_error", { name: event?.name || event?.type || "microphone_error" });
+        });
         api.addListener('videoMuteStatusChanged', status => {
           if (status?.muted === false) setDeviceNotice(current => current?.kind === 'video' ? null : current);
         });
@@ -1573,7 +1707,10 @@ function PrepVideoCall({
         clearNetworkQuality();
         clearModerationState();
         if (!cancelled) {
-          failConnection(t(dict, "classroom_video_error_generic"));
+          failConnection(t(dict, "classroom_video_error_generic"), "initialization_error", {
+            name: err?.name || "Error",
+            message: err?.message || "Jitsi initialization failed",
+          });
         }
       }
     }
@@ -1817,7 +1954,11 @@ function PrepVideoCall({
               onClick={handleJoin}
               disabled={!canJoin}
             >
-              {canJoin ? "Join coaching session" : "Checking connection…"}
+              {!canJoin
+                ? "Checking connection…"
+                : networkStatus.reachable === false
+                  ? "Join anyway"
+                  : "Join coaching session"}
             </button>
           </section>
         </div>

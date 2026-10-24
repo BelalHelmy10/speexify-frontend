@@ -1,0 +1,61 @@
+name: Classroom Real Devices
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 1 * * 1-5"
+
+concurrency:
+  group: classroom-real-devices
+  cancel-in-progress: true
+
+jobs:
+  browserstack-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      CLASSROOM_SMOKE_URL: ${{ secrets.CLASSROOM_SMOKE_URL }}
+      CLASSROOM_SMOKE_COOKIES_JSON: ${{ secrets.CLASSROOM_SMOKE_COOKIES_JSON }}
+      CLASSROOM_REAL_DEVICE_JOIN: ${{ vars.CLASSROOM_REAL_DEVICE_JOIN || '1' }}
+      BROWSERSTACK_BUILD_NAME: classroom-${{ github.run_id }}
+
+    steps:
+      - name: Check real-device configuration
+        id: configured
+        run: |
+          if [ -n "$BROWSERSTACK_USERNAME" ] && [ -n "$BROWSERSTACK_ACCESS_KEY" ] && [ -n "$CLASSROOM_SMOKE_URL" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "BrowserStack or classroom smoke secrets are not configured; skipping real-device run."
+          fi
+
+      - name: Checkout
+        if: steps.configured.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: steps.configured.outputs.enabled == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.configured.outputs.enabled == 'true'
+        run: npm ci
+
+      - name: iPhone, iPad, Pixel, and Android tablet smoke tests
+        if: steps.configured.outputs.enabled == 'true'
+        run: npm run qa:classroom:real-devices
+
+      - name: Upload real-device screenshots
+        if: always() && steps.configured.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: classroom-real-devices-${{ github.run_id }}
+          path: test-results/classroom-real-devices
+          if-no-files-found: ignore
+          retention-days: 14
