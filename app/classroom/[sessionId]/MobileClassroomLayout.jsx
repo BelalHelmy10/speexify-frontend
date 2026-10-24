@@ -11,6 +11,11 @@ import {
     Users,
     Video,
 } from "lucide-react";
+import ClassroomUnreadBadge from "./ClassroomUnreadBadge";
+import {
+    getUnreadChatLabel,
+    normalizeUnreadCount,
+} from "@/lib/classroomChatUnread.mjs";
 
 /**
  * Mobile-specific tabbed layout for classroom
@@ -35,6 +40,8 @@ export default function MobileClassroomLayout({
     onToggleCaptions,
 }) {
     const shouldShowVideoPip = activeTab !== "video";
+    const unreadCount = normalizeUnreadCount(chatUnreadCount);
+    const hasUnread = activeTab !== "chat" && unreadCount > 0;
 
     return (
         <div className={`cr-mobile-layout ${chromeOnly ? "cr-mobile-layout--chrome" : ""}`}>
@@ -143,15 +150,18 @@ export default function MobileClassroomLayout({
 
                 <button
                     className={`cr-mobile-tabs__tab ${activeTab === "chat" ? "cr-mobile-tabs__tab--active" : ""
+                        } ${hasUnread ? "cr-mobile-tabs__tab--has-unread" : ""
                         }`}
                     onClick={() => onTabChange("chat")}
                     aria-current={activeTab === "chat" ? "page" : undefined}
+                    aria-label={hasUnread ? `Chat, ${getUnreadChatLabel(unreadCount)}` : "Chat"}
                 >
                     <span className="cr-mobile-tabs__tab-icon">
                         <MessageSquare size={22} />
-                        {chatUnreadCount > 0 && activeTab !== "chat" && (
-                            <span className="cr-mobile-tabs__badge">{chatUnreadCount}</span>
-                        )}
+                        <ClassroomUnreadBadge
+                            count={hasUnread ? unreadCount : 0}
+                            className="cr-mobile-tabs__badge"
+                        />
                     </span>
                     <span className="cr-mobile-tabs__tab-label">Chat</span>
                 </button>

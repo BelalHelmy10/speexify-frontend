@@ -443,8 +443,8 @@ export default function ClassroomShell({
   const lastContentScrollSentAtRef = useRef(0);
   const contentScrollRafPendingRef = useRef(false);
 
-  // Chat defaults to closed; a red unread dot announces new messages.
-  // The classroom should feel calm by default — chat is opt-in.
+  // Chat defaults to closed. Incoming messages get a compact unread count and
+  // a brief attention cue; opening chat clears the indicator on every layout.
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
@@ -1195,9 +1195,13 @@ export default function ClassroomShell({
     finishResize();
   }, [canResizePanels, finishResize, isDragging]);
 
+  const isChatVisible = isMobile
+    ? mobileActiveTab === "chat"
+    : isChatOpen;
+
   useEffect(() => {
-    if (isChatOpen) setChatUnreadCount(0);
-  }, [isChatOpen]);
+    if (isChatVisible) setChatUnreadCount(0);
+  }, [isChatVisible]);
 
   const getSplitPercentage = () => {
     // While sharing, the screen-share stage takes priority over the

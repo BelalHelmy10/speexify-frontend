@@ -14,6 +14,11 @@ import { ClassroomRaiseHandButton } from "./ClassroomRaiseHand";
 import { ClassroomCaptionsButton } from "./ClassroomCaptions";
 import { ClassroomScreenShareButton } from "./ClassroomScreenShare";
 import ClassroomHostMenu from "./ClassroomHostMenu";
+import ClassroomUnreadBadge from "./ClassroomUnreadBadge";
+import {
+  getUnreadChatLabel,
+  normalizeUnreadCount,
+} from "@/lib/classroomChatUnread.mjs";
 
 export default function ClassroomControlBar({
   isMobile,
@@ -59,6 +64,9 @@ export default function ClassroomControlBar({
   onTeacherAllowsScreenShareChange,
 }) {
   if (isMobile) return null;
+
+  const unreadCount = normalizeUnreadCount(chatUnreadCount);
+  const hasUnread = !isChatOpen && unreadCount > 0;
 
   return (
     <footer className="cr-controls">
@@ -230,34 +238,32 @@ export default function ClassroomControlBar({
         )}
 
         <button
+          type="button"
           className={
             "cr-controls__btn cr-controls__btn--chat" +
             (isChatOpen ? " cr-controls__btn--chat-open" : "") +
-            (!isChatOpen && chatUnreadCount > 0 ? " cr-controls__btn--has-unread" : "")
+            (hasUnread ? " cr-controls__btn--has-unread" : "")
           }
           onClick={() => setIsChatOpen(!isChatOpen)}
           aria-expanded={isChatOpen}
           aria-controls="classroom-chat-drawer"
           aria-label={
-            !isChatOpen && chatUnreadCount > 0
-              ? `Open chat, ${chatUnreadCount} unread`
+            hasUnread
+              ? `Open chat, ${getUnreadChatLabel(unreadCount)}`
               : isChatOpen
                 ? "Close chat"
                 : "Open chat"
           }
         >
-          <span className="cr-controls__btn-icon cr-controls__btn-icon--dot-host">
+          <span className="cr-controls__btn-icon cr-controls__btn-icon--badge-host">
             <MessageSquare size={16} />
-            {!isChatOpen && chatUnreadCount > 0 && (
-              <span className="cr-controls__btn-dot" aria-hidden="true" />
-            )}
+            <ClassroomUnreadBadge
+              count={hasUnread ? unreadCount : 0}
+              className="cr-chat-unread-badge--desktop"
+            />
           </span>
           <span className="cr-controls__btn-label">
-            {isChatOpen
-              ? "Close chat"
-              : chatUnreadCount > 0
-                ? `Open chat (${chatUnreadCount > 9 ? "9+" : chatUnreadCount})`
-                : "Open chat"}
+            {isChatOpen ? "Close chat" : "Chat"}
           </span>
         </button>
       </div>

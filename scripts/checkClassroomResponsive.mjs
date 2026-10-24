@@ -89,6 +89,21 @@ try {
     console.log(`${width}x${height}: ${JSON.stringify(result)}`);
     assert.ok(result.width > 80 && result.height > 80, 'Call frame must have visible dimensions');
     assert.ok(result.x >= 0 && result.y >= 0 && result.y + result.height <= height + 1, 'Call frame must be in viewport');
+
+    await page.evaluate(() => window.showUnreadChat(100));
+    const chatSelector = mobile
+      ? '.cr-mobile-tabs__tab--has-unread'
+      : '.cr-controls__btn--has-unread';
+    await page.waitForSelector(chatSelector);
+    const unread = await page.$eval(chatSelector, (button) => ({
+      badge: button.querySelector('.cr-chat-unread-badge')?.textContent,
+      label: button.getAttribute('aria-label'),
+    }));
+    assert.equal(unread.badge, '99+', 'Unread badge must remain compact at high counts');
+    assert.match(unread.label, /100 unread chat messages/, 'Accessible label must preserve the exact count');
+    await page.click(chatSelector);
+    await page.waitForFunction(() => !document.querySelector('.cr-chat-unread-badge'));
+
     if (mobile) {
       for (const tab of ['content','chat','video']) {
         const count = await page.evaluate(() => window.calls.length);

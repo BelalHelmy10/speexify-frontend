@@ -3450,21 +3450,16 @@ body.classroom-active {
   }
 
   &__badge {
-    position: absolute;
-    top: -4px;
-    right: -8px;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    font-size: 0.625rem;
-    font-weight: 700;
-    color: white;
-    background: $cr-accent-danger;
-    border-radius: $cr-radius-full;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 4px rgba($cr-accent-danger, 0.4);
+    top: -9px;
+    right: -13px;
+  }
+
+  &__tab--has-unread {
+    color: #ffd2c6;
+
+    .cr-mobile-tabs__tab-icon {
+      filter: drop-shadow(0 4px 9px rgba(221, 73, 40, 0.3));
+    }
   }
 }
 
@@ -5820,8 +5815,80 @@ body.classroom-active {
   &__pages-total { font-size: 11px; line-height: 1; }
 }
 
+// The chat control stays quiet until it has something to say. New messages
+// receive a finite spring + halo rather than a perpetual pulse, so the cue is
+// noticeable without becoming distracting during a lesson.
+.cr-chat-unread-badge {
+  position: absolute;
+  z-index: 3;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  background: linear-gradient(145deg, #ff7a59 0%, #ec4c30 52%, #c7311d 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 2px rgba(11, 17, 32, 0.98),
+    0 5px 14px rgba(219, 62, 35, 0.46);
+  transform-origin: 50% 60%;
+  animation: cr-chat-badge-arrive 620ms cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border: 1px solid rgba(255, 112, 80, 0.58);
+    border-radius: inherit;
+    pointer-events: none;
+    animation: cr-chat-badge-halo 920ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  }
+
+  &--desktop {
+    top: -10px;
+    right: -14px;
+  }
+}
+
+@keyframes cr-chat-badge-arrive {
+  0% { opacity: 0; transform: translate3d(0, 4px, 0) scale(0.45); }
+  58% { opacity: 1; transform: translate3d(0, -1px, 0) scale(1.12); }
+  78% { transform: translate3d(0, 0, 0) scale(0.96); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes cr-chat-badge-halo {
+  0% { opacity: 0.75; transform: scale(0.62); }
+  100% { opacity: 0; transform: scale(1.65); }
+}
+
+@keyframes cr-chat-control-arrive {
+  0% { transform: scale(1); }
+  42% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+
+@keyframes cr-chat-control-sheen {
+  from { transform: translateX(-145%) skewX(-20deg); }
+  to { transform: translateX(230%) skewX(-20deg); }
+}
+
 // Give chat a clear visual anchor among the quieter classroom controls.
 .cr-controls .cr-controls__btn--chat {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
   background: #c64521;
   border-color: $cr-accent-primary;
   color: #fff;
@@ -5832,16 +5899,42 @@ body.classroom-active {
   &:hover { background: #b53c1b; border-color: $cr-accent-primary-light; }
   &:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
   .cr-controls__btn-label { display: inline; }
-  .cr-controls__btn-icon--dot-host { position: relative; display: inline-flex; }
-  .cr-controls__btn-dot {
-    position: absolute;
-    top: -3px;
-    right: -3px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 0 0 2px #c64521;
+  .cr-controls__btn-icon--badge-host {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  &.cr-controls__btn--has-unread {
+    border-color: rgba(255, 174, 148, 0.78);
+    background: linear-gradient(135deg, #d65431 0%, #bc3c20 55%, #a92f18 100%);
+    color: #fff;
+    box-shadow:
+      0 4px 15px rgba(198, 69, 33, 0.34),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    animation: cr-chat-control-arrive 560ms cubic-bezier(0.2, 0.8, 0.25, 1) both;
+
+    > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      overflow: hidden;
+      border-radius: inherit;
+      background: linear-gradient(
+        100deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.26) 48%,
+        transparent 74%
+      );
+      animation: cr-chat-control-sheen 880ms 90ms cubic-bezier(0.3, 0.7, 0.3, 1) both;
+      pointer-events: none;
+    }
   }
   &.cr-controls__btn--chat-open {
     background: #9d3218;
