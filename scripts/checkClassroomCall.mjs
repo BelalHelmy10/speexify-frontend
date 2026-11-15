@@ -63,15 +63,26 @@ try {
   assert.match(await page.$eval('.cr-header__pill-signal', e => e.getAttribute('aria-label')), /connecting/);
   await page.evaluate(() => window.calls.at(-1).emit('videoConferenceJoined'));
   await page.waitForFunction(() => !document.querySelector('.cr-video__loading'));
+  assert.match(await page.$eval('.cr-header__pill-signal', e => e.getAttribute('aria-label')), /waiting/);
+  await page.evaluate(() => {
+    window.calls.at(-1).emit('participantJoined', { id: 'remote' });
+    window.calls.at(-1).emit('dataChannelOpened');
+  });
   assert.match(await page.$eval('.cr-header__pill-signal', e => e.getAttribute('aria-label')), /connected/);
-  console.log('PASS join confirmation controls loading and header status');
+  console.log('PASS admission waits for transport before claiming video connected');
+
+  await page.click('.cr-video__reconnect');
+  await page.waitForFunction(() => window.calls.length === 2);
+  assert.equal(await page.evaluate(() => window.calls[0].disposed), true);
+  await page.evaluate(() => window.calls.at(-1).emit('videoConferenceJoined'));
+  console.log('PASS manual reconnect is available even without an SDK error');
 
   await page.evaluate(() => window.calls.at(-1).emit('peerConnectionFailure'));
   await page.waitForSelector('.cr-video__error');
   assert.match(await page.$eval('.cr-header__pill-signal', e => e.getAttribute('aria-label')), /failed/);
   await page.click('.cr-video__retry');
-  await page.waitForFunction(() => window.calls.length === 2);
-  assert.equal(await page.evaluate(() => window.calls[0].disposed), true);
+  await page.waitForFunction(() => window.calls.length === 3);
+  assert.equal(await page.evaluate(() => window.calls[1].disposed), true);
   await page.evaluate(() => window.calls.at(-1).emit('videoConferenceJoined'));
   await page.waitForFunction(() => !document.querySelector('.cr-video__error'));
   console.log('PASS connection failure, disposal and retry without page reload');
@@ -119,5 +130,20 @@ try {
   await page.evaluate(() => window.calls.at(-1).emit('videoConferenceJoined'));
   await page.waitForFunction(() => !document.querySelector('.cr-video__error') && !document.querySelector('.cr-video__loading'));
   console.log('PASS script loading failure can recover through Retry');
+
+  await page.evaluate(() => {
+    const original = window.setTimeout;
+    window.setTimeout = (fn, ms, ...args) => original(fn, ms === 20000 ? 150 : ms, ...args);
+    window.mediaFailureFrame = document.querySelector('iframe');
+    window.calls.at(-1).emit('participantJoined', { id: 'remote' });
+  });
+  await page.waitForFunction(() => document.querySelector('.cr-video__error')?.textContent.includes('classroom_video_error_media'));
+  assert.match(await page.$eval('.cr-header__pill-signal', e => e.getAttribute('aria-label')), /failed/);
+  assert.equal(await page.$eval('.cr-video__frame', e => getComputedStyle(e).opacity), '1');
+  await page.evaluate(() => window.calls.at(-1).emit('dataChannelOpened'));
+  await page.waitForFunction(() => !document.querySelector('.cr-video__error'));
+  assert.equal(await page.evaluate(() => document.querySelector('iframe') === window.mediaFailureFrame), true);
+  assert.match(await page.$eval('.cr-header__pill-signal', e => e.getAttribute('aria-label')), /connected/);
+  console.log('PASS joined-without-media shows recovery and a late transport restores the same call');
   assert.deepEqual(errors, []);
 } finally { await browser.close(); }

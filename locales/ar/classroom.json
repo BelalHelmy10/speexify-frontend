@@ -3,5 +3,8 @@
   "classroom_video_error_generic": "حدث خطأ في الفيديو. يرجى المحاولة مجدداً.",
   "classroom_video_error_timeout": "لم تتصل مكالمة الفيديو. تحقق من اتصالك ثم اضغط إعادة المحاولة.",
   "classroom_video_error_connection": "خطأ في الاتصال. تحقق من شبكتك وأعد المحاولة.",
-  "classroom_video_retry": "إعادة المحاولة"
+  "classroom_video_retry": "إعادة المحاولة",
+  "classroom_video_error_media": "انضممت إلى الغرفة، لكن تعذّر إنشاء اتصال الفيديو. أعد المحاولة أو جرّب شبكة أخرى.",
+  "classroom_video_reconnect": "إعادة توصيل الفيديو",
+  "classroom_video_reconnect_hint": "أعد تشغيل اتصال الفيديو دون مغادرة الدرس"
 }

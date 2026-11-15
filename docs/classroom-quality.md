@@ -22,6 +22,11 @@ Sass in:
 - Chromium Pixel and Android tablet profiles
 - Teacher and learner layouts in portrait and landscape
 
+This layer uses a simulated Jitsi API. It verifies the classroom's handling of
+events and layout, not actual camera capture, WebRTC negotiation, or received
+media in those engines. A green matrix alone cannot establish device media
+compatibility.
+
 It verifies stable iframe ownership through rotation, horizontal overflow,
 permission denial and mid-call permission loss, automatic Bluetooth/headset and
 camera hot-plug updates, offline/online recovery, background/foreground events,
@@ -31,6 +36,36 @@ Failure traces, screenshots, and video are written to `test-results/classroom`
 and `playwright-report/classroom`. CI retains them for 14 days.
 
 ## 2. TURN-only relay verification
+
+First verify what the **hosted Jitsi service actually supplies to browsers**.
+An independently supplied TURN credential can pass the standalone test below
+even when Jitsi never advertises that service to classroom participants.
+
+```bash
+node scripts/diagnoseLiveClassroom.mjs p2p
+node scripts/diagnoseLiveClassroom.mjs bridge
+node scripts/diagnoseLiveClassroom.mjs relay
+```
+
+These are opt-in production-service probes. Each creates a fresh, isolated room
+with two synthetic participants and fake camera/microphone input; they do not
+join customer sessions. Set `PUPPETEER_EXECUTABLE_PATH` outside macOS. Each probe
+prints JSON lines, inspects actual inbound audio/video counters, and exits
+unsuccessfully unless both clients receive media. Relay mode additionally
+requires a selected relay candidate on both clients. Output includes advertised
+ICE URLs and candidate types, but excludes credentials and candidate addresses.
+
+The probe also runs the application's connection monitor against real iframe
+events. Admission (`videoConferenceJoined`) is not proof of media connectivity.
+The deployed iframe API supports `dataChannelOpened`, `dataChannelClosed`, and
+`p2pStatusChanged`; it does not forward lib-jitsi-meet's `connectionInterrupted`
+or `connectionRestored` events. `peerConnectionFailure` is conditional on
+rtcstats monitoring and must not be the sole failure detector. A bridge data
+channel or active P2P transport indicates a connection, but is not itself proof
+of decoded remote video; the probe checks inbound frames separately.
+
+Require the hosted relay probe to pass after a video-server/network change.
+Do not interpret a passing direct call or mock browser matrix as a relay pass.
 
 Configure an expiring test credential from the production TURN service:
 
@@ -64,6 +99,12 @@ Required repository secrets:
 - `BROWSERSTACK_ACCESS_KEY`
 - `CLASSROOM_SMOKE_URL` — an HTTPS staging classroom URL
 - `CLASSROOM_SMOKE_COOKIES_JSON` — optional JSON array of short-lived staging cookies
+
+Missing required configuration fails this workflow; an unconfigured run must
+never appear to verify physical devices. The smoke script currently verifies
+iframe visibility and lifecycle/geometry, not decoded remote audio/video.
+Release evidence must additionally include a paired call on each physical
+device with observed two-way media, including a forced relay case.
 
 The real-device job joins by default, automatically accepts camera/microphone
 prompts, requires a visible call frame, backgrounds and restores the physical

@@ -1116,6 +1116,23 @@ body.classroom-active {
     }
   }
 
+  &__reconnect {
+    position: absolute;
+    inset-block-start: 0.5rem;
+    inset-inline-end: 0.5rem;
+    z-index: 11;
+    min-height: 36px;
+    padding: 0.4rem 0.65rem;
+    border: 1px solid $cr-border-default;
+    border-radius: $cr-radius-full;
+    color: $cr-text-primary;
+    background: rgba($cr-bg-primary, 0.88);
+    font-size: 0.75rem;
+    cursor: pointer;
+
+    &:focus-visible { outline: 2px solid $cr-accent-primary; outline-offset: 2px; }
+  }
+
   &__speaker-indicator {
     position: absolute;
     top: 0.75rem;

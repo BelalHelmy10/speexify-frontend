@@ -3,5 +3,8 @@
   "classroom_video_error_generic": "Something went wrong with the video. Please try again.",
   "classroom_video_error_timeout": "The video call did not connect. Check your connection and tap Retry.",
   "classroom_video_error_connection": "Connection error. Check your network and retry.",
-  "classroom_video_retry": "Retry"
+  "classroom_video_retry": "Retry",
+  "classroom_video_error_media": "You joined the room, but the video connection could not be established. Retry, or try a different network.",
+  "classroom_video_reconnect": "Reconnect video",
+  "classroom_video_reconnect_hint": "Restart the video connection without leaving your lesson"
 }

@@ -4,6 +4,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { JITSI_DOMAIN, buildJitsiOptions } from "@/lib/jitsiConfig";
 import { loadJitsiScript } from "@/lib/loadJitsiScript.mjs";
+import { monitorClassroomConnection } from "@/lib/classroomConnectionMonitor.mjs";
 import api from "@/lib/api";
 import { getDictionary, t } from "@/app/i18n";
 
@@ -944,12 +945,15 @@ function PrepVideoCall({
   useEffect(() => {
     let cancelled = false;
     let joinTimer;
+    let stopConnectionMonitor;
+    let fatalConnectionFailure = false;
     const joinStartedAt = Date.now();
     const publishConnectionState = (state) => {
       if (!cancelled) connectionStateCbRef.current?.(state);
     };
     const failConnection = (message, reason = "unknown", details = {}) => {
       if (cancelled) return;
+      fatalConnectionFailure = !["media_transport_timeout", "network_offline"].includes(reason);
       window.clearTimeout(joinTimer);
       setIsLoading(false);
       setJoinDelayed(false);
@@ -1014,7 +1018,6 @@ function PrepVideoCall({
           setIsLoading(false);
           setJoinDelayed(false);
           setError(null);
-          publishConnectionState("connected");
           reportCallEvent("conference_joined", {
             elapsedMs: Date.now() - joinStartedAt,
             retryAttempt,
@@ -1049,18 +1052,28 @@ function PrepVideoCall({
           window.setTimeout(() => applyTileGridLayout(), 1000);
         });
 
-        api.addListener("connectionInterrupted", () => {
-          if (cancelled) return;
-          publishConnectionState("reconnecting");
-          clearNetworkQuality();
-        });
-
-        api.addListener("connectionRestored", () => {
-          if (cancelled) return;
-          setError(null);
-          setJoinDelayed(false);
-          setIsLoading(false);
-          publishConnectionState("connected");
+        stopConnectionMonitor = monitorClassroomConnection(api, {
+          onStateChange: (state) => {
+            if (fatalConnectionFailure) return;
+            publishConnectionState(state);
+            if (state !== "connected") clearNetworkQuality();
+            if (state === "waiting") {
+              setError(null);
+              setJoinDelayed(false);
+            }
+          },
+          onTransportReady: () => {
+            if (cancelled || fatalConnectionFailure) return;
+            setError(null);
+            setJoinDelayed(false);
+            setIsLoading(false);
+          },
+          onUnavailable: ({ reason }) => {
+            if (fatalConnectionFailure) return;
+            failConnection(t(dict, "classroom_video_error_media"), reason);
+            // Preserve the iframe so a late ICE connection can still recover.
+            setJoinDelayed(true);
+          },
         });
 
         api.addListener("audioMuteStatusChanged", (status) => {
@@ -1240,6 +1253,7 @@ function PrepVideoCall({
     return () => {
       cancelled = true;
       window.clearTimeout(joinTimer);
+      stopConnectionMonitor?.();
       try {
         const cb = screenShareCbRef.current;
         if (typeof cb === "function") {
@@ -1296,6 +1310,17 @@ function PrepVideoCall({
             {t(dict, "classroom_video_retry")}
           </button>
         </div>
+      )}
+
+      {!isLoading && !error && (
+        <button
+          type="button"
+          className="cr-video__reconnect"
+          title={t(dict, "classroom_video_reconnect_hint")}
+          onClick={() => setRetryAttempt((attempt) => attempt + 1)}
+        >
+          {t(dict, "classroom_video_reconnect")}
+        </button>
       )}
 
       <div
