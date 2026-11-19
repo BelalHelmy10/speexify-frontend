@@ -54,6 +54,25 @@ iPhone/Safari testing. Its phone-sized client is Chromium with a small viewport.
 Failure traces, screenshots, and video are written to `test-results/classroom`
 and `playwright-report/classroom`. CI retains them for 14 days.
 
+### Material following
+
+```bash
+node scripts/checkClassroomMaterialSync.mjs
+node scripts/checkAdaptivePdf.mjs
+```
+
+The material regression runs the real classroom, PrepShell and PDF viewer in
+separate trainer and learner browser pages. Only PDF rendering, API calls and
+the message transport are simulated. It checks matching PDF coordinates on
+phone, tablet and desktop viewports, a late join while the PDF is loading,
+non-first pages, saved trainer positions and resource switching. It does not enter a production session or verify physical Safari devices.
+
+Keep trainer restoration separate from learner following: restoring a trainer
+into the cropped learner window removes the scroll range and suppresses future
+viewport broadcasts. Scroll listeners and the parent scroll reference must
+attach when the asynchronous viewer's DOM node mounts, including when its URL
+was unavailable on the component's first render.
+
 ## 2. TURN-only relay verification
 
 First verify what the **hosted Jitsi service actually supplies to browsers**.

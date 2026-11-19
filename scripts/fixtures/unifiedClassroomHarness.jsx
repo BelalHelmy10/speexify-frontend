@@ -81,7 +81,7 @@ window.MockCall = class {
 };
 window.JitsiMeetExternalAPI = window.MockCall;
 
-window.testState = { state: {resourceId:"a",openResourceIds:["a"]}, messages: [], saved: [] };
+window.testState = { state: window.testInitialClassroomState || {resourceId:"a",openResourceIds:["a"]}, messages: [], saved: [] };
 window.channelSubscribers = new Set();
 window.receive = (message) => window.channelSubscribers.forEach((fn) => fn(message));
 window.testRole = new URLSearchParams(location.search).get('role') || 'teacher';

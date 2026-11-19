@@ -270,8 +270,6 @@ function PrepShellContent({
   const pdfScrollRef = useRef(null); // scroll container (mainRef inside PdfViewerWithSidebar)
   const pdfNavApiRef = useRef(null); // nav API from PdfViewerWithSidebar (setPage, etc.)
   const layoutResizeTimeoutRef = useRef(null);
-  const lastScrollSentAtRef = useRef(0); // throttle
-  const rafPendingRef = useRef(false); // throttle (rAF)
 
   const applyingRemoteRef = useRef(false);
 
@@ -405,13 +403,21 @@ function PrepShellContent({
   const sendOnChannel = classroomChannel?.send;
 
   const pdfViewportPublishedRef = useRef(false);
+  const pdfLiveViewReceivedRef = useRef(false);
   const handlePdfViewportChange = useCallback((view) => {
     if (!isActive || !isTeacher || !channelReady || !sendOnChannel) return;
     pdfViewportPublishedRef.current = true;
-    const pdfScroll = { resourceId: resource._id, page: view.page, scrollNorm: 0, view };
+    const panel = pdfScrollRef.current;
+    const scrollNorm = panel ? panel.scrollTop / Math.max(1, panel.scrollHeight - panel.clientHeight) : 0;
+    const pdfScroll = { resourceId: resource._id, page: view.page, scrollNorm, view };
     sendOnChannel({type:'PDF_SCROLL',...pdfScroll});
     onClassroomStateChange?.({pdfScroll},{delay:1500});
   }, [isActive,isTeacher,channelReady,sendOnChannel,resource._id,onClassroomStateChange]);
+
+  useEffect(() => {
+    const view = pdfNavApiRef.current?.getView?.();
+    if (view) handlePdfViewportChange(view);
+  }, [isActive, channelReady, handlePdfViewportChange]);
 
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -1026,74 +1032,6 @@ function PrepShellContent({
     pdfCurrentPage,
   ]);
 
-  // ✅ Teacher: broadcast PDF scroll position (normalized)
-  useEffect(() => {
-    if (!isActive || !isPdf) return;
-    if (!isTeacher) return;
-
-    const el = pdfScrollRef.current;
-    if (!el) return;
-
-    const onScroll = () => {
-      const now = Date.now();
-      if (now - lastScrollSentAtRef.current < 16) return; // ~60fps
-      if (rafPendingRef.current) return;
-
-      rafPendingRef.current = true;
-
-      requestAnimationFrame(() => {
-        rafPendingRef.current = false;
-
-        const target = pdfScrollRef.current;
-        if (!target) return;
-
-        const maxScroll = Math.max(
-          1,
-          target.scrollHeight - target.clientHeight
-        );
-        const scrollNorm = target.scrollTop / maxScroll;
-
-        lastScrollSentAtRef.current = Date.now();
-
-        if (channelReady && sendOnChannel) {
-          sendOnChannel({
-            type: "PDF_SCROLL",
-            resourceId: resource._id,
-            page: pdfCurrentPage,
-            scrollNorm,
-            view: pdfNavApiRef.current?.getView?.(),
-          });
-        }
-
-        if (typeof onClassroomStateChange === "function") {
-          onClassroomStateChange(
-            {
-              pdfScroll: {
-                resourceId: resource._id,
-                page: pdfCurrentPage,
-                scrollNorm,
-                view: pdfNavApiRef.current?.getView?.(),
-              },
-            },
-            { delay: 1500 }
-          );
-        }
-      });
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, [
-    isActive,
-    isPdf,
-    isTeacher,
-    channelReady,
-    sendOnChannel,
-    resource._id,
-    pdfCurrentPage,
-    onClassroomStateChange,
-  ]);
-
   const initialPdfScrollKeyRef = useRef("");
 
   useEffect(() => {
@@ -1112,12 +1050,17 @@ function PrepShellContent({
     if (initialPdfScrollKeyRef.current === key) return;
     initialPdfScrollKeyRef.current = key;
 
+    const api = pdfNavApiRef.current;
+    if (initialPdfScroll.view && api?.applyView) {
+      if (!isTeacher && pdfLiveViewReceivedRef.current) return;
+      if (isTeacher) api.restoreView?.(initialPdfScroll.view);
+      else api.applyView(initialPdfScroll.view);
+      return;
+    }
+
     const id = setTimeout(() => {
+      if (!isTeacher && pdfLiveViewReceivedRef.current) return;
       const api = pdfNavApiRef.current;
-      if (initialPdfScroll.view && api?.applyView) {
-        api.applyView(initialPdfScroll.view);
-        return;
-      }
       if (api?.setPage && targetPage !== pdfCurrentPage) {
         api.setPage(targetPage);
       }
@@ -1758,6 +1701,15 @@ function PrepShellContent({
       // Hidden tabs continue receiving comments, but must not play media or
       // scroll/focus a viewer that the participant is no longer looking at.
       if (!isActive && msg?.type !== "ANNOTATION_STATE") return;
+      if (!isTeacher && msg?.resourceId === resource._id &&
+          ["PDF_SCROLL", "PDF_SET_PAGE", "PDF_FIT_TO_PAGE"].includes(msg.type)) {
+        pdfLiveViewReceivedRef.current = true;
+      }
+      if (msg?.type === "PDF_VIEW_REQUEST" && msg.resourceId === resource._id && isTeacher) {
+        const view = pdfNavApiRef.current?.getView?.();
+        if (view) handlePdfViewportChange(view);
+        return;
+      }
       handlePrepChannelMessage(msg, {
         resourceId: resource._id,
         applyRemoteAnnotationState,
@@ -1785,7 +1737,14 @@ function PrepShellContent({
     isPdf,
     pdfCurrentPage,
     applyAudioState,
+    handlePdfViewportChange,
   ]);
+
+  useEffect(() => {
+    if (isActive && isPdf && !isTeacher && channelReady) {
+      sendOnChannel?.({ type: "PDF_VIEW_REQUEST", resourceId: resource._id });
+    }
+  }, [isActive, isPdf, isTeacher, channelReady, sendOnChannel, resource._id]);
 
   // ─────────────────────────────────────────────────────────────
   // Drawing tools (pen / highlighter / eraser) using normalized coords

@@ -64,6 +64,11 @@ export default function PdfViewerWithSidebar({
   onViewportChange,
 }) {
   const mainRef = useRef(null);
+  const [scrollElement, setScrollElement] = useState(null);
+  const attachScrollContainer = useCallback((node) => {
+    mainRef.current = node;
+    setScrollElement(node);
+  }, []);
   const pdfCanvasRef = useRef(null);
   const pageWrapperRef = useRef(null);
 
@@ -87,6 +92,9 @@ export default function PdfViewerWithSidebar({
   const [sharedView, setSharedView] = useState(null);
   const [pageSize, setPageSize] = useState({width:0,height:0});
   const sharedViewRef = useRef(null);
+  const pendingRestoreRef = useRef(null);
+  const pendingPageRef = useRef(null);
+  const [restoreVersion, setRestoreVersion] = useState(0);
   sharedViewRef.current = sharedView;
   const onViewportChangeRef = useRef(onViewportChange);
   onViewportChangeRef.current = onViewportChange;
@@ -103,6 +111,8 @@ export default function PdfViewerWithSidebar({
   const ZOOM_STEP = 0.1;
 
   const setManualZoom = useCallback((value) => {
+    pendingRestoreRef.current = null;
+    sharedViewRef.current = null;
     setSharedView(null);
     manualZoomRef.current = true;
     fitRequestRef.current += 1;
@@ -163,6 +173,7 @@ export default function PdfViewerWithSidebar({
   }, [pdfDoc, currentPage, fitMode]);
 
   const fitToPage = useCallback(() => {
+    pendingRestoreRef.current = null;
     manualZoomRef.current = false;
     sharedViewRef.current = null;
     setSharedView(null);
@@ -177,21 +188,37 @@ export default function PdfViewerWithSidebar({
     if (!view || !Number.isFinite(view.page)) return;
     const region = normalizePdfRegion(view.region);
     if (view.manual && !region) return;
+    if (!pdfDoc) pendingPageRef.current = view.page;
     setCurrentPage(Math.max(1, Math.min(numPages || view.page, Math.floor(view.page))));
     manualZoomRef.current = Boolean(view.manual);
     sharedViewRef.current = view.manual ? region : null;
     setSharedView(view.manual ? region : null);
     // Fitting runs after the target page/state is committed below.
     requestAnimationFrame(() => applyFit());
+  }, [numPages, pdfDoc, applyFit]);
+
+  const restoreView = useCallback((view) => {
+    if (!view || !Number.isFinite(view.page)) return;
+    const region = normalizePdfRegion(view.region);
+    if (!region) return;
+    // A presenter resumes on the full, scrollable page. Cropping is only
+    // for participants following a remote presenter.
+    pendingRestoreRef.current = { ...view, region };
+    setRestoreVersion(version => version + 1);
+    sharedViewRef.current = null;
+    setSharedView(null);
+    manualZoomRef.current = Boolean(view.manual);
+    setCurrentPage(Math.max(1, Math.min(numPages || view.page, Math.floor(view.page))));
+    if (!view.manual) applyFit();
   }, [numPages, applyFit]);
 
   const getView = useCallback(() => {
     const panel=mainRef.current, wrapper=pageWrapperRef.current;
-    if (!panel || !wrapper) return null;
+    if (!panel || !wrapper || !pdfDoc || loading || pendingRestoreRef.current) return null;
     const region=visiblePdfRegion(wrapper.getBoundingClientRect(),panel.getBoundingClientRect());
     if (!region) return null;
     return {page:currentPage,manual:manualZoomRef.current || panel.scrollTop>1 || panel.scrollLeft>1,region};
-  }, [currentPage]);
+  }, [currentPage, pdfDoc, loading]);
 
   useEffect(() => {
     const panel=mainRef.current;
@@ -209,7 +236,7 @@ export default function PdfViewerWithSidebar({
     panel.addEventListener('scroll',publish,{passive:true});
     publish();
     return ()=>{panel.removeEventListener('scroll',publish);cancelAnimationFrame(frame);};
-  }, [pdfDoc,currentPage,zoom,loading,getView]);
+  }, [scrollElement,pdfDoc,currentPage,zoom,loading,getView]);
 
   useEffect(() => { if (pdfDoc && sharedView) applyFit(); }, [pdfDoc,currentPage,sharedView,applyFit]);
 
@@ -239,17 +266,10 @@ export default function PdfViewerWithSidebar({
     updateContainerRef();
   }, [updateContainerRef]);
 
-  // ✅ Expose the scroll container element to parent
-  const updateScrollContainerRef = useCallback(() => {
-    const handler = onScrollContainerReadyRef.current;
-    if (typeof handler === "function" && mainRef.current) {
-      handler(mainRef.current);
-    }
-  }, []);
-
   useEffect(() => {
-    updateScrollContainerRef();
-  }, [updateScrollContainerRef]);
+    onScrollContainerReadyRef.current?.(scrollElement);
+    return () => onScrollContainerReadyRef.current?.(null);
+  }, [scrollElement]);
 
   // NEW: Notify parent of nav state changes, including fitToPage
   useEffect(() => {
@@ -271,12 +291,13 @@ export default function PdfViewerWithSidebar({
         fitToPage, // NEW: Expose fitToPage
         autoFit,
         applyView,
+        restoreView,
         getView,
         setPage: (page) =>
           setCurrentPage(Math.max(1, Math.min(numPages, page))),
       });
     }
-  }, [currentPage, numPages, zoom, onNavStateChange, fitToPage, autoFit, setManualZoom, applyView, getView]);
+  }, [currentPage, numPages, zoom, onNavStateChange, fitToPage, autoFit, setManualZoom, applyView, restoreView, getView]);
 
   // Load pdf.js lazily
   useEffect(() => {
@@ -426,6 +447,11 @@ export default function PdfViewerWithSidebar({
         }
         setPdfDoc(doc);
         setNumPages(doc.numPages || 0);
+        const requestedPage = pendingRestoreRef.current?.page || pendingPageRef.current;
+        if (requestedPage) {
+          setCurrentPage(Math.max(1, Math.min(doc.numPages, requestedPage)));
+          pendingPageRef.current = null;
+        }
         setLoading(false);
       } catch (err) {
         console.error("Failed to load PDF document:", err);
@@ -484,6 +510,21 @@ export default function PdfViewerWithSidebar({
         const page = await pdfDoc.getPage(currentPage);
         if (cancelled) return;
 
+        const restore = pendingRestoreRef.current;
+        const panel = mainRef.current;
+        if (restore?.manual && panel) {
+          const base = page.getViewport({ scale: 1 });
+          const style = getComputedStyle(panel);
+          const restoredZoom = regionFitZoom(base, {
+            width: panel.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 2,
+            height: panel.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - 2,
+          }, restore.region);
+          if (restoredZoom && Math.abs(restoredZoom - zoom) >= .002) {
+            setZoom(restoredZoom);
+            return;
+          }
+        }
+
         const canvas = pdfCanvasRef.current;
         const context = canvas.getContext("2d");
 
@@ -515,6 +556,11 @@ export default function PdfViewerWithSidebar({
         await renderTask.promise;
 
         if (!cancelled) {
+          if (restore && panel && pendingRestoreRef.current === restore) {
+            pendingRestoreRef.current = null;
+            panel.scrollTop = restore.region.y * viewport.height;
+            panel.scrollLeft = restore.region.x * viewport.width;
+          }
           setLoading(false);
           updateContainerRef();
         }
@@ -540,7 +586,7 @@ export default function PdfViewerWithSidebar({
         } catch (_) { }
       }
     };
-  }, [pdfDoc, currentPage, zoom, updateContainerRef, dict]);
+  }, [pdfDoc, currentPage, zoom, updateContainerRef, dict, restoreVersion]);
 
   // ✅ Cleanup auto-fit RAF on unmount
   useEffect(() => {
@@ -639,7 +685,7 @@ export default function PdfViewerWithSidebar({
     <div className={`prep-pdf-layout ${fitMode === 'classroom' ? 'prep-pdf-layout--adaptive' : ''}`}>
       {/* MAIN AREA */}
       <div className="prep-pdf-main">
-        <div className="prep-pdf-main-inner" ref={mainRef} data-lenis-prevent>
+        <div className="prep-pdf-main-inner" ref={attachScrollContainer} data-lenis-prevent>
           {loading && !pdfDoc && (
             <div className="cpv-loading">
               <div className="cpv-loading__spinner" />

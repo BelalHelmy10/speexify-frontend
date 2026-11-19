@@ -6,7 +6,7 @@ import * as sass from "sass";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 
-export function buildClassroomHarness({ realLobby = false, liveVideo = false } = {}) {
+export function buildClassroomHarness({ realLobby = false, liveVideo = false, realPrep = false } = {}) {
   const modules = [];
   const ids = new Map();
 
@@ -63,10 +63,16 @@ export function buildClassroomHarness({ realLobby = false, liveVideo = false } =
       source = `module.exports={__esModule:true,default:{get:async(url)=>{if(url.endsWith('/lobby/status')) {window.lobbyStatusChecks=(window.lobbyStatusChecks||0)+1;return {data:{lobbyEnabled:true,status:window.testLobbyStatus||'waiting'}};}if(url.endsWith('/materials')) await new Promise(resolve=>setTimeout(resolve,20));return {data:url.endsWith('classroom-state') ? {state:window.testState.state} : {materials:window.testState.materials||[]}}},patch:async(url,body)=>({data:{state:body.state}}),put:async(url,body)=>{window.testState.saved.push(body);return {data:{}}},post:async()=>({data:{}})}};`;
     }
     if (relativePath === "app/resources/prep/useClassroomChannel.js") {
-      source = `const React=require('react');exports.useClassroomChannel = ()=>React.useMemo(()=>({ready:true,status:'ready',send:message=>window.testState.messages.push(message),subscribe:fn=>{window.channelSubscribers.add(fn);return ()=>window.channelSubscribers.delete(fn)}}),[]);`;
+      source = `const React=require('react');exports.useClassroomChannel = ()=>React.useMemo(()=>({ready:true,status:'ready',send:message=>{window.testState.messages.push(message);window.onClassroomSend?.(message);},subscribe:fn=>{window.channelSubscribers.add(fn);return ()=>window.channelSubscribers.delete(fn)}}),[]);`;
     }
-    if (relativePath === "app/resources/prep/PrepShell.jsx") {
+    if (relativePath === "app/resources/prep/PrepShell.jsx" && !realPrep) {
       source = `const React=require('react');module.exports={__esModule:true,default:({resource,isActive})=>React.createElement('div',{'data-resource':resource._id,'data-active':isActive,className:'classroom-test-content'},React.createElement('h2',null,resource.title),React.createElement('textarea',{'aria-label':'Lesson notes'}))};`;
+    }
+    if (realPrep && ["app/resources/prep/PrepBreadcrumbs.jsx", "app/resources/prep/PrepInfoSidebar.jsx"].includes(relativePath)) {
+      source = "module.exports={__esModule:true,default:()=>null};";
+    }
+    if (file.endsWith("/legacy/build/pdf.min.mjs")) {
+      source = `exports.GlobalWorkerOptions={};exports.version='test';exports.getDocument=()=>({destroy:async()=>{},promise:new Promise(resolve=>setTimeout(()=>resolve({numPages:2,destroy:async()=>{},getPage:async()=>({getViewport:({scale})=>({width:600*scale,height:840*scale}),render:()=>({promise:Promise.resolve(),cancel:()=>{}})})}),300))});`;
     }
     if (file.endsWith("/app/i18n.js")) {
       source = "const dict={};exports.getDictionary = () => dict; exports.t = (_, key) => key;";
