@@ -6,7 +6,7 @@ import * as sass from "sass";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 
-export function buildClassroomHarness() {
+export function buildClassroomHarness({ realLobby = false, liveVideo = false } = {}) {
   const modules = [];
   const ids = new Map();
 
@@ -19,10 +19,14 @@ export function buildClassroomHarness() {
     const localRequire = createRequire(file);
     let source = fs.readFileSync(file, "utf8");
     const relativePath = path.relative(root, file);
+    if (liveVideo && relativePath === "scripts/fixtures/unifiedClassroomHarness.jsx") {
+      source = source.replace('window.JitsiMeetExternalAPI = window.MockCall;', 'window.JitsiMeetExternalAPI = window.LiveJitsiAPI;');
+    }
     const shellDirectory = "app/classroom/[sessionId]/";
 
     if (
       relativePath.startsWith(shellDirectory)
+      && !(realLobby && relativePath.endsWith("useClassroomLobby.js"))
       && ![
         "ClassroomShell.jsx",
         "ClassroomResourceWorkspace.jsx",
@@ -56,7 +60,7 @@ export function buildClassroomHarness() {
       source = "module.exports={__esModule:true,default:()=>({user:{id:'test-user'}})};";
     }
     if (relativePath === "lib/api.js") {
-      source = `module.exports={__esModule:true,default:{get:async(url)=>{if(url.endsWith('/materials')) await new Promise(resolve=>setTimeout(resolve,20));return {data:url.endsWith('classroom-state') ? {state:window.testState.state} : {materials:window.testState.materials||[]}}},patch:async(url,body)=>({data:{state:body.state}}),put:async(url,body)=>{window.testState.saved.push(body);return {data:{}}},post:async()=>({data:{}})}};`;
+      source = `module.exports={__esModule:true,default:{get:async(url)=>{if(url.endsWith('/lobby/status')) {window.lobbyStatusChecks=(window.lobbyStatusChecks||0)+1;return {data:{lobbyEnabled:true,status:window.testLobbyStatus||'waiting'}};}if(url.endsWith('/materials')) await new Promise(resolve=>setTimeout(resolve,20));return {data:url.endsWith('classroom-state') ? {state:window.testState.state} : {materials:window.testState.materials||[]}}},patch:async(url,body)=>({data:{state:body.state}}),put:async(url,body)=>{window.testState.saved.push(body);return {data:{}}},post:async()=>({data:{}})}};`;
     }
     if (relativePath === "app/resources/prep/useClassroomChannel.js") {
       source = `const React=require('react');exports.useClassroomChannel = ()=>React.useMemo(()=>({ready:true,status:'ready',send:message=>window.testState.messages.push(message),subscribe:fn=>{window.channelSubscribers.add(fn);return ()=>window.channelSubscribers.delete(fn)}}),[]);`;

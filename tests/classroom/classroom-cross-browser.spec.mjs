@@ -2,6 +2,27 @@ import { test, expect } from "@playwright/test";
 import { buildClassroomHarness } from "./support/buildClassroomHarness.mjs";
 
 const harness = buildClassroomHarness();
+const admissionHarness = buildClassroomHarness({ realLobby: true });
+
+test("learner admission attaches the call after the waiting room", async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route('http://classroom.test/**', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html class="classroom-active"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body class="classroom-active"><div id="root"></div></body></html>' }));
+  await page.goto('http://classroom.test/?role=learner');
+  await page.addStyleTag({ content: admissionHarness.css });
+  await page.addScriptTag({ content: admissionHarness.script });
+  await expect.poll(() => page.evaluate(() => window.lobbyStatusChecks || 0)).toBeGreaterThan(1);
+  await expect(page.locator('iframe')).toHaveCount(0);
+  await page.evaluate(() => {
+    window.testLobbyStatus = 'admitted';
+    window.dispatchEvent(new Event('focus'));
+  });
+  await expect(page.locator('.cr-video-target iframe')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.calls.length)).toBe(1);
+  expect(await page.evaluate(() => window.calls[0].options.parentNode.isConnected)).toBe(true);
+  await joinClassroom(page);
+  expect(errors).toEqual([]);
+});
 
 async function mountClassroom(page, {
   role = "teacher",

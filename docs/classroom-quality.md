@@ -32,6 +32,25 @@ permission denial and mid-call permission loss, automatic Bluetooth/headset and
 camera hot-plug updates, offline/online recovery, background/foreground events,
 and connection interruption/restoration without recreating the call.
 
+The admission regression also runs the real lobby hook: it holds the learner
+in the waiting room, then admits them and requires an attached, visible call.
+Do not replace that scenario with an always-admitted lobby stub. A call API can
+be constructed inside a detached portal without any iframe in the classroom.
+
+For an opt-in check of actual received media through the real classroom shell
+and lobby hook, run:
+
+```bash
+node scripts/checkClassroomAdmission.mjs
+node scripts/checkLiveClassroomAdmission.mjs
+```
+
+The first command is local and uses a simulated video API. The second creates
+an isolated synthetic room on the configured video service, uses fake media,
+and requires inbound audio and decoded video on both clients after admission.
+It does not log into Speexify, enter a customer session, or replace physical
+iPhone/Safari testing. Its phone-sized client is Chromium with a small viewport.
+
 Failure traces, screenshots, and video are written to `test-results/classroom`
 and `playwright-report/classroom`. CI retains them for 14 days.
 

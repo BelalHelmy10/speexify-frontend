@@ -1,7 +1,7 @@
 // app/classroom/[sessionId]/ClassroomShell.jsx
 "use client";
 
-import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import PrepVideoCall from "@/app/resources/prep/PrepVideoCall";
 import ClassroomResourceWorkspace from "./ClassroomResourceWorkspace";
@@ -423,7 +423,6 @@ export default function ClassroomShell({
   const [customSplit, setCustomSplit] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
-  const desktopVideoTargetRef = useRef(null);
   const videoHostRef = useRef(null);
   const [videoHost, setVideoHost] = useState(null);
   const customSplitRef = useRef(customSplit);
@@ -471,8 +470,10 @@ export default function ClassroomShell({
     setVideoHost(videoHostRef.current);
   }, []);
 
-  useLayoutEffect(() => {
-    const target = desktopVideoTargetRef.current;
+  // The target does not exist while the learner is waiting for admission.
+  // Attach when that element actually mounts, including after admission or
+  // a lobby retry. A host-only effect never reruns for those transitions.
+  const attachVideoHost = useCallback((target) => {
     if (videoHost && target && videoHost.parentNode !== target) target.appendChild(videoHost);
   }, [videoHost]);
 
@@ -2049,7 +2050,7 @@ export default function ClassroomShell({
               data-session-type={isGroup ? "group" : "one-on-one"}
               data-participant-count={videoParticipantCount}
             >
-              <div className="cr-video-target" ref={desktopVideoTargetRef} />
+              <div className="cr-video-target" ref={attachVideoHost} />
             </div>
 
           </aside>
