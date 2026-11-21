@@ -2,7 +2,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { JITSI_DOMAIN, buildJitsiOptions } from "@/lib/jitsiConfig";
+import { buildJitsiOptions, fetchClassroomVideoAccess } from "@/lib/jitsiConfig";
 import { loadJitsiScript } from "@/lib/loadJitsiScript.mjs";
 import { monitorClassroomConnection } from "@/lib/classroomConnectionMonitor.mjs";
 import api from "@/lib/api";
@@ -990,8 +990,22 @@ function PrepVideoCall({
         });
       }, 30000);
 
+      let access;
       try {
-        await loadJitsiScript(JITSI_DOMAIN);
+        access = await fetchClassroomVideoAccess(api, roomId);
+      } catch (accessErr) {
+        if (cancelled) return;
+        failConnection(
+          t(dict, "classroom_video_error_access"),
+          "video_access_denied",
+          { code: accessErr?.code, status: accessErr?.status }
+        );
+        return;
+      }
+      if (cancelled) return;
+
+      try {
+        await loadJitsiScript(access.domain);
         if (cancelled) return;
 
         const JitsiAPI = window.JitsiMeetExternalAPI;
@@ -1001,6 +1015,8 @@ function PrepVideoCall({
 
         const options = buildJitsiOptions({
           roomId,
+          roomName: access.roomName,
+          jwt: access.jwt,
           userName,
           isTeacher: !!isTeacher,
           parentNode: containerRef.current,
@@ -1008,7 +1024,7 @@ function PrepVideoCall({
           startWithVideoMuted: START_WITH_VIDEO_MUTED,
         });
 
-        const api = new JitsiAPI(JITSI_DOMAIN, options);
+        const api = new JitsiAPI(access.domain, options);
         apiRef.current = api;
         setSessionAudioMuted(START_WITH_AUDIO_MUTED);
 

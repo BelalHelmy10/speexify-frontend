@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import api from "@/lib/api";
+import { isTrustedClassroomEvent } from "@/lib/classroomEventTrust.mjs";
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 const MAX_RECONNECT_DELAY_MS = 30000;
@@ -430,6 +431,10 @@ export function useClassroomChannel(roomId) {
                 : [msg.data];
 
             events.forEach((eventPayload) => {
+              if (!isTrustedClassroomEvent(eventPayload)) {
+                debugClassroomWs("Dropped untrusted event", eventPayload?.type);
+                return;
+              }
               handlersRef.current.forEach((fn) => {
                 try {
                   fn(eventPayload);
