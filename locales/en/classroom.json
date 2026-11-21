@@ -1,6 +1,9 @@
 {
   "classroom_video_connecting": "Connecting to video…",
   "classroom_video_error_generic": "Something went wrong with the video. Please try again.",
+  "classroom_moderation_muted": "Your teacher muted your microphone.",
+  "classroom_moderation_camera_stopped": "Your teacher turned off your camera.",
+  "classroom_moderation_dismiss": "Dismiss",
   "classroom_video_error_access": "You can't join this lesson's video yet. Wait for your teacher to admit you, then tap Retry.",
   "classroom_video_error_timeout": "The video call did not connect. Check your connection and tap Retry.",
   "classroom_video_error_connection": "Connection error. Check your network and retry.",

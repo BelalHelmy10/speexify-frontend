@@ -13,6 +13,7 @@ import {
   UserRound,
   Users,
   UserX,
+  VideoOff,
   X,
 } from "lucide-react";
 import { formatNumber } from "@/utils/locale";
@@ -81,10 +82,12 @@ function ParticipantActions({
   handRaised = false,
   videoControlsReady = false,
   onMuteParticipant,
+  onStopParticipantVideo,
   onPinParticipant,
   onLowerHand,
   onRemoveParticipant,
   learnerName,
+  learnerUserId = null,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState(null);
@@ -172,10 +175,17 @@ function ParticipantActions({
         >
           <TeacherActionButton
             disabled={!canControl}
-            onClick={() => runAction(() => onMuteParticipant?.(liveParticipant?.id))}
+            onClick={() => runAction(() => onMuteParticipant?.(liveParticipant?.id, learnerUserId))}
             title="Mute this participant"
           >
             <MicOff size={14} /> Mute
+          </TeacherActionButton>
+          <TeacherActionButton
+            disabled={!canControl}
+            onClick={() => runAction(() => onStopParticipantVideo?.(liveParticipant?.id, learnerUserId))}
+            title="Turn off this participant's camera"
+          >
+            <VideoOff size={14} /> Stop video
           </TeacherActionButton>
           <TeacherActionButton
             disabled={!canControl}
@@ -194,7 +204,9 @@ function ParticipantActions({
           <TeacherActionButton
             kind="danger"
             disabled={!canControl}
-            onClick={() => runAction(() => onRemoveParticipant?.(liveParticipant?.id))}
+            onClick={() =>
+              runAction(() => onRemoveParticipant?.(liveParticipant?.id, learnerUserId, learnerName))
+            }
             title="Remove this participant from the call"
           >
             <UserX size={14} /> Remove
@@ -237,7 +249,9 @@ export default function ClassroomParticipantsModal({
   isClassroomLocked = false,
   moderationNotice = "",
   onMuteAll,
+  onStopAllVideo,
   onMuteParticipant,
+  onStopParticipantVideo,
   onPinParticipant,
   onRemoveParticipant,
   onLowerHand,
@@ -347,6 +361,13 @@ export default function ClassroomParticipantsModal({
                   <MicOff size={15} /> Mute all
                 </TeacherActionButton>
                 <TeacherActionButton
+                  disabled={!videoControlsReady}
+                  onClick={onStopAllVideo}
+                  title="Turn off all learner cameras"
+                >
+                  <VideoOff size={15} /> Cameras off
+                </TeacherActionButton>
+                <TeacherActionButton
                   kind={isClassroomLocked ? "secondary" : "danger"}
                   onClick={() => onToggleClassroomLock?.(!isClassroomLocked)}
                   title={
@@ -427,10 +448,12 @@ export default function ClassroomParticipantsModal({
                         handRaised={handRaised}
                         videoControlsReady={videoControlsReady}
                         onMuteParticipant={onMuteParticipant}
+                        onStopParticipantVideo={onStopParticipantVideo}
                         onPinParticipant={onPinParticipant}
                         onLowerHand={onLowerHand}
                         onRemoveParticipant={onRemoveParticipant}
                         learnerName={learnerName}
+                        learnerUserId={learner.id ?? learner.userId ?? null}
                       />
                     )}
                   </article>
@@ -460,8 +483,10 @@ export default function ClassroomParticipantsModal({
                         liveParticipant={participant}
                         videoControlsReady={videoControlsReady}
                         onMuteParticipant={onMuteParticipant}
+                        onStopParticipantVideo={onStopParticipantVideo}
                         onPinParticipant={onPinParticipant}
                         onRemoveParticipant={onRemoveParticipant}
+                        learnerName={participant.displayName}
                       />
                     </article>
                   ))}

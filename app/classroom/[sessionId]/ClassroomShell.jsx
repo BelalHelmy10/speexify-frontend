@@ -38,6 +38,8 @@ import {
 import useAuth from "@/hooks/useAuth";
 import { formatCompactDuration, getSessionTiming } from "./classroomTime";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
+import { getDictionary, t } from "@/app/i18n";
+import useClassroomVideoModeration from "./useClassroomVideoModeration";
 import api from "@/lib/api";
 import { MessageCircle, MessageSquare, BookOpenText, Target, BookOpen, Monitor } from "lucide-react";
 
@@ -540,6 +542,7 @@ export default function ClassroomShell({
   const [videoModeration, setVideoModeration] = useState({
     ready: false,
     participants: [],
+    localParticipantId: null,
     screenShareEndpointId: null,
     actions: null,
   });
@@ -587,6 +590,18 @@ export default function ClassroomShell({
     classroomChannel,
     userName,
     userId: localUserId,
+  });
+
+  const moderationDict = useMemo(() => getDictionary(locale, "classroom"), [locale]);
+  const videoModerationControls = useClassroomVideoModeration({
+    isTeacher,
+    localUserId,
+    sessionId,
+    ready,
+    send,
+    subscribe,
+    videoModeration,
+    onRemoved: lobby.markRemoved,
   });
 
   /* -----------------------------------------------------------
@@ -801,10 +816,31 @@ export default function ClassroomShell({
       participants: Array.isArray(nextState?.participants)
         ? nextState.participants
         : [],
+      localParticipantId: nextState?.localParticipantId || null,
       screenShareEndpointId: nextState?.screenShareEndpointId || null,
       actions: nextState?.actions || null,
     });
   }, []);
+
+  const applyModerationResult = useCallback((result) => {
+    if (result?.message) setModerationNotice(result.message);
+    return Boolean(result?.ok);
+  }, []);
+
+  const handleRemoveParticipant = useCallback(
+    async (participantId, learnerUserId, learnerName) => {
+      const who = learnerName || "this participant";
+      if (
+        typeof window !== "undefined" &&
+        !window.confirm(`Remove ${who} from the lesson? They will need your admission to come back.`)
+      ) {
+        return false;
+      }
+      const result = await videoModerationControls.removeParticipant(participantId, learnerUserId);
+      return applyModerationResult(result);
+    },
+    [videoModerationControls, applyModerationResult]
+  );
 
   const handleNetworkQualityChange = useCallback((nextQuality) => {
     setNetworkQuality(nextQuality || null);
@@ -1941,8 +1977,10 @@ export default function ClassroomShell({
         status={
           sessionEnded || lobby.isEnded
             ? "ended"
-            : lobby.isDenied
-              ? "denied"
+            : lobby.isRemoved
+              ? "removed"
+              : lobby.isDenied
+                ? "denied"
               : lobby.isError
                 ? "error"
                 : "waiting"
@@ -1996,6 +2034,27 @@ export default function ClassroomShell({
         channel={classroomChannel}
         onRejoin={handleHardRejoin}
       />
+
+      {!isTeacher && videoModerationControls.learnerNotice && (
+        <div className="cr-moderation-notice" role="status">
+          <span>
+            {t(
+              moderationDict,
+              videoModerationControls.learnerNotice === "video"
+                ? "classroom_moderation_camera_stopped"
+                : "classroom_moderation_muted"
+            )}
+          </span>
+          <button
+            type="button"
+            className="cr-moderation-notice__close"
+            onClick={videoModerationControls.dismissLearnerNotice}
+            aria-label={t(moderationDict, "classroom_moderation_dismiss")}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <ClassroomTimeWarning
         warningLevel={isTeacher ? sessionTiming.warningLevel : null}
@@ -2283,16 +2342,22 @@ export default function ClassroomShell({
         videoControlsReady={videoModeration.ready}
         isClassroomLocked={isClassroomLocked}
         moderationNotice={moderationNotice}
-        onMuteAll={() => runVideoModerationAction("muteAll")}
-        onMuteParticipant={(participantId) =>
-          runVideoModerationAction("muteParticipant", participantId)
+        onMuteAll={() => applyModerationResult(videoModerationControls.muteAll())}
+        onStopAllVideo={() => applyModerationResult(videoModerationControls.stopAllVideo())}
+        onMuteParticipant={(participantId, learnerUserId) =>
+          applyModerationResult(
+            videoModerationControls.muteParticipant(participantId, learnerUserId)
+          )
+        }
+        onStopParticipantVideo={(participantId, learnerUserId) =>
+          applyModerationResult(
+            videoModerationControls.stopParticipantVideo(participantId, learnerUserId)
+          )
         }
         onPinParticipant={(participantId) =>
           runVideoModerationAction("pinParticipant", participantId)
         }
-        onRemoveParticipant={(participantId) =>
-          runVideoModerationAction("kickParticipant", participantId)
-        }
+        onRemoveParticipant={handleRemoveParticipant}
         onLowerHand={lowerHand}
         onToggleClassroomLock={handleToggleClassroomLock}
       />

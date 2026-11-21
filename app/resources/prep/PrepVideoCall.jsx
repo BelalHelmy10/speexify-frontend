@@ -801,14 +801,36 @@ function PrepVideoCall({
     // treatment in sync with that first snapshot too.
     setRemoteParticipantCount(jitsiParticipantsRef.current.size);
 
+    // Mutes this client's own mic/camera only if it is currently on
+    // (toggleAudio/toggleVideo would otherwise turn it back on).
+    const muteLocal = (media) => {
+      const current = apiRef.current;
+      if (!current) return false;
+      const isMuted = media === "video" ? current.isVideoMuted?.() : current.isAudioMuted?.();
+      const command = media === "video" ? "toggleVideo" : "toggleAudio";
+      if (typeof isMuted?.then !== "function") return false;
+      isMuted
+        .then((muted) => {
+          if (!muted) executeJitsiCommand(command);
+        })
+        .catch(() => { });
+      return true;
+    };
+
     cb({
       ready: Boolean(api),
       participants: Array.from(jitsiParticipantsRef.current.values()),
+      localParticipantId: localParticipantIdRef.current || null,
       screenShareEndpointId: screenShareEndpointIdRef.current,
       actions: {
-        muteAll: () => executeJitsiCommand("muteEveryone"),
-        muteParticipant: (participantId) =>
-          executeJitsiCommand("muteParticipant", participantId, "audio"),
+        // Native Jitsi moderation; enforced by Jitsi only when this client
+        // holds the moderator role (teacher JWT). The classroom channel
+        // additionally asks each learner's client to comply.
+        muteAll: () => executeJitsiCommand("muteEveryone", "audio"),
+        stopAllVideo: () => executeJitsiCommand("muteEveryone", "video"),
+        muteLocalAudio: () => muteLocal("audio"),
+        muteLocalVideo: () => muteLocal("video"),
+        hangup: () => executeJitsiCommand("hangup"),
         pinParticipant: (participantId) => {
           const pinned =
             executeJitsiCommand("setLargeVideoParticipant", participantId) ||

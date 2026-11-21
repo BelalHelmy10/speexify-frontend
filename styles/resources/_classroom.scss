@@ -655,6 +655,40 @@ body.classroom-active {
   }
 }
 
+.cr-moderation-notice {
+  position: sticky;
+  top: $cr-header-height;
+  z-index: 136;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+  padding: 0.6rem 1.5rem;
+  color: $cr-text-primary;
+  background: rgba($cr-bg-secondary, 0.97);
+  border-bottom: 1px solid rgba($cr-accent-primary, 0.45);
+  font-size: 0.875rem;
+  line-height: 1.35;
+
+  &__close {
+    flex: 0 0 auto;
+    width: 2rem;
+    height: 2rem;
+    color: $cr-text-primary;
+    background: transparent;
+    border: 1px solid rgba($cr-accent-primary, 0.45);
+    border-radius: $cr-radius-full;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  @media (max-width: 600px) {
+    padding: 0.55rem 1rem;
+  }
+}
+
 .cr-connection-banner {
   position: sticky;
   top: $cr-header-height;

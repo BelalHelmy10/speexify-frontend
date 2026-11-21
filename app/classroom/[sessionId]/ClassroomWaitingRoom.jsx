@@ -13,7 +13,7 @@ import { formatNumber } from "@/utils/locale";
      - sessionId: current session ID
      - sessionInfo: { teacherName, sessionTitle, startTime, participantCount, capacity }
      - userName: current learner's display name
-     - status: "waiting" | "admitted" | "denied" | "error" | "ended"
+     - status: "waiting" | "admitted" | "denied" | "removed" | "error" | "ended"
      - wsConnected: boolean indicating WS connection status
      - onRetry: callback to retry lobby join
      - onLeave: callback to leave waiting room
@@ -65,9 +65,10 @@ export default function ClassroomWaitingRoom({
     capacity,
   } = sessionInfo;
 
-  if (["denied", "ended", "error"].includes(status)) {
+  if (["denied", "removed", "ended", "error"].includes(status)) {
     const isEnded = status === "ended";
     const isError = status === "error";
+    const isRemoved = status === "removed";
     return (
       <div className={`cr-waiting-room cr-waiting-room--${status}`} dir={isArabic ? "rtl" : "ltr"}>
         <div className="cr-waiting-room__orbs" aria-hidden="true">
@@ -85,14 +86,18 @@ export default function ClassroomWaitingRoom({
               ? isArabic ? "انتهت الجلسة" : "Session Ended"
               : isError
                 ? isArabic ? "مشكلة في الاتصال" : "Connection Problem"
-                : isArabic ? "لم تتم الموافقة على الدخول" : "Entry Not Approved"}
+                : isRemoved
+                  ? isArabic ? "تمت إزالتك من الدرس" : "You Were Removed"
+                  : isArabic ? "لم تتم الموافقة على الدخول" : "Entry Not Approved"}
           </h1>
           <p className="cr-waiting-room__subtitle">
             {isEnded
               ? isArabic ? "هذه الجلسة لم تعد متاحة." : "This classroom session is no longer available."
               : isError
                 ? isArabic ? "تعذر التحقق من دخولك. تحقق من الاتصال وحاول مرة أخرى." : "We could not verify your admission. Check your connection and try again."
-                : isArabic ? "لم يسمح لك المعلم بالدخول بعد. قد تكون الجلسة ممتلئة أو بدأت بالفعل." : "The teacher has not admitted you to this session. This may be because the session is full or has already started."}
+                : isRemoved
+                  ? isArabic ? "أزالك المعلم من هذا الفصل. يمكنك طلب الدخول مرة أخرى وسيقرر المعلم." : "Your teacher removed you from this classroom. You can ask to join again and your teacher will decide."
+                  : isArabic ? "لم يسمح لك المعلم بالدخول بعد. قد تكون الجلسة ممتلئة أو بدأت بالفعل." : "The teacher has not admitted you to this session. This may be because the session is full or has already started."}
           </p>
 
           <div className="cr-waiting-room__actions">

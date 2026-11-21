@@ -349,8 +349,21 @@ export function useClassroomLobby({
   );
 
   const retryJoin = useCallback(() => {
+    // A denied/removed learner must knock again (lobby/join), not just
+    // re-read the status, which would keep reporting "denied".
+    if (lobbyStatus === "denied" || lobbyStatus === "removed") {
+      setLobbyEnabled(true);
+      setLobbyStatus("not_joined");
+      return;
+    }
     setLobbyStatus("checking");
     setJoinAttempt((attempt) => attempt + 1);
+  }, [lobbyStatus]);
+
+  // The teacher removed this learner during the lesson.
+  const markRemoved = useCallback(() => {
+    setLobbyEnabled(true);
+    setLobbyStatus("removed");
   }, []);
 
   const togglePanel = useCallback(() => {
@@ -373,11 +386,14 @@ export function useClassroomLobby({
       !isTeacher &&
       lobbyEnabled !== false &&
       ["checking", "waiting", "error"].includes(lobbyStatus),
-    isDenied: !isTeacher && lobbyStatus === "denied",
+    isDenied: !isTeacher && (lobbyStatus === "denied" || lobbyStatus === "removed"),
+    isRemoved: !isTeacher && lobbyStatus === "removed",
     isError: !isTeacher && lobbyStatus === "error",
     isChecking: !isTeacher && lobbyStatus === "checking",
     isEnded: !isTeacher && lobbyStatus === "ended",
-    isAdmitted: lobbyStatus === "admitted" || lobbyEnabled === false,
+    isAdmitted:
+      lobbyStatus === "admitted" ||
+      (lobbyEnabled === false && !["denied", "removed"].includes(lobbyStatus)),
     hasWaitingLearners: isTeacher && waitingLearners.length > 0,
 
     // Teacher actions
@@ -390,5 +406,6 @@ export function useClassroomLobby({
 
     // Learner actions
     retryJoin,
+    markRemoved,
   };
 }

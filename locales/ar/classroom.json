@@ -1,6 +1,9 @@
 {
   "classroom_video_connecting": "جارٍ الاتصال بالفيديو…",
   "classroom_video_error_generic": "حدث خطأ في الفيديو. يرجى المحاولة مجدداً.",
+  "classroom_moderation_muted": "قام المعلم بكتم الميكروفون الخاص بك.",
+  "classroom_moderation_camera_stopped": "قام المعلم بإيقاف الكاميرا الخاصة بك.",
+  "classroom_moderation_dismiss": "إغلاق",
   "classroom_video_error_access": "لا يمكنك الانضمام إلى فيديو هذا الدرس بعد. انتظر حتى يسمح لك المعلم بالدخول ثم اضغط إعادة المحاولة.",
   "classroom_video_error_timeout": "لم تتصل مكالمة الفيديو. تحقق من اتصالك ثم اضغط إعادة المحاولة.",
   "classroom_video_error_connection": "خطأ في الاتصال. تحقق من شبكتك وأعد المحاولة.",
