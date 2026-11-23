@@ -1017,7 +1017,7 @@
   }
 }
 
-.calx-toolbar-support {
+.calx-toolbar-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2859,11 +2859,11 @@
 
   .calx-today-btn,
   .calx-filter-btn,
-  .calx-toolbar-support {
+  .calx-toolbar-link {
     height: 44px;
   }
 
-  .calx-toolbar-support {
+  .calx-toolbar-link {
     flex: 1 1 92px;
   }
 

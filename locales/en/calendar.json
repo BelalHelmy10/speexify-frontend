@@ -8,6 +8,7 @@
   "session_mode_hint_body_admin": "The time grid shows scheduled sessions. Use the admin workspace to schedule or change sessions.",
   "not_auth": "Not authenticated",
   "title": "My Schedule",
+  "sync_calendar": "Sync Calendar",
   "subtitle": "Manage your upcoming sessions and meetings",
   "empty": "No sessions in this date range yet. Once you book a session, it will appear here on the calendar.",
   "error_failed": "Failed to load sessions",

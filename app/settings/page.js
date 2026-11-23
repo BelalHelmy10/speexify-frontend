@@ -7,6 +7,7 @@ import {
   AlertCircle,
   Bell,
   CalendarDays,
+  CalendarPlus,
   CheckCircle2,
   ChevronRight,
   Copy,
@@ -22,7 +23,6 @@ import {
   Mail,
   Monitor,
   PackageCheck,
-  RefreshCw,
   Save,
   ShieldCheck,
   Smartphone,
@@ -206,7 +206,7 @@ export default function SettingsPage() {
   const [calendarBusy, setCalendarBusy] = useState(false);
   const [calendarError, setCalendarError] = useState("");
   const [calendarSuccess, setCalendarSuccess] = useState("");
-  const [copiedCalendarField, setCopiedCalendarField] = useState("");
+  const [calendarCopied, setCalendarCopied] = useState(false);
   const [timezoneOptions, setTimezoneOptions] = useState(getDefaultTimezones);
 
   const [privacyBusy, setPrivacyBusy] = useState("");
@@ -282,10 +282,14 @@ export default function SettingsPage() {
   }, [checking, user, dict]);
 
   useEffect(() => {
-    if (initialLoading || !settingsReady || searchParams.get("complete") !== "contact") {
-      return;
-    }
-    const frame = window.requestAnimationFrame(() => jumpToSection("profile"));
+    if (initialLoading || !settingsReady) return;
+
+    const section = searchParams.get("complete") === "contact"
+      ? "profile"
+      : searchParams.get("section");
+    if (!SECTION_IDS.includes(section)) return;
+
+    const frame = window.requestAnimationFrame(() => jumpToSection(section));
     return () => window.cancelAnimationFrame(frame);
   }, [initialLoading, searchParams, settingsReady]);
 
@@ -466,12 +470,8 @@ export default function SettingsPage() {
     setCalendarError("");
     setCalendarSuccess("");
     try {
-      const res = await api.get("/calendar/export-link", {
-        params: { t: Date.now() },
-        headers: { "Cache-Control": "no-store" },
-      });
+      const res = await api.get("/calendar/export-link");
       setCalendarUrls(res.data);
-      setCalendarSuccess(copyText("calendar_generated", "Calendar feed link is ready"));
     } catch (error) {
       setCalendarError(getApiError(error, copyText("calendar_error", "Failed to generate calendar link")));
     } finally {
@@ -485,13 +485,9 @@ export default function SettingsPage() {
     setCalendarSuccess("");
 
     try {
-      const res = await api.post("/calendar/export-link/revoke");
+      await api.post("/calendar/export-link/revoke");
       setCalendarUrls(null);
-      setMe((current) =>
-        current
-          ? { ...current, calendarFeedRevokedAt: res.data?.revokedAt || new Date().toISOString() }
-          : current
-      );
+      setCalendarCopied(false);
       setCalendarSuccess(copyText("calendar_revoked", "Previous calendar feed links were revoked"));
     } catch (error) {
       setCalendarError(getApiError(error, copyText("calendar_revoke_error", "Failed to revoke calendar links")));
@@ -500,12 +496,12 @@ export default function SettingsPage() {
     }
   }
 
-  async function copyToClipboard(value, field) {
-    if (!value) return;
+  async function copyCalendarLink() {
+    setCalendarError("");
     try {
-      await navigator.clipboard.writeText(value);
-      setCopiedCalendarField(field);
-      setTimeout(() => setCopiedCalendarField(""), 1600);
+      await navigator.clipboard.writeText(calendarUrls.httpsUrl);
+      setCalendarCopied(true);
+      setTimeout(() => setCalendarCopied(false), 1600);
     } catch {
       setCalendarError(copyText("calendar_copy_error", "Browser blocked clipboard access"));
     }
@@ -1002,29 +998,34 @@ export default function SettingsPage() {
             id="calendar"
             eyebrow={copyText("calendar_eyebrow", "External calendars")}
             title={copyText("calendar_title", "Calendar Sync")}
-            description={copyText("calendar_description", "Subscribe to your Speexify sessions in Google, Apple, or Outlook")}
+            description={copyText("calendar_description", "Subscribe to your Speexify sessions in Apple Calendar, Google Calendar, or Outlook. Bookings, reschedules, and cancellations appear when your calendar app refreshes.")}
             icon={Globe2}
           >
             <div className="settings-callout">
               <CalendarDays size={19} />
               <div>
                 <strong>{copyText("calendar_sensitive_title", "Treat this link like a password")}</strong>
-                <p>{copyText("calendar_sensitive_copy", "Anyone with the feed link can see your session calendar until the link expires or is revoked.")}</p>
+                <p>{copyText("calendar_sensitive_copy", "Anyone with this link can see your session calendar. Revoking it stops updates for existing subscriptions.")}</p>
               </div>
             </div>
 
             <div className="settings-actions">
-              <button
-                type="button"
-                className="settings-btn settings-btn--primary"
-                onClick={loadCalendarExportLink}
-                disabled={calendarBusy}
-              >
-                {calendarBusy ? <Loader2 size={16} className="settings-spin" /> : <RefreshCw size={16} />}
-                {calendarUrls
-                  ? copyText("calendar_refresh", "Refresh Link")
-                  : copyText("calendar_generate", "Generate Export Link")}
-              </button>
+              {calendarUrls ? (
+                <a className="settings-btn settings-btn--primary" href={calendarUrls.webcalUrl}>
+                  <CalendarPlus size={16} />
+                  {copyText("calendar_add_apple", "Subscribe in Apple Calendar")}
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className="settings-btn settings-btn--primary"
+                  onClick={loadCalendarExportLink}
+                  disabled={calendarBusy}
+                >
+                  {calendarBusy ? <Loader2 size={16} className="settings-spin" /> : <CalendarPlus size={16} />}
+                  {copyText("calendar_generate", "Show Subscription Link")}
+                </button>
+              )}
               <button
                 type="button"
                 className="settings-btn settings-btn--ghost settings-btn--danger"
@@ -1038,42 +1039,27 @@ export default function SettingsPage() {
 
             {calendarUrls ? (
               <div className="settings-calendar-links">
-                <p className="settings-calendar-expiry">
-                  {copyText("calendar_expiry", "This link expires")}: {calendarUrls.expiresAt
-                    ? new Date(calendarUrls.expiresAt).toLocaleString()
-                    : copyText("calendar_expiry_unknown", "according to the server policy")}
-                </p>
-                {[
-                  ["webcal", "webcalUrl", copyText("calendar_webcal", "webcal subscription link")],
-                  ["ics", "httpsUrl", copyText("calendar_ics", "ICS direct link")],
-                ].map(([key, field, label]) => (
-                  <div className="settings-copy-field" key={key}>
-                    <label>
-                      <span>{label}</span>
-                      <small>
-                        {key === "webcal"
-                          ? copyText("calendar_webcal_hint", "Best for calendar subscriptions")
-                          : copyText("calendar_ics_hint", "Use when an app asks for an ICS URL")}
-                      </small>
-                    </label>
-                    <div>
-                      <input value={calendarUrls[field] || ""} readOnly onFocus={(event) => event.target.select()} />
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(calendarUrls[field], key)}
-                      >
-                        {copiedCalendarField === key ? <CheckCircle2 size={16} /> : <Copy size={16} />}
-                        {copiedCalendarField === key
-                          ? copyText("copied", "Copied")
-                          : copyText("copy", "Copy")}
-                      </button>
-                    </div>
-                  </div>
-                ))}
                 <p className="settings-muted">
-                  {copyText("calendar_expires", "Expires")}{" "}
-                  {formatDate(calendarUrls.expiresAt, locale)}
+                  {copyText("calendar_apple_hint", "In Apple Calendar on Mac, choose Auto-refresh when you subscribe. Choose iCloud as the location to see the subscription on your other Apple devices.")}
                 </p>
+                <div className="settings-copy-field">
+                  <label htmlFor="calendar-subscription-url">
+                    <span>{copyText("calendar_ics", "ICS subscription link")}</span>
+                    <small>{copyText("calendar_ics_hint", "Paste this link into From URL in Google Calendar or Subscribe from web in Outlook.")}</small>
+                  </label>
+                  <div>
+                    <input id="calendar-subscription-url" dir="ltr" value={calendarUrls.httpsUrl} readOnly onFocus={(event) => event.target.select()} />
+                    <button type="button" onClick={copyCalendarLink}>
+                      {calendarCopied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+                      {calendarCopied ? copyText("copied", "Copied") : copyText("copy", "Copy")}
+                    </button>
+                  </div>
+                </div>
+                {calendarUrls.expiresAt && (
+                  <p className="settings-muted">
+                    {copyText("calendar_expires", "Expires")} {formatDate(calendarUrls.expiresAt, locale)}
+                  </p>
+                )}
               </div>
             ) : null}
 

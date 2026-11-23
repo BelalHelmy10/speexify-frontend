@@ -38,6 +38,7 @@ import {
   Ban,
   CalendarClock,
   CalendarDays,
+  CalendarPlus,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -2277,7 +2278,14 @@ export default function CalendarPage() {
                 )}
               </div>
 
-              <Link className="calx-toolbar-support" href={`${prefix}/contact`}>
+              {!isImpersonating && (
+                <Link className="calx-toolbar-link" href={`${prefix}/settings?section=calendar`}>
+                  <CalendarPlus size={15} strokeWidth={2.5} />
+                  {t(dict, "sync_calendar")}
+                </Link>
+              )}
+
+              <Link className="calx-toolbar-link" href={`${prefix}/contact`}>
                 <Headphones size={15} strokeWidth={2.5} />
                 {t(dict, "support")}
               </Link>
