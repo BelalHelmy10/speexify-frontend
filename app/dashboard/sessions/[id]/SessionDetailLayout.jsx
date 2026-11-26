@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import AttendancePanel from "./AttendancePanel";
+import HomeworkSessionPanel from "@/components/homework/HomeworkSessionPanel";
 import SessionSummary from "./SessionSummary";
 import {
   AsideCard,
@@ -320,6 +321,16 @@ export default function SessionDetailLayout({
               />
             )}
           </Panel>
+
+          {/* Interactive homework: teachers assign, learners open */}
+          {!isTraining && sessionStatus !== "canceled" && (
+            <HomeworkSessionPanel
+              sessionId={Number(sessionId)}
+              locale={locale}
+              prefix={prefix}
+              canTeach={Boolean(sessionIsTeacher || sessionIsAdmin)}
+            />
+          )}
 
           {/* Teacher Feedback */}
           {!isTraining && (teacherFeedback ? (

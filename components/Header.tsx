@@ -281,12 +281,14 @@ export default function Header() {
   const learner = [
     { to: APP_ROUTES.dashboard, label: t(navDict, "dashboard") },
     { to: "/calendar", label: t(navDict, "calendar") },
+    { to: "/dashboard/homework", label: t(navDict, "homework") },
     { to: "/dashboard/progress", label: t(navDict, "progress") },
   ];
 
   const teacher = [
     { to: APP_ROUTES.dashboard, label: t(navDict, "dashboard") },
     { to: "/calendar", label: t(navDict, "calendar") },
+    { to: "/dashboard/homework", label: t(navDict, "homework") },
     { to: "/dashboard/progress", label: t(navDict, "progress") },
     // ✅ teachers DO see Resources
     { to: "/resources", label: t(navDict, "resources") },
