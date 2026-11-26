@@ -99,10 +99,7 @@ function Home({ locale = "en" }) {
     <div className="home-home">
       {/* ===== HERO ===== */}
       <section className="home-hero">
-        <div className="home-hero__background">
-          <div className="home-hero__gradient"></div>
-          <div className="home-hero__grid-pattern"></div>
-        </div>
+        <div className="home-hero__grid-pattern" aria-hidden="true" />
 
         <div className="home-hero__grid home-container">
           <div className="home-hero__copy">

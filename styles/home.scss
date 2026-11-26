@@ -333,25 +333,11 @@
     min-height: auto;
   }
 
-  &__background {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-  }
-
-  &__gradient {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 80% 60% at 0% 40%, rgba($coral, 0.12) 0%, transparent 55%),
-      radial-gradient(ellipse 60% 50% at 100% 20%, rgba($navy, 0.06) 0%, transparent 50%),
-      linear-gradient(180deg, $bg-soft 0%, $bg-primary 100%);
-  }
-
   &__grid-pattern {
     position: absolute;
     inset: 0;
+    z-index: 0;
+    pointer-events: none;
     background-image:
       repeating-linear-gradient(0deg, transparent, transparent 49px, rgba($navy, 0.04) 49px, rgba($navy, 0.04) 50px),
       repeating-linear-gradient(90deg, transparent, transparent 49px, rgba($navy, 0.04) 49px, rgba($navy, 0.04) 50px);
