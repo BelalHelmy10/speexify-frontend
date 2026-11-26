@@ -294,7 +294,7 @@
 .profile-primary-link {
   grid-column: 1 / -1;
   min-height: 46px;
-  border-radius: 14px;
+  border-radius: var(--spx-button-radius);
   background: $brand;
   color: $color-white;
   padding: 0 16px;

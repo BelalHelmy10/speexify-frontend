@@ -587,7 +587,7 @@
   justify-content: center;
   background: rgba($brand, 0.1);
   border: 1px solid rgba($brand, 0.2);
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
   color: var(--admin-primary);
   cursor: pointer;
   transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease,
@@ -619,7 +619,7 @@
       var(--admin-primary),
       var(--admin-primary-dark));
   border: none;
-  border-radius: var(--admin-radius-sm);
+  border-radius: var(--spx-button-radius);
   color: $color-white;
   cursor: pointer;
   transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease,
@@ -1121,7 +1121,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid rgba($text-muted, 0.16);
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
   background: rgba($color-black, 0.34);
   color: var(--admin-text-secondary);
   cursor: pointer;
@@ -1495,7 +1495,7 @@
       var(--admin-primary),
       var(--admin-primary-dark));
   border: none;
-  border-radius: var(--admin-radius-sm);
+  border-radius: var(--spx-button-radius);
   color: $color-white;
   font-size: 0.875rem;
   font-weight: 600;
@@ -1530,7 +1530,7 @@
   padding: 0.875rem 1.75rem;
   background: rgba($text-muted, 0.1);
   border: 1px solid rgba($text-muted, 0.2);
-  border-radius: var(--admin-radius-sm);
+  border-radius: var(--spx-button-radius);
   color: var(--admin-text-primary);
   font-size: 0.875rem;
   font-weight: 600;
@@ -1557,7 +1557,7 @@
   padding: 0.875rem 1.75rem;
   background: linear-gradient(135deg, var(--admin-danger), $payment-red-600);
   border: none;
-  border-radius: var(--admin-radius-sm);
+  border-radius: var(--spx-button-radius);
   color: $color-white;
   font-size: 0.875rem;
   font-weight: 600;
@@ -1584,7 +1584,7 @@
   justify-content: center;
   background: rgba($text-muted, 0.1);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
   color: var(--admin-text-secondary);
   cursor: pointer;
   transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease,
@@ -2828,7 +2828,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--admin-border);
-  border-radius: 0.6rem;
+  border-radius: var(--spx-button-radius);
   background: rgba(255, 255, 255, 0.04);
   color: var(--admin-text-secondary);
   cursor: pointer;
@@ -3429,7 +3429,7 @@
 .pkg-modal__close {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
+  border-radius: var(--spx-button-radius);
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.5);
@@ -4100,7 +4100,7 @@
 .adm-btn-close {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
   border: none;
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.7);
@@ -4285,7 +4285,7 @@
 .att-close {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
+  border-radius: var(--spx-button-radius);
   border: 1px solid rgba(255,255,255,0.1);
   background: rgba(255,255,255,0.05);
   color: rgba(255,255,255,0.5);

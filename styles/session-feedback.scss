@@ -82,7 +82,7 @@
 .session-report-icon-button {
   width: 34px;
   height: 34px;
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
 
   &:hover {
     transform: translateY(-1px);

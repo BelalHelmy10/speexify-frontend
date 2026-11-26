@@ -139,7 +139,7 @@
     align-items: center;
     gap: 8px;
     padding: 12px 24px;
-    border-radius: 12px;
+    border-radius: var(--spx-button-radius);
     font-weight: 700;
     font-size: 15px;
     text-decoration: none;

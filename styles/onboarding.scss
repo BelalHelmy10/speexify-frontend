@@ -672,7 +672,7 @@ body:has(.onboarding-wrapper) .site-footer-wrapper {
   gap: 8px;
   min-height: 44px;
   padding: 0 18px;
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
   font: inherit;
   font-size: 14px;
   font-weight: 850;
@@ -952,7 +952,7 @@ body:has(.onboarding-wrapper) .site-footer-wrapper {
 .onboarding-availability-grid { display: grid; width: 100%; min-width: 0; max-width: 100%; gap: 14px; padding: 16px; border: 1px solid rgba($brand, .22); border-radius: 16px; background: $color-white; }
 .onboarding-availability-grid__toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: $text-secondary; font-size: 13px; flex-wrap: wrap; }
 .onboarding-availability-grid__toolbar > div { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
-.onboarding-availability-grid__toolbar button { border: 1px solid rgba($brand, .2); border-radius: 7px; background: $color-white; color: $brand-dark; padding: 6px 9px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.onboarding-availability-grid__toolbar button { border: 1px solid rgba($brand, .2); border-radius: var(--spx-button-radius); background: $color-white; color: $brand-dark; padding: 6px 9px; font-weight: 700; white-space: nowrap; cursor: pointer; }
 .onboarding-availability-grid__toolbar button.onboarding-availability-nav { display: inline-flex; align-items: center; gap: 4px; background: rgba($brand, .03); }
 .onboarding-availability-grid__toolbar button:hover { border-color: $brand; background: rgba($brand, .06); }
 .onboarding-availability-grid__toolbar button:last-child { border: 0; background: transparent; padding-inline: 4px; }

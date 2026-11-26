@@ -145,7 +145,7 @@
   font-weight: 600;
   text-align: center;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--spx-button-radius);
   min-height: 2.75rem;
   cursor: pointer;
   transition: background-color 0.2s, box-shadow 0.2s;

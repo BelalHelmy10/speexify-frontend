@@ -36,7 +36,7 @@
     background: $classroom-success;
     color: white;
     border: none;
-    border-radius: $classroom-border-radius;
+    border-radius: var(--spx-button-radius);
     cursor: pointer;
     transition: background 0.2s;
 
@@ -147,7 +147,7 @@
     gap: 0.4375rem;
     border: 1px solid color-mix(in srgb, var(--btn-color, #{$classroom-gray-600}) 34%, #{$classroom-gray-200});
     background: color-mix(in srgb, var(--btn-color, #{$classroom-gray-600}) 7%, white);
-    border-radius: $classroom-border-radius;
+    border-radius: var(--spx-button-radius);
     color: var(--btn-color, $classroom-gray-700);
     cursor: pointer;
     font-size: 0.75rem;
@@ -202,7 +202,7 @@
     background: $classroom-primary;
     color: white;
     border: none;
-    border-radius: $classroom-border-radius;
+    border-radius: var(--spx-button-radius);
     font-weight: 500;
     cursor: pointer;
     transition: background 0.2s;
@@ -373,7 +373,7 @@
     background: $classroom-primary;
     color: white;
     border: none;
-    border-radius: $classroom-border-radius;
+    border-radius: var(--spx-button-radius);
     cursor: pointer;
 
     &:hover {
@@ -468,7 +468,7 @@
     justify-content: center;
     background: white;
     border: 1px solid rgba($classroom-gray-200, 0.95);
-    border-radius: 8px;
+    border-radius: var(--spx-button-radius);
     cursor: pointer;
     color: $classroom-gray-500;
     transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
@@ -525,7 +525,7 @@
     align-items: center;
     background: white;
     border: 1px solid rgba($classroom-gray-200, 0.95);
-    border-radius: 8px;
+    border-radius: var(--spx-button-radius);
     color: rgba($classroom-gray-400, 0.8);
     cursor: pointer;
     display: inline-flex;
@@ -609,7 +609,7 @@
   }
 
   &__btn {
-    border-radius: 8px;
+    border-radius: var(--spx-button-radius);
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 800;

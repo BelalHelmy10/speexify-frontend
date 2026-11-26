@@ -712,7 +712,7 @@
   justify-content: center;
   min-height: 42px;
   padding: 0 16px;
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
   font: inherit;
   font-size: 14px;
   font-weight: 850;

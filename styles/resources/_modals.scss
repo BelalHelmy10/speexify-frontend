@@ -938,7 +938,7 @@
     justify-content: center;
     gap: 0.45rem;
     border: 0;
-    border-radius: 0.6rem;
+    border-radius: var(--spx-button-radius);
     padding: 0.65rem 0.9rem;
     background: $cr-accent-primary;
     color: white;
@@ -960,7 +960,7 @@
     width: 100%;
     text-align: start;
     border: 1px solid $cr-border-subtle;
-    border-radius: 0.6rem;
+    border-radius: var(--spx-button-radius);
     padding: 0.65rem 0.8rem;
     background: $cr-bg-secondary;
     color: $cr-text-primary;

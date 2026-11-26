@@ -31,7 +31,7 @@
     align-items: center;
     gap: 7px;
     padding: 8px 16px;
-    border-radius: 10px;
+    border-radius: var(--spx-button-radius);
     font-size: 13px;
     font-weight: 700;
     color: $navy;
@@ -712,7 +712,7 @@
   .sd-aside-card .btn,
   .sd-actions-stack .btn {
     min-height: 44px;
-    border-radius: 10px;
+    border-radius: var(--spx-button-radius);
     font-weight: 850;
   }
 
@@ -892,7 +892,7 @@
     gap: 7px;
     min-height: 36px;
     padding: 0 14px;
-    border-radius: 8px;
+    border-radius: var(--spx-button-radius);
     border: 1px solid rgba($navy, 0.1);
     background: $color-white;
     font-size: 13px;
@@ -998,7 +998,7 @@
     min-height: 38px;
     padding: 0 13px;
     border: 1px solid color-mix(in srgb, var(--btn-color) 34%, rgba($navy, 0.1));
-    border-radius: 10px;
+    border-radius: var(--spx-button-radius);
     background: color-mix(in srgb, var(--btn-color) 7%, white);
     font-size: 12px;
     font-weight: 800;
@@ -1047,7 +1047,7 @@
     gap: 8px;
     min-height: 40px;
     padding: 0 22px;
-    border-radius: 10px;
+    border-radius: var(--spx-button-radius);
     border: none;
     background: $coral;
     color: $color-white;

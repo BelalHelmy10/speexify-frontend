@@ -90,7 +90,7 @@
 .dashboard .session-item .badge--completed { color: $secondary; background: rgba($secondary,.1); }
 .dashboard .session-item .badge--canceled { color: #b94432; background: rgba($coral,.1); }
 .dashboard .session-item__actions { flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
-.dashboard .session-item__actions .btn { min-height: 38px; padding: 8px 12px; border-radius: 7px; font-size: 11px; }
+.dashboard .session-item__actions .btn { min-height: 38px; padding: 8px 12px; border-radius: var(--spx-button-radius); font-size: 11px; }
 .dashboard .session-item__actions .session-item__details {
   border: 1px solid rgba($border, .92);
   background: rgba($bg-soft, .72);
@@ -1789,7 +1789,7 @@ $stat-shadow-hover: 0 2px 5px rgba(13, 27, 42, 0.06), 0 30px 56px -18px rgba(13,
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: var(--spx-button-radius);
     transition: all 0.2s ease;
 
     &:hover {
@@ -2135,7 +2135,7 @@ $stat-shadow-hover: 0 2px 5px rgba(13, 27, 42, 0.06), 0 30px 56px -18px rgba(13,
   min-height: 48px;
   justify-content: space-between;
   padding: 12px 16px;
-  border-radius: 14px;
+  border-radius: var(--spx-button-radius);
   font-size: 14px;
   font-weight: 700;
 

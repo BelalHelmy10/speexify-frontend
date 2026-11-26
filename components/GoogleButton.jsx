@@ -124,7 +124,7 @@ export default function GoogleButton({
           onError={handleError}
           theme="outline"
           size="large"
-          shape="rectangular"
+          shape="pill"
           text="signin_with"
           width={String(resolvedButtonWidth)} // pixels, as a string
           locale={googleLocale}

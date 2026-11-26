@@ -643,7 +643,7 @@
 .why-btn {
   align-items: center;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
   cursor: pointer;
   display: inline-flex;
   font-size: 16px;

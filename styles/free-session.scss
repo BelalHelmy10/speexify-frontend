@@ -101,7 +101,7 @@
 .starter-availability-grid { display: grid; gap: 11px; padding: 13px; border: 1px solid rgba($coral, .22); border-radius: 14px; background: #fff; }
 .starter-availability-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: $muted; font-size: 11px; line-height: 1.4; flex-wrap: wrap; }
 .starter-availability-toolbar__actions { display: flex; align-items: center; justify-content: flex-end; gap: 5px; flex: 0 0 auto; flex-wrap: wrap; }
-.starter-availability-toolbar button { border: 0; border-radius: 7px; background: transparent; color: $coral-dark; padding: 5px 4px; font: inherit; font-size: 11px; font-weight: 800; white-space: nowrap; cursor: pointer; }
+.starter-availability-toolbar button { border: 0; border-radius: var(--spx-button-radius); background: transparent; color: $coral-dark; padding: 5px 4px; font: inherit; font-size: 11px; font-weight: 800; white-space: nowrap; cursor: pointer; }
 .starter-availability-toolbar button.starter-availability-nav { display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba($coral, .24); background: #fffaf7; padding: 6px 8px; }
 .starter-availability-toolbar button.starter-availability-nav svg { flex: 0 0 auto; }
 .starter-availability-toolbar button:hover:not(:disabled) { background: $coral-pale; }
@@ -144,7 +144,7 @@
 .starter-slot__copy small { margin-top: 3px; color: $muted; font-size: 11px; font-weight: 600; }
 .starter-form-error { margin: 0 0 16px; padding: 11px 13px; border: 1px solid rgba($error, .22); border-radius: 10px; background: $error-bg; color: $error; font-size: 13px; font-weight: 700; }
 .starter-submit-row { display: flex; align-items: center; gap: 17px; padding-top: 8px; }
-.starter-button { display: inline-flex; align-items: center; justify-content: center; gap: 11px; min-height: 50px; border: 0; border-radius: 12px; background: $coral; color: $color-white; padding: 13px 20px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 12px 26px rgba($coral, .25); transition: background .18s ease, transform .18s ease, box-shadow .18s ease; }
+.starter-button { display: inline-flex; align-items: center; justify-content: center; gap: 11px; min-height: 50px; border: 0; border-radius: var(--spx-button-radius); background: $coral; color: $color-white; padding: 13px 20px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 12px 26px rgba($coral, .25); transition: background .18s ease, transform .18s ease, box-shadow .18s ease; }
 .starter-button:hover:not(:disabled) { background: $coral-dark; transform: translateY(-2px); box-shadow: 0 16px 32px rgba($coral, .30); }
 .starter-button:disabled { cursor: wait; opacity: .68; }
 .starter-button--secondary { margin-top: 24px; border: 1px solid $border; background: #fff; color: $navy; box-shadow: none; text-decoration: none; }

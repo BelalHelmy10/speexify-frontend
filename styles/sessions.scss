@@ -212,7 +212,7 @@
     justify-content: center;
     gap: 0.375rem;
     padding: 0.5rem 1rem;
-    border-radius: $sessions-border-radius;
+    border-radius: var(--spx-button-radius);
     font-size: 0.875rem;
     font-weight: 500;
     text-decoration: none;
@@ -318,7 +318,7 @@
     background: $sessions-primary;
     color: white;
     border: none;
-    border-radius: $sessions-border-radius;
+    border-radius: var(--spx-button-radius);
     cursor: pointer;
 
     &:hover {
@@ -349,7 +349,7 @@
     border: none;
     background: transparent;
     color: $sessions-gray-600;
-    border-radius: 6px;
+    border-radius: var(--spx-button-radius);
     cursor: pointer;
     font-size: 0.875rem;
     transition: all 0.2s;
@@ -539,7 +539,7 @@
     background: $sessions-success;
     color: white;
     border: none;
-    border-radius: $sessions-border-radius;
+    border-radius: var(--spx-button-radius);
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
@@ -696,7 +696,7 @@
     background: $sessions-primary;
     color: white;
     text-decoration: none;
-    border-radius: $sessions-border-radius;
+    border-radius: var(--spx-button-radius);
     font-size: 0.875rem;
 
     &:hover {
@@ -714,7 +714,7 @@
   &__action-btn {
     padding: 0.625rem 1.25rem;
     border: none;
-    border-radius: $sessions-border-radius;
+    border-radius: var(--spx-button-radius);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
@@ -816,7 +816,7 @@
   &__modal-btn {
     padding: 0.5rem 1rem;
     border: none;
-    border-radius: $sessions-border-radius;
+    border-radius: var(--spx-button-radius);
     font-size: 0.875rem;
     cursor: pointer;
 
@@ -952,7 +952,7 @@
       border: none;
       background: $sessions-gray-100;
       color: $sessions-gray-700;
-      border-radius: 4px;
+      border-radius: var(--spx-button-radius);
       font-size: 0.75rem;
       cursor: pointer;
 
@@ -1038,7 +1038,7 @@
   &__btn {
     padding: 0.625rem 1.25rem;
     border: none;
-    border-radius: $sessions-border-radius;
+    border-radius: var(--spx-button-radius);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
@@ -1092,7 +1092,7 @@
     background: $sessions-primary;
     color: white;
     border: none;
-    border-radius: $sessions-border-radius;
+    border-radius: var(--spx-button-radius);
     font-weight: 500;
     cursor: pointer;
 
@@ -1144,7 +1144,7 @@
       background: $sessions-primary;
       color: white;
       border: none;
-      border-radius: $sessions-border-radius;
+      border-radius: var(--spx-button-radius);
       cursor: pointer;
     }
   }
@@ -1262,7 +1262,7 @@
     padding: 0.375rem;
     border: none;
     background: $sessions-gray-100;
-    border-radius: 4px;
+    border-radius: var(--spx-button-radius);
     cursor: pointer;
     font-size: 0.875rem;
 
@@ -1301,7 +1301,7 @@
       padding: 0.5rem 1rem;
       border: 1px solid $sessions-gray-300;
       background: white;
-      border-radius: $sessions-border-radius;
+      border-radius: var(--spx-button-radius);
       cursor: pointer;
 
       &:hover:not(:disabled) {
@@ -1445,7 +1445,7 @@
     border: none;
     background: #fee2e2;
     color: #991b1b;
-    border-radius: 4px;
+    border-radius: var(--spx-button-radius);
     font-size: 0.75rem;
     cursor: pointer;
 
@@ -1465,7 +1465,7 @@
     background: $sessions-primary;
     color: white;
     border: none;
-    border-radius: $sessions-border-radius;
+    border-radius: var(--spx-button-radius);
     cursor: pointer;
 
     &:hover {

@@ -1119,7 +1119,7 @@
 .asp-btn {
   padding: 0.75rem 1.25rem;
   border: none;
-  border-radius: $asp-radius-sm;
+  border-radius: var(--spx-button-radius);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -1599,7 +1599,7 @@
   > .asp-btn--ghost {
     flex: 0 0 auto;
     border: 1px solid rgba($asp-primary, 0.16);
-    border-radius: 12px;
+    border-radius: var(--spx-button-radius);
     color: $asp-primary;
 
     &:hover:not(:disabled) {

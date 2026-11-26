@@ -283,7 +283,7 @@
   justify-content: center;
   min-height: 46px;
   padding: 0 18px;
-  border-radius: 12px;
+  border-radius: var(--spx-button-radius);
   font-size: 14px;
   font-weight: 900;
   transition:

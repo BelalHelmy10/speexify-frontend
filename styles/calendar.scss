@@ -63,7 +63,7 @@
 .calx-impersonate-stop {
   margin-left: auto;
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
   border: 1.5px solid rgba($color-white, 0.4);
   color: $color-white;
   font-size: 12px;
@@ -140,7 +140,7 @@
   width: 34px;
   height: 34px;
   border: 1px solid $ring;
-  border-radius: 10px;
+  border-radius: var(--spx-button-radius);
   display: grid;
   place-items: center;
   color: $text-secondary;
@@ -188,7 +188,7 @@
   width: 46px;
   min-height: 118px;
   border: 1px solid $ring;
-  border-radius: 14px;
+  border-radius: var(--spx-button-radius);
   background: $surface;
   color: $text-secondary;
   display: grid;
@@ -245,7 +245,7 @@
     button {
       min-width: 28px;
       height: 28px;
-      border-radius: 8px;
+      border-radius: var(--spx-button-radius);
       background: $surface;
       color: $text-secondary;
       font-size: 14px;
@@ -435,7 +435,7 @@
   margin-top: 10px;
   padding: 0 12px;
   border: 1px solid rgba($color-secondary-dark, 0.28) !important;
-  border-radius: 11px !important;
+  border-radius: var(--spx-button-radius) !important;
   background: rgba($success, 0.08) !important;
   color: $color-secondary-dark !important;
   display: inline-flex;
@@ -772,7 +772,7 @@
 .calx-nav-btn {
   width: 44px;
   height: 44px;
-  border-radius: 9px;
+  border-radius: var(--spx-button-radius);
   border: 1px solid transparent;
   background: transparent;
   color: $text-secondary;
@@ -808,7 +808,7 @@
 .calx-today-btn {
   height: 44px;
   padding: 0 18px;
-  border-radius: 10px;
+  border-radius: var(--spx-button-radius);
   border: 1px solid $border;
   background: $surface;
   font-size: 13px;
@@ -984,7 +984,7 @@
   gap: 6px;
   height: 44px;
   padding: 0 14px;
-  border-radius: 10px;
+  border-radius: var(--spx-button-radius);
   border: 1px solid $border;
   font-size: 12px;
   font-weight: 800;
@@ -1024,7 +1024,7 @@
   gap: 6px;
   height: 40px;
   padding: 0 16px;
-  border-radius: 10px;
+  border-radius: var(--spx-button-radius);
   border: 1px solid rgba($calendar-primary, 0.24);
   background: rgba($calendar-primary, 0.08);
   color: $calendar-primary;
@@ -1139,7 +1139,7 @@
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-  border-radius: 6px;
+  border-radius: var(--spx-button-radius);
   background: rgba($success, 0.15);
   color: $color-secondary-dark;
   font-size: 12px;
@@ -2056,7 +2056,7 @@
 .calx-availability-action {
   min-height: 44px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--spx-button-radius);
   font-size: 12px;
   font-weight: 700;
   line-height: 1.2;
@@ -2213,7 +2213,7 @@
   margin-left: auto;
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
   display: grid;
   place-items: center;
   background: $surface;
@@ -2409,7 +2409,7 @@
 .calx-session-drawer__close {
   width: 44px;
   height: 44px;
-  border-radius: 9px;
+  border-radius: var(--spx-button-radius);
   display: grid;
   place-items: center;
   background: $surface;
@@ -2472,7 +2472,7 @@
 .calx-session-drawer__action {
   min-height: 38px;
   padding: 0 12px;
-  border-radius: 10px;
+  border-radius: var(--spx-button-radius);
   border: 1px solid $ring;
   background: $card-bg;
   color: $navy;

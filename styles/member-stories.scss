@@ -590,7 +590,7 @@ $ms-prose: 38rem;
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.25s ease;
-  border-radius: 2px;
+  border-radius: var(--spx-button-radius);
 }
 
 .ms-btn--primary {

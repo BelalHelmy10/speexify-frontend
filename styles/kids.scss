@@ -166,7 +166,7 @@ $k-ring:    #ede5d8;
   justify-content: center;
   gap: 8px;
   padding: 13px 28px;
-  border-radius: 10px;
+  border-radius: var(--spx-button-radius);
   font-family: $font-heading;
   font-size: 0.95rem;
   font-weight: 700;
@@ -210,7 +210,6 @@ $k-ring:    #ede5d8;
     color: $k-navy;
     font-size: 1rem;
     padding: 16px 36px;
-    border-radius: 12px;
 
     &:hover { background: #fff; transform: translateY(-1px); }
   }
@@ -221,7 +220,6 @@ $k-ring:    #ede5d8;
     border-color: rgba($k-bg, 0.25);
     font-size: 1rem;
     padding: 16px 36px;
-    border-radius: 12px;
 
     &:hover { border-color: rgba($k-bg, 0.6); color: $k-bg; }
   }

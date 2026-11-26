@@ -502,7 +502,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
+    border-radius: var(--spx-button-radius);
 
     &:hover {
       color: $text-primary;
@@ -539,7 +539,7 @@
   color: $color-white;
   background: linear-gradient(135deg, $brand 0%, $brand-dark 100%);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--spx-button-radius);
   cursor: pointer;
   transition: transform 0.2s ease;
   box-shadow: $shadow-md, 0 1px 0 0 rgba($color-white, 0.1) inset;
@@ -616,7 +616,7 @@
   color: $brand;
   background: none;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--spx-button-radius);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
@@ -863,7 +863,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
+    border-radius: var(--spx-button-radius);
 
     &:hover {
       color: $text-primary;
@@ -1042,8 +1042,7 @@
 }
 
 .auth-page--register .input-wrapper input,
-.auth-page--register .auth-form input:not(.input-wrapper input),
-.auth-page--register .btn-primary {
+.auth-page--register .auth-form input:not(.input-wrapper input) {
   border-radius: 12px;
 }
 
@@ -1099,7 +1098,7 @@
   min-height: var(--spx-touch-target, 44px);
   overflow: hidden;
   border: 1px solid $border;
-  border-radius: 12px;
+  border-radius: var(--spx-button-radius);
   background: $color-white;
   transition: border-color $transition-fast, box-shadow $transition-fast;
 

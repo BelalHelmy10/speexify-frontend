@@ -56,7 +56,7 @@
 .pcx-question { color: $muted; text-decoration: underline; text-decoration-color: #b7c2c8; text-underline-offset: 4px; font-size: 12px; }
 .pcx-action {
   display: flex; align-items: center; justify-content: space-between; gap: 6px;
-  min-height: 44px; border: 1px solid #cdd8d6; border-radius: 8px;
+  min-height: 44px; border: 1px solid #cdd8d6; border-radius: var(--spx-button-radius);
   padding: 9px 12px; color: $navy; font-size: 13px; font-weight: 600; text-decoration: none;
   &:hover { background: $navy; color: white; text-decoration: none; }
 }

@@ -523,7 +523,7 @@
     padding: 10px 12px;
     background: rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: $sw-radius-sm;
+    border-radius: var(--spx-button-radius);
     cursor: pointer;
     transition: all $sw-transition;
     text-decoration: none;
@@ -678,7 +678,7 @@
     background: linear-gradient(135deg, $sw-primary 0%, $sw-primary-hover 100%);
     color: white;
     border: none;
-    border-radius: $sw-radius-sm;
+    border-radius: var(--spx-button-radius);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -810,7 +810,7 @@
   &--full {
     width: 100%;
     height: 44px;
-    border-radius: $sw-radius-sm;
+    border-radius: var(--spx-button-radius);
     font-size: 14px;
     font-weight: 600;
     gap: 8px;
@@ -887,7 +887,7 @@
   padding: 14px 16px;
   background: $sw-surface;
   border: 1px solid $sw-border;
-  border-radius: $sw-radius;
+  border-radius: var(--spx-button-radius);
   color: $sw-text;
   font-size: 14px;
   font-weight: 500;
@@ -1062,7 +1062,7 @@
 .sw-secondary-action {
   min-height: 38px;
   padding: 8px 12px;
-  border-radius: $sw-radius-sm;
+  border-radius: var(--spx-button-radius);
   border: 1px solid $sw-border;
   background: $sw-surface;
   color: $sw-text;

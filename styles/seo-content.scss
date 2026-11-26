@@ -79,7 +79,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: var(--spx-button-radius);
   padding: 0 20px;
   font-size: 0.96rem;
   font-weight: 900;

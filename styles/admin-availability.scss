@@ -73,7 +73,7 @@
   font-size: 0.95rem;
 
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--spx-button-radius);
 
   background: linear-gradient(
     180deg,

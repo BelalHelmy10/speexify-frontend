@@ -466,7 +466,7 @@
   --spx-login-padding: 16px;
   display: flex;
   align-items: stretch;
-  border-radius: 10px;
+  border-radius: var(--spx-button-radius);
   overflow: hidden;
   color: $color-white;
   font-size: 14px;
@@ -701,7 +701,7 @@
   align-items: center;
   gap: 8px;
   border: 1px solid rgba($ink, 0.08);
-  border-radius: 12px;
+  border-radius: var(--spx-button-radius);
   background: rgba($color-white, 0.84);
   color: $ink;
   padding: 4px 9px 4px 4px;
@@ -951,7 +951,7 @@
 
 .spx-account-logout {
   border-top: 1px solid rgba($ink, 0.08);
-  border-radius: 12px;
+  border-radius: var(--spx-button-radius);
   color: $error;
   font-size: 13px;
   font-weight: 800;
@@ -1202,7 +1202,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
     height: 42px;
     background: $bg;
     border: 1px solid rgba($ink, 0.08);
-    border-radius: 12px;
+    border-radius: var(--spx-button-radius);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1438,7 +1438,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   width: 100%;
   color: $color-white;
   border: none;
-  border-radius: 14px;
+  border-radius: var(--spx-button-radius);
   padding: 16px 20px;
   font-weight: 700;
   font-size: 16px;
@@ -1745,7 +1745,6 @@ $flip-crease: rgba(13, 27, 42, 0.09);
 
   .spx-mobile-cta {
     min-height: 56px;
-    border-radius: 16px;
     box-shadow: 0 16px 34px rgba($brand, 0.26);
   }
 
@@ -2019,8 +2018,15 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   &:focus-visible {
     outline: 2px solid $brand;
     outline-offset: 4px;
-    border-radius: 8px;
   }
+}
+
+.spx-nav-link:focus-visible,
+.spx-mobile-link:focus-visible,
+.spx-register-link:focus-visible,
+.spx-account-link:focus-visible,
+.spx-brand:focus-visible {
+  border-radius: 8px;
 }
 
 /* Refined desktop navigation: calm active state and clearer utility controls. */
@@ -2118,7 +2124,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   direction: ltr;
   /* IMPORTANT: prevents RTL flipping */
   background: rgba($ink, 0.06);
-  border-radius: 9px;
+  border-radius: var(--spx-button-radius);
   padding: 3px;
   gap: 0;
 }
@@ -2133,7 +2139,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   font-weight: 600;
   color: $muted;
   cursor: pointer;
-  border-radius: 7px;
+  border-radius: var(--spx-button-radius);
   transition: color 0.2s ease;
   min-width: 42px;
 
@@ -2153,7 +2159,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   width: calc(50% - 4px);
   height: calc(100% - 6px);
   background: linear-gradient(135deg, $brand 0%, $brand-ink 100%);
-  border-radius: 7px;
+  border-radius: var(--spx-button-radius);
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
   box-shadow: 0 2px 8px rgba($brand, 0.3);

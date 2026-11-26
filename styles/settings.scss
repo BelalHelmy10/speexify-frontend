@@ -392,7 +392,7 @@
     width: 34px;
     height: 34px;
     border: 0;
-    border-radius: 9px;
+    border-radius: var(--spx-button-radius);
     color: #64748b;
     background: transparent;
     display: grid;
@@ -418,7 +418,7 @@
 .settings-btn {
   min-height: 42px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--spx-button-radius);
   padding: 0 15px;
   display: inline-flex;
   align-items: center;
@@ -747,7 +747,7 @@
 
   button {
     border: 1px solid rgba(15, 23, 42, 0.12);
-    border-radius: 10px;
+    border-radius: var(--spx-button-radius);
     background: #fff;
     color: #0f172a;
     padding: 0 12px;
