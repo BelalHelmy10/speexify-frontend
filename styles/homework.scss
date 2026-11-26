@@ -294,3 +294,13 @@ $hw-line: #e8e0d5;
 }
 .hw-comment-box { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px dashed $hw-line; }
 .hw-review-bar { border-color: $coral; box-shadow: 0 10px 30px -22px rgba(13, 27, 42, 0.45); }
+
+// Homework rows and the back link are whole-card links: never underline them,
+// whatever the page's general link styles say.
+a.hw-row,
+a.hw-row:hover,
+a.hw-row:focus,
+a.hw-back,
+a.hw-back:hover {
+  text-decoration: none !important;
+}
