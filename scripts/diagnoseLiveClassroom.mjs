@@ -2,7 +2,9 @@
 // Run: node scripts/diagnoseLiveClassroom.mjs [p2p|bridge|relay]
 import fs from 'node:fs/promises';
 import http from 'node:http';
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
+import os from 'node:os';
+import path from 'node:path';
 import puppeteer from 'puppeteer';
 
 const mode = process.argv[2] || 'p2p';
@@ -11,6 +13,22 @@ const configSource = await fs.readFile(new URL('../lib/jitsiConfig.js', import.m
 const { JITSI_DOMAIN, buildJitsiOptions } = await import(`data:text/javascript;base64,${Buffer.from(configSource).toString('base64')}`);
 const monitorSource = await fs.readFile(new URL('../lib/classroomConnectionMonitor.mjs', import.meta.url), 'utf8');
 const roomId = `diagnostic-${randomUUID()}`;
+
+// meet.speexify.com requires a Speexify-signed token. The shared secret is
+// read from a local file (never from the repository or the command line).
+const secretFile = process.env.JITSI_JWT_SECRET_FILE || path.join(os.homedir(), '.speexify', 'jitsi_jwt_secret');
+const jwtSecret = await fs.readFile(secretFile, 'utf8').then((value) => value.trim()).catch(() => '');
+function signDiagnosticToken({ room, name, moderator }) {
+  if (!jwtSecret) return null;
+  const now = Math.floor(Date.now() / 1000);
+  const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  const body = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({
+    aud: 'jitsi', iss: process.env.JITSI_APP_ID || 'speexify', sub: JITSI_DOMAIN, room,
+    iat: now, nbf: now - 30, exp: now + 600, moderator,
+    context: { user: { id: `diagnostic-${moderator ? 'teacher' : 'learner'}`, name, moderator, affiliation: moderator ? 'owner' : 'member' } },
+  })}`;
+  return `${body}.${createHmac('sha256', jwtSecret).update(body).digest('base64url')}`;
+}
 const server = http.createServer((_req, res) => {
   res.setHeader('Content-Type', 'text/html');
   res.end('<!doctype html><html><body style="margin:0"><div id="call" style="width:900px;height:700px"></div></body></html>');
@@ -48,7 +66,10 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     await page.addScriptTag({ url: `https://${JITSI_DOMAIN}/external_api.js` });
     await page.addScriptTag({ content: monitorSource.replace('export function', 'function') });
-    const options = buildJitsiOptions({ roomId, userName: `Synthetic diagnostic ${index + 1}`, isTeacher: index === 0, startWithAudioMuted: false });
+    const userName = `Synthetic diagnostic ${index + 1}`;
+    const options = buildJitsiOptions({ roomId, userName, isTeacher: index === 0, startWithAudioMuted: false });
+    const jwt = signDiagnosticToken({ room: options.roomName, name: userName, moderator: index === 0 });
+    if (jwt) options.jwt = jwt;
     if (mode !== 'p2p') options.configOverwrite.p2p = { enabled: false };
     await page.evaluate(({ domain, options }) => {
       window.diagnosticEvents = [];
