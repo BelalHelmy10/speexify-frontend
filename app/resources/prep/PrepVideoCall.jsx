@@ -356,16 +356,19 @@ function PrepVideoCall({
           setIsLoading(false);
           setJoinDelayed(false);
           setError(null);
-          reportCallEvent("conference_joined", {
-            elapsedMs: Date.now() - joinStartedAt,
-            retryAttempt,
-          });
           try {
             const localId = event?.id || jitsi.getCurrentUserID?.();
             if (localId) localParticipantIdRef.current = String(localId);
           } catch {
             // Ignore local participant lookup failures.
           }
+          // participantId is the Jitsi endpoint id; it links this classroom
+          // user to the video-quality collector's per-participant summaries.
+          reportCallEvent("conference_joined", {
+            elapsedMs: Date.now() - joinStartedAt,
+            retryAttempt,
+            participantId: localParticipantIdRef.current || null,
+          });
           const audioMutedPromise = jitsi.isAudioMuted?.();
           if (typeof audioMutedPromise?.then === "function") {
             audioMutedPromise.then((muted) => setSessionAudioMuted(Boolean(muted))).catch(() => { });
