@@ -38,6 +38,7 @@ export default function MobileClassroomLayout({
     captionsEnabled = false,
     captionsSupported = false,
     onToggleCaptions,
+    moreAction = null,
 }) {
     const shouldShowVideoPip = activeTab !== "video";
     const unreadCount = normalizeUnreadCount(chatUnreadCount);
@@ -76,7 +77,9 @@ export default function MobileClassroomLayout({
             </div>}
 
             {/* Floating quick actions */}
-            <div className="cr-mobile-quick-actions">
+            <div
+                className={`cr-mobile-quick-actions${activeTab === "content" ? " cr-mobile-quick-actions--row" : ""}`}
+            >
                 {/* Raise hand (always visible) */}
                 <button
                     className={`cr-mobile-quick-actions__btn ${isHandRaised ? "cr-controls__btn--active" : ""}`}
@@ -118,6 +121,8 @@ export default function MobileClassroomLayout({
                         <Users size={20} />
                     </button>
                 )}
+
+                {moreAction}
             </div>
 
             {/* Bottom tab bar */}

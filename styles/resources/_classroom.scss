@@ -2986,15 +2986,17 @@ body.classroom-active {
 }
 
 // ─── Hide Desktop Elements on Mobile ────────────────────────────────────────
-@media (max-width: 900px) and (orientation: portrait) {
+// Phones in portrait use the Video / Content / Chat tabs. Tablets in portrait
+// (700px and wider) keep the full classroom, stacked.
+@media (max-width: 699px) and (orientation: portrait) {
 
   // Hide desktop layout
   .cr-main {
     display: none !important;
   }
 
-  // Hide desktop controls footer
-  .cr-controls {
+  // Hide desktop controls footer (the More sheet reuses its markup)
+  .cr-controls:not(.cr-controls--sheet) {
     display: none !important;
   }
 
@@ -5605,8 +5607,13 @@ body.classroom-active {
     padding: 4px 4px calc(4px + var(--spx-safe-bottom));
   }
 
-  // The lesson's bottom row: open resources on the left, zoom and page
-  // controls on the right, instead of two stacked bars.
+}
+
+// Phones (landscape and portrait tabs): one bottom row in the lesson, with
+// open resources on the left and zoom and page controls on the right,
+// instead of two stacked bars.
+.cr-shell--compact-landscape,
+.cr-main--portrait {
   .cr-resource-workspace:has(.cpv-nav) {
     position: relative;
 
@@ -5622,6 +5629,9 @@ body.classroom-active {
       border-top: 0;
       background: transparent;
     }
+
+    // Teachers open resources from their own Resources button here.
+    .cr-resource-tabs__add { display: none; }
   }
 
   .cr-resource-workspace .cpv-nav {
@@ -5825,4 +5835,76 @@ body.classroom-active {
   right: calc(8px + var(--spx-safe-right));
   bottom: calc(8px + var(--spx-safe-bottom));
   height: auto;
+}
+
+// ─── Phone portrait ─────────────────────────────────────────────────────────
+.cr-main--portrait {
+  // The video panel's padding was added to its 100% width, cutting off its
+  // right edge.
+  .cr-panel--left { box-sizing: border-box; }
+}
+
+// Phones and tablets in portrait: the same page list as the laptop classroom,
+// a narrow rail on the right rather than a row of page buttons under the page.
+.cr-main--portrait,
+.cr-shell:not(.cr-shell--compact-landscape) .cr-main--stacked {
+  .cr-content-viewer .prep-pdf-layout { flex-direction: row; }
+
+  .cr-content-viewer .prep-pdf-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 36px;
+    max-height: none;
+    min-height: 0;
+    overflow: hidden;
+    border-top: 0;
+    border-left: 1px solid $cr-border-subtle;
+  }
+
+  .cr-content-viewer .prep-pdf-sidebar__pages {
+    flex: 1;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 4px;
+    min-height: 0;
+    padding: 4px 2px;
+    overflow-y: auto;
+  }
+
+  .cr-content-viewer .prep-pdf-sidebar__page-button {
+    flex-shrink: 0;
+    width: 30px;
+    height: 32px;
+  }
+}
+
+.cr-main--portrait .cr-resource-workspace:has(.cpv-nav) .cr-resource-tabs {
+  max-width: calc(100% - 210px);
+}
+
+// On the Content tab the quick actions sit in a row beside the small video,
+// instead of a column on top of it.
+.cr-mobile-quick-actions--row {
+  flex-direction: row;
+  right: auto;
+  left: calc(10px + var(--spx-safe-left));
+  bottom: calc(60px + var(--spx-safe-bottom) + 36px);
+  gap: 6px;
+
+  .cr-mobile-quick-actions__btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.cr-mobile-quick-actions__btn { position: relative; }
+
+// Layout presets do nothing in the portrait tabs.
+.cr-more-sheet--portrait .cr-controls.cr-controls--sheet .cr-controls__center { display: none; }
+
+// Tablets in portrait: video stacked above the lesson. Include the panel
+// padding in its full width so the video is not cut off on the right.
+@media (min-width: 700px) and (max-width: 900px) and (orientation: portrait) {
+  .cr-panel--left { box-sizing: border-box; }
 }

@@ -78,7 +78,7 @@ export default function ClassroomControlBar({
   teacherAllowsScreenShare,
   onTeacherAllowsScreenShareChange,
 }) {
-  if (isMobile) return null;
+  if (isMobile && variant !== "more") return null;
 
   const unreadCount = normalizeUnreadCount(chatUnreadCount);
   const hasUnread = !isChatOpen && unreadCount > 0;
@@ -290,6 +290,20 @@ export default function ClassroomControlBar({
     </>
   );
 
+  // Portrait phones: a single More button among the floating quick actions.
+  if (variant === "more") {
+    return (
+      <ClassroomMoreSheet
+        buttonClassName="cr-mobile-quick-actions__btn"
+        iconSize={20}
+        isPageRecording={isPageRecording}
+        sheetClassName="cr-more-sheet--portrait"
+      >
+        {controls}
+      </ClassroomMoreSheet>
+    );
+  }
+
   if (variant === "compact") {
     return (
       <ClassroomCompactDock
@@ -362,31 +376,6 @@ function ClassroomCompactDock({
   isPageRecording,
   children,
 }) {
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const moreButtonRef = useRef(null);
-  const fullscreen = useFullscreen();
-
-  const closeMore = useCallback(() => setIsMoreOpen(false), []);
-
-  useEffect(() => {
-    if (!isMoreOpen) return undefined;
-    const onKeyDown = (event) => {
-      if (event.key !== "Escape") return;
-      setIsMoreOpen(false);
-      moreButtonRef.current?.focus();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [isMoreOpen]);
-
-  // Buttons that open a dialog or change something close the sheet. The host
-  // menu opens its own panel inside the sheet, so it keeps the sheet open.
-  const handleSheetClick = (event) => {
-    const button = event.target.closest?.("button");
-    if (!button || button.closest(".cr-host-menu")) return;
-    setIsMoreOpen(false);
-  };
-
   return (
     <div className="cr-dock">
       <div className="cr-dock__row" role="toolbar" aria-label="Classroom controls">
@@ -461,21 +450,68 @@ function ClassroomCompactDock({
             />
           </span>
         </button>
-        <button
-          ref={moreButtonRef}
-          type="button"
-          className={`cr-dock__btn${isMoreOpen ? " cr-dock__btn--active" : ""}`}
-          onClick={() => setIsMoreOpen((open) => !open)}
-          aria-expanded={isMoreOpen}
-          aria-controls="classroom-more-sheet"
-          aria-label="More controls"
-          title="More controls"
+        <ClassroomMoreSheet
+          buttonClassName="cr-dock__btn"
+          activeClassName="cr-dock__btn--active"
+          isPageRecording={isPageRecording}
         >
-          <MoreHorizontal size={18} />
-          {isPageRecording && <span className="cr-dock__recording-dot" aria-hidden="true" />}
-        </button>
+          {children}
+        </ClassroomMoreSheet>
       </div>
+    </div>
+  );
+}
 
+
+// Everything from the desktop control bar, in a sheet opened by "More".
+function ClassroomMoreSheet({
+  buttonClassName,
+  activeClassName = "cr-controls__btn--active",
+  sheetClassName = "",
+  iconSize = 18,
+  isPageRecording,
+  children,
+}) {
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const moreButtonRef = useRef(null);
+  const fullscreen = useFullscreen();
+
+  const closeMore = useCallback(() => setIsMoreOpen(false), []);
+
+  useEffect(() => {
+    if (!isMoreOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      setIsMoreOpen(false);
+      moreButtonRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isMoreOpen]);
+
+  // Buttons that open a dialog or change something close the sheet. The host
+  // menu opens its own panel inside the sheet, so it keeps the sheet open.
+  const handleSheetClick = (event) => {
+    const button = event.target.closest?.("button");
+    if (!button || button.closest(".cr-host-menu")) return;
+    setIsMoreOpen(false);
+  };
+
+  return (
+    <>
+      <button
+        ref={moreButtonRef}
+        type="button"
+        className={`${buttonClassName}${isMoreOpen ? ` ${activeClassName}` : ""}`}
+        onClick={() => setIsMoreOpen((open) => !open)}
+        aria-expanded={isMoreOpen}
+        aria-controls="classroom-more-sheet"
+        aria-label="More controls"
+        title="More controls"
+      >
+        <MoreHorizontal size={iconSize} />
+        {isPageRecording && <span className="cr-dock__recording-dot" aria-hidden="true" />}
+      </button>
       {/* The video column contains its layout, so the sheet is portalled out
           of it to position against the screen. */}
       {isMoreOpen && createPortal(
@@ -483,7 +519,7 @@ function ClassroomCompactDock({
           <div className="cr-more-backdrop" onClick={closeMore} aria-hidden="true" />
           <div
             id="classroom-more-sheet"
-            className="cr-more-sheet"
+            className={`cr-more-sheet ${sheetClassName}`.trim()}
             role="dialog"
             aria-label="More classroom controls"
             onClick={handleSheetClick}
@@ -521,6 +557,6 @@ function ClassroomCompactDock({
         </>,
         document.body
       )}
-    </div>
+    </>
   );
 }

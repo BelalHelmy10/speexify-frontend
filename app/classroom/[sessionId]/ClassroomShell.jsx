@@ -488,15 +488,23 @@ export default function ClassroomShell({
   // Portrait phones retain navigation tabs; the underlying call stays mounted.
   const [isMobile, setIsMobile] = useState(false);
   const [isCompactLandscape, setIsCompactLandscape] = useState(false);
+  const [isStackedTablet, setIsStackedTablet] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState('video');
   useEffect(() => {
-    const query = window.matchMedia('(max-width: 900px) and (orientation: portrait)');
+    // Phones in portrait get tabs; tablets in portrait keep the full classroom
+    // with the video stacked above the lesson.
+    const query = window.matchMedia('(max-width: 699px) and (orientation: portrait)');
     const compact = window.matchMedia('(max-width: 1366px) and (max-height: 600px) and (orientation: landscape) and (pointer: coarse)');
-    const update = () => { setIsMobile(query.matches); setIsCompactLandscape(compact.matches); };
+    const stacked = window.matchMedia('(min-width: 700px) and (max-width: 900px) and (orientation: portrait)');
+    const update = () => {
+      setIsMobile(query.matches);
+      setIsCompactLandscape(compact.matches);
+      setIsStackedTablet(stacked.matches);
+    };
     update();
-    query.addEventListener('change', update);
-    compact.addEventListener('change', update);
-    return () => { query.removeEventListener('change', update); compact.removeEventListener('change', update); };
+    const queries = [query, compact, stacked];
+    queries.forEach((mq) => mq.addEventListener('change', update));
+    return () => queries.forEach((mq) => mq.removeEventListener('change', update));
   }, []);
 
   // Attach the portal host once. Reparenting a live iframe reloads the call.
@@ -2016,7 +2024,7 @@ export default function ClassroomShell({
 
   const controlBar = (
     <ClassroomControlBar
-      variant={isCompactLandscape ? "compact" : "full"}
+      variant={isCompactLandscape ? "compact" : isMobile ? "more" : "full"}
       micMuted={localAudioMuted}
       cameraMuted={localVideoMuted}
       onToggleMic={() => runVideoModerationAction("toggleLocalAudio")}
@@ -2152,6 +2160,7 @@ export default function ClassroomShell({
           className={[
             "cr-main",
             isMobile ? `cr-main--portrait cr-main--portrait-${mobileActiveTab}` : "",
+            isStackedTablet ? "cr-main--stacked" : "",
             isDragging ? "cr-main--dragging" : "",
             screenShare.isRemoteSharing ? "cr-main--screen-share" : "",
             isChatOpen ? "cr-main--chat-open" : "",
@@ -2259,7 +2268,7 @@ export default function ClassroomShell({
       )}
 
       {/* Full classroom controls in the split layout. */}
-      {!isCompactLandscape && controlBar}
+      {!isCompactLandscape && !isMobile && controlBar}
 
       {/* Tabbed layout for portrait phones and narrow tablets. */}
       {isMobile && (
@@ -2276,6 +2285,7 @@ export default function ClassroomShell({
           captionsEnabled={captionsEnabled}
           captionsSupported={captionsSupported}
           onToggleCaptions={toggleCaptions}
+          moreAction={controlBar}
           chromeOnly
         />
       )}
