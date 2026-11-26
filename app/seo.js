@@ -8,7 +8,19 @@ export const SITE_URL = "https://speexify.com";
 export const SITE_NAME = "Speexify";
 
 const DEFAULT_OG_IMAGE = "/speexify-share-coral-v2.png";
-const DEFAULT_TWITTER_IMAGE = DEFAULT_OG_IMAGE;
+const HOME_OG_IMAGE = "/speexify-share-logo-v3.png";
+const HOME_SHARE_COPY = {
+  en: {
+    title: "Speexify | Speak English with confidence",
+    description:
+      "Practice real conversations with a coach. Start with a free trial and get a practice plan tailored to your goals.",
+  },
+  ar: {
+    title: "اتكلّم إنجليزي بثقة مع Speexify",
+    description:
+      "اتدرّب على محادثات حقيقية مع مدرّب. ابدأ بجلسة تجريبية مجانية، وهنحط معاك خطة تدريب تناسب هدفك.",
+  },
+};
 
 const GOOGLE_BOT = {
   index: true,
@@ -311,6 +323,9 @@ export function pageMetadata(key, locale = "en") {
   const title = isArabic ? page.arTitle : page.title;
   const description = isArabic ? page.arDescription : page.description;
   const keywords = isArabic && page.arKeywords ? page.arKeywords : page.keywords;
+  const isHome = key === "home";
+  const shareCopy = isHome ? HOME_SHARE_COPY[isArabic ? "ar" : "en"] : { title, description };
+  const shareImage = isHome ? HOME_OG_IMAGE : DEFAULT_OG_IMAGE;
 
   return {
     title,
@@ -329,24 +344,22 @@ export function pageMetadata(key, locale = "en") {
       locale: isArabic ? "ar_EG" : "en_US",
       alternateLocale: isArabic ? ["en_US"] : ["ar_EG"],
       url: canonical,
-      title,
-      description,
+      ...shareCopy,
       siteName: SITE_NAME,
       images: [
         {
-          url: DEFAULT_OG_IMAGE,
+          url: shareImage,
           width: 1200,
           height: 630,
-          alt: ogImageAlt(title),
+          alt: isHome ? SITE_NAME : ogImageAlt(title),
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      ...shareCopy,
       creator: "@speexify",
-      images: [DEFAULT_TWITTER_IMAGE],
+      images: [shareImage],
     },
     robots: metadataRobots(true),
   };
