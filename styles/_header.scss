@@ -456,90 +456,150 @@
    CTA BUTTON
    ──────────────────────────────────────────────────────────────────────────── */
 
-.spx-nav-cta {
+.spx-nav-auth {
   position: relative;
   grid-column: 3;
   justify-self: end;
-  color: $color-white;
-  border: none;
+}
+
+.spx-nav-cta {
+  --spx-login-padding: 16px;
+  display: flex;
+  align-items: stretch;
   border-radius: 10px;
-  padding: 9px 16px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
   overflow: hidden;
-  transition: background-color 0.2s ease, transform 0.15s ease,
-    box-shadow 0.2s ease;
+  color: $color-white;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: linear-gradient(135deg, $brand 0%, $brand-ink 100%);
   box-shadow: 0 6px 14px rgba($brand, 0.24);
-  /* single shadow */
-  flex-shrink: 0;
-  background: transparent;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 
-  .spx-cta-bg {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, $brand 0%, $brand-ink 100%);
-    transition: background-color 0.2s ease;
-
-    &::before {
-      content: none;
+  @media (hover: hover) {
+    .spx-nav-auth:hover & {
+      background: linear-gradient(135deg, $brand-ink 0%, $brand 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba($brand, 0.28);
     }
-
-    /* removed sweeping shine animation */
   }
 
-  .spx-cta-content {
-    position: relative;
-    z-index: 1;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+  .spx-nav-auth &:active {
+    transform: translateY(-1px);
   }
+}
 
-  .spx-cta-arrow,
-  .spx-cta-icon {
-    transition: transform 0.15s ease;
+.spx-nav-cta__login,
+.spx-nav-cta__toggle {
+  color: inherit;
+  border: 0;
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -3px;
+    border-radius: 8px;
   }
+}
+
+.spx-nav-cta__login {
+  padding: 9px 6px;
+  padding-inline-start: var(--spx-login-padding);
 
   &:hover {
     text-decoration: none;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba($brand, 0.28);
+  }
+}
 
-    .spx-cta-bg {
-      background: linear-gradient(135deg, $brand-ink 0%, $brand 100%);
-    }
+.spx-nav-cta__toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: calc(var(--spx-login-padding) + 18px);
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
 
-    .spx-cta-arrow,
-    .spx-cta-icon {
-      transform: translateX(2px);
-    }
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block: 26%;
+    inset-inline-start: 0;
+    inline-size: 1px;
+    background-color: rgba($color-white, 0.36);
   }
 
-  &:active {
-    transform: translateY(-1px);
+  svg {
+    transition: transform 0.16s ease;
   }
 
-  &.spx-logout-btn {
-    box-shadow: 0 8px 16px rgba($muted, 0.25);
+  &:hover,
+  &[aria-expanded="true"] {
+    background-color: rgba($ink, 0.1);
+  }
 
-    .spx-cta-bg {
-      background: linear-gradient(135deg, $muted 0%, ($muted, 10%) 100%);
+  &[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+  }
+}
+
+.spx-guest-account-dropdown {
+  --spx-guest-menu-gap: 14px;
+  position: absolute;
+  z-index: 1;
+  inset-block-start: calc(100% + var(--spx-guest-menu-gap));
+  inset-inline-end: 0;
+  min-inline-size: max(100%, 132px);
+  padding: 5px;
+  border: 1px solid rgba($ink, 0.1);
+  border-radius: 14px;
+  background: $color-white;
+  box-shadow: 0 12px 28px rgba($ink, 0.14);
+
+  // Keep the menu hovered while the pointer crosses the visible gap.
+  &::before {
+    content: "";
+    position: absolute;
+    inset-inline: -1px;
+    inset-block-end: 100%;
+    block-size: calc(var(--spx-guest-menu-gap) + 1px);
+  }
+
+  .spx-register-link {
+    justify-content: flex-start;
+    min-block-size: 40px;
+    padding-inline: 11px;
+    font-size: 14px;
+    text-align: start;
+
+    &:focus-visible {
+      outline-offset: -2px;
     }
+  }
+}
 
-    &:hover {
-      box-shadow: 0 10px 20px rgba($muted, 0.32);
+.spx-register-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 24px;
+  padding-inline: 8px;
+  border-radius: 8px;
+  color: $ink;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
 
-      .spx-cta-bg {
-        background: linear-gradient(135deg,
-            ($muted, 10%) 0%,
-            ($muted, 20%) 100%);
-      }
-    }
+  &[aria-current="page"] {
+    background-color: rgba($ink, 0.05);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  &:hover {
+    background-color: rgba($ink, 0.05);
+    text-decoration: none;
   }
 }
 
@@ -1241,6 +1301,12 @@ $flip-crease: rgba(13, 27, 42, 0.09);
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px solid rgba($ink, 0.08);
+
+    > .spx-register-link {
+      min-block-size: 44px;
+      margin-block-start: 4px;
+      font-size: 15px;
+    }
   }
 }
 
@@ -1492,11 +1558,6 @@ $flip-crease: rgba(13, 27, 42, 0.09);
     padding: 8px 12px;
     font-size: 14px;
   }
-
-  .spx-nav-cta {
-    padding: 9px 16px;
-    font-size: 14px;
-  }
 }
 
 @media (max-width: 1199px) {
@@ -1519,8 +1580,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   }
 
   .spx-nav-cta {
-    padding: 9px 14px;
-    font-size: 14px;
+    --spx-login-padding: 14px;
   }
 }
 
@@ -1541,7 +1601,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   }
 
   .spx-nav,
-  .spx-nav-cta,
+  .spx-nav-auth,
   .spx-account-menu,
   .spx-nav-status,
   .spx-auth-placeholder {
@@ -1949,7 +2009,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
 
 .spx-nav-link,
 .spx-mobile-link,
-.spx-nav-cta,
+.spx-register-link,
 .spx-account-trigger,
 .spx-account-link,
 .spx-account-logout,
@@ -1989,7 +2049,11 @@ $flip-crease: rgba(13, 27, 42, 0.09);
     }
   }
 
-  .spx-nav-cta,
+  .spx-nav-cta {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+  }
+
   .spx-mobile-cta {
     border: 2px solid currentColor;
   }
@@ -2009,7 +2073,7 @@ $flip-crease: rgba(13, 27, 42, 0.09);
   .spx-mobile-drawer,
   .spx-account-menu,
   .spx-auth-placeholder,
-  .spx-nav-cta {
+  .spx-nav-auth {
     display: none !important;
   }
 

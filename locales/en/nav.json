@@ -23,6 +23,7 @@
   "role_coach": "Coach",
   "role_admin": "Admin",
   "account_open": "Open account menu",
+  "guest_account_options": "Account options",
   "profile_hint": "Identity and account snapshot",
   "settings_hint": "Security, calendar, and preferences",
   "admin_hint": "Operations and user management",

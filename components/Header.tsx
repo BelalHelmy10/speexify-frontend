@@ -144,6 +144,9 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  const guestMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const guestMenuLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const guestTogglePointerType = useRef("");
 
   // Locale detection from URL
   const isArabic = pathname?.startsWith("/ar");
@@ -156,8 +159,10 @@ export default function Header() {
   const navDict = getDictionary(locale, "nav");
 
   const [open, setOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [openAccountMenu, setOpenAccountMenu] = useState<"member" | "guest" | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const accountOpen = openAccountMenu === "member";
+  const guestMenuOpen = openAccountMenu === "guest";
 
   const isActive = (hrefBase) => {
     const href = hrefBase || "/";
@@ -194,7 +199,7 @@ export default function Header() {
 
   useEffect(() => {
     setOpen(false);
-    setAccountOpen(false);
+    setOpenAccountMenu(null);
   }, [pathname]);
 
   useEffect(() => {
@@ -217,7 +222,7 @@ export default function Header() {
   }, [open]);
 
   useEffect(() => {
-    if (!accountOpen) return undefined;
+    if (!openAccountMenu) return undefined;
 
     function onPointerDown(event) {
       const target = event.target;
@@ -227,11 +232,15 @@ export default function Header() {
       ) {
         return;
       }
-      setAccountOpen(false);
+      setOpenAccountMenu(null);
     }
 
     function onKeyDown(event) {
-      if (event.key === "Escape") setAccountOpen(false);
+      if (event.key !== "Escape") return;
+      setOpenAccountMenu(null);
+      if (openAccountMenu === "guest" && document.activeElement === guestMenuLinkRef.current) {
+        guestMenuTriggerRef.current?.focus();
+      }
     }
 
     document.addEventListener("pointerdown", onPointerDown);
@@ -240,7 +249,7 @@ export default function Header() {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [accountOpen]);
+  }, [openAccountMenu]);
 
   const authPending = checking && hasSessionCookie && !user;
   const loggedOutReady = !user && !authPending;
@@ -253,7 +262,7 @@ export default function Header() {
       await authLogout();
     } catch { }
     setOpen(false);
-    setAccountOpen(false);
+    setOpenAccountMenu(null);
     router.push(localizeHref(APP_ROUTES.login, locale));
   };
 
@@ -357,7 +366,13 @@ export default function Header() {
     ]
     : [];
 
-  const RightCTA = () =>
+  if (isFocusedWorkspace) return null;
+
+  const loginHref = localizeHref(APP_ROUTES.login, locale);
+  const registerHref = localizeHref(APP_ROUTES.register, locale);
+  const registerCurrent = normalizedPath === APP_ROUTES.register ? "page" : undefined;
+
+  const rightCTA =
     user ? (
       <div
         className={`spx-account-menu${accountOpen ? " spx-is-open" : ""}${isActive("/profile") || isActive("/settings") ? " spx-is-active" : ""
@@ -370,7 +385,7 @@ export default function Header() {
           aria-haspopup="menu"
           aria-expanded={accountOpen}
           aria-label={navText("account_open", "Open account menu")}
-          onClick={() => setAccountOpen((value) => !value)}
+          onClick={() => setOpenAccountMenu(accountOpen ? null : "member")}
         >
           <span className="spx-account-avatar" aria-hidden="true">
             <AvatarContent user={user} />
@@ -405,7 +420,7 @@ export default function Header() {
                       }`}
                     key={item.to}
                     role="menuitem"
-                    onClick={() => setAccountOpen(false)}
+                    onClick={() => setOpenAccountMenu(null)}
                   >
                     <span className="spx-account-link__icon">
                       <Icon size={17} />
@@ -440,34 +455,66 @@ export default function Header() {
         </span>
       </span>
     ) : (
-      <Link
-        href={localizeHref(APP_ROUTES.login, locale)}
-        className="spx-nav-cta"
-        onClick={() => setOpen(false)}
+      <div
+        className="spx-nav-auth"
+        ref={accountMenuRef}
+        onPointerEnter={(event) => {
+          if (event.pointerType === "mouse") setOpenAccountMenu("guest");
+        }}
+        onPointerLeave={(event) => {
+          if (event.pointerType === "mouse" && document.activeElement !== guestMenuLinkRef.current) {
+            setOpenAccountMenu(null);
+          }
+        }}
+        onBlur={(event) => {
+          if (guestMenuOpen && !event.currentTarget.contains(event.relatedTarget)) {
+            setOpenAccountMenu(null);
+          }
+        }}
       >
-        <span className="spx-cta-bg"></span>
-        <span className="spx-cta-content">
-          <span className="spx-cta-text">{t(navDict, "login")}</span>
-          <svg
-            className="spx-cta-arrow"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
+        <div className="spx-nav-cta">
+          <Link
+            href={loginHref}
+            className="spx-nav-cta__login"
+            onClick={() => setOpenAccountMenu(null)}
           >
-            <path
-              d="M6 12L10 8L6 4"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      </Link>
+            {t(navDict, "login")}
+          </Link>
+          <button
+            type="button"
+            className="spx-nav-cta__toggle"
+            ref={guestMenuTriggerRef}
+            aria-label={t(navDict, "guest_account_options")}
+            aria-expanded={guestMenuOpen}
+            aria-controls="spx-guest-account-menu"
+            onPointerDown={(event) => {
+              guestTogglePointerType.current = event.pointerType;
+            }}
+            onClick={(event) => {
+              if (event.detail > 0 && guestTogglePointerType.current === "mouse") return;
+              setOpenAccountMenu(guestMenuOpen ? null : "guest");
+            }}
+          >
+            <ChevronDown size={16} aria-hidden="true" />
+          </button>
+        </div>
+        <div
+          id="spx-guest-account-menu"
+          className="spx-guest-account-dropdown"
+          hidden={!guestMenuOpen}
+        >
+          <Link
+            href={registerHref}
+            ref={guestMenuLinkRef}
+            className="spx-register-link"
+            aria-current={registerCurrent}
+            onClick={() => setOpenAccountMenu(null)}
+          >
+            {t(navDict, "register")}
+          </Link>
+        </div>
+      </div>
     );
-
-  if (isFocusedWorkspace) return null;
 
   return (
     <header
@@ -587,7 +634,7 @@ export default function Header() {
           </ul>
         </nav>
 
-        <RightCTA />
+        {rightCTA}
 
         <button
           type="button"
@@ -702,7 +749,7 @@ export default function Header() {
                   style={itemIndexStyle(links.length + 1)}
                 >
                   <Link
-                    href={localizeHref(APP_ROUTES.login, locale)}
+                    href={loginHref}
                     className="spx-mobile-cta"
                     onClick={() => setOpen(false)}
                   >
@@ -714,6 +761,7 @@ export default function Header() {
                         height="18"
                         viewBox="0 0 18 18"
                         fill="none"
+                        aria-hidden="true"
                       >
                         <path
                           d="M6.75 13.5L11.25 9L6.75 4.5"
@@ -724,6 +772,14 @@ export default function Header() {
                         />
                       </svg>
                     </span>
+                  </Link>
+                  <Link
+                    href={registerHref}
+                    className="spx-register-link"
+                    aria-current={registerCurrent}
+                    onClick={() => setOpen(false)}
+                  >
+                    {t(navDict, "register")}
                   </Link>
                 </li>
               </>
