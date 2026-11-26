@@ -37,6 +37,7 @@ export function buildClassroomHarness({ realLobby = false, liveVideo = false, re
         "ClassroomHeaderBar.jsx",
         "ClassroomHostMenu.jsx",
         "useClassroomVideoModeration.js",
+        "ClassroomScreenShare.jsx",
       ].includes(path.basename(file))
     ) {
       source = "module.exports = {__esModule:true, default: () => null};";

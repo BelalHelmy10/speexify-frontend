@@ -227,7 +227,12 @@ export function useClassroomLobby({
       try {
         const { data } = await api.get(`/sessions/${sessionId}/lobby`);
         if (cancelled) return;
-        setWaitingLearners(data.waiting || []);
+        // Polled every few seconds for the whole lesson: keep the previous
+        // array when nothing changed so the classroom does not re-render.
+        const next = Array.isArray(data?.waiting) ? data.waiting : [];
+        setWaitingLearners((previous) =>
+          JSON.stringify(previous) === JSON.stringify(next) ? previous : next
+        );
       } catch {
         // Ignore
       }

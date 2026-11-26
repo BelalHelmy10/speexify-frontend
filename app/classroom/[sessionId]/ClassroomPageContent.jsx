@@ -62,16 +62,12 @@ const CLASSROOM_RESOURCES_QUERY = `
   // 🔥 NEW — single audio support
   "audioUrl": audio.asset->url,
 
-  // 🔥 NEW — multiple audio tracks support
-  audioTracks[] {
+  // Multiple audio tracks, flattened (buildPrepAudioTracks reads track.url).
+  // The nested file.asset shape made this the largest part of the payload.
+  "audioTracks": audioTracks[] {
     _key,
     label,
-    file {
-      asset-> {
-        url,
-        originalFilename
-      }
-    }
+    "url": file.asset->url
   },
 
   externalUrl,
@@ -86,9 +82,51 @@ const CLASSROOM_RESOURCES_QUERY = `
 }
 `;
 
+// The library tree was fetched live from Sanity (useCdn off) on every
+// classroom open: ~1.8 s of query time plus the transfer, before the page could
+// render. Keep a per-server copy for a few minutes and refresh it in the
+// background, so imports still show up quickly but joins never wait on it.
+const RESOURCE_TREE_FRESH_MS = 5 * 60 * 1000;
+const RESOURCE_TREE_MAX_STALE_MS = 60 * 60 * 1000;
+const resourceTreeCache = globalThis.__speexifyClassroomResourceTree || {
+  data: null,
+  fetchedAt: 0,
+  inflight: null,
+};
+globalThis.__speexifyClassroomResourceTree = resourceTreeCache;
+
+function refreshResourcesTree() {
+  if (!resourceTreeCache.inflight) {
+    resourceTreeCache.inflight = sanityClient
+      .fetch(CLASSROOM_RESOURCES_QUERY)
+      .then((data) => {
+        resourceTreeCache.data = data || [];
+        resourceTreeCache.fetchedAt = Date.now();
+        return resourceTreeCache.data;
+      })
+      .finally(() => {
+        resourceTreeCache.inflight = null;
+      });
+  }
+  return resourceTreeCache.inflight;
+}
+
 async function getResourcesTree() {
-  const data = await sanityClient.fetch(CLASSROOM_RESOURCES_QUERY);
-  return data || [];
+  const age = Date.now() - resourceTreeCache.fetchedAt;
+  if (resourceTreeCache.data && age < RESOURCE_TREE_FRESH_MS) {
+    return resourceTreeCache.data;
+  }
+  if (resourceTreeCache.data && age < RESOURCE_TREE_MAX_STALE_MS) {
+    // Serve the recent copy now; refresh for the next visitor.
+    void refreshResourcesTree().catch(() => {});
+    return resourceTreeCache.data;
+  }
+  try {
+    return await refreshResourcesTree();
+  } catch (error) {
+    if (resourceTreeCache.data) return resourceTreeCache.data;
+    throw error;
+  }
 }
 
 export default async function ClassroomPageContent({ params, locale = "en" }) {

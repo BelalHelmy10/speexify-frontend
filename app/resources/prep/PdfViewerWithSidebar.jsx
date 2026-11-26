@@ -44,6 +44,17 @@ function PdfZoomSlider({ zoom, onChange, min = 0.1, max = 5 }) {
   );
 }
 
+// Large canvases exhaust memory (iOS Safari refuses canvases above ~16.7 MP
+// and a page at 5x zoom on a Retina screen is ~48 MP). Cap the backing store
+// and let the browser upscale slightly instead.
+const MAX_CANVAS_PIXELS = 12_000_000;
+
+function getCanvasOutputScale(cssWidth, cssHeight) {
+  const devicePixelRatio = (typeof window !== "undefined" && window.devicePixelRatio) || 1;
+  const area = Math.max(1, cssWidth * cssHeight);
+  return Math.max(0.25, Math.min(devicePixelRatio, Math.sqrt(MAX_CANVAS_PIXELS / area)));
+}
+
 export default function PdfViewerWithSidebar({
   fileUrl,
   fitMode = "width",
@@ -425,12 +436,15 @@ export default function PdfViewerWithSidebar({
 
       try {
         destroyLoadingTask(loadingTaskRef.current);
-        const isClassroomUpload = /^\/api\/sessions\/\d+\/materials\//.test(fileUrl);
+        // Fetch only the byte ranges needed for the visible page. Both the
+        // classroom upload API and the library PDF proxy support ranges;
+        // pdf.js falls back to a full download when a host does not.
+        // Downloading whole PDFs up front used to compete with the call.
         const loadingTask = pdfjs.getDocument({
           url: fileUrl,
-          disableRange: !isClassroomUpload,
+          disableRange: false,
           disableStream: true,
-          disableAutoFetch: isClassroomUpload,
+          disableAutoFetch: true,
           rangeChunkSize: 256 * 1024,
           withCredentials: false,
         });
@@ -525,35 +539,38 @@ export default function PdfViewerWithSidebar({
           }
         }
 
-        const canvas = pdfCanvasRef.current;
-        const context = canvas.getContext("2d");
-
-        const devicePixelRatio = window.devicePixelRatio || 1;
         const viewport = page.getViewport({ scale: zoom });
         setPageSize(previous => {
           const width=viewport.width/zoom,height=viewport.height/zoom;
           return previous.width===width&&previous.height===height ? previous : {width,height};
         });
-        const outputScale = devicePixelRatio;
+        const outputScale = getCanvasOutputScale(viewport.width, viewport.height);
 
-        canvas.width = viewport.width * outputScale;
-        canvas.height = viewport.height * outputScale;
+        // Render off-screen, then swap in one step. Resizing the visible
+        // canvas first cleared it, so every page turn, zoom or fit flashed
+        // white until the new page finished rendering.
+        const offscreen = document.createElement("canvas");
+        offscreen.width = Math.max(1, Math.floor(viewport.width * outputScale));
+        offscreen.height = Math.max(1, Math.floor(viewport.height * outputScale));
+        const offscreenContext = offscreen.getContext("2d");
+        offscreenContext.setTransform(outputScale, 0, 0, outputScale, 0, 0);
 
-        canvas.style.width = `${viewport.width}px`;
-        canvas.style.height = `${viewport.height}px`;
-
-        context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
-        context.clearRect(0, 0, viewport.width, viewport.height);
-
-        const renderContext = {
-          canvasContext: context,
-          viewport,
-        };
-
-        const renderTask = page.render(renderContext);
+        const renderTask = page.render({ canvasContext: offscreenContext, viewport });
         renderTaskRef.current = renderTask;
 
         await renderTask.promise;
+
+        const canvas = pdfCanvasRef.current;
+        if (!cancelled && canvas) {
+          canvas.width = offscreen.width;
+          canvas.height = offscreen.height;
+          canvas.style.width = `${viewport.width}px`;
+          canvas.style.height = `${viewport.height}px`;
+          canvas.getContext("2d").drawImage(offscreen, 0, 0);
+        }
+        // Release the off-screen bitmap right away.
+        offscreen.width = 0;
+        offscreen.height = 0;
 
         if (!cancelled) {
           if (restore && panel && pendingRestoreRef.current === restore) {

@@ -4,14 +4,30 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import api from "@/lib/api";
 import { isTrustedClassroomEvent } from "@/lib/classroomEventTrust.mjs";
+import {
+  chunkEventsForSend,
+  enqueueOutboxEvent,
+} from "@/lib/classroomChannelOutbox.mjs";
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 const MAX_RECONNECT_DELAY_MS = 30000;
 const WS_TOKEN_REFRESH_SKEW_MS = 30000;
 const WS_CONNECT_TIMEOUT_MS = 7000;
+const WS_JOIN_TIMEOUT_MS = 10000;
 const WS_HEARTBEAT_INTERVAL_MS = 15000;
 const WS_SEND_BATCH_DELAY_MS = 16;
 const WS_CONFIG_ENDPOINTS = ["/ws-config", "/api/ws-config"];
+// The server rejects a single classroom message above 256 KB.
+const WS_MAX_FRAME_BYTES = 200 * 1024;
+// Join rejections that retrying cannot fix. Admission is retried by the
+// classroom once the learner is admitted (retryNow).
+const ADMISSION_REQUIRED_CODE = "classroom_admission_required";
+const TERMINAL_JOIN_CODES = new Set([
+  "forbidden_classroom_room",
+  "classroom_ended",
+  "invalid_classroom_room",
+  "missing_authenticated_user",
+]);
 const CLASSROOM_WS_DEBUG =
   process.env.NODE_ENV !== "production" &&
   process.env.NEXT_PUBLIC_CLASSROOM_WS_DEBUG === "1";
@@ -102,6 +118,7 @@ export function useClassroomChannel(roomId) {
   const [status, setStatus] = useState("idle");
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const [reconnectFailed, setReconnectFailed] = useState(false);
+  const [lastServerError, setLastServerError] = useState(null);
 
   const wsRef = useRef(null);
   const handlersRef = useRef([]);
@@ -111,6 +128,11 @@ export function useClassroomChannel(roomId) {
   const sendBufferRef = useRef([]);
   const sendFlushTimeoutRef = useRef(null);
   const closingRef = useRef(false);
+  // Events created before the server confirmed the room join.
+  const outboxRef = useRef([]);
+  const joinedRef = useRef(false);
+  // Set when the server refused the join; stops the reconnect loop.
+  const joinBlockedRef = useRef(null);
   const currentUrlIndexRef = useRef(0);
   const wsEndpointStateRef = useRef({
     url: "",
@@ -308,6 +330,8 @@ export function useClassroomChannel(roomId) {
       }
 
       closingRef.current = false;
+      joinedRef.current = false;
+      joinBlockedRef.current = null;
       setReconnectFailed(false);
       setStatus(retryAttemptRef.current > 0 ? "reconnecting" : "connecting");
       setReady(false);
@@ -387,12 +411,18 @@ export function useClassroomChannel(roomId) {
           clearConnectTimeout();
 
           opened = true;
-          retryAttemptRef.current = 0;
-          setReconnectAttempt(0);
-          setReconnectFailed(false);
           currentUrlIndexRef.current = normalizedIndex;
-          setReady(true);
-          setStatus("ready");
+          // Not "ready" yet: the server authorises the join asynchronously
+          // and drops anything sent before it answers "joined".
+          setStatus("joining");
+
+          // If the server never confirms the join (room full, server
+          // restart mid-handshake), close so the normal reconnect runs.
+          setTimeout(() => {
+            if (closingRef.current || joinedRef.current || wsRef.current !== ws) return;
+            if (joinBlockedRef.current) return;
+            try { ws.close(); } catch { /* ignore */ }
+          }, WS_JOIN_TIMEOUT_MS);
 
           debugClassroomWs("Joining room", { roomId });
           ws.send(
@@ -415,8 +445,29 @@ export function useClassroomChannel(roomId) {
 
           if (msg?.type === "ping" || msg?.type === "pong") return;
 
+          if (msg?.type === "joined") {
+            joinedRef.current = true;
+            retryAttemptRef.current = 0;
+            setReconnectAttempt(0);
+            setReconnectFailed(false);
+            setLastServerError(null);
+            setReady(true);
+            setStatus("ready");
+            flushOutboxRef.current?.();
+            return;
+          }
+
           if (msg?.type === "error") {
-            console.warn("Classroom WS server error", msg?.message || "unknown");
+            const code = typeof msg?.code === "string" ? msg.code : "";
+            if (code === ADMISSION_REQUIRED_CODE || TERMINAL_JOIN_CODES.has(code)) {
+              joinBlockedRef.current = code;
+            }
+            console.warn("Classroom WS server error", code || msg?.message || "unknown");
+            setLastServerError({
+              code: code || null,
+              message: typeof msg?.message === "string" ? msg.message : "",
+              at: Date.now(),
+            });
             return;
           }
 
@@ -463,6 +514,19 @@ export function useClassroomChannel(roomId) {
           clearConnectTimeout();
           stopHeartbeat();
           setReady(false);
+          joinedRef.current = false;
+
+          if (joinBlockedRef.current) {
+            // Retrying cannot succeed until something changes (admission).
+            // Reconnecting every second here hammered the server for as
+            // long as a learner sat in the waiting room.
+            setStatus(
+              joinBlockedRef.current === ADMISSION_REQUIRED_CODE
+                ? "awaiting_admission"
+                : "forbidden"
+            );
+            return;
+          }
 
           if (closingRef.current) {
             debugClassroomWs("Closed intentionally");
@@ -521,9 +585,22 @@ export function useClassroomChannel(roomId) {
     retryAttemptRef.current = 0;
     setReconnectAttempt(0);
     setReconnectFailed(false);
+    joinBlockedRef.current = null;
     currentUrlIndexRef.current = 0;
     connect(0);
   }, [roomId, connect]);
+
+  // Coming back online should reconnect now, not after the current backoff
+  // (which grows up to 30 s).
+  useEffect(() => {
+    if (!roomId || typeof window === "undefined") return undefined;
+    const handleOnline = () => {
+      if (closingRef.current || joinedRef.current || joinBlockedRef.current) return;
+      retryNow();
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [roomId, retryNow]);
 
   useEffect(() => {
     if (!roomId) {
@@ -581,7 +658,7 @@ export function useClassroomChannel(roomId) {
   const sendRaw = useCallback((payload) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      return;
+      return false;
     }
 
     try {
@@ -592,10 +669,19 @@ export function useClassroomChannel(roomId) {
           data: payload,
         })
       );
+      return true;
     } catch (err) {
       console.warn("Failed to send classroom payload", err);
+      return false;
     }
   }, []);
+
+  const sendEvents = useCallback((events) => {
+    // Keep every frame under the server's message size limit.
+    for (const frame of chunkEventsForSend(events, WS_MAX_FRAME_BYTES)) {
+      sendRaw(frame.length === 1 ? frame[0] : { type: "BATCH", events: frame });
+    }
+  }, [sendRaw]);
 
   const flushSendBuffer = useCallback(() => {
     sendFlushTimeoutRef.current = null;
@@ -604,19 +690,29 @@ export function useClassroomChannel(roomId) {
     sendBufferRef.current = [];
     if (!events.length) return;
 
-    sendRaw(
-      events.length === 1
-        ? events[0]
-        : {
-            type: "BATCH",
-            events,
-          }
-    );
-  }, [sendRaw]);
+    if (!joinedRef.current) {
+      for (const event of events) {
+        outboxRef.current = enqueueOutboxEvent(outboxRef.current, event);
+      }
+      return;
+    }
+    sendEvents(events);
+  }, [sendEvents]);
+
+  const flushOutboxRef = useRef(null);
+  flushOutboxRef.current = () => {
+    const queued = outboxRef.current;
+    outboxRef.current = [];
+    if (queued.length) sendEvents(queued);
+  };
 
   const send = useCallback((payload) => {
-    const ws = wsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
+    if (!payload || typeof payload !== "object") return;
+
+    if (!joinedRef.current) {
+      // Not joined yet (connecting, reconnecting, or the join is still being
+      // authorised): keep what still matters and send it after "joined".
+      outboxRef.current = enqueueOutboxEvent(outboxRef.current, payload);
       return;
     }
 
@@ -653,6 +749,7 @@ export function useClassroomChannel(roomId) {
       maxReconnectAttempts: MAX_RECONNECT_ATTEMPTS,
       reconnectFailed,
       retryNow,
+      lastServerError,
     }),
     [
       ready,
@@ -663,6 +760,7 @@ export function useClassroomChannel(roomId) {
       reconnectAttempt,
       reconnectFailed,
       retryNow,
+      lastServerError,
     ]
   );
 }

@@ -24,6 +24,19 @@ function localeToRecognitionLang(locale) {
   return "en-US";
 }
 
+// On phones and tablets, browser speech recognition opens a second microphone
+// capture next to the call. On Android this can take the microphone away from
+// the call or disable its echo cancellation, so captions stay desktop-only.
+function isMobileBrowser() {
+  if (typeof navigator === "undefined") return false;
+  const ua = String(navigator.userAgent || "");
+  if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
+  return /Macintosh/.test(ua) && Number(navigator.maxTouchPoints) > 1;
+}
+
+// Interim results arrive many times per second; others only need a few.
+const INTERIM_CAPTION_INTERVAL_MS = 250;
+
 function getSpeechRecognition() {
   if (typeof window === "undefined") return null;
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
@@ -102,8 +115,9 @@ export function useClassroomCaptions(
   userName,
   { locale = "en", storageKey = null, micMuted = false } = {}
 ) {
-  const SpeechRecognitionImpl = getSpeechRecognition();
+  const SpeechRecognitionImpl = isMobileBrowser() ? null : getSpeechRecognition();
   const supported = !!SpeechRecognitionImpl;
+  const lastInterimSentAtRef = useRef(0);
 
   const [enabled, setEnabled] = useState(() => {
     if (!supported) return false;
@@ -233,7 +247,10 @@ export function useClassroomCaptions(
           at,
         });
 
-        if (ready) {
+        const now = Date.now();
+        const throttled = !isFinal && now - lastInterimSentAtRef.current < INTERIM_CAPTION_INTERVAL_MS;
+        if (ready && !throttled) {
+          if (!isFinal) lastInterimSentAtRef.current = now;
           send({
             type: "CAPTION",
             userName: speaker,

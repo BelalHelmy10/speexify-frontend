@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
+import { useSessionTiming } from "./classroomTime";
 import { ChevronLeft, GraduationCap, UserRound, Users } from "lucide-react";
 
 /* ─── WS status map ───────────────────────────────────────────────────── */
 const WS_STATUS_MAP = {
   ready: { label: "Connected" },
   connecting: { label: "Connecting…" },
+  joining: { label: "Joining…" },
+  awaiting_admission: { label: "Waiting for admission" },
+  forbidden: { label: "Not allowed" },
   reconnecting: { label: "Reconnecting…" },
   error: { label: "Connection error" },
   closed: { label: "Disconnected" },
@@ -119,7 +123,7 @@ function getNetworkQualityText(networkQuality) {
   return networkQuality.label;
 }
 
-export default function ClassroomHeaderBar({
+function ClassroomHeaderBar({
   prefix,
   setShowLeaveConfirm,
   headerTitle,
@@ -133,10 +137,12 @@ export default function ClassroomHeaderBar({
   wsStatus,
   networkQuality,
   videoConnectionState = "connecting",
-  sessionTiming,
+  startedAt,
+  endAt,
+  locale = "en",
 }) {
   const [showConnPopover, setShowConnPopover] = useState(false);
-  const timing = sessionTiming || {};
+  const timing = useSessionTiming({ startedAt, endAt, locale });
   const wsInfo = WS_STATUS_MAP[wsStatus] || WS_STATUS_MAP.idle;
   const networkQualityText = getNetworkQualityText(networkQuality);
   const networkQualityLevel = networkQuality?.level || "unknown";
@@ -256,3 +262,5 @@ export default function ClassroomHeaderBar({
     </header>
   );
 }
+
+export default memo(ClassroomHeaderBar);

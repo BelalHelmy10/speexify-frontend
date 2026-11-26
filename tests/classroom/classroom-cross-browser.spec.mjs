@@ -112,8 +112,15 @@ test("permission denial fails soft and mid-call revocation keeps the classroom u
   const initialOptions = await page.evaluate(() => ({
     audio: window.calls.at(-1).options.configOverwrite.startWithAudioMuted,
     video: window.calls.at(-1).options.configOverwrite.startWithVideoMuted,
+    quality: window.calls.at(-1).options.configOverwrite.videoQuality,
   }));
-  expect(initialOptions).toEqual({ audio: true, video: false });
+  // Teachers (and 1:1 learners) start with the microphone on; group learners
+  // start muted. Tiles request HD from 240px tall instead of Jitsi's 720px.
+  expect(initialOptions).toEqual({
+    audio: false,
+    video: false,
+    quality: { minHeightForQualityLvl: { 120: "standard", 240: "high" } },
+  });
 
   await page.evaluate(() => window.calls.at(-1).emit("cameraError", { name: "NotAllowedError" }));
   await expect(page.locator(".cr-video__device-notice")).toContainText("Camera unavailable");

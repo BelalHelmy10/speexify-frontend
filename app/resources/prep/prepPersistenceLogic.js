@@ -7,6 +7,7 @@ import {
   buildPdfFitToPageMessage,
   applyRemotePrepAnnotationState,
 } from "./prepRealtimeSync";
+import { splitAnnotationState } from "@/lib/classroomAnnotationSync.mjs";
 
 export function savePrepAnnotations(opts, saveOpts, ctx) {
   const {
@@ -52,6 +53,8 @@ export function schedulePrepBroadcastAnnotations(partial, ctx) {
   });
 }
 
+export const ANNOTATION_SAVE_DEBOUNCE_MS = 2000;
+
 export function schedulePrepSaveAnnotations(partial, ctx) {
   const { pendingSaveRef, saveDebounceRef, saveAnnotations } = ctx;
 
@@ -63,7 +66,10 @@ export function schedulePrepSaveAnnotations(partial, ctx) {
     const payload = pendingSaveRef.current;
     pendingSaveRef.current = {};
     saveAnnotations(payload, { includeCanvas: false });
-  }, 300);
+    // Each save is a full-snapshot PUT (three database round-trips); batch
+    // edits instead of saving 300 ms after every change. Pending edits are
+    // flushed when the tab is hidden, the resource is switched or closed.
+  }, ANNOTATION_SAVE_DEBOUNCE_MS);
 }
 
 export function broadcastPrepAnnotations(custom, opts, ctx) {
@@ -100,7 +106,9 @@ export function broadcastPrepAnnotations(custom, opts, ctx) {
   });
 
   try {
-    sendOnChannel(payload);
+    // Large snapshots are split so they stay under the server's message
+    // limit (a single oversized message was silently dropped).
+    for (const part of splitAnnotationState(payload)) sendOnChannel(part);
   } catch (err) {
     console.warn("Failed to broadcast annotations", err);
   }

@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { formatNumber } from "@/utils/locale";
 
 export const SESSION_TIME_WARNING = {
@@ -84,4 +85,25 @@ export function getSessionTiming({ startedAt, endAt, nowMs = Date.now(), locale 
     hasEnded,
     warningLevel,
   };
+}
+
+/**
+ * Live session timing for the small components that display a clock.
+ * Keeping the 1-second tick here (instead of in ClassroomShell) means only
+ * the clock re-renders every second, not the whole classroom.
+ */
+export function useSessionTiming({ startedAt, endAt, locale = "en", enabled = true, intervalMs = 1000 } = {}) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+    setNowMs(Date.now());
+    const id = setInterval(() => setNowMs(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [enabled, intervalMs]);
+
+  return useMemo(
+    () => getSessionTiming({ startedAt, endAt, nowMs, locale }),
+    [startedAt, endAt, nowMs, locale]
+  );
 }

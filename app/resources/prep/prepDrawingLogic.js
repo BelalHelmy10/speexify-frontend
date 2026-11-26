@@ -5,6 +5,7 @@ import {
   TOOL_HIGHLIGHTER,
   TOOL_ERASER,
 } from "./prepAnnotationUtils";
+import { quantizePoint, shouldAppendPoint } from "@/lib/classroomAnnotationSync.mjs";
 
 export function startPrepDrawing(e, ctx) {
   const {
@@ -19,6 +20,7 @@ export function startPrepDrawing(e, ctx) {
     penStrokeWidth,
     setStrokes,
     setCurrentStrokeId,
+    onStrokeProgress,
   } = ctx;
 
   if (tool === TOOL_ERASER) {
@@ -30,8 +32,9 @@ export function startPrepDrawing(e, ctx) {
 
   if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER) return;
 
-  const p = getNormalizedPoint(e);
-  if (!p) return;
+  const rawPoint = getNormalizedPoint(e);
+  if (!rawPoint) return;
+  const p = quantizePoint(rawPoint);
 
   const id = `stroke_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
@@ -49,6 +52,7 @@ export function startPrepDrawing(e, ctx) {
   setStrokes((prev) => [...prev, stroke]);
   setCurrentStrokeId(id);
   setIsDrawing(true);
+  onStrokeProgress?.(id);
 }
 
 export function drawPrepStrokeOrDrag(e, ctx) {
@@ -65,6 +69,7 @@ export function drawPrepStrokeOrDrag(e, ctx) {
     currentStrokeId,
     getNormalizedPoint,
     setStrokes,
+    onStrokeProgress,
   } = ctx;
 
   if (dragState) {
@@ -123,27 +128,35 @@ export function drawPrepStrokeOrDrag(e, ctx) {
   if (tool !== TOOL_PEN && tool !== TOOL_HIGHLIGHTER) return;
   if (!currentStrokeId) return;
 
-  const p = getNormalizedPoint(e);
-  if (!p) return;
+  const rawPoint = getNormalizedPoint(e);
+  if (!rawPoint) return;
+  const p = quantizePoint(rawPoint);
 
   setStrokes((prev) =>
     prev.map((stroke) => {
       if (stroke.id !== currentStrokeId) return stroke;
+      const last = stroke.points[stroke.points.length - 1];
 
       if (stroke.tool === TOOL_HIGHLIGHTER && stroke.points.length > 0) {
         const firstY = stroke.points[0].y;
+        const next = { x: p.x, y: firstY };
+        if (!shouldAppendPoint(last, next)) return stroke;
         return {
           ...stroke,
-          points: [...stroke.points, { x: p.x, y: firstY }],
+          points: [...stroke.points, next],
         };
       }
 
+      // Pointer events fire far more often than ink needs; skipping
+      // sub-pixel moves keeps strokes (and every sync message) small.
+      if (!shouldAppendPoint(last, p)) return stroke;
       return {
         ...stroke,
         points: [...stroke.points, p],
       };
     })
   );
+  onStrokeProgress?.(currentStrokeId);
 }
 
 export function stopPrepDrawing(ctx) {
@@ -162,6 +175,7 @@ export function stopPrepDrawing(ctx) {
     setCurrentStrokeId,
     setDragState,
     setMaskDrag,
+    broadcastStrokeFinished,
   } = ctx;
 
   if (!isDrawing && !dragState && !maskDrag) return;
@@ -178,7 +192,8 @@ export function stopPrepDrawing(ctx) {
         setStrokes(nextStrokes);
 
         scheduleSaveAnnotations({ strokes: nextStrokes });
-        scheduleBroadcastAnnotations({ strokes: nextStrokes });
+        if (broadcastStrokeFinished) broadcastStrokeFinished(nextStrokes[sIndex]);
+        else scheduleBroadcastAnnotations({ strokes: nextStrokes });
 
         setIsDrawing(false);
         setCurrentStrokeId(null);
@@ -191,6 +206,11 @@ export function stopPrepDrawing(ctx) {
     }
   }
 
+  const finishedPenStroke =
+    isDrawing && currentStrokeId && (tool === TOOL_PEN || tool === TOOL_HIGHLIGHTER) && !dragState && !maskDrag
+      ? strokes.find((s) => s.id === currentStrokeId)
+      : null;
+
   setIsDrawing(false);
   setCurrentStrokeId(null);
 
@@ -198,5 +218,8 @@ export function stopPrepDrawing(ctx) {
   if (maskDrag) setMaskDrag(null);
 
   scheduleSaveAnnotations({});
-  scheduleBroadcastAnnotations({});
+  // A finished pen stroke is sent on its own (small); other edits (drags,
+  // erasing, masks) still send the full state.
+  if (finishedPenStroke && broadcastStrokeFinished) broadcastStrokeFinished(finishedPenStroke);
+  else scheduleBroadcastAnnotations({});
 }

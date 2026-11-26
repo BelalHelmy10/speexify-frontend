@@ -36,12 +36,12 @@ import {
   getViewerInfo,
 } from "./classroomHelpers";
 import useAuth from "@/hooks/useAuth";
-import { formatCompactDuration, getSessionTiming } from "./classroomTime";
+import { formatCompactDuration, getSessionTiming, useSessionTiming } from "./classroomTime";
 import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import { getDictionary, t } from "@/app/i18n";
 import useClassroomVideoModeration from "./useClassroomVideoModeration";
 import api from "@/lib/api";
-import { MessageCircle, MessageSquare, BookOpenText, Target, BookOpen, Monitor } from "lucide-react";
+import { MessageCircle, MessageSquare, BookOpenText, Target, BookOpen } from "lucide-react";
 
 /* -----------------------------------------------------------
    Utility: Safely generate a display name
@@ -296,6 +296,57 @@ function formatSessionEndLabel(endMs, locale = "en") {
 /* -----------------------------------------------------------
    MAIN COMPONENT
 ----------------------------------------------------------- */
+function ClassroomTimeWarningClock({ startedAt, endAt, locale }) {
+  const timing = useSessionTiming({ startedAt, endAt, locale });
+  return (
+    <ClassroomTimeWarning
+      warningLevel={timing.warningLevel}
+      remainingLabel={timing.remainingLabel}
+    />
+  );
+}
+
+// The leave dialog's summary includes a live clock; it only ticks while the
+// dialog is open.
+function ClassroomLeaveConfirm({
+  show,
+  startedAt,
+  endAt,
+  locale,
+  participantLabel,
+  resourceLabel,
+  ...modalProps
+}) {
+  const timing = useSessionTiming({ startedAt, endAt, locale, enabled: show });
+  const summary = useMemo(() => {
+    const nowMs = Date.now();
+    const overBySeconds =
+      timing.endMs && nowMs > timing.endMs
+        ? Math.floor((nowMs - timing.endMs) / 1000)
+        : 0;
+
+    let statusLabel = "No scheduled end";
+    if (timing.endMs) {
+      statusLabel = timing.hasEnded
+        ? overBySeconds > 0
+          ? `Over by ${formatCompactDuration(overBySeconds, locale)}`
+          : "Time is up"
+        : `Ends in ${timing.remainingLabel}`;
+    }
+
+    return {
+      statusLabel,
+      elapsedLabel: timing.elapsedLabel,
+      scheduledLabel: timing.scheduledLabel || "Open-ended",
+      participantLabel,
+      resourceLabel,
+      endLabel: formatSessionEndLabel(timing.endMs, locale),
+    };
+  }, [timing, locale, participantLabel, resourceLabel]);
+
+  return <ClassroomLeaveConfirmModal show={show} summary={summary} {...modalProps} />;
+}
+
 export default function ClassroomShell({
   session,
   sessionId,
@@ -314,7 +365,7 @@ export default function ClassroomShell({
     chatParticipants,
     participantCount,
     capacity,
-  } = getParticipantsFromSession(session);
+  } = useMemo(() => getParticipantsFromSession(session), [session]);
 
   const isTeacher =
     session?.isTeacher === true ||
@@ -346,24 +397,9 @@ export default function ClassroomShell({
     : isTeacher ? teacherName : currentLearnerName;
   const sessionStartedAt = session?.startedAt || session?.startAt;
 
-  const [nowMs, setNowMs] = useState(() => Date.now());
-
-  useEffect(() => {
-    const intervalId = setInterval(() => setNowMs(Date.now()), 1000);
-    setNowMs(Date.now());
-    return () => clearInterval(intervalId);
-  }, []);
-
-  const sessionTiming = useMemo(
-    () =>
-      getSessionTiming({
-        startedAt: sessionStartedAt,
-        endAt: session?.endAt,
-        nowMs,
-        locale,
-      }),
-    [sessionStartedAt, session?.endAt, nowMs, locale]
-  );
+  // The live clock is rendered by the header, time warning and leave dialog
+  // themselves (useSessionTiming). The shell must not tick every second: that
+  // re-rendered the whole classroom, including every open resource.
 
   /* -----------------------------------------------------------
      Resources
@@ -416,7 +452,7 @@ export default function ClassroomShell({
     }
   }, [selectedResourceId, updateOpenResources]);
   const [isScreenShareActive, setIsScreenShareActive] = useState(false);
-  const [screenShareStream, setScreenShareStream] = useState(null);
+  const [jitsiSharing, setJitsiSharing] = useState(null);
 
   /* -----------------------------------------------------------
      Focus Mode & Layout State
@@ -543,13 +579,11 @@ export default function ClassroomShell({
     ready: false,
     participants: [],
     localParticipantId: null,
-    screenShareEndpointId: null,
     actions: null,
   });
   const [liveVideoParticipantCount, setLiveVideoParticipantCount] = useState(
     () => Math.max(1, Number(participantCount) || 1)
   );
-  const [networkQuality, setNetworkQuality] = useState(null);
   const [videoConnectionState, setVideoConnectionState] = useState("connecting");
 
   const handleVideoParticipantCountChange = useCallback((count) => {
@@ -592,6 +626,23 @@ export default function ClassroomShell({
     userId: localUserId,
   });
 
+  // A waiting learner's live-sync socket stops retrying once the server says
+  // admission is required; reconnect as soon as they are admitted.
+  const channelStatus = classroomChannel?.status;
+  const retryChannel = classroomChannel?.retryNow;
+  const lastAdmissionRetryRef = useRef(0);
+  useEffect(() => {
+    if (!lobby.isAdmitted || channelStatus !== "awaiting_admission") return undefined;
+    // Never faster than every 5 s, in case the socket and REST views of the
+    // lobby briefly disagree.
+    const wait = Math.max(0, lastAdmissionRetryRef.current + 5000 - Date.now());
+    const id = setTimeout(() => {
+      lastAdmissionRetryRef.current = Date.now();
+      retryChannel?.();
+    }, wait);
+    return () => clearTimeout(id);
+  }, [lobby.isAdmitted, channelStatus, retryChannel]);
+
   const moderationDict = useMemo(() => getDictionary(locale, "classroom"), [locale]);
   const videoModerationControls = useClassroomVideoModeration({
     isTeacher,
@@ -609,6 +660,7 @@ export default function ClassroomShell({
      who join after the session has started
   ----------------------------------------------------------- */
   const [showLateJoinBanner, setShowLateJoinBanner] = useState(false);
+  const [lateJoinElapsedMinutes, setLateJoinElapsedMinutes] = useState(0);
   const [lateJoinMessages, setLateJoinMessages] = useState([]);
   const lateJoinCheckedRef = useRef(false);
 
@@ -617,9 +669,16 @@ export default function ClassroomShell({
     lateJoinCheckedRef.current = true;
 
     // Only show if session has started and learner is joining > 1 min late
-    const elapsedMin = Math.floor((sessionTiming.elapsedSeconds || 0) / 60);
-    if (!sessionTiming.hasStarted || elapsedMin < 1) return;
+    const joinTiming = getSessionTiming({
+      startedAt: sessionStartedAt,
+      endAt: session?.endAt,
+      nowMs: Date.now(),
+      locale,
+    });
+    const elapsedMin = Math.floor((joinTiming.elapsedSeconds || 0) / 60);
+    if (!joinTiming.hasStarted || elapsedMin < 1) return;
 
+    setLateJoinElapsedMinutes(elapsedMin);
     setShowLateJoinBanner(true);
 
     // Fetch last 5 chat messages for context
@@ -640,7 +699,7 @@ export default function ClassroomShell({
         setLateJoinMessages(msgs);
       })
       .catch(() => {});
-  }, [isTeacher, sessionId, sessionTiming.hasStarted, sessionTiming.elapsedSeconds]);
+  }, [isTeacher, sessionId, sessionStartedAt, session?.endAt, locale]);
 
   /* -----------------------------------------------------------
      Live Captions (browser SpeechRecognition + WS broadcast)
@@ -674,6 +733,7 @@ export default function ClassroomShell({
     userId: localUserId,
     isTeacher,
     isLocalSharing: isScreenShareActive,
+    jitsiSharing,
   });
 
   const [showScreenShareConfirm, setShowScreenShareConfirm] = useState(false);
@@ -703,40 +763,9 @@ export default function ClassroomShell({
     }
   }, [videoModeration.actions]);
 
-  // When *anyone* is sharing, pin Jitsi's screen-share endpoint (a
-  // separate participant Jitsi spawns to carry the desktop track —
-  // displayName like "Belal Helmy's screen"). Pinning that endpoint
-  // makes the actual screen content the large video on every side.
-  //
-  // Pinning the human participant would show their camera/avatar
-  // instead — which is the bug we saw in v1.
-  const lastPinnedRef = useRef(null);
-  useEffect(() => {
-    if (!videoModeration.ready) return;
-
-    const screenId = videoModeration.screenShareEndpointId || null;
-
-    if (screenShare.isSomeoneSharing) {
-      if (screenId && screenId !== lastPinnedRef.current) {
-        videoModeration.actions?.pinParticipant?.(screenId);
-        lastPinnedRef.current = screenId;
-      }
-      // If we don't have the endpoint id yet (it may arrive a tick
-      // after the WS broadcast), do nothing — when it lands, this
-      // effect re-runs because screenShareEndpointId changed.
-      return;
-    }
-
-    if (!screenShare.isSomeoneSharing && lastPinnedRef.current) {
-      videoModeration.actions?.unpinParticipant?.();
-      lastPinnedRef.current = null;
-    }
-  }, [
-    videoModeration.ready,
-    videoModeration.actions,
-    videoModeration.screenShareEndpointId,
-    screenShare.isSomeoneSharing,
-  ]);
+  // Jitsi puts a presenter's screen on stage for viewers by itself, so the
+  // classroom no longer pins anything; it only stops forcing tile view while
+  // a remote presentation is active (see suspendTileViewLock below).
 
   const [classroomStateLoaded, setClassroomStateLoaded] = useState(false);
   const [classroomStateSnapshot, setClassroomStateSnapshot] = useState(null);
@@ -817,7 +846,6 @@ export default function ClassroomShell({
         ? nextState.participants
         : [],
       localParticipantId: nextState?.localParticipantId || null,
-      screenShareEndpointId: nextState?.screenShareEndpointId || null,
       actions: nextState?.actions || null,
     });
   }, []);
@@ -841,10 +869,6 @@ export default function ClassroomShell({
     },
     [videoModerationControls, applyModerationResult]
   );
-
-  const handleNetworkQualityChange = useCallback((nextQuality) => {
-    setNetworkQuality(nextQuality || null);
-  }, []);
 
   const runVideoModerationAction = useCallback(
     (actionName, ...args) => {
@@ -1040,10 +1064,10 @@ export default function ClassroomShell({
   /* -----------------------------------------------------------
      Drag-to-resize logic
   ----------------------------------------------------------- */
-  // While a screen share is active the layout is force-locked to the
-  // share split, so dragging the divider must be inert for both sides.
+  // While someone else presents, viewers get the full-width stage, so the
+  // divider is inert. The presenter keeps their normal lesson layout.
   const canResizePanels =
-    !screenShare.isSomeoneSharing && (isTeacher || !followTeacherLayout);
+    !screenShare.isRemoteSharing && (isTeacher || !followTeacherLayout);
 
   const updateCustomSplit = useCallback((nextSplit, { defer = true } = {}) => {
     if (nextSplit === null || nextSplit === undefined) return;
@@ -1241,9 +1265,10 @@ export default function ClassroomShell({
   }, [isChatVisible]);
 
   const getSplitPercentage = () => {
-    // While sharing, the screen-share stage takes priority over the
-    // teacher/learner focus-mode + custom-drag selection.
-    if (screenShare.isSomeoneSharing) return SCREEN_SHARE_LEFT_PERCENT;
+    // Viewers of a presentation get the full-width stage. The presenter keeps
+    // their own layout so the lesson stays visible (and sharing this tab no
+    // longer produces a mirror of the call).
+    if (screenShare.isRemoteSharing) return SCREEN_SHARE_LEFT_PERCENT;
 
     if (customSplit !== null) return customSplit;
 
@@ -1287,17 +1312,22 @@ export default function ClassroomShell({
   };
 
 
-  // ✅ Teacher: broadcast layout (focusMode + customSplit + follow control)
+  // Teacher: broadcast layout (focusMode + customSplit + follow control).
+  // Throttled to ~10/s with a trailing send, so the final position is never
+  // skipped (the old throttle dropped changes made within 100 ms of the last).
+  const layoutTrailingTimeoutRef = useRef(null);
+  useEffect(() => () => {
+    if (layoutTrailingTimeoutRef.current) clearTimeout(layoutTrailingTimeoutRef.current);
+  }, []);
   useEffect(() => {
     if (!isTeacher) return;
 
-    const now = Date.now();
-    if (now - lastLayoutSentAtRef.current < 100) return; // ~10fps — smooth enough for layout sync
-    if (layoutRafPendingRef.current) return;
-
+    const wait = Math.max(0, lastLayoutSentAtRef.current + 100 - Date.now());
+    if (layoutTrailingTimeoutRef.current) clearTimeout(layoutTrailingTimeoutRef.current);
     layoutRafPendingRef.current = true;
 
-    requestAnimationFrame(() => {
+    layoutTrailingTimeoutRef.current = setTimeout(() => {
+      layoutTrailingTimeoutRef.current = null;
       layoutRafPendingRef.current = false;
       lastLayoutSentAtRef.current = Date.now();
 
@@ -1320,7 +1350,7 @@ export default function ClassroomShell({
         },
         { delay: 700 }
       );
-    });
+    }, wait);
   }, [
     ready,
     isTeacher,
@@ -1380,7 +1410,7 @@ export default function ClassroomShell({
 
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, [ready, isTeacher, send, persistClassroomState, selectedResourceId, isMobile, isScreenShareActive]);
+  }, [ready, isTeacher, send, persistClassroomState, selectedResourceId, isMobile]);
 
   useEffect(() => {
     if (!ready) return;
@@ -1586,71 +1616,14 @@ export default function ClassroomShell({
   const resource = selectedResourceId
     ? resourcesById[selectedResourceId]
     : null;
-  const leaveSummary = useMemo(() => {
-    const overBySeconds =
-      sessionTiming.endMs && nowMs > sessionTiming.endMs
-        ? Math.floor((nowMs - sessionTiming.endMs) / 1000)
-        : 0;
-    const participantLabel = isTraining
-      ? "admin trainer"
-      : isGroup
-      ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
-      : participantCount === 1
-        ? `${formatNumber(1, locale)} learner`
-        : `${formatNumber(participantCount || 1, locale)} learners`;
-    const resourceLabel =
-      resource?.title || resource?.name || "No resource selected";
-
-    let statusLabel = "No scheduled end";
-    if (sessionTiming.endMs) {
-      statusLabel = sessionTiming.hasEnded
-        ? overBySeconds > 0
-          ? `Over by ${formatCompactDuration(overBySeconds, locale)}`
-          : "Time is up"
-        : `Ends in ${sessionTiming.remainingLabel}`;
-    }
-
-    return {
-      statusLabel,
-      elapsedLabel: sessionTiming.elapsedLabel,
-      scheduledLabel: sessionTiming.scheduledLabel || "Open-ended",
-      participantLabel,
-      resourceLabel,
-      endLabel: formatSessionEndLabel(sessionTiming.endMs, locale),
-    };
-  }, [
-    capacity,
-    isGroup,
-    isTraining,
-    nowMs,
-    participantCount,
-    resource?.name,
-    resource?.title,
-    locale,
-    sessionTiming.elapsedLabel,
-    sessionTiming.endMs,
-    sessionTiming.hasEnded,
-    sessionTiming.remainingLabel,
-    sessionTiming.scheduledLabel,
-  ]);
-  const hasScreenShareStream =
-    !!(screenShareStream && typeof screenShareStream.getTracks === "function");
-
-  const sharedScreenVideoRef = useRef(null);
-
-  const assignSharedScreenVideoRef = useCallback(
-    (node) => {
-      sharedScreenVideoRef.current = node;
-      if (!node) return;
-
-      const stream = hasScreenShareStream ? screenShareStream : null;
-      if (node.srcObject !== stream) {
-        node.srcObject = stream;
-      }
-    },
-    [hasScreenShareStream, screenShareStream]
-  );
-
+  const leaveParticipantLabel = isTraining
+    ? "admin trainer"
+    : isGroup
+    ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
+    : participantCount === 1
+      ? `${formatNumber(1, locale)} learner`
+      : `${formatNumber(participantCount || 1, locale)} learners`;
+  const leaveResourceLabel = resource?.title || resource?.name || "No resource selected";
   // ✅ Track resource usage when teacher changes resource
   const handleChangeResourceId = useCallback(async (newId, resourceOverride = null, tabsOverride = null) => {
     const nextTabs = tabsOverride || (newId ? [...openResourceIdsRef.current, newId] : openResourceIdsRef.current);
@@ -1713,39 +1686,76 @@ export default function ClassroomShell({
     void handleChangeResourceId(nextId, null, next);
   }, [handleChangeResourceId]);
 
+  // Everything handed to the resource workspace must keep its identity
+  // between renders, otherwise memo(PrepShell) re-renders every open PDF on
+  // any classroom state change (chat, lobby, timers...).
+  const openResources = useMemo(
+    () => openResourceIds.map((id) => resourcesById[id]).filter(Boolean),
+    [openResourceIds, resourcesById]
+  );
+  const viewersByResourceId = useMemo(() => {
+    const viewers = new Map();
+    for (const item of openResources) viewers.set(item._id, getViewerInfo(item));
+    return viewers;
+  }, [openResources]);
+  const snapshotAudioKey = JSON.stringify(classroomStateSnapshot?.audio ?? null);
+  const snapshotPdfScrollKey = JSON.stringify(classroomStateSnapshot?.pdfScroll ?? null);
+  const initialAudioState = useMemo(
+    () => (snapshotAudioKey === "null" ? null : JSON.parse(snapshotAudioKey)),
+    [snapshotAudioKey]
+  );
+  const initialPdfScroll = useMemo(
+    () => (snapshotPdfScrollKey === "null" ? null : JSON.parse(snapshotPdfScrollKey)),
+    [snapshotPdfScrollKey]
+  );
+  const openPicker = useCallback(() => setIsPickerOpen(true), []);
+
+  const renderResource = useCallback((item, active) => (
+    <PrepShell resource={item} viewer={viewersByResourceId.get(item._id) || getViewerInfo(item)}
+      isActive={active} hideSidebar hideBreadcrumbs
+      classroomChannel={classroomChannel} isTeacher={isTeacher}
+      sessionId={sessionId} locale={locale}
+      initialAudioState={initialAudioState}
+      initialPdfScroll={initialPdfScroll}
+      onClassroomStateChange={persistClassroomState}
+      onExportReady={active ? handleExportReady : undefined} />
+  ), [
+    viewersByResourceId,
+    classroomChannel,
+    isTeacher,
+    sessionId,
+    locale,
+    initialAudioState,
+    initialPdfScroll,
+    persistClassroomState,
+    handleExportReady,
+  ]);
+
+  const emptyResourceContent = useMemo(() => (
+    <div className="cr-placeholder">
+      <div className="cr-placeholder__icon"><BookOpen size={32} /></div>
+      <h2 className="cr-placeholder__title">{locale === "ar" ? "لا توجد موارد مفتوحة" : "No resources open"}</h2>
+      <p className="cr-placeholder__text">{isTeacher
+        ? (locale === "ar" ? "اختر موردًا لبدء العمل." : "Choose a resource to start working.")
+        : (locale === "ar" ? "في انتظار المعلم لفتح مورد." : "Waiting for the teacher to open a resource.")}</p>
+      {isTeacher && <button className="cr-placeholder__action" onClick={openPicker}>
+        <BookOpen size={16} /> {locale === "ar" ? "فتح مورد" : "Open resource"}
+      </button>}
+    </div>
+  ), [isTeacher, locale, openPicker]);
+
   const resourceWorkspace = (
     <ClassroomResourceWorkspace
-      resources={openResourceIds.map((id) => resourcesById[id]).filter(Boolean)}
+      resources={openResources}
       selectedResourceId={selectedResourceId}
       onSelect={handleChangeResourceId}
       onClose={handleCloseResource}
-      onOpenPicker={() => setIsPickerOpen(true)}
+      onOpenPicker={openPicker}
       canManage={isTeacher}
       locale={locale}
-      suspended={isScreenShareActive}
       scrollContainerRef={contentScrollRef}
-      emptyContent={
-        <div className="cr-placeholder">
-          <div className="cr-placeholder__icon"><BookOpen size={32} /></div>
-          <h2 className="cr-placeholder__title">{locale === "ar" ? "لا توجد موارد مفتوحة" : "No resources open"}</h2>
-          <p className="cr-placeholder__text">{isTeacher
-            ? (locale === "ar" ? "اختر موردًا لبدء العمل." : "Choose a resource to start working.")
-            : (locale === "ar" ? "في انتظار المعلم لفتح مورد." : "Waiting for the teacher to open a resource.")}</p>
-          {isTeacher && <button className="cr-placeholder__action" onClick={() => setIsPickerOpen(true)}>
-            <BookOpen size={16} /> {locale === "ar" ? "فتح مورد" : "Open resource"}
-          </button>}
-        </div>
-      }
-      renderResource={(item, active) => (
-        <PrepShell resource={item} viewer={getViewerInfo(item)}
-          isActive={active} hideSidebar hideBreadcrumbs
-          classroomChannel={classroomChannel} isTeacher={isTeacher}
-          sessionId={sessionId} locale={locale}
-          initialAudioState={classroomStateSnapshot?.audio || null}
-          initialPdfScroll={classroomStateSnapshot?.pdfScroll || null}
-          onClassroomStateChange={persistClassroomState}
-          onExportReady={active ? handleExportReady : undefined} />
-      )}
+      emptyContent={emptyResourceContent}
+      renderResource={renderResource}
     />
   );
 
@@ -1764,31 +1774,12 @@ export default function ClassroomShell({
     await handleChangeResourceId(material._id, material);
   }, [sessionId, handleChangeResourceId]);
 
-  const handleScreenShareStreamChange = useCallback((payload) => {
-    // Supports both old boolean callback and richer payload shape.
-    if (payload && typeof payload.getTracks === "function") {
-      setIsScreenShareActive(true);
-      setScreenShareStream(payload);
-      return;
-    }
+  const handleLocalScreenShareChange = useCallback((active) => {
+    setIsScreenShareActive(Boolean(active));
+  }, []);
 
-    if (payload && typeof payload === "object") {
-      const active = !!payload.active;
-      const stream =
-        payload.stream && typeof payload.stream.getTracks === "function"
-          ? payload.stream
-          : null;
-
-      setIsScreenShareActive(active);
-      setScreenShareStream(stream);
-      return;
-    }
-
-    const active = !!payload;
-    setIsScreenShareActive(active);
-    if (!active) {
-      setScreenShareStream(null);
-    }
+  const handleContentSharingChange = useCallback((next) => {
+    setJitsiSharing(next || null);
   }, []);
 
   /* -----------------------------------------------------------
@@ -2025,9 +2016,11 @@ export default function ClassroomShell({
         learnerName={isTeacher ? learnerName : userName}
         setShowParticipantList={setShowParticipantList}
         wsStatus={classroomChannel?.status}
-        networkQuality={networkQuality}
+        networkQuality={null}
         videoConnectionState={videoConnectionState}
-        sessionTiming={sessionTiming}
+        startedAt={sessionStartedAt}
+        endAt={session?.endAt}
+        locale={locale}
       />
 
       <ClassroomConnectionBanner
@@ -2056,10 +2049,13 @@ export default function ClassroomShell({
         </div>
       )}
 
-      <ClassroomTimeWarning
-        warningLevel={isTeacher ? sessionTiming.warningLevel : null}
-        remainingLabel={sessionTiming.remainingLabel}
-      />
+      {isTeacher && (
+        <ClassroomTimeWarningClock
+          startedAt={sessionStartedAt}
+          endAt={session?.endAt}
+          locale={locale}
+        />
+      )}
 
       <ClassroomScreenShareBanner
         visible={screenShare.isSomeoneSharing}
@@ -2077,7 +2073,7 @@ export default function ClassroomShell({
       {/* Late-Join Banner (learner only, when joining mid-session) */}
       {showLateJoinBanner && !isTeacher && (
         <ClassroomLateJoinBanner
-          elapsedMinutes={Math.floor((sessionTiming.elapsedSeconds || 0) / 60)}
+          elapsedMinutes={lateJoinElapsedMinutes}
           currentResourceTitle={resource?.title || resource?.name || null}
           recentMessages={lateJoinMessages}
           onDismiss={() => setShowLateJoinBanner(false)}
@@ -2092,7 +2088,7 @@ export default function ClassroomShell({
             "cr-main",
             isMobile ? `cr-main--portrait cr-main--portrait-${mobileActiveTab}` : "",
             isDragging ? "cr-main--dragging" : "",
-            screenShare.isSomeoneSharing ? "cr-main--screen-share" : "",
+            screenShare.isRemoteSharing ? "cr-main--screen-share" : "",
             isChatOpen ? "cr-main--chat-open" : "",
           ]
             .filter(Boolean)
@@ -2152,29 +2148,6 @@ export default function ClassroomShell({
             style={{ width: `${100 - leftPanelWidth}%` }}
           >
             <div className="cr-content-viewer" data-lenis-prevent>
-              {isScreenShareActive && (
-                <div className="cr-screen-share">
-                  {hasScreenShareStream ? (
-                    <video
-                      ref={assignSharedScreenVideoRef}
-                      className="cr-screen-share__video"
-                      playsInline
-                      autoPlay
-                      muted
-                    />
-                  ) : (
-                    <div className="cr-placeholder">
-                      <div className="cr-placeholder__icon">
-                        <Monitor size={32} />
-                      </div>
-                      <h2 className="cr-placeholder__title">Screen sharing is active</h2>
-                      <p className="cr-placeholder__text">
-                        The shared screen is being initialized. Please wait a moment.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
               {resourceWorkspace}
             </div>
           </section>
@@ -2293,13 +2266,14 @@ export default function ClassroomShell({
             roomId={sessionId}
             userName={userName}
             isTeacher={isTeacher}
-            onScreenShareStreamChange={handleScreenShareStreamChange}
+            isGroup={isGroup}
+            onLocalScreenShareChange={handleLocalScreenShareChange}
+            onContentSharingChange={handleContentSharingChange}
             onModerationStateChange={handleVideoModerationChange}
-            onNetworkQualityChange={handleNetworkQualityChange}
             onConnectionStateChange={setVideoConnectionState}
             onAudioMuteChange={handleAudioMuteChange}
             onParticipantCountChange={handleVideoParticipantCountChange}
-            suspendTileViewLock={screenShare.isSomeoneSharing}
+            suspendTileViewLock={screenShare.isRemoteSharing}
             locale={locale}
           />
           <ClassroomRaiseHandOverlay
@@ -2362,15 +2336,19 @@ export default function ClassroomShell({
         onToggleClassroomLock={handleToggleClassroomLock}
       />
 
-      <ClassroomLeaveConfirmModal
+      <ClassroomLeaveConfirm
         isTraining={isTraining}
         isAdmin={session?.isAdmin === true}
         show={showLeaveConfirm}
         setShowLeaveConfirm={setShowLeaveConfirm}
         prefix={prefix}
         sessionId={sessionId}
-        summary={leaveSummary}
         isTeacher={isTeacher}
+        startedAt={sessionStartedAt}
+        endAt={session?.endAt}
+        locale={locale}
+        participantLabel={leaveParticipantLabel}
+        resourceLabel={leaveResourceLabel}
       />
     </div>
   );

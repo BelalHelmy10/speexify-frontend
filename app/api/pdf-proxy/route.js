@@ -97,6 +97,19 @@ function validateTargetUrl(rawTargetUrl, allowedHosts) {
   return { valid: true, url: parsed.toString() };
 }
 
+// Sanity asset URLs are content-addressed (the file hash is in the path), so
+// a copy never goes stale. Other hosts keep a short per-browser cache.
+function cacheControlFor(url) {
+  try {
+    if (new URL(url).hostname === "cdn.sanity.io") {
+      return "private, max-age=604800, immutable";
+    }
+  } catch {
+    // fall through
+  }
+  return "private, max-age=300, stale-while-revalidate=86400";
+}
+
 function isPdfContentType(contentType) {
   const normalized = String(contentType || "").toLowerCase();
   return normalized.includes("application/pdf");
@@ -152,6 +165,10 @@ export async function GET(request) {
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  // pdf.js asks for byte ranges so the first page shows without downloading
+  // the whole file (a full download competed with the live video call).
+  const range = request.headers.get("range");
+  const validRange = range && /^bytes=\d*-\d*$/.test(range) ? range : null;
 
   try {
     const upstream = await fetchWithValidatedRedirects(
@@ -161,10 +178,15 @@ export async function GET(request) {
       signal: controller.signal,
       headers: {
         Accept: "application/pdf,application/octet-stream;q=0.9",
+        ...(validRange ? { Range: validRange } : {}),
       },
       },
       allowedHosts
     );
+
+    if (upstream.status === 416) {
+      return new NextResponse(null, { status: 416 });
+    }
 
     if (!upstream.ok || !upstream.body) {
       return new NextResponse("Upstream fetch failed", {
@@ -177,24 +199,36 @@ export async function GET(request) {
       return new NextResponse("Upstream did not return a PDF", { status: 415 });
     }
 
+    const contentRange = upstream.headers.get("content-range");
+    const totalFromRange = Number(String(contentRange || "").split("/")[1]);
     const upstreamContentLength = Number(upstream.headers.get("content-length"));
-    if (
-      Number.isFinite(upstreamContentLength) &&
-      upstreamContentLength > MAX_PDF_BYTES
-    ) {
+    const totalSize = Number.isFinite(totalFromRange) && totalFromRange > 0
+      ? totalFromRange
+      : upstream.status === 200 ? upstreamContentLength : NaN;
+    if (Number.isFinite(totalSize) && totalSize > MAX_PDF_BYTES) {
       return new NextResponse("PDF is too large", { status: 413 });
     }
 
+    const isPartial = upstream.status === 206 && Boolean(contentRange);
+    const headers = {
+      "Content-Type": "application/pdf",
+      "Cache-Control": cacheControlFor(targetValidation.url),
+      "X-Content-Type-Options": "nosniff",
+    };
+    const acceptRanges = upstream.headers.get("accept-ranges");
+    if (acceptRanges) headers["Accept-Ranges"] = acceptRanges;
+    if (Number.isFinite(upstreamContentLength) && upstreamContentLength >= 0) {
+      headers["Content-Length"] = String(upstreamContentLength);
+    }
+    if (isPartial) headers["Content-Range"] = contentRange;
+    for (const name of ["etag", "last-modified"]) {
+      const value = upstream.headers.get(name);
+      if (value) headers[name === "etag" ? "ETag" : "Last-Modified"] = value;
+    }
+
     return new NextResponse(upstream.body, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        // A short per-browser cache prevents reopening the same classroom
-        // resource from downloading it again without sharing signed asset
-        // responses through an intermediary cache.
-        "Cache-Control": "private, max-age=300, stale-while-revalidate=86400",
-        "X-Content-Type-Options": "nosniff",
-      },
+      status: isPartial ? 206 : 200,
+      headers,
     });
   } catch (err) {
     if (err?.name === "AbortError") {

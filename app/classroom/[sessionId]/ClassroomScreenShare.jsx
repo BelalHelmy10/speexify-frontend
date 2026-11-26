@@ -1,15 +1,17 @@
 // app/classroom/[sessionId]/ClassroomScreenShare.jsx
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Monitor, MonitorOff, ShieldOff, Volume2, X } from "lucide-react";
 import useFocusTrap from "@/hooks/useFocusTrap";
+import { canShareScreen, resolveScreenShareState } from "@/lib/classroomScreenShare.mjs";
 
 /* ─────────────────────────────────────────────────────────────
    Hook: own the cross-side screen-share state
-   - Broadcasts when *I* start/stop sharing
-   - Receives broadcasts so I know who else is sharing
-   - Owns the teacher's "allow learners to share" gate
+   - Who is presenting comes from Jitsi (contentSharingParticipantsChanged),
+     which cannot be spoofed by another classroom client.
+   - The teacher's "allow learners to share" gate travels over the
+     classroom channel (teacher-only event on the server).
 ───────────────────────────────────────────────────────────── */
 export function useClassroomScreenShare(
   classroomChannel,
@@ -18,66 +20,32 @@ export function useClassroomScreenShare(
     userId = "",
     isTeacher = false,
     isLocalSharing = false,
+    jitsiSharing = null,
   } = {}
 ) {
-  const [remoteSharer, setRemoteSharer] = useState(null);
   const [teacherAllowsScreenShare, setTeacherAllowsScreenShare] = useState(true);
 
   const ready = classroomChannel?.ready ?? false;
   const send = classroomChannel?.send ?? (() => { });
   const subscribe = classroomChannel?.subscribe ?? (() => () => { });
 
-  // Broadcast local share state changes. We deduplicate so a re-render
-  // doesn't spam the WS with the same on/off signal.
-  const lastBroadcastRef = useRef(null);
+  const { isLocalSharer, remoteSharer } = useMemo(
+    () => resolveScreenShareState({
+      sharingIds: jitsiSharing?.sharingIds || [],
+      localId: jitsiSharing?.localId || null,
+      participants: jitsiSharing?.participants || new Map(),
+      localSharing: isLocalSharing,
+    }),
+    [jitsiSharing, isLocalSharing]
+  );
+
+  const teacherAllowsRef = useRef(teacherAllowsScreenShare);
+  teacherAllowsRef.current = teacherAllowsScreenShare;
+
   useEffect(() => {
     if (!ready) return;
-    const sig = isLocalSharing ? `on:${userId}` : `off:${userId}`;
-    if (lastBroadcastRef.current === sig) return;
-    lastBroadcastRef.current = sig;
-
-    send({
-      type: "SCREEN_SHARE",
-      on: !!isLocalSharing,
-      sharerName: userName || "",
-      sharerId: userId || "",
-      at: Date.now(),
-    });
-  }, [ready, send, isLocalSharing, userName, userId]);
-
-  // Reset our broadcast memory when the channel reconnects so the next
-  // state transition fires a fresh broadcast.
-  useEffect(() => {
-    if (!ready) {
-      lastBroadcastRef.current = null;
-      setRemoteSharer(null);
-    }
-  }, [ready]);
-
-  // Receive other people's share state.
-  useEffect(() => {
-    if (!ready) return;
-    const unsub = subscribe((msg) => {
+    return subscribe((msg) => {
       if (!msg) return;
-
-      if (msg.type === "SCREEN_SHARE") {
-        const sharerId = msg.sharerId || "";
-        if (sharerId && userId && sharerId === userId) return; // self-echo
-        if (msg.on) {
-          setRemoteSharer({
-            id: sharerId,
-            name: msg.sharerName || "Someone",
-            at: Number(msg.at) || Date.now(),
-          });
-        } else {
-          setRemoteSharer((prev) => {
-            if (!prev) return null;
-            if (!sharerId || prev.id === sharerId) return null;
-            return prev;
-          });
-        }
-        return;
-      }
 
       // Teacher's allow-screen-share preference is broadcast by the teacher.
       if (msg.type === "SCREEN_SHARE_ALLOW") {
@@ -86,19 +54,16 @@ export function useClassroomScreenShare(
         return;
       }
 
-      // When a teacher joins or a learner reconnects, ask for the current
-      // allow setting so we render the right gate.
+      // When a learner joins or reconnects, it asks for the current setting.
       if (msg.type === "SCREEN_SHARE_ALLOW_REQUEST" && isTeacher) {
         send({
           type: "SCREEN_SHARE_ALLOW",
-          allow: teacherAllowsScreenShare,
+          allow: teacherAllowsRef.current,
           at: Date.now(),
         });
-        return;
       }
     });
-    return unsub;
-  }, [ready, subscribe, userId, isTeacher, send, teacherAllowsScreenShare]);
+  }, [ready, subscribe, isTeacher, send]);
 
   // Learners ask for the current allow setting once on connect.
   useEffect(() => {
@@ -122,12 +87,10 @@ export function useClassroomScreenShare(
     [isTeacher, ready, send]
   );
 
-  const isLocalSharer = !!isLocalSharing;
   const isRemoteSharing = !!remoteSharer;
-  const isSomeoneSharing = isLocalSharer || isRemoteSharing;
 
   return {
-    isSomeoneSharing,
+    isSomeoneSharing: isLocalSharer || isRemoteSharing,
     isLocalSharer,
     isRemoteSharing,
     remoteSharer,
@@ -159,13 +122,12 @@ export function ClassroomScreenShareBanner({
       aria-live="polite"
     >
       <div className="cr-screenshare-banner__icon" aria-hidden="true">
-        <span className="cr-screenshare-banner__dot" />
         <Monitor size={16} />
       </div>
       <div className="cr-screenshare-banner__text">
         {isLocalSharer
-          ? "You are sharing your screen with the class"
-          : `${sharerName} is sharing their screen`}
+          ? "You're presenting"
+          : `${sharerName} is presenting`}
       </div>
       {isLocalSharer && onStop && (
         <button
@@ -175,7 +137,7 @@ export function ClassroomScreenShareBanner({
           aria-label="Stop sharing your screen"
         >
           <X size={14} />
-          <span>Stop sharing</span>
+          <span>Stop presenting</span>
         </button>
       )}
     </div>
@@ -226,29 +188,31 @@ export function ClassroomScreenShareConfirmModal({
               <Monitor size={36} />
             </div>
             <p className="cr-screenshare-confirm__lead">
-              Your browser will ask you to pick a window, a tab, or your
-              entire screen. The class will see exactly what you choose.
+              Your browser will ask what to share. The class will see exactly
+              what you choose, and your lesson stays open here.
             </p>
             <ul className="cr-screenshare-confirm__tips">
               <li>
+                <Monitor size={14} aria-hidden="true" />
+                <span>
+                  Pick a <strong>window</strong> (for example a document or a
+                  slide deck). Don&apos;t pick this classroom tab: the class
+                  would see a mirror of the call.
+                </span>
+              </li>
+              <li>
                 <Volume2 size={14} aria-hidden="true" />
                 <span>
-                  Pick <strong>“This Tab”</strong> if you want the class to
-                  hear audio (e.g. a video clip).
+                  To play a video with sound, open it in another browser tab
+                  and choose <strong>that tab</strong> with
+                  <strong> “Share tab audio”</strong> turned on.
                 </span>
               </li>
               <li>
                 <ShieldOff size={14} aria-hidden="true" />
                 <span>
                   If you share <strong>your entire screen</strong>, close
-                  anything sensitive first.
-                </span>
-              </li>
-              <li>
-                <X size={14} aria-hidden="true" />
-                <span>
-                  You can stop sharing any time from the banner at the top
-                  of the classroom or the bottom control bar.
+                  anything private first.
                 </span>
               </li>
             </ul>
@@ -287,6 +251,15 @@ export function ClassroomScreenShareButton({
   onRequestStart,
   onStop,
 }) {
+  const [supported, setSupported] = useState(false);
+  useEffect(() => {
+    setSupported(canShareScreen(window));
+  }, []);
+
+  // Phones and tablets cannot share a screen from the browser; offering a
+  // button that silently does nothing makes the classroom feel broken.
+  if (!supported && !isLocalSharer) return null;
+
   if (blockedByTeacher) {
     return (
       <button

@@ -29,6 +29,12 @@ import {
   exportAnnotatedPage,
 } from "./prepAnnotationUtils";
 import { handlePrepChannelMessage } from "./prepRealtimeSync";
+import {
+  applyStrokeEvent,
+  buildStrokeAddMessage,
+  buildStrokeProgressMessage,
+  createAnnotationStateAssembler,
+} from "@/lib/classroomAnnotationSync.mjs";
 import { getAudioTargetTime, planAudioSync, shouldApplyAudioState } from "./audioSync.mjs";
 import {
   buildPrepAudioTracks,
@@ -1599,7 +1605,16 @@ function PrepShellContent({
       }
     };
     if (!isActive) flush();
-    return flush;
+    const flushWhenHidden = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    document.addEventListener("visibilitychange", flushWhenHidden);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", flushWhenHidden);
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
   }, [isActive, storageKey]);
 
   const pendingBroadcastRef = useRef({});
@@ -1634,6 +1649,64 @@ function PrepShellContent({
       masksRef,
       linesRef,
       boxesRef,
+    });
+  }
+
+  // ── Live ink ─────────────────────────────────────────────────
+  // While a pen stroke is drawn, small deltas stream every ~50 ms so others
+  // see the ink appear live; the finished stroke is then sent on its own.
+  const strokeProgressRef = useRef({ strokeId: null, sentCount: 0, timer: null });
+
+  function flushStrokeProgress() {
+    const progress = strokeProgressRef.current;
+    progress.timer = null;
+    if (!channelReady || !sendOnChannel || applyingRemoteRef.current) return;
+    const stroke = strokesRef.current.find((item) => item.id === progress.strokeId);
+    if (!stroke || stroke.points.length <= progress.sentCount) return;
+    sendOnChannel(buildStrokeProgressMessage({
+      resourceId: resource._id,
+      stroke,
+      fromIndex: progress.sentCount,
+    }));
+    progress.sentCount = stroke.points.length;
+  }
+
+  function scheduleStrokeProgress(strokeId) {
+    const progress = strokeProgressRef.current;
+    if (progress.strokeId !== strokeId) {
+      if (progress.timer) clearTimeout(progress.timer);
+      strokeProgressRef.current = { strokeId, sentCount: 0, timer: null };
+    }
+    if (strokeProgressRef.current.timer) return;
+    // Runs after React commits the new points (strokesRef is then current).
+    strokeProgressRef.current.timer = setTimeout(flushStrokeProgress, 50);
+  }
+
+  function broadcastStrokeFinished(stroke) {
+    if (!stroke?.id) return;
+    const progress = strokeProgressRef.current;
+    if (progress.timer) clearTimeout(progress.timer);
+    strokeProgressRef.current = { strokeId: null, sentCount: 0, timer: null };
+    // Wait for the final points to be committed before sending.
+    setTimeout(() => {
+      if (!channelReady || !sendOnChannel || applyingRemoteRef.current) return;
+      const latest = strokesRef.current.find((item) => item.id === stroke.id) || stroke;
+      sendOnChannel(buildStrokeAddMessage({ resourceId: resource._id, stroke: latest }));
+    }, 0);
+  }
+
+  const annotationAssemblerRef = useRef(null);
+  if (!annotationAssemblerRef.current) {
+    annotationAssemblerRef.current = createAnnotationStateAssembler();
+  }
+
+  function applyRemoteStrokeEvent(message) {
+    setStrokes((previous) => {
+      const next = applyStrokeEvent(previous, message);
+      if (next !== previous && message.type === "ANNOTATION_STROKE_ADD") {
+        scheduleSaveAnnotations({ strokes: next });
+      }
+      return next;
     });
   }
 
@@ -1700,7 +1773,23 @@ function PrepShellContent({
     const unsubscribe = classroomChannel.subscribe((msg) => {
       // Hidden tabs continue receiving comments, but must not play media or
       // scroll/focus a viewer that the participant is no longer looking at.
-      if (!isActive && msg?.type !== "ANNOTATION_STATE") return;
+      const isAnnotationEvent =
+        msg?.type === "ANNOTATION_STATE" ||
+        msg?.type === "ANNOTATION_STATE_PART" ||
+        msg?.type === "ANNOTATION_STROKE_PROGRESS" ||
+        msg?.type === "ANNOTATION_STROKE_ADD";
+      if (!isActive && !isAnnotationEvent) return;
+      if (msg?.resourceId === resource._id) {
+        if (msg.type === "ANNOTATION_STROKE_PROGRESS" || msg.type === "ANNOTATION_STROKE_ADD") {
+          applyRemoteStrokeEvent(msg);
+          return;
+        }
+        if (msg.type === "ANNOTATION_STATE_PART") {
+          const assembled = annotationAssemblerRef.current.push(msg);
+          if (assembled) applyRemoteAnnotationState(assembled);
+          return;
+        }
+      }
       if (!isTeacher && msg?.resourceId === resource._id &&
           ["PDF_SCROLL", "PDF_SET_PAGE", "PDF_FIT_TO_PAGE"].includes(msg.type)) {
         pdfLiveViewReceivedRef.current = true;
@@ -1806,6 +1895,7 @@ function PrepShellContent({
       penStrokeWidth,
       setStrokes,
       setCurrentStrokeId,
+      onStrokeProgress: scheduleStrokeProgress,
     });
   }
 
@@ -1823,6 +1913,7 @@ function PrepShellContent({
       currentStrokeId,
       getNormalizedPoint,
       setStrokes,
+      onStrokeProgress: scheduleStrokeProgress,
     });
   }
 
@@ -1842,6 +1933,7 @@ function PrepShellContent({
       setCurrentStrokeId,
       setDragState,
       setMaskDrag,
+      broadcastStrokeFinished,
     });
   }
 

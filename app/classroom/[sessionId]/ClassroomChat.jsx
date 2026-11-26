@@ -1,7 +1,7 @@
 // app/classroom/[sessionId]/ClassroomChat.jsx
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   Check,
@@ -114,7 +114,86 @@ function toSocketMessage(message) {
   return safeMessage;
 }
 
-export default function ClassroomChat({
+// The text box owns its own state: typing used to re-render the whole chat
+// (message list included) on every keystroke.
+const ClassroomChatComposer = memo(function ClassroomChatComposer({
+  chatMode,
+  selectedRecipient,
+  historyError,
+  isSending,
+  ready,
+  onChange,
+  onBlur,
+  onSend,
+}) {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const text = inputValue.trim();
+    if (!text || isSending || (chatMode === "direct" && !selectedRecipient)) return;
+    setInputValue("");
+    void onSend(text);
+  };
+
+  return (
+    <form
+      className={`cr-chat__form${chatMode === "direct" ? " cr-chat__form--private" : ""}${historyError ? " cr-chat__form--disabled" : ""}`}
+      onSubmit={handleSubmit}
+    >
+      {chatMode === "direct" && selectedRecipient && (
+        <div className="cr-chat__composer-scope">
+          <LockKeyhole size={12} />
+          <span>Only you and {selectedRecipient.name} can see this</span>
+        </div>
+      )}
+      <input
+        type="text"
+        className="cr-chat__input"
+        aria-label="Message"
+        disabled={Boolean(historyError)}
+        placeholder={
+          historyError
+            ? "Retry loading the conversation to continue..."
+            : chatMode === "direct"
+            ? selectedRecipient
+              ? `Message ${selectedRecipient.name} privately...`
+              : "Choose someone to message privately..."
+            : "Share with everyone..."
+        }
+        value={inputValue}
+        onChange={(event) => {
+          setInputValue(event.target.value);
+          onChange(event.target.value);
+        }}
+        onBlur={onBlur}
+        maxLength={4000}
+      />
+      <button
+        type="submit"
+        className="cr-chat__send"
+        disabled={
+          isSending ||
+          Boolean(historyError) ||
+          !inputValue.trim() ||
+          (chatMode === "direct" && !selectedRecipient)
+        }
+        aria-label="Send message"
+        title={
+          chatMode === "direct"
+            ? "Send private message"
+            : ready
+              ? "Send message"
+              : "Send when live sync reconnects"
+        }
+      >
+        {chatMode === "direct" ? <LockKeyhole size={17} /> : <Send size={17} />}
+      </button>
+    </form>
+  );
+});
+
+function ClassroomChat({
   classroomChannel,
   sessionId,
   isTeacher,
@@ -127,7 +206,6 @@ export default function ClassroomChat({
   locale = "en",
 }) {
   const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -687,9 +765,7 @@ export default function ClassroomChat({
     [chatMode, myName, myRole, ready, selectedRecipientId, send, sessionId]
   );
 
-  const handleInputChange = (e) => {
-    const nextValue = e.target.value;
-    setInputValue(nextValue);
+  const handleInputChange = (nextValue) => {
 
     if (nextValue.trim() && !hasSentTypingRef.current) {
       hasSentTypingRef.current = true;
@@ -735,14 +811,14 @@ export default function ClassroomChat({
     [broadcastChatMessage, replaceMessage, sessionId]
   );
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const text = inputValue.trim();
+  // A failed send stays in the list as "failed" with a retry, so the
+  // composer can always clear its text.
+  const handleSendText = async (rawText) => {
+    const text = String(rawText || "").trim();
     const recipientId = chatMode === "direct" ? selectedRecipient?.id : null;
-    if (!text || isSending || (chatMode === "direct" && !recipientId)) return;
+    if (!text || isSending || (chatMode === "direct" && !recipientId)) return false;
 
     setIsSending(true);
-    setInputValue("");
 
     const tempId = createTempId();
     appendOrMergeMessage(
@@ -1161,56 +1237,18 @@ export default function ClassroomChat({
         <div ref={messagesEndRef} />
       </div>
 
-      <form
-        className={`cr-chat__form${chatMode === "direct" ? " cr-chat__form--private" : ""}${historyError ? " cr-chat__form--disabled" : ""}`}
-        onSubmit={handleSubmit}
-      >
-        {chatMode === "direct" && selectedRecipient && (
-          <div className="cr-chat__composer-scope">
-            <LockKeyhole size={12} />
-            <span>Only you and {selectedRecipient.name} can see this</span>
-          </div>
-        )}
-        <input
-          type="text"
-          className="cr-chat__input"
-          aria-label="Message"
-          disabled={Boolean(historyError)}
-          placeholder={
-            historyError
-              ? "Retry loading the conversation to continue..."
-              : chatMode === "direct"
-              ? selectedRecipient
-                ? `Message ${selectedRecipient.name} privately...`
-                : "Choose someone to message privately..."
-              : "Share with everyone..."
-          }
-          value={inputValue}
-          onChange={handleInputChange}
-          onBlur={handleInputBlur}
-          maxLength={4000}
-        />
-        <button
-          type="submit"
-          className="cr-chat__send"
-          disabled={
-            isSending ||
-            Boolean(historyError) ||
-            !inputValue.trim() ||
-            (chatMode === "direct" && !selectedRecipient)
-          }
-          aria-label="Send message"
-          title={
-            chatMode === "direct"
-              ? "Send private message"
-              : ready
-                ? "Send message"
-                : "Send when live sync reconnects"
-          }
-        >
-          {chatMode === "direct" ? <LockKeyhole size={17} /> : <Send size={17} />}
-        </button>
-      </form>
+      <ClassroomChatComposer
+        chatMode={chatMode}
+        selectedRecipient={selectedRecipient}
+        historyError={historyError}
+        isSending={isSending}
+        ready={ready}
+        onChange={handleInputChange}
+        onBlur={handleInputBlur}
+        onSend={handleSendText}
+      />
     </div>
   );
 }
+
+export default memo(ClassroomChat);
