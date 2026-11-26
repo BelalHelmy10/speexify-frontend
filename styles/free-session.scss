@@ -143,12 +143,29 @@
 .starter-slot__copy strong { color: $navy; font-size: 12px; }
 .starter-slot__copy small { margin-top: 3px; color: $muted; font-size: 11px; font-weight: 600; }
 .starter-form-error { margin: 0 0 16px; padding: 11px 13px; border: 1px solid rgba($error, .22); border-radius: 10px; background: $error-bg; color: $error; font-size: 13px; font-weight: 700; }
+.starter-details { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+.starter-account-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: $navy;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.starter-account-link:disabled { color: $muted; text-decoration: none; cursor: default; }
+.starter-account-hint { color: $muted; font-size: 12px; }
+.starter-account-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 22px; }
 .starter-submit-row { display: flex; align-items: center; gap: 17px; padding-top: 8px; }
 .starter-button { display: inline-flex; align-items: center; justify-content: center; gap: 11px; min-height: 50px; border: 0; border-radius: var(--spx-button-radius); background: $coral; color: $color-white; padding: 13px 20px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 12px 26px rgba($coral, .25); transition: background .18s ease, transform .18s ease, box-shadow .18s ease; }
 .starter-button:hover:not(:disabled) { background: $coral-dark; transform: translateY(-2px); box-shadow: 0 16px 32px rgba($coral, .30); }
 .starter-button:disabled { cursor: wait; opacity: .68; }
 .starter-button--secondary { margin-top: 24px; border: 1px solid $border; background: #fff; color: $navy; box-shadow: none; text-decoration: none; }
 .starter-submit-row p { display: flex; align-items: center; gap: 6px; margin: 0; color: $muted; font-size: 11px; line-height: 1.4; }
+.starter-submit-row a { color: inherit; text-decoration: underline; }
 .starter-submit-row p svg { flex: 0 0 auto; color: $coral; }
 
 .starter-page--success { display: grid; place-items: center; min-height: calc(100vh - 84px); }
