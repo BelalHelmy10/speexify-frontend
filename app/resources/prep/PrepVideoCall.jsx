@@ -2,7 +2,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RotateCw } from "lucide-react";
 import { buildJitsiOptions, fetchClassroomVideoAccess } from "@/lib/jitsiConfig";
 import { loadJitsiScript } from "@/lib/loadJitsiScript.mjs";
 import { monitorClassroomConnection } from "@/lib/classroomConnectionMonitor.mjs";
@@ -594,9 +594,11 @@ function PrepVideoCall({
           type="button"
           className="cr-video__reconnect"
           title={t(dict, "classroom_video_reconnect_hint")}
+          aria-label={t(dict, "classroom_video_reconnect")}
           onClick={() => setRetryAttempt((attempt) => attempt + 1)}
         >
-          {t(dict, "classroom_video_reconnect")}
+          <RotateCw size={14} aria-hidden="true" />
+          <span className="cr-video__reconnect-label">{t(dict, "classroom_video_reconnect")}</span>
         </button>
       )}
 

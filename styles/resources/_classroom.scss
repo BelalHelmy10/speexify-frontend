@@ -1033,6 +1033,9 @@ body.classroom-active {
   width: 100%;
   height: 100%;
   position: relative;
+  // Lets the overlays adapt to the video area's own width (narrow on phones
+  // in landscape, or when the lesson takes most of the screen).
+  container-type: inline-size;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1160,6 +1163,9 @@ body.classroom-active {
     background: rgba($cr-bg-primary, 0.88);
     font-size: 0.75rem;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 
     &:focus-visible { outline: 2px solid $cr-accent-primary; outline-offset: 2px; }
   }
@@ -1167,7 +1173,7 @@ body.classroom-active {
   &__speaker-indicator {
     position: absolute;
     top: 0.75rem;
-    left: 0.75rem;
+    inset-inline-start: 0.75rem;
     z-index: 12;
     display: inline-flex;
     align-items: center;
@@ -1206,6 +1212,23 @@ body.classroom-active {
     animation: cr-pulse-dot 1.4s infinite ease-in-out;
   }
 
+  // In a narrow video area the reconnect button becomes an icon, and the
+  // speaker badge takes the rest of the top row instead of covering it.
+  @container (max-width: 420px) {
+    &__reconnect {
+      justify-content: center;
+      width: 36px;
+      padding: 0;
+    }
+
+    &__reconnect-label { display: none; }
+
+    &__speaker-indicator {
+      top: 0.5rem;
+      inset-inline-start: 0.5rem;
+      max-width: calc(100% - 36px - 1.5rem);
+    }
+  }
 }
 
 // ─── Desktop Chat Drawer ───────────────────────────────────────────────────
