@@ -33,6 +33,7 @@ function PrepVideoCall({
   onModerationStateChange,
   onConnectionStateChange,
   onAudioMuteChange,
+  onVideoMuteChange,
   onParticipantCountChange,
   suspendTileViewLock = false,
   locale = "en",
@@ -45,6 +46,7 @@ function PrepVideoCall({
   const [joinDelayed, setJoinDelayed] = useState(false);
   const [deviceNotice, setDeviceNotice] = useState(null);
   const [sessionAudioMuted, setSessionAudioMuted] = useState(true);
+  const [sessionVideoMuted, setSessionVideoMuted] = useState(false);
   const [activeSpeakerName, setActiveSpeakerName] = useState("");
   const [remoteParticipantCount, setRemoteParticipantCount] = useState(0);
 
@@ -62,6 +64,7 @@ function PrepVideoCall({
     onModerationStateChange,
     onConnectionStateChange,
     onAudioMuteChange,
+    onVideoMuteChange,
     onParticipantCountChange,
   };
   const userNameRef = useRef(userName);
@@ -149,6 +152,11 @@ function PrepVideoCall({
     if (typeof cb === "function") cb(sessionAudioMuted);
   }, [sessionAudioMuted]);
 
+  useEffect(() => {
+    const cb = callbacksRef.current.onVideoMuteChange;
+    if (typeof cb === "function") cb(sessionVideoMuted);
+  }, [sessionVideoMuted]);
+
   // ─────────────────────────────────────────────
   // Participants, moderation and screen sharing
   // ─────────────────────────────────────────────
@@ -230,6 +238,9 @@ function PrepVideoCall({
         stopAllVideo: () => executeJitsiCommand("muteEveryone", "video"),
         muteLocalAudio: () => muteLocal("audio"),
         muteLocalVideo: () => muteLocal("video"),
+        // The compact phone layout has its own mic and camera buttons.
+        toggleLocalAudio: () => executeJitsiCommand("toggleAudio"),
+        toggleLocalVideo: () => executeJitsiCommand("toggleVideo"),
         hangup: () => executeJitsiCommand("hangup"),
         pinParticipant: (participantId) => executeJitsiCommand("pinParticipant", participantId),
         unpinParticipant: () => executeJitsiCommand("pinParticipant", ""),
@@ -349,6 +360,7 @@ function PrepVideoCall({
         const jitsi = new JitsiAPI(access.domain, options);
         apiRef.current = jitsi;
         setSessionAudioMuted(startWithAudioMuted);
+        setSessionVideoMuted(Boolean(START_WITH_VIDEO_MUTED));
 
         jitsi.addListener("videoConferenceJoined", (event) => {
           if (cancelled) return;
@@ -412,6 +424,7 @@ function PrepVideoCall({
         });
 
         jitsi.addListener("videoMuteStatusChanged", (status) => {
+          setSessionVideoMuted(Boolean(status?.muted));
           if (status?.muted === false) {
             setDeviceNotice((current) => (current?.kind === "video" ? null : current));
           }

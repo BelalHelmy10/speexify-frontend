@@ -140,6 +140,7 @@ function ClassroomHeaderBar({
   startedAt,
   endAt,
   locale = "en",
+  compact = false,
 }) {
   const [showConnPopover, setShowConnPopover] = useState(false);
   const timing = useSessionTiming({ startedAt, endAt, locale });
@@ -166,7 +167,7 @@ function ClassroomHeaderBar({
     .join(" ");
 
   return (
-    <header className="cr-header">
+    <header className={`cr-header${compact ? " cr-header--compact" : ""}`}>
       {/* ── Left: Back / Leave ── */}
       <div className="cr-header__left">
         <a
@@ -200,6 +201,7 @@ function ClassroomHeaderBar({
             className="cr-header__pill-signal"
             onMouseEnter={() => setShowConnPopover(true)}
             onMouseLeave={() => setShowConnPopover(false)}
+            onClick={() => setShowConnPopover((open) => !open)}
             aria-label={`Classroom: ${wsInfo.label}; video call: ${videoConnectionState}`}
           >
             <SignalBars level={combinedLevel} size={16} />

@@ -79,7 +79,9 @@ export function ClassroomCaptionsButton({ enabled, supported, onToggle, iconOnly
         title="Live captions are not supported in this browser. Try Chrome or Edge."
       >
         <span className="cr-controls__btn-icon"><CaptionsOff size={16} /></span>
-        {!iconOnly && <span className="cr-controls__btn-label">Captions</span>}
+        {iconOnly
+          ? <span className="cr-controls__sheet-label">Captions</span>
+          : <span className="cr-controls__btn-label">Captions</span>}
       </button>
     );
   }
@@ -100,11 +102,9 @@ export function ClassroomCaptionsButton({ enabled, supported, onToggle, iconOnly
       <span className="cr-controls__btn-icon">
         {enabled ? <Captions size={16} /> : <CaptionsOff size={16} />}
       </span>
-      {!iconOnly && (
-        <span className="cr-controls__btn-label">
-          {enabled ? "Captions on" : "Captions"}
-        </span>
-      )}
+      <span className={iconOnly ? "cr-controls__sheet-label" : "cr-controls__btn-label"}>
+        {enabled ? "Captions on" : "Captions"}
+      </span>
     </button>
   );
 }

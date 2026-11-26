@@ -1,13 +1,23 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   BookOpen,
   Circle,
   Download,
+  Hand,
+  Maximize,
+  Mic,
+  MicOff,
+  Minimize,
   MessageSquare,
+  MoreHorizontal,
   RotateCcw,
   Square,
   Users,
+  Video,
+  VideoOff,
   X,
 } from "lucide-react";
 import { ClassroomRaiseHandButton } from "./ClassroomRaiseHand";
@@ -22,6 +32,11 @@ import {
 
 export default function ClassroomControlBar({
   isMobile,
+  variant = "full",
+  micMuted = true,
+  cameraMuted = false,
+  onToggleMic,
+  onToggleCamera,
   isTeacher,
   setIsPickerOpen,
   isPageRecording,
@@ -68,8 +83,8 @@ export default function ClassroomControlBar({
   const unreadCount = normalizeUnreadCount(chatUnreadCount);
   const hasUnread = !isChatOpen && unreadCount > 0;
 
-  return (
-    <footer className="cr-controls">
+  const controls = (
+    <>
       <div className="cr-controls__left">
         {isTeacher && (
           <button
@@ -96,6 +111,9 @@ export default function ClassroomControlBar({
               ) : (
                 <Circle size={16} fill="#ef4444" />
               )}
+            </span>
+            <span className="cr-controls__sheet-label">
+              {isPageRecording ? "Stop recording" : "Record class"}
             </span>
           </button>
         )}
@@ -175,6 +193,7 @@ export default function ClassroomControlBar({
             <span className="cr-controls__btn-icon">
               <RotateCcw size={16} />
             </span>
+            <span className="cr-controls__sheet-label">Reset layout</span>
           </button>
         )}
       </div>
@@ -204,6 +223,7 @@ export default function ClassroomControlBar({
             <span className="cr-controls__btn-icon">
               <Download size={16} />
             </span>
+            <span className="cr-controls__sheet-label">Save page</span>
           </button>
         )}
         <ClassroomRaiseHandButton isHandRaised={isHandRaised} onToggleHand={toggleHand} />
@@ -267,6 +287,240 @@ export default function ClassroomControlBar({
           </span>
         </button>
       </div>
-    </footer>
+    </>
+  );
+
+  if (variant === "compact") {
+    return (
+      <ClassroomCompactDock
+        isTeacher={isTeacher}
+        micMuted={micMuted}
+        cameraMuted={cameraMuted}
+        onToggleMic={onToggleMic}
+        onToggleCamera={onToggleCamera}
+        isHandRaised={isHandRaised}
+        toggleHand={toggleHand}
+        setIsPickerOpen={setIsPickerOpen}
+        isChatOpen={isChatOpen}
+        setIsChatOpen={setIsChatOpen}
+        hasUnread={hasUnread}
+        unreadCount={unreadCount}
+        isPageRecording={isPageRecording}
+      >
+        {controls}
+      </ClassroomCompactDock>
+    );
+  }
+
+  return <footer className="cr-controls">{controls}</footer>;
+}
+
+function useFullscreen() {
+  const [state, setState] = useState({ supported: false, active: false, ios: false });
+
+  useEffect(() => {
+    const update = () => {
+      const ua = navigator.userAgent || "";
+      setState({
+        supported: Boolean(document.fullscreenEnabled && document.documentElement.requestFullscreen),
+        active: Boolean(document.fullscreenElement),
+        // iPhone Safari has no page fullscreen; Add to Home Screen hides the bars.
+        ios: /iPhone|iPod/.test(ua) && !window.matchMedia("(display-mode: standalone)").matches,
+      });
+    };
+    update();
+    document.addEventListener("fullscreenchange", update);
+    return () => document.removeEventListener("fullscreenchange", update);
+  }, []);
+
+  const toggle = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => {});
+    } else {
+      document.documentElement.requestFullscreen?.({ navigationUI: "hide" }).catch(() => {});
+    }
+  }, []);
+
+  return { ...state, toggle };
+}
+
+// Phones in landscape: the main buttons sit under the video, and everything
+// else from the desktop control bar opens in a sheet.
+function ClassroomCompactDock({
+  isTeacher,
+  micMuted,
+  cameraMuted,
+  onToggleMic,
+  onToggleCamera,
+  isHandRaised,
+  toggleHand,
+  setIsPickerOpen,
+  isChatOpen,
+  setIsChatOpen,
+  hasUnread,
+  unreadCount,
+  isPageRecording,
+  children,
+}) {
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const moreButtonRef = useRef(null);
+  const fullscreen = useFullscreen();
+
+  const closeMore = useCallback(() => setIsMoreOpen(false), []);
+
+  useEffect(() => {
+    if (!isMoreOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      setIsMoreOpen(false);
+      moreButtonRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isMoreOpen]);
+
+  // Buttons that open a dialog or change something close the sheet. The host
+  // menu opens its own panel inside the sheet, so it keeps the sheet open.
+  const handleSheetClick = (event) => {
+    const button = event.target.closest?.("button");
+    if (!button || button.closest(".cr-host-menu")) return;
+    setIsMoreOpen(false);
+  };
+
+  return (
+    <div className="cr-dock">
+      <div className="cr-dock__row" role="toolbar" aria-label="Classroom controls">
+        <button
+          type="button"
+          className={`cr-dock__btn${micMuted ? " cr-dock__btn--off" : ""}`}
+          onClick={onToggleMic}
+          disabled={!onToggleMic}
+          aria-pressed={!micMuted}
+          aria-label={micMuted ? "Unmute microphone" : "Mute microphone"}
+          title={micMuted ? "Unmute microphone" : "Mute microphone"}
+        >
+          {micMuted ? <MicOff size={18} /> : <Mic size={18} />}
+        </button>
+        <button
+          type="button"
+          className={`cr-dock__btn${cameraMuted ? " cr-dock__btn--off" : ""}`}
+          onClick={onToggleCamera}
+          disabled={!onToggleCamera}
+          aria-pressed={!cameraMuted}
+          aria-label={cameraMuted ? "Turn camera on" : "Turn camera off"}
+          title={cameraMuted ? "Turn camera on" : "Turn camera off"}
+        >
+          {cameraMuted ? <VideoOff size={18} /> : <Video size={18} />}
+        </button>
+        {isTeacher ? (
+          <button
+            type="button"
+            className="cr-dock__btn cr-dock__btn--primary"
+            onClick={() => setIsPickerOpen(true)}
+            aria-label="Choose resource"
+            title="Choose resource"
+          >
+            <BookOpen size={18} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={`cr-dock__btn${isHandRaised ? " cr-dock__btn--active" : ""}`}
+            onClick={toggleHand}
+            aria-pressed={Boolean(isHandRaised)}
+            aria-label={isHandRaised ? "Lower hand" : "Raise hand"}
+            title={isHandRaised ? "Lower hand" : "Raise hand"}
+          >
+            <Hand size={18} fill={isHandRaised ? "currentColor" : "none"} />
+          </button>
+        )}
+        <button
+          type="button"
+          className={
+            "cr-dock__btn" +
+            (isChatOpen ? " cr-dock__btn--active" : "") +
+            (hasUnread ? " cr-dock__btn--has-unread" : "")
+          }
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          aria-expanded={isChatOpen}
+          aria-controls="classroom-chat-drawer"
+          aria-label={
+            hasUnread
+              ? `Open chat, ${getUnreadChatLabel(unreadCount)}`
+              : isChatOpen
+                ? "Close chat"
+                : "Open chat"
+          }
+          title="Chat"
+        >
+          <span className="cr-controls__btn-icon--badge-host">
+            <MessageSquare size={18} />
+            <ClassroomUnreadBadge
+              count={hasUnread ? unreadCount : 0}
+              className="cr-chat-unread-badge--desktop"
+            />
+          </span>
+        </button>
+        <button
+          ref={moreButtonRef}
+          type="button"
+          className={`cr-dock__btn${isMoreOpen ? " cr-dock__btn--active" : ""}`}
+          onClick={() => setIsMoreOpen((open) => !open)}
+          aria-expanded={isMoreOpen}
+          aria-controls="classroom-more-sheet"
+          aria-label="More controls"
+          title="More controls"
+        >
+          <MoreHorizontal size={18} />
+          {isPageRecording && <span className="cr-dock__recording-dot" aria-hidden="true" />}
+        </button>
+      </div>
+
+      {/* The video column contains its layout, so the sheet is portalled out
+          of it to position against the screen. */}
+      {isMoreOpen && createPortal(
+        <>
+          <div className="cr-more-backdrop" onClick={closeMore} aria-hidden="true" />
+          <div
+            id="classroom-more-sheet"
+            className="cr-more-sheet"
+            role="dialog"
+            aria-label="More classroom controls"
+            onClick={handleSheetClick}
+            data-lenis-prevent
+          >
+            <div className="cr-more-sheet__header">
+              <span>More controls</span>
+              <button
+                type="button"
+                className="cr-more-sheet__close"
+                onClick={closeMore}
+                aria-label="Close more controls"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="cr-controls cr-controls--sheet">{children}</div>
+            {fullscreen.supported && (
+              <button
+                type="button"
+                className="cr-more-sheet__fullscreen"
+                onClick={fullscreen.toggle}
+              >
+                {fullscreen.active ? <Minimize size={16} /> : <Maximize size={16} />}
+                <span>{fullscreen.active ? "Exit full screen" : "Full screen"}</span>
+              </button>
+            )}
+            {!fullscreen.supported && fullscreen.ios && (
+              <p className="cr-more-sheet__tip">
+                To hide Safari&apos;s bars, tap Share, then Add to Home Screen, and open
+                Speexify from there.
+              </p>
+            )}
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
   );
 }

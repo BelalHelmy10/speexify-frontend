@@ -17,7 +17,9 @@ body.classroom-active {
   .navbar,
   .header,
   nav[class*="header"],
-  header:not(.cr-header) {
+  // Site headers only: the classroom's own panels (chat, participants,
+  // lobby) use <header> elements too.
+  header:not([class*="cr-"]) {
     display: none !important;
   }
 
@@ -25,7 +27,7 @@ body.classroom-active {
   .site-footer,
   .main-footer,
   .footer,
-  footer:not(.cr-controls) {
+  footer:not([class*="cr-"]) {
     display: none !important;
   }
 
@@ -5530,4 +5532,297 @@ body.classroom-active {
   position: absolute; inset: 6px 6px auto; z-index: 12;
   padding: 6px 8px; border-radius: 6px; background: rgba(15, 23, 42, .94);
   color: #fbbf24; font-size: 11px; line-height: 1.35;
+}
+
+// ─── Phone landscape ────────────────────────────────────────────────────────
+// Same arrangement as the laptop classroom (video left, lesson right, page
+// list on the far right), but the header and controls move into the video
+// column so the lesson gets almost the full screen height. The shell sets
+// this class from a (pointer: coarse) landscape query with height <= 600px.
+.cr-controls__sheet-label { display: none; }
+
+.cr-shell--compact-landscape {
+  .cr-main { flex: 1 1 auto; min-height: 0; }
+
+  .cr-panel--left {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    padding: 0 0 0 var(--spx-safe-left);
+    overflow: hidden;
+  }
+
+  .cr-panel--right { padding-right: var(--spx-safe-right); }
+
+  .cr-header--compact {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    height: calc(32px + var(--spx-safe-top));
+    min-height: 0;
+    padding: var(--spx-safe-top) 4px 0;
+    gap: 4px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+
+    .cr-header__center,
+    .cr-header__role-badge,
+    .cr-header__back-label,
+    .cr-header__pill-net { display: none; }
+
+    .cr-header__left,
+    .cr-header__right { flex: 0 1 auto; min-width: 0; gap: 4px; }
+
+    .cr-header__back {
+      min-width: 32px;
+      min-height: 28px;
+      padding: 0 4px;
+      justify-content: center;
+    }
+
+    .cr-header__session-pill {
+      min-height: 26px;
+      padding: 0 8px;
+      gap: 6px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .cr-header__participants-btn { min-height: 26px; padding: 0 6px; }
+  }
+
+  .cr-video-container {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    margin: 0 4px;
+    border-radius: 8px;
+  }
+
+  .cr-dock {
+    flex: 0 0 auto;
+    padding: 4px 4px calc(4px + var(--spx-safe-bottom));
+  }
+
+  // The lesson's bottom row: open resources on the left, zoom and page
+  // controls on the right, instead of two stacked bars.
+  .cr-resource-workspace:has(.cpv-nav) {
+    position: relative;
+
+    .cr-resource-tabs {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      z-index: 3;
+      max-width: calc(100% - 250px);
+      height: var(--cr-resource-bar-height);
+      min-height: 0;
+      padding: 2px 4px;
+      border-top: 0;
+      background: transparent;
+    }
+  }
+
+  .cr-resource-workspace .cpv-nav {
+    justify-content: flex-end;
+    overflow: hidden;
+
+    .cpv-nav__zoom-slider,
+    .cpv-nav__zoom,
+    .cpv-nav__pages-kicker,
+    .cpv-nav__right { display: none; }
+
+    .cpv-nav__left,
+    .cpv-nav__center { flex: 0 0 auto; }
+  }
+}
+
+.cr-dock__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cr-dock__btn {
+  position: relative;
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid $cr-border-default;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: $cr-text-primary;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active { transform: scale(0.95); }
+  &:focus-visible { outline: 2px solid $cr-accent-primary; outline-offset: 1px; }
+  &:disabled { opacity: 0.45; cursor: default; }
+
+  &--off {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.16);
+    color: #fca5a5;
+  }
+
+  &--active {
+    border-color: rgba($cr-accent-primary, 0.6);
+    background: rgba($cr-accent-primary, 0.2);
+    color: #ffd2c6;
+  }
+
+  &--primary {
+    border-color: transparent;
+    background: $cr-accent-primary;
+    color: #fff;
+  }
+
+  &--has-unread { border-color: $cr-accent-primary; }
+
+  .cr-controls__btn-icon--badge-host { position: relative; display: inline-flex; }
+}
+
+.cr-dock__recording-dot {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+.cr-more-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1190;
+  background: rgba(2, 6, 23, 0.5);
+}
+
+.cr-more-sheet {
+  position: fixed;
+  left: calc(8px + var(--spx-safe-left));
+  bottom: calc(8px + var(--spx-safe-bottom));
+  z-index: 1200;
+  box-sizing: border-box;
+  width: min(440px, calc(100vw - 16px - var(--spx-safe-left) - var(--spx-safe-right)));
+  max-height: calc(var(--spx-mobile-shell) - 16px - var(--spx-safe-top) - var(--spx-safe-bottom));
+  padding: 8px 10px 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid $cr-border-default;
+  border-radius: 14px;
+  background: $cr-bg-secondary;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  color: $cr-text-primary;
+  font-family: $cr-font-sans;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 6px 2px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  &__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: $cr-text-primary;
+    cursor: pointer;
+  }
+
+  // Reuse the desktop control bar, laid out as labelled rows.
+  .cr-controls.cr-controls--sheet {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    background: none;
+    box-shadow: none;
+
+    .cr-controls__left,
+    .cr-controls__center,
+    .cr-controls__right {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .cr-controls__btn {
+      min-width: 0;
+      min-height: 38px;
+      padding: 6px 10px;
+      gap: 6px;
+    }
+
+    .cr-controls__btn--icon-only::after,
+    .cr-controls__btn--icon-only::before { display: none; }
+
+    .cr-controls__btn-label,
+    .cr-controls__sheet-label,
+    .cr-controls__toggle-label { display: inline; }
+
+    .cr-controls__btn--chat { display: none; }
+
+    .cr-focus-btn { width: 38px; height: 38px; }
+
+    .cr-controls__center::before {
+      content: "Layout";
+      align-self: center;
+      margin-right: 4px;
+      color: $cr-text-secondary;
+      font-size: 12px;
+    }
+  }
+
+  &__fullscreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 38px;
+    margin-top: 8px;
+    border: 1px solid $cr-border-default;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    color: $cr-text-primary;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  &__tip {
+    margin: 8px 2px 0;
+    color: $cr-text-muted;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
+
+.cr-shell--compact-landscape .cr-chat-drawer {
+  top: calc(8px + var(--spx-safe-top));
+  right: calc(8px + var(--spx-safe-right));
+  bottom: calc(8px + var(--spx-safe-bottom));
+  height: auto;
 }

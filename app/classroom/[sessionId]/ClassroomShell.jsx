@@ -712,6 +712,10 @@ export default function ClassroomShell({
   const handleAudioMuteChange = useCallback((muted) => {
     setLocalAudioMuted(Boolean(muted));
   }, []);
+  const [localVideoMuted, setLocalVideoMuted] = useState(false);
+  const handleVideoMuteChange = useCallback((muted) => {
+    setLocalVideoMuted(Boolean(muted));
+  }, []);
 
   const {
     captions,
@@ -1273,7 +1277,8 @@ export default function ClassroomShell({
     if (customSplit !== null) return customSplit;
 
     if (isCompactLandscape) {
-      return focusMode === FOCUS_MODES.CONTENT ? 20 : focusMode === FOCUS_MODES.VIDEO ? 50 : 28;
+      // The video column also holds the header and controls on phones.
+      return focusMode === FOCUS_MODES.CONTENT ? 24 : focusMode === FOCUS_MODES.VIDEO ? 50 : 30;
     }
     return getFocusModeSplitPercentage(focusMode);
   };
@@ -1987,8 +1992,85 @@ export default function ClassroomShell({
     );
   }
 
+  const headerBar = (
+    <ClassroomHeaderBar
+      prefix={prefix}
+      setShowLeaveConfirm={setShowLeaveConfirm}
+      headerTitle={headerTitle}
+      typeLabel={typeLabel}
+      isGroup={isGroup}
+      countLabel={countLabel}
+      isTeacher={isTeacher}
+      teacherName={teacherName}
+      learnerName={isTeacher ? learnerName : userName}
+      setShowParticipantList={setShowParticipantList}
+      wsStatus={classroomChannel?.status}
+      networkQuality={null}
+      videoConnectionState={videoConnectionState}
+      startedAt={sessionStartedAt}
+      endAt={session?.endAt}
+      locale={locale}
+      compact={isCompactLandscape}
+    />
+  );
+
+  const controlBar = (
+    <ClassroomControlBar
+      variant={isCompactLandscape ? "compact" : "full"}
+      micMuted={localAudioMuted}
+      cameraMuted={localVideoMuted}
+      onToggleMic={() => runVideoModerationAction("toggleLocalAudio")}
+      onToggleCamera={() => runVideoModerationAction("toggleLocalVideo")}
+      isMobile={isMobile}
+      isTeacher={isTeacher}
+      setIsPickerOpen={setIsPickerOpen}
+      isPageRecording={isPageRecording}
+      pageRecError={pageRecError}
+      clearPageRecError={() => setPageRecError(null)}
+      pageRecWarning={pageRecWarning}
+      stopPageRecording={stopPageRecording}
+      startPageRecording={startPageRecording}
+      isGroup={isGroup}
+      setShowParticipantList={setShowParticipantList}
+      participantCount={participantCount}
+      focusMode={focusMode}
+      FOCUS_MODE_ORDER={FOCUS_MODE_ORDER}
+      focusModeLabel={focusModeLabel}
+      focusModeIcon={focusModeIcon}
+      resetToMode={resetToMode}
+      customSplit={customSplit}
+      setCustomSplit={setCustomSplit}
+      teacherAllowsFollowing={teacherAllowsFollowing}
+      onTeacherAllowsFollowingChange={handleTeacherAllowsFollowingChange}
+      learnerWantsToFollow={learnerWantsToFollow}
+      onLearnerWantsToFollowChange={handleLearnerWantsToFollowChange}
+      isChatOpen={isChatOpen}
+      setIsChatOpen={setIsChatOpen}
+      chatUnreadCount={chatUnreadCount}
+      isHandRaised={isHandRaised}
+      toggleHand={toggleHand}
+      captionsEnabled={captionsEnabled}
+      captionsSupported={captionsSupported}
+      onToggleCaptions={toggleCaptions}
+      captionsPausedForMute={captionsPausedForMute}
+      onExportPage={(format) => exportFnRef.current?.(format)}
+      hasResource={Boolean(resource)}
+      screenShareIsLocalSharer={screenShare.isLocalSharer}
+      screenShareIsRemoteSharing={screenShare.isRemoteSharing}
+      screenShareBlockedByTeacher={
+        !isTeacher && !screenShare.teacherAllowsScreenShare
+      }
+      onRequestStartScreenShare={requestStartScreenShare}
+      onStopScreenShare={stopScreenShare}
+      teacherAllowsScreenShare={screenShare.teacherAllowsScreenShare}
+      onTeacherAllowsScreenShareChange={
+        screenShare.setTeacherAllowsScreenShare
+      }
+    />
+  );
+
   return (
-    <div className="cr-shell">
+    <div className={`cr-shell${isCompactLandscape ? " cr-shell--compact-landscape" : ""}`}>
       {/* Lobby Panel (teacher only, for admitting waiting learners) */}
       {isTeacher && (
         <ClassroomLobbyPanel
@@ -2003,25 +2085,8 @@ export default function ClassroomShell({
         />
       )}
 
-      {/* Header */}
-      <ClassroomHeaderBar
-        prefix={prefix}
-        setShowLeaveConfirm={setShowLeaveConfirm}
-        headerTitle={headerTitle}
-        typeLabel={typeLabel}
-        isGroup={isGroup}
-        countLabel={countLabel}
-        isTeacher={isTeacher}
-        teacherName={teacherName}
-        learnerName={isTeacher ? learnerName : userName}
-        setShowParticipantList={setShowParticipantList}
-        wsStatus={classroomChannel?.status}
-        networkQuality={null}
-        videoConnectionState={videoConnectionState}
-        startedAt={sessionStartedAt}
-        endAt={session?.endAt}
-        locale={locale}
-      />
+      {/* Header (phones in landscape show it above the video instead) */}
+      {!isCompactLandscape && headerBar}
 
       <ClassroomConnectionBanner
         channel={classroomChannel}
@@ -2100,6 +2165,7 @@ export default function ClassroomShell({
             className="cr-panel cr-panel--left"
             style={{ width: `${leftPanelWidth}%` }}
           >
+            {isCompactLandscape && headerBar}
             <div
               className={`cr-video-container ${videoLayoutClass}`}
               data-session-type={isGroup ? "group" : "one-on-one"}
@@ -2107,6 +2173,7 @@ export default function ClassroomShell({
             >
               <div className="cr-video-target" ref={attachVideoHost} />
             </div>
+            {isCompactLandscape && controlBar}
 
           </aside>
 
@@ -2192,53 +2259,7 @@ export default function ClassroomShell({
       )}
 
       {/* Full classroom controls in the split layout. */}
-      <ClassroomControlBar
-        isMobile={isMobile}
-        isTeacher={isTeacher}
-        setIsPickerOpen={setIsPickerOpen}
-        isPageRecording={isPageRecording}
-        pageRecError={pageRecError}
-        clearPageRecError={() => setPageRecError(null)}
-        pageRecWarning={pageRecWarning}
-        stopPageRecording={stopPageRecording}
-        startPageRecording={startPageRecording}
-        isGroup={isGroup}
-        setShowParticipantList={setShowParticipantList}
-        participantCount={participantCount}
-        focusMode={focusMode}
-        FOCUS_MODE_ORDER={FOCUS_MODE_ORDER}
-        focusModeLabel={focusModeLabel}
-        focusModeIcon={focusModeIcon}
-        resetToMode={resetToMode}
-        customSplit={customSplit}
-        setCustomSplit={setCustomSplit}
-        teacherAllowsFollowing={teacherAllowsFollowing}
-        onTeacherAllowsFollowingChange={handleTeacherAllowsFollowingChange}
-        learnerWantsToFollow={learnerWantsToFollow}
-        onLearnerWantsToFollowChange={handleLearnerWantsToFollowChange}
-        isChatOpen={isChatOpen}
-        setIsChatOpen={setIsChatOpen}
-        chatUnreadCount={chatUnreadCount}
-        isHandRaised={isHandRaised}
-        toggleHand={toggleHand}
-        captionsEnabled={captionsEnabled}
-        captionsSupported={captionsSupported}
-        onToggleCaptions={toggleCaptions}
-        captionsPausedForMute={captionsPausedForMute}
-        onExportPage={(format) => exportFnRef.current?.(format)}
-        hasResource={Boolean(resource)}
-        screenShareIsLocalSharer={screenShare.isLocalSharer}
-        screenShareIsRemoteSharing={screenShare.isRemoteSharing}
-        screenShareBlockedByTeacher={
-          !isTeacher && !screenShare.teacherAllowsScreenShare
-        }
-        onRequestStartScreenShare={requestStartScreenShare}
-        onStopScreenShare={stopScreenShare}
-        teacherAllowsScreenShare={screenShare.teacherAllowsScreenShare}
-        onTeacherAllowsScreenShareChange={
-          screenShare.setTeacherAllowsScreenShare
-        }
-      />
+      {!isCompactLandscape && controlBar}
 
       {/* Tabbed layout for portrait phones and narrow tablets. */}
       {isMobile && (
@@ -2272,6 +2293,7 @@ export default function ClassroomShell({
             onModerationStateChange={handleVideoModerationChange}
             onConnectionStateChange={setVideoConnectionState}
             onAudioMuteChange={handleAudioMuteChange}
+            onVideoMuteChange={handleVideoMuteChange}
             onParticipantCountChange={handleVideoParticipantCountChange}
             suspendTileViewLock={screenShare.isRemoteSharing}
             locale={locale}

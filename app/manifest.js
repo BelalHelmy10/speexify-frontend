@@ -10,7 +10,8 @@ export default function manifest() {
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#f25c2e", // Brand coral
-    orientation: "portrait-primary",
+    // Live lessons are easier with the phone turned sideways.
+    orientation: "any",
     icons: [
       {
         src: "/icon-192x192.png",
