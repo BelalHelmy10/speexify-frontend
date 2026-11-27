@@ -3,6 +3,8 @@
 
 .units-page {
   display: grid;
+  // The dashboard gives pages a minimum height; keep rows at their own size.
+  align-content: start;
   gap: 22px;
   padding-top: 32px;
   padding-bottom: 72px;
@@ -36,6 +38,7 @@
 
 .units-page__head {
   display: grid;
+  align-content: start;
   gap: 6px;
 
   h1 {
