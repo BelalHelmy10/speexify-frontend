@@ -16,6 +16,8 @@ import DashboardKpiCard from "./components/DashboardKpiCard";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 import LearnerFeedbackPanel from "./components/LearnerFeedbackPanel";
 import TeacherEarningsCard from "./components/TeacherEarningsCard";
+import CurrentUnitCard from "@/components/units/CurrentUnitCard";
+import useLessonUnits from "@/components/units/useLessonUnits";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -168,6 +170,11 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
   const [onboarding, setOnboarding] = useState(null);
   const [assessment, setAssessment] = useState(null);
   const [continueLesson, setContinueLesson] = useState(null);
+  // The learner's lessons grouped into course units (current unit card).
+  const lessonUnits = useLessonUnits({
+    enabled: authStatus !== "checking" && (isLearner || (isImpersonating && user?.role === "learner")),
+  });
+  const currentUnit = lessonUnits.groups?.current || null;
   const [reschedOpen, setReschedOpen] = useState(false);
   const [reschedSession, setReschedSession] = useState(null);
   const [newStart, setNewStart] = useState("");
@@ -710,10 +717,16 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
       if (continueLesson?.steps?.next) {
         const step = continueLesson.steps.next;
         const homework = continueLesson.steps.homework;
+        const lessonUnitId = lessonUnits.groups?.lessonUnit?.[continueLesson.id];
+        const lessonUnit = lessonUnits.groups?.units.find((unit) => unit.id === lessonUnitId) || null;
         return {
           tone: "feedback",
           kicker: t(dict, "next_action_label"),
-          meta: t(dict, "next_action_meta_lesson"),
+          meta: lessonUnit
+            ? [lessonUnit.number != null ? t(dict, "unit_number", { n: lessonUnit.number }) : null, lessonUnit.topic]
+                .filter(Boolean)
+                .join(" · ")
+            : t(dict, "next_action_meta_lesson"),
           title: t(dict, "next_action_lesson_title"),
           body: t(dict, `next_action_lesson_${step}_body`, {
             title: actionSessionTitle(continueLesson),
@@ -1356,6 +1369,21 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
               </>
             )}
           </div>
+        )}
+
+        {/* Current course unit - learners only */}
+        {showLearnerContent && currentUnit && (
+          <CurrentUnitCard
+            group={currentUnit}
+            prefix={prefix}
+            labels={{
+              title: t(dict, "unit_card_title"),
+              open: t(dict, "unit_card_open"),
+              all: t(dict, "unit_card_all"),
+              unitNumber: (n) => t(dict, "unit_number", { n }),
+              progress: (done, total) => t(dict, "unit_card_progress", { done, total }),
+            }}
+          />
         )}
 
         {/* Feedback panel - show for learners or when impersonating a learner */}

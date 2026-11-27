@@ -82,15 +82,16 @@ function ReportRow({ item, index, c }) {
   );
 }
 
-export default function FeedbackReportTable({ items, locale = "en", headingLevel = 2 }) {
+export default function FeedbackReportTable({ items, locale = "en", headingLevel = 2, title, emptyText }) {
   const c = lessonCopy(locale);
   const Heading = `h${headingLevel}`;
+  const heading = title || c.reportTitle;
   return (
     <section className="session-report-learner-section fb-report">
       <div className="session-report-section-title">
         <div>
           <ListChecks size={18} />
-          <Heading>{c.reportTitle}</Heading>
+          <Heading>{heading}</Heading>
         </div>
         {items.some((item) => item.type === "grammar") && (
           <p className="fb-report__legend">
@@ -102,7 +103,7 @@ export default function FeedbackReportTable({ items, locale = "en", headingLevel
       </div>
 
       {items.length ? (
-        <div className="fb-report__table" role="table" aria-label={c.reportTitle}>
+        <div className="fb-report__table" role="table" aria-label={heading}>
           <div className="fb-report__head" role="row">
             <span role="columnheader">{c.columns.index}</span>
             <span role="columnheader">{c.columns.type}</span>
@@ -115,7 +116,7 @@ export default function FeedbackReportTable({ items, locale = "en", headingLevel
         </div>
       ) : (
         <div className="session-report-empty session-report-empty--learner">
-          <p>{c.reportEmpty}</p>
+          <p>{emptyText || c.reportEmpty}</p>
         </div>
       )}
     </section>

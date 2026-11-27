@@ -402,6 +402,23 @@ export default function ProgressPage() {
         </Link>
       </section>
 
+      <section className="learning-journey__next learning-journey__next--units" aria-labelledby="learning-journey-units-title">
+        <div className="learning-journey__next-index" aria-hidden="true">02</div>
+        <div className="learning-journey__next-copy">
+          <p className="learning-journey__section-kicker">
+            {copy(dict, "units_kicker", "Your units")}
+          </p>
+          <h2 id="learning-journey-units-title">
+            {copy(dict, "units_title", "See what you've covered, unit by unit")}
+          </h2>
+          <p>{copy(dict, "units_body", "Each unit brings together its lessons, new words, corrections and homework.")}</p>
+        </div>
+        <Link href={`${prefix}/dashboard/units`} className="learning-journey__primary-link">
+          {copy(dict, "units_cta", "Open your units")}
+          <span aria-hidden="true">↗</span>
+        </Link>
+      </section>
+
       <section className="learning-journey__momentum" aria-labelledby="learning-journey-momentum-title">
         <div className="learning-journey__section-heading">
           <p className="learning-journey__section-kicker">

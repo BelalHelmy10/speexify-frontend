@@ -246,6 +246,17 @@
   box-shadow: $shadow-md;
 }
 
+.learning-journey__next--units {
+  margin-top: 12px;
+  border-color: hsl(174 56% 40% / 0.28);
+  border-inline-start-color: hsl(174 56% 40%);
+
+  .learning-journey__next-index {
+    background: hsl(174 56% 40%);
+    box-shadow: 0 10px 24px hsl(174 56% 40% / 0.22);
+  }
+}
+
 .learning-journey__next-index {
   display: grid;
   width: 60px;

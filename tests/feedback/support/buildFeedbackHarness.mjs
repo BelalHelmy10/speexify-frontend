@@ -85,7 +85,7 @@ export function buildFeedbackHarness({ entry = "tests/feedback/support/feedbackH
 
   const entryId = bundle(path.join(root, entry));
   const script = `const process={env:{NODE_ENV:'development'}};const modules=[${modules.join(",")}];const cache={};function require(id){if(!cache[id]){const m=cache[id]={exports:{}};modules[id](require,m,m.exports)}return cache[id].exports}require(${entryId});`;
-  const css = ["styles/_responsive.scss", "styles/session-feedback.scss", "styles/lesson-recap.scss"]
+  const css = ["styles/_responsive.scss", "styles/session-feedback.scss", "styles/lesson-recap.scss", "styles/units.scss"]
     .map((file) =>
       sass.compile(path.join(root, file), { loadPaths: [path.join(root, "styles")], logger: sass.Logger.silent }).css
     )

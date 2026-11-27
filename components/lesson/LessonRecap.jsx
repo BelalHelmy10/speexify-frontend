@@ -5,8 +5,11 @@
 // on the server so the dashboard knows what is left.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, Check, PartyPopper, PenLine } from "lucide-react";
+import { ArrowDown, BookOpen, Check, PartyPopper, PenLine } from "lucide-react";
 import api from "@/lib/api";
+import { lookupUnits } from "@/lib/curriculumLookup";
+import { mainUnitOf, unitTopic } from "@/lib/lessonUnits.mjs";
+import { unitCopy } from "@/components/units/unitCopy";
 import { getReportFromFeedback, stripRichFeedbackPayload } from "@/lib/feedbackReport";
 import FeedbackReportTable from "./FeedbackReportTable";
 import {
@@ -19,6 +22,7 @@ import {
 import { lessonCopy } from "./lessonCopy";
 import "@/styles/session-feedback.scss";
 import "@/styles/lesson-recap.scss";
+import "@/styles/units.scss";
 
 const PRACTICE_TYPES = new Set(["vocabulary", "grammar", "pronunciation"]);
 
@@ -76,6 +80,40 @@ function StepStrip({ steps, c, interactive }) {
         </span>
       </li>
     </ol>
+  );
+}
+
+// The curriculum unit this lesson belongs to, from the materials opened in it.
+function useLessonUnit(materials) {
+  const [unit, setUnit] = useState(null);
+  const key = (materials || []).map((m) => m.id).join("|");
+  useEffect(() => {
+    if (!key) return undefined;
+    let cancelled = false;
+    lookupUnits(key.split("|"))
+      .then((lookup) => {
+        const unitId = mainUnitOf({ materials }, lookup.resources);
+        if (!cancelled) setUnit(unitId ? lookup.units[unitId] || null : null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // `key` stands for the materials list.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return key ? unit : null;
+}
+
+function UnitChip({ unit, href, locale }) {
+  const c = unitCopy(locale);
+  const topic = unitTopic(unit.title) || unit.title;
+  const label = typeof unit.order === "number" ? `${c.unitNumber(unit.order)} · ${topic}` : topic;
+  return (
+    <Link href={href} className="lesson-unit-chip">
+      <BookOpen size={14} aria-hidden="true" />
+      <span dir="auto">{label}</span>
+    </Link>
   );
 }
 
@@ -211,6 +249,11 @@ export default function LessonRecap({
   };
 
   const learners = data?.learners || [];
+  const unit = useLessonUnit(data?.materials);
+  const unitLearner = canTeach ? learners[0]?.id : null;
+  const unitLink = unit
+    ? `${prefix}/dashboard/units/${encodeURIComponent(unit._id)}${unitLearner ? `?learner=${unitLearner}` : ""}`
+    : null;
   let stepNumber = 0;
 
   return (
@@ -220,6 +263,7 @@ export default function LessonRecap({
           <p className="lesson-recap__kicker">{c.recapKicker}</p>
           <h2 id="lesson-recap-title">{canTeach ? c.recapTitleTeacher : c.recapTitle}</h2>
           <p className="lesson-recap__hint">{canTeach ? c.recapHintTeacher : c.recapHintLearner}</p>
+          {unit && (canTeach ? unitLearner : true) && <UnitChip unit={unit} href={unitLink} locale={locale} />}
         </div>
         {canTeach && (
           <Link href={`${prefix}/dashboard/sessions/${sessionId}/feedback`} className="lesson-recap__edit">

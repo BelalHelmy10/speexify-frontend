@@ -30,14 +30,15 @@ async function mount(page, { harness = lessonHarness, role = "learner", props = 
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.route("http://feedback.test/**", (route) =>
-    route.fulfill({
+    // Tests answer /api/ requests with their own routes.
+    route.request().url().includes("/api/") ? route.fallback() : route.fulfill({
       contentType: "text/html",
       body: '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;font-family:system-ui"><div id="root"></div></body></html>',
     })
   );
   await page.addInitScript(
     ({ role, props, teacherFeedback, state }) => {
-      const lesson = { reviewedAt: null, practisedAt: null, practiceItems: 3, homework: [], teacher: false, ...state };
+      const lesson = { reviewedAt: null, practisedAt: null, practiceItems: 3, homework: [], materials: [], teacher: false, ...state };
       const steps = () => {
         const review = { done: Boolean(lesson.reviewedAt) };
         const practise = lesson.practiceItems ? { done: Boolean(lesson.practisedAt) } : null;
@@ -71,8 +72,9 @@ async function mount(page, { harness = lessonHarness, role = "learner", props = 
             lesson[field] = lesson[field] || new Date().toISOString();
           }
           const progress = { reviewedAt: lesson.reviewedAt, practisedAt: lesson.practisedAt, steps: steps() };
-          if (lesson.teacher) return { practiceItems: lesson.practiceItems, learners: [{ id: 10, name: "Iñaki", ...progress }] };
-          return { practiceItems: lesson.practiceItems, progress };
+          const materials = lesson.materials;
+          if (lesson.teacher) return { practiceItems: lesson.practiceItems, materials, learners: [{ id: 10, name: "Iñaki", ...progress }] };
+          return { practiceItems: lesson.practiceItems, materials, progress };
         },
       };
     },
@@ -196,6 +198,45 @@ test("learners opening the old feedback link land on the lesson page", async ({ 
   await mount(page, { harness: feedbackHarness, role: "learner" });
   await expect.poll(() => page.evaluate(() => window.feedbackTest.navigations)).toEqual(["/dashboard/sessions/s1#lesson"]);
   await expect(page.locator(".fb-editor")).toHaveCount(0);
+});
+
+for (const role of ["learner", "teacher"]) {
+  test(`the recap links to the lesson's course unit (${role})`, async ({ page }) => {
+    await page.route("http://feedback.test/api/curriculum/units", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          resources: { "r4-sheet": "unit-04", "r5-sheet": "unit-05" },
+          units: {
+            "unit-04": { _id: "unit-04", title: "Unit 4 · Confident Travel", order: 4 },
+            "unit-05": { _id: "unit-05", title: "Unit 5 · Money in Real Life", order: 5 },
+          },
+        }),
+      })
+    );
+    const errors = await mount(page, {
+      role,
+      props: { canTeach: role === "teacher" },
+      state: {
+        teacher: role === "teacher",
+        materials: [
+          { id: "r5-sheet", firstOpenedAt: "2026-11-26T12:40:00.000Z" },
+          { id: "r4-sheet", firstOpenedAt: "2026-11-26T12:35:00.000Z" },
+        ],
+      },
+    });
+    const chip = page.locator(".lesson-unit-chip");
+    await expect(chip).toHaveText("Unit 4 · Confident Travel");
+    await expect(chip).toHaveAttribute("href", role === "teacher" ? "/dashboard/units/unit-04?learner=10" : "/dashboard/units/unit-04");
+    expect(errors).toEqual([]);
+  });
+}
+
+test("a lesson with no course materials shows no unit link", async ({ page }) => {
+  await mount(page);
+  await expect(page.locator(".lesson-recap__head")).toBeVisible();
+  await page.waitForTimeout(300);
+  await expect(page.locator(".lesson-unit-chip")).toHaveCount(0);
 });
 
 const layoutHarness = buildFeedbackHarness({ entry: "tests/feedback/support/sessionLayoutEntry.jsx" });
