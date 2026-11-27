@@ -1217,9 +1217,9 @@ body.classroom-active {
 }
 
 // ─── Desktop Chat Drawer ───────────────────────────────────────────────────
-// Chat is anchored to the bottom control instead of living below the video.
-// It overlays the workspace with a stable footprint, so opening a message
-// thread never resizes the people or the lesson content.
+// Chat pops up from the chat control and floats over the lesson. It never
+// resizes the video or the lesson: resizing re-fitted the PDF, and the
+// teacher's new view was then sent to every learner.
 .cr-chat-drawer {
   position: absolute;
   right: 1rem;
@@ -1228,15 +1228,65 @@ body.classroom-active {
   width: var(--cr-chat-drawer-width);
   height: min(620px, max(320px, calc(100% - #{$cr-header-height} - #{$cr-controls-height} - 2rem)));
   pointer-events: none;
+  visibility: hidden;
   opacity: 0;
-  transform: translateY(12px) scale(0.98);
+  transform: translate(24px, 16px) scale(0.96);
   transform-origin: bottom right;
-  transition: opacity 180ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  // Closing: slide back toward the chat control, then hide.
+  transition:
+    opacity 160ms ease-in,
+    transform 200ms cubic-bezier(0.4, 0, 1, 1),
+    visibility 0s linear 200ms;
 
   &--open {
     pointer-events: auto;
+    visibility: visible;
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: none;
+    // Opening: a quick, slightly springy pop.
+    transition:
+      opacity 180ms ease-out,
+      transform 260ms cubic-bezier(0.2, 1.1, 0.3, 1),
+      visibility 0s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    &--open {
+      transform: none;
+      transition: opacity 120ms linear, visibility 0s linear 120ms;
+    }
+
+    &--open {
+      transition: opacity 120ms linear, visibility 0s;
+    }
+  }
+
+  &__close {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-inline-start: auto;
+    padding: 0;
+    color: $cr-text-secondary;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: $cr-radius-md;
+    cursor: pointer;
+    transition: background $cr-transition-fast, color $cr-transition-fast;
+
+    &:hover {
+      color: $cr-text-primary;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $cr-accent-primary;
+      outline-offset: 1px;
+    }
   }
 
   &__panel {
@@ -1246,6 +1296,7 @@ body.classroom-active {
     height: 100%;
     min-height: 0;
     overflow: hidden;
+    outline: none;
     background: rgba($cr-bg-secondary, 0.98);
     border: 1px solid $cr-border-default;
     border-radius: $cr-radius-lg;
@@ -2051,13 +2102,6 @@ body.classroom-active {
   flex-direction: column;
   overflow: auto; // Changed from hidden to auto (key fix: allow content viewer scroll)
   position: relative;
-
-  // Reserve the drawer's footprint instead of allowing it to cover the
-  // lesson. The resource becomes narrower while remaining fully visible and
-  // interactive, and the video panel keeps its existing dimensions.
-  .cr-main--chat-open .cr-panel--right & {
-    width: calc(100% - var(--cr-chat-drawer-width) - 1rem);
-  }
 
   >* {
     flex: 1;
@@ -4852,10 +4896,6 @@ body.classroom-active {
     right: calc(0.5rem + var(--spx-safe-right));
     bottom: calc(50px + var(--spx-safe-bottom));
     height: min(320px, calc(100% - 100px - var(--spx-safe-top) - var(--spx-safe-bottom)));
-  }
-
-  .cr-main--chat-open .cr-panel--right .cr-content-viewer {
-    width: 100%;
   }
 
   .cr-controls {

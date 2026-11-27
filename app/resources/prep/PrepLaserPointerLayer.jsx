@@ -10,6 +10,12 @@ import { useRef, useEffect } from "react";
    pointer. Trail points fade out over ~1.5s using a requestAnimationFrame
    loop for 60fps performance. The trail is drawn on a <canvas> for
    silky-smooth rendering without DOM thrash.
+
+   The loop runs only while there is something to draw (a pointer, or a trail
+   still fading) and sleeps otherwise. It used to run every frame for the
+   whole lesson, re-sizing a full-page canvas at device resolution; on phones
+   that drained the battery, and in WebKit rotating the device grew the page
+   past 12 GB until it was killed.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const TRAIL_DURATION_MS = 1500;  // trail point lifetime
@@ -32,6 +38,8 @@ export default function PrepLaserPointerLayer({
   const rafRef = useRef(null);
   const lastPosRef = useRef(null);
   const pointerRef = useRef(null); // current teacher pointer (avoids rAF restart)
+  const sizeRef = useRef(null);    // { canvas, size } last size applied
+  const wakeRef = useRef(null);    // starts the draw loop if it is asleep
 
   // Sync pointer prop to ref + push trail point
   useEffect(() => {
@@ -58,6 +66,7 @@ export default function PrepLaserPointerLayer({
 
       lastPosRef.current = { x: teacherPointer.x, y: teacherPointer.y };
     }
+    wakeRef.current?.();
   }, [teacherPointer]);
 
   // Stable animation loop — reads from refs only
@@ -65,26 +74,26 @@ export default function PrepLaserPointerLayer({
     let active = true;
 
     function drawFrame() {
+      rafRef.current = null;
       if (!active) return;
 
+      // No canvas yet (or menus open): sleep until the pointer changes.
       const canvas = canvasRef.current;
-      if (!canvas) {
-        rafRef.current = requestAnimationFrame(drawFrame);
-        return;
-      }
+      if (!canvas) return;
 
       const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        rafRef.current = requestAnimationFrame(drawFrame);
-        return;
-      }
+      if (!ctx) return;
 
       const rect = canvas.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
       const w = Math.round(rect.width * dpr);
       const h = Math.round(rect.height * dpr);
 
-      if (canvas.width !== w || canvas.height !== h) {
+      // Re-allocate only when the on-screen size really changed. Comparing
+      // with canvas.width re-allocated every frame in WebKit.
+      const size = `${w}x${h}`;
+      if (sizeRef.current?.canvas !== canvas || sizeRef.current.size !== size) {
+        sizeRef.current = { canvas, size };
         canvas.width = w;
         canvas.height = h;
       }
@@ -167,14 +176,22 @@ export default function PrepLaserPointerLayer({
         ctx.fill();
       }
 
+      // Nothing left to draw: this frame cleared the canvas; sleep.
+      if (!pointer && activeTrail.length === 0) return;
       rafRef.current = requestAnimationFrame(drawFrame);
     }
 
-    rafRef.current = requestAnimationFrame(drawFrame);
+    const wake = () => {
+      if (active && !rafRef.current) rafRef.current = requestAnimationFrame(drawFrame);
+    };
+    wakeRef.current = wake;
+    wake();
 
     return () => {
       active = false;
+      wakeRef.current = null;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     };
   }, []);
 

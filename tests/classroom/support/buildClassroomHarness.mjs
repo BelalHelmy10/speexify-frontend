@@ -82,8 +82,10 @@ export function buildClassroomHarness({ realLobby = false, liveVideo = false, re
       source = `exports.GlobalWorkerOptions={};exports.version='test';exports.getDocument=()=>({destroy:async()=>{},promise:new Promise(resolve=>setTimeout(()=>resolve({numPages:2,destroy:async()=>{},getPage:async()=>({getViewport:({scale})=>({width:600*scale,height:840*scale}),render:()=>({promise:Promise.resolve(),cancel:()=>{}})})}),300))});`;
     }
     if (file.endsWith("/app/i18n.js")) {
-      // Real English classroom text, so tests read what learners see.
-      source = "const en=require('@/locales/en/classroom.json');const classroom=en.default||en;exports.getDictionary = (_locale, ns) => ns === 'classroom' ? classroom : {}; exports.t = (dict, key) => (dict && dict[key] !== undefined ? dict[key] : key);";
+      // Real English classroom text, so tests read what learners see. Like
+      // the real module, return the same object every time: a new one per
+      // call made the PDF viewer re-render in an endless loop.
+      source = "const en=require('@/locales/en/classroom.json');const classroom=en.default||en;const empty={};exports.getDictionary = (_locale, ns) => ns === 'classroom' ? classroom : empty; exports.t = (dict, key) => (dict && dict[key] !== undefined ? dict[key] : key);";
     }
     // The page address decides the classroom language (?locale=ar → /ar/...).
     if (/node_modules\/next\/navigation(\.js)?$/.test(file)) {

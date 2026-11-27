@@ -132,11 +132,7 @@ for (const [width, height] of [[810, 1080], [744, 1133]]) {
   });
 }
 
-// QUARANTINED: rotating with a PDF open freezes the classroom page. In CI,
-// WebKit's page process grew past 12 GB until the runner was killed, and
-// Chromium hung until the test timed out. Re-enable (test.fixme -> test)
-// once the freeze is fixed.
-test.fixme("rotating a phone switches layouts without reloading the call", async ({ page }) => {
+test("rotating a phone switches layouts without reloading the call", async ({ page }) => {
   const errors = await mount(page, { role: "learner", width: 393, height: 852 });
   await page.evaluate(() => { window.callFrame = document.querySelector("iframe"); });
   for (const [width, height, layout] of [

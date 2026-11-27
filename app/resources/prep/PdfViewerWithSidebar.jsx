@@ -113,6 +113,11 @@ export default function PdfViewerWithSidebar({
   onViewportChangeRef.current = onViewportChange;
 
   const dict = getDictionary(locale, "resources");
+  // Effects read messages through a ref: when the translations were a new
+  // object on each render, listing them as a dependency re-rendered the page
+  // on every render, which set state, which rendered again, forever.
+  const dictRef = useRef(dict);
+  dictRef.current = dict;
   const renderTaskRef = useRef(null);
   const loadingTaskRef = useRef(null);
   const onFatalErrorRef = useRef(onFatalError);
@@ -345,7 +350,7 @@ export default function PdfViewerWithSidebar({
       } catch (err) {
         console.error("Failed to load pdf.js", err);
         if (!cancelled) {
-          setError(t(dict, "resources_pdf_engine_error"));
+          setError(t(dictRef.current, "resources_pdf_engine_error"));
           setLoading(false);
           onFatalErrorRef.current?.(err);
         }
@@ -357,7 +362,7 @@ export default function PdfViewerWithSidebar({
     return () => {
       cancelled = true;
     };
-  }, [fileUrl, dict]);
+  }, [fileUrl]);
 
   // ✅ Auto-fit when a new PDF loads (or when the URL changes)
   useEffect(() => {
@@ -472,19 +477,19 @@ export default function PdfViewerWithSidebar({
       } catch (err) {
         console.error("Failed to load PDF document:", err);
         if (!cancelled) {
-          let msg = t(dict, "resources_pdf_load_generic_error");
+          let msg = t(dictRef.current, "resources_pdf_load_generic_error");
 
           if (err.message?.includes("Missing PDF")) {
-            msg = t(dict, "resources_pdf_missing_error");
+            msg = t(dictRef.current, "resources_pdf_missing_error");
           } else if (err.message?.includes("Invalid PDF")) {
-            msg = t(dict, "resources_pdf_invalid_error");
+            msg = t(dictRef.current, "resources_pdf_invalid_error");
           } else if (err.name === "MissingPDFException") {
-            msg = t(dict, "resources_pdf_missing_error");
+            msg = t(dictRef.current, "resources_pdf_missing_error");
           } else if (
             err.message?.includes("fetch") ||
             err.message?.includes("network")
           ) {
-            msg = t(dict, "resources_pdf_network_error");
+            msg = t(dictRef.current, "resources_pdf_network_error");
           }
 
           setError(msg);
@@ -588,7 +593,7 @@ export default function PdfViewerWithSidebar({
         if (err.name === "RenderingCancelledException") return;
 
         console.error("Failed to render PDF page:", err);
-        setError(t(dict, "resources_pdf_render_error"));
+        setError(t(dictRef.current, "resources_pdf_render_error"));
         setLoading(false);
       } finally {
         renderTaskRef.current = null;
@@ -605,7 +610,7 @@ export default function PdfViewerWithSidebar({
         } catch (_) { }
       }
     };
-  }, [pdfDoc, currentPage, zoom, updateContainerRef, dict, restoreVersion]);
+  }, [pdfDoc, currentPage, zoom, updateContainerRef, restoreVersion]);
 
   // ✅ Cleanup auto-fit RAF on unmount
   useEffect(() => {

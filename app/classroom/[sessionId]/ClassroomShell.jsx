@@ -40,7 +40,7 @@ import { useClassroomChannel } from "@/app/resources/prep/useClassroomChannel";
 import { getDictionary, t } from "@/app/i18n";
 import useClassroomVideoModeration from "./useClassroomVideoModeration";
 import api from "@/lib/api";
-import { MessageCircle, MessageSquare, BookOpenText, Target, BookOpen } from "lucide-react";
+import { MessageCircle, MessageSquare, BookOpenText, Target, BookOpen, X } from "lucide-react";
 import { classroomText, useClassroomText } from "./classroomText";
 import ClassroomScreenStage from "./ClassroomScreenStage";
 
@@ -1294,6 +1294,40 @@ export default function ClassroomShell({
     if (isChatVisible) setChatUnreadCount(0);
   }, [isChatVisible]);
 
+  // The desktop chat floats over the lesson like a pop-up: it never resizes
+  // the lesson, so opening it changes nothing for anyone else in the class.
+  // Opening moves focus into it (the message box with a mouse; the panel on
+  // touch screens, so the keyboard doesn't jump up). Escape inside the chat,
+  // or the close button, closes it and sends focus back to the chat button;
+  // with focus on the lesson, Escape keeps clearing the drawing tool.
+  const chatDrawerRef = useRef(null);
+  const closeChat = useCallback(() => {
+    setIsChatOpen(false);
+    requestAnimationFrame(() => {
+      document.querySelector('[aria-controls="classroom-chat-drawer"]')?.focus();
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isMobile || !isChatOpen) return undefined;
+    const frame = requestAnimationFrame(() => {
+      const drawer = chatDrawerRef.current;
+      if (!drawer || drawer.contains(document.activeElement)) return;
+      const coarse = window.matchMedia?.("(pointer: coarse)").matches;
+      const input = drawer.querySelector("input:not([disabled]), textarea:not([disabled])");
+      (coarse || !input ? drawer.querySelector(".cr-chat-drawer__panel") : input)?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isMobile, isChatOpen]);
+
+  const handleChatKeyDown = useCallback((event) => {
+    if (isMobile || event.key !== "Escape") return;
+    // A menu open inside the chat (the private-message picker) closes first.
+    if (event.currentTarget.querySelector('[aria-expanded="true"]')) return;
+    event.stopPropagation();
+    closeChat();
+  }, [isMobile, closeChat]);
+
   const getSplitPercentage = () => {
     if (customSplit !== null) return customSplit;
 
@@ -2243,16 +2277,20 @@ export default function ClassroomShell({
         </div>
       )}
 
-      {/* Desktop chat drawer: anchored to the chat control so opening the
-          conversation never steals height from the video or lesson canvas. */}
+      {/* Chat pops up over the lesson from the chat control and slides back
+          when closed. It never resizes the video or the lesson. */}
       {(
         <aside
           id="classroom-chat-drawer"
-          className={`cr-chat-drawer ${isMobile ? "cr-chat-drawer--portrait" : ""} ${(isMobile ? mobileActiveTab === "chat" : isChatOpen) ? "cr-chat-drawer--open" : ""}`}
-          aria-hidden={isMobile ? mobileActiveTab !== "chat" : !isChatOpen}
+          ref={chatDrawerRef}
+          className={`cr-chat-drawer ${isMobile ? "cr-chat-drawer--portrait" : ""} ${isChatVisible ? "cr-chat-drawer--open" : ""}`}
+          aria-hidden={!isChatVisible}
+          aria-label={ct("cr_conversation")}
+          inert={!isChatVisible}
+          onKeyDown={handleChatKeyDown}
           data-lenis-prevent
         >
-          <div className="cr-chat-drawer__panel">
+          <div className="cr-chat-drawer__panel" tabIndex={-1}>
             <header className="cr-chat-drawer__header">
               <div className="cr-chat-drawer__title">
                 <MessageSquare size={16} aria-hidden="true" />
@@ -2261,6 +2299,17 @@ export default function ClassroomShell({
               <span className="cr-chat-drawer__context">
                 {isGroup ? ct("cr_group_thread") : ct("cr_private_thread")}
               </span>
+              {!isMobile && (
+                <button
+                  type="button"
+                  className="cr-chat-drawer__close"
+                  onClick={closeChat}
+                  aria-label={ct("cr_close_chat")}
+                  title={ct("cr_close_chat")}
+                >
+                  <X size={16} aria-hidden="true" />
+                </button>
+              )}
             </header>
             <ClassroomChat
               classroomChannel={classroomChannel}
@@ -2268,7 +2317,7 @@ export default function ClassroomShell({
               isTeacher={isTeacher}
               teacherName={teacherName}
               learnerName={isTeacher ? learnerName : userName}
-              isOpen={isMobile ? mobileActiveTab === "chat" : isChatOpen}
+              isOpen={isChatVisible}
               onUnreadCountChange={setChatUnreadCount}
               allLearnerNames={allLearnerNames}
               chatParticipants={chatParticipants}

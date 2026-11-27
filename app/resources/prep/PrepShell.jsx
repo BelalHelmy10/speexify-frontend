@@ -410,15 +410,30 @@ function PrepShellContent({
 
   const pdfViewportPublishedRef = useRef(false);
   const pdfLiveViewReceivedRef = useRef(false);
-  const handlePdfViewportChange = useCallback((view) => {
+  // Last view sent to learners. Re-renders (opening chat, any shell update)
+  // re-publish the current view; only send it when it really changed, so the
+  // class isn't nudged by sub-pixel differences.
+  const lastPdfViewKeyRef = useRef("");
+  const handlePdfViewportChange = useCallback((view, { force = false } = {}) => {
     if (!isActive || !isTeacher || !channelReady || !sendOnChannel) return;
     pdfViewportPublishedRef.current = true;
     const panel = pdfScrollRef.current;
     const scrollNorm = panel ? panel.scrollTop / Math.max(1, panel.scrollHeight - panel.clientHeight) : 0;
+    const round = (value) => Math.round(Number(value || 0) * 1000);
+    const region = view.region || {};
+    const key = [resource._id, view.page, Boolean(view.manual), round(scrollNorm),
+      round(region.x), round(region.y), round(region.width), round(region.height)].join("|");
+    if (!force && key === lastPdfViewKeyRef.current) return;
+    lastPdfViewKeyRef.current = key;
     const pdfScroll = { resourceId: resource._id, page: view.page, scrollNorm, view };
     sendOnChannel({type:'PDF_SCROLL',...pdfScroll});
     onClassroomStateChange?.({pdfScroll},{delay:1500});
   }, [isActive,isTeacher,channelReady,sendOnChannel,resource._id,onClassroomStateChange]);
+
+  // A (re)connected channel or a newly shown lesson always gets the view.
+  useEffect(() => {
+    lastPdfViewKeyRef.current = "";
+  }, [isActive, channelReady]);
 
   useEffect(() => {
     const view = pdfNavApiRef.current?.getView?.();
@@ -1796,7 +1811,7 @@ function PrepShellContent({
       }
       if (msg?.type === "PDF_VIEW_REQUEST" && msg.resourceId === resource._id && isTeacher) {
         const view = pdfNavApiRef.current?.getView?.();
-        if (view) handlePdfViewportChange(view);
+        if (view) handlePdfViewportChange(view, { force: true });
         return;
       }
       handlePrepChannelMessage(msg, {
