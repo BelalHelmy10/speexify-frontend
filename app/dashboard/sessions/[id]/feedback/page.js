@@ -5,29 +5,24 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
-  ArrowLeftRight,
   AudioWaveform,
   BookOpen,
   Brain,
   Check,
   CheckCircle2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CircleAlert,
-  ClipboardCheck,
   GraduationCap,
   Loader2,
   MessageSquareText,
   Mic,
   PenLine,
-  Plus,
   RotateCcw,
   Save,
   Sparkles,
   Square,
   Target,
-  Trash2,
   Trophy,
   Volume2,
   X,
@@ -39,68 +34,17 @@ import { trackEvent } from "@/lib/analytics";
 import { getDictionary, t } from "@/app/i18n";
 import {
   getReportFromFeedback,
+  normalizeFeedbackItems,
   serializeRichFeedbackComments,
 } from "@/lib/feedbackReport";
+import { isLink, stripMarks } from "@/lib/feedbackMarks.mjs";
 import { getIntlLocale } from "@/utils/locale";
+import FeedbackReportEditor, { createFeedbackRow } from "./FeedbackReportEditor";
+import FeedbackReportTable, { getMistakeParts } from "./FeedbackReportTable";
+import { FEEDBACK_TYPES, speakText } from "./feedbackShared";
 import "@/styles/session-feedback.scss";
 
-const CATEGORY_CONFIG = [
-  {
-    key: "vocabulary",
-    label: "New Word",
-    listLabel: "Vocabulary",
-    description: "Capture terms worth revisiting.",
-    icon: BookOpen,
-    primaryLabel: "Word or phrase",
-    secondaryLabel: "Definition / context",
-    primaryPlaceholder: "e.g. bandwidth",
-    secondaryPlaceholder: "The time or capacity to handle extra work.",
-  },
-  {
-    key: "grammar",
-    label: "Grammar Mistake",
-    listLabel: "Grammar",
-    description: "Log before, after, and why.",
-    icon: ClipboardCheck,
-    primaryLabel: "Original sentence",
-    secondaryLabel: "Corrected sentence + explanation",
-    primaryPlaceholder: "e.g. I am agree with you.",
-    secondaryPlaceholder: "I agree with you. | Agree is already a verb.",
-  },
-  {
-    key: "pronunciation",
-    label: "Pronunciation",
-    listLabel: "Pronunciation",
-    description: "Mark sounds to rehearse.",
-    icon: Mic,
-    primaryLabel: "Word",
-    secondaryLabel: "Phonetic spelling / audio note",
-    primaryPlaceholder: "e.g. assistance",
-    secondaryPlaceholder: "/uh-SIS-tuhns/ or /əˈsɪs.təns/",
-  },
-  {
-    key: "note",
-    label: "General Note",
-    listLabel: "Note",
-    description: "Record coaching observations.",
-    icon: MessageSquareText,
-    primaryLabel: "Focus area",
-    secondaryLabel: "Coach note",
-    primaryPlaceholder: "e.g. Confidence",
-    secondaryPlaceholder: "Strong improvement when you paused before answering.",
-  },
-];
-
-const EMPTY_DRAFTS = CATEGORY_CONFIG.reduce((acc, category) => {
-  acc[category.key] = { prompt: "", response: "" };
-  return acc;
-}, {});
-
 const spring = { type: "spring", stiffness: 420, damping: 34 };
-
-function getCategoryConfig(type) {
-  return CATEGORY_CONFIG.find((item) => item.key === type) || CATEGORY_CONFIG[0];
-}
 
 function pluralize(count, singular, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
@@ -128,89 +72,16 @@ function uniqueChoices(values) {
     .slice(0, 4);
 }
 
-function splitCorrectionAndExplanation(value = "") {
-  const text = String(value || "").trim();
-  if (!text) return { correction: "", explanation: "" };
-
-  const lines = text
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (lines.length > 1) {
-    return { correction: lines[0], explanation: lines.slice(1).join(" ") };
-  }
-
-  const separatorMatch = text.match(/^(.+?)(?:\s+\|\s+|\s+-\s+|\s+--\s+)(.+)$/);
-  if (separatorMatch) {
-    return {
-      correction: separatorMatch[1].trim(),
-      explanation: separatorMatch[2].trim(),
-    };
-  }
-
-  return { correction: text, explanation: "" };
-}
-
-function getDiffTokens(before = "", after = "") {
-  const beforeTokens = String(before || "").trim().split(/\s+/).filter(Boolean);
-  const afterTokens = String(after || "").trim().split(/\s+/).filter(Boolean);
-  const matrix = Array.from({ length: beforeTokens.length + 1 }, () =>
-    Array(afterTokens.length + 1).fill(0)
-  );
-
-  for (let i = beforeTokens.length - 1; i >= 0; i -= 1) {
-    for (let j = afterTokens.length - 1; j >= 0; j -= 1) {
-      if (beforeTokens[i].toLowerCase() === afterTokens[j].toLowerCase()) {
-        matrix[i][j] = matrix[i + 1][j + 1] + 1;
-      } else {
-        matrix[i][j] = Math.max(matrix[i + 1][j], matrix[i][j + 1]);
-      }
-    }
-  }
-
-  const beforeParts = [];
-  const afterParts = [];
-  let i = 0;
-  let j = 0;
-
-  while (i < beforeTokens.length && j < afterTokens.length) {
-    if (beforeTokens[i].toLowerCase() === afterTokens[j].toLowerCase()) {
-      beforeParts.push({ value: beforeTokens[i], changed: false });
-      afterParts.push({ value: afterTokens[j], changed: false });
-      i += 1;
-      j += 1;
-    } else if (matrix[i + 1][j] >= matrix[i][j + 1]) {
-      beforeParts.push({ value: beforeTokens[i], changed: true });
-      i += 1;
-    } else {
-      afterParts.push({ value: afterTokens[j], changed: true });
-      j += 1;
-    }
-  }
-
-  while (i < beforeTokens.length) {
-    beforeParts.push({ value: beforeTokens[i], changed: true });
-    i += 1;
-  }
-
-  while (j < afterTokens.length) {
-    afterParts.push({ value: afterTokens[j], changed: true });
-    j += 1;
-  }
-
-  return { beforeParts, afterParts };
-}
-
 function buildQuizQuestions(items) {
-  const vocabulary = items.filter((item) => item.type === "vocabulary");
-  const grammar = items.filter((item) => item.type === "grammar");
+  const vocabulary = items.filter((item) => item.type === "vocabulary" && item.response);
+  const grammar = items.filter((item) => item.type === "grammar" && item.response);
   const questions = [];
 
   vocabulary.forEach((target, index) => {
+    const answer = stripMarks(target.response).trim();
     const choices = uniqueChoices([
-      target.response,
-      ...vocabulary.filter((item) => item.id !== target.id).map((item) => item.response),
+      answer,
+      ...vocabulary.filter((item) => item.id !== target.id).map((item) => stripMarks(item.response)),
       "A filler word used when you need more time.",
       "A phrase for ending a conversation politely.",
       "A word used only in formal writing.",
@@ -218,26 +89,22 @@ function buildQuizQuestions(items) {
     questions.push({
       id: `vocab-${target.id || index}`,
       type: "vocabulary",
-      prompt: `What does "${target.prompt}" mean in this session?`,
-      answer: target.response,
+      prompt: `What does "${stripMarks(target.prompt)}" mean in this session?`,
+      answer,
       choices: rotateChoices(choices, index),
     });
   });
 
   grammar.forEach((target, index) => {
-    const { correction } = splitCorrectionAndExplanation(target.response);
-    const choices = uniqueChoices([
-      correction,
-      target.prompt,
-      "I am agreed with you.",
-      "I agreeing with you.",
-    ]);
+    const answer = stripMarks(getMistakeParts(target).correction).trim();
+    const choices = uniqueChoices([answer, stripMarks(target.prompt)]);
+    if (choices.length < 2) return;
 
     questions.push({
       id: `grammar-${target.id || index}`,
       type: "grammar",
-      prompt: "Choose the stronger correction.",
-      answer: correction,
+      prompt: "Which sentence is correct?",
+      answer,
       choices: rotateChoices(choices, index + vocabulary.length),
     });
   });
@@ -300,40 +167,24 @@ function ErrorState({ error, onBack }) {
   );
 }
 
-function CategoryBadge({ type }) {
-  const config = getCategoryConfig(type);
-  const Icon = config.icon;
-
-  return (
-    <span className={`session-report-badge session-report-badge--${type}`}>
-      <Icon size={14} />
-      {config.listLabel}
-    </span>
-  );
-}
-
 function CoachView({
-  activeType,
   canEdit,
-  draft,
+  dirty,
   futureSteps,
   items,
-  onAddItem,
-  onChangeDraft,
-  onDeleteItem,
+  onChangeItems,
+  onDiscardDraft,
   onSave,
-  onSetActiveType,
   onSetFutureSteps,
   onSetSummary,
+  publishState,
   published,
+  restoredDraft,
   saving,
   summary,
 }) {
-  const activeConfig = getCategoryConfig(activeType);
-  const ActiveIcon = activeConfig.icon;
-  const counts = getCounts(items);
-  const canAdd = draft.prompt.trim() && draft.response.trim() && canEdit;
-  const totalCoreItems = counts.vocabulary + counts.grammar + counts.pronunciation;
+  const filled = normalizeFeedbackItems(items);
+  const counts = getCounts(filled);
 
   return (
     <motion.div
@@ -344,187 +195,62 @@ function CoachView({
       transition={spring}
       className="session-report-view session-report-view--coach"
     >
-      <aside className="session-report-category-rail">
-        <div className="session-report-rail-head">
-          <p className="session-report-kicker">Coach workspace</p>
-          <h2>Feedback stack</h2>
-          <span>{pluralize(items.length, "entry", "entries")} prepared</span>
-        </div>
-
-        <div className="session-report-segmented" role="tablist" aria-label="Feedback category">
-          {CATEGORY_CONFIG.map((category) => {
-            const Icon = category.icon;
-            const isActive = activeType === category.key;
-            const categoryCount = counts[category.key] || 0;
-            return (
-              <button
-                key={category.key}
-                type="button"
-                className={`session-report-segment ${isActive ? "is-active" : ""}`}
-                onClick={() => onSetActiveType(category.key)}
-                role="tab"
-                aria-selected={isActive}
-              >
-                <span className="session-report-segment__icon">
-                  <Icon size={17} />
-                </span>
-                <span className="session-report-segment__copy">
-                  <strong>{category.label}</strong>
-                  <small>{category.description}</small>
-                </span>
-                <span className="session-report-segment__count">{categoryCount}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="session-report-rail-foot">
-          <span>{totalCoreItems}/8</span>
-          <div className="session-report-progress-track" aria-hidden>
-            <span style={{ width: `${Math.min((totalCoreItems / 8) * 100, 100)}%` }} />
+      <div className="fb-coach-main">
+        {restoredDraft && (
+          <div className="fb-draft-notice" role="status">
+            <RotateCcw size={16} aria-hidden="true" />
+            <span>We brought back the changes you had not published yet.</span>
+            <button type="button" onClick={onDiscardDraft}>Discard them</button>
           </div>
-          <p>Enough structure for a useful learner recap.</p>
-        </div>
-      </aside>
+        )}
 
-      <section className="session-report-editor">
-        <div className="session-report-composer">
-          <div className={`session-report-composer__mark session-report-composer__mark--${activeType}`}>
-            <ActiveIcon size={22} />
-          </div>
-          <div className="session-report-composer__body">
-            <div className="session-report-panel-head">
-              <div>
-                <p className="session-report-kicker">Quick capture</p>
-                <h2>{activeConfig.label}</h2>
-              </div>
-              <div className="session-report-mini-stats">
-                <span>{pluralize(counts.vocabulary, "word")}</span>
-                <span>{pluralize(counts.grammar, "fix", "fixes")}</span>
-                <span>{pluralize(counts.pronunciation, "sound")}</span>
-              </div>
-            </div>
+        <FeedbackReportEditor items={items} onChangeItems={onChangeItems} canEdit={canEdit} />
 
-            <form className="session-report-entry-form" onSubmit={onAddItem}>
-              <label className="session-report-field">
-                <span>{activeConfig.primaryLabel}</span>
-                <input
-                  value={draft.prompt}
-                  onChange={(event) => onChangeDraft("prompt", event.target.value)}
-                  disabled={!canEdit}
-                  placeholder={activeConfig.primaryPlaceholder}
-                />
-              </label>
-
-              <label className="session-report-field session-report-field--wide">
-                <span>{activeConfig.secondaryLabel}</span>
-                <textarea
-                  rows={3}
-                  value={draft.response}
-                  onChange={(event) => onChangeDraft("response", event.target.value)}
-                  disabled={!canEdit}
-                  placeholder={activeConfig.secondaryPlaceholder}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      onAddItem(event);
-                    }
-                  }}
-                />
-              </label>
-
-              <motion.button
-                type="submit"
-                className="session-report-add"
-                disabled={!canAdd}
-                whileHover={canAdd ? { scale: 1.02 } : undefined}
-                whileTap={canAdd ? { scale: 0.98 } : undefined}
-              >
-                <Plus size={18} />
-                Add
-              </motion.button>
-            </form>
-          </div>
-        </div>
-
-        <div className="session-report-live-preview">
-          <div className="session-report-list-head">
-            <div>
-              <ClipboardCheck size={18} />
-              <h3>Session evidence</h3>
-            </div>
-            <span>{pluralize(items.length, "entry", "entries")}</span>
-          </div>
-
-          {items.length ? (
-            <motion.div layout className="session-report-table" role="list">
-              <AnimatePresence initial={false}>
-                {items.map((item) => (
-                  <motion.article
-                    layout
-                    key={item.id}
-                    initial={{ opacity: 0, y: 12, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, x: -18, scale: 0.98 }}
-                    transition={spring}
-                    className="session-report-row"
-                    role="listitem"
-                  >
-                    <CategoryBadge type={item.type} />
-                    <div className="session-report-row__main">
-                      <strong>{item.prompt}</strong>
-                      <span>{item.response}</span>
-                    </div>
-                    {canEdit && (
-                      <button
-                        type="button"
-                        className="session-report-icon-button session-report-icon-button--danger"
-                        onClick={() => onDeleteItem(item.id)}
-                        aria-label={`Delete ${item.prompt}`}
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </motion.article>
-                ))}
-              </AnimatePresence>
-            </motion.div>
-          ) : (
-            <div className="session-report-empty">
-              <Sparkles size={22} />
-              <p>New feedback entries will appear here.</p>
-            </div>
-          )}
-        </div>
-      </section>
+        <section className="fb-comments">
+          <label className="session-report-field">
+            <span>General comments</span>
+            <textarea
+              rows={7}
+              dir="auto"
+              value={summary}
+              onChange={(event) => onSetSummary(event.target.value)}
+              disabled={!canEdit}
+              placeholder="A personal message for the learner: what went well, what to practise, and one thing to try before next time."
+            />
+          </label>
+        </section>
+      </div>
 
       <aside className="session-report-summary-panel">
         <div className="session-report-publish-card">
           <div>
             <p className="session-report-kicker">Learner report</p>
-            <h3>Publish-ready brief</h3>
+            <h3>Ready to publish</h3>
           </div>
           <div className="session-report-publish-meter">
-            <strong>{items.length}</strong>
-            <span>items</span>
+            <strong>{filled.length}</strong>
+            <span>{filled.length === 1 ? "entry" : "entries"}</span>
           </div>
         </div>
 
-        <label className="session-report-field">
-          <span>General summary</span>
-          <textarea
-            rows={8}
-            value={summary}
-            onChange={(event) => onSetSummary(event.target.value)}
-            disabled={!canEdit}
-            placeholder="Personalized comments for the learner."
-          />
-        </label>
+        <ul className="fb-type-counts">
+          {FEEDBACK_TYPES.map((type) => {
+            const Icon = type.icon;
+            return (
+              <li key={type.key} className={`fb-type-counts__item fb-type-counts__item--${type.key}`}>
+                <Icon size={15} aria-hidden="true" />
+                <span>{type.plural}</span>
+                <strong>{counts[type.key] || 0}</strong>
+              </li>
+            );
+          })}
+        </ul>
 
         <label className="session-report-field">
           <span>Next practice focus</span>
           <textarea
-            rows={5}
+            rows={4}
+            dir="auto"
             value={futureSteps}
             onChange={(event) => onSetFutureSteps(event.target.value)}
             disabled={!canEdit}
@@ -533,48 +259,44 @@ function CoachView({
         </label>
 
         {canEdit && (
-          <motion.button
-            type="button"
-            className={`session-report-publish ${published ? "is-complete" : ""}`}
-            onClick={onSave}
-            disabled={saving}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-          >
-            <AnimatePresence mode="wait" initial={false}>
-              {saving ? (
-                <motion.span
-                  key="saving"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                >
-                  <Loader2 className="session-report-spin" size={18} />
-                  Publishing
-                </motion.span>
-              ) : published ? (
-                <motion.span
-                  key="published"
-                  initial={{ opacity: 0, scale: 0.86 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.92 }}
-                >
-                  <CheckCircle2 size={18} />
-                  Published
-                </motion.span>
-              ) : (
-                <motion.span
-                  key="publish"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                >
-                  <Save size={18} />
-                  Publish Feedback
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.button>
+          <>
+            <motion.button
+              type="button"
+              className={`session-report-publish ${published ? "is-complete" : ""}`}
+              onClick={onSave}
+              disabled={saving}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {saving ? (
+                  <motion.span key="saving" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+                    <Loader2 className="session-report-spin" size={18} />
+                    Publishing
+                  </motion.span>
+                ) : published ? (
+                  <motion.span key="published" initial={{ opacity: 0, scale: 0.86 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.92 }}>
+                    <CheckCircle2 size={18} />
+                    Published
+                  </motion.span>
+                ) : (
+                  <motion.span key="publish" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+                    <Save size={18} />
+                    Publish feedback
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
+            <p className={`fb-save-state is-${publishState}`} role="status">
+              {{
+                dirty: "Changes not published yet. They are kept on this device until you publish.",
+                published: "The learner sees the latest version.",
+                draft: dirty
+                  ? "Not published yet. Your work is kept on this device until you publish."
+                  : "The learner sees nothing until you publish.",
+              }[publishState]}
+            </p>
+          </>
         )}
       </aside>
     </motion.div>
@@ -591,7 +313,7 @@ function LearnerStats({ counts }) {
     },
     {
       key: "grammar",
-      label: "Grammar Fixes",
+      label: "Corrections",
       value: counts.grammar,
       icon: Brain,
     },
@@ -625,13 +347,13 @@ function LearnerStats({ counts }) {
   );
 }
 
-function GeneralCommentsCard({ futureSteps, notes, summary }) {
+function GeneralCommentsCard({ futureSteps, summary, notes = [] }) {
   return (
     <section className="session-report-learner-section session-report-message">
       <div className="session-report-section-title">
         <div>
           <Sparkles size={18} />
-          <h2>Coach comments</h2>
+          <h2>General comments</h2>
         </div>
       </div>
       <div className="session-report-message__body">
@@ -671,11 +393,8 @@ function VocabularyCarousel({ items }) {
 
   const speak = (event) => {
     event.stopPropagation();
-    if (typeof window === "undefined" || !window.speechSynthesis || !active) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(`${active.prompt}. ${active.response}`);
-    utterance.lang = "en-US";
-    window.speechSynthesis.speak(utterance);
+    if (!active) return;
+    speakText(`${active.prompt}. ${active.response}`);
   };
 
   useEffect(() => {
@@ -743,20 +462,20 @@ function VocabularyCarousel({ items }) {
             animate={{ opacity: 1, x: 0, rotateY: flippedId === active.id ? 180 : 0 }}
             exit={{ opacity: 0, x: -40, rotateY: 8 }}
             transition={spring}
-            aria-label={`Review ${active.prompt}`}
+            aria-label={`Review ${stripMarks(active.prompt)}`}
           >
             <span className="session-report-flashcard__face session-report-flashcard__front">
               <BookOpen size={24} />
-              <strong>{active.prompt}</strong>
+              <strong dir="auto">{stripMarks(active.prompt)}</strong>
               <span><RotateCcw size={15} /></span>
             </span>
             <span className="session-report-flashcard__face session-report-flashcard__back">
-              <p>{active.response}</p>
+              <p dir="auto">{stripMarks(active.response)}</p>
               <span
                 className="session-report-listen"
                 role="button"
                 tabIndex={0}
-                aria-label={`Listen to ${active.prompt}`}
+                aria-label={`Listen to ${stripMarks(active.prompt)}`}
                 onClick={speak}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") speak(event);
@@ -769,89 +488,6 @@ function VocabularyCarousel({ items }) {
           </motion.button>
         </AnimatePresence>
       </div>
-    </section>
-  );
-}
-
-function GrammarFixCards({ items }) {
-  const [openId, setOpenId] = useState(null);
-
-  return (
-    <section className="session-report-learner-section">
-      <div className="session-report-section-title">
-        <div>
-          <Brain size={18} />
-          <h2>Grammar fix-it cards</h2>
-        </div>
-      </div>
-
-      {items.length ? (
-        <div className="session-report-fix-grid">
-          {items.map((item) => {
-            const { correction, explanation } = splitCorrectionAndExplanation(item.response);
-            const diff = getDiffTokens(item.prompt, correction);
-            const isOpen = openId === item.id;
-
-            return (
-              <motion.article
-                key={item.id}
-                className="session-report-fix-card"
-                layout
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={spring}
-              >
-                <div className="session-report-fix-card__compare">
-                  <div className="session-report-before">
-                    <span>Before</span>
-                    <p>
-                      {diff.beforeParts.map((part, idx) => (
-                        <mark key={`${part.value}-${idx}`} className={part.changed ? "is-removed" : ""}>
-                          {part.value}
-                        </mark>
-                      ))}
-                    </p>
-                  </div>
-                  <ArrowLeftRight size={18} />
-                  <div className="session-report-after">
-                    <span>After</span>
-                    <p>
-                      {diff.afterParts.map((part, idx) => (
-                        <mark key={`${part.value}-${idx}`} className={part.changed ? "is-added" : ""}>
-                          {part.value}
-                        </mark>
-                      ))}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="session-report-explain"
-                  onClick={() => setOpenId((current) => (current === item.id ? null : item.id))}
-                >
-                  <span>Explanation</span>
-                  <ChevronDown className={isOpen ? "is-open" : ""} size={16} />
-                </button>
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      className="session-report-explanation"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={spring}
-                    >
-                      <p>{explanation || "Use this version for a clearer and more natural sentence."}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.article>
-            );
-          })}
-        </div>
-      ) : (
-        <EmptyLearnerState label="No grammar fixes for this report." />
-      )}
     </section>
   );
 }
@@ -945,8 +581,8 @@ function PronunciationHub({ items }) {
               >
                 <div>
                   <span>Practice</span>
-                  <strong>{item.prompt}</strong>
-                  <p>{item.response}</p>
+                  <strong dir="auto">{stripMarks(item.prompt)}</strong>
+                  {item.response && !isLink(item.response) && <p dir="auto">{stripMarks(item.response)}</p>}
                 </div>
                 <button
                   type="button"
@@ -958,7 +594,7 @@ function PronunciationHub({ items }) {
                       void startRecording(item.id);
                     }
                   }}
-                  aria-label={isRecording ? "Stop recording" : `Record ${item.prompt}`}
+                  aria-label={isRecording ? "Stop recording" : `Record ${stripMarks(item.prompt)}`}
                   title={isRecording ? "Stop" : "Record"}
                 >
                   {isRecording ? <Square size={18} /> : recording ? <Check size={18} /> : <Mic size={18} />}
@@ -1061,9 +697,7 @@ function EmptyLearnerState({ label }) {
 function LearnerView({ futureSteps, items, summary }) {
   const counts = getCounts(items);
   const vocabulary = items.filter((item) => item.type === "vocabulary");
-  const grammar = items.filter((item) => item.type === "grammar");
   const pronunciation = items.filter((item) => item.type === "pronunciation");
-  const notes = items.filter((item) => item.type === "note");
   const questions = useMemo(() => buildQuizQuestions(items), [items]);
 
   return (
@@ -1078,24 +712,51 @@ function LearnerView({ futureSteps, items, summary }) {
       <div className="session-report-learner-topline">
         <div>
           <p className="session-report-kicker">Learner recap</p>
-          <h2>Turn the lesson into your next practice loop.</h2>
+          <h2>Your lesson, entry by entry.</h2>
         </div>
         <LearnerStats counts={counts} />
       </div>
 
       <div className="session-report-learner-grid">
         <div className="session-report-learner-main">
-          <GeneralCommentsCard futureSteps={futureSteps} notes={notes} summary={summary} />
-          <GrammarFixCards items={grammar} />
+          <FeedbackReportTable items={items} />
+          <GeneralCommentsCard futureSteps={futureSteps} summary={summary} />
+          <QuickReviewQuiz questions={questions} />
         </div>
         <div className="session-report-learner-side">
           <VocabularyCarousel items={vocabulary} />
           <PronunciationHub items={pronunciation} />
-          <QuickReviewQuiz questions={questions} />
         </div>
       </div>
     </motion.div>
   );
+}
+
+const draftKey = (sessionId) => `speexify:feedback-draft:${sessionId}`;
+
+function reportSnapshot({ items, summary, futureSteps }) {
+  return JSON.stringify({
+    items: normalizeFeedbackItems(items).map(({ id, type, prompt, response, note }) => ({ id, type, prompt, response, note: note || "" })),
+    summary: String(summary || "").trim(),
+    futureSteps: String(futureSteps || "").trim(),
+  });
+}
+
+function readDraft(sessionId) {
+  try {
+    const raw = window.localStorage.getItem(draftKey(sessionId));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft(sessionId) {
+  try {
+    window.localStorage.removeItem(draftKey(sessionId));
+  } catch {
+    // Storage can be unavailable (private mode); nothing to clear then.
+  }
 }
 
 export default function SessionFeedbackPage() {
@@ -1108,7 +769,6 @@ export default function SessionFeedbackPage() {
   const dict = getDictionary(locale, "session_feedback");
   const { user, checking } = useAuth();
   const isTeacher = user?.role === "teacher";
-
   const toastApi = useToast();
   const toast = toastApi?.toast || toastApi;
 
@@ -1118,19 +778,25 @@ export default function SessionFeedbackPage() {
   const [published, setPublished] = useState(false);
   const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState("coach");
-  const [activeType, setActiveType] = useState("vocabulary");
-  const [drafts, setDrafts] = useState(EMPTY_DRAFTS);
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState("");
   const [futureSteps, setFutureSteps] = useState("");
+  const [savedSnapshot, setSavedSnapshot] = useState("");
+  const [restoredDraft, setRestoredDraft] = useState(false);
+  const serverReportRef = useRef(null);
 
   const canEdit = Boolean(session && isTeacher);
-  const activeDraft = drafts[activeType] || EMPTY_DRAFTS[activeType];
   const visibleView = canEdit ? viewMode : "learner";
+  const currentSnapshot = reportSnapshot({ items, summary, futureSteps });
+  const dirty = canEdit && Boolean(savedSnapshot) && currentSnapshot !== savedSnapshot;
+  const learnerItems = useMemo(() => normalizeFeedbackItems(items), [items]);
+  const everPublished = Boolean(
+    session?.teacherFeedback?.commentsOnSession || session?.teacherFeedback?.messageToLearner
+  );
+  const publishState = !everPublished ? "draft" : dirty ? "dirty" : "published";
 
   useEffect(() => {
     if (!id || checking) return undefined;
-
     let cancelled = false;
 
     async function load() {
@@ -1141,13 +807,24 @@ export default function SessionFeedbackPage() {
         if (cancelled) return;
 
         const loadedSession = data?.session || null;
-        const teacherFeedback = loadedSession?.teacherFeedback || {};
-        const report = getReportFromFeedback(teacherFeedback);
-
+        const report = getReportFromFeedback(loadedSession?.teacherFeedback || {});
+        serverReportRef.current = report;
         setSession(loadedSession);
-        setItems(report.items);
-        setSummary(report.summary);
-        setFutureSteps(report.futureSteps);
+        setSavedSnapshot(reportSnapshot(report));
+
+        const draft = isTeacher ? readDraft(id) : null;
+        const draftMatchesServer = draft && (draft.base || null) === (report.updatedAt || null);
+        if (draftMatchesServer && reportSnapshot(draft) !== reportSnapshot(report)) {
+          setItems(draft.items || []);
+          setSummary(draft.summary || "");
+          setFutureSteps(draft.futureSteps || "");
+          setRestoredDraft(true);
+        } else {
+          if (draft) clearDraft(id);
+          setItems(report.items.length || !isTeacher ? report.items : [createFeedbackRow("vocabulary")]);
+          setSummary(report.summary);
+          setFutureSteps(report.futureSteps);
+        }
       } catch (err) {
         if (cancelled) return;
         console.error("Failed to load session feedback", err);
@@ -1158,47 +835,53 @@ export default function SessionFeedbackPage() {
     }
 
     load();
-
     return () => {
       cancelled = true;
     };
-  }, [id, checking]);
+  }, [id, checking, isTeacher]);
+
+  // Keep unpublished work on this device so a closed tab loses nothing.
+  useEffect(() => {
+    if (!canEdit || !id) return undefined;
+    const timer = window.setTimeout(() => {
+      if (!dirty) {
+        clearDraft(id);
+        return;
+      }
+      try {
+        window.localStorage.setItem(
+          draftKey(id),
+          JSON.stringify({ base: serverReportRef.current?.updatedAt || null, items, summary, futureSteps })
+        );
+      } catch {
+        // Storage full or unavailable: the warning on leaving still protects the work.
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [canEdit, dirty, futureSteps, id, items, summary]);
+
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const warn = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   const handleBack = () => {
     router.push(id ? `${prefix}/dashboard/sessions/${id}` : `${prefix}/dashboard`);
   };
 
-  const handleChangeDraft = (field, value) => {
-    setDrafts((current) => ({
-      ...current,
-      [activeType]: {
-        ...current[activeType],
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleAddItem = (event) => {
-    event.preventDefault();
-    if (!canEdit) return;
-
-    const prompt = activeDraft.prompt.trim();
-    const response = activeDraft.response.trim();
-    if (!prompt || !response) return;
-
-    const newItem = {
-      id: `${activeType}-${Date.now()}`,
-      type: activeType,
-      prompt,
-      response,
-      createdAt: new Date().toISOString(),
-    };
-
-    setItems((current) => [newItem, ...current]);
-    setDrafts((current) => ({
-      ...current,
-      [activeType]: { prompt: "", response: "" },
-    }));
+  const handleDiscardDraft = () => {
+    const report = serverReportRef.current;
+    if (!report) return;
+    clearDraft(id);
+    setItems(report.items.length ? report.items : [createFeedbackRow("vocabulary")]);
+    setSummary(report.summary);
+    setFutureSteps(report.futureSteps);
+    setRestoredDraft(false);
   };
 
   const handleSave = async () => {
@@ -1208,7 +891,7 @@ export default function SessionFeedbackPage() {
       version: 1,
       summary: summary.trim(),
       futureSteps: futureSteps.trim(),
-      items,
+      items: normalizeFeedbackItems(items),
       updatedAt: new Date().toISOString(),
     };
     const commentsOnSession = serializeRichFeedbackComments(report);
@@ -1217,13 +900,16 @@ export default function SessionFeedbackPage() {
       setSaving(true);
       setPublished(false);
       setError("");
-
       await api.post(`/sessions/${id}/feedback`, {
         messageToLearner: report.summary,
         commentsOnSession,
         futureSteps: report.futureSteps,
       });
 
+      serverReportRef.current = { ...report, hasRichReport: true };
+      setSavedSnapshot(reportSnapshot(report));
+      setRestoredDraft(false);
+      clearDraft(id);
       setSession((current) => ({
         ...current,
         teacherFeedback: {
@@ -1235,14 +921,12 @@ export default function SessionFeedbackPage() {
       }));
       setPublished(true);
       window.setTimeout(() => setPublished(false), 1800);
-
       trackEvent("feedback_submitted", {
         role: "teacher",
         sessionId: id,
         richReport: true,
-        itemCount: items.length,
+        itemCount: report.items.length,
       });
-
       toast?.success?.(t(dict, "saved_ok") || "Feedback saved.");
     } catch (err) {
       console.error("Failed to save feedback", err);
@@ -1313,9 +997,11 @@ export default function SessionFeedbackPage() {
                 </button>
               </div>
             )}
-            <span className={`session-report-status ${canEdit ? "is-editable" : "is-readonly"}`}>
-              {canEdit ? "Editable" : "Read-only"}
-            </span>
+            {canEdit && (
+              <span className={`session-report-status is-${publishState}`}>
+                {{ dirty: "Unpublished changes", published: "Published", draft: "Not published yet" }[publishState]}
+              </span>
+            )}
           </div>
         </header>
 
@@ -1324,24 +1010,23 @@ export default function SessionFeedbackPage() {
         <AnimatePresence mode="wait">
           {visibleView === "coach" ? (
             <CoachView
-              activeType={activeType}
               canEdit={canEdit}
-              draft={activeDraft}
+              dirty={dirty}
+              publishState={publishState}
               futureSteps={futureSteps}
               items={items}
-              onAddItem={handleAddItem}
-              onChangeDraft={handleChangeDraft}
-              onDeleteItem={(itemId) => setItems((current) => current.filter((item) => item.id !== itemId))}
+              onChangeItems={setItems}
+              onDiscardDraft={handleDiscardDraft}
               onSave={handleSave}
-              onSetActiveType={setActiveType}
               onSetFutureSteps={setFutureSteps}
               onSetSummary={setSummary}
               published={published}
+              restoredDraft={restoredDraft}
               saving={saving}
               summary={summary}
             />
           ) : (
-            <LearnerView futureSteps={futureSteps} items={items} summary={summary} />
+            <LearnerView futureSteps={futureSteps} items={learnerItems} summary={summary} />
           )}
         </AnimatePresence>
       </div>

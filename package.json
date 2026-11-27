@@ -51,6 +51,7 @@
     "qa:responsive": "node scripts/responsiveQa.mjs",
     "qa:classroom:browsers": "playwright test --config=playwright.classroom.config.mjs",
     "qa:classroom:turn": "REQUIRE_TURN=1 playwright test --config=playwright.classroom.config.mjs tests/classroom/turn-relay.spec.mjs --project=chromium-desktop",
+    "qa:feedback": "playwright test --config=playwright.feedback.config.mjs",
     "qa:classroom:real-devices": "node scripts/classroomRealDeviceSmoke.mjs",
     "qa:public-routes": "node scripts/checkPublicRoutes.mjs --start-server",
     "qa:seo": "node qa-audit/seo.mjs",
