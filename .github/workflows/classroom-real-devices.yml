@@ -11,6 +11,11 @@ concurrency:
 
 jobs:
   browserstack-smoke:
+    # BrowserStack is not set up yet, so the nightly run failed (and emailed)
+    # every weekday. It runs on schedule once the repository variable
+    # CLASSROOM_REAL_DEVICES_ENABLED is "1"; a manual run always runs and
+    # still fails loudly if the credentials are missing.
+    if: github.event_name == 'workflow_dispatch' || vars.CLASSROOM_REAL_DEVICES_ENABLED == '1'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

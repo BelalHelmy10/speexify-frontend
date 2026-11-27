@@ -5788,14 +5788,13 @@ body.classroom-active {
   .cr-resource-workspace:has(.cpv-nav) {
     position: relative;
 
-    // --cr-tabs-room is measured from the zoom and page controls
-    // (ClassroomResourceWorkspace); the fixed allowance is only a fallback.
+    // Inline start, so Arabic puts the tabs on the side the controls leave.
     .cr-resource-tabs {
       position: absolute;
       inset-inline-start: 0;
       bottom: 0;
       z-index: 3;
-      max-width: calc(var(--cr-tabs-room, calc(100% - 242px)) - 8px);
+      max-width: calc(100% - 250px);
       height: var(--cr-resource-bar-height);
       min-height: 0;
       padding: 2px 4px;
@@ -6052,8 +6051,22 @@ body.classroom-active {
   }
 }
 
-.cr-main--portrait .cr-resource-workspace:has(.cpv-nav) .cr-resource-tabs {
-  max-width: calc(var(--cr-tabs-room, calc(100% - 202px)) - 8px);
+// Portrait phones: the zoom and page controls are fixed-size buttons plus a
+// page counter that grew with the text (WebKit fonts, "12 / 120"), so the
+// teacher's tab covered them. Fix the counter's width and keep the tabs
+// clear of everything: page rail 37 + controls 230 + edge 6, plus a margin.
+.cr-main--portrait .cr-resource-workspace:has(.cpv-nav) {
+  .cpv-nav__pages {
+    flex: 0 0 72px;
+    width: 72px;
+    justify-content: center;
+    padding-inline: 4px;
+    overflow: hidden;
+  }
+
+  .cr-resource-tabs {
+    max-width: calc(100% - 282px);
+  }
 }
 
 // On the Content tab the quick actions sit in a row beside the small video,
