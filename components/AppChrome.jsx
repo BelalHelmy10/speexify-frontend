@@ -67,6 +67,7 @@ function isFocusedWorkspace(pathname) {
     normalized.startsWith("/classroom/") ||
     normalized === "/resources/prep" ||
     normalized.startsWith("/resources/prep/") ||
+    normalized === "/trial-booking" ||
     normalized === "/checkout" ||
     normalized.startsWith("/checkout/") ||
     normalized === "/payment" ||
@@ -104,7 +105,7 @@ export default function AppChrome({ children }) {
 
   return (
     <>
-      {deferredChromeReady && !appPath && <SmoothScroll />}
+      {deferredChromeReady && !appPath && !focusedWorkspace && <SmoothScroll />}
 
       {showSiteChrome && <Header />}
       <Suspense fallback={null}>
@@ -119,7 +120,8 @@ export default function AppChrome({ children }) {
         !appPath &&
         authStatus === "unauthenticated" &&
         normalizedPath !== "/assessment" &&
-        normalizedPath !== "/book-free-session" && <StickyTrialCTA />}
+        normalizedPath !== "/book-free-session" &&
+        normalizedPath !== "/trial-booking" && <StickyTrialCTA />}
     </>
   );
 }

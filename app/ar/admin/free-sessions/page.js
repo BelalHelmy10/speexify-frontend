@@ -1,5 +1,2 @@
-import FreeSessionRequestsPage from "../../../admin/free-sessions/FreeSessionRequestsPage";
-
-export default function ArabicAdminFreeSessionsPage() {
-  return <FreeSessionRequestsPage />;
-}
+import TrialAdminPage from "@/components/trial/TrialAdminPage";
+export default function Page() { return <TrialAdminPage locale="ar" />; }
