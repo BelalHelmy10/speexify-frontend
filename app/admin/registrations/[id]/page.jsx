@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
+import ResilientAvatar from "@/components/ResilientAvatar";
 import AdminAccessFallback from "@/app/admin/components/AdminAccessFallback";
 import AdminDashboardHeader from "@/app/admin/components/AdminDashboardHeader";
 
@@ -178,7 +179,7 @@ export default function AdminRegistrationDetailPage() {
             <section className="adm-registration-hero adm-admin-card">
               <div className="adm-registration-hero__identity">
                 <div className="adm-registration-avatar" aria-hidden="true">
-                  {user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initials}
+                  <ResilientAvatar src={user.avatarUrl} alt="" fallback={initials} />
                 </div>
                 <div>
                   <div className="adm-registration-badges">
