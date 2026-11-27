@@ -26,7 +26,6 @@ import {
   useClassroomCaptions,
 } from "./ClassroomCaptions";
 import {
-  ClassroomScreenShareBanner,
   ClassroomScreenShareConfirmModal,
   useClassroomScreenShare,
 } from "./ClassroomScreenShare";
@@ -43,6 +42,7 @@ import useClassroomVideoModeration from "./useClassroomVideoModeration";
 import api from "@/lib/api";
 import { MessageCircle, MessageSquare, BookOpenText, Target, BookOpen } from "lucide-react";
 import { classroomText, useClassroomText } from "./classroomText";
+import ClassroomScreenStage from "./ClassroomScreenStage";
 
 /* -----------------------------------------------------------
    Utility: Safely generate a display name
@@ -179,7 +179,6 @@ const MAX_SPLIT_PERCENT = 88;
 // While someone is sharing their screen, the resource viewer on the right
 // is hidden entirely and the Jitsi stage view fills the full classroom
 // width — same as Zoom / Teams when content is being shared.
-const SCREEN_SHARE_LEFT_PERCENT = 100;
 const PAGE_RECORDING_UNSUPPORTED_KEY = "cr_rec_unsupported";
 const PAGE_RECORDING_MIME_TYPES = [
   "video/webm;codecs=vp9,opus",
@@ -467,8 +466,6 @@ export default function ClassroomShell({
       updateOpenResources([...openResourceIdsRef.current, selectedResourceId]);
     }
   }, [selectedResourceId, updateOpenResources]);
-  const [isScreenShareActive, setIsScreenShareActive] = useState(false);
-  const [jitsiSharing, setJitsiSharing] = useState(null);
 
   /* -----------------------------------------------------------
      Focus Mode & Layout State
@@ -761,8 +758,7 @@ export default function ClassroomShell({
     userName,
     userId: localUserId,
     isTeacher,
-    isLocalSharing: isScreenShareActive,
-    jitsiSharing,
+    sessionId,
   });
 
   const [showScreenShareConfirm, setShowScreenShareConfirm] = useState(false);
@@ -777,24 +773,31 @@ export default function ClassroomShell({
     isTeacher,
   ]);
 
-  const confirmStartScreenShare = useCallback(() => {
+  // The screen is captured here and shown in the content panel (see
+  // useClassroomScreenStream); Jitsi keeps the cameras and microphones.
+  const startScreenStream = screenShare.stream.start;
+  const confirmStartScreenShare = useCallback(async () => {
     setShowScreenShareConfirm(false);
-    const action = videoModeration.actions?.startScreenShare;
-    if (typeof action === "function") {
-      action();
+    const result = await startScreenStream();
+    if (result?.reason === "failed" || result?.reason === "unsupported") {
+      setShareStartError(true);
     }
-  }, [videoModeration.actions]);
+  }, [startScreenStream]);
 
-  const stopScreenShare = useCallback(() => {
-    const action = videoModeration.actions?.stopScreenShare;
-    if (typeof action === "function") {
-      action();
-    }
-  }, [videoModeration.actions]);
+  const stopScreenShare = screenShare.stream.stop;
+  const [shareStartError, setShareStartError] = useState(false);
+  useEffect(() => {
+    if (!shareStartError) return undefined;
+    const timer = setTimeout(() => setShareStartError(false), 6000);
+    return () => clearTimeout(timer);
+  }, [shareStartError]);
 
-  // Jitsi puts a presenter's screen on stage for viewers by itself, so the
-  // classroom no longer pins anything; it only stops forcing tile view while
-  // a remote presentation is active (see suspendTileViewLock below).
+  // Phones show one area at a time: open the lesson area when a share starts.
+  const remoteShareId = screenShare.stream.remote?.shareId || null;
+  useEffect(() => {
+    if (remoteShareId && isMobile) setMobileActiveTab("content");
+  }, [remoteShareId, isMobile]);
+
 
   const [classroomStateLoaded, setClassroomStateLoaded] = useState(false);
   const [classroomStateSnapshot, setClassroomStateSnapshot] = useState(null);
@@ -1093,10 +1096,7 @@ export default function ClassroomShell({
   /* -----------------------------------------------------------
      Drag-to-resize logic
   ----------------------------------------------------------- */
-  // While someone else presents, viewers get the full-width stage, so the
-  // divider is inert. The presenter keeps their normal lesson layout.
-  const canResizePanels =
-    !screenShare.isRemoteSharing && (isTeacher || !followTeacherLayout);
+  const canResizePanels = isTeacher || !followTeacherLayout;
 
   const updateCustomSplit = useCallback((nextSplit, { defer = true } = {}) => {
     if (nextSplit === null || nextSplit === undefined) return;
@@ -1295,11 +1295,6 @@ export default function ClassroomShell({
   }, [isChatVisible]);
 
   const getSplitPercentage = () => {
-    // Viewers of a presentation get the full-width stage. The presenter keeps
-    // their own layout so the lesson stays visible (and sharing this tab no
-    // longer produces a mirror of the call).
-    if (screenShare.isRemoteSharing) return SCREEN_SHARE_LEFT_PERCENT;
-
     if (customSplit !== null) return customSplit;
 
     if (isCompactLandscape) {
@@ -1787,6 +1782,7 @@ export default function ClassroomShell({
       scrollContainerRef={contentScrollRef}
       emptyContent={emptyResourceContent}
       renderResource={renderResource}
+      suspended={screenShare.isSomeoneSharing}
     />
   );
 
@@ -1805,13 +1801,6 @@ export default function ClassroomShell({
     await handleChangeResourceId(material._id, material);
   }, [sessionId, handleChangeResourceId, ct]);
 
-  const handleLocalScreenShareChange = useCallback((active) => {
-    setIsScreenShareActive(Boolean(active));
-  }, []);
-
-  const handleContentSharingChange = useCallback((next) => {
-    setJitsiSharing(next || null);
-  }, []);
 
   /* -----------------------------------------------------------
    Page Recording (local download, teacher only)
@@ -2148,12 +2137,11 @@ export default function ClassroomShell({
         />
       )}
 
-      <ClassroomScreenShareBanner
-        visible={screenShare.isSomeoneSharing}
-        sharerName={screenShare.sharerName}
-        isLocalSharer={screenShare.isLocalSharer}
-        onStop={stopScreenShare}
-      />
+      {shareStartError && (
+        <div className="cr-moderation-notice" role="alert">
+          {ct("cr_stage_start_failed")}
+        </div>
+      )}
 
       <ClassroomScreenShareConfirmModal
         isOpen={showScreenShareConfirm}
@@ -2180,7 +2168,7 @@ export default function ClassroomShell({
             isMobile ? `cr-main--portrait cr-main--portrait-${mobileActiveTab}` : "",
             isStackedTablet ? "cr-main--stacked" : "",
             isDragging ? "cr-main--dragging" : "",
-            screenShare.isRemoteSharing ? "cr-main--screen-share" : "",
+            screenShare.isSomeoneSharing ? "cr-main--sharing" : "",
             isChatOpen ? "cr-main--chat-open" : "",
           ]
             .filter(Boolean)
@@ -2242,6 +2230,13 @@ export default function ClassroomShell({
             style={{ width: `${100 - leftPanelWidth}%` }}
           >
             <div className="cr-content-viewer" data-lenis-prevent>
+              {screenShare.isSomeoneSharing && (
+                <ClassroomScreenStage
+                  stream={screenShare.stream}
+                  isTeacher={isTeacher}
+                  sharerName={screenShare.sharerName}
+                />
+              )}
               {resourceWorkspace}
             </div>
           </section>
@@ -2316,14 +2311,12 @@ export default function ClassroomShell({
             userName={userName}
             isTeacher={isTeacher}
             isGroup={isGroup}
-            onLocalScreenShareChange={handleLocalScreenShareChange}
-            onContentSharingChange={handleContentSharingChange}
             onModerationStateChange={handleVideoModerationChange}
             onConnectionStateChange={setVideoConnectionState}
             onAudioMuteChange={handleAudioMuteChange}
             onVideoMuteChange={handleVideoMuteChange}
             onParticipantCountChange={handleVideoParticipantCountChange}
-            suspendTileViewLock={screenShare.isRemoteSharing}
+            suspendTileViewLock={false}
             locale={locale}
           />
           <ClassroomRaiseHandOverlay

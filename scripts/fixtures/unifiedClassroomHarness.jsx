@@ -54,6 +54,31 @@ Object.defineProperty(navigator, "mediaDevices", {
       }
       return new MediaStream();
     },
+    // A moving test card stands in for the shared screen.
+    getDisplayMedia: async () => {
+      if (window.classroomTestMedia.displayDenied) {
+        throw new DOMException("Picker closed", "NotAllowedError");
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = 640;
+      canvas.height = 360;
+      const ctx = canvas.getContext("2d");
+      let frame = 0;
+      const draw = () => {
+        frame += 1;
+        ctx.fillStyle = "#1d4ed8";
+        ctx.fillRect(0, 0, 640, 360);
+        ctx.fillStyle = "#fff";
+        ctx.font = "32px sans-serif";
+        ctx.fillText("Shared slide " + frame, 40, 180);
+      };
+      draw();
+      const timer = setInterval(draw, 100);
+      const stream = canvas.captureStream(15);
+      stream.getVideoTracks()[0].addEventListener("ended", () => clearInterval(timer));
+      window.classroomTestMedia.displayStream = stream;
+      return stream;
+    },
     addEventListener: (...args) => mediaDeviceEvents.addEventListener(...args),
     removeEventListener: (...args) => mediaDeviceEvents.removeEventListener(...args),
   },
@@ -86,4 +111,4 @@ window.channelSubscribers = new Set();
 window.receive = (message) => window.channelSubscribers.forEach((fn) => fn(message));
 window.testRole = new URLSearchParams(location.search).get('role') || 'teacher';
 createRoot(document.getElementById("root")).render(<ClassroomShell
-  locale={new URLSearchParams(location.search).get("locale") || "en"} tracks={tracks} sessionId="tabs-test" session={{ isTeacher: window.testRole === 'teacher', currentUser: {id: 'test-user'}, title: 'Resource tabs QA' }} />);
+  locale={new URLSearchParams(location.search).get("locale") || "en"} tracks={tracks} sessionId="tabs-test" session={{ isTeacher: window.testRole === 'teacher', currentUser: {id: window.testUserId || 'test-user'}, title: 'Resource tabs QA' }} />);

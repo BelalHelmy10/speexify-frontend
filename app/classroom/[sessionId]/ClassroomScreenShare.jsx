@@ -4,13 +4,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Monitor, MonitorOff, ShieldOff, Volume2, X } from "lucide-react";
 import useFocusTrap from "@/hooks/useFocusTrap";
-import { canShareScreen, resolveScreenShareState } from "@/lib/classroomScreenShare.mjs";
+import { canShareScreen } from "@/lib/classroomScreenShare.mjs";
+import useClassroomScreenStream from "./useClassroomScreenStream";
 import { useClassroomText } from "./classroomText";
 
 /* ─────────────────────────────────────────────────────────────
    Hook: own the cross-side screen-share state
-   - Who is presenting comes from Jitsi (contentSharingParticipantsChanged),
-     which cannot be spoofed by another classroom client.
+   - The screen itself is captured in this page and sent browser to
+     browser (useClassroomScreenStream), so it can be shown in the
+     content panel. Who is presenting comes from server-stamped events.
    - The teacher's "allow learners to share" gate travels over the
      classroom channel (teacher-only event on the server).
 ───────────────────────────────────────────────────────────── */
@@ -20,8 +22,7 @@ export function useClassroomScreenShare(
     userName = "",
     userId = "",
     isTeacher = false,
-    isLocalSharing = false,
-    jitsiSharing = null,
+    sessionId = "",
   } = {}
 ) {
   const [teacherAllowsScreenShare, setTeacherAllowsScreenShare] = useState(true);
@@ -30,14 +31,18 @@ export function useClassroomScreenShare(
   const send = classroomChannel?.send ?? (() => { });
   const subscribe = classroomChannel?.subscribe ?? (() => () => { });
 
-  const { isLocalSharer, remoteSharer } = useMemo(
-    () => resolveScreenShareState({
-      sharingIds: jitsiSharing?.sharingIds || [],
-      localId: jitsiSharing?.localId || null,
-      participants: jitsiSharing?.participants || new Map(),
-      localSharing: isLocalSharing,
-    }),
-    [jitsiSharing, isLocalSharing]
+  const stream = useClassroomScreenStream({
+    channel: classroomChannel,
+    sessionId,
+    userId,
+    userName,
+    isTeacher,
+    allowLearners: teacherAllowsScreenShare,
+  });
+  const isLocalSharer = stream.isLocal;
+  const remoteSharer = useMemo(
+    () => (stream.remote ? { id: stream.remote.userId, name: stream.remote.name } : null),
+    [stream.remote]
   );
 
   const teacherAllowsRef = useRef(teacherAllowsScreenShare);
@@ -99,6 +104,7 @@ export function useClassroomScreenShare(
     sharerId: isLocalSharer ? userId : remoteSharer?.id || null,
     teacherAllowsScreenShare,
     setTeacherAllowsScreenShare: updateTeacherAllowsScreenShare,
+    stream,
   };
 }
 

@@ -819,21 +819,6 @@ body.classroom-active {
     }
   }
 
-  // Screen-share layout: collapse the divider and right panel so the
-  // Jitsi stage (pinned screen) fills the full classroom width. The
-  // left panel inline-style is already driven to 100% by the shell.
-  &--screen-share {
-    .cr-divider {
-      display: none !important;
-    }
-    .cr-panel--right {
-      display: none !important;
-    }
-    .cr-panel--left {
-      width: 100% !important;
-    }
-  }
-
   @media (max-width: 900px) and (orientation: portrait) {
     flex-direction: column;
     overflow-y: auto;
@@ -2187,6 +2172,169 @@ body.classroom-active {
       transform: translateY(-2px);
       box-shadow: 0 8px 24px rgba($cr-accent-primary, 0.3);
     }
+  }
+}
+
+// ─── Shared screen in the content panel ───────────────────────────────────
+// Shown where slides and PDFs appear; the video column is left alone.
+.cr-screen-stage {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: $cr-bg-primary-dark;
+
+  &:fullscreen {
+    background: #000;
+  }
+}
+
+.cr-screen-stage__bar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid $cr-border-default;
+  background: $cr-bg-secondary;
+  color: $cr-text-primary;
+}
+
+.cr-screen-stage__live {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: $cr-radius-full;
+  background: $cr-accent-danger;
+  box-shadow: 0 0 0 4px rgba($cr-accent-danger, 0.2);
+  animation: cr-stage-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes cr-stage-pulse {
+  50% {
+    box-shadow: 0 0 0 7px rgba($cr-accent-danger, 0.06);
+  }
+}
+
+.cr-screen-stage__title {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+
+  strong {
+    overflow: hidden;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: $cr-text-secondary;
+    font-size: 12px;
+  }
+}
+
+.cr-screen-stage__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.cr-screen-stage__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid $cr-border-strong;
+  border-radius: $cr-radius-full;
+  background: $cr-bg-tertiary;
+  color: $cr-text-primary;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba($cr-accent-primary, 0.6);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $cr-accent-primary;
+    outline-offset: 2px;
+  }
+
+  &--icon {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  &--stop {
+    border-color: transparent;
+    background: $cr-accent-danger;
+
+    &:hover {
+      border-color: transparent;
+      background: $cr-accent-danger-light;
+    }
+  }
+}
+
+.cr-screen-stage__screen {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #000;
+}
+
+.cr-screen-stage__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.cr-screen-stage__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: rgba($cr-bg-primary-dark, 0.82);
+  color: $cr-text-primary;
+  text-align: center;
+
+  p {
+    max-width: 360px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+.cr-screen-stage__spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba($cr-text-primary, 0.2);
+  border-top-color: $cr-accent-primary;
+  border-radius: $cr-radius-full;
+  animation: spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cr-screen-stage__live,
+  .cr-screen-stage__spinner {
+    animation: none;
   }
 }
 
