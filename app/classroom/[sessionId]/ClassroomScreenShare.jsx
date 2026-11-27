@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Monitor, MonitorOff, ShieldOff, Volume2, X } from "lucide-react";
 import useFocusTrap from "@/hooks/useFocusTrap";
 import { canShareScreen, resolveScreenShareState } from "@/lib/classroomScreenShare.mjs";
+import { useClassroomText } from "./classroomText";
 
 /* ─────────────────────────────────────────────────────────────
    Hook: own the cross-side screen-share state
@@ -110,6 +111,7 @@ export function ClassroomScreenShareBanner({
   isLocalSharer,
   onStop,
 }) {
+  const ct = useClassroomText();
   if (!visible) return null;
 
   return (
@@ -126,18 +128,18 @@ export function ClassroomScreenShareBanner({
       </div>
       <div className="cr-screenshare-banner__text">
         {isLocalSharer
-          ? "You're presenting"
-          : `${sharerName} is presenting`}
+          ? ct("cr_ss_you_presenting")
+          : ct("cr_ss_presenting", { name: sharerName })}
       </div>
       {isLocalSharer && onStop && (
         <button
           type="button"
           className="cr-screenshare-banner__stop"
           onClick={onStop}
-          aria-label="Stop sharing your screen"
+          aria-label={ct("cr_ss_stop_aria")}
         >
           <X size={14} />
-          <span>Stop presenting</span>
+          <span>{ct("cr_ss_stop_presenting")}</span>
         </button>
       )}
     </div>
@@ -147,11 +149,19 @@ export function ClassroomScreenShareBanner({
 /* ─────────────────────────────────────────────────────────────
    Confirmation modal shown before the OS picker.
 ───────────────────────────────────────────────────────────── */
+// Renders **bold** parts of a translated sentence.
+function withBold(text) {
+  return String(text)
+    .split("**")
+    .map((part, index) => (index % 2 ? <strong key={index}>{part}</strong> : part));
+}
+
 export function ClassroomScreenShareConfirmModal({
   isOpen,
   onConfirm,
   onCancel,
 }) {
+  const ct = useClassroomText();
   const modalRef = useFocusTrap(Boolean(isOpen), { onEscape: onCancel });
 
   if (!isOpen) return null;
@@ -171,13 +181,13 @@ export function ClassroomScreenShareConfirmModal({
       >
         <div className="cr-modal__header">
           <h2 id="cr-screenshare-confirm-title" className="cr-modal__title">
-            Share your screen?
+            {ct("cr_ss_confirm_title")}
           </h2>
           <button
             type="button"
             className="cr-modal__close"
             onClick={onCancel}
-            aria-label="Close"
+            aria-label={ct("cr_close")}
           >
             ✕
           </button>
@@ -188,32 +198,20 @@ export function ClassroomScreenShareConfirmModal({
               <Monitor size={36} />
             </div>
             <p className="cr-screenshare-confirm__lead">
-              Your browser will ask what to share. The class will see exactly
-              what you choose, and your lesson stays open here.
+              {ct("cr_ss_confirm_lead")}
             </p>
             <ul className="cr-screenshare-confirm__tips">
               <li>
                 <Monitor size={14} aria-hidden="true" />
-                <span>
-                  Pick a <strong>window</strong> (for example a document or a
-                  slide deck). Don&apos;t pick this classroom tab: the class
-                  would see a mirror of the call.
-                </span>
+                <span>{withBold(ct("cr_ss_tip_window"))}</span>
               </li>
               <li>
                 <Volume2 size={14} aria-hidden="true" />
-                <span>
-                  To play a video with sound, open it in another browser tab
-                  and choose <strong>that tab</strong> with
-                  <strong> “Share tab audio”</strong> turned on.
-                </span>
+                <span>{withBold(ct("cr_ss_tip_audio"))}</span>
               </li>
               <li>
                 <ShieldOff size={14} aria-hidden="true" />
-                <span>
-                  If you share <strong>your entire screen</strong>, close
-                  anything private first.
-                </span>
+                <span>{withBold(ct("cr_ss_tip_screen"))}</span>
               </li>
             </ul>
           </div>
@@ -224,7 +222,7 @@ export function ClassroomScreenShareConfirmModal({
             className="cr-controls__btn cr-controls__btn--ghost"
             onClick={onCancel}
           >
-            Cancel
+            {ct("cr_cancel")}
           </button>
           <button
             type="button"
@@ -233,7 +231,7 @@ export function ClassroomScreenShareConfirmModal({
             autoFocus
           >
             <Monitor size={16} />
-            <span>Choose what to share</span>
+            <span>{ct("cr_ss_choose")}</span>
           </button>
         </div>
       </div>
@@ -251,6 +249,7 @@ export function ClassroomScreenShareButton({
   onRequestStart,
   onStop,
 }) {
+  const ct = useClassroomText();
   const [supported, setSupported] = useState(false);
   useEffect(() => {
     setSupported(canShareScreen(window));
@@ -266,13 +265,13 @@ export function ClassroomScreenShareButton({
         type="button"
         className="cr-controls__btn cr-controls__btn--ghost"
         disabled
-        title="Screen sharing is disabled by the teacher"
-        aria-label="Screen sharing is disabled by the teacher"
+        title={ct("cr_ss_blocked")}
+        aria-label={ct("cr_ss_blocked")}
       >
         <span className="cr-controls__btn-icon">
           <MonitorOff size={16} />
         </span>
-        <span className="cr-controls__btn-label">Sharing off</span>
+        <span className="cr-controls__btn-label">{ct("cr_ss_off")}</span>
       </button>
     );
   }
@@ -283,13 +282,13 @@ export function ClassroomScreenShareButton({
         type="button"
         className="cr-controls__btn cr-controls__btn--danger"
         onClick={onStop}
-        title="Stop sharing your screen"
-        aria-label="Stop sharing your screen"
+        title={ct("cr_ss_stop_aria")}
+        aria-label={ct("cr_ss_stop_aria")}
       >
         <span className="cr-controls__btn-icon">
           <MonitorOff size={16} />
         </span>
-        <span className="cr-controls__btn-label">Stop sharing</span>
+        <span className="cr-controls__btn-label">{ct("cr_ss_stop")}</span>
       </button>
     );
   }
@@ -302,16 +301,16 @@ export function ClassroomScreenShareButton({
       disabled={isRemoteSharing}
       title={
         isRemoteSharing
-          ? "Someone else is already sharing"
-          : "Share your screen"
+          ? ct("cr_ss_busy")
+          : ct("cr_ss_share")
       }
-      aria-label="Share your screen"
+      aria-label={ct("cr_ss_share")}
     >
       <span className="cr-controls__btn-icon">
         <Monitor size={16} />
       </span>
       <span className="cr-controls__btn-label">
-        {isRemoteSharing ? "Sharing in progress" : "Share screen"}
+        {isRemoteSharing ? ct("cr_ss_in_progress") : ct("cr_ss_share_short")}
       </span>
     </button>
   );

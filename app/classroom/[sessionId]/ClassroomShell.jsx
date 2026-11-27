@@ -42,6 +42,7 @@ import { getDictionary, t } from "@/app/i18n";
 import useClassroomVideoModeration from "./useClassroomVideoModeration";
 import api from "@/lib/api";
 import { MessageCircle, MessageSquare, BookOpenText, Target, BookOpen } from "lucide-react";
+import { classroomText, useClassroomText } from "./classroomText";
 
 /* -----------------------------------------------------------
    Utility: Safely generate a display name
@@ -144,10 +145,20 @@ const FOCUS_MODES = {
   CONTENT: "content",
 };
 
-const focusModeLabel = {
-  [FOCUS_MODES.VIDEO]: "Conversation",
-  [FOCUS_MODES.BALANCED]: "Reading",
-  [FOCUS_MODES.CONTENT]: "Drilling",
+// The video panel's share of the width, measured from its own side: in a
+// right-to-left page (Arabic) the video sits on the right.
+function isRightToLeft(element) {
+  return typeof window !== "undefined" && Boolean(element) && window.getComputedStyle(element).direction === "rtl";
+}
+
+function splitFromPointer(rect, clientX, rtl) {
+  return ((rtl ? rect.right - clientX : clientX - rect.left) / rect.width) * 100;
+}
+
+const FOCUS_MODE_LABEL_KEYS = {
+  [FOCUS_MODES.VIDEO]: "cr_focus_video",
+  [FOCUS_MODES.BALANCED]: "cr_focus_balanced",
+  [FOCUS_MODES.CONTENT]: "cr_focus_content",
 };
 
 const focusModeIcon = {
@@ -169,8 +180,7 @@ const MAX_SPLIT_PERCENT = 88;
 // is hidden entirely and the Jitsi stage view fills the full classroom
 // width — same as Zoom / Teams when content is being shared.
 const SCREEN_SHARE_LEFT_PERCENT = 100;
-const PAGE_RECORDING_UNSUPPORTED_MESSAGE =
-  "Recording is currently supported in Chrome and Edge";
+const PAGE_RECORDING_UNSUPPORTED_KEY = "cr_rec_unsupported";
 const PAGE_RECORDING_MIME_TYPES = [
   "video/webm;codecs=vp9,opus",
   "video/webm;codecs=vp8,opus",
@@ -290,7 +300,7 @@ function formatSessionEndLabel(endMs, locale = "en") {
     minute: "2-digit",
   });
 
-  return `Scheduled end ${time}`;
+  return classroomText(locale, "cr_scheduled_end", { time });
 }
 
 /* -----------------------------------------------------------
@@ -325,19 +335,20 @@ function ClassroomLeaveConfirm({
         ? Math.floor((nowMs - timing.endMs) / 1000)
         : 0;
 
-    let statusLabel = "No scheduled end";
+    let statusLabel = classroomText(locale, "cr_status_no_end");
     if (timing.endMs) {
       statusLabel = timing.hasEnded
         ? overBySeconds > 0
-          ? `Over by ${formatCompactDuration(overBySeconds, locale)}`
-          : "Time is up"
-        : `Ends in ${timing.remainingLabel}`;
+          ? classroomText(locale, "cr_status_over_by", { time: formatCompactDuration(overBySeconds, locale) })
+          : classroomText(locale, "cr_status_time_up")
+        : classroomText(locale, "cr_status_ends_in", { time: timing.remainingLabel });
     }
 
     return {
       statusLabel,
+      hasEnded: Boolean(timing.endMs && timing.hasEnded),
       elapsedLabel: timing.elapsedLabel,
-      scheduledLabel: timing.scheduledLabel || "Open-ended",
+      scheduledLabel: timing.scheduledLabel || classroomText(locale, "cr_open_ended"),
       participantLabel,
       resourceLabel,
       endLabel: formatSessionEndLabel(timing.endMs, locale),
@@ -355,6 +366,11 @@ export default function ClassroomShell({
   prefix = "",
 }) {
   const { user: authUser } = useAuth();
+  const ct = useClassroomText();
+  const focusModeLabel = useMemo(
+    () => Object.fromEntries(Object.entries(FOCUS_MODE_LABEL_KEYS).map(([mode, key]) => [mode, ct(key)])),
+    [ct]
+  );
   const {
     teacherName,
     learnerName,
@@ -673,7 +689,8 @@ export default function ClassroomShell({
   const lateJoinCheckedRef = useRef(false);
 
   useEffect(() => {
-    if (isTeacher || lateJoinCheckedRef.current) return;
+    // Wait until the learner is let in: the chat is closed to the waiting room.
+    if (isTeacher || lateJoinCheckedRef.current || !lobby.isAdmitted) return;
     lateJoinCheckedRef.current = true;
 
     // Only show if session has started and learner is joining > 1 min late
@@ -707,7 +724,7 @@ export default function ClassroomShell({
         setLateJoinMessages(msgs);
       })
       .catch(() => {});
-  }, [isTeacher, sessionId, sessionStartedAt, session?.endAt, locale]);
+  }, [isTeacher, lobby.isAdmitted, sessionId, sessionStartedAt, session?.endAt, locale]);
 
   /* -----------------------------------------------------------
      Live Captions (browser SpeechRecognition + WS broadcast)
@@ -869,37 +886,37 @@ export default function ClassroomShell({
 
   const handleRemoveParticipant = useCallback(
     async (participantId, learnerUserId, learnerName) => {
-      const who = learnerName || "this participant";
+      const who = learnerName || ct("cr_this_participant");
       if (
         typeof window !== "undefined" &&
-        !window.confirm(`Remove ${who} from the lesson? They will need your admission to come back.`)
+        !window.confirm(ct("cr_remove_confirm", { name: who }))
       ) {
         return false;
       }
       const result = await videoModerationControls.removeParticipant(participantId, learnerUserId);
       return applyModerationResult(result);
     },
-    [videoModerationControls, applyModerationResult]
+    [videoModerationControls, applyModerationResult, ct]
   );
 
   const runVideoModerationAction = useCallback(
     (actionName, ...args) => {
       const action = videoModeration.actions?.[actionName];
       if (typeof action !== "function") {
-        setModerationNotice("Video controls are still connecting.");
+        setModerationNotice(ct("cr_mod_connecting"));
         return false;
       }
 
       const ok = action(...args);
       if (!ok) {
-        setModerationNotice("That video control is not available yet.");
+        setModerationNotice(ct("cr_mod_control_unavailable"));
         return false;
       }
 
       setModerationNotice("");
       return true;
     },
-    [videoModeration.actions]
+    [videoModeration.actions, ct]
   );
 
   const handleToggleClassroomLock = useCallback(
@@ -909,8 +926,8 @@ export default function ClassroomShell({
       setIsClassroomLocked(nextLocked);
       setModerationNotice(
         nextLocked
-          ? "Classroom locked. Late joins are now blocked."
-          : "Classroom unlocked. Learners can join again."
+          ? ct("cr_lock_notice")
+          : ct("cr_unlock_notice")
       );
 
       if (ready) {
@@ -1111,7 +1128,7 @@ export default function ClassroomShell({
 
       const rect = containerRef.current.getBoundingClientRect();
       const nextSplit = clampSplitPercent(
-        ((clientX - rect.left) / rect.width) * 100
+        splitFromPointer(rect, clientX, isRightToLeft(containerRef.current))
       );
 
       updateCustomSplit(nextSplit);
@@ -1198,9 +1215,8 @@ export default function ClassroomShell({
       // Compute target split but don't commit to panels
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const nextSplit = clampSplitPercent(
-        ((e.clientX - rect.left) / rect.width) * 100
-      );
+      const rtl = isRightToLeft(containerRef.current);
+      const nextSplit = clampSplitPercent(splitFromPointer(rect, e.clientX, rtl));
       if (nextSplit === null) return;
 
       pendingSplitRef.current = nextSplit;
@@ -1210,7 +1226,7 @@ export default function ClassroomShell({
       if (divEl) {
         const startSplit = dragStartSplitRef.current ?? nextSplit;
         const deltaPercent = nextSplit - startSplit;
-        const deltaPx = (deltaPercent / 100) * rect.width;
+        const deltaPx = (deltaPercent / 100) * rect.width * (rtl ? -1 : 1);
         divEl.style.transform = `translateX(${deltaPx}px)`;
       }
     },
@@ -1236,7 +1252,9 @@ export default function ClassroomShell({
       const currentSplit =
         customSplitRef.current ?? getFocusModeSplitPercentage(focusMode);
       const step = e.shiftKey ? 5 : 2;
-      const direction = e.key === "ArrowLeft" ? -1 : 1;
+      // The arrow moves the divider the way it points, whichever side the video is on.
+      const pointsLeft = e.key === "ArrowLeft";
+      const direction = (pointsLeft ? -1 : 1) * (isRightToLeft(containerRef.current) ? -1 : 1);
       const nextSplit = clampSplitPercent(currentSplit + direction * step);
       updateCustomSplit(nextSplit, { defer: false });
       commitCurrentSplitLayout();
@@ -1630,13 +1648,13 @@ export default function ClassroomShell({
     ? resourcesById[selectedResourceId]
     : null;
   const leaveParticipantLabel = isTraining
-    ? "admin trainer"
+    ? ct("cr_admin_trainer")
     : isGroup
     ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
-    : participantCount === 1
-      ? `${formatNumber(1, locale)} learner`
-      : `${formatNumber(participantCount || 1, locale)} learners`;
-  const leaveResourceLabel = resource?.title || resource?.name || "No resource selected";
+    : participantCount <= 1
+      ? ct("cr_one_learner")
+      : ct("cr_n_learners", { n: formatNumber(participantCount, locale) });
+  const leaveResourceLabel = resource?.title || resource?.name || ct("cr_no_resource");
   // ✅ Track resource usage when teacher changes resource
   const handleChangeResourceId = useCallback(async (newId, resourceOverride = null, tabsOverride = null) => {
     const nextTabs = tabsOverride || (newId ? [...openResourceIdsRef.current, newId] : openResourceIdsRef.current);
@@ -1747,15 +1765,15 @@ export default function ClassroomShell({
   const emptyResourceContent = useMemo(() => (
     <div className="cr-placeholder">
       <div className="cr-placeholder__icon"><BookOpen size={32} /></div>
-      <h2 className="cr-placeholder__title">{locale === "ar" ? "لا توجد موارد مفتوحة" : "No resources open"}</h2>
+      <h2 className="cr-placeholder__title">{ct("cr_no_resources_open")}</h2>
       <p className="cr-placeholder__text">{isTeacher
-        ? (locale === "ar" ? "اختر موردًا لبدء العمل." : "Choose a resource to start working.")
-        : (locale === "ar" ? "في انتظار المعلم لفتح مورد." : "Waiting for the teacher to open a resource.")}</p>
+        ? ct("cr_choose_to_start")
+        : ct("cr_waiting_teacher_resource")}</p>
       {isTeacher && <button className="cr-placeholder__action" onClick={openPicker}>
-        <BookOpen size={16} /> {locale === "ar" ? "فتح مورد" : "Open resource"}
+        <BookOpen size={16} /> {ct("cr_open_resource")}
       </button>}
     </div>
-  ), [isTeacher, locale, openPicker]);
+  ), [ct, isTeacher, openPicker]);
 
   const resourceWorkspace = (
     <ClassroomResourceWorkspace
@@ -1782,10 +1800,10 @@ export default function ClassroomShell({
       },
     });
     const material = data?.material;
-    if (!material?._id) throw new Error("The PDF was uploaded but could not be opened");
+    if (!material?._id) throw new Error(ct("cr_pdf_open_failed"));
     setUploadedMaterials((current) => [...current, material]);
     await handleChangeResourceId(material._id, material);
-  }, [sessionId, handleChangeResourceId]);
+  }, [sessionId, handleChangeResourceId, ct]);
 
   const handleLocalScreenShareChange = useCallback((active) => {
     setIsScreenShareActive(Boolean(active));
@@ -1823,13 +1841,13 @@ export default function ClassroomShell({
 
       const support = getPageRecordingSupport();
       if (!support.supported) {
-        setPageRecError(PAGE_RECORDING_UNSUPPORTED_MESSAGE);
+        setPageRecError(ct(PAGE_RECORDING_UNSUPPORTED_KEY));
         return;
       }
 
       const mimeType = pickSupportedPageRecordingMime();
       if (!mimeType) {
-        setPageRecError(PAGE_RECORDING_UNSUPPORTED_MESSAGE);
+        setPageRecError(ct(PAGE_RECORDING_UNSUPPORTED_KEY));
         return;
       }
 
@@ -1852,7 +1870,7 @@ export default function ClassroomShell({
       const baseLatency = Number(audioContext.baseLatency || 0);
       if (baseLatency > 0.03) {
         setPageRecWarning(
-          `Recording audio latency is elevated (${Math.round(baseLatency * 1000)}ms).`
+          ct("cr_rec_latency_msg", { ms: Math.round(baseLatency * 1000) })
         );
       }
 
@@ -1920,8 +1938,8 @@ export default function ClassroomShell({
       const support = getPageRecordingSupport();
       setPageRecError(
         support.supported
-          ? "Recording could not start. Check screen and microphone permissions, then try again."
-          : PAGE_RECORDING_UNSUPPORTED_MESSAGE
+          ? ct("cr_rec_failed")
+          : ct(PAGE_RECORDING_UNSUPPORTED_KEY)
       );
       setPageRecWarning(null);
     }
@@ -1952,12 +1970,12 @@ export default function ClassroomShell({
   /* -----------------------------------------------------------
      Header (FIXED: match SCSS classnames)
   ----------------------------------------------------------- */
-  const headerTitle = session?.title || "Classroom";
+  const headerTitle = session?.title || ct("cr_classroom");
   const typeLabel = isTraining
     ? showUnpaidTraining
-      ? locale === "ar" ? "تدريب · بدون أجر" : "TRAINING · UNPAID"
-      : locale === "ar" ? "تدريب" : "TRAINING"
-    : isGroup ? "GROUP" : "1:1";
+      ? ct("cr_type_training_unpaid")
+      : ct("cr_type_training")
+    : isGroup ? ct("cr_type_group") : ct("cr_type_one");
   const countLabel = isGroup
     ? `${formatNumber(participantCount, locale)}${capacity ? `/${formatNumber(capacity, locale)}` : ""}`
     : "";
@@ -2203,12 +2221,12 @@ export default function ClassroomShell({
             onKeyDown={handleDividerKeyDown}
             role="separator"
             aria-orientation="vertical"
-            aria-label="Resize panels"
+            aria-label={ct("cr_resize")}
             aria-disabled={!canResizePanels}
             aria-valuemin={MIN_SPLIT_PERCENT}
             aria-valuemax={MAX_SPLIT_PERCENT}
             aria-valuenow={Math.round(leftPanelWidth)}
-            aria-valuetext={`Left panel ${Math.round(leftPanelWidth)} percent`}
+            aria-valuetext={ct("cr_resize_value", { n: Math.round(leftPanelWidth) })}
             tabIndex={canResizePanels ? 0 : -1}
           >
             <div className="cr-divider__handle">
@@ -2243,10 +2261,10 @@ export default function ClassroomShell({
             <header className="cr-chat-drawer__header">
               <div className="cr-chat-drawer__title">
                 <MessageSquare size={16} aria-hidden="true" />
-                <span>Conversation</span>
+                <span>{ct("cr_conversation")}</span>
               </div>
               <span className="cr-chat-drawer__context">
-                {isGroup ? "Group thread" : "Private thread"}
+                {isGroup ? ct("cr_group_thread") : ct("cr_private_thread")}
               </span>
             </header>
             <ClassroomChat

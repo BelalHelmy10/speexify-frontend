@@ -15,7 +15,7 @@ import {
   Video,
 } from "lucide-react";
 import api from "@/lib/api";
-import { buildResourcePickerIndex } from "@/lib/resourcePickerIndex";
+import { buildResourcePickerIndex } from "@/lib/resourcePickerIndex.mjs";
 import { getDictionary, t } from "@/app/i18n";
 import useAuth from "@/hooks/useAuth";
 

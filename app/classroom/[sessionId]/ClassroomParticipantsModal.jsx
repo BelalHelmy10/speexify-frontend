@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { formatNumber } from "@/utils/locale";
+import { useClassroomText } from "./classroomText";
 
 function normalizeName(value) {
   return String(value || "")
@@ -89,6 +90,7 @@ function ParticipantActions({
   learnerName,
   learnerUserId = null,
 }) {
+  const ct = useClassroomText();
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState(null);
   const triggerRef = useRef(null);
@@ -166,7 +168,7 @@ function ParticipantActions({
           ref={menuContentRef}
           className="cr-participant-menu__content"
           role="menu"
-          aria-label="Participant actions"
+          aria-label={ct("cr_pa_actions_aria")}
           style={{
             top: menuPosition ? `${menuPosition.top}px` : "0px",
             left: menuPosition ? `${menuPosition.left}px` : "0px",
@@ -176,30 +178,30 @@ function ParticipantActions({
           <TeacherActionButton
             disabled={!canControl}
             onClick={() => runAction(() => onMuteParticipant?.(liveParticipant?.id, learnerUserId))}
-            title="Mute this participant"
+            title={ct("cr_pa_mute_hint")}
           >
-            <MicOff size={14} /> Mute
+            <MicOff size={14} /> {ct("cr_pa_mute")}
           </TeacherActionButton>
           <TeacherActionButton
             disabled={!canControl}
             onClick={() => runAction(() => onStopParticipantVideo?.(liveParticipant?.id, learnerUserId))}
-            title="Turn off this participant's camera"
+            title={ct("cr_pa_stop_video_hint")}
           >
-            <VideoOff size={14} /> Stop video
+            <VideoOff size={14} /> {ct("cr_pa_stop_video")}
           </TeacherActionButton>
           <TeacherActionButton
             disabled={!canControl}
             onClick={() => runAction(() => onPinParticipant?.(liveParticipant?.id))}
-            title="Spotlight this participant"
+            title={ct("cr_pa_pin_hint")}
           >
-            <Pin size={14} /> Pin
+            <Pin size={14} /> {ct("cr_pa_pin")}
           </TeacherActionButton>
           <TeacherActionButton
             disabled={!handRaised}
             onClick={() => runAction(() => onLowerHand?.(learnerName))}
-            title="Lower this participant's hand"
+            title={ct("cr_pa_lower_hint")}
           >
-            <Hand size={14} /> Lower hand
+            <Hand size={14} /> {ct("cr_hand_lower")}
           </TeacherActionButton>
           <TeacherActionButton
             kind="danger"
@@ -207,9 +209,9 @@ function ParticipantActions({
             onClick={() =>
               runAction(() => onRemoveParticipant?.(liveParticipant?.id, learnerUserId, learnerName))
             }
-            title="Remove this participant from the call"
+            title={ct("cr_pa_remove_hint")}
           >
-            <UserX size={14} /> Remove
+            <UserX size={14} /> {ct("cr_pa_remove")}
           </TeacherActionButton>
         </div>,
         document.body
@@ -227,7 +229,7 @@ function ParticipantActions({
         onClick={() => (isOpen ? closeMenu() : setIsOpen(true))}
       >
         <MoreHorizontal size={18} />
-        <span>Actions</span>
+        <span>{ct("cr_pa_actions")}</span>
       </button>
       {menu}
     </div>
@@ -258,7 +260,13 @@ export default function ClassroomParticipantsModal({
   onToggleClassroomLock,
   locale = "en",
 }) {
+  const ct = useClassroomText();
   if (!show) return null;
+  const seatLabel = (status) => {
+    const key = `cr_seat_${status}`;
+    const text = ct(key);
+    return text === key ? status : text;
+  };
 
   const safeLearners = Array.isArray(learners) ? learners : [];
   const liveParticipants = Array.from(
@@ -326,17 +334,17 @@ export default function ClassroomParticipantsModal({
             </span>
             <div>
               <h2 id="cr-participants-title" className="cr-modal__title">
-                Participants
+                {ct("cr_pm_title")}
               </h2>
               <p className="cr-participants-header__summary">
-                {liveCountLabel} in call <span aria-hidden="true">·</span> {participantCountLabel} participants
+                {ct("cr_pm_summary", { live: liveCountLabel, total: participantCountLabel })}
               </p>
             </div>
           </div>
           <button
             className="cr-modal__close cr-participants-header__close"
             onClick={() => setShowParticipantList(false)}
-            aria-label="Close participants"
+            aria-label={ct("cr_pm_close")}
           >
             <X size={20} />
           </button>
@@ -344,40 +352,40 @@ export default function ClassroomParticipantsModal({
 
         <div className="cr-modal__body cr-participants-body" data-lenis-prevent>
           {isTeacher && (
-            <section className="cr-participants-controls" aria-label="Classroom controls">
+            <section className="cr-participants-controls" aria-label={ct("cr_classroom_controls")}>
               <div className="cr-participants-controls__copy">
-                <span className="cr-participants-controls__eyebrow">Classroom controls</span>
+                <span className="cr-participants-controls__eyebrow">{ct("cr_classroom_controls")}</span>
                 <span className="cr-participants-controls__state">
                   <span className={`cr-participants-controls__dot ${isClassroomLocked ? "is-locked" : ""}`} />
-                  {isClassroomLocked ? "Late joins are locked" : "Late joins are allowed"}
+                  {isClassroomLocked ? ct("cr_pm_locked") : ct("cr_pm_allowed")}
                 </span>
               </div>
               <div className="cr-participants-controls__actions">
                 <TeacherActionButton
                   disabled={!videoControlsReady}
                   onClick={onMuteAll}
-                  title="Mute all learners"
+                  title={ct("cr_pm_mute_all_hint")}
                 >
-                  <MicOff size={15} /> Mute all
+                  <MicOff size={15} /> {ct("cr_pm_mute_all")}
                 </TeacherActionButton>
                 <TeacherActionButton
                   disabled={!videoControlsReady}
                   onClick={onStopAllVideo}
-                  title="Turn off all learner cameras"
+                  title={ct("cr_pm_cams_off_hint")}
                 >
-                  <VideoOff size={15} /> Cameras off
+                  <VideoOff size={15} /> {ct("cr_pm_cams_off")}
                 </TeacherActionButton>
                 <TeacherActionButton
                   kind={isClassroomLocked ? "secondary" : "danger"}
                   onClick={() => onToggleClassroomLock?.(!isClassroomLocked)}
                   title={
                     isClassroomLocked
-                      ? "Allow learners to join again"
-                      : "Block late joins"
+                      ? ct("cr_pm_unlock_hint")
+                      : ct("cr_pm_lock_hint")
                   }
                 >
                   {isClassroomLocked ? <Unlock size={15} /> : <Lock size={15} />}
-                  {isClassroomLocked ? "Unlock" : "Lock joins"}
+                  {isClassroomLocked ? ct("cr_pm_unlock") : ct("cr_pm_lock")}
                 </TeacherActionButton>
               </div>
               {moderationNotice && (
@@ -388,11 +396,11 @@ export default function ClassroomParticipantsModal({
             </section>
           )}
 
-          <section className="cr-participants-roster" aria-label="Classroom roster">
+          <section className="cr-participants-roster" aria-label={ct("cr_pm_roster")}>
             <div className="cr-participants-roster__heading">
               <div>
-                <span className="cr-participants-roster__eyebrow">Classroom roster</span>
-                <h3>{liveCountLabel} in the room</h3>
+                <span className="cr-participants-roster__eyebrow">{ct("cr_pm_roster")}</span>
+                <h3>{ct("cr_pm_in_room", { n: liveCountLabel })}</h3>
               </div>
               <span className="cr-participants-roster__capacity">{participantCountLabel}</span>
             </div>
@@ -405,17 +413,17 @@ export default function ClassroomParticipantsModal({
                 <div className="cr-participant-row__identity">
                   <div className="cr-participant-row__name-line">
                     <span className="cr-participant-row__name">{teacherName}</span>
-                    <span className="cr-participant-row__role">Teacher</span>
+                    <span className="cr-participant-row__role">{ct("cr_teacher")}</span>
                   </div>
                   <span className={`cr-participant-row__status ${liveTeacher ? "is-live" : ""}`}>
                     <span className="cr-participant-row__status-dot" />
-                    {liveTeacher ? "In call" : "Not joined"}
+                    {liveTeacher ? ct("cr_pm_in_call") : ct("cr_pm_not_joined")}
                   </span>
                 </div>
               </article>
 
               {safeLearners.length === 0 ? (
-                <p className="cr-participants-roster__empty">No learners added to this session yet.</p>
+                <p className="cr-participants-roster__empty">{ct("cr_pm_no_learners")}</p>
               ) : (
                 learnerRows.map(({ key, learner, learnerName, liveParticipant, handRaised }) => (
                   <article
@@ -429,15 +437,15 @@ export default function ClassroomParticipantsModal({
                       <div className="cr-participant-row__name-line">
                         <span className="cr-participant-row__name">{learnerName}</span>
                         {learner.status && learner.status !== "booked" && (
-                          <span className="cr-participant-row__status-tag">{learner.status}</span>
+                          <span className="cr-participant-row__status-tag">{seatLabel(learner.status)}</span>
                         )}
                       </div>
                       <span className={`cr-participant-row__status ${liveParticipant ? "is-live" : ""}`}>
                         <span className="cr-participant-row__status-dot" />
-                        {liveParticipant ? "In call" : "Not joined"}
+                        {liveParticipant ? ct("cr_pm_in_call") : ct("cr_pm_not_joined")}
                         {handRaised && (
                           <span className="cr-participant-row__hand">
-                            <Hand size={13} /> Hand raised
+                            <Hand size={13} /> {ct("cr_pm_hand_raised")}
                           </span>
                         )}
                       </span>
@@ -462,7 +470,7 @@ export default function ClassroomParticipantsModal({
 
               {isTeacher && unmatchedLiveParticipants.length > 0 && (
                 <>
-                  <div className="cr-participants-roster__subheading">Other connections</div>
+                  <div className="cr-participants-roster__subheading">{ct("cr_pm_other")}</div>
                   {unmatchedLiveParticipants.map((participant) => (
                     <article key={participant.id} className="cr-participant-row">
                       <span className="cr-participant-row__avatar" aria-hidden="true">
@@ -471,12 +479,12 @@ export default function ClassroomParticipantsModal({
                       <div className="cr-participant-row__identity">
                         <div className="cr-participant-row__name-line">
                           <span className="cr-participant-row__name">
-                            {participant.displayName || "Participant"}
+                            {participant.displayName || ct("cr_participant")}
                           </span>
-                          <span className="cr-participant-row__role">Guest</span>
+                          <span className="cr-participant-row__role">{ct("cr_pm_guest")}</span>
                         </div>
                         <span className="cr-participant-row__status is-live">
-                          <span className="cr-participant-row__status-dot" /> In call
+                          <span className="cr-participant-row__status-dot" /> {ct("cr_pm_in_call")}
                         </span>
                       </div>
                       <ParticipantActions

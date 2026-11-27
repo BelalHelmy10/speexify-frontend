@@ -3,19 +3,21 @@
 import { memo, useState } from "react";
 import { useSessionTiming } from "./classroomTime";
 import { ChevronLeft, GraduationCap, UserRound, Users } from "lucide-react";
+import { useClassroomText } from "./classroomText";
 
 /* ─── WS status map ───────────────────────────────────────────────────── */
-const WS_STATUS_MAP = {
-  ready: { label: "Connected" },
-  connecting: { label: "Connecting…" },
-  joining: { label: "Joining…" },
-  awaiting_admission: { label: "Waiting for admission" },
-  forbidden: { label: "Not allowed" },
-  reconnecting: { label: "Reconnecting…" },
-  error: { label: "Connection error" },
-  closed: { label: "Disconnected" },
-  idle: { label: "Idle" },
-};
+const WS_STATUSES = new Set([
+  "ready",
+  "connecting",
+  "joining",
+  "awaiting_admission",
+  "forbidden",
+  "reconnecting",
+  "error",
+  "closed",
+  "idle",
+]);
+const VIDEO_STATES = new Set(["connecting", "connected", "waiting", "reconnecting", "failed"]);
 
 /* ─── Signal strength bars (3-bar) ────────────────────────────────────── */
 const LEVEL_TO_BARS = { excellent: 3, good: 3, fair: 2, poor: 1, unknown: 0 };
@@ -63,7 +65,8 @@ function SignalBars({ level = "unknown", size = 16 }) {
 }
 
 /* ─── Connection popover ──────────────────────────────────────────────── */
-function ConnectionPopover({ wsStatus, wsLabel, networkQuality, videoConnectionState }) {
+function ConnectionPopover({ wsStatus, wsLabel, networkQuality, videoLabel }) {
+  const ct = useClassroomText();
   const nq = networkQuality || {};
   const wsOk = wsStatus === "ready";
   const latency = Number.isFinite(Number(nq.latencyMs)) ? Math.round(Number(nq.latencyMs)) : null;
@@ -71,37 +74,37 @@ function ConnectionPopover({ wsStatus, wsLabel, networkQuality, videoConnectionS
 
   return (
     <div className="cr-conn-popover">
-      <div className="cr-conn-popover__title">Connection Details</div>
+      <div className="cr-conn-popover__title">{ct("cr_conn_details")}</div>
 
       <div className="cr-conn-popover__row">
-        <span className="cr-conn-popover__label">WebSocket</span>
+        <span className="cr-conn-popover__label">{ct("cr_conn_classroom")}</span>
         <span className={`cr-conn-popover__value cr-conn-popover__value--${wsOk ? "ok" : "warn"}`}>
           {wsLabel}
         </span>
       </div>
 
       <div className="cr-conn-popover__row">
-        <span className="cr-conn-popover__label">Video call</span>
-        <span className="cr-conn-popover__value">{videoConnectionState}</span>
+        <span className="cr-conn-popover__label">{ct("cr_conn_video")}</span>
+        <span className="cr-conn-popover__value">{videoLabel}</span>
       </div>
 
       <div className="cr-conn-popover__row">
-        <span className="cr-conn-popover__label">Video network</span>
+        <span className="cr-conn-popover__label">{ct("cr_conn_network")}</span>
         <span className={`cr-conn-popover__value cr-conn-popover__value--${nq.level || "unknown"}`}>
-          {nq.label || "N/A"}
+          {nq.label || ct("cr_conn_na")}
         </span>
       </div>
 
       {latency !== null && (
         <div className="cr-conn-popover__row">
-          <span className="cr-conn-popover__label">Latency</span>
+          <span className="cr-conn-popover__label">{ct("cr_conn_latency")}</span>
           <span className="cr-conn-popover__value">{latency}ms</span>
         </div>
       )}
 
       {quality !== null && (
         <div className="cr-conn-popover__row">
-          <span className="cr-conn-popover__label">Quality</span>
+          <span className="cr-conn-popover__label">{ct("cr_conn_quality")}</span>
           <div className="cr-conn-popover__bar-track">
             <div
               className={`cr-conn-popover__bar-fill cr-conn-popover__bar-fill--${nq.level || "unknown"}`}
@@ -142,9 +145,13 @@ function ClassroomHeaderBar({
   locale = "en",
   compact = false,
 }) {
+  const ct = useClassroomText();
   const [showConnPopover, setShowConnPopover] = useState(false);
   const timing = useSessionTiming({ startedAt, endAt, locale });
-  const wsInfo = WS_STATUS_MAP[wsStatus] || WS_STATUS_MAP.idle;
+  const wsInfo = { label: ct(`cr_ws_${WS_STATUSES.has(wsStatus) ? wsStatus : "idle"}`) };
+  const videoLabel = VIDEO_STATES.has(videoConnectionState)
+    ? ct(`cr_video_state_${videoConnectionState}`)
+    : videoConnectionState;
   const networkQualityText = getNetworkQualityText(networkQuality);
   const networkQualityLevel = networkQuality?.level || "unknown";
 
@@ -177,10 +184,10 @@ function ClassroomHeaderBar({
             e.preventDefault();
             setShowLeaveConfirm(true);
           }}
-          title="Leave classroom"
+          title={ct("cr_leave_classroom")}
         >
-          <ChevronLeft size={18} />
-          <span className="cr-header__back-label">Leave</span>
+          <ChevronLeft size={18} className="cr-flip-rtl" />
+          <span className="cr-header__back-label">{ct("cr_leave")}</span>
         </a>
       </div>
 
@@ -202,7 +209,7 @@ function ClassroomHeaderBar({
             onMouseEnter={() => setShowConnPopover(true)}
             onMouseLeave={() => setShowConnPopover(false)}
             onClick={() => setShowConnPopover((open) => !open)}
-            aria-label={`Classroom: ${wsInfo.label}; video call: ${videoConnectionState}`}
+            aria-label={ct("cr_conn_aria", { ws: wsInfo.label, video: videoLabel })}
           >
             <SignalBars level={combinedLevel} size={16} />
 
@@ -211,7 +218,7 @@ function ClassroomHeaderBar({
                 wsStatus={wsStatus}
                 wsLabel={wsInfo.label}
                 networkQuality={networkQuality}
-                videoConnectionState={videoConnectionState}
+                videoLabel={videoLabel}
               />
             )}
           </span>
@@ -226,14 +233,14 @@ function ClassroomHeaderBar({
           {timing.endMs && (
             <span className={endsInClassName}>
               <span className="cr-header__pill-sep">|</span>
-              {timing.hasEnded ? "Ended" : timing.remainingLabel}
+              {timing.hasEnded ? ct("cr_ended") : timing.remainingLabel}
             </span>
           )}
 
           {networkQualityText && (
             <span
               className={`cr-header__pill-net cr-header__pill-net--${networkQualityLevel}`}
-              aria-label={`Video network: ${networkQualityText}`}
+              aria-label={ct("cr_network_aria", { text: networkQualityText })}
             >
               <span className="cr-header__pill-sep">|</span>
               {networkQualityText}
@@ -254,7 +261,7 @@ function ClassroomHeaderBar({
             type="button"
             className="cr-header__participants-btn"
             onClick={() => setShowParticipantList(true)}
-            title="View participants"
+            title={ct("cr_view_participants")}
           >
             <Users size={14} />
             <span>{countLabel}</span>

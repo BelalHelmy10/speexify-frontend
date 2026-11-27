@@ -4,6 +4,7 @@ import { Component } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import Sentry from "@/lib/sentry";
+import { classroomText } from "./classroomCopy";
 
 function getErrorPayload(error, errorInfo, sessionId) {
   const location =
@@ -73,29 +74,27 @@ export default class ClassroomErrorBoundary extends Component {
 
     const { prefix = "", sessionId } = this.props;
     const classroomHref = `${prefix}/classroom/${sessionId}`;
+    const locale = prefix === "/ar" ? "ar" : "en";
 
     return (
       <div className="cr-error-screen">
         <div className="cr-error-screen__content">
           <span className="cr-error-screen__icon" aria-hidden="true">!</span>
-          <h1 className="cr-error-screen__title">Classroom needs to reload</h1>
-          <p className="cr-error-screen__text">
-            Something failed while rendering the live classroom. The issue was
-            reported, and rejoining will reload the room.
-          </p>
+          <h1 className="cr-error-screen__title">{classroomText(locale, "cr_reload_title")}</h1>
+          <p className="cr-error-screen__text">{classroomText(locale, "cr_reload_text")}</p>
           <div className="cr-error-screen__actions">
             <button
               type="button"
               className="cr-error-screen__btn"
               onClick={this.handleRejoin}
             >
-              Rejoin classroom
+              {classroomText(locale, "cr_rejoin_classroom")}
             </button>
             <Link
               href={classroomHref}
               className="cr-error-screen__btn cr-error-screen__btn--ghost"
             >
-              Open classroom link
+              {classroomText(locale, "cr_open_classroom_link")}
             </Link>
           </div>
         </div>

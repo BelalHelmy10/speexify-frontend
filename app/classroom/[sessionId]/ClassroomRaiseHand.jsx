@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Hand } from "lucide-react";
+import { useClassroomText } from "./classroomText";
 
 /* ─── Soft acknowledgment tone (Web Audio API) ─────────────────────────── */
 function playRaiseHandTone() {
@@ -39,6 +40,7 @@ function formatElapsed(raisedAtMs) {
 
 /* ─── Single badge with live elapsed counter ───────────────────────────── */
 function RaiseHandBadge({ userName, raisedAt, onLower }) {
+  const ct = useClassroomText();
   const [elapsed, setElapsed] = useState(() => formatElapsed(raisedAt));
 
   useEffect(() => {
@@ -60,8 +62,8 @@ function RaiseHandBadge({ userName, raisedAt, onLower }) {
           type="button"
           className="cr-raise-hand-badge__dismiss"
           onClick={() => onLower(userName)}
-          aria-label={`Lower ${userName}'s hand`}
-          title="Lower hand"
+          aria-label={ct("cr_hand_lower_for", { name: userName })}
+          title={ct("cr_hand_lower")}
         >
           ×
         </button>
@@ -94,19 +96,21 @@ export function ClassroomRaiseHandOverlay({ raisedHands, isTeacher, onLowerHand 
 
 /* ─── Raise Hand Toggle Button ───────────────────────────────────────────── */
 export function ClassroomRaiseHandButton({ isHandRaised, onToggleHand }) {
+  const ct = useClassroomText();
+  const label = isHandRaised ? ct("cr_hand_lower") : ct("cr_hand_raise");
   return (
     <button
       type="button"
       className={`cr-controls__btn cr-controls__btn--ghost ${isHandRaised ? "cr-controls__btn--active" : ""}`}
       onClick={onToggleHand}
-      aria-label={isHandRaised ? "Lower hand" : "Raise hand"}
-      title={isHandRaised ? "Lower hand" : "Raise hand"}
+      aria-label={label}
+      title={label}
     >
       <span className="cr-controls__btn-icon">
         <Hand size={16} fill={isHandRaised ? "currentColor" : "none"} />
       </span>
       <span className="cr-controls__btn-label">
-        {isHandRaised ? "Lower" : "Raise"} Hand
+        {label}
       </span>
     </button>
   );

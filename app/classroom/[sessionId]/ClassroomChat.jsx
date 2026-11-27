@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { getIntlLocale } from "@/utils/locale";
+import { useClassroomText } from "./classroomText";
 
 const CHAT_HISTORY_LIMIT = 100;
 const TEMP_MESSAGE_PREFIX = "temp_chat_";
@@ -126,6 +127,7 @@ const ClassroomChatComposer = memo(function ClassroomChatComposer({
   onBlur,
   onSend,
 }) {
+  const ct = useClassroomText();
   const [inputValue, setInputValue] = useState("");
 
   const handleSubmit = (event) => {
@@ -144,22 +146,22 @@ const ClassroomChatComposer = memo(function ClassroomChatComposer({
       {chatMode === "direct" && selectedRecipient && (
         <div className="cr-chat__composer-scope">
           <LockKeyhole size={12} />
-          <span>Only you and {selectedRecipient.name} can see this</span>
+          <span>{ct("cr_chat_only_you_and", { name: selectedRecipient.name })}</span>
         </div>
       )}
       <input
         type="text"
         className="cr-chat__input"
-        aria-label="Message"
+        aria-label={ct("cr_chat_message")}
         disabled={Boolean(historyError)}
         placeholder={
           historyError
-            ? "Retry loading the conversation to continue..."
+            ? ct("cr_chat_ph_retry")
             : chatMode === "direct"
             ? selectedRecipient
-              ? `Message ${selectedRecipient.name} privately...`
-              : "Choose someone to message privately..."
-            : "Share with everyone..."
+              ? ct("cr_chat_ph_direct_to", { name: selectedRecipient.name })
+              : ct("cr_chat_ph_direct_choose")
+            : ct("cr_chat_ph_room")
         }
         value={inputValue}
         onChange={(event) => {
@@ -178,13 +180,13 @@ const ClassroomChatComposer = memo(function ClassroomChatComposer({
           !inputValue.trim() ||
           (chatMode === "direct" && !selectedRecipient)
         }
-        aria-label="Send message"
+        aria-label={ct("cr_chat_send")}
         title={
           chatMode === "direct"
-            ? "Send private message"
+            ? ct("cr_chat_send_private")
             : ready
-              ? "Send message"
-              : "Send when live sync reconnects"
+              ? ct("cr_chat_send")
+              : ct("cr_chat_send_later")
         }
       >
         {chatMode === "direct" ? <LockKeyhole size={17} /> : <Send size={17} />}
@@ -205,6 +207,12 @@ function ClassroomChat({
   onUnreadCountChange,
   locale = "en",
 }) {
+  const ct = useClassroomText();
+  // Listeners read the text through a ref so they don't resubscribe.
+  const ctRef = useRef(ct);
+  ctRef.current = ct;
+  // Server errors are in English; Arabic learners get our own wording.
+  const errorText = (err, key) => (locale === "ar" ? ct(key) : getErrorMessage(err, ct(key)));
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -483,7 +491,7 @@ function ClassroomChat({
       setNextBefore(res.data?.nextBefore || null);
     } catch (err) {
       setHistoryError(
-        getErrorMessage(err, "Chat transcript could not be loaded.")
+        errorText(err, "cr_chat_load_failed")
       );
       setMessages([]);
       knownMessageIdsRef.current = new Set();
@@ -522,7 +530,7 @@ function ClassroomChat({
       setNextBefore(res.data?.nextBefore || null);
     } catch (err) {
       setHistoryError(
-        getErrorMessage(err, "Earlier chat messages could not be loaded.")
+        errorText(err, "cr_chat_more_failed")
       );
     } finally {
       setIsLoadingMore(false);
@@ -563,7 +571,7 @@ function ClassroomChat({
         {
           id: `local_join_${sessionId}_${myRole}`,
           type: "system_local",
-          text: `You joined as ${myName} (${myRole})`,
+          text: ctRef.current("cr_chat_you_joined", { name: myName }),
           at: new Date().toISOString(),
         },
         { countAsUnread: false }
@@ -648,8 +656,8 @@ function ClassroomChat({
 
           const systemText =
             kind === "join"
-              ? `${who} joined the classroom`
-              : `${who} left the classroom`;
+              ? ctRef.current("cr_chat_joined", { name: who })
+              : ctRef.current("cr_chat_left", { name: who });
 
           appendOrMergeMessage(
             {
@@ -842,7 +850,7 @@ function ClassroomChat({
     try {
       await persistMessage(text, tempId, recipientId);
     } catch (err) {
-      const error = getErrorMessage(err, "Message failed to send.");
+      const error = errorText(err, "cr_chat_send_failed");
       appendOrMergeMessage(
         {
           id: tempId,
@@ -898,7 +906,7 @@ function ClassroomChat({
         {
           ...message,
           deliveryStatus: "failed",
-          error: getErrorMessage(err, "Message failed to send."),
+          error: errorText(err, "cr_chat_send_failed"),
         },
         { countAsUnread: false, fallbackMine: true }
       );
@@ -921,7 +929,7 @@ function ClassroomChat({
       appendOrMergeMessage(
         {
           ...message,
-          error: getErrorMessage(err, "Message could not be deleted."),
+          error: errorText(err, "cr_chat_delete_failed"),
         },
         { countAsUnread: false }
       );
@@ -962,10 +970,10 @@ function ClassroomChat({
   const visibleMessages = messages.filter(isMessageInCurrentConversation);
   const hasMessages = visibleMessages.length > 0;
   const transcriptStatus = historyError
-    ? "Transcript unavailable"
+    ? ct("cr_chat_transcript_unavailable")
     : isLoadingHistory
-      ? "Loading transcript"
-      : "Transcript saved";
+      ? ct("cr_chat_transcript_loading")
+      : ct("cr_chat_transcript_saved");
 
   return (
     <div className="cr-chat">
@@ -977,12 +985,12 @@ function ClassroomChat({
           target="_blank"
           rel="noreferrer"
         >
-          Export
+          {ct("cr_chat_export")}
         </a>
       </div>
 
       <div className="cr-chat__audience" ref={recipientMenuRef}>
-        <div className="cr-chat__audience-switcher" role="tablist" aria-label="Chat audience">
+        <div className="cr-chat__audience-switcher" role="tablist" aria-label={ct("cr_chat_audience")}>
           <button
             type="button"
             className={`cr-chat__audience-tab${chatMode === "room" ? " is-active" : ""}`}
@@ -992,8 +1000,8 @@ function ClassroomChat({
           >
             <Users size={14} />
             <span className="cr-chat__audience-tab-label">
-              <span>Room</span>
-              <small>Everyone</small>
+              <span>{ct("cr_chat_room")}</span>
+              <small>{ct("cr_chat_everyone")}</small>
             </span>
           </button>
           <button
@@ -1005,7 +1013,7 @@ function ClassroomChat({
           >
             <LockKeyhole size={14} />
             <span className="cr-chat__audience-tab-label">
-              <span>Direct</span>
+              <span>{ct("cr_chat_direct")}</span>
               <small>1:1</small>
             </span>
           </button>
@@ -1025,15 +1033,15 @@ function ClassroomChat({
                 {selectedRecipient ? getInitials(selectedRecipient.name) : <UserRound size={14} />}
               </span>
               <span className="cr-chat__recipient-copy">
-                <small>Private to</small>
-                <strong>{selectedRecipient?.name || "Choose someone"}</strong>
+                <small>{ct("cr_chat_private_to")}</small>
+                <strong>{selectedRecipient?.name || ct("cr_chat_choose_someone")}</strong>
               </span>
               <ChevronDown size={15} className="cr-chat__recipient-chevron" />
             </button>
 
             {recipientMenuOpen && directRecipients.length > 0 && (
-              <div className="cr-chat__recipient-menu" role="listbox" aria-label="Choose a private recipient">
-                <div className="cr-chat__recipient-menu-label">Choose a private conversation</div>
+              <div className="cr-chat__recipient-menu" role="listbox" aria-label={ct("cr_chat_choose_recipient")}>
+                <div className="cr-chat__recipient-menu-label">{ct("cr_chat_choose_conversation")}</div>
                 {directRecipients.map((recipient) => (
                   <button
                     type="button"
@@ -1046,7 +1054,7 @@ function ClassroomChat({
                     <span className="cr-chat__recipient-avatar">{getInitials(recipient.name)}</span>
                     <span className="cr-chat__recipient-copy">
                       <strong>{recipient.name}</strong>
-                      <small>{recipient.role === "teacher" ? "Teacher" : "Learner"}</small>
+                      <small>{recipient.role === "teacher" ? ct("cr_teacher") : ct("cr_learner")}</small>
                     </span>
                     {selectedRecipient?.id === recipient.id && <Check size={15} />}
                   </button>
@@ -1065,7 +1073,7 @@ function ClassroomChat({
             onClick={loadEarlierMessages}
             disabled={isLoadingMore}
           >
-            {isLoadingMore ? "Loading..." : "Load earlier messages"}
+            {isLoadingMore ? ct("cr_chat_loading") : ct("cr_chat_load_earlier")}
           </button>
         )}
 
@@ -1074,7 +1082,7 @@ function ClassroomChat({
             <div className="cr-chat__error-icon">
               <AlertCircle size={20} />
             </div>
-            <strong className="cr-chat__error-title">We couldn’t load this conversation</strong>
+            <strong className="cr-chat__error-title">{ct("cr_chat_error_title")}</strong>
             <span className="cr-chat__error-detail">{historyError}</span>
             <button
               type="button"
@@ -1082,13 +1090,13 @@ function ClassroomChat({
               onClick={loadInitialHistory}
             >
               <RefreshCw size={14} />
-              Try again
+              {ct("cr_error_try_again")}
             </button>
           </div>
         )}
 
         {isLoadingHistory && (
-          <div className="cr-chat__loading">Loading transcript...</div>
+          <div className="cr-chat__loading">{ct("cr_chat_loading_transcript")}</div>
         )}
 
         {!isLoadingHistory && !historyError && !hasMessages && (
@@ -1098,13 +1106,15 @@ function ClassroomChat({
             </div>
             <p className="cr-chat__empty-text">
               {chatMode === "direct"
-                ? `Your private conversation with ${selectedRecipient?.name || "this person"} starts here.`
-                : "No messages yet"}
+                ? ct("cr_chat_direct_start", { name: selectedRecipient?.name || ct("cr_chat_this_person") })
+                : ct("cr_chat_no_messages")}
             </p>
             <p className="cr-chat__empty-hint">
               {chatMode === "direct"
-                ? "Only the two of you can see these messages."
-                : `Start the conversation with your ${isTeacher ? "learner" : "teacher"}.`}
+                ? ct("cr_chat_direct_hint")
+                : isTeacher
+                  ? ct("cr_chat_start_learner")
+                  : ct("cr_chat_start_teacher")}
             </p>
           </div>
         )}
@@ -1153,7 +1163,7 @@ function ClassroomChat({
                   <div className="cr-chat__bubble-header">
                     <span className="cr-chat__bubble-name">
                       {msg.name ||
-                        (msg.role === "teacher" ? "Teacher" : "Learner")}
+                        (msg.role === "teacher" ? ct("cr_teacher") : ct("cr_learner"))}
                     </span>
                     <span className="cr-chat__bubble-time">
                       {formatTime(msg.at, locale)}
@@ -1163,7 +1173,7 @@ function ClassroomChat({
                   {isDirectMessage(msg) && (
                     <div className="cr-chat__bubble-scope">
                       <LockKeyhole size={10} />
-                      <span>Private</span>
+                      <span>{ct("cr_chat_private")}</span>
                     </div>
                   )}
 
@@ -1171,7 +1181,7 @@ function ClassroomChat({
                     className={`cr-chat__bubble-text ${msg.isDeleted ? "cr-chat__bubble-text--deleted" : ""
                       }`}
                   >
-                    {msg.isDeleted ? "Message deleted" : msg.text}
+                    {msg.isDeleted ? ct("cr_chat_deleted") : msg.text}
                   </div>
 
                   {(msg.deliveryStatus === "sending" ||
@@ -1181,20 +1191,20 @@ function ClassroomChat({
                       <div className="cr-chat__bubble-footer">
                         {msg.deliveryStatus === "sending" && (
                           <span className="cr-chat__bubble-status">
-                            Sending...
+                            {ct("cr_chat_sending")}
                           </span>
                         )}
                         {msg.deliveryStatus === "failed" && (
                           <>
                             <span className="cr-chat__bubble-status cr-chat__bubble-status--failed">
-                              {msg.error || "Failed"}
+                              {msg.error || ct("cr_chat_failed")}
                             </span>
                             <button
                               type="button"
                               className="cr-chat__retry"
                               onClick={() => handleRetryMessage(msg)}
                             >
-                              Retry
+                              {ct("cr_chat_retry")}
                             </button>
                           </>
                         )}
@@ -1211,7 +1221,7 @@ function ClassroomChat({
                               className="cr-chat__delete"
                               onClick={() => handleDeleteMessage(msg)}
                             >
-                              Delete
+                              {ct("cr_chat_delete")}
                             </button>
                           )}
                       </div>
@@ -1229,7 +1239,7 @@ function ClassroomChat({
               <span />
             </div>
             <div className="cr-chat__typing-text">
-              {otherTypingName} is typing...
+              {ct("cr_chat_typing", { name: otherTypingName })}
             </div>
           </div>
         )}

@@ -18,6 +18,7 @@ import {
   pushRecentResourceId,
   searchEntries,
 } from "./classroomFuzzySearch";
+import { useClassroomText } from "./classroomText";
 
 const SEARCH_LIMIT = 50;
 
@@ -57,6 +58,7 @@ function ClassroomResourcePickerModal({
   handleChangeResourceId,
   sessionId,
 }) {
+  const ct = useClassroomText();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
@@ -94,11 +96,11 @@ function ClassroomResourcePickerModal({
     event.target.value = "";
     if (!file) return;
     if (!/\.pdf$/i.test(file.name) || file.size === 0) {
-      setUploadError("Choose a valid PDF file.");
+      setUploadError(ct("cr_pk_invalid_pdf"));
       return;
     }
     if (file.size > maxPdfBytes) {
-      setUploadError(`PDF must be ${Math.floor(maxPdfBytes / (1024 * 1024))} MB or smaller.`);
+      setUploadError(ct("cr_pk_pdf_too_big", { mb: Math.floor(maxPdfBytes / (1024 * 1024)) }));
       return;
     }
     setUploadError("");
@@ -107,7 +109,7 @@ function ClassroomResourcePickerModal({
     try {
       await onUploadPdf(file, setUploadProgress);
     } catch (error) {
-      setUploadError(error?.response?.data?.error || error?.message || "Could not upload PDF.");
+      setUploadError(ct("cr_pk_upload_failed"));
     } finally {
       setUploading(false);
     }
@@ -218,7 +220,7 @@ function ClassroomResourcePickerModal({
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Choose a resource"
+        aria-label={ct("cr_pk_title")}
       >
         <div className="cr-picker-search">
           <span className="cr-picker-search__icon" aria-hidden="true">
@@ -228,13 +230,13 @@ function ClassroomResourcePickerModal({
             ref={inputRef}
             type="text"
             className="cr-picker-search__input"
-            placeholder="Search by resource, unit, level, or course…"
+            placeholder={ct("cr_pk_search_ph")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
             autoComplete="off"
             spellCheck={false}
-            aria-label="Search resources"
+            aria-label={ct("cr_pk_search")}
             aria-controls="cr-picker-results"
             aria-activedescendant={
               isSearching && results[activeIndex]
@@ -250,7 +252,7 @@ function ClassroomResourcePickerModal({
                 setQuery("");
                 inputRef.current?.focus();
               }}
-              aria-label="Clear search"
+              aria-label={ct("cr_pk_clear")}
             >
               <X size={14} />
             </button>
@@ -259,7 +261,7 @@ function ClassroomResourcePickerModal({
             type="button"
             className="cr-picker-search__close"
             onClick={() => setIsPickerOpen(false)}
-            aria-label="Close"
+            aria-label={ct("cr_close")}
           >
             ✕
           </button>
@@ -268,8 +270,8 @@ function ClassroomResourcePickerModal({
         {canUploadPdf && (
           <div className="cr-picker-upload">
             <div>
-              <strong>Teach from your computer</strong>
-              <span>Upload a PDF up to {Math.floor(maxPdfBytes / (1024 * 1024))} MB and open it for everyone in this classroom.</span>
+              <strong>{ct("cr_pk_upload_title")}</strong>
+              <span>{ct("cr_pk_upload_text", { mb: Math.floor(maxPdfBytes / (1024 * 1024)) })}</span>
             </div>
             <input
               ref={fileInputRef}
@@ -277,12 +279,12 @@ function ClassroomResourcePickerModal({
               accept=".pdf,application/pdf"
               onChange={handlePdfUpload}
               hidden
-              aria-label="Choose PDF to upload"
+              aria-label={ct("cr_pk_choose_pdf")}
             />
             <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-              <FileUp size={16} /> {uploading ? (uploadProgress >= 100 ? "Preparing PDF…" : `Uploading ${uploadProgress}%…`) : "Upload PDF"}
+              <FileUp size={16} /> {uploading ? (uploadProgress >= 100 ? ct("cr_pk_preparing") : ct("cr_pk_uploading", { p: uploadProgress })) : ct("cr_pk_upload")}
             </button>
-            {uploading && <p role="status" className="cr-picker-upload__status">{uploadProgress >= 100 ? "Preparing your PDF. You can keep teaching while it finishes." : `Uploading your PDF: ${uploadProgress}%. You can keep teaching.`}</p>}
+            {uploading && <p role="status" className="cr-picker-upload__status">{uploadProgress >= 100 ? ct("cr_pk_preparing_status") : ct("cr_pk_uploading_status", { p: uploadProgress })}</p>}
             {uploadError && <p role="alert" className="cr-picker-upload__error">{uploadError}</p>}
           </div>
         )}
@@ -290,7 +292,7 @@ function ClassroomResourcePickerModal({
         <div className="cr-modal__body cr-picker-body" data-lenis-prevent>
           {visibleUploads.length > 0 && (
             <div className="cr-picker-uploads">
-              <strong>Uploaded for this class</strong>
+              <strong>{ct("cr_pk_uploaded")}</strong>
               {visibleUploads.map((material) => (
                 <button
                   type="button"
@@ -307,11 +309,9 @@ function ClassroomResourcePickerModal({
             results.length === 0 ? (
               visibleUploads.length === 0 ? <div className="cr-picker__empty">
                 <span className="cr-picker__empty-icon">🔎</span>
-                <p>
-                  No matches for <strong>“{trimmedQuery}”</strong>.
-                </p>
+                <p>{ct("cr_pk_no_matches_for", { q: trimmedQuery })}</p>
                 <p className="cr-picker__empty-hint">
-                  Try a different word, or clear the search to browse.
+                  {ct("cr_pk_no_matches_hint")}
                 </p>
               </div> : null
             ) : (
@@ -360,9 +360,9 @@ function ClassroomResourcePickerModal({
                         {isSelected && (
                           <span
                             className="cr-picker-result__badge"
-                            aria-label="Currently shown"
+                            aria-label={ct("cr_pk_current_aria")}
                           >
-                            Current
+                            {ct("cr_pk_current")}
                           </span>
                         )}
                       </button>
@@ -377,7 +377,7 @@ function ClassroomResourcePickerModal({
                 <div className="cr-picker-section">
                   <div className="cr-picker-section__header">
                     <Clock size={14} aria-hidden="true" />
-                    <span>Recently used in this session</span>
+                    <span>{ct("cr_pk_recent")}</span>
                   </div>
                   <ul className="cr-picker-results cr-picker-results--compact">
                     {recentEntries.map((entry) => {
@@ -410,7 +410,7 @@ function ClassroomResourcePickerModal({
                             </span>
                             {isSelected && (
                               <span className="cr-picker-result__badge">
-                                Current
+                                {ct("cr_pk_current")}
                               </span>
                             )}
                           </button>
@@ -423,7 +423,7 @@ function ClassroomResourcePickerModal({
 
               <div className="cr-picker-section">
                 <div className="cr-picker-section__header cr-picker-section__header--browse">
-                  <span>Browse by course</span>
+                  <span>{ct("cr_pk_browse")}</span>
                 </div>
                 <ClassroomResourcePicker
                   tracks={tracks}
@@ -441,21 +441,23 @@ function ClassroomResourcePickerModal({
           <span className="cr-picker-kbd">
             <kbd>↑</kbd>
             <kbd>↓</kbd>
-            <span>Navigate</span>
+            <span>{ct("cr_pk_navigate")}</span>
           </span>
           <span className="cr-picker-kbd">
             <kbd>↵</kbd>
-            <span>Select</span>
+            <span>{ct("cr_pk_select")}</span>
           </span>
           <span className="cr-picker-kbd">
             <kbd>esc</kbd>
-            <span>Close</span>
+            <span>{ct("cr_close")}</span>
           </span>
           {isSearching && (
             <span className="cr-picker-footer__count">
               {results.length === 0
-                ? "No matches"
-                : `${results.length} match${results.length === 1 ? "" : "es"}`}
+                ? ct("cr_pk_no_matches")
+                : results.length === 1
+                  ? ct("cr_pk_match_one")
+                  : ct("cr_pk_matches", { n: results.length })}
             </span>
           )}
         </div>

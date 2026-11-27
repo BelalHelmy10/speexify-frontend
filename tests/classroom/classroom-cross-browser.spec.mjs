@@ -48,14 +48,14 @@ async function mountClassroom(page, {
 async function joinClassroom(page) {
   await page.evaluate(() => window.calls.at(-1).emit("videoConferenceJoined"));
   await expect(page.locator(".cr-video__loading")).toHaveCount(0);
-  await expect(page.locator(".cr-header__pill-signal")).toHaveAttribute('aria-label', /video call: waiting/);
+  await expect(page.locator(".cr-header__pill-signal")).toHaveAttribute('aria-label', /video call: Waiting for others/);
   await page.evaluate(() => {
     window.calls.at(-1).emit('participantJoined', { id: 'remote' });
     window.calls.at(-1).emit('dataChannelOpened');
   });
   await expect(page.locator(".cr-header__pill-signal")).toHaveAttribute(
     "aria-label",
-    /video call: connected/
+    /video call: Connected/
   );
 }
 
@@ -167,7 +167,7 @@ test("network loss, restoration, and backgrounding preserve the live iframe", as
   await page.evaluate(() => window.calls.at(-1).emit("dataChannelClosed"));
   await expect(page.locator(".cr-header__pill-signal")).toHaveAttribute(
     "aria-label",
-    /video call: reconnecting/
+    /video call: Reconnecting/
   );
   await expect(page.locator("iframe")).toBeVisible();
 
@@ -176,7 +176,7 @@ test("network loss, restoration, and backgrounding preserve the live iframe", as
   await page.evaluate(() => window.calls.at(-1).emit("dataChannelOpened"));
   await expect(page.locator(".cr-header__pill-signal")).toHaveAttribute(
     "aria-label",
-    /video call: connected/
+    /video call: Connected/
   );
   expect(await page.evaluate(() => window.calls.length)).toBe(1);
   expect(await page.evaluate(

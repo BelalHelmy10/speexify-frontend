@@ -23,6 +23,8 @@ const WS_MAX_FRAME_BYTES = 200 * 1024;
 // classroom once the learner is admitted (retryNow).
 const ADMISSION_REQUIRED_CODE = "classroom_admission_required";
 const TERMINAL_JOIN_CODES = new Set([
+  // A lock refuses late joiners until the teacher unlocks; retrying cannot help.
+  "classroom_locked",
   "forbidden_classroom_room",
   "classroom_ended",
   "invalid_classroom_room",
@@ -92,16 +94,18 @@ function appendWsToken(wsUrl, token) {
   }
 }
 
+// The token travels as the WebSocket subprotocol, which the server reads
+// first. It only goes in the URL (where proxies may log it) when the browser
+// refuses it as a subprotocol.
 function createWebSocket(wsUrl, token) {
-  const urlWithToken = appendWsToken(wsUrl, token);
   if (!token) {
-    return new WebSocket(urlWithToken);
+    return new WebSocket(wsUrl);
   }
 
   try {
-    return new WebSocket(urlWithToken, [token]);
+    return new WebSocket(wsUrl, [token]);
   } catch {
-    return new WebSocket(urlWithToken);
+    return new WebSocket(appendWsToken(wsUrl, token));
   }
 }
 

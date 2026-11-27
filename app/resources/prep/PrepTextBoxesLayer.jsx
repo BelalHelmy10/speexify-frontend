@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 import { getPrepTextClickOffset, syncPrepTextEditor } from "./prepTextEditorDOM";
 
 import { getPrepTextColorSegments } from "./prepTextBoxLogic";
+import { useClassroomText } from "@/app/classroom/[sessionId]/classroomText";
 
 export default function PrepTextBoxesLayer({
   textBoxes,
@@ -34,6 +35,7 @@ export default function PrepTextBoxesLayer({
   textPlaceholder,
   readOnly = false,
 }) {
+  const ct = useClassroomText();
   const pendingEdit = useRef(null);
   useLayoutEffect(() => {
     const textarea = textAreaRefs.current[activeTextId];
@@ -155,7 +157,7 @@ export default function PrepTextBoxesLayer({
                         e.preventDefault();
                         deleteTextBox(box.id);
                       }}
-                      title="Delete"
+                      title={ct("cr_tbx_delete")}
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -173,7 +175,7 @@ export default function PrepTextBoxesLayer({
                       type="button"
                       className="prep-text-box__toolbar-btn prep-text-box__toolbar-btn--move"
                       onMouseDown={(e) => startTextDrag(e, box)}
-                      title="Move"
+                      title={ct("cr_tbx_move")}
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -287,7 +289,7 @@ export default function PrepTextBoxesLayer({
                           }
                           startFontSizeResize(e, box);
                         }}
-                        title="Resize font"
+                        title={ct("cr_tbx_resize")}
                       />
 
                       <span

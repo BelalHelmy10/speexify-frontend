@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Clock, BookOpen, MessageSquare, X, ChevronRight } from "lucide-react";
+import { useClassroomText } from "./classroomText";
 
 /* -----------------------------------------------------------
    Late-Join Banner — Shows when a learner joins after the
@@ -22,6 +23,7 @@ export default function ClassroomLateJoinBanner({
   onDismiss,
   onOpenChat,
 }) {
+  const ct = useClassroomText();
   const [isVisible, setIsVisible] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -43,8 +45,14 @@ export default function ClassroomLateJoinBanner({
 
   const elapsedLabel =
     elapsedMinutes >= 60
-      ? `${Math.floor(elapsedMinutes / 60)}h ${elapsedMinutes % 60}m`
-      : `${elapsedMinutes} minute${elapsedMinutes !== 1 ? "s" : ""}`;
+      ? ct("cr_late_hours", { h: Math.floor(elapsedMinutes / 60), m: elapsedMinutes % 60 })
+      : elapsedMinutes === 1
+        ? ct("cr_late_minutes_one")
+        : elapsedMinutes === 2
+          ? ct("cr_late_minutes_two")
+          : elapsedMinutes <= 10
+            ? ct("cr_late_minutes_few", { n: elapsedMinutes })
+            : ct("cr_late_minutes", { n: elapsedMinutes });
 
   return (
     <div className="cr-late-join" role="status" aria-live="polite">
@@ -55,8 +63,8 @@ export default function ClassroomLateJoinBanner({
             <Clock size={14} />
           </div>
           <div className="cr-late-join__headline">
-            <strong>Class started {elapsedLabel} ago</strong>
-            <span>· catch up on what&apos;s been covered</span>
+            <strong>{ct("cr_late_started", { elapsed: elapsedLabel })}</strong>
+            <span>{ct("cr_late_catch_up")}</span>
           </div>
         </div>
 
@@ -65,7 +73,7 @@ export default function ClassroomLateJoinBanner({
             type="button"
             className="cr-late-join__toggle"
             onClick={() => setIsExpanded(!isExpanded)}
-            aria-label={isExpanded ? "Collapse" : "Expand"}
+            aria-label={isExpanded ? ct("cr_collapse") : ct("cr_expand")}
           >
             <ChevronRight
               size={14}
@@ -76,7 +84,7 @@ export default function ClassroomLateJoinBanner({
             type="button"
             className="cr-late-join__close"
             onClick={handleDismiss}
-            aria-label="Dismiss catch-up banner"
+            aria-label={ct("cr_late_dismiss")}
           >
             <X size={14} />
           </button>
@@ -93,7 +101,7 @@ export default function ClassroomLateJoinBanner({
                 <BookOpen size={13} />
               </div>
               <div className="cr-late-join__section-content">
-                <span className="cr-late-join__label">Currently on</span>
+                <span className="cr-late-join__label">{ct("cr_late_currently_on")}</span>
                 <span className="cr-late-join__value">{currentResourceTitle}</span>
               </div>
             </div>
@@ -107,7 +115,7 @@ export default function ClassroomLateJoinBanner({
               </div>
               <div className="cr-late-join__section-content">
                 <span className="cr-late-join__label">
-                  Recent messages ({recentMessages.length})
+                  {ct("cr_late_recent", { n: recentMessages.length })}
                 </span>
                 <ul className="cr-late-join__messages">
                   {recentMessages.map((msg) => (
@@ -126,7 +134,7 @@ export default function ClassroomLateJoinBanner({
                       handleDismiss();
                     }}
                   >
-                    Open full chat →
+                    {ct("cr_late_open_chat")}
                   </button>
                 )}
               </div>

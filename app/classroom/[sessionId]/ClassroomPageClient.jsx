@@ -8,6 +8,16 @@ import api from "@/lib/api";
 import ClassroomErrorBoundary from "./ClassroomErrorBoundary";
 import ClassroomShell from "./ClassroomShell";
 import ClassroomReviewShell from "./ClassroomReviewShell";
+import { useClassroomText } from "./classroomText";
+
+// Why the session could not load, from the response status.
+function errorKindFor(err) {
+  const status = err?.response?.status;
+  if (status === 404) return "not_found";
+  if (status === 401 || status === 403) return "forbidden";
+  if (!err?.response) return "network";
+  return "other";
+}
 
 export default function ClassroomPageClient({ sessionId, tracks, initialSession = null }) {
   const pathname = usePathname();
@@ -16,7 +26,9 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
 
   const [session, setSession] = useState(initialSession);
   const [status, setStatus] = useState(initialSession ? "ok" : "loading"); // "loading" | "ok" | "error"
-  const [error, setError] = useState("");
+  const [errorKind, setErrorKind] = useState("not_found");
+  const [reloadKey, setReloadKey] = useState(0);
+  const ct = useClassroomText();
 
   // Add class to body when classroom is active (to hide site header/footer)
   useEffect(() => {
@@ -42,7 +54,6 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
     async function load() {
       try {
         setStatus("loading");
-        setError("");
 
         const { data } = await api.get(`/sessions/${sessionId}`, {
           params: { classroomJoin: 1 },
@@ -56,15 +67,13 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
           setStatus("ok");
         } else {
           setStatus("error");
-          setError(`Session #${sessionId} not found.`);
+          setErrorKind("not_found");
         }
       } catch (err) {
         console.error("Failed to load session for classroom", err);
         if (cancelled) return;
 
-        setError(
-          err?.response?.data?.error || "Failed to load session for classroom"
-        );
+        setErrorKind(errorKindFor(err));
         setStatus("error");
       }
     }
@@ -73,7 +82,7 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
     return () => {
       cancelled = true;
     };
-  }, [initialSession, sessionId]);
+  }, [initialSession, reloadKey, sessionId]);
 
   // LOADING - full screen loading
   if (status === "loading") {
@@ -81,9 +90,9 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
       <div className="cr-loading-screen">
         <div className="cr-loading-screen__content">
           <div className="cr-loading-screen__spinner" />
-          <h1 className="cr-loading-screen__title">Loading classroom…</h1>
+          <h1 className="cr-loading-screen__title">{ct("cr_loading_title")}</h1>
           <p className="cr-loading-screen__text">
-            Preparing session #{sessionId}
+            {ct("cr_loading_text", { id: sessionId })}
           </p>
         </div>
       </div>
@@ -96,13 +105,18 @@ export default function ClassroomPageClient({ sessionId, tracks, initialSession 
       <div className="cr-error-screen">
         <div className="cr-error-screen__content">
           <span className="cr-error-screen__icon">⚠️</span>
-          <h1 className="cr-error-screen__title">Session not found</h1>
-          <p className="cr-error-screen__text">
-            {error || `Unable to load classroom session #${sessionId}.`}
-          </p>
-          <Link href={`${prefix}/dashboard`} className="cr-error-screen__btn">
-            ← Back to dashboard
-          </Link>
+          <h1 className="cr-error-screen__title">{ct(`cr_error_${errorKind}_title`)}</h1>
+          <p className="cr-error-screen__text">{ct(`cr_error_${errorKind}_text`)}</p>
+          <div className="cr-error-screen__actions">
+            {(errorKind === "network" || errorKind === "other") && (
+              <button type="button" className="cr-error-screen__btn" onClick={() => setReloadKey((n) => n + 1)}>
+                {ct("cr_error_try_again")}
+              </button>
+            )}
+            <Link href={`${prefix}/dashboard`} className="cr-error-screen__btn cr-error-screen__btn--ghost">
+              {ct("cr_back_to_dashboard")}
+            </Link>
+          </div>
         </div>
       </div>
     );

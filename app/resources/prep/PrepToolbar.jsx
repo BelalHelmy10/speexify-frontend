@@ -11,6 +11,7 @@ import {
 import PrepAudioControls from "./PrepAudioControls";
 import PrepToolDropdownMenus from "./PrepToolDropdownMenus";
 import PrepStyleControls from "./PrepStyleControls";
+import { useClassroomText } from "@/app/classroom/[sessionId]/classroomText";
 
 export default function PrepToolbar({
   hideSidebar,
@@ -70,6 +71,7 @@ export default function PrepToolbar({
   PEN_COLORS,
   setPenColor,
 }) {
+  const ct = useClassroomText();
   return (
     <div className="prep-annotate-toolbar" style={{ position: "relative", zIndex: 50 }}>
       {!hideSidebar && (
@@ -92,7 +94,7 @@ export default function PrepToolbar({
       {classroomChannel && !channelReady && (
         <div
           style={{ marginRight: 8, color: "#f87171", display: "flex", alignItems: "center" }}
-          title="Offline / Reconnecting"
+          title={ct("cr_tb_offline")}
         >
           <WifiOff size={18} />
         </div>
@@ -103,10 +105,10 @@ export default function PrepToolbar({
         className="prep-annotate-toolbar__btn"
         onClick={undo}
         disabled={historyLength === 0}
-        aria-label="Undo (Ctrl+Z)"
-        title="Undo (Ctrl+Z)"
+        aria-label={ct("cr_tb_undo_hint")}
+        title={ct("cr_tb_undo_hint")}
       >
-        <Undo2 size={18} /> <span>Undo</span>
+        <Undo2 size={18} /> <span>{ct("cr_tb_undo")}</span>
       </button>
 
       <button
@@ -114,10 +116,10 @@ export default function PrepToolbar({
         className="prep-annotate-toolbar__btn"
         onClick={redo}
         disabled={redoLength === 0}
-        aria-label="Redo (Ctrl+Shift+Z)"
-        title="Redo (Ctrl+Shift+Z)"
+        aria-label={ct("cr_tb_redo_hint")}
+        title={ct("cr_tb_redo_hint")}
       >
-        <Redo2 size={18} /> <span>Redo</span>
+        <Redo2 size={18} /> <span>{ct("cr_tb_redo")}</span>
       </button>
 
       <div className="prep-annotate-toolbar__separator" />
@@ -167,7 +169,8 @@ export default function PrepToolbar({
         type="button"
         className="prep-annotate-toolbar__btn prep-annotate-toolbar__btn--danger"
         onClick={requestClearAll}
-        title="Clear All"
+        title={ct("cr_tb_clear_all")}
+        aria-label={ct("cr_tb_clear_all")}
       >
         <Trash2 size={18} />
       </button>

@@ -16,6 +16,7 @@ import {
     getUnreadChatLabel,
     normalizeUnreadCount,
 } from "@/lib/classroomChatUnread.mjs";
+import { useClassroomLocale, useClassroomText } from "./classroomText";
 
 /**
  * Mobile-specific tabbed layout for classroom
@@ -40,6 +41,8 @@ export default function MobileClassroomLayout({
     onToggleCaptions,
     moreAction = null,
 }) {
+    const ct = useClassroomText();
+    const locale = useClassroomLocale();
     const shouldShowVideoPip = activeTab !== "video";
     const unreadCount = normalizeUnreadCount(chatUnreadCount);
     const hasUnread = activeTab !== "chat" && unreadCount > 0;
@@ -84,7 +87,7 @@ export default function MobileClassroomLayout({
                 <button
                     className={`cr-mobile-quick-actions__btn ${isHandRaised ? "cr-controls__btn--active" : ""}`}
                     onClick={toggleHand}
-                    aria-label={isHandRaised ? "Lower hand" : "Raise hand"}
+                    aria-label={isHandRaised ? ct("cr_hand_lower") : ct("cr_hand_raise")}
                 >
                     <Hand size={20} />
                 </button>
@@ -94,7 +97,7 @@ export default function MobileClassroomLayout({
                     <button
                         className={`cr-mobile-quick-actions__btn ${captionsEnabled ? "cr-controls__btn--active" : ""}`}
                         onClick={onToggleCaptions}
-                        aria-label={captionsEnabled ? "Turn captions off" : "Turn captions on"}
+                        aria-label={captionsEnabled ? ct("cr_captions_off") : ct("cr_captions_on")}
                         aria-pressed={captionsEnabled}
                     >
                         {captionsEnabled ? <Captions size={20} /> : <CaptionsOff size={20} />}
@@ -106,7 +109,7 @@ export default function MobileClassroomLayout({
                     <button
                         className="cr-mobile-quick-actions__btn"
                         onClick={onOpenPicker}
-                        aria-label="Choose resource"
+                        aria-label={ct("cr_choose_resource")}
                     >
                         <BookOpen size={20} />
                     </button>
@@ -116,7 +119,7 @@ export default function MobileClassroomLayout({
                     <button
                         className="cr-mobile-quick-actions__btn"
                         onClick={onOpenParticipants}
-                        aria-label="Open teacher controls"
+                        aria-label={ct("cr_open_teacher_controls")}
                     >
                         <Users size={20} />
                     </button>
@@ -126,7 +129,7 @@ export default function MobileClassroomLayout({
             </div>
 
             {/* Bottom tab bar */}
-            <nav className="cr-mobile-tabs" aria-label="Classroom navigation">
+            <nav className="cr-mobile-tabs" aria-label={ct("cr_mobile_nav")}>
                 <button
                     className={`cr-mobile-tabs__tab ${activeTab === "video" ? "cr-mobile-tabs__tab--active" : ""
                         }`}
@@ -136,7 +139,7 @@ export default function MobileClassroomLayout({
                     <span className="cr-mobile-tabs__tab-icon">
                         <Video size={22} />
                     </span>
-                    <span className="cr-mobile-tabs__tab-label">Video</span>
+                    <span className="cr-mobile-tabs__tab-label">{ct("cr_tab_video")}</span>
                 </button>
 
                 <button
@@ -149,7 +152,7 @@ export default function MobileClassroomLayout({
                         <FileText size={22} />
                     </span>
                     <span className="cr-mobile-tabs__tab-label">
-                        Content
+                        {ct("cr_tab_content")}
                     </span>
                 </button>
 
@@ -159,7 +162,7 @@ export default function MobileClassroomLayout({
                         }`}
                     onClick={() => onTabChange("chat")}
                     aria-current={activeTab === "chat" ? "page" : undefined}
-                    aria-label={hasUnread ? `Chat, ${getUnreadChatLabel(unreadCount)}` : "Chat"}
+                    aria-label={hasUnread ? ct("cr_chat_with_unread", { label: getUnreadChatLabel(unreadCount, locale) }) : ct("cr_tab_chat")}
                 >
                     <span className="cr-mobile-tabs__tab-icon">
                         <MessageSquare size={22} />
@@ -168,7 +171,7 @@ export default function MobileClassroomLayout({
                             className="cr-mobile-tabs__badge"
                         />
                     </span>
-                    <span className="cr-mobile-tabs__tab-label">Chat</span>
+                    <span className="cr-mobile-tabs__tab-label">{ct("cr_tab_chat")}</span>
                 </button>
             </nav>
         </div>

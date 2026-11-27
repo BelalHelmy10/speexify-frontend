@@ -3,15 +3,16 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { SmilePlus } from "lucide-react";
+import { useClassroomText } from "./classroomText";
 
 /* ─── Available reactions ─────────────────────────────────────────────── */
 const REACTIONS = [
-  { emoji: "✋", label: "Raise hand" },
-  { emoji: "👏", label: "Clap" },
-  { emoji: "❓", label: "Question" },
-  { emoji: "✅", label: "Agree" },
-  { emoji: "😂", label: "Laugh" },
-  { emoji: "🔥", label: "Fire" },
+  { emoji: "✋", label: "cr_reaction_raise_hand" },
+  { emoji: "👏", label: "cr_reaction_clap" },
+  { emoji: "❓", label: "cr_reaction_question" },
+  { emoji: "✅", label: "cr_reaction_agree" },
+  { emoji: "😂", label: "cr_reaction_laugh" },
+  { emoji: "🔥", label: "cr_reaction_fire" },
 ];
 
 /* ─── Single Floating Reaction ────────────────────────────────────────── */
@@ -56,6 +57,7 @@ export function ClassroomReactionsOverlay({ reactions, onReactionDone }) {
 
 /* ─── Reaction Picker (the button + popup) ───────────────────────────── */
 export function ClassroomReactionPicker({ onReact }) {
+  const ct = useClassroomText();
   const [isOpen, setIsOpen] = useState(false);
   const pickerRef = useRef(null);
 
@@ -92,12 +94,12 @@ export function ClassroomReactionPicker({ onReact }) {
         type="button"
         className={`cr-controls__btn cr-controls__btn--ghost ${isOpen ? "cr-controls__btn--active" : ""}`}
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Send a reaction"
+        aria-label={ct("cr_reaction_send")}
         aria-expanded={isOpen}
-        title="Reactions"
+        title={ct("cr_reactions")}
       >
         <span className="cr-controls__btn-icon"><SmilePlus size={16} /></span>
-        <span className="cr-controls__btn-label">React</span>
+        <span className="cr-controls__btn-label">{ct("cr_react")}</span>
       </button>
 
       {isOpen && (
@@ -108,8 +110,8 @@ export function ClassroomReactionPicker({ onReact }) {
               type="button"
               className="cr-reaction-picker__btn"
               onClick={() => handleReact(r.emoji)}
-              aria-label={r.label}
-              title={r.label}
+              aria-label={ct(r.label)}
+              title={ct(r.label)}
               role="menuitem"
             >
               {r.emoji}

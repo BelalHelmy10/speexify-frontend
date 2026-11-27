@@ -13,6 +13,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { formatNumber } from "@/utils/locale";
+import { useClassroomText } from "./classroomText";
 
 /* -----------------------------------------------------------
    Lobby Panel — Teacher-facing panel to manage learners
@@ -37,6 +38,7 @@ export default function ClassroomLobbyPanel({
   onClose,
   locale = "en",
 }) {
+  const ct = useClassroomText();
   const [admittingIds, setAdmittingIds] = useState(new Set());
   const [denyingIds, setDenyingIds] = useState(new Set());
   const [isAdmittingAll, setIsAdmittingAll] = useState(false);
@@ -106,13 +108,13 @@ export default function ClassroomLobbyPanel({
         type="button"
         className="cr-lobby-badge"
         onClick={onToggle}
-        aria-label={`${count} learner${count > 1 ? "s" : ""} waiting for admission`}
+        aria-label={ct("cr_lobby_badge_aria", { n: formatNumber(count, locale) })}
       >
         <span className="cr-lobby-badge__pulse" />
         <Bell size={18} />
         <span className="cr-lobby-badge__count">{formatNumber(count, locale)}</span>
         <span className="cr-lobby-badge__label">
-          {count === 1 ? "Learner waiting" : "Learners waiting"}
+          {count === 1 ? ct("cr_lobby_one_waiting") : ct("cr_lobby_many_waiting")}
         </span>
       </button>
     );
@@ -121,13 +123,13 @@ export default function ClassroomLobbyPanel({
   if (!isOpen) return null;
 
   return (
-    <div ref={panelRef} className="cr-lobby-panel" role="dialog" aria-label="Waiting room lobby">
+    <div ref={panelRef} className="cr-lobby-panel" role="dialog" aria-label={ct("cr_lobby_aria")}>
       {/* Header */}
       <header className="cr-lobby-panel__header">
         <div className="cr-lobby-panel__header-left">
           <Users size={18} />
           <h3 className="cr-lobby-panel__title">
-            Waiting Room
+            {ct("cr_lobby_title")}
             {count > 0 && (
               <span className="cr-lobby-panel__count">{formatNumber(count, locale)}</span>
             )}
@@ -137,7 +139,7 @@ export default function ClassroomLobbyPanel({
           type="button"
           className="cr-lobby-panel__close"
           onClick={onClose || onToggle}
-          aria-label="Close lobby panel"
+          aria-label={ct("cr_lobby_close")}
         >
           <X size={16} />
         </button>
@@ -150,8 +152,8 @@ export default function ClassroomLobbyPanel({
             <div className="cr-lobby-panel__empty-icon">
               <UserCheck size={24} />
             </div>
-            <p>No one is waiting.</p>
-            <span>Learners who join will appear here for your approval.</span>
+            <p>{ct("cr_lobby_empty")}</p>
+            <span>{ct("cr_lobby_empty_hint")}</span>
           </div>
         ) : (
           <>
@@ -165,7 +167,7 @@ export default function ClassroomLobbyPanel({
                   disabled={isAdmittingAll}
                 >
                   <CheckCheck size={16} />
-                  {isAdmittingAll ? "Admitting…" : `Admit all (${formatNumber(count, locale)})`}
+                  {isAdmittingAll ? ct("cr_lobby_admitting") : ct("cr_lobby_admit_all", { n: formatNumber(count, locale) })}
                 </button>
               </div>
             )}
@@ -185,7 +187,7 @@ export default function ClassroomLobbyPanel({
                           .toUpperCase()}
                       </div>
                       <div className="cr-lobby-panel__learner-info">
-                        <strong>{learner.name || "Learner"}</strong>
+                        <strong>{learner.name || ct("cr_learner")}</strong>
                         {learner.email && <span>{learner.email}</span>}
                       </div>
                     </div>
@@ -196,17 +198,17 @@ export default function ClassroomLobbyPanel({
                         className="cr-lobby-panel__btn cr-lobby-panel__btn--admit"
                         onClick={() => handleAdmit(learner.id)}
                         disabled={isAdmitting || isDenying}
-                        aria-label={`Admit ${learner.name || "learner"}`}
+                        aria-label={ct("cr_lobby_admit_name", { name: learner.name || ct("cr_learner") })}
                       >
                         <UserCheck size={15} />
-                        {isAdmitting ? "…" : "Admit"}
+                        {isAdmitting ? "…" : ct("cr_lobby_admit")}
                       </button>
                       <button
                         type="button"
                         className="cr-lobby-panel__btn cr-lobby-panel__btn--deny"
                         onClick={() => handleDeny(learner.id)}
                         disabled={isAdmitting || isDenying}
-                        aria-label={`Deny ${learner.name || "learner"}`}
+                        aria-label={ct("cr_lobby_deny_name", { name: learner.name || ct("cr_learner") })}
                       >
                         <UserX size={15} />
                       </button>

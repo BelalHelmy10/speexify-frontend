@@ -8,7 +8,7 @@ import {
   normalizeYouTubeEmbed,
   normalizeGoogleSlidesEmbed,
 } from "@/lib/viewerHelpers";
-import { buildResourcePickerIndex } from "@/lib/resourcePickerIndex";
+import { buildResourcePickerIndex } from "@/lib/resourcePickerIndex.mjs";
 
 // The classroom picker is opened and closed repeatedly during a session.
 // Keep the derived index tied to the immutable tracks array so reopening the

@@ -1096,3 +1096,8 @@
     transform: rotate(360deg);
   }
 }
+
+// Arrows that point "back" or "forward" turn around in Arabic (right to left).
+[dir="rtl"] .cr-flip-rtl {
+  transform: scaleX(-1);
+}

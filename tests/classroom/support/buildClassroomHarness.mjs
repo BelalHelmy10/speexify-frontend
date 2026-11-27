@@ -33,6 +33,9 @@ export function buildClassroomHarness({ realLobby = false, liveVideo = false, re
         "MobileClassroomLayout.jsx",
         "classroomHelpers.js",
         "classroomTime.js",
+        "classroomText.js",
+        "ClassroomLeaveConfirmModal.jsx",
+        "classroomCopy.js",
         "ClassroomControlBar.jsx",
         "ClassroomHeaderBar.jsx",
         "ClassroomHostMenu.jsx",
@@ -77,11 +80,18 @@ export function buildClassroomHarness({ realLobby = false, liveVideo = false, re
       source = `exports.GlobalWorkerOptions={};exports.version='test';exports.getDocument=()=>({destroy:async()=>{},promise:new Promise(resolve=>setTimeout(()=>resolve({numPages:2,destroy:async()=>{},getPage:async()=>({getViewport:({scale})=>({width:600*scale,height:840*scale}),render:()=>({promise:Promise.resolve(),cancel:()=>{}})})}),300))});`;
     }
     if (file.endsWith("/app/i18n.js")) {
-      source = "const dict={};exports.getDictionary = () => dict; exports.t = (_, key) => key;";
+      // Real English classroom text, so tests read what learners see.
+      source = "const en=require('@/locales/en/classroom.json');const classroom=en.default||en;exports.getDictionary = (_locale, ns) => ns === 'classroom' ? classroom : {}; exports.t = (dict, key) => (dict && dict[key] !== undefined ? dict[key] : key);";
     }
-    if (file.endsWith(".json")) source = `module.exports = ${source}`;
+    // The page address decides the classroom language (?locale=ar → /ar/...).
+    if (/node_modules\/next\/navigation(\.js)?$/.test(file)) {
+      source = "const ar=()=>new URLSearchParams(location.search).get('locale')==='ar';exports.usePathname=()=>ar()?'/ar/classroom/tabs-test':'/classroom/tabs-test';exports.useRouter=()=>({push(){},replace(){},back(){},refresh(){}});exports.useSearchParams=()=>new URLSearchParams(location.search);exports.useParams=()=>({sessionId:'tabs-test'});";
+    }
+    // Default import, as Next.js gives `import dict from "./x.json"`.
+    if (file.endsWith(".json")) source = `module.exports = {__esModule: true, default: ${source}}`;
 
-    if (!file.includes("node_modules")) {
+    // JSON (locale files) is already plain CommonJS after the line above.
+    if (!file.includes("node_modules") && !file.endsWith(".json")) {
       source = ts.transpileModule(source, {
         fileName: file.endsWith(".mjs") ? file.replace(/\.mjs$/, ".js") : file,
         compilerOptions: {

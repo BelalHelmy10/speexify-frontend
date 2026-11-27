@@ -47,11 +47,11 @@ test("learner announces its video identity and obeys only stamped teacher mutes"
 
   await page.evaluate((from) => window.receive({ type: "MODERATION_MUTE", media: "audio", targetUserId: "all", _from: from }), teacher);
   await expect.poll(() => commandNames(page)).toContain("toggleAudio");
-  await expect(page.locator(".cr-moderation-notice")).toContainText("classroom_moderation_muted");
+  await expect(page.locator(".cr-moderation-notice")).toContainText("Your teacher muted your microphone.");
 
   await page.evaluate((from) => window.receive({ type: "MODERATION_MUTE", media: "video", targetUserId: "test-user", _from: from }), teacher);
   await expect.poll(() => commandNames(page)).toContain("toggleVideo");
-  await expect(page.locator(".cr-moderation-notice")).toContainText("classroom_moderation_camera_stopped");
+  await expect(page.locator(".cr-moderation-notice")).toContainText("Your teacher turned off your camera.");
 
   expect(errors).toEqual([]);
 });

@@ -31,6 +31,7 @@ import {
   TOOL_BOX,
   TOOL_SELECT,
 } from "./prepAnnotationUtils";
+import { useClassroomText } from "@/app/classroom/[sessionId]/classroomText";
 
 export default function PrepToolDropdownMenus({
   tool,
@@ -53,6 +54,7 @@ export default function PrepToolDropdownMenus({
   viewport,
   setViewport,
 }) {
+  const ct = useClassroomText();
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   function runExport(format) {
@@ -81,6 +83,8 @@ export default function PrepToolDropdownMenus({
           }}
           aria-expanded={drawMenuOpen}
           aria-haspopup="true"
+          aria-label={ct("cr_tool_draw")}
+          title={ct("cr_tool_draw")}
         >
           {tool === TOOL_SELECT && <MousePointer2 size={18} />}
           {tool === TOOL_PEN && <PenTool size={18} />}
@@ -107,7 +111,7 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <MousePointer2 size={16} />
-              <span>Select</span>
+              <span>{ct("cr_tool_select")}</span>
               <kbd>V</kbd>
             </button>
             <button
@@ -122,7 +126,7 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <PenTool size={16} />
-              <span>Pen</span>
+              <span>{ct("cr_tool_pen")}</span>
               <kbd>P</kbd>
             </button>
             <button
@@ -137,7 +141,7 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <Highlighter size={16} />
-              <span>Highlighter</span>
+              <span>{ct("cr_tool_highlighter")}</span>
               <kbd>H</kbd>
             </button>
             <button
@@ -152,7 +156,7 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <Eraser size={16} />
-              <span>Eraser</span>
+              <span>{ct("cr_tool_eraser")}</span>
               <kbd>E</kbd>
             </button>
             <button
@@ -167,7 +171,7 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <Zap size={16} />
-              <span>Pointer</span>
+              <span>{ct("cr_tool_pointer")}</span>
               <kbd>L</kbd>
             </button>
           </div>
@@ -192,6 +196,8 @@ export default function PrepToolDropdownMenus({
           }}
           aria-expanded={moreMenuOpen}
           aria-haspopup="true"
+          aria-label={ct("cr_tool_more")}
+          title={ct("cr_tool_more")}
         >
           {[TOOL_TEXT, TOOL_NOTE, TOOL_LINE, TOOL_BOX, TOOL_MASK].includes(tool) ? (
             <>
@@ -213,7 +219,7 @@ export default function PrepToolDropdownMenus({
 
         {moreMenuOpen && (
           <div className="prep-toolbar-dropdown__menu prep-toolbar-dropdown__menu--more">
-            <div className="prep-toolbar-dropdown__section-title">Annotate</div>
+            <div className="prep-toolbar-dropdown__section-title">{ct("cr_tool_annotate")}</div>
             <button
               type="button"
               className={
@@ -226,7 +232,7 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <Type size={16} />
-              <span>Text</span>
+              <span>{ct("cr_tool_text")}</span>
               <kbd>T</kbd>
             </button>
             <button
@@ -241,12 +247,12 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <StickyNote size={16} />
-              <span>Sticky Note</span>
+              <span>{ct("cr_tool_note")}</span>
               <kbd>N</kbd>
             </button>
 
             <div className="prep-toolbar-dropdown__divider" />
-            <div className="prep-toolbar-dropdown__section-title">Shapes</div>
+            <div className="prep-toolbar-dropdown__section-title">{ct("cr_tool_shapes")}</div>
             <button
               type="button"
               className={
@@ -259,7 +265,7 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <Minus size={16} style={{ transform: "rotate(45deg)" }} />
-              <span>Line</span>
+              <span>{ct("cr_tool_line")}</span>
               <kbd>1</kbd>
             </button>
             <button
@@ -274,7 +280,7 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <Square size={16} />
-              <span>Rectangle</span>
+              <span>{ct("cr_tool_rect")}</span>
               <kbd>2</kbd>
             </button>
             <button
@@ -289,12 +295,12 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <Square size={16} fill="currentColor" fillOpacity={0.3} />
-              <span>Hide Mask</span>
+              <span>{ct("cr_tool_mask")}</span>
               <kbd>M</kbd>
             </button>
 
             <div className="prep-toolbar-dropdown__divider" />
-            <div className="prep-toolbar-dropdown__section-title">View</div>
+            <div className="prep-toolbar-dropdown__section-title">{ct("cr_tool_view")}</div>
             <button
               type="button"
               className={
@@ -307,7 +313,7 @@ export default function PrepToolDropdownMenus({
               }}
             >
               <Grid3x3 size={16} />
-              <span>Grid</span>
+              <span>{ct("cr_tool_grid")}</span>
             </button>
             <div className="prep-toolbar-dropdown__export">
               <button
@@ -362,7 +368,7 @@ export default function PrepToolDropdownMenus({
                 }}
               >
                 <RotateCcw size={16} />
-                <span>Reset Zoom</span>
+                <span>{ct("cr_tool_reset_zoom")}</span>
               </button>
             )}
           </div>

@@ -1,8 +1,10 @@
 "use client";
 
 import { RotateCw, WifiOff } from "lucide-react";
+import { useClassroomText } from "./classroomText";
 
 export default function ClassroomConnectionBanner({ channel, onRejoin }) {
+  const ct = useClassroomText();
   const reconnectAttempt = Number(channel?.reconnectAttempt) || 0;
   const reconnectFailed = Boolean(channel?.reconnectFailed);
   const shouldShowReconnecting =
@@ -32,8 +34,8 @@ export default function ClassroomConnectionBanner({ channel, onRejoin }) {
         )}
         <span>
           {reconnectFailed
-            ? "Live sync stopped. Rejoin the classroom to restore messages and layout updates."
-            : "Reconnecting... messages may be delayed."}
+            ? ct("cr_sync_stopped")
+            : ct("cr_sync_reconnecting")}
         </span>
       </div>
 
@@ -43,7 +45,7 @@ export default function ClassroomConnectionBanner({ channel, onRejoin }) {
           className="cr-connection-banner__btn cr-connection-banner__btn--danger"
           onClick={onRejoin}
         >
-          Rejoin
+          {ct("cr_rejoin")}
         </button>
       ) : (
         <button
@@ -51,7 +53,7 @@ export default function ClassroomConnectionBanner({ channel, onRejoin }) {
           className="cr-connection-banner__btn"
           onClick={channel?.retryNow}
         >
-          Retry now
+          {ct("cr_retry_now")}
         </button>
       )}
     </div>

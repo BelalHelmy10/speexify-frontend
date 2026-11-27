@@ -1,8 +1,10 @@
 "use client";
 
 import { Clock3 } from "lucide-react";
+import { useClassroomText } from "./classroomText";
 
 export default function ClassroomTimeWarning({ warningLevel, remainingLabel }) {
+  const ct = useClassroomText();
   if (!warningLevel) return null;
 
   const isHard = warningLevel === "hard";
@@ -16,16 +18,14 @@ export default function ClassroomTimeWarning({ warningLevel, remainingLabel }) {
         role="status"
         aria-live={isHard ? "assertive" : "polite"}
       >
-        {isHard
-          ? "1-minute warning. Session is in the final minute."
-          : "5-minute warning. Session is in the wrap-up window."}
+        {isHard ? ct("cr_warn_hard_sr") : ct("cr_warn_soft_sr")}
       </span>
       <Clock3 size={16} aria-hidden="true" />
-      <strong>{isHard ? "1-minute warning" : "5-minute warning"}</strong>
+      <strong>{isHard ? ct("cr_warn_hard") : ct("cr_warn_soft")}</strong>
       <span>
         {isHard
-          ? `Session ends in ${remainingLabel}. Close the class now.`
-          : `Session ends in ${remainingLabel}. Start wrapping up.`}
+          ? ct("cr_warn_hard_text", { time: remainingLabel })
+          : ct("cr_warn_soft_text", { time: remainingLabel })}
       </span>
     </div>
   );

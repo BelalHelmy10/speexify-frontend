@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Captions, CaptionsOff } from "lucide-react";
+import { useClassroomText } from "./classroomText";
 
 const CAPTION_FINAL_TTL_MS = 6500;
 const CAPTION_INTERIM_TTL_MS = 9000;
@@ -69,19 +70,20 @@ export function ClassroomCaptionsOverlay({ captions }) {
 
 /* ─── Toggle Button for the Control Bar ───────────────────────────────── */
 export function ClassroomCaptionsButton({ enabled, supported, onToggle, iconOnly = false }) {
+  const ct = useClassroomText();
   if (!supported) {
     return (
       <button
         type="button"
         className={`cr-controls__btn cr-controls__btn--ghost${iconOnly ? " cr-controls__btn--icon-only" : ""}`}
         disabled
-        aria-label="Live captions are not supported in this browser"
-        title="Live captions are not supported in this browser. Try Chrome or Edge."
+        aria-label={ct("cr_captions_unsupported")}
+        title={ct("cr_captions_unsupported_hint")}
       >
         <span className="cr-controls__btn-icon"><CaptionsOff size={16} /></span>
         {iconOnly
-          ? <span className="cr-controls__sheet-label">Captions</span>
-          : <span className="cr-controls__btn-label">Captions</span>}
+          ? <span className="cr-controls__sheet-label">{ct("cr_captions")}</span>
+          : <span className="cr-controls__btn-label">{ct("cr_captions")}</span>}
       </button>
     );
   }
@@ -96,14 +98,14 @@ export function ClassroomCaptionsButton({ enabled, supported, onToggle, iconOnly
       }
       onClick={onToggle}
       aria-pressed={enabled}
-      aria-label={enabled ? "Turn captions off" : "Turn captions on"}
-      title={enabled ? "Captions on. Click to turn off" : "Turn captions on"}
+      aria-label={enabled ? ct("cr_captions_off") : ct("cr_captions_on")}
+      title={enabled ? ct("cr_captions_on_hint") : ct("cr_captions_on")}
     >
       <span className="cr-controls__btn-icon">
         {enabled ? <Captions size={16} /> : <CaptionsOff size={16} />}
       </span>
       <span className={iconOnly ? "cr-controls__sheet-label" : "cr-controls__btn-label"}>
-        {enabled ? "Captions on" : "Captions"}
+        {enabled ? ct("cr_captions_on_label") : ct("cr_captions")}
       </span>
     </button>
   );

@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import api from "@/lib/api";
 import { formatNumber, getIntlLocale } from "@/utils/locale";
+import { useClassroomText } from "./classroomText";
 
 /**
  * SessionNotes - Teacher's notes panel for the live classroom
@@ -31,6 +32,7 @@ export default function SessionNotes({
   onToggle,
   locale = "en",
 }) {
+  const ct = useClassroomText();
   const [notes, setNotes] = useState(initialNotes);
   const [saveStatus, setSaveStatus] = useState("saved"); // "saved" | "saving" | "unsaved" | "error"
   const [lastSaved, setLastSaved] = useState(null);
@@ -162,20 +164,22 @@ export default function SessionNotes({
   const getStatusIndicator = () => {
     switch (saveStatus) {
       case "saving":
-        return { text: "Saving...", icon: "⏳", className: "saving" };
+        return { text: ct("cr_notes_saving"), icon: "⏳", className: "saving" };
       case "unsaved":
-        return { text: "Unsaved", icon: "●", className: "unsaved" };
+        return { text: ct("cr_notes_unsaved"), icon: "●", className: "unsaved" };
       case "error":
-        return { text: "Error saving", icon: "⚠", className: "error" };
+        return { text: ct("cr_notes_error"), icon: "⚠", className: "error" };
       case "saved":
       default:
         return {
           text: lastSaved
-            ? `Saved ${lastSaved.toLocaleTimeString(getIntlLocale(locale), {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}`
-            : "Saved",
+            ? ct("cr_notes_saved_at", {
+                time: lastSaved.toLocaleTimeString(getIntlLocale(locale), {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+              })
+            : ct("cr_notes_saved"),
           icon: "✓",
           className: "saved",
         };
@@ -202,9 +206,9 @@ export default function SessionNotes({
       <div className="session-notes__header" onClick={handleToggle}>
         <div className="session-notes__title">
           <span className="session-notes__icon">📝</span>
-          <span>Session Notes</span>
+          <span>{ct("cr_notes_title")}</span>
           {!isTeacher && (
-            <span className="session-notes__readonly">(Read Only)</span>
+            <span className="session-notes__readonly">{ct("cr_notes_readonly")}</span>
           )}
         </div>
         <div className="session-notes__header-actions">
@@ -217,7 +221,7 @@ export default function SessionNotes({
           <button
             type="button"
             className="session-notes__toggle"
-            aria-label={isExpanded ? "Collapse" : "Expand"}
+            aria-label={isExpanded ? ct("cr_collapse") : ct("cr_expand")}
           >
             {isExpanded ? "▼" : "▲"}
           </button>
@@ -233,12 +237,7 @@ export default function SessionNotes({
                 className="session-notes__textarea"
                 value={notes}
                 onChange={handleNotesChange}
-                placeholder="Take notes during the session...
-
-• Key discussion points
-• Learner's strengths observed
-• Areas to work on
-• Homework/next steps"
+                placeholder={ct("cr_notes_placeholder")}
                 maxLength={maxCharacters}
               />
               <div className="session-notes__footer">
@@ -253,13 +252,13 @@ export default function SessionNotes({
                       className="session-notes__save-btn"
                       onClick={handleManualSave}
                     >
-                      Save Now
+                      {ct("cr_notes_save_now")}
                     </button>
                   )}
                   <span className="session-notes__hint">
                     {typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent)
-                      ? "⌘S to save"
-                      : "Ctrl+S to save"}
+                      ? ct("cr_notes_hint_mac")
+                      : ct("cr_notes_hint")}
                   </span>
                 </div>
               </div>
@@ -270,7 +269,7 @@ export default function SessionNotes({
                 <p className="session-notes__text">{notes}</p>
               ) : (
                 <p className="session-notes__empty">
-                  No notes have been added for this session yet.
+                  {ct("cr_notes_empty")}
                 </p>
               )}
             </div>

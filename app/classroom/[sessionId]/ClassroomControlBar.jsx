@@ -29,6 +29,7 @@ import {
   getUnreadChatLabel,
   normalizeUnreadCount,
 } from "@/lib/classroomChatUnread.mjs";
+import { useClassroomLocale, useClassroomText } from "./classroomText";
 
 export default function ClassroomControlBar({
   isMobile,
@@ -78,6 +79,8 @@ export default function ClassroomControlBar({
   teacherAllowsScreenShare,
   onTeacherAllowsScreenShareChange,
 }) {
+  const ct = useClassroomText();
+  const locale = useClassroomLocale();
   if (isMobile && variant !== "more") return null;
 
   const unreadCount = normalizeUnreadCount(chatUnreadCount);
@@ -90,11 +93,11 @@ export default function ClassroomControlBar({
           <button
             className="cr-controls__btn cr-controls__btn--primary"
             onClick={() => setIsPickerOpen(true)}
-            aria-label="Choose resource"
-            title="Choose resource"
+            aria-label={ct("cr_choose_resource")}
+            title={ct("cr_choose_resource")}
           >
             <span className="cr-controls__btn-icon"><BookOpen size={16} /></span>
-            <span className="cr-controls__btn-label">Resources</span>
+            <span className="cr-controls__btn-label">{ct("cr_resources")}</span>
           </button>
         )}
 
@@ -102,8 +105,8 @@ export default function ClassroomControlBar({
           <button
             className="cr-controls__btn cr-controls__btn--secondary cr-controls__btn--icon-only"
             onClick={isPageRecording ? stopPageRecording : startPageRecording}
-            title={isPageRecording ? "Stop recording" : "Record class"}
-            aria-label={isPageRecording ? "Stop recording" : "Record class"}
+            title={isPageRecording ? ct("cr_rec_stop") : ct("cr_rec_start")}
+            aria-label={isPageRecording ? ct("cr_rec_stop") : ct("cr_rec_start")}
           >
             <span className="cr-controls__btn-icon">
               {isPageRecording ? (
@@ -113,14 +116,14 @@ export default function ClassroomControlBar({
               )}
             </span>
             <span className="cr-controls__sheet-label">
-              {isPageRecording ? "Stop recording" : "Record class"}
+              {isPageRecording ? ct("cr_rec_stop") : ct("cr_rec_start")}
             </span>
           </button>
         )}
 
         {isTeacher && pageRecWarning && (
           <span className="cr-controls__recording-warning" title={pageRecWarning}>
-            Audio latency
+            {ct("cr_rec_latency")}
           </span>
         )}
 
@@ -131,7 +134,7 @@ export default function ClassroomControlBar({
               type="button"
               className="cr-controls__recording-notice-dismiss"
               onClick={clearPageRecError}
-              aria-label="Dismiss recording error"
+              aria-label={ct("cr_rec_dismiss")}
             >
               <X size={12} />
             </button>
@@ -142,12 +145,12 @@ export default function ClassroomControlBar({
           <button
             className="cr-controls__btn cr-controls__btn--secondary"
             onClick={() => setShowParticipantList(true)}
-            aria-label={isTeacher ? "Open classroom controls" : `Show ${participantCount} participants`}
-            title={isTeacher ? "Open classroom controls" : `Show ${participantCount} participants`}
+            aria-label={isTeacher ? ct("cr_open_controls") : ct("cr_show_participants", { n: participantCount })}
+            title={isTeacher ? ct("cr_open_controls") : ct("cr_show_participants", { n: participantCount })}
           >
             <span className="cr-controls__btn-icon"><Users size={16} /></span>
             <span className="cr-controls__btn-label">
-              {isTeacher ? "Controls" : `Participants (${participantCount})`}
+              {isTeacher ? ct("cr_controls") : ct("cr_participants_n", { n: participantCount })}
             </span>
           </button>
         )}
@@ -187,13 +190,13 @@ export default function ClassroomControlBar({
           <button
             className="cr-controls__btn cr-controls__btn--ghost cr-controls__btn--icon-only"
             onClick={() => setCustomSplit(null)}
-            title="Reset to preset layout"
-            aria-label="Reset to preset layout"
+            title={ct("cr_reset_layout_hint")}
+            aria-label={ct("cr_reset_layout_hint")}
           >
             <span className="cr-controls__btn-icon">
               <RotateCcw size={16} />
             </span>
-            <span className="cr-controls__sheet-label">Reset layout</span>
+            <span className="cr-controls__sheet-label">{ct("cr_reset_layout")}</span>
           </button>
         )}
       </div>
@@ -208,22 +211,22 @@ export default function ClassroomControlBar({
         {captionsEnabled && captionsPausedForMute && (
           <span
             className="cr-controls__caption-hint"
-            title="Captions resume when you unmute"
+            title={ct("cr_captions_paused_hint")}
           >
-            Captions paused (muted)
+            {ct("cr_captions_paused")}
           </span>
         )}
         {hasResource && onExportPage && (
           <button
             className="cr-controls__btn cr-controls__btn--export cr-controls__btn--icon-only"
             onClick={() => onExportPage("png")}
-            title="Save annotated page as PNG"
-            aria-label="Save annotated page as PNG"
+            title={ct("cr_save_page_hint")}
+            aria-label={ct("cr_save_page_hint")}
           >
             <span className="cr-controls__btn-icon">
               <Download size={16} />
             </span>
-            <span className="cr-controls__sheet-label">Save page</span>
+            <span className="cr-controls__sheet-label">{ct("cr_save_page")}</span>
           </button>
         )}
         <ClassroomRaiseHandButton isHandRaised={isHandRaised} onToggleHand={toggleHand} />
@@ -244,15 +247,15 @@ export default function ClassroomControlBar({
               checked={learnerWantsToFollow}
               onChange={(e) => onLearnerWantsToFollowChange(e.target.checked)}
               disabled={!teacherAllowsFollowing}
-              aria-label="Follow teacher layout"
+              aria-label={ct("cr_follow_teacher")}
             />
             <span className="cr-controls__toggle-slider"></span>
             <span className="cr-controls__toggle-label">
               {!teacherAllowsFollowing
-                ? "Following disabled by teacher"
+                ? ct("cr_follow_disabled")
                 : learnerWantsToFollow
-                  ? "Following layout"
-                  : "Free layout"}
+                  ? ct("cr_following")
+                  : ct("cr_free_layout")}
             </span>
           </label>
         )}
@@ -269,10 +272,10 @@ export default function ClassroomControlBar({
           aria-controls="classroom-chat-drawer"
           aria-label={
             hasUnread
-              ? `Open chat, ${getUnreadChatLabel(unreadCount)}`
+              ? ct("cr_open_chat_unread", { label: getUnreadChatLabel(unreadCount, locale) })
               : isChatOpen
-                ? "Close chat"
-                : "Open chat"
+                ? ct("cr_close_chat")
+                : ct("cr_open_chat")
           }
         >
           <span className="cr-controls__btn-icon cr-controls__btn-icon--badge-host">
@@ -283,7 +286,7 @@ export default function ClassroomControlBar({
             />
           </span>
           <span className="cr-controls__btn-label">
-            {isChatOpen ? "Close chat" : "Chat"}
+            {isChatOpen ? ct("cr_close_chat") : ct("cr_tab_chat")}
           </span>
         </button>
       </div>
@@ -376,17 +379,19 @@ function ClassroomCompactDock({
   isPageRecording,
   children,
 }) {
+  const ct = useClassroomText();
+  const locale = useClassroomLocale();
   return (
     <div className="cr-dock">
-      <div className="cr-dock__row" role="toolbar" aria-label="Classroom controls">
+      <div className="cr-dock__row" role="toolbar" aria-label={ct("cr_classroom_controls")}>
         <button
           type="button"
           className={`cr-dock__btn${micMuted ? " cr-dock__btn--off" : ""}`}
           onClick={onToggleMic}
           disabled={!onToggleMic}
           aria-pressed={!micMuted}
-          aria-label={micMuted ? "Unmute microphone" : "Mute microphone"}
-          title={micMuted ? "Unmute microphone" : "Mute microphone"}
+          aria-label={micMuted ? ct("cr_mic_unmute") : ct("cr_mic_mute")}
+          title={micMuted ? ct("cr_mic_unmute") : ct("cr_mic_mute")}
         >
           {micMuted ? <MicOff size={18} /> : <Mic size={18} />}
         </button>
@@ -396,8 +401,8 @@ function ClassroomCompactDock({
           onClick={onToggleCamera}
           disabled={!onToggleCamera}
           aria-pressed={!cameraMuted}
-          aria-label={cameraMuted ? "Turn camera on" : "Turn camera off"}
-          title={cameraMuted ? "Turn camera on" : "Turn camera off"}
+          aria-label={cameraMuted ? ct("cr_cam_on") : ct("cr_cam_off")}
+          title={cameraMuted ? ct("cr_cam_on") : ct("cr_cam_off")}
         >
           {cameraMuted ? <VideoOff size={18} /> : <Video size={18} />}
         </button>
@@ -406,8 +411,8 @@ function ClassroomCompactDock({
             type="button"
             className="cr-dock__btn cr-dock__btn--primary"
             onClick={() => setIsPickerOpen(true)}
-            aria-label="Choose resource"
-            title="Choose resource"
+            aria-label={ct("cr_choose_resource")}
+            title={ct("cr_choose_resource")}
           >
             <BookOpen size={18} />
           </button>
@@ -417,8 +422,8 @@ function ClassroomCompactDock({
             className={`cr-dock__btn${isHandRaised ? " cr-dock__btn--active" : ""}`}
             onClick={toggleHand}
             aria-pressed={Boolean(isHandRaised)}
-            aria-label={isHandRaised ? "Lower hand" : "Raise hand"}
-            title={isHandRaised ? "Lower hand" : "Raise hand"}
+            aria-label={isHandRaised ? ct("cr_hand_lower") : ct("cr_hand_raise")}
+            title={isHandRaised ? ct("cr_hand_lower") : ct("cr_hand_raise")}
           >
             <Hand size={18} fill={isHandRaised ? "currentColor" : "none"} />
           </button>
@@ -435,12 +440,12 @@ function ClassroomCompactDock({
           aria-controls="classroom-chat-drawer"
           aria-label={
             hasUnread
-              ? `Open chat, ${getUnreadChatLabel(unreadCount)}`
+              ? ct("cr_open_chat_unread", { label: getUnreadChatLabel(unreadCount, locale) })
               : isChatOpen
-                ? "Close chat"
-                : "Open chat"
+                ? ct("cr_close_chat")
+                : ct("cr_open_chat")
           }
-          title="Chat"
+          title={ct("cr_tab_chat")}
         >
           <span className="cr-controls__btn-icon--badge-host">
             <MessageSquare size={18} />
@@ -472,6 +477,7 @@ function ClassroomMoreSheet({
   isPageRecording,
   children,
 }) {
+  const ct = useClassroomText();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const moreButtonRef = useRef(null);
   const fullscreen = useFullscreen();
@@ -506,8 +512,8 @@ function ClassroomMoreSheet({
         onClick={() => setIsMoreOpen((open) => !open)}
         aria-expanded={isMoreOpen}
         aria-controls="classroom-more-sheet"
-        aria-label="More controls"
-        title="More controls"
+        aria-label={ct("cr_more_controls")}
+        title={ct("cr_more_controls")}
       >
         <MoreHorizontal size={iconSize} />
         {isPageRecording && <span className="cr-dock__recording-dot" aria-hidden="true" />}
@@ -521,17 +527,17 @@ function ClassroomMoreSheet({
             id="classroom-more-sheet"
             className={`cr-more-sheet ${sheetClassName}`.trim()}
             role="dialog"
-            aria-label="More classroom controls"
+            aria-label={ct("cr_more_controls_aria")}
             onClick={handleSheetClick}
             data-lenis-prevent
           >
             <div className="cr-more-sheet__header">
-              <span>More controls</span>
+              <span>{ct("cr_more_controls")}</span>
               <button
                 type="button"
                 className="cr-more-sheet__close"
                 onClick={closeMore}
-                aria-label="Close more controls"
+                aria-label={ct("cr_close_more")}
               >
                 <X size={16} />
               </button>
@@ -544,13 +550,12 @@ function ClassroomMoreSheet({
                 onClick={fullscreen.toggle}
               >
                 {fullscreen.active ? <Minimize size={16} /> : <Maximize size={16} />}
-                <span>{fullscreen.active ? "Exit full screen" : "Full screen"}</span>
+                <span>{fullscreen.active ? ct("cr_fullscreen_exit") : ct("cr_fullscreen")}</span>
               </button>
             )}
             {!fullscreen.supported && fullscreen.ios && (
               <p className="cr-more-sheet__tip">
-                To hide Safari&apos;s bars, tap Share, then Add to Home Screen, and open
-                Speexify from there.
+                {ct("cr_ios_tip")}
               </p>
             )}
           </div>

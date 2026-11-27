@@ -330,7 +330,7 @@ function PrepVideoCall({
       } catch (accessErr) {
         if (cancelled) return;
         failConnection(
-          t(dict, "classroom_video_error_access"),
+          t(dict, accessErr?.code === "classroom_locked" ? "classroom_video_error_locked" : "classroom_video_error_access"),
           "video_access_denied",
           { code: accessErr?.code, status: accessErr?.status }
         );
@@ -504,11 +504,11 @@ function PrepVideoCall({
         });
 
         jitsi.addListener("cameraError", (event) => {
-          setDeviceNotice({ kind: "video", text: "Camera unavailable. Allow camera access in your browser, then turn it on using the video controls." });
+          setDeviceNotice({ kind: "video", text: t(dict, "classroom_video_camera_unavailable") });
           reportCallEvent("camera_error", { name: event?.name || event?.type || "camera_error" });
         });
         jitsi.addListener("micError", (event) => {
-          setDeviceNotice({ kind: "audio", text: "Microphone unavailable. Allow microphone access in your browser, then unmute using the video controls." });
+          setDeviceNotice({ kind: "audio", text: t(dict, "classroom_video_mic_unavailable") });
           reportCallEvent("microphone_error", { name: event?.name || event?.type || "microphone_error" });
         });
 

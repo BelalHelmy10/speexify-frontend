@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, Volume2, RotateCcw } from "lucide-react";
+import { useClassroomText } from "@/app/classroom/[sessionId]/classroomText";
 
 function formatAudioTime(value) {
   const totalSeconds = Math.max(0, Math.floor(Number(value) || 0));
@@ -32,6 +33,7 @@ export default function PrepAudioControls({
   setNeedsAudioUnlock,
   currentTrackUrl,
 }) {
+  const ct = useClassroomText();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
@@ -253,8 +255,8 @@ export default function PrepAudioControls({
               );
             }
           }}
-          aria-label={isAudioPlaying ? "Pause audio" : hasEnded ? "Replay audio" : "Play audio"}
-          title={isAudioPlaying ? "Pause audio" : hasEnded ? "Replay audio" : "Play audio"}
+          aria-label={isAudioPlaying ? ct("cr_audio_pause") : hasEnded ? ct("cr_audio_replay") : ct("cr_audio_play")}
+          title={isAudioPlaying ? ct("cr_audio_pause") : hasEnded ? ct("cr_audio_replay") : ct("cr_audio_play")}
         >
           {isAudioPlaying ? <Pause size={16} /> : <Play size={16} />}
         </button>
@@ -262,7 +264,7 @@ export default function PrepAudioControls({
         <div className="prep-audio-player__body">
           <div className="prep-audio-player__meta">
             <span className="prep-audio-player__label">
-              {hasEnded ? "Finished" : isAudioPlaying ? "Playing" : "Audio"}
+              {hasEnded ? ct("cr_audio_finished") : isAudioPlaying ? ct("cr_audio_playing") : ct("cr_audio")}
             </span>
             <span className="prep-audio-player__time" aria-live="polite">
               {formatAudioTime(currentTime)} / {formatAudioTime(duration)}
@@ -284,8 +286,8 @@ export default function PrepAudioControls({
             onKeyUp={handleSeekKeyUp}
             onBlur={commitSeek}
             disabled={!duration || !isTeacher}
-            aria-label={isTeacher ? "Audio position" : "Audio position, controlled by teacher"}
-            title={isTeacher ? "Drag or click to seek" : "Playback position is controlled by the teacher"}
+            aria-label={isTeacher ? ct("cr_audio_position") : ct("cr_audio_position_teacher")}
+            title={isTeacher ? ct("cr_audio_seek_hint") : ct("cr_audio_seek_teacher")}
           />
         </div>
 
@@ -293,8 +295,8 @@ export default function PrepAudioControls({
           type="button"
           className="prep-audio-player__restart"
           onClick={handleRestart}
-          aria-label="Play from beginning"
-          title="Play from beginning"
+          aria-label={ct("cr_audio_restart")}
+          title={ct("cr_audio_restart")}
         >
           <RotateCcw size={15} />
         </button>
@@ -321,8 +323,8 @@ export default function PrepAudioControls({
                 () => {}
               );
             }}
-            aria-label="Enable audio"
-            title="Enable audio"
+            aria-label={ct("cr_audio_enable")}
+            title={ct("cr_audio_enable")}
           >
             <Volume2 size={15} />
           </button>

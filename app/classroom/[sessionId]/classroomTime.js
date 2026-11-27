@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatNumber } from "@/utils/locale";
+import { classroomText } from "./classroomCopy";
 
 export const SESSION_TIME_WARNING = {
   SOFT: "soft",
@@ -32,11 +33,13 @@ export function formatCompactDuration(totalSeconds, locale = "en") {
   const minutes = Math.floor((safeSeconds % 3600) / 60);
 
   if (hours > 0) {
-    return minutes > 0 ? `${formatNumber(hours, locale)}h ${formatNumber(minutes, locale)}m` : `${formatNumber(hours, locale)}h`;
+    return minutes > 0
+      ? classroomText(locale, "cr_unit_hm", { h: formatNumber(hours, locale), m: formatNumber(minutes, locale) })
+      : classroomText(locale, "cr_unit_h", { n: formatNumber(hours, locale) });
   }
 
-  if (minutes > 0) return `${formatNumber(minutes, locale)}m`;
-  return "<1m";
+  if (minutes > 0) return classroomText(locale, "cr_unit_m", { n: formatNumber(minutes, locale) });
+  return classroomText(locale, "cr_unit_lt1m");
 }
 
 export function getSessionTiming({ startedAt, endAt, nowMs = Date.now(), locale = "en" } = {}) {

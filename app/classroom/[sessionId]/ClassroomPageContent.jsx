@@ -2,6 +2,7 @@
 import { sanityClient } from "@/lib/sanity";
 import ClassroomPageClient from "./ClassroomPageClient";
 import { requireClassroomPageAccess } from "@/app/protected-access";
+import { classroomText } from "./classroomCopy";
 
 export const dynamic = "force-dynamic";
 
@@ -142,13 +143,10 @@ export default async function ClassroomPageContent({ params, locale = "en" }) {
       <div className="cr-error-screen">
         <div className="cr-error-screen__content">
           <span className="cr-error-screen__icon">⚠️</span>
-          <h1 className="cr-error-screen__title">Session not found</h1>
-          <p className="cr-error-screen__text">
-            Missing classroom session id in the URL. Please go back to the
-            dashboard and open the classroom again.
-          </p>
+          <h1 className="cr-error-screen__title">{classroomText(locale, "cr_error_not_found_title")}</h1>
+          <p className="cr-error-screen__text">{classroomText(locale, "cr_error_missing_id_text")}</p>
           <a href={dashboardHref} className="cr-error-screen__btn">
-            ← Back to dashboard
+            {classroomText(locale, "cr_back_to_dashboard")}
           </a>
         </div>
       </div>
@@ -165,14 +163,11 @@ export default async function ClassroomPageContent({ params, locale = "en" }) {
     return (
       <div className="cr-error-screen">
         <div className="cr-error-screen__content">
-          <span className="cr-error-screen__icon">Locked</span>
-          <h1 className="cr-error-screen__title">Classroom locked</h1>
-          <p className="cr-error-screen__text">
-            {session.error ||
-              "The teacher has locked this classroom and late joins are closed."}
-          </p>
+          <span className="cr-error-screen__icon" aria-hidden="true">🔒</span>
+          <h1 className="cr-error-screen__title">{classroomText(locale, "cr_locked_title")}</h1>
+          <p className="cr-error-screen__text">{classroomText(locale, "cr_locked_text")}</p>
           <a href={dashboardHref} className="cr-error-screen__btn">
-            ← Back to dashboard
+            {classroomText(locale, "cr_back_to_dashboard")}
           </a>
         </div>
       </div>
@@ -184,13 +179,10 @@ export default async function ClassroomPageContent({ params, locale = "en" }) {
       <div className="cr-error-screen">
         <div className="cr-error-screen__content">
           <span className="cr-error-screen__icon">⚠️</span>
-          <h1 className="cr-error-screen__title">Session not found</h1>
-          <p className="cr-error-screen__text">
-            We could not find this classroom session. Please go back to the
-            dashboard and open it again.
-          </p>
+          <h1 className="cr-error-screen__title">{classroomText(locale, "cr_error_not_found_title")}</h1>
+          <p className="cr-error-screen__text">{classroomText(locale, "cr_error_not_found_text")}</p>
           <a href={dashboardHref} className="cr-error-screen__btn">
-            ← Back to dashboard
+            {classroomText(locale, "cr_back_to_dashboard")}
           </a>
         </div>
       </div>

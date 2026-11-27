@@ -3,6 +3,7 @@
 
 import { memo, useMemo, useState, useEffect, useCallback } from "react";
 import { buildPickerIndex } from "./classroomHelpers";
+import { useClassroomText } from "./classroomText";
 
 /**
  * FINAL BEHAVIOR (Sanity-driven only):
@@ -50,6 +51,7 @@ function ClassroomResourcePicker({
   isTeacher,
   sessionId, // ← NEW PROP: pass the classroom session ID
 }) {
+  const ct = useClassroomText();
   const index = useMemo(() => buildPickerIndex(tracks || []), [tracks]);
 
   const {
@@ -197,7 +199,7 @@ function ClassroomResourcePicker({
       <div className="cr-picker">
         <div className="cr-picker__empty">
           <span className="cr-picker__empty-icon">📂</span>
-          <p>No classroom resources are configured yet.</p>
+          <p>{ct("cr_pt_none")}</p>
         </div>
       </div>
     );
@@ -210,7 +212,7 @@ function ClassroomResourcePicker({
         <div className="cr-picker__nav-row">
           {/* Track */}
           <div className="cr-picker__field">
-            <label className="cr-picker__label">Course</label>
+            <label className="cr-picker__label">{ct("cr_pt_course")}</label>
             <div className="cr-picker__select-wrapper">
               <select
                 className="cr-picker__select"
@@ -230,7 +232,7 @@ function ClassroomResourcePicker({
 
           {/* Book */}
           <div className="cr-picker__field">
-            <label className="cr-picker__label">Book</label>
+            <label className="cr-picker__label">{ct("cr_pt_book")}</label>
             <div className="cr-picker__select-wrapper">
               <select
                 className="cr-picker__select"
@@ -251,7 +253,7 @@ function ClassroomResourcePicker({
 
           {/* CEFR (SubLevel) */}
           <div className="cr-picker__field">
-            <label className="cr-picker__label">CEFR</label>
+            <label className="cr-picker__label">{ct("cr_pt_cefr")}</label>
             <div className="cr-picker__select-wrapper">
               <select
                 className="cr-picker__select"
@@ -272,7 +274,7 @@ function ClassroomResourcePicker({
 
           {/* Unit */}
           <div className="cr-picker__field">
-            <label className="cr-picker__label">Unit</label>
+            <label className="cr-picker__label">{ct("cr_pt_unit")}</label>
             <div className="cr-picker__select-wrapper">
               <select
                 className="cr-picker__select"
@@ -305,7 +307,7 @@ function ClassroomResourcePicker({
         {resourceOptions.length === 0 ? (
           <div className="cr-picker__empty">
             <span className="cr-picker__empty-icon">📂</span>
-            <p>No resources in this unit</p>
+            <p>{ct("cr_pt_empty_unit")}</p>
           </div>
         ) : (
           <ul className="cr-picker__list">
@@ -327,7 +329,7 @@ function ClassroomResourcePicker({
                     </span>
                     <span className="cr-picker__item-info">
                       <span className="cr-picker__item-title">
-                        {r.title || "Untitled resource"}
+                        {r.title || ct("cr_untitled")}
                       </span>
                       {r.description && (
                         <span className="cr-picker__item-desc">
@@ -350,7 +352,7 @@ function ClassroomResourcePicker({
       {/* Current Selection Info */}
       {currentResource && (
         <div className="cr-picker__current">
-          <span className="cr-picker__current-label">Selected:</span>
+          <span className="cr-picker__current-label">{ct("cr_pt_selected")}</span>
           <span className="cr-picker__current-name">
             {currentResource.title}
           </span>

@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Settings } from "lucide-react";
+import { useClassroomText } from "./classroomText";
 
 /**
  * Host Controls popover.
@@ -18,6 +19,7 @@ export default function ClassroomHostMenu({
   teacherAllowsScreenShare,
   onTeacherAllowsScreenShareChange,
 }) {
+  const ct = useClassroomText();
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef(null);
 
@@ -71,14 +73,14 @@ export default function ClassroomHostMenu({
         onClick={() => setIsOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        aria-label="Host controls"
-        title="Host controls"
+        aria-label={ct("cr_host_controls")}
+        title={ct("cr_host_controls")}
       >
         <span className="cr-controls__btn-icon">
           <Settings size={16} />
         </span>
         <span className="cr-controls__btn-label cr-controls__btn-label--collapsible">
-          Host
+          {ct("cr_host")}
         </span>
       </button>
 
@@ -86,18 +88,17 @@ export default function ClassroomHostMenu({
         <div
           className="cr-host-menu__panel"
           role="menu"
-          aria-label="Host controls"
+          aria-label={ct("cr_host_controls")}
         >
-          <div className="cr-host-menu__header">Host controls</div>
+          <div className="cr-host-menu__header">{ct("cr_host_controls")}</div>
 
           <label className="cr-host-menu__row">
             <span className="cr-host-menu__row-text">
               <span className="cr-host-menu__row-title">
-                Learners follow layout
+                {ct("cr_host_follow_title")}
               </span>
               <span className="cr-host-menu__row-desc">
-                When on, the panels resize on learners&apos; screens to match
-                yours.
+                {ct("cr_host_follow_desc")}
               </span>
             </span>
             <span className="cr-host-menu__switch">
@@ -114,10 +115,10 @@ export default function ClassroomHostMenu({
           <label className="cr-host-menu__row">
             <span className="cr-host-menu__row-text">
               <span className="cr-host-menu__row-title">
-                Learners can share screen
+                {ct("cr_host_share_title")}
               </span>
               <span className="cr-host-menu__row-desc">
-                When off, only you can share your screen with the class.
+                {ct("cr_host_share_desc")}
               </span>
             </span>
             <span className="cr-host-menu__switch">

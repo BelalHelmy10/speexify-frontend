@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { getDictionary, t } from "@/app/i18n";
 import { COMPACT_CLASSROOM_QUERY, normalizePdfRegion, visiblePdfRegion, regionFitZoom } from './pdfViewport.mjs';
+import { useClassroomText } from "@/app/classroom/[sessionId]/classroomText";
 
 function PdfPageIndicator({ dict, currentPage, numPages }) {
   const pageTotalLabel = numPages || "…";
@@ -29,6 +30,7 @@ function PdfPageIndicator({ dict, currentPage, numPages }) {
 }
 
 function PdfZoomSlider({ zoom, onChange, min = 0.1, max = 5 }) {
+  const ct = useClassroomText();
   return (
     <input
       className="cpv-nav__zoom-slider"
@@ -38,8 +40,8 @@ function PdfZoomSlider({ zoom, onChange, min = 0.1, max = 5 }) {
       step="1"
       value={Math.min(max * 100, Math.max(min * 100, Math.round(zoom * 100)))}
       onChange={(event) => onChange(Number(event.target.value))}
-      aria-label="Adjust PDF zoom"
-      title="Drag to calibrate PDF size"
+      aria-label={ct("cr_pdf_zoom")}
+      title={ct("cr_pdf_zoom_hint")}
     />
   );
 }

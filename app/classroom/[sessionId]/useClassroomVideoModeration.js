@@ -10,6 +10,7 @@ import {
   participantIdentityFrom,
   resolveModerationTarget,
 } from "@/lib/classroomVideoModeration.mjs";
+import { useClassroomText } from "./classroomText";
 
 /**
  * Teacher video moderation: mute all, cameras off, mute/stop video for one
@@ -35,6 +36,10 @@ export default function useClassroomVideoModeration({
   videoModeration,
   onRemoved,
 }) {
+  const ct = useClassroomText();
+  // Read through a ref so the moderation callbacks keep their identity.
+  const ctRef = useRef(ct);
+  ctRef.current = ct;
   const [identities, setIdentities] = useState(() => new Map());
   const [learnerNotice, setLearnerNotice] = useState(null);
   const actionsRef = useRef(videoModeration?.actions || null);
@@ -118,11 +123,11 @@ export default function useClassroomVideoModeration({
         : actionsRef.current?.muteAll?.();
       if (ready) send({ type: "MODERATION_MUTE", media, targetUserId: "all" });
       if (!ready && !nativeOk) {
-        return { ok: false, message: "Video controls are still connecting." };
+        return { ok: false, message: ctRef.current("cr_mod_connecting") };
       }
       return {
         ok: true,
-        message: media === "video" ? "Learner cameras turned off." : "All learners muted.",
+        message: media === "video" ? ctRef.current("cr_mod_cams_off") : ctRef.current("cr_mod_all_muted"),
       };
     },
     [isTeacher, ready, send]
@@ -135,13 +140,13 @@ export default function useClassroomVideoModeration({
       if (!targetUserId || !ready) {
         return {
           ok: false,
-          message: "This participant is not connected to the classroom yet. Try again in a moment.",
+          message: ctRef.current("cr_mod_not_connected"),
         };
       }
       send({ type: "MODERATION_MUTE", media, targetUserId });
       return {
         ok: true,
-        message: media === "video" ? "Camera turned off for that learner." : "Learner muted.",
+        message: media === "video" ? ctRef.current("cr_mod_cam_off_one") : ctRef.current("cr_mod_muted_one"),
       };
     },
     [isTeacher, identities, ready, send]
@@ -156,22 +161,22 @@ export default function useClassroomVideoModeration({
         // Unknown connection (not a classroom member): only Jitsi can drop it.
         const kicked = participantId ? actionsRef.current?.kickParticipant?.(participantId) : false;
         return kicked
-          ? { ok: true, message: "Removed that connection from the call." }
-          : { ok: false, message: "That participant could not be removed." };
+          ? { ok: true, message: ctRef.current("cr_mod_removed_conn") }
+          : { ok: false, message: ctRef.current("cr_mod_remove_conn_failed") };
       }
 
       try {
         await api.post(`/sessions/${sessionId}/lobby/deny`, { learnerId: targetUserId });
       } catch (err) {
         console.warn("Failed to remove learner", err);
-        return { ok: false, message: "Could not remove the learner. Please try again." };
+        return { ok: false, message: ctRef.current("cr_mod_remove_failed") };
       }
 
       if (ready) send({ type: "MODERATION_REMOVE", targetUserId });
       if (participantId) actionsRef.current?.kickParticipant?.(participantId);
       return {
         ok: true,
-        message: "Learner removed. They can ask to rejoin from the waiting room.",
+        message: ctRef.current("cr_mod_removed"),
       };
     },
     [isTeacher, identities, ready, send, sessionId]

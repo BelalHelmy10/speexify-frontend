@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   buildResourcePickerIndex,
   formatUnitOptionLabel,
-} from "../lib/resourcePickerIndex.js";
+} from "../lib/resourcePickerIndex.mjs";
 
 test("unit labels add the unit number without duplicating existing prefixes", () => {
   assert.equal(

@@ -5,8 +5,10 @@ import {
   getUnreadChatLabel,
   normalizeUnreadCount,
 } from "@/lib/classroomChatUnread.mjs";
+import { useClassroomLocale } from "./classroomText";
 
 export default function ClassroomUnreadBadge({ count, className = "" }) {
+  const locale = useClassroomLocale();
   const unreadCount = normalizeUnreadCount(count);
 
   return (
@@ -26,7 +28,7 @@ export default function ClassroomUnreadBadge({ count, className = "" }) {
         aria-live="polite"
         aria-atomic="true"
       >
-        {unreadCount > 0 ? getUnreadChatLabel(unreadCount) : ""}
+        {unreadCount > 0 ? getUnreadChatLabel(unreadCount, locale) : ""}
       </span>
     </>
   );
