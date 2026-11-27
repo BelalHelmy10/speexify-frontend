@@ -12,6 +12,7 @@
 //                                ◀──  SCREEN_RTC_REQUEST (to presenter)
 //   SCREEN_RTC_OFFER (to viewer) ──▶
 //                                ◀──  SCREEN_RTC_ANSWER (to presenter)
+//   SCREEN_RTC_CANDIDATE (both ways, as each network route is found)
 //   SCREEN_RTC_STOP (everyone)   ──▶
 //
 // Late joiners send SCREEN_RTC_HELLO and the presenter announces again.
@@ -19,9 +20,8 @@
 // delivers the targeted ones only to their recipient.
 import { useCallback, useEffect, useRef, useState } from "react";
 import api from "@/lib/api";
+import { createIceServerCache } from "@/lib/iceServerCache.mjs";
 
-const DEFAULT_ICE_SERVERS = [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }];
-const GATHER_TIMEOUT_MS = 2500;
 const OFFER_TIMEOUT_MS = 8000;
 const CONNECT_TIMEOUT_MS = 20000;
 const MAX_ATTEMPTS = 4;
@@ -35,20 +35,46 @@ function newId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function waitForIceGathering(pc) {
-  if (pc.iceGatheringState === "complete") return Promise.resolve();
-  return new Promise((resolve) => {
-    const done = () => {
-      pc.removeEventListener("icegatheringstatechange", onChange);
-      clearTimeout(timer);
-      resolve();
-    };
-    const onChange = () => {
-      if (pc.iceGatheringState === "complete") done();
-    };
-    const timer = setTimeout(done, GATHER_TIMEOUT_MS);
-    pc.addEventListener("icegatheringstatechange", onChange);
-  });
+// Sends each network route ("ICE candidate") as soon as the browser finds
+// it, so a slow relay route still arrives. Routes found before the offer or
+// answer has gone out wait until it has, keeping them in order.
+function trickleCandidates(pc, sendCandidate) {
+  const held = [];
+  let open = false;
+  pc.onicecandidate = (event) => {
+    if (!event.candidate) return;
+    const candidate = typeof event.candidate.toJSON === "function" ? event.candidate.toJSON() : event.candidate;
+    if (open) sendCandidate(candidate);
+    else held.push(candidate);
+  };
+  return () => {
+    open = true;
+    held.splice(0).forEach(sendCandidate);
+  };
+}
+
+// Routes can arrive before the other side's offer/answer has been applied;
+// keep them until it has.
+async function addRemoteCandidate(pc, pending, candidate) {
+  if (!pc || !pc.remoteDescription) {
+    pending.push(candidate);
+    return;
+  }
+  try {
+    await pc.addIceCandidate(candidate);
+  } catch (err) {
+    console.warn("Screen share route rejected", err);
+  }
+}
+
+async function flushRemoteCandidates(pc, pending) {
+  for (const candidate of pending.splice(0)) {
+    try {
+      await pc.addIceCandidate(candidate);
+    } catch (err) {
+      console.warn("Screen share route rejected", err);
+    }
+  }
 }
 
 const sameUser = (a, b) => a != null && b != null && String(a) === String(b);
@@ -79,7 +105,10 @@ export default function useClassroomScreenStream({
   const viewerPcRef = useRef(null);
   const attemptRef = useRef(0);
   const timersRef = useRef({ offer: null, connect: null });
-  const iceRef = useRef(null);
+  // Routes from the presenter that arrived before this viewer's connection.
+  const viewerPendingRef = useRef([]);
+  // Per viewer, routes that arrived before their answer was applied.
+  const presenterPendingRef = useRef(new Map());
   const live = useRef({});
   live.current = { send, userId, userName, isTeacher, allowLearners, sessionId };
 
@@ -87,16 +116,14 @@ export default function useClassroomScreenStream({
     live.current.send?.({ ...event, at: Date.now() });
   }, []);
 
-  const iceServers = useCallback(async () => {
-    if (iceRef.current) return iceRef.current;
-    try {
-      const { data } = await api.get(`/sessions/${encodeURIComponent(live.current.sessionId)}/screen-share/ice`);
-      iceRef.current = Array.isArray(data?.iceServers) ? data.iceServers : DEFAULT_ICE_SERVERS;
-    } catch {
-      iceRef.current = DEFAULT_ICE_SERVERS;
-    }
-    return iceRef.current;
-  }, []);
+  const iceCacheRef = useRef(null);
+  if (!iceCacheRef.current) {
+    iceCacheRef.current = createIceServerCache({
+      load: async () =>
+        (await api.get(`/sessions/${encodeURIComponent(live.current.sessionId)}/screen-share/ice`)).data,
+    });
+  }
+  const iceServers = useCallback(() => iceCacheRef.current.get(), []);
 
   const countViewers = useCallback(() => {
     const connected = [...presenterPcsRef.current.values()].filter((pc) => pc.connectionState === "connected").length;
@@ -116,6 +143,7 @@ export default function useClassroomScreenStream({
     viewerPcRef.current = null;
     if (pc) {
       pc.ontrack = null;
+      pc.onicecandidate = null;
       pc.onconnectionstatechange = null;
       pc.close();
     }
@@ -136,6 +164,7 @@ export default function useClassroomScreenStream({
     if (!share) return;
     clearTimers();
     closeViewerPc();
+    viewerPendingRef.current = [];
     attemptRef.current += 1;
     setStatus("connecting");
     emit({ type: "SCREEN_RTC_REQUEST", to: share.userId, shareId: share.shareId, peer: peerIdRef.current });
@@ -155,6 +184,17 @@ export default function useClassroomScreenStream({
       closeViewerPc();
       const pc = new RTCPeerConnection({ iceServers: await iceServers() });
       viewerPcRef.current = pc;
+      const releaseCandidates = trickleCandidates(pc, (candidate) => {
+        if (viewerPcRef.current !== pc) return;
+        emit({
+          type: "SCREEN_RTC_CANDIDATE",
+          to: share.userId,
+          toPeer: msg.peer,
+          peer: peerIdRef.current,
+          shareId: share.shareId,
+          candidate,
+        });
+      });
       const stream = new MediaStream();
       pc.ontrack = (event) => {
         if (!stream.getTracks().includes(event.track)) stream.addTrack(event.track);
@@ -174,8 +214,8 @@ export default function useClassroomScreenStream({
       };
       try {
         await pc.setRemoteDescription({ type: "offer", sdp: msg.sdp });
+        await flushRemoteCandidates(pc, viewerPendingRef.current);
         await pc.setLocalDescription(await pc.createAnswer());
-        await waitForIceGathering(pc);
         if (viewerPcRef.current !== pc) return;
         emit({
           type: "SCREEN_RTC_ANSWER",
@@ -185,6 +225,7 @@ export default function useClassroomScreenStream({
           shareId: share.shareId,
           sdp: pc.localDescription.sdp,
         });
+        releaseCandidates();
         timersRef.current.connect = setTimeout(() => {
           if (viewerPcRef.current !== pc || pc.connectionState === "connected") return;
           if (attemptRef.current < MAX_ATTEMPTS) requestOffer();
@@ -237,8 +278,20 @@ export default function useClassroomScreenStream({
       if (!local || msg.shareId !== local.shareId || !from?.userId || !msg.peer) return;
       const key = `${from.userId}:${msg.peer}`;
       presenterPcsRef.current.get(key)?.close();
+      presenterPendingRef.current.set(key, []);
       const pc = new RTCPeerConnection({ iceServers: await iceServers() });
       presenterPcsRef.current.set(key, pc);
+      const releaseCandidates = trickleCandidates(pc, (candidate) => {
+        if (presenterPcsRef.current.get(key) !== pc) return;
+        emit({
+          type: "SCREEN_RTC_CANDIDATE",
+          to: from.userId,
+          toPeer: msg.peer,
+          peer: peerIdRef.current,
+          shareId: local.shareId,
+          candidate,
+        });
+      });
       local.stream.getTracks().forEach((track) => pc.addTrack(track, local.stream));
       pc.onconnectionstatechange = () => {
         if (["failed", "closed"].includes(pc.connectionState) && presenterPcsRef.current.get(key) === pc) {
@@ -260,7 +313,6 @@ export default function useClassroomScreenStream({
           }));
           await sender.setParameters(params).catch(() => {});
         }
-        await waitForIceGathering(pc);
         if (presenterPcsRef.current.get(key) !== pc || localRef.current !== local) return;
         emit({
           type: "SCREEN_RTC_OFFER",
@@ -270,6 +322,7 @@ export default function useClassroomScreenStream({
           shareId: local.shareId,
           sdp: pc.localDescription.sdp,
         });
+        releaseCandidates();
       } catch (err) {
         console.warn("Screen share offer failed", err);
         presenterPcsRef.current.delete(key);
@@ -283,12 +336,33 @@ export default function useClassroomScreenStream({
     const local = localRef.current;
     const from = msg._from;
     if (!local || msg.shareId !== local.shareId || !from?.userId) return;
-    const pc = presenterPcsRef.current.get(`${from.userId}:${msg.peer}`);
+    const key = `${from.userId}:${msg.peer}`;
+    const pc = presenterPcsRef.current.get(key);
     if (!pc || pc.signalingState !== "have-local-offer") return;
     try {
       await pc.setRemoteDescription({ type: "answer", sdp: msg.sdp });
+      await flushRemoteCandidates(pc, presenterPendingRef.current.get(key) || []);
     } catch (err) {
       console.warn("Screen share answer rejected", err);
+    }
+  }, []);
+
+  const handleCandidate = useCallback(async (msg) => {
+    const from = msg._from;
+    if (!from?.userId || !msg.candidate) return;
+    // From the presenter we are watching.
+    const share = remoteRef.current;
+    if (share && msg.shareId === share.shareId && sameUser(from.userId, share.userId)) {
+      await addRemoteCandidate(viewerPcRef.current, viewerPendingRef.current, msg.candidate);
+      return;
+    }
+    // From one of our viewers.
+    const local = localRef.current;
+    if (local && msg.shareId === local.shareId) {
+      const key = `${from.userId}:${msg.peer}`;
+      const pending = presenterPendingRef.current.get(key);
+      if (!pending) return;
+      await addRemoteCandidate(presenterPcsRef.current.get(key), pending, msg.candidate);
     }
   }, []);
 
@@ -298,6 +372,7 @@ export default function useClassroomScreenStream({
     localRef.current = null;
     for (const pc of presenterPcsRef.current.values()) pc.close();
     presenterPcsRef.current.clear();
+    presenterPendingRef.current.clear();
     local.stream.getTracks().forEach((track) => track.stop());
     setLocalStream(null);
     setViewerCount(0);
@@ -402,6 +477,9 @@ export default function useClassroomScreenStream({
         case "SCREEN_RTC_ANSWER":
           void handleAnswer(msg);
           break;
+        case "SCREEN_RTC_CANDIDATE":
+          void handleCandidate(msg);
+          break;
         case "SCREEN_RTC_STOP_REQUEST":
           if (PRIVILEGED.has(String(msg._from?.role || "")) && localRef.current?.shareId === msg.shareId) {
             stopRef.current?.();
@@ -411,7 +489,7 @@ export default function useClassroomScreenStream({
           break;
       }
     });
-  }, [ready, subscribe, emit, endRemote, handleAnswer, handleOffer, handleRequest, handleStart]);
+  }, [ready, subscribe, emit, endRemote, handleAnswer, handleCandidate, handleOffer, handleRequest, handleStart]);
 
   // On (re)connecting: a presenter announces again; others ask what's on.
   useEffect(() => {

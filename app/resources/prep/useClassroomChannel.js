@@ -8,13 +8,13 @@ import {
   chunkEventsForSend,
   enqueueOutboxEvent,
 } from "@/lib/classroomChannelOutbox.mjs";
+import { createSocketLiveness } from "@/lib/classroomSocketLiveness.mjs";
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 const MAX_RECONNECT_DELAY_MS = 30000;
 const WS_TOKEN_REFRESH_SKEW_MS = 30000;
 const WS_CONNECT_TIMEOUT_MS = 7000;
 const WS_JOIN_TIMEOUT_MS = 10000;
-const WS_HEARTBEAT_INTERVAL_MS = 15000;
 const WS_SEND_BATCH_DELAY_MS = 16;
 const WS_CONFIG_ENDPOINTS = ["/ws-config", "/api/ws-config"];
 // The server rejects a single classroom message above 256 KB.
@@ -128,7 +128,7 @@ export function useClassroomChannel(roomId) {
   const handlersRef = useRef([]);
   const retryAttemptRef = useRef(0);
   const reconnectTimeoutRef = useRef(null);
-  const heartbeatIntervalRef = useRef(null);
+  const livenessRef = useRef(null);
   const sendBufferRef = useRef([]);
   const sendFlushTimeoutRef = useRef(null);
   const closingRef = useRef(false);
@@ -157,33 +157,42 @@ export function useClassroomChannel(roomId) {
   }, []);
 
   const stopHeartbeat = useCallback(() => {
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = null;
-    }
+    livenessRef.current?.stop();
+    livenessRef.current = null;
   }, []);
 
+  // Pings the server and expects an answer. A socket that died without
+  // closing (network change, sleep) is closed here and reconnected through
+  // the normal onclose path, which then resyncs everything that listens.
   const startHeartbeat = useCallback(() => {
     stopHeartbeat();
 
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
-    heartbeatIntervalRef.current = setInterval(() => {
-      const sock = wsRef.current;
-      if (!sock || sock.readyState !== WebSocket.OPEN) return;
-
-      try {
-        sock.send(
-          JSON.stringify({
-            type: "ping",
-            ts: Date.now(),
-          })
-        );
-      } catch (err) {
-        console.warn("Classroom WS ping failed", err);
-      }
-    }, WS_HEARTBEAT_INTERVAL_MS);
+    const liveness = createSocketLiveness({
+      sendPing: () => {
+        if (ws.readyState !== WebSocket.OPEN) return;
+        ws.send(JSON.stringify({ type: "ping", ts: Date.now() }));
+      },
+      onStale: (reason) => {
+        if (wsRef.current !== ws) return;
+        debugClassroomWs("Connection went quiet; reconnecting", reason);
+        const handleClose = ws.onclose;
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        ws.onclose = null;
+        try {
+          ws.close(4000, "stale");
+        } catch {
+          // ignore
+        }
+        handleClose?.({ code: 4000, reason: "stale" });
+      },
+    });
+    livenessRef.current = liveness;
+    liveness.start();
   }, [stopHeartbeat]);
 
   const getConfiguredWsUrl = useCallback(async () => {
@@ -440,6 +449,7 @@ export function useClassroomChannel(roomId) {
         };
 
         ws.onmessage = (event) => {
+          if (wsRef.current === ws) livenessRef.current?.heard(null);
           let msg;
           try {
             msg = JSON.parse(event.data);
@@ -447,7 +457,10 @@ export function useClassroomChannel(roomId) {
             return;
           }
 
-          if (msg?.type === "ping" || msg?.type === "pong") return;
+          if (msg?.type === "ping" || msg?.type === "pong") {
+            if (msg.type === "pong" && wsRef.current === ws) livenessRef.current?.heard("pong");
+            return;
+          }
 
           if (msg?.type === "joined") {
             joinedRef.current = true;
@@ -599,11 +612,27 @@ export function useClassroomChannel(roomId) {
   useEffect(() => {
     if (!roomId || typeof window === "undefined") return undefined;
     const handleOnline = () => {
-      if (closingRef.current || joinedRef.current || joinBlockedRef.current) return;
+      if (closingRef.current || joinBlockedRef.current) return;
+      // Still "joined" may be a socket that died with the old network:
+      // check it now instead of trusting it.
+      if (joinedRef.current) {
+        livenessRef.current?.probe();
+        return;
+      }
       retryNow();
     };
+    // A laptop waking up or a tab coming back can hold a dead socket too.
+    const handleVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (closingRef.current || joinBlockedRef.current) return;
+      if (joinedRef.current) livenessRef.current?.probe();
+    };
     window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
+    document.addEventListener("visibilitychange", handleVisible);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      document.removeEventListener("visibilitychange", handleVisible);
+    };
   }, [roomId, retryNow]);
 
   useEffect(() => {

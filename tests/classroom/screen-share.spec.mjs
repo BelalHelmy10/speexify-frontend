@@ -84,6 +84,13 @@ test("the teacher's screen shows in the learner's content panel and the video co
   await expect(learner.page.locator(".cr-resource-workspace")).toBeHidden();
   await expect(teacherStage).toContainText("1 person is watching");
 
+  // Network routes travel separately, as they are found (trickle ICE).
+  const sentRoutes = (page) => page.evaluate(() =>
+    window.testState.messages.filter((message) => message.type === "SCREEN_RTC_CANDIDATE").length
+  );
+  expect(await sentRoutes(teacher.page)).toBeGreaterThan(0);
+  expect(await sentRoutes(learner.page)).toBeGreaterThan(0);
+
   // The video column is untouched on both sides.
   expect(Math.abs((await videoWidth(learner.page)) - learnerVideoBefore)).toBeLessThan(2);
   expect(Math.abs((await videoWidth(teacher.page)) - teacherVideoBefore)).toBeLessThan(2);

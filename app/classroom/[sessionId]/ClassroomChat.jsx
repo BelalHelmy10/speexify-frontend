@@ -537,6 +537,63 @@ function ClassroomChat({
     }
   }, [isLoadingMore, isTeacher, nextBefore, sessionId]);
 
+  // After the live connection comes back, fetch what was said meanwhile:
+  // messages sent while it was down never reached this page.
+  const catchUpAfterReconnect = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      const res = await api.get(`/sessions/${sessionId}/chat/messages`, {
+        params: { limit: CHAT_HISTORY_LIMIT },
+      });
+      const fresh = (res.data?.messages || []).map((message) =>
+        normalizeMessage(message, { isTeacher })
+      );
+      const unseen = fresh.filter(
+        (message) =>
+          !knownMessageIdsRef.current.has(message.id) &&
+          !message.isMine &&
+          (!isOpen || !isMessageInCurrentConversation(message))
+      );
+      fresh.forEach((message) => knownMessageIdsRef.current.add(message.id));
+      setMessages((prev) => {
+        const byId = new Map(prev.map((message) => [message.id, message]));
+        for (const message of fresh) {
+          const existing = byId.get(message.id);
+          byId.set(
+            message.id,
+            existing
+              ? {
+                ...existing,
+                ...message,
+                isMine: existing.isMine || message.isMine,
+                canDelete: message.isDeleted ? false : existing.canDelete || message.canDelete,
+              }
+              : message
+          );
+        }
+        const time = (message) => new Date(message.at || 0).getTime() || 0;
+        return [...byId.values()].sort((a, b) => time(a) - time(b));
+      });
+      if (unseen.length && typeof onUnreadCountChange === "function") {
+        onUnreadCountChange((prev) => (typeof prev === "number" ? prev : 0) + unseen.length);
+      }
+    } catch {
+      // The next reconnect tries again; the history button also reloads.
+    }
+  }, [sessionId, isTeacher, isOpen, isMessageInCurrentConversation, onUnreadCountChange]);
+  const catchUpRef = useRef(catchUpAfterReconnect);
+  catchUpRef.current = catchUpAfterReconnect;
+
+  const wasReadyRef = useRef(false);
+  const hasBeenReadyRef = useRef(false);
+  useEffect(() => {
+    const wasReady = wasReadyRef.current;
+    wasReadyRef.current = ready;
+    if (!ready || wasReady) return;
+    if (hasBeenReadyRef.current) void catchUpRef.current();
+    hasBeenReadyRef.current = true;
+  }, [ready]);
+
   useEffect(() => {
     hasAnnouncedJoinRef.current = false;
     hasAnnouncedLeaveRef.current = false;
