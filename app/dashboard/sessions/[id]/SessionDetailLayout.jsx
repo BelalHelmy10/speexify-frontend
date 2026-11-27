@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import AttendancePanel from "./AttendancePanel";
 import HomeworkSessionPanel from "@/components/homework/HomeworkSessionPanel";
+import LessonRecap from "@/components/lesson/LessonRecap";
 import SessionSummary from "./SessionSummary";
 import {
   AsideCard,
@@ -12,7 +13,6 @@ import {
   Panel,
 } from "./SessionDetailUI";
 import { getSafeExternalUrl } from "@/utils/url";
-import { stripRichFeedbackPayload } from "@/lib/feedbackReport";
 import { formatNumber, getIntlLocale } from "@/utils/locale";
 
 function getInitials(value = "") {
@@ -97,8 +97,17 @@ export default function SessionDetailLayout({
   const heroDate = formatHeroDate(startAt, locale);
   const backLabel = cleanBackLabel(txt("back_btn", "Back"));
   const statusKey = sessionStatus === "canceled" ? "canceled" : sessionStatus;
-  const feedbackComments = stripRichFeedbackPayload(
-    teacherFeedback?.commentsOnSession || ""
+  const canTeach = Boolean(sessionIsTeacher || sessionIsAdmin);
+  // Once the teacher shares feedback, the lesson recap (report, practice and
+  // homework as three steps) replaces the separate feedback and homework boxes.
+  const showLessonRecap = !isTraining && sessionStatus !== "canceled" && Boolean(teacherFeedback);
+  const homeworkPanel = !isTraining && sessionStatus !== "canceled" && (
+    <HomeworkSessionPanel
+      sessionId={Number(sessionId)}
+      locale={locale}
+      prefix={prefix}
+      canTeach={canTeach}
+    />
   );
 
   const fmtTime = (iso) => {
@@ -291,6 +300,19 @@ export default function SessionDetailLayout({
               </Panel>
             )}
 
+          {showLessonRecap && (
+            <LessonRecap
+              sessionId={Number(sessionId)}
+              locale={locale}
+              prefix={prefix}
+              teacherFeedback={teacherFeedback}
+              canTeach={canTeach}
+              isLearner={Boolean(isLearner)}
+              progressHref={progressHref}
+              homework={homeworkPanel}
+            />
+          )}
+
           {/* Notes / Homework */}
           <Panel
             icon="notes"
@@ -322,109 +344,45 @@ export default function SessionDetailLayout({
             )}
           </Panel>
 
-          {/* Interactive homework: teachers assign, learners open */}
-          {!isTraining && sessionStatus !== "canceled" && (
-            <HomeworkSessionPanel
-              sessionId={Number(sessionId)}
-              locale={locale}
-              prefix={prefix}
-              canTeach={Boolean(sessionIsTeacher || sessionIsAdmin)}
-            />
-          )}
+          {/* Before feedback is shared: homework on its own, and a note that
+              feedback is still to come. */}
+          {!showLessonRecap && homeworkPanel}
 
-          {/* Teacher Feedback */}
-          {!isTraining && (teacherFeedback ? (
+          {!isTraining && !showLessonRecap && sessionStatus !== "canceled" && (
             <Panel
               icon="feedback"
-              title={txt("feedback_title", "Teacher feedback")}
-              hint={txt(
-                "feedback_hint",
-                "Reflections from your teacher to help guide your next steps."
-              )}
+              title={txt("feedback_empty_title", "No coach feedback yet")}
             >
-              <div className="sd-feedback-layout">
-                <article className="sd-feedback-card sd-feedback-card--featured">
-                  <h4>{txt("feedback_msg_title", "Message to the learner")}</h4>
-                  <p>
-                    {teacherFeedback.messageToLearner?.trim() ||
-                      txt("feedback_msg_empty", "No message provided.")}
-                  </p>
-                </article>
-                <div className="sd-feedback-sub">
-                  <article className="sd-feedback-card">
-                    <h4>
-                      {txt(
-                        "feedback_comments_title",
-                        "Comments on the session"
-                      )}
-                    </h4>
-                    <p>
-                      {feedbackComments ||
-                        txt(
-                          "feedback_comments_empty",
-                          "No comments provided."
-                        )}
-                    </p>
-                  </article>
-                  <article className="sd-feedback-card">
-                    <h4>{txt("feedback_future_title", "Future steps")}</h4>
-                    <p>
-                      {teacherFeedback.futureSteps?.trim() ||
-                        txt(
-                          "feedback_future_empty",
-                          "No future steps added yet."
-                        )}
-                    </p>
-                  </article>
-                </div>
-              </div>
-              {(sessionIsTeacher || sessionIsAdmin) && (
-                <Link
-                  href={`${prefix}/dashboard/sessions/${sessionId}/feedback`}
-                  className="btn btn--ghost"
-                  style={{ marginTop: 16 }}
-                >
-                  {txt("feedback_edit_coach", "Edit feedback")}
-                </Link>
-              )}
-            </Panel>
-          ) : (
-            sessionStatus !== "canceled" && (
-              <Panel
+              <EmptyState
                 icon="feedback"
-                title={txt("feedback_empty_title", "No coach feedback yet")}
-              >
-                <EmptyState
-                  icon="feedback"
-                  title={txt(
-                    "feedback_empty_title",
-                    "No teacher feedback yet"
-                  )}
-                  body={
-                    isLearner
-                      ? txt(
-                          "feedback_empty_body",
-                          "Your teacher hasn't shared feedback for this session yet."
-                        )
-                      : txt(
-                          "feedback_empty_body",
-                          "Add feedback to help your learner reflect on this session."
-                        )
-                  }
-                  action={
-                    (sessionIsTeacher || sessionIsAdmin) && (
-                      <Link
-                        href={`${prefix}/dashboard/sessions/${sessionId}/feedback`}
-                        className="btn btn--primary"
-                      >
-                        {txt("feedback_add_coach", "Add feedback")}
-                      </Link>
-                    )
-                  }
-                />
-              </Panel>
-            )
-          ))}
+                title={txt(
+                  "feedback_empty_title",
+                  "No teacher feedback yet"
+                )}
+                body={
+                  isLearner
+                    ? txt(
+                        "feedback_empty_body",
+                        "Your teacher hasn't shared feedback for this session yet."
+                      )
+                    : txt(
+                        "feedback_empty_body",
+                        "Add feedback to help your learner reflect on this session."
+                      )
+                }
+                action={
+                  canTeach && (
+                    <Link
+                      href={`${prefix}/dashboard/sessions/${sessionId}/feedback`}
+                      className="btn btn--primary"
+                    >
+                      {txt("feedback_add_coach", "Add feedback")}
+                    </Link>
+                  )
+                }
+              />
+            </Panel>
+          )}
 
           {/* Session Summary */}
           {!isTraining && showSummary && (

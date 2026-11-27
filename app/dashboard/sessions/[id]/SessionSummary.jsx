@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { SessionIcon } from "./SessionDetailUI";
-import { stripRichFeedbackPayload } from "@/lib/feedbackReport";
 import { formatNumber, getIntlLocale } from "@/utils/locale";
 
 /**
@@ -84,9 +83,6 @@ export default function SessionSummary({
     teacherFeedback,
     learnerFeedback,
   } = summary;
-  const feedbackComments = stripRichFeedbackPayload(
-    teacherFeedback?.commentsOnSession || ""
-  );
 
   // Format date
   const sessionDate = session.startAt
@@ -268,7 +264,7 @@ export default function SessionSummary({
         </section>
       )}
 
-      {/* Teacher Feedback Section */}
+      {/* Teacher feedback lives in the lesson recap at the top of the page. */}
       {teacherFeedback && (
         <section className="session-summary__section">
           <h3 className="session-summary__section-title">
@@ -277,34 +273,9 @@ export default function SessionSummary({
             </span>
             Teacher Feedback
           </h3>
-          <div className="session-summary__feedback">
-            {teacherFeedback.messageToLearner && (
-              <div className="session-summary__feedback-item">
-                <h4>Message to Learner</h4>
-                <p>{teacherFeedback.messageToLearner}</p>
-              </div>
-            )}
-            {feedbackComments && (
-              <div className="session-summary__feedback-item">
-                <h4>Session Comments</h4>
-                <p>{feedbackComments}</p>
-              </div>
-            )}
-            {teacherFeedback.futureSteps && (
-              <div className="session-summary__feedback-item">
-                <h4>Future Steps</h4>
-                <p>{teacherFeedback.futureSteps}</p>
-              </div>
-            )}
-          </div>
-          {isTeacher && (
-            <Link
-              href={`${prefix}/dashboard/sessions/${sessionId}/feedback`}
-              className="session-summary__link"
-            >
-              Edit Feedback →
-            </Link>
-          )}
+          <a href="#lesson" className="session-summary__link">
+            Open the lesson recap →
+          </a>
         </section>
       )}
 

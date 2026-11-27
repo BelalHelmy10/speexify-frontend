@@ -330,7 +330,7 @@ export default function SessionRow({
 
               {!isTeacher && s.teacherFeedback && (
                 <Link
-                  href={`${prefix}/dashboard/sessions/${s.id}/feedback`}
+                  href={`${prefix}/dashboard/sessions/${s.id}#lesson`}
                   className="btn btn--primary"
                 >
                   {t(dict, "session_view_feedback")}

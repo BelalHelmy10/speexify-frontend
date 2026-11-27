@@ -167,6 +167,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
   const [packs, setPacks] = useState([]);
   const [onboarding, setOnboarding] = useState(null);
   const [assessment, setAssessment] = useState(null);
+  const [continueLesson, setContinueLesson] = useState(null);
   const [reschedOpen, setReschedOpen] = useState(false);
   const [reschedSession, setReschedSession] = useState(null);
   const [newStart, setNewStart] = useState("");
@@ -273,6 +274,18 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
     } catch { }
   }, []);
 
+  // The newest finished lesson with a step left (review, practise, homework).
+  const fetchContinueLesson = useCallback(async () => {
+    try {
+      const { data } = await api.get("/me/lessons/continue", {
+        params: { t: Date.now() },
+      });
+      setContinueLesson(data?.lesson || null);
+    } catch {
+      setContinueLesson(null);
+    }
+  }, []);
+
   const refreshAll = useCallback(async () => {
     await Promise.all([fetchSummary(), fetchSessions(), fetchPackages()]);
   }, [fetchSummary, fetchSessions, fetchPackages]);
@@ -322,6 +335,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
     if (isLearner || (isImpersonating && user?.role === "learner")) {
       fetchOnboarding();
       fetchAssessment();
+      fetchContinueLesson();
     }
   }, [
     authStatus,
@@ -332,6 +346,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
     refreshAll,
     fetchOnboarding,
     fetchAssessment,
+    fetchContinueLesson,
     dict,
   ]);
 
@@ -692,6 +707,32 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
         };
       }
 
+      if (continueLesson?.steps?.next) {
+        const step = continueLesson.steps.next;
+        const homework = continueLesson.steps.homework;
+        return {
+          tone: "feedback",
+          kicker: t(dict, "next_action_label"),
+          meta: t(dict, "next_action_meta_lesson"),
+          title: t(dict, "next_action_lesson_title"),
+          body: t(dict, `next_action_lesson_${step}_body`, {
+            title: actionSessionTitle(continueLesson),
+            done: homework?.completed ?? 0,
+            total: homework?.total ?? 0,
+          }),
+          primary: {
+            href: `${prefix}/dashboard/sessions/${continueLesson.id}#lesson-${step}`,
+            label: t(dict, `next_action_cta_lesson_${step}`),
+          },
+          secondary: [
+            {
+              href: `${prefix}/dashboard/progress`,
+              label: t(dict, "next_action_secondary_progress"),
+            },
+          ],
+        };
+      }
+
       if (!onbComplete) {
         return {
           tone: "setup",
@@ -771,7 +812,7 @@ function DashboardInner({ dict, navDict, locale, prefix }) {
             title: actionSessionTitle(latestFeedbackSession),
           }),
           primary: {
-            href: `${prefix}/dashboard/sessions/${latestFeedbackSession.id}/feedback`,
+            href: `${prefix}/dashboard/sessions/${latestFeedbackSession.id}#lesson`,
             label: t(dict, "next_action_cta_feedback"),
           },
           secondary: [

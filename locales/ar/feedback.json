@@ -23,5 +23,7 @@
   "load_more": "حمّل المزيد",
   "loading": "بيتحمّل الملاحظات…",
   "loading_more": "بيحمّل ملاحظات أكتر…",
-  "error_loading": "حصل مشكلة في تحميل الملاحظات"
+  "error_loading": "حصل مشكلة في تحميل الملاحظات",
+  "report_counts": "{words} كلمات جديدة · {fixes} تصحيحات · {sounds} نطق",
+  "open_lesson": "افتح ملخص الحصة"
 }

@@ -353,7 +353,7 @@ function PastSessionCard({ session, dict, prefix, locale, timezone, isTeacher })
 
             {!isTeacher && feedbackReady && (
               <Link
-                href={`${prefix}/dashboard/sessions/${session.id}/feedback`}
+                href={`${prefix}/dashboard/sessions/${session.id}#lesson`}
                 className="past-session-card__action past-session-card__action--primary"
               >
                 {text(dict, "session_view_feedback", "View feedback")}

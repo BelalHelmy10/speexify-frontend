@@ -23,5 +23,7 @@
   "load_more": "Load more",
   "loading": "Loading feedback…",
   "loading_more": "Loading more feedback…",
-  "error_loading": "Failed to load feedback"
+  "error_loading": "Failed to load feedback",
+  "report_counts": "{words} new words · {fixes} corrections · {sounds} pronunciation",
+  "open_lesson": "Open lesson recap"
 }

@@ -8,7 +8,7 @@ import {
   stripMarks,
   toggleMarkAroundSelection,
 } from "@/lib/feedbackMarks.mjs";
-import { FEEDBACK_TYPES, MarkedText, getFeedbackType } from "./feedbackShared";
+import { FEEDBACK_TYPES, MarkedText, getFeedbackType } from "@/components/lesson/feedbackShared";
 
 let rowSequence = 0;
 

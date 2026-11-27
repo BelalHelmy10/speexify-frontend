@@ -1,0 +1,382 @@
+// Lesson recap on the session page: header with the step strip, then one
+// block per step (review, practise, homework).
+
+.lesson-recap {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  color: var(--sr-slate-950);
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
+
+.lesson-recap__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px 18px;
+  padding: 22px;
+  border: 1px solid hsl(18 44% 88% / 0.72);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, hsl(16 87% 97%) 0%, hsl(0 0% 100%) 55%, hsl(174 45% 97%) 100%);
+  box-shadow: 0 16px 48px hsl(211 53% 11% / 0.07);
+
+  > .lesson-steps,
+  > .lesson-recap__learners {
+    grid-column: 1 / -1;
+  }
+}
+
+.lesson-recap__kicker {
+  margin: 0;
+  color: var(--sr-coral-dark);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lesson-recap__titles {
+  min-width: 0;
+
+  h2 {
+    margin: 4px 0 6px;
+    font-size: clamp(22px, 3vw, 30px);
+    line-height: 1.1;
+  }
+}
+
+.lesson-recap__hint {
+  margin: 0;
+  color: var(--sr-slate-700);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.lesson-recap__edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: start;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--sr-border);
+  border-radius: 999px;
+  background: var(--sr-white);
+  color: var(--sr-slate-800);
+  font-weight: 800;
+  text-decoration: none;
+
+  &:hover {
+    border-color: hsl(14 89% 56% / 0.42);
+    color: var(--sr-coral-dark);
+  }
+}
+
+// ── Step strip ──
+
+.lesson-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lesson-steps__item {
+  flex: 1 1 150px;
+  min-width: 0;
+
+  > button,
+  > .lesson-steps__static {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 52px;
+    padding: 8px 12px;
+    border: 1px solid var(--sr-border);
+    border-radius: 10px;
+    background: hsl(0 0% 100% / 0.85);
+    color: inherit;
+    font: inherit;
+    text-align: start;
+  }
+
+  > button {
+    cursor: pointer;
+    transition: border-color 160ms ease, transform 160ms ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      border-color: hsl(14 89% 56% / 0.4);
+    }
+
+    &:focus-visible {
+      outline: 3px solid hsl(14 89% 56% / 0.35);
+      outline-offset: 2px;
+    }
+  }
+
+  &.is-done > * {
+    border-color: hsl(174 56% 40% / 0.35);
+    background: var(--sr-teal-soft);
+  }
+
+  &.is-next > * {
+    border-color: var(--sr-coral);
+    box-shadow: 0 0 0 3px hsl(14 89% 56% / 0.14);
+  }
+}
+
+.lesson-steps__marker {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--sr-slate-100);
+  color: var(--sr-slate-700);
+  font-size: 13px;
+  font-weight: 850;
+
+  .is-done & {
+    background: var(--sr-teal);
+    color: var(--sr-white);
+  }
+
+  .is-next & {
+    background: var(--sr-coral);
+    color: var(--sr-white);
+  }
+}
+
+.lesson-steps__text {
+  display: grid;
+  min-width: 0;
+
+  strong {
+    font-size: 14px;
+  }
+
+  small {
+    color: var(--sr-slate-500);
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+.lesson-recap__learners {
+  display: grid;
+  gap: 10px;
+
+  h3 {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  ul {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    gap: 6px;
+  }
+
+  .lesson-steps__item > * {
+    min-height: 42px;
+  }
+}
+
+.lesson-recap__learner-name {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+// ── Done banner ──
+
+.lesson-recap__done {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 14px;
+  padding: 16px 18px;
+  border: 1px solid hsl(174 56% 40% / 0.35);
+  border-radius: 12px;
+  background: var(--sr-teal-soft);
+  color: var(--sr-teal-dark);
+
+  strong {
+    font-size: 16px;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: var(--sr-slate-700);
+  }
+}
+
+.lesson-recap__done-link {
+  margin-inline-start: auto;
+  color: var(--sr-teal-dark);
+  font-weight: 850;
+}
+
+// ── Steps ──
+
+.lesson-step {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  scroll-margin-top: 90px;
+}
+
+.lesson-step__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  h3 {
+    margin: 2px 0 2px;
+    font-size: 19px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--sr-slate-700);
+    font-size: 14px;
+  }
+}
+
+.lesson-step__number {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--sr-navy);
+  color: var(--sr-white);
+  font-weight: 850;
+
+  &.is-done {
+    background: var(--sr-teal);
+  }
+}
+
+.lesson-step__body {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+
+  .session-report-learner-section {
+    padding: 20px;
+  }
+}
+
+.lesson-step__sentinel {
+  display: block;
+  height: 1px;
+}
+
+.lesson-practice-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  align-items: start;
+}
+
+.lesson-next {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--sr-coral), var(--sr-coral-dark));
+  color: var(--sr-white);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+  box-shadow: 0 12px 26px hsl(14 89% 56% / 0.22);
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.85;
+  }
+
+  &.is-done {
+    background: var(--sr-teal-soft);
+    color: var(--sr-teal-dark);
+    box-shadow: none;
+  }
+}
+
+// ── Older plain-text feedback ──
+
+.lesson-legacy {
+  display: grid;
+  gap: 12px;
+}
+
+.lesson-legacy__card {
+  padding: 16px 18px;
+  border: 1px solid var(--sr-border);
+  border-radius: 10px;
+  background: var(--sr-white);
+
+  h4 {
+    margin: 0 0 6px;
+    font-size: 14px;
+  }
+
+  p {
+    margin: 0;
+    white-space: pre-line;
+    line-height: 1.6;
+  }
+
+  &--featured {
+    border-color: hsl(14 89% 56% / 0.25);
+    background: var(--sr-coral-soft);
+  }
+}
+
+@media (max-width: 640px) {
+  .lesson-recap__head {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .lesson-steps__item {
+    flex-basis: calc(50% - 4px);
+  }
+
+  .lesson-step__body .session-report-learner-section {
+    padding: 14px;
+  }
+
+  .lesson-next {
+    justify-self: stretch;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-steps__item > button {
+    transition: none;
+  }
+}

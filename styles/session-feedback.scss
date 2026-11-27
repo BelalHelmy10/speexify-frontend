@@ -1,6 +1,8 @@
 @use "variables" as *;
 
-.page-session-feedback {
+// Colours shared by the feedback page and the lesson recap on the session
+// page (`.fb-theme`).
+@mixin sr-tokens {
   --sr-navy: hsl(211 53% 11%);
   --sr-navy-mid: hsl(209 56% 23%);
   --sr-coral: hsl(14 89% 56%);
@@ -26,6 +28,14 @@
   --sr-amber-soft: hsl(48 96% 89%);
   --sr-border: hsl(218 31% 89%);
   --sr-shadow: 0 22px 70px hsl(222 47% 11% / 0.13);
+  --fb-wrong: hsl(354 72% 40%);
+  --fb-wrong-soft: hsl(355 100% 95%);
+  --fb-right: hsl(152 72% 25%);
+  --fb-right-soft: hsl(145 62% 91%);
+}
+
+.page-session-feedback {
+  @include sr-tokens;
 
   min-height: calc(100vh - 72px);
   padding: 34px 0 72px;
@@ -963,11 +973,8 @@
 
 /* ===== Row-based report: shared marks ===== */
 
-.page-session-feedback {
-  --fb-wrong: hsl(354 72% 40%);
-  --fb-wrong-soft: hsl(355 100% 95%);
-  --fb-right: hsl(152 72% 25%);
-  --fb-right-soft: hsl(145 62% 91%);
+.fb-theme {
+  @include sr-tokens;
 }
 
 .fb-sr-only {

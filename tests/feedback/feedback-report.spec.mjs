@@ -125,9 +125,9 @@ test("a teacher fills the report row by row from the keyboard", async ({ page })
   expect(errors).toEqual([]);
 });
 
-test("a learner sees the published report with marks and no asterisks", async ({ page }) => {
+test("the learner preview shows the published report with marks and no asterisks", async ({ page }) => {
   const errors = await mount(page, {
-    role: "learner",
+    role: "teacher",
     teacherFeedback: savedFeedback({
       summary: "Thank you for today's session.",
       futureSteps: "",
@@ -141,6 +141,7 @@ test("a learner sees the published report with marks and no asterisks", async ({
     }),
   });
 
+  await page.getByRole("button", { name: "Learner" }).click();
   await expect(page.locator(".fb-editor")).toHaveCount(0);
   const rows = page.locator(".fb-report__row");
   await expect(rows).toHaveCount(5);
@@ -175,11 +176,11 @@ test("unpublished work comes back after the tab is closed", async ({ page }) => 
   await expect(page.locator(".fb-draft-notice")).toHaveCount(0);
 });
 
-for (const role of ["teacher", "learner"]) {
-  test(`${role} report fits a phone screen`, async ({ page }) => {
+for (const view of ["Coach", "Learner"]) {
+  test(`${view.toLowerCase()} view fits a phone screen`, async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     const errors = await mount(page, {
-      role,
+      role: "teacher",
       teacherFeedback: savedFeedback({
         summary: "Great work.",
         futureSteps: "",
@@ -190,6 +191,7 @@ for (const role of ["teacher", "learner"]) {
       }),
     });
     await expect(page.locator(".session-report-view")).toBeVisible();
+    await page.getByRole("button", { name: view }).click();
     // Let the cards finish sliding in before measuring.
     await page.waitForTimeout(1200);
     const overflow = await page.evaluate(() => {
@@ -200,7 +202,7 @@ for (const role of ["teacher", "learner"]) {
       return wide.map((element) => element.className).slice(0, 5);
     });
     expect(overflow).toEqual([]);
-    if (role === "teacher") {
+    if (view === "Coach") {
       await expect(page.locator(".fb-grid__field-label").first()).toBeVisible();
     }
     expect(errors).toEqual([]);

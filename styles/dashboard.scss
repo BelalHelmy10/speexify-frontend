@@ -2702,6 +2702,14 @@ $stat-shadow-hover: 0 2px 5px rgba(13, 27, 42, 0.06), 0 30px 56px -18px rgba(13,
     }
   }
 
+  &__lesson-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: $primary;
+  }
+
   &__section-icon {
     width: 36px;
     height: 36px;

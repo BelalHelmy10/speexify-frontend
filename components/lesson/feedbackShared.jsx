@@ -51,13 +51,13 @@ export function getFeedbackType(key) {
   return FEEDBACK_TYPES.find((type) => type.key === key) || FEEDBACK_TYPES[0];
 }
 
-export function FeedbackTypeBadge({ type }) {
+export function FeedbackTypeBadge({ type, label }) {
   const config = getFeedbackType(type);
   const Icon = config.icon;
   return (
     <span className={`session-report-badge session-report-badge--${config.key}`}>
       <Icon size={14} aria-hidden="true" />
-      {config.label}
+      {label || config.label}
     </span>
   );
 }
@@ -66,13 +66,13 @@ export function FeedbackTypeBadge({ type }) {
 // "key" = a highlighted word on any other row.
 const TONE_LABEL = { wrong: "mistake", right: "correction" };
 
-export function MarkedText({ segments, tone = "key", className = "" }) {
+export function MarkedText({ segments, tone = "key", className = "", labels = TONE_LABEL }) {
   return (
     <span dir="auto" className={`fb-text ${className}`.trim()}>
       {segments.map((segment, index) =>
         segment.marked ? (
           <mark key={index} className={`fb-mark fb-mark--${tone}`}>
-            {TONE_LABEL[tone] && <span className="fb-sr-only">{TONE_LABEL[tone]}: </span>}
+            {labels[tone] && <span className="fb-sr-only">{labels[tone]}: </span>}
             {segment.text}
           </mark>
         ) : (

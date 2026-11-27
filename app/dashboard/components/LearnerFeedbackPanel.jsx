@@ -143,7 +143,7 @@ export default function LearnerFeedbackPanel({ dict, prefix, timezone }) {
           )}
           <div className="feedback-highlight__actions">
             <Link
-              href={`${prefix}/dashboard/sessions/${latest.id}/feedback`}
+              href={`${prefix}/dashboard/sessions/${latest.id}#lesson`}
               className="btn btn--primary btn--sm"
             >
               {dict?.read_more || "Read more"}
@@ -158,7 +158,7 @@ export default function LearnerFeedbackPanel({ dict, prefix, timezone }) {
           {feedbacks.slice(1).map((fb) => (
             <Link
               key={fb.id}
-              href={`${prefix}/dashboard/sessions/${fb.id}/feedback`}
+              href={`${prefix}/dashboard/sessions/${fb.id}#lesson`}
               className="feedback-mini-item"
             >
               <div className="feedback-mini-item__dot" />

@@ -7,7 +7,7 @@ import api from "@/lib/api";
 import { fmtInTz } from "@/utils/date";
 import { getDictionary, t } from "@/app/i18n";
 import useAuth from "@/hooks/useAuth";
-import { stripRichFeedbackPayload } from "@/lib/feedbackReport";
+import { getReportFromFeedback, stripRichFeedbackPayload } from "@/lib/feedbackReport";
 import ResilientAvatar from "@/components/ResilientAvatar";
 
 function FeedbackIcon({ size = 24 }) {
@@ -81,7 +81,10 @@ function TeacherAvatar({ name, url }) {
 
 function FeedbackCard({ item, timezone, prefix, dict, locale }) {
   const fb = item.feedback;
-  const commentsOnSession = stripRichFeedbackPayload(fb.commentsOnSession || "");
+  const report = getReportFromFeedback(fb);
+  // Newer reports keep their rows in the lesson recap; here we only count them.
+  const commentsOnSession = report.hasRichReport ? "" : stripRichFeedbackPayload(fb.commentsOnSession || "");
+  const counts = report.items.reduce((acc, item) => ({ ...acc, [item.type]: (acc[item.type] || 0) + 1 }), {});
   const hasMessage = !!fb.messageToLearner?.trim();
   const hasComments = !!commentsOnSession;
   const hasSteps = !!fb.futureSteps?.trim();
@@ -99,7 +102,7 @@ function FeedbackCard({ item, timezone, prefix, dict, locale }) {
           </span>
         </div>
         <Link
-          href={`${prefix}/dashboard/sessions/${item.id}/feedback`}
+          href={`${prefix}/dashboard/sessions/${item.id}#lesson`}
           className="btn btn--ghost btn--sm fb-card__link"
         >
           {t(dict, "session_label") || "Session"}
@@ -129,6 +132,25 @@ function FeedbackCard({ item, timezone, prefix, dict, locale }) {
             <div>
               <h5>{t(dict, "comments_title") || "Comments on session"}</h5>
               <p>{commentsOnSession}</p>
+            </div>
+          </div>
+        )}
+        {report.hasRichReport && report.items.length > 0 && (
+          <div className="fb-card__section">
+            <div className="fb-card__section-icon fb-card__section-icon--comments">
+              <CommentsIcon />
+            </div>
+            <div>
+              <h5>{t(dict, "comments_title") || "Comments on session"}</h5>
+              <p>
+                {(t(dict, "report_counts") || "{words} new words · {fixes} corrections · {sounds} pronunciation")
+                  .replace("{words}", counts.vocabulary || 0)
+                  .replace("{fixes}", counts.grammar || 0)
+                  .replace("{sounds}", counts.pronunciation || 0)}
+              </p>
+              <Link href={`${prefix}/dashboard/sessions/${item.id}#lesson`} className="fb-card__lesson-link">
+                {t(dict, "open_lesson") || "Open lesson recap"}
+              </Link>
             </div>
           </div>
         )}
