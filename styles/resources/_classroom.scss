@@ -5788,12 +5788,14 @@ body.classroom-active {
   .cr-resource-workspace:has(.cpv-nav) {
     position: relative;
 
+    // --cr-tabs-room is measured from the zoom and page controls
+    // (ClassroomResourceWorkspace); the fixed allowance is only a fallback.
     .cr-resource-tabs {
       position: absolute;
-      left: 0;
+      inset-inline-start: 0;
       bottom: 0;
       z-index: 3;
-      max-width: calc(100% - 250px);
+      max-width: calc(var(--cr-tabs-room, calc(100% - 242px)) - 8px);
       height: var(--cr-resource-bar-height);
       min-height: 0;
       padding: 2px 4px;
@@ -6051,7 +6053,7 @@ body.classroom-active {
 }
 
 .cr-main--portrait .cr-resource-workspace:has(.cpv-nav) .cr-resource-tabs {
-  max-width: calc(100% - 210px);
+  max-width: calc(var(--cr-tabs-room, calc(100% - 202px)) - 8px);
 }
 
 // On the Content tab the quick actions sit in a row beside the small video,

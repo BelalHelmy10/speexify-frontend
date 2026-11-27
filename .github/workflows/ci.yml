@@ -46,6 +46,14 @@ jobs:
   quality-gates:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # The production build needs these public values. The CI build is never
+    # deployed (Vercel builds with its own settings): repository variables win
+    # when set; otherwise a well-formed Google stand-in (next.config.mjs
+    # refuses an empty one) and the public Sanity project the site reads.
+    env:
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '000000000000-ci-build.apps.googleusercontent.com' }}
+      NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID || 'rdg57gpl' }}
+      NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET || 'production' }}
 
     steps:
       - name: Checkout

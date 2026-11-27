@@ -3,10 +3,33 @@
 // play teacher and learner; the test relays classroom events between them
 // the way the server does: stamped with the sender, and targeted events
 // delivered only to their recipient.
+import os from "node:os";
 import { test, expect } from "@playwright/test";
 import { buildClassroomHarness } from "./support/buildClassroomHarness.mjs";
 
 const harness = buildClassroomHarness();
+
+// WebKit hides host addresses behind mDNS names (*.local) that the Linux CI
+// runner cannot resolve between two pages, so the connection never starts
+// checking there. Real users connect over STUN/TURN routes, which are not
+// hidden. For WebKit only, hand the peer this machine's own addresses in
+// place of the hidden name, so the real sharing code still runs end to end.
+const LOCAL_IPV4 = Object.values(os.networkInterfaces())
+  .flat()
+  .filter((address) => address && address.family === "IPv4" && !address.internal)
+  .map((address) => address.address);
+const HIDDEN_HOST = /\s\S+\.local\s/;
+
+function unhideHostRoutes(event) {
+  const line = event?.candidate?.candidate;
+  if (event?.type !== "SCREEN_RTC_CANDIDATE" || typeof line !== "string" || !HIDDEN_HOST.test(line) || !LOCAL_IPV4.length) {
+    return [event];
+  }
+  return LOCAL_IPV4.map((ip) => ({
+    ...event,
+    candidate: { ...event.candidate, candidate: line.replace(HIDDEN_HOST, ` ${ip} `) },
+  }));
+}
 const PEOPLE = {
   teacher: { userId: 20, role: "teacher" },
   learner: { userId: 10, role: "learner" },
@@ -28,11 +51,14 @@ async function openPage(context, name, peers) {
   };
   peers[name] = entry;
   page.on("pageerror", (error) => entry.errors.push(error.message));
-  await page.exposeFunction("relayClassroomEvent", async (event) => {
-    for (const other of Object.values(peers)) {
-      if (other === entry) continue;
-      if (event.to != null && String(event.to) !== String(other.userId)) continue;
-      await other.deliver({ ...event, _from: { userId: entry.userId, role: entry.role } });
+  const isWebKit = context.browser()?.browserType().name() === "webkit";
+  await page.exposeFunction("relayClassroomEvent", async (sent) => {
+    for (const event of isWebKit ? unhideHostRoutes(sent) : [sent]) {
+      for (const other of Object.values(peers)) {
+        if (other === entry) continue;
+        if (event.to != null && String(event.to) !== String(other.userId)) continue;
+        await other.deliver({ ...event, _from: { userId: entry.userId, role: entry.role } });
+      }
     }
   });
   await page.addInitScript((userId) => {
@@ -128,11 +154,10 @@ test("stopping from the browser's own sharing bar ends the share", async ({ brow
   await startSharing(teacher.page);
   await expect.poll(() => sharedFrameWidth(learner.page), { timeout: 15000 }).toBe(640);
 
-  await teacher.page.evaluate(() => {
-    const [track] = window.classroomTestMedia.displayStream.getVideoTracks();
-    track.stop();
-    track.dispatchEvent(new Event("ended"));
-  });
+  // What the browser does when its own "Stop sharing" bar is used: the
+  // capture ends and the track fires "ended" (see the harness for why this
+  // is not a dispatched event).
+  await teacher.page.evaluate(() => window.classroomTestMedia.endDisplay());
   await expect(teacher.page.locator(".cr-screen-stage")).toHaveCount(0);
   await expect(learner.page.locator(".cr-screen-stage")).toHaveCount(0);
   await context.close();

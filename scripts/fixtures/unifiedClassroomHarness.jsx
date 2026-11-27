@@ -75,8 +75,26 @@ Object.defineProperty(navigator, "mediaDevices", {
       draw();
       const timer = setInterval(draw, 100);
       const stream = canvas.captureStream(15);
-      stream.getVideoTracks()[0].addEventListener("ended", () => clearInterval(timer));
+      const [videoTrack] = stream.getVideoTracks();
+      // Firefox never delivers a script-dispatched "ended" to a track's
+      // listeners, so keep them and call them the way the browser does when
+      // its own "Stop sharing" bar ends the capture.
+      const endedListeners = [];
+      const addListener = videoTrack.addEventListener.bind(videoTrack);
+      videoTrack.addEventListener = (type, listener, options) => {
+        if (type === "ended") endedListeners.push(listener);
+        return addListener(type, listener, options);
+      };
       window.classroomTestMedia.displayStream = stream;
+      window.classroomTestMedia.endDisplay = () => {
+        clearInterval(timer);
+        videoTrack.stop();
+        const event = new Event("ended");
+        for (const listener of endedListeners) {
+          if (typeof listener === "function") listener.call(videoTrack, event);
+          else listener?.handleEvent?.(event);
+        }
+      };
       return stream;
     },
     addEventListener: (...args) => mediaDeviceEvents.addEventListener(...args),
