@@ -12,6 +12,14 @@ The public scheduler lives at `/trial-booking` and `/ar/trial-booking`. Both rou
 
 All admin inputs use `Africa/Cairo`, including seasonal clock changes. Times can be prepared up to 90 days ahead; only those inside the configured booking horizon and minimum notice are offered publicly. Nothing is seeded into production.
 
+## Trainers, repeating and deleting
+
+- **Trainers:** when adding times, pick one or more trainers (or "No specific trainer"). Each trainer gets one place at every time. The public page shows each time once; a learner is matched to a free trainer at that time, and the booking is assigned to that trainer automatically. A trainer cannot be given overlapping times. Times without a trainer can still hold several places.
+- **Repeat every week:** choose the first date, tick the weekdays and an end date. The form shows how many times and places will be added before you save. A trainer's time that already exists is skipped.
+- **Copy a day** carries trainers and places, and can repeat to the same weekday for up to 12 following weeks.
+- **Schedule view:** grouped by day, then by time, with one row per trainer showing Free / Booked and the learner's name. Filter by trainer, by state (open, booked, closed) and by date.
+- **Delete:** the bin on a row, "Delete empty times" on a day, or tick rows (or a whole day) and use the selection bar to delete, close or reopen. Times that have ever had a booking are never deleted; close them instead.
+
 ## Editing availability
 
 - **Edit time** changes the date, start time, duration, buffer and capacity of an existing time.
