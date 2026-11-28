@@ -124,7 +124,7 @@ export default function TrialBookingPage({ locale = "en" }) {
       <section className="trial-card" aria-busy={busy || loading}>
         {error && <div className="trial-error" role="alert">{error}</div>}
         {checkingLink ? <div className="trial-state" role="status">{c.loading}<div className="trial-skeleton" /></div> : showBooking ? <div className="trial-success">
-          <span className="trial-success-icon"><Check size={30} /></span><p className="trial-eyebrow">{c.statuses[booking.status]}</p>
+          <span className="trial-success-icon"><Check size={30} /></span><p className="trial-eyebrow">{c.learnerStatuses[booking.status] || c.statuses[booking.status]}</p>
           <h2 ref={successHeading} tabIndex={-1}>{booking.status === "CANCELLED" ? c.cancelled : booking.status === "CONFIRMED" ? c.confirmed : ["COMPLETED", "NO_SHOW"].includes(booking.status) ? c.finished : c.success}</h2>
           <p>{booking.status === "CANCELLED" ? c.cancelledText : booking.status === "CONFIRMED" ? c.confirmedText : c.successText}</p>
           <div className="trial-receipt"><strong>{format(booking.slot.startAt, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</strong><span>{format(booking.slot.startAt, { hour: "numeric", minute: "2-digit" })} – {format(booking.slot.endAt, { hour: "numeric", minute: "2-digit" })}</span><small>{timezone}</small><span>{booking.name}</span><span dir="ltr">{booking.phone}</span><small>{c.reference}: {booking.id.slice(0, 8).toUpperCase()}</small></div>
