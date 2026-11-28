@@ -12,6 +12,9 @@ async function mount(page, role) {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1280, height: 800 });
+  // The sample lesson audio points at a real address; answer it at once so
+  // timing never depends on the network.
+  await page.route("https://example.com/**", (route) => route.fulfill({ status: 404, body: "" }));
   await page.route("http://classroom.test/**", (route) => route.fulfill({
     contentType: "text/html",
     body: '<!doctype html><html class="classroom-active"><head></head><body class="classroom-active"><div id="root"></div></body></html>',
@@ -33,21 +36,39 @@ const lessonGeometry = (page) => page.evaluate(() => {
   return { viewer: box(".cr-content-viewer"), pdf: box(".prep-pdf-main-inner"), video: box(".cr-panel--left") };
 });
 
+// After loading, the PDF fits itself, then fits again once its panel settles
+// (the page list fills in), and sends the teacher's view each time. On a busy
+// machine the second fit can come seconds later. Wait until nothing is
+// changing: no new messages, and the PDF panel and page keep their size.
+// A pending refit always starts with a size change, so it can't slip past.
+async function waitForQuietLesson(page, quietMs = 2500) {
+  let quietSince = Date.now();
+  let last = "";
+  await expect.poll(async () => {
+    const now = await page.evaluate(() => {
+      const panel = document.querySelector(".cr-resource-workspace__panel:not([hidden])");
+      const size = (element) => {
+        const rect = element?.getBoundingClientRect();
+        return rect ? `${Math.round(rect.width)}x${Math.round(rect.height)}` : "-";
+      };
+      return [
+        window.testState.messages.length,
+        size(panel?.querySelector(".prep-pdf-main-inner")),
+        ...[...(panel?.querySelectorAll("canvas") || [])].map((canvas) => `${canvas.width}x${canvas.height}`),
+      ].join("|");
+    });
+    if (now !== last) {
+      last = now;
+      quietSince = Date.now();
+    }
+    return Date.now() - quietSince >= quietMs;
+  }, { timeout: 30_000, intervals: [200] }).toBe(true);
+}
+
 for (const role of ["teacher", "learner"]) {
   test(`${role}: chat floats over the lesson without moving it`, async ({ page }) => {
     const errors = await mount(page, role);
-    // Let the lesson settle first: the PDF's first fit and scroll are sent
-    // once it loads (slower in WebKit), and must not count against chat.
-    let quietSince = Date.now();
-    let lastCount = -1;
-    await expect.poll(async () => {
-      const count = await page.evaluate(() => window.testState.messages.length);
-      if (count !== lastCount) {
-        lastCount = count;
-        quietSince = Date.now();
-      }
-      return Date.now() - quietSince >= 2500;
-    }, { timeout: 20_000, intervals: [200] }).toBe(true);
+    await waitForQuietLesson(page);
     const before = await lessonGeometry(page);
     const sentBefore = await page.evaluate(() => window.testState.messages.length);
 
@@ -92,11 +113,15 @@ test("Escape in the lesson does not freeze the classroom", async ({ page }) => {
 
 test("the teacher always answers a learner asking for the current PDF view", async ({ page }) => {
   await mount(page, "teacher");
-  const scrollsSent = () => page.evaluate(() => window.testState.messages.filter((message) => message.type === "PDF_SCROLL").length);
-  await expect.poll(scrollsSent, { timeout: 10_000 }).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() =>
+    window.testState.messages.some((message) => message.type === "PDF_SCROLL")), { timeout: 10_000 }).toBe(true);
+  // Once quiet, the view is unchanged, so only the forced answer can send it.
+  await waitForQuietLesson(page);
+  const answeredSince = (from) => page.evaluate((index) =>
+    window.testState.messages.slice(index).some((message) => message.type === "PDF_SCROLL"), from);
   for (let request = 1; request <= 2; request += 1) {
-    const before = await scrollsSent();
+    const from = await page.evaluate(() => window.testState.messages.length);
     await page.evaluate(() => window.receive({ type: "PDF_VIEW_REQUEST", resourceId: "a", _from: { userId: 10, role: "learner" } }));
-    await expect.poll(scrollsSent).toBe(before + 1);
+    await expect.poll(() => answeredSince(from)).toBe(true);
   }
 });
