@@ -1,8 +1,9 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Globe2, ShieldCheck, Sparkles } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Globe2, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import api from "@/lib/api";
+import BrandLogo from "@/components/brand/BrandLogo";
 import { calendarFile, downloadFile, formatTrial, groupSlots, makeToken, normalizeTrialPhone, period } from "@/lib/trialBooking.mjs";
 import { trialCopy } from "./copy";
 import "@/styles/trial-booking.scss";
@@ -15,6 +16,7 @@ export default function TrialBookingPage({ locale = "en" }) {
   const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [website, setWebsite] = useState("");
   const [booking, setBooking] = useState(null); const [rescheduling, setRescheduling] = useState(false);
   const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [fieldError, setFieldError] = useState({});
+  const [invite, setInvite] = useState(null); const [checkingLink, setCheckingLink] = useState(false);
   const [cancelPrompt, setCancelPrompt] = useState(false); const [copied, setCopied] = useState(false); const [manageLink, setManageLink] = useState("");
   const token = useRef(null); const strip = useRef(null); const successHeading = useRef(null); const submitting = useRef(false);
   const format = (value, options) => formatTrial(value, locale, timezone, options);
@@ -34,18 +36,34 @@ export default function TrialBookingPage({ locale = "en" }) {
       sessionStorage.removeItem("trial-language-draft");
       if (draft) { setName(draft.name || ""); setPhone(draft.phone || ""); setSelectedId(draft.selectedId); setDay(draft.day || ""); if (draft.timezone) setTimezone(draft.timezone); }
     } catch { /* Storage may be disabled. */ }
-    const fragment = new URLSearchParams(window.location.hash.slice(1)).get("manage");
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    // A personal link from the team: name and phone are already known, so the
+    // person only picks a time. After booking, the same link manages it.
+    const inviteSecret = hash.get("invite");
+    if (inviteSecret && /^[a-f0-9]{64}$/.test(inviteSecret)) {
+      token.current = inviteSecret; setCheckingLink(true);
+      api.post("/trial-bookings/invite", { token: inviteSecret }).then(({ data }) => {
+        if (data.booking) { setBooking(data.booking); setTimezone(data.booking.timezone); } else setInvite(data);
+        setManageLink(window.location.href);
+      }).catch((e) => {
+        token.current = null; window.history.replaceState(null, "", window.location.pathname);
+        setError(c.errors[e?.response?.data?.code] || c.errors.DEFAULT);
+      }).finally(() => setCheckingLink(false));
+      void refresh();
+      return;
+    }
+    const fragment = hash.get("manage");
     let pending;
     try { pending = sessionStorage.getItem("trial-pending-token"); } catch { /* optional recovery */ }
     const secret = fragment || pending;
     if (secret && /^[a-f0-9]{64}$/.test(secret)) {
       token.current = secret;
-      setBusy(true);
+      setBusy(true); if (fragment) setCheckingLink(true);
       api.post("/trial-bookings/lookup", { token: secret }).then(({ data }) => {
         setBooking(data); setTimezone(data.timezone);
         window.history.replaceState(null, "", `${window.location.pathname}#manage=${secret}`);
         setManageLink(window.location.href);
-      }).catch((e) => { if (fragment) setError(c.errors[e?.response?.data?.code] || c.errors.DEFAULT); }).finally(() => setBusy(false));
+      }).catch((e) => { if (fragment) setError(c.errors[e?.response?.data?.code] || c.errors.DEFAULT); }).finally(() => { setBusy(false); setCheckingLink(false); });
     }
     void refresh();
   }, [refresh, c]);
@@ -68,7 +86,7 @@ export default function TrialBookingPage({ locale = "en" }) {
   async function submit(event) {
     event.preventDefault(); if (!selected || submitting.current) return;
     const normalized = normalizeTrialPhone(phone);
-    const errors = rescheduling ? {} : { ...(name.trim().length < 2 ? { name: c.nameError } : {}), ...(!/^\+[1-9]\d{7,14}$/.test(normalized) ? { phone: c.phoneError } : {}) };
+    const errors = rescheduling || invite ? {} : { ...(name.trim().length < 2 ? { name: c.nameError } : {}), ...(!/^\+[1-9]\d{7,14}$/.test(normalized) ? { phone: c.phoneError } : {}) };
     setFieldError(errors);
     if (Object.keys(errors).length) { document.getElementById(errors.name ? "trial-name" : "trial-phone")?.focus(); return; }
     submitting.current = true; setBusy(true); setError("");
@@ -77,6 +95,7 @@ export default function TrialBookingPage({ locale = "en" }) {
       try { sessionStorage.setItem("trial-pending-token", token.current); } catch { /* token remains in memory */ }
       const { data } = rescheduling
         ? await api.post("/trial-bookings/change", { token: token.current, action: "reschedule", slotId: selected.id })
+        : invite ? await api.post("/trial-bookings/invite/reserve", { token: token.current, slotId: selected.id, timezone })
         : await api.post("/trial-bookings", { token: token.current, slotId: selected.id, name: name.trim(), phone: normalized, timezone, locale, website });
       saved(data);
     } catch (e) { setError(message(e)); if (e?.response?.status === 409) await refresh(); }
@@ -89,19 +108,22 @@ export default function TrialBookingPage({ locale = "en" }) {
     finally { setBusy(false); submitting.current = false; }
   }
   function startAgain() {
-    token.current = null; setBooking(null); setRescheduling(false); setSelectedId(null); setError(""); setManageLink("");
+    if (booking) { setName(booking.name); setPhone(booking.phone); }
+    token.current = null; setInvite(null); setBooking(null); setRescheduling(false); setSelectedId(null); setError(""); setManageLink("");
     window.history.replaceState(null, "", window.location.pathname); void refresh();
   }
-  const otherHref = `${ar ? "" : "/ar"}/trial-booking${booking && token.current ? `#manage=${token.current}` : ""}`;
+  const carried = !token.current ? "" : booking ? `#manage=${token.current}` : invite ? `#invite=${token.current}` : "";
+  const otherHref = `${ar ? "" : "/ar"}/trial-booking${carried}`;
+  const firstName = invite?.name.trim().split(/\s+/)[0] || "";
   return <div className="trial-page" dir={ar ? "rtl" : "ltr"} lang={locale}>
-    <div className="trial-topline"><Link href={prefix || "/"} className="trial-wordmark">speexify<span>.</span></Link><Link href={otherHref} onClick={rememberLanguage} className="trial-language"><Globe2 size={17} />{ar ? "English" : "العربية"}</Link></div>
+    <div className="trial-topline"><BrandLogo context="auth" href={prefix || "/"} className="trial-wordmark" /><Link href={otherHref} onClick={rememberLanguage} className="trial-language"><Globe2 size={17} />{ar ? "English" : "العربية"}</Link></div>
     <div className="trial-layout">
       <aside className="trial-intro"><p className="trial-eyebrow">{c.eyebrow}</p><h1>{c.title}</h1><p className="trial-lead">{c.intro}</p><div className="trial-benefits"><span><Sparkles size={18} />{c.free}</span><span><Check size={18} />{c.personal}</span><span><ShieldCheck size={18} />{c.noAccount}</span></div>
         <div className="trial-next"><span className="trial-icon"><CalendarDays size={22} /></span><h2>{c.next}</h2><p>{c.nextText}</p></div>
       </aside>
       <section className="trial-card" aria-busy={busy || loading}>
         {error && <div className="trial-error" role="alert">{error}</div>}
-        {showBooking ? <div className="trial-success">
+        {checkingLink ? <div className="trial-state" role="status">{c.loading}<div className="trial-skeleton" /></div> : showBooking ? <div className="trial-success">
           <span className="trial-success-icon"><Check size={30} /></span><p className="trial-eyebrow">{c.statuses[booking.status]}</p>
           <h2 ref={successHeading} tabIndex={-1}>{booking.status === "CANCELLED" ? c.cancelled : booking.status === "CONFIRMED" ? c.confirmed : ["COMPLETED", "NO_SHOW"].includes(booking.status) ? c.finished : c.success}</h2>
           <p>{booking.status === "CANCELLED" ? c.cancelledText : booking.status === "CONFIRMED" ? c.confirmedText : c.successText}</p>
@@ -112,7 +134,9 @@ export default function TrialBookingPage({ locale = "en" }) {
           {active ? <div className="trial-manage"><button disabled={busy} onClick={() => { setRescheduling(true); setSelectedId(null); setError(""); void refresh(); }}>{c.change}</button><button disabled={busy} onClick={() => setCancelPrompt(true)}>{c.cancel}</button></div> : <><p>{c.closed}</p><button className="trial-secondary" onClick={startAgain}>{c.newBooking}</button></>}
           {cancelPrompt && <div className="trial-cancel" role="group" aria-label={c.cancel}><p>{c.cancelPrompt}</p><button className="trial-secondary" disabled={busy} onClick={() => setCancelPrompt(false)}>{c.keep}</button><button className="trial-danger" disabled={busy} onClick={cancel}>{busy ? c.busy : c.cancelYes}</button></div>}
         </div> : <>
-          <div className="trial-card-heading"><p className="trial-eyebrow">{c.progress}</p><h2>{c.choose}</h2><p>{c.chooseHint}</p></div>
+          {invite && !rescheduling
+            ? <div className="trial-card-heading"><p className="trial-eyebrow">{c.inviteEyebrow}</p><h2>{c.inviteHello.replace("{name}", firstName)}</h2><p>{c.inviteHint}</p></div>
+            : <div className="trial-card-heading"><p className="trial-eyebrow">{c.progress}</p><h2>{c.choose}</h2><p>{c.chooseHint}</p></div>}
           {rescheduling && <button className="trial-text-button" onClick={() => setRescheduling(false)}>{c.back}</button>}
           <label className="trial-timezone"><Globe2 size={16} /><span>{c.timezone}</span><select value={timezone} onChange={(e) => { setTimezone(e.target.value); setDay(""); setSelectedId(null); }}>{[...new Set([...zones, timezone])].map((zone) => <option key={zone} value={zone}>{zone.replaceAll("_", " ")}</option>)}</select></label>
           {loading ? <div className="trial-state" role="status">{c.loading}<div className="trial-skeleton" /></div> : loadError ? <div className="trial-state" role="alert"><p>{c.errors.DEFAULT}</p><button className="trial-secondary" onClick={refresh}>{c.retry}</button></div> : !groups.length ? <div className="trial-state"><CalendarDays size={36} /><h3>{c.empty}</h3><p>{c.emptyText}</p><Link className="trial-secondary" href={`${prefix}/contact`}>{c.contact}</Link></div> : <>
@@ -125,8 +149,9 @@ export default function TrialBookingPage({ locale = "en" }) {
             <form onSubmit={submit} noValidate>
               {selected ? <>
                 <div className="trial-selection" aria-live="polite"><CalendarDays size={20} /><div><strong>{format(selected.startAt, { weekday: "long", month: "short", day: "numeric" })} · {format(selected.startAt, { hour: "numeric", minute: "2-digit" })}</strong><span><Clock3 size={14} />{Math.round((new Date(selected.endAt) - new Date(selected.startAt)) / 60000)} {c.minutes} · {timezone}</span></div></div>
-                {!rescheduling && <fieldset disabled={busy} className="trial-fields"><legend>{c.details}</legend><p>{c.detailsHint}</p><label htmlFor="trial-name">{c.name}</label><input id="trial-name" name="name" autoComplete="name" maxLength={120} value={name} onChange={(e) => setName(e.target.value)} aria-invalid={!!fieldError.name} aria-describedby={fieldError.name ? "trial-name-error" : undefined} />{fieldError.name && <span id="trial-name-error" className="trial-field-error">{fieldError.name}</span>}<label htmlFor="trial-phone">{c.phone}</label><input id="trial-phone" name="tel" type="tel" dir="ltr" autoComplete="tel" placeholder="+20 100 123 4567" maxLength={40} value={phone} onChange={(e) => setPhone(e.target.value)} aria-invalid={!!fieldError.phone} aria-describedby={fieldError.phone ? "trial-phone-error" : "trial-phone-hint"} /><small id="trial-phone-hint">{c.phoneHint}</small>{fieldError.phone && <span id="trial-phone-error" className="trial-field-error">{fieldError.phone}</span>}<div className="trial-honeypot" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} /></label></div></fieldset>}
-                <button className="trial-primary" disabled={busy} type="submit">{busy ? c.busy : rescheduling ? c.save : c.reserve}</button><p className="trial-privacy"><ShieldCheck size={15} /><span>{c.privacy} <Link href={`${prefix}/privacy`}>{c.privacyLink}</Link></span></p>
+                {invite && !rescheduling && <p className="trial-invite-for"><UserRound size={17} aria-hidden="true" /><span>{c.inviteFor.replace("{name}", invite.name)} <bdi dir="ltr">{invite.phoneEnding}</bdi></span></p>}
+                {!rescheduling && !invite && <fieldset disabled={busy} className="trial-fields"><legend>{c.details}</legend><p>{c.detailsHint}</p><label htmlFor="trial-name">{c.name}</label><input id="trial-name" name="name" autoComplete="name" maxLength={120} value={name} onChange={(e) => setName(e.target.value)} aria-invalid={!!fieldError.name} aria-describedby={fieldError.name ? "trial-name-error" : undefined} />{fieldError.name && <span id="trial-name-error" className="trial-field-error">{fieldError.name}</span>}<label htmlFor="trial-phone">{c.phone}</label><input id="trial-phone" name="tel" type="tel" dir="ltr" autoComplete="tel" placeholder="010 0123 4567" maxLength={40} value={phone} onChange={(e) => setPhone(e.target.value)} aria-invalid={!!fieldError.phone} aria-describedby={fieldError.phone ? "trial-phone-error" : "trial-phone-hint"} /><small id="trial-phone-hint">{c.phoneHint}</small>{fieldError.phone && <span id="trial-phone-error" className="trial-field-error">{fieldError.phone}</span>}<div className="trial-honeypot" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} /></label></div></fieldset>}
+                <button className="trial-primary" disabled={busy} type="submit">{busy ? c.busy : rescheduling ? c.save : invite ? c.inviteConfirm : c.reserve}</button><p className="trial-privacy"><ShieldCheck size={15} /><span>{c.privacy} <Link href={`${prefix}/privacy`}>{c.privacyLink}</Link></span></p>
               </> : <p className="trial-select-hint"><Clock3 size={17} />{c.selectHint}</p>}
             </form>
           </>}

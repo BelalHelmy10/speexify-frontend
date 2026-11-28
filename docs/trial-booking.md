@@ -30,6 +30,14 @@ The success screen includes appointment details, a calendar download and a priva
 
 Reservations are not classroom sessions. Your team contacts the learner, assigns a trainer, and provides joining instructions. If the classroom requires an account, arrange that account and create the session through the existing scheduler.
 
+## Personal links
+
+For people the team has already spoken to. In **Free sessions → Personal links**, enter their name, number (Egyptian numbers can be typed as `010…`), the page language and how many days the link works (default 14, up to 60). Copy the link, or press **Send on WhatsApp** to open a chat with the message and link already written. Nothing is sent automatically.
+
+The person opens the link, sees "Hi {name}", taps a time and confirms. They type nothing and need no account. Only their name and the last three digits of the number are shown, so a forwarded link does not reveal the number.
+
+After booking, the same link becomes their private booking link (view, change or cancel), and the list shows it as Booked with the time. Unused links can be switched off or turned back on (which extends them to at least 14 days from today). An expired or unknown link shows a message and falls back to the normal form. Personal links are stored readable (table `TrialInvite`) so admins can copy them again; the general flow's booking tokens remain hashed.
+
 ## Daily administration
 
 The Bookings tab includes search, Today/Upcoming/All dates filters, status filters, pagination and CSV export (up to 10,000 filtered records). Expand a booking to assign a trainer, write notes, change status or open a localized WhatsApp message. Opening WhatsApp does not send the message automatically.

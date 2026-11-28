@@ -5,34 +5,40 @@
   *, *::before, *::after { box-sizing: border-box; }
   h1, h2, p { margin: 0; } h1 { font-size: 34px; margin: 8px 0; } h2 { font-size: 21px; }
   button, input, textarea, select { font: inherit; }
-  button, .ta-actions a { border: 1px solid #cdd5db; padding: 10px 14px; min-height: 44px; border-radius: 9px; background: white; color: $navy; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+  button, .ta-actions a { border: 1px solid #d9cfc2; padding: 10px 14px; min-height: 44px; border-radius: 9px; background: white; color: $navy; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
   button:disabled { opacity: .5; cursor: default; }
-  input, select, textarea { border: 1px solid #cdd5db; padding: 10px 12px; min-height: 44px; background: white; color: $navy; border-radius: 8px; max-width: 100%; }
-  :focus-visible { outline: 3px solid #ba451e; outline-offset: 3px; }
-  .ta-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 26px; p { color: #526170; } a { color: #a43b19; } }
+  input, select, textarea { border: 1px solid #d9cfc2; padding: 10px 12px; min-height: 44px; background: white; color: $navy; border-radius: 8px; max-width: 100%; }
+  :focus-visible { outline: 3px solid $coral; outline-offset: 3px; }
+  .ta-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 26px; p { color: $muted; } a { color: $coral-dark; } }
   .ta-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .ta-tabs { display: flex; gap: 12px; border-bottom: 1px solid #dfe3e6; margin-bottom: 24px; padding-bottom: 12px; flex-wrap: wrap; button { border: 0; } [aria-current="page"] { background: $navy; color: white; } }
-  .ta-info { display: flex; align-items: start; gap: 12px; padding: 18px 20px; background: #f1f5f7; border-radius: 12px; margin-bottom: 22px; color: #435565; svg { flex-shrink: 0; margin-top: 3px; } }
+  .ta-tabs { display: flex; gap: 12px; border-bottom: 1px solid $border; margin-bottom: 24px; padding-bottom: 12px; flex-wrap: wrap; button { border: 0; } [aria-current="page"] { background: $navy; color: white; } }
+  .ta-info { display: flex; align-items: start; gap: 12px; padding: 18px 20px; background: $bg-secondary; border-radius: 12px; margin-bottom: 22px; color: $navy-mid; svg { flex-shrink: 0; margin-top: 3px; } }
   .ta-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; > input:first-child { flex: 1; min-width: 170px; } h2 { flex: 1; } }
   .ta-bookings { display: grid; gap: 12px; }
-  .ta-booking { border: 1px solid #dfe3e6; border-radius: 14px; overflow: hidden; background: white; }
-  .ta-booking-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap: 20px; align-items: center; padding: 20px; > div { min-width: 0; } strong, small, a { display: block; overflow-wrap: anywhere; } small { color: #526170; font-size: 13px; margin-top: 5px; } a { width: fit-content; color: #526170; font-size: 14px; } }
-  .ta-badge { background: #f1f3f4; padding: 5px 9px; border-radius: 7px; font-size: 13px; display: inline-block; }
-  .ta-badge-reserved { background: #fff0e7; color: #93401e; } .ta-badge-confirmed { background: #e7f3ed; color: #21644b; } .ta-badge-cancelled { background: #f8eaea; color: #9c3434; }
-  .ta-editor { padding: 24px; border-top: 1px solid #dfe3e6; background: #fafbfc; label { display: flex; flex-direction: column; gap: 7px; } .ta-actions { margin-top: 16px; } }
+  .ta-booking { border: 1px solid $border; border-radius: 14px; overflow: hidden; background: white; }
+  .ta-booking-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap: 20px; align-items: center; padding: 20px; > div { min-width: 0; } strong, small, a { display: block; overflow-wrap: anywhere; } small { color: $muted; font-size: 13px; margin-top: 5px; } a { width: fit-content; color: $muted; font-size: 14px; } }
+  .ta-badge { background: $bg-secondary; padding: 5px 9px; border-radius: 7px; font-size: 13px; display: inline-block; }
+  .ta-badge-reserved { background: $coral-pale; color: $coral-dark; } .ta-badge-confirmed { background: #e7f3f1; color: $secondary; } .ta-badge-cancelled { background: #f8eaea; color: #9c3434; }
+  .ta-editor { padding: 24px; border-top: 1px solid $border; background: $bg; label { display: flex; flex-direction: column; gap: 7px; } .ta-actions { margin-top: 16px; } }
   .ta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
   .ta-editor .ta-checkbox { display: flex; flex-direction: row; align-items: center; gap: 12px; margin: 16px 0; input { min-height: 20px; width: 20px; height: 20px; flex-shrink: 0; } }
-  .ta-slot-wrap { border-bottom: 1px solid #e6e9eb; }
-  .ta-primary { background: #c44921; color: white; border-color: #c44921; }
-  .ta-hint { color: #526170; font-size: 13px; margin: 12px 0; }
+  .ta-slot-wrap { border-bottom: 1px solid $border; }
+  .ta-primary { background: $coral; color: white; border-color: $coral; font-weight: 600; &:hover:not(:disabled) { background: $coral-dark; border-color: $coral-dark; } }
+  .ta-hint { color: $muted; font-size: 13px; margin: 12px 0; }
   .ta-error, .ta-warning, .ta-notice { padding: 14px 18px; border-radius: 10px; margin-bottom: 18px; }
-  .ta-error, .ta-warning { background: #fff0ed; color: #9d241b; } .ta-notice { background: #e7f3ed; color: #21644b; }
-  .ta-empty { padding: 48px 20px; text-align: center; color: #526170; border: 1px dashed #cdd5db; border-radius: 12px; }
+  .ta-error, .ta-warning { background: #fff0ed; color: #9d241b; } .ta-notice { background: #e7f3f1; color: $secondary; }
+  .ta-empty { padding: 48px 20px; text-align: center; color: $muted; border: 1px dashed #d9cfc2; border-radius: 12px; }
   .ta-pagination { display: flex; justify-content: space-between; gap: 16px; margin: 24px 0; > div { display: flex; gap: 12px; } }
   .ta-availability-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; margin-bottom: 22px; }
-  .ta-panel { border: 1px solid #dfe3e6; border-radius: 14px; padding: 24px; background: white; > p { color: #526170; margin: 12px 0 20px; } label { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; } .ta-grid label { margin-bottom: 0; } }
+  .ta-panel { border: 1px solid $border; border-radius: 14px; padding: 24px; background: white; > p { color: $muted; margin: 12px 0 20px; } label { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; } .ta-grid label { margin-bottom: 0; } }
   .ta-stack { display: grid; gap: 22px; }
-  .ta-slot { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding: 18px 0; border-top: 1px solid #e6e9eb; > div:first-child { flex: 1; min-width: 200px; } small { display: block; font-size: 13px; color: #526170; } }
+  .ta-slot { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding: 18px 0; border-top: 1px solid $border; > div:first-child { flex: 1; min-width: 200px; } small { display: block; font-size: 13px; color: $muted; } }
+  .ta-invites { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 22px; align-items: start; .ta-panel > form > .ta-grid { margin-bottom: 16px; } }
+  .ta-invite-ready { margin-top: 22px; padding: 18px; border-radius: 12px; background: $coral-pale; border: 1px solid rgba($coral, .22); strong { display: flex; align-items: center; gap: 8px; color: $navy; svg { color: $coral; } } input { width: 100%; margin: 12px 0; font-size: 13px; } .ta-actions a { display: inline-flex; align-items: center; gap: 7px; background: white; } .ta-hint { margin: 12px 0 0; } }
+  .ta-invite-list { display: grid; }
+  .ta-invite { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto; gap: 16px; align-items: center; padding: 16px 0; border-top: 1px solid $border; > div { min-width: 0; } strong, a, small { display: block; overflow-wrap: anywhere; } > div:first-child a { color: $muted; font-size: 14px; width: fit-content; } small { color: $muted; font-size: 13px; margin-top: 5px; } .ta-actions { justify-content: flex-end; button, a { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; min-height: 40px; font-size: 14px; } } }
+  .ta-invite-waiting { background: $coral-pale; color: $coral-dark; } .ta-invite-booked { background: #e7f3f1; color: $secondary; } .ta-invite-expired, .ta-invite-off { background: $bg-secondary; color: $muted; }
+  @media(max-width: 1100px) { .ta-invites { grid-template-columns: 1fr; } .ta-invite { grid-template-columns: 1fr 1fr; .ta-actions { grid-column: 1 / -1; justify-content: flex-start; } } }
   @media(max-width: 850px) { .ta-availability-grid { grid-template-columns: 1fr; } .ta-booking-row { grid-template-columns: 1fr 1fr; } }
-  @media(max-width: 480px) { padding: 24px 14px 50px; .ta-grid { grid-template-columns: 1fr; } .ta-panel { padding: 18px; } .ta-booking-row { padding: 16px; gap: 16px; } .ta-toolbar > * { width: 100%; } h1 { font-size: 29px; } }
+  @media(max-width: 480px) { padding: 24px 14px 50px; .ta-invite { grid-template-columns: 1fr; } .ta-grid { grid-template-columns: 1fr; } .ta-panel { padding: 18px; } .ta-booking-row { padding: 16px; gap: 16px; } .ta-toolbar > * { width: 100%; } h1 { font-size: 29px; } }
 }
