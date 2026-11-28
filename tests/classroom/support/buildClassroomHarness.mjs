@@ -44,6 +44,7 @@ export function buildClassroomHarness({ realLobby = false, liveVideo = false, re
         "useClassroomScreenStream.js",
         "ClassroomScreenStage.jsx",
         "ClassroomParticipantsModal.jsx",
+        "ClassroomWaitingRoom.jsx",
       ].includes(path.basename(file))
     ) {
       source = "module.exports = {__esModule:true, default: () => null};";
@@ -68,7 +69,7 @@ export function buildClassroomHarness({ realLobby = false, liveVideo = false, re
       source = "module.exports={__esModule:true,default:()=>({user:{id:window.testUserId||'test-user'}})};";
     }
     if (relativePath === "lib/api.js") {
-      source = `module.exports={__esModule:true,default:{get:async(url)=>{if(url.endsWith('/lobby/status')) {window.lobbyStatusChecks=(window.lobbyStatusChecks||0)+1;return {data:{lobbyEnabled:true,status:window.testLobbyStatus||'waiting'}};}if(url.endsWith('/screen-share/ice')) return {data:{iceServers:[]}};if(url.endsWith('/materials')) await new Promise(resolve=>setTimeout(resolve,20));return {data:url.endsWith('classroom-state') ? {state:window.testState.state} : {materials:window.testState.materials||[]}}},patch:async(url,body)=>({data:{state:body.state}}),put:async(url,body)=>{window.testState.saved.push(body);return {data:{}}},post:async()=>({data:{}})}};`;
+      source = `module.exports={__esModule:true,default:{get:async(url)=>{if(url.endsWith('/lobby/status')) {window.lobbyStatusChecks=(window.lobbyStatusChecks||0)+1;if(window.testLobbyStatusFails) throw new Error('Network Error');return {data:{lobbyEnabled:true,status:window.testLobbyStatus||'waiting'}};}if(url.endsWith('/screen-share/ice')) return {data:{iceServers:[]}};if(url.endsWith('/materials')) await new Promise(resolve=>setTimeout(resolve,20));return {data:url.endsWith('classroom-state') ? {state:window.testState.state} : {materials:window.testState.materials||[]}}},patch:async(url,body)=>({data:{state:body.state}}),put:async(url,body)=>{window.testState.saved.push(body);return {data:{}}},post:async()=>({data:{}})}};`;
     }
     if (relativePath === "app/resources/prep/useClassroomChannel.js") {
       source = `const React=require('react');exports.useClassroomChannel = ()=>React.useMemo(()=>({ready:true,status:'ready',send:message=>{window.testState.messages.push(message);window.onClassroomSend?.(message);},subscribe:fn=>{window.channelSubscribers.add(fn);return ()=>window.channelSubscribers.delete(fn)}}),[]);`;

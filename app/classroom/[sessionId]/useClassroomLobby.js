@@ -32,6 +32,10 @@ export function useClassroomLobby({
   const [lobbyEnabled, setLobbyEnabled] = useState(null); // null = unknown
   const [lobbyStatus, setLobbyStatus] = useState("checking"); // "checking" | "admitted" | "waiting" | "denied" | "not_joined" | "error"
   const [joinAttempt, setJoinAttempt] = useState(0);
+  // Waiting learners are kept out of the live classroom connection until
+  // admitted, so "connected" in the waiting room means the admission checks
+  // are reaching the server, not that the live connection is joined.
+  const [waitingReachable, setWaitingReachable] = useState(true);
 
   // Teacher state
   const [waitingLearners, setWaitingLearners] = useState([]);
@@ -153,6 +157,7 @@ export function useClassroomLobby({
     if (isTeacher || !["waiting", "error"].includes(lobbyStatus)) return;
 
     let requestInFlight = false;
+    let failures = 0;
     const refreshStatus = async () => {
       if (requestInFlight) return;
       requestInFlight = true;
@@ -160,15 +165,21 @@ export function useClassroomLobby({
         const { data } = await api.get(`/sessions/${sessionId}/lobby/status`);
         if (!mountedRef.current) return;
 
+        failures = 0;
+        setWaitingReachable(true);
         if (data.lobbyEnabled === false) setLobbyEnabled(false);
         else setLobbyEnabled(true);
         setLobbyStatus(data.status || "not_joined");
       } catch {
-        // Ignore polling errors
+        // One slow answer is normal; two in a row means we can't reach it.
+        failures += 1;
+        if (failures >= 2 && mountedRef.current) setWaitingReachable(false);
       } finally {
         requestInFlight = false;
       }
     };
+    const handleOffline = () => setWaitingReachable(false);
+    window.addEventListener("offline", handleOffline);
 
     // Admission should not wait for the first timer tick. Browsers can also
     // throttle intervals while backgrounded, so refresh when the learner
@@ -186,6 +197,7 @@ export function useClassroomLobby({
       clearInterval(interval);
       window.removeEventListener("focus", refreshStatus);
       window.removeEventListener("online", refreshStatus);
+      window.removeEventListener("offline", handleOffline);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isTeacher, lobbyStatus, sessionId]);
@@ -395,6 +407,7 @@ export function useClassroomLobby({
     isRemoved: !isTeacher && lobbyStatus === "removed",
     isError: !isTeacher && lobbyStatus === "error",
     isChecking: !isTeacher && lobbyStatus === "checking",
+    isWaitingConnected: waitingReachable,
     isEnded: !isTeacher && lobbyStatus === "ended",
     isAdmitted:
       lobbyStatus === "admitted" ||

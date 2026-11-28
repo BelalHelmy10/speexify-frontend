@@ -24,6 +24,40 @@ test("learner admission attaches the call after the waiting room", async ({ page
   expect(errors).toEqual([]);
 });
 
+test("the waiting room shows connected while admission checks reach the server", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.route("http://classroom.test/**", (route) => route.fulfill({ contentType: "text/html", body: '<!doctype html><html class="classroom-active"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body class="classroom-active"><div id="root"></div></body></html>' }));
+  await page.goto("http://classroom.test/?role=learner");
+  await page.addStyleTag({ content: admissionHarness.css });
+  await page.addScriptTag({ content: admissionHarness.script });
+  const indicator = page.locator(".cr-waiting-room__connection");
+
+  // Waiting learners stay out of the live connection; that is not a fault.
+  await expect.poll(() => page.evaluate(() => window.lobbyStatusChecks || 0)).toBeGreaterThan(1);
+  await expect(indicator).toHaveText("Connected. Listening for approval");
+  await expect(indicator).toHaveClass(/--ok/);
+
+  // Going offline, or checks failing, does show reconnecting...
+  await page.evaluate(() => {
+    window.testLobbyStatusFails = true;
+    window.dispatchEvent(new Event("offline"));
+  });
+  await expect(indicator).toHaveText("Reconnecting…");
+
+  // ...and the next answer from the server clears it.
+  await page.evaluate(() => {
+    window.testLobbyStatusFails = false;
+    window.dispatchEvent(new Event("online"));
+  });
+  await expect(indicator).toHaveText("Connected. Listening for approval");
+
+  // Two failed checks in a row also count as reconnecting.
+  await page.evaluate(() => { window.testLobbyStatusFails = true; });
+  await expect(indicator).toHaveText("Reconnecting…", { timeout: 12_000 });
+  expect(errors).toEqual([]);
+});
+
 async function mountClassroom(page, {
   role = "teacher",
   media = "granted",

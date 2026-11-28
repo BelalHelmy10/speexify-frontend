@@ -2033,7 +2033,7 @@ export default function ClassroomShell({
                 ? "error"
                 : "waiting"
         }
-        wsConnected={classroomChannel?.ready || false}
+        wsConnected={lobby.isWaitingConnected}
         onRetry={lobby.retryJoin}
         onLeave={() => {
           if (typeof window !== "undefined") {
