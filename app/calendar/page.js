@@ -33,18 +33,22 @@ import { shiftDateToTimezone } from "@/utils/date";
 import { getIntlLocale, formatNumber } from "@/utils/locale";
 import { usePathname, useRouter } from "next/navigation";
 import { getDictionary, t } from "@/app/i18n";
+import { getEventTone, getEventToneLabelKey } from "@/lib/calendarSessionStatus.mjs";
 import { useToast } from "@/components/ToastProvider";
 import {
   Ban,
+  CalendarCheck,
   CalendarClock,
   CalendarDays,
   CalendarPlus,
   ChevronLeft,
   ChevronRight,
+  CircleCheck,
   Clock3,
   Copy,
   ExternalLink,
   Headphones,
+  PencilLine,
   PanelRightOpen,
   PanelRightClose,
   PanelLeftClose,
@@ -52,6 +56,8 @@ import {
   Plus,
   SlidersHorizontal,
   UserRound,
+  Users,
+  Video,
   X,
 } from "lucide-react";
 
@@ -238,7 +244,7 @@ function availabilitySlotChangedTimeOrNote(before, after) {
   );
 }
 
-const toRbcEvents = (arr = [], timezone, locale = "en", showUnpaidTraining = false) =>
+const toRbcEvents = (arr = [], timezone, locale = "en", showUnpaidTraining = false, viewerId = null) =>
   arr.map((s) => {
     const type = String(s.type || "").toUpperCase();
     const isGroup = type === "GROUP";
@@ -257,6 +263,11 @@ const toRbcEvents = (arr = [], timezone, locale = "en", showUnpaidTraining = fal
       start,
       end,
       status: s.status,
+      // Real end time (not the display-shifted one) decides "has it happened".
+      endsAtMs: new Date(s.endAt || s.startAt).getTime(),
+      // Older backends only send the feedback relation.
+      hasFeedback: Boolean(s.hasFeedback ?? s.teacherFeedback ?? s.feedback),
+      viewerTeaches: viewerId != null && String(s.teacher?.id ?? "") === String(viewerId),
       meetingUrl: s.meetingUrl || "",
       joinUrl: s.joinUrl || "",
       type,
@@ -397,16 +408,6 @@ const useCountdown = (startAt, endAt, labels = {}) => {
   return ended;
 };
 
-const canJoin = (startAt, endAt, windowMins = 15) => {
-  const now = new Date();
-  const start = new Date(startAt);
-  const end = endAt
-    ? new Date(endAt)
-    : new Date(start.getTime() + 60 * 60 * 1000);
-  const early = new Date(start.getTime() - windowMins * 60 * 1000);
-  return now >= early && now <= end;
-};
-
 const canOpenClassroom = (startAt, status, windowMins = 15) => {
   if (!startAt || String(status || "").toLowerCase() === "canceled") return false;
   const start = new Date(startAt);
@@ -477,11 +478,16 @@ function buildDayLayout(events, dayDate) {
   return laidOut;
 }
 
-function getEventTone(event) {
-  if (event.status === "canceled") return "canceled";
-  if (event.status === "live" || canJoin(event.start, event.end)) return "live";
-  if (event.isGroup) return "group";
-  return "scheduled";
+const EVENT_TONE_ICONS = {
+  scheduled: CalendarCheck,
+  live: Video,
+  "needs-feedback": PencilLine,
+  done: CircleCheck,
+  canceled: X,
+};
+
+function getEventToneLabel(event, tone, dict) {
+  return t(dict, getEventToneLabelKey(event, tone));
 }
 
 function getViewRangeLabel(currentDate, view, locale) {
@@ -510,10 +516,9 @@ function getSessionCoachName(event) {
 }
 
 function getSessionTypeLabel(event, tone, dict) {
-  if (event.isTraining) return event.trainingLabel;
-  if (tone === "live") return t(dict, "event_live");
-  if (tone === "canceled") return t(dict, "event_canceled");
-  return event.isGroup ? t(dict, "session_group") : t(dict, "event_scheduled");
+  const status = getEventToneLabel(event, tone, dict);
+  if (event.isTraining) return `${event.trainingLabel} · ${status}`;
+  return event.isGroup ? `${t(dict, "session_group")} · ${status}` : status;
 }
 
 function getSessionDetailsHref(prefix, event) {
@@ -835,6 +840,8 @@ export default function CalendarPage() {
 
   const [filters, setFilters] = useState({
     scheduled: true,
+    needsFeedback: true,
+    done: true,
     canceled: true,
     group: true,
     oneOnOne: true,
@@ -853,6 +860,8 @@ export default function CalendarPage() {
 
   const isImpersonating = !!user?._impersonating;
   const showUnpaidTraining = user?.role === "teacher" || (user?.role === "admin" && !isImpersonating);
+  // Teachers (and admins) write feedback and keep availability; learners wait for both.
+  const viewerTeaches = user?.role === "teacher" || user?.role === "admin";
 
   const fetchAvailability = useCallback(async () => {
     try {
@@ -886,7 +895,7 @@ export default function CalendarPage() {
     (async () => {
       try {
         const sessions = await fetchEvents(start.toISOString(), end.toISOString());
-        setEvents(toRbcEvents(sessions, user?.timezone, locale, showUnpaidTraining));
+        setEvents(toRbcEvents(sessions, user?.timezone, locale, showUnpaidTraining, user?.id));
       } catch (e) {
         setError(e?.response?.data?.error || t(dict, "error_failed"));
       } finally {
@@ -952,9 +961,13 @@ export default function CalendarPage() {
 
   const isSessionVisible = useCallback(
     (event) => {
-      const isCanceled = event.status === "canceled";
-      if (isCanceled && !filters.canceled) return false;
-      if (!isCanceled && !filters.scheduled) return false;
+      const tone = getEventTone(event);
+      const statusFilter = {
+        canceled: "canceled",
+        done: "done",
+        "needs-feedback": "needsFeedback",
+      }[tone] || "scheduled";
+      if (!filters[statusFilter]) return false;
       if (event.isGroup && !filters.group) return false;
       if (event.isTraining && !filters.training) return false;
       if (!event.isGroup && !event.isTraining && !filters.oneOnOne) return false;
@@ -1111,15 +1124,6 @@ export default function CalendarPage() {
     return (minutes / 60).toFixed(1);
   }, [availabilitySlots]);
 
-  const eventToneLabels = useMemo(
-    () => ({
-      scheduled: t(dict, "event_scheduled"),
-      group: t(dict, "event_group"),
-      live: t(dict, "event_live"),
-      canceled: t(dict, "event_canceled"),
-    }),
-    [dict]
-  );
 
   const updateAvailabilityDraft = useCallback((updater) => {
     setAvailabilitySlots((prev) => {
@@ -1707,7 +1711,7 @@ export default function CalendarPage() {
 
     const { start, end } = getVisibleRange(currentDate, view);
     const sessions = await fetchEvents(start.toISOString(), end.toISOString());
-    setEvents(toRbcEvents(sessions, user?.timezone, locale, showUnpaidTraining));
+    setEvents(toRbcEvents(sessions, user?.timezone, locale, showUnpaidTraining, user?.id));
   }, [currentDate, fetchEvents, user, view, locale, showUnpaidTraining]);
 
   const getEventAnchor = useCallback((target) => {
@@ -1925,13 +1929,30 @@ export default function CalendarPage() {
         : event.title || t(dict, "session_default_title");
       const startLabel = format(event.start, "h:mm a");
       const endLabel = format(event.end, "h:mm a");
-      const meta = event.isAvailability
-        ? `${startLabel} - ${endLabel}`
-        : `${startLabel}${event.isGroup ? ` · ${t(dict, "session_group")}` : ""}`;
+      if (event.isAvailability) {
+        return (
+          <div className="calx-rbc-pill">
+            <Clock3 className="calx-rbc-pill__icon" size={13} strokeWidth={2.4} aria-hidden="true" />
+            <span className="calx-rbc-pill__copy">
+              <span className="calx-rbc-pill__title">{title}</span>
+              <span className="calx-rbc-pill__meta">{`${startLabel} - ${endLabel}`}</span>
+            </span>
+          </div>
+        );
+      }
+
+      // The icon says where the session stands; a group gets the people icon
+      // while it's still ahead, so its kind stays visible.
+      const tone = getEventTone(event);
+      const StatusIcon = event.isGroup && tone === "scheduled" ? Users : EVENT_TONE_ICONS[tone];
+      const status = getEventToneLabel(event, tone, dict);
+      const meta = tone === "scheduled"
+        ? `${startLabel}${event.isGroup ? ` · ${t(dict, "session_group")}` : ""}`
+        : `${startLabel} · ${status}`;
 
       return (
-        <div className="calx-rbc-pill">
-          <span className="calx-rbc-pill__accent" />
+        <div className="calx-rbc-pill" title={`${title} · ${status}`}>
+          <StatusIcon className="calx-rbc-pill__icon" size={13} strokeWidth={2.4} aria-hidden="true" />
           <span className="calx-rbc-pill__copy">
             <span className="calx-rbc-pill__title">{title}</span>
             <span className="calx-rbc-pill__meta">{meta}</span>
@@ -2127,7 +2148,7 @@ export default function CalendarPage() {
                                 {ev.title || t(dict, "session_default_title")}
                               </span>
                               <span className={`calx-upcoming-status is-${tone}`}>
-                                {eventToneLabels[tone] || t(dict, "session_default_title")}
+                                {getEventToneLabel(ev, tone, dict)}
                               </span>
                             </span>
                             <span className="calx-upcoming-time">
@@ -2140,6 +2161,33 @@ export default function CalendarPage() {
                     })
                   )}
                 </div>
+              </section>
+
+              <section className="calx-sidebar-section" aria-labelledby="calx-legend-title">
+                <div id="calx-legend-title" className="calx-sidebar-label">{t(dict, "legend_title")}</div>
+                <ul className="calx-legend">
+                  {[
+                    ["scheduled", t(dict, "legend_scheduled")],
+                    ["live", t(dict, "legend_live")],
+                    ["needs-feedback", t(dict, viewerTeaches ? "legend_needs_feedback" : "legend_feedback_coming")],
+                    ["done", t(dict, "legend_feedback_written")],
+                    ["canceled", t(dict, "legend_canceled")],
+                  ].map(([tone, label]) => {
+                    const Icon = EVENT_TONE_ICONS[tone];
+                    return (
+                      <li key={tone} className={`calx-legend__item is-${tone}`}>
+                        <span className="calx-legend__swatch"><Icon size={11} strokeWidth={2.6} aria-hidden="true" /></span>
+                        <span>{label}</span>
+                      </li>
+                    );
+                  })}
+                  {viewerTeaches && (
+                    <li className="calx-legend__item is-availability">
+                      <span className="calx-legend__swatch"><Clock3 size={11} strokeWidth={2.6} aria-hidden="true" /></span>
+                      <span>{t(dict, "legend_available")}</span>
+                    </li>
+                  )}
+                </ul>
               </section>
 
               <div className="calx-sidebar-note">
@@ -2255,6 +2303,8 @@ export default function CalendarPage() {
                   <div className="calx-filter-menu">
                     {[
                       ["scheduled", t(dict, "filter_scheduled")],
+                      ["needsFeedback", t(dict, "filter_needs_feedback")],
+                      ["done", t(dict, "filter_feedback_written")],
                       ["canceled", t(dict, "filter_canceled")],
                       ["group", t(dict, "filter_group")],
                       ["oneOnOne", t(dict, "filter_oneOnOne")],
@@ -2563,10 +2613,13 @@ export default function CalendarPage() {
                           const widthPct = 100 / (ev.colCount || 1);
                           const leftPct = widthPct * (ev.col || 0);
                           const tone = getEventTone(ev);
+                          const StatusIcon = ev.isGroup && tone === "scheduled" ? Users : EVENT_TONE_ICONS[tone];
+                          const statusLabel = getEventToneLabel(ev, tone, dict);
 
                           return (
                             <button
                               key={`sess-${ev.id}-${ev.start.toISOString()}`}
+                              title={`${ev.title || t(dict, "session_default_title")} · ${statusLabel}`}
                               className={`calx-ev-pill is-${tone} ${calendarMode === "availability" ? "is-dimmed" : ""
                                 }`}
                               style={{
@@ -2580,7 +2633,7 @@ export default function CalendarPage() {
                                 openSessionPopover(ev, e.currentTarget);
                               }}
                             >
-                              <span className="calx-ev-dot" />
+                              <StatusIcon className="calx-ev-icon" size={13} strokeWidth={2.4} aria-hidden="true" />
                               <span className="calx-ev-copy">
                                 <span className="calx-ev-title">
                                   {ev.title || t(dict, "session_default_title")}
@@ -2589,6 +2642,7 @@ export default function CalendarPage() {
                                   {format(ev.start, "h:mm a")}
                                   {ev.isTraining ? ` · ${ev.trainingLabel}` : ev.isGroup ? ` · ${t(dict, "session_group")}` : ""}
                                   {ev.isGroup && ev.seatsLabel ? ` · ${ev.seatsLabel}` : ""}
+                                  {tone !== "scheduled" ? ` · ${statusLabel}` : ""}
                                 </span>
                               </span>
                             </button>

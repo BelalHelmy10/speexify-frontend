@@ -1,4 +1,20 @@
+@use "sass:map";
 @use "variables" as *;
+
+// Session status colors: one place, so every chip, dot and label agrees.
+// Color always means where a session stands; its kind (group, one-to-one)
+// is shown with an icon instead. Text on each fill passes 4.5:1 contrast.
+$calx-status-colors: (
+  scheduled: (fill: #ffe4d9, border: #f25c2e, text: #9a3412, dot: #f25c2e),
+  live: (fill: #c2410c, border: #c2410c, text: #ffffff, dot: #c2410c),
+  needs-feedback: (fill: #fef3c7, border: #d97706, text: #92400e, dot: #d97706),
+  done: (fill: #dcfce7, border: #16a34a, text: #166534, dot: #16a34a),
+  canceled: (fill: #f1f5f9, border: #94a3b8, text: #475569, dot: #94a3b8),
+);
+
+@function calx-status($status, $key) {
+  @return map.get(map.get($calx-status-colors, $status), $key);
+}
 
 .calx-state {
   min-height: 60vh;
@@ -545,21 +561,56 @@
   margin-top: 5px;
   flex-shrink: 0;
 
-  &.is-scheduled {
-    background: $calendar-primary;
+  @each $status, $colors in $calx-status-colors {
+    &.is-#{$status} {
+      background: map.get($colors, dot);
+    }
+  }
+}
+
+.calx-legend {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calx-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-secondary;
+
+  @each $status, $colors in $calx-status-colors {
+    &.is-#{$status} .calx-legend__swatch {
+      background: map.get($colors, fill);
+      border: 1px solid map.get($colors, border);
+      color: map.get($colors, text);
+    }
   }
 
-  &.is-live {
-    background: $color-secondary-dark;
+  &.is-canceled .calx-legend__swatch {
+    border-style: dashed;
   }
 
-  &.is-group {
-    background: $color-tertiary-dark;
+  &.is-availability .calx-legend__swatch {
+    background: #eff6ff;
+    border: 1px dashed #60a5fa;
+    color: #1d4ed8;
   }
+}
 
-  &.is-canceled {
-    background: $text-muted;
-  }
+.calx-legend__swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 16px;
+  border-radius: 5px;
+  flex-shrink: 0;
 }
 
 .calx-upcoming-copy {
@@ -604,24 +655,11 @@
   text-transform: uppercase;
   white-space: nowrap;
 
-  &.is-scheduled {
-    background: rgba($calendar-primary, 0.11);
-    color: $calendar-primary;
-  }
-
-  &.is-live {
-    background: rgba($success, 0.14);
-    color: color-mix(in srgb, $success 72%, $color-black);
-  }
-
-  &.is-group {
-    background: rgba($color-tertiary-dark, 0.12);
-    color: $color-tertiary-dark;
-  }
-
-  &.is-canceled {
-    background: rgba($navy, 0.08);
-    color: $text-secondary;
+  @each $status, $colors in $calx-status-colors {
+    &.is-#{$status} {
+      background: map.get($colors, fill);
+      color: map.get($colors, text);
+    }
   }
 }
 
@@ -1440,15 +1478,16 @@
 
 .calx-avail-block {
   position: absolute;
-  background: rgba($success, 0.12);
-  border: 1px solid rgba($success, 0.3);
+  // Open time, not a session: the same quiet blue outline as the main grid.
+  background: #eff6ff;
+  border: 1px dashed #60a5fa;
   border-radius: 6px;
   display: none;
   align-items: center;
   justify-content: center;
   font-size: 10px;
   font-weight: 700;
-  color: $color-secondary-dark;
+  color: #1d4ed8;
   z-index: 2;
   overflow: hidden;
   padding: 0 6px;
@@ -1472,7 +1511,7 @@
   }
 
   &:hover {
-    background: rgba($success, 0.2);
+    background: #dbeafe;
   }
 }
 
@@ -1540,29 +1579,20 @@
     opacity: 1;
   }
 
-  &.is-scheduled {
-    background: #ffe0d6;
-    border: 1px solid $calendar-primary;
-    color: #a83a18;
-  }
-
-  &.is-group {
-    background: #ffedbf;
-    border: 1px solid $color-tertiary-dark;
-    color: #855400;
+  @each $status, $colors in $calx-status-colors {
+    &.is-#{$status} {
+      background: map.get($colors, fill);
+      border: 1px solid map.get($colors, border);
+      color: map.get($colors, text);
+    }
   }
 
   &.is-live {
-    background: #c9f0dc;
-    border: 1px solid $success;
-    color: #0f5f42;
     animation: calx-live-pulse 2s ease-in-out infinite;
   }
 
   &.is-canceled {
-    background: #e2e8f0;
-    border: 1px solid #64748b;
-    color: $text-secondary;
+    border-style: dashed;
     text-decoration: line-through;
     opacity: 1;
   }
@@ -1579,13 +1609,10 @@
   }
 }
 
-.calx-ev-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
+.calx-ev-icon,
+.calx-rbc-pill__icon {
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .calx-ev-copy {
@@ -1883,36 +1910,25 @@
       box-shadow: 0 0 0 3px rgba($calendar-primary, 0.15);
     }
 
-    &.calx-rbc-event--scheduled {
-      background: #ffe0d6;
-      color: #a83a18;
-      border: 1px solid $calendar-primary;
-    }
-
-    &.calx-rbc-event--group {
-      background: #ffedbf;
-      color: #855400;
-      border: 1px solid $color-tertiary-dark;
-    }
-
-    &.calx-rbc-event--live {
-      background: #c9f0dc;
-      color: #0f5f42;
-      border: 1px solid $success;
+    @each $status, $colors in $calx-status-colors {
+      &.calx-rbc-event--#{$status} {
+        background: map.get($colors, fill);
+        color: map.get($colors, text);
+        border: 1px solid map.get($colors, border);
+      }
     }
 
     &.calx-rbc-event--canceled {
-      background: #e2e8f0;
-      color: $text-secondary;
-      border: 1px solid #64748b;
+      border-style: dashed;
       opacity: 1;
       text-decoration: line-through;
     }
 
+    // Open time to book, not a session: a quiet blue outline.
     &.calx-rbc-event--availability {
-      background: #c9f0dc;
-      color: $color-secondary-dark;
-      border: 1px solid $success;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px dashed #60a5fa;
 
       &.is-faded {
         opacity: 1;
@@ -1952,14 +1968,6 @@
     text-align: left;
   }
 
-  .calx-rbc-pill__accent {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-    flex-shrink: 0;
-    margin-top: 4px;
-  }
 
   .calx-rbc-pill__copy {
     min-width: 0;
@@ -2350,16 +2358,10 @@
   border-radius: 999px;
   background: $calendar-primary;
 
-  &.is-live {
-    background: $success;
-  }
-
-  &.is-group {
-    background: $color-tertiary-dark;
-  }
-
-  &.is-canceled {
-    background: $text-muted;
+  @each $status, $colors in $calx-status-colors {
+    &.is-#{$status} {
+      background: map.get($colors, dot);
+    }
   }
 }
 
@@ -2386,22 +2388,14 @@
   padding: 3px 8px;
   font-size: 11px;
   font-weight: 800;
-  background: rgba($calendar-primary, 0.11);
-  color: $calendar-primary;
+  background: calx-status(scheduled, fill);
+  color: calx-status(scheduled, text);
 
-  &.is-live {
-    background: rgba($success, 0.12);
-    color: $color-secondary-dark;
-  }
-
-  &.is-group {
-    background: rgba($color-tertiary-dark, 0.11);
-    color: $color-tertiary-dark;
-  }
-
-  &.is-canceled {
-    background: $surface;
-    color: $text-secondary;
+  @each $status, $colors in $calx-status-colors {
+    &.is-#{$status} {
+      background: map.get($colors, fill);
+      color: map.get($colors, text);
+    }
   }
 }
 
@@ -2993,10 +2987,9 @@
       font-size: 10px;
     }
 
-    .calx-rbc-pill__accent {
-      width: 5px;
-      height: 5px;
-      margin-top: 3px;
+    .calx-rbc-pill__icon {
+      width: 11px;
+      height: 11px;
     }
 
     .rbc-month-view .calx-rbc-pill__meta {
