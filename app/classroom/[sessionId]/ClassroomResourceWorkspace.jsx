@@ -9,6 +9,8 @@ export default function ClassroomResourceWorkspace({
   resources, selectedResourceId, onSelect, onClose, onOpenPicker,
   canManage = false, locale = "en", renderResource, emptyContent,
   suspended = false, scrollContainerRef,
+  // Learners in a live lesson see what's open but follow the teacher's choice.
+  canSelect = true, selectLockedLabel = "",
 }) {
   const id = useId();
   const tabRefs = useRef(new Map());
@@ -28,6 +30,7 @@ export default function ClassroomResourceWorkspace({
   }
 
   function handleKeyDown(event, index) {
+    if (!canSelect) return;
     if (event.key === "Delete" && canManage) {
       event.preventDefault();
       event.stopPropagation();
@@ -62,7 +65,7 @@ export default function ClassroomResourceWorkspace({
         {!selectedResourceId && !suspended && emptyContent}
       </div>
       {resources.length > 0 && (
-        <div className="cr-resource-tabs">
+        <div className={`cr-resource-tabs${canSelect ? "" : " cr-resource-tabs--locked"}`}>
           <div className="cr-resource-tabs__list" role="tablist" aria-label={ar ? "الموارد المفتوحة" : "Open resources"}>
             {resources.map((resource, index) => {
               const active = resource._id === selectedResourceId;
@@ -71,9 +74,12 @@ export default function ClassroomResourceWorkspace({
                 <div className={`cr-resource-tabs__item${active ? " cr-resource-tabs__item--active" : ""}`} key={resource._id}>
                   <button type="button" role="tab" id={`${id}-tab-${index}`}
                     aria-controls={`${id}-panel-${index}`} aria-selected={active}
-                    tabIndex={active ? 0 : -1} title={title}
+                    tabIndex={active ? 0 : -1}
+                    title={canSelect || active ? title : selectLockedLabel || title}
+                    aria-disabled={canSelect || active ? undefined : true}
                     ref={(node) => { if (node) tabRefs.current.set(resource._id, node); else tabRefs.current.delete(resource._id); }}
-                    onClick={() => onSelect(resource._id)} onKeyDown={(event) => handleKeyDown(event, index)}>
+                    onClick={() => { if (canSelect) onSelect(resource._id); }}
+                    onKeyDown={(event) => handleKeyDown(event, index)}>
                     <BookOpen size={13} aria-hidden="true" /><span>{title}</span>
                   </button>
                   {canManage && <button type="button" className="cr-resource-tabs__close"

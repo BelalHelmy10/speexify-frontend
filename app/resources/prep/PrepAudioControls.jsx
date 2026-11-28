@@ -25,6 +25,9 @@ export default function PrepAudioControls({
   setIsAudioPlaying,
   audioRef,
   isTeacher,
+  // Live classroom learners hear the teacher's playback but can't start,
+  // stop, restart or switch it (that only changed their own screen).
+  canControlAudio = true,
   channelReady,
   sendOnChannel,
   sendAudioState,
@@ -164,7 +167,7 @@ export default function PrepAudioControls({
 
   const handleRestart = () => {
     const el = audioRef.current;
-    if (!el) return;
+    if (!el || !canControlAudio) return;
 
     el.currentTime = 0;
     setCurrentTime(0);
@@ -193,7 +196,10 @@ export default function PrepAudioControls({
         <select
           className="prep-annotate-toolbar__audio-select"
           value={safeTrackIndex}
+          disabled={!canControlAudio}
+          title={canControlAudio ? undefined : ct("cr_audio_teacher_controls")}
           onChange={(e) => {
+            if (!canControlAudio) return;
             const nextIndex = Number(e.target.value) || 0;
 
             setCurrentTrackIndex(nextIndex);
@@ -229,9 +235,10 @@ export default function PrepAudioControls({
         <button
           type="button"
           className="prep-audio-player__play"
+          disabled={!canControlAudio}
           onClick={() => {
             const el = audioRef.current;
-            if (!el) return;
+            if (!el || !canControlAudio) return;
 
             if (isAudioPlaying) {
               el.pause();
@@ -256,7 +263,7 @@ export default function PrepAudioControls({
             }
           }}
           aria-label={isAudioPlaying ? ct("cr_audio_pause") : hasEnded ? ct("cr_audio_replay") : ct("cr_audio_play")}
-          title={isAudioPlaying ? ct("cr_audio_pause") : hasEnded ? ct("cr_audio_replay") : ct("cr_audio_play")}
+          title={!canControlAudio ? ct("cr_audio_teacher_controls") : isAudioPlaying ? ct("cr_audio_pause") : hasEnded ? ct("cr_audio_replay") : ct("cr_audio_play")}
         >
           {isAudioPlaying ? <Pause size={16} /> : <Play size={16} />}
         </button>
@@ -295,8 +302,9 @@ export default function PrepAudioControls({
           type="button"
           className="prep-audio-player__restart"
           onClick={handleRestart}
+          disabled={!canControlAudio}
           aria-label={ct("cr_audio_restart")}
-          title={ct("cr_audio_restart")}
+          title={canControlAudio ? ct("cr_audio_restart") : ct("cr_audio_teacher_controls")}
         >
           <RotateCcw size={15} />
         </button>

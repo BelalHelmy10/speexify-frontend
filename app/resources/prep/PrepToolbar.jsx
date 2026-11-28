@@ -32,6 +32,7 @@ export default function PrepToolbar({
   setIsAudioPlaying,
   audioRef,
   isTeacher,
+  canControlAudio = true,
   sendOnChannel,
   sendAudioState,
   isAudioPlaying,
@@ -132,6 +133,7 @@ export default function PrepToolbar({
         setIsAudioPlaying={setIsAudioPlaying}
         audioRef={audioRef}
         isTeacher={isTeacher}
+        canControlAudio={canControlAudio}
         channelReady={channelReady}
         sendOnChannel={sendOnChannel}
         sendAudioState={sendAudioState}

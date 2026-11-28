@@ -427,5 +427,7 @@
   "cr_stage_connecting": "Connecting to the shared screen…",
   "cr_stage_failed": "The shared screen couldn't reach you on this network.",
   "cr_stage_sound": "Turn on sound",
-  "cr_stage_start_failed": "Screen sharing couldn't start. Try again."
+  "cr_stage_start_failed": "Screen sharing couldn't start. Try again.",
+  "cr_audio_teacher_controls": "Your teacher controls the audio",
+  "cr_teacher_picks_material": "Your teacher chooses the material"
 }

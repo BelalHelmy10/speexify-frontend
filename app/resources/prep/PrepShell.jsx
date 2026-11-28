@@ -141,6 +141,8 @@ function PrepShellContent({
   isScreenShareActive = false,
   screenShareStream = null,
   isTeacher = false,
+  // Live classroom learners: the teacher chooses pages and plays the audio.
+  lockNavigation = false,
   sessionId = null,
   locale = "en",
   initialAudioState = null,
@@ -2709,6 +2711,7 @@ function PrepShellContent({
                 setIsAudioPlaying={setIsAudioPlaying}
                 audioRef={audioRef}
                 isTeacher={isTeacher}
+                canControlAudio={!lockNavigation}
                 sendOnChannel={sendOnChannel}
                 sendAudioState={sendAudioState}
                 isAudioPlaying={isAudioPlaying}
@@ -2768,6 +2771,7 @@ function PrepShellContent({
                   viewerUrl={viewerUrl}
                   resourceTitle={resource.title}
                   viewer={viewer}
+                  canNavigatePages={!lockNavigation}
                 />
               </div>
             </>

@@ -219,5 +219,6 @@
   "resources_pdf_sidebar_empty": "No pages to show.",
   "resources_pdf_page_label": "Page {current} of {total}",
   "resources_pdf_page_short": "Page",
-  "resources_pdf_fit_to_page": "Fit to page"
+  "resources_pdf_fit_to_page": "Fit to page",
+  "resources_pdf_teacher_turns_pages": "Your teacher turns the pages"
 }

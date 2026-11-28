@@ -660,6 +660,19 @@
     color: $cr-text-muted;
   }
 
+  // Learners in a live lesson: the teacher runs the audio.
+  &__play:disabled,
+  &__restart:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    transform: none;
+
+    &:hover {
+      color: inherit;
+      background: inherit;
+    }
+  }
+
   &__unlock {
     color: $cr-accent-teacher;
 

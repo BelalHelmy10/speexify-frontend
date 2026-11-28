@@ -217,5 +217,6 @@
   "resources_pdf_sidebar_empty": "مفيش صفحات للعرض.",
   "resources_pdf_page_label": "الصفحة {current} من {total}",
   "resources_pdf_page_short": "الصفحة",
-  "resources_pdf_fit_to_page": "ملاءمة الصفحة"
+  "resources_pdf_fit_to_page": "ملاءمة الصفحة",
+  "resources_pdf_teacher_turns_pages": "يقلّب المعلم الصفحات"
 }

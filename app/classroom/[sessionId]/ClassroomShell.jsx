@@ -1774,6 +1774,7 @@ export default function ClassroomShell({
     <PrepShell resource={item} viewer={viewersByResourceId.get(item._id) || getViewerInfo(item)}
       isActive={active} hideSidebar hideBreadcrumbs
       classroomChannel={classroomChannel} isTeacher={isTeacher}
+      lockNavigation={!isTeacher}
       sessionId={sessionId} locale={locale}
       initialAudioState={initialAudioState}
       initialPdfScroll={initialPdfScroll}
@@ -1812,6 +1813,8 @@ export default function ClassroomShell({
       onClose={handleCloseResource}
       onOpenPicker={openPicker}
       canManage={isTeacher}
+      canSelect={isTeacher}
+      selectLockedLabel={ct("cr_teacher_picks_material")}
       locale={locale}
       scrollContainerRef={contentScrollRef}
       emptyContent={emptyResourceContent}

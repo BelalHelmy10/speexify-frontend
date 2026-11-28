@@ -20,6 +20,7 @@ export default function PrepViewerFrame({
   viewerUrl,
   resourceTitle,
   viewer,
+  canNavigatePages = true,
 }) {
   if (hasScreenShare) {
     return (
@@ -79,6 +80,7 @@ export default function PrepViewerFrame({
           }}
           hideControls={false}
           hideSidebar={false}
+          canNavigatePages={canNavigatePages}
           locale={locale}
         >
           {renderAnnotationsOverlay()}

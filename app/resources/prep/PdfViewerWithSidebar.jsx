@@ -75,6 +75,10 @@ export default function PdfViewerWithSidebar({
   // ✅ NEW: notify parent when "fit to page" is triggered (for classroom sync)
   onFitToPage,
   onViewportChange,
+  // Live classroom learners follow the teacher's page: they can still zoom
+  // and scroll, but only the teacher turns pages (the teacher's page still
+  // reaches them through the classroom sync).
+  canNavigatePages = true,
 }) {
   const mainRef = useRef(null);
   const [scrollElement, setScrollElement] = useState(null);
@@ -296,10 +300,11 @@ export default function PdfViewerWithSidebar({
         currentPage,
         numPages,
         zoom,
-        canGoPrev: currentPage > 1,
-        canGoNext: currentPage < numPages,
-        goPrevPage: () => setCurrentPage((p) => Math.max(1, p - 1)),
-        goNextPage: () => setCurrentPage((p) => Math.min(numPages, p + 1)),
+        canGoPrev: canNavigatePages && currentPage > 1,
+        canGoNext: canNavigatePages && currentPage < numPages,
+        pagesLocked: !canNavigatePages,
+        goPrevPage: () => { if (canNavigatePages) setCurrentPage((p) => Math.max(1, p - 1)); },
+        goNextPage: () => { if (canNavigatePages) setCurrentPage((p) => Math.min(numPages, p + 1)); },
         zoomIn: () => setManualZoom((z) => Math.round((z + ZOOM_STEP) * 100) / 100),
         zoomOut: () => setManualZoom((z) => Math.round((z - ZOOM_STEP) * 100) / 100),
         setZoomPercent: (percent) => setManualZoom(Number(percent) / 100),
@@ -315,7 +320,7 @@ export default function PdfViewerWithSidebar({
           setCurrentPage(Math.max(1, Math.min(numPages, page))),
       });
     }
-  }, [currentPage, numPages, zoom, onNavStateChange, fitToPage, autoFit, setManualZoom, applyView, restoreView, getView]);
+  }, [currentPage, numPages, zoom, onNavStateChange, fitToPage, autoFit, setManualZoom, applyView, restoreView, getView, canNavigatePages]);
 
   // Load pdf.js lazily
   useEffect(() => {
@@ -647,8 +652,9 @@ export default function PdfViewerWithSidebar({
   }, [pdfDoc]);
 
   // Controls (for internal use only when not using external nav)
-  const canGoPrev = currentPage > 1;
-  const canGoNext = currentPage < numPages;
+  const canGoPrev = canNavigatePages && currentPage > 1;
+  const canGoNext = canNavigatePages && currentPage < numPages;
+  const pagesLockedTitle = t(dict, "resources_pdf_teacher_turns_pages");
 
   function goPrevPage() {
     if (!canGoPrev) return;
@@ -850,7 +856,8 @@ export default function PdfViewerWithSidebar({
                 className="cpv-nav__btn"
                 onClick={goPrevPage}
                 disabled={!canGoPrev}
-                title={t(dict, "resources_pdf_prev_page")}
+                title={canNavigatePages ? t(dict, "resources_pdf_prev_page") : pagesLockedTitle}
+                aria-label={t(dict, "resources_pdf_prev_page")}
               >
                 ←
               </button>
@@ -864,7 +871,8 @@ export default function PdfViewerWithSidebar({
                 className="cpv-nav__btn"
                 onClick={goNextPage}
                 disabled={!canGoNext}
-                title={t(dict, "resources_pdf_next_page")}
+                title={canNavigatePages ? t(dict, "resources_pdf_next_page") : pagesLockedTitle}
+                aria-label={t(dict, "resources_pdf_next_page")}
               >
                 →
               </button>
@@ -877,7 +885,11 @@ export default function PdfViewerWithSidebar({
 
       {/* SIDEBAR */}
       {!hideSidebar && numPages > 1 && (
-        <aside className="prep-pdf-sidebar" data-lenis-prevent>
+        <aside
+          className={`prep-pdf-sidebar${canNavigatePages ? "" : " prep-pdf-sidebar--locked"}`}
+          title={canNavigatePages ? undefined : pagesLockedTitle}
+          data-lenis-prevent
+        >
           {numPages === 0 ? (
             <div className="prep-pdf-sidebar__empty">
               {t(dict, "resources_pdf_sidebar_empty")}
@@ -893,7 +905,11 @@ export default function PdfViewerWithSidebar({
                       "prep-pdf-sidebar__page-button" +
                       (pageNo === currentPage ? " is-active" : "")
                     }
-                    onClick={() => setCurrentPage(pageNo)}
+                    aria-current={pageNo === currentPage ? "page" : undefined}
+                    disabled={!canNavigatePages}
+                    onClick={() => {
+                      if (canNavigatePages) setCurrentPage(pageNo);
+                    }}
                   >
                     {pageNo}
                   </button>
@@ -930,7 +946,9 @@ export function PdfNavBar({ navState, locale = "en", className = "" }) {
     minZoom = 0.1,
     maxZoom = 5,
     fitToPage, // NEW
+    pagesLocked = false,
   } = navState;
+  const pagesLockedTitle = t(dict, "resources_pdf_teacher_turns_pages");
 
   return (
     <div className={`cpv-nav cpv-nav--external ${className}`}>
@@ -1021,7 +1039,8 @@ export function PdfNavBar({ navState, locale = "en", className = "" }) {
           className="cpv-nav__btn"
           onClick={goPrevPage}
           disabled={!canGoPrev}
-          title={t(dict, "resources_pdf_prev_page")}
+          title={pagesLocked ? pagesLockedTitle : t(dict, "resources_pdf_prev_page")}
+          aria-label={t(dict, "resources_pdf_prev_page")}
         >
           ←
         </button>
@@ -1035,7 +1054,8 @@ export function PdfNavBar({ navState, locale = "en", className = "" }) {
           className="cpv-nav__btn"
           onClick={goNextPage}
           disabled={!canGoNext}
-          title={t(dict, "resources_pdf_next_page")}
+          title={pagesLocked ? pagesLockedTitle : t(dict, "resources_pdf_next_page")}
+          aria-label={t(dict, "resources_pdf_next_page")}
         >
           →
         </button>

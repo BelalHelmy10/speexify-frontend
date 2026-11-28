@@ -427,5 +427,7 @@
   "cr_stage_connecting": "جارٍ الاتصال بالشاشة المشتركة…",
   "cr_stage_failed": "تعذّر وصول الشاشة المشتركة إليك على هذه الشبكة.",
   "cr_stage_sound": "شغّل الصوت",
-  "cr_stage_start_failed": "تعذّر بدء مشاركة الشاشة. حاول مرة أخرى."
+  "cr_stage_start_failed": "تعذّر بدء مشاركة الشاشة. حاول مرة أخرى.",
+  "cr_audio_teacher_controls": "يتحكم المعلم في الصوت",
+  "cr_teacher_picks_material": "يختار المعلم المادة المعروضة"
 }

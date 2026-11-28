@@ -5133,6 +5133,31 @@ body.classroom-active {
   }
 }
 
+// Learners in a live lesson follow the teacher's material and page: show
+// where the teacher is, without inviting clicks that would only change
+// the learner's own screen.
+.cr-resource-tabs--locked [role="tab"][aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+
+  &:hover {
+    background: transparent;
+    color: $cr-text-secondary;
+  }
+}
+
+.prep-pdf-sidebar--locked .prep-pdf-sidebar__page-button:disabled {
+  cursor: not-allowed;
+
+  &:not(.is-active) {
+    opacity: 0.5;
+  }
+
+  &.is-active {
+    opacity: 1;
+  }
+}
+
 // Persistent lesson resources, with a compact browser-style bottom tab strip.
 .cr-resource-workspace {
   --cr-resource-bar-height: 27px;
