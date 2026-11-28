@@ -2403,9 +2403,13 @@ export default function ClassroomShell({
         capacity={capacity}
         locale={locale}
         teacherName={teacherName}
+        teacherUserId={session?.teacherId ?? session?.teacher?.id ?? null}
         learners={learners}
         buildDisplayName={buildDisplayName}
         isTeacher={isTeacher}
+        identities={videoModerationControls.identities}
+        selfInCall={Boolean(videoModeration.localParticipantId)}
+        viewerUserId={localUserId}
         raisedHands={raisedHands}
         videoParticipants={videoModeration.participants}
         videoControlsReady={videoModeration.ready}

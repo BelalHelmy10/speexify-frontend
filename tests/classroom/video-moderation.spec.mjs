@@ -174,3 +174,32 @@ test("a learner mentions its previous tile, and leaves the call when the page go
   await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: false })));
   await expect.poll(() => commandNames(page)).toContain("hangup");
 });
+
+test("the participants panel finds a learner in the call even when names are shared", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.testSessionExtra = {
+      type: "GROUP",
+      teacherName: "Belal Helmy",
+      participantCount: 2,
+      learners: [
+        { id: 10, name: "Belal Helmy", status: "booked" },
+        { id: 11, name: "Belal Helmy", status: "booked" },
+      ],
+    };
+  });
+  const errors = await mountTeacherCall(page);
+  await page.evaluate(() => window.calls.at(-1).emit("videoConferenceJoined", { id: "teacher-tile" }));
+  await page.evaluate(() => {
+    window.setParticipants([{ participantId: "tile-11", displayName: "Belal Helmy" }]);
+    window.receive({ type: "VIDEO_PARTICIPANT", participantId: "tile-11", userId: 11, _from: { userId: 11, role: "learner" } });
+  });
+
+  await page.getByRole("button", { name: "Open classroom controls" }).click();
+  const modal = page.locator(".cr-participants-modal");
+  await expect(modal).toBeVisible();
+  await expect(modal.locator(".cr-participants-header__summary")).toHaveText("2 in call · 2 participants");
+  await expect(modal.locator(".cr-participant-row--teacher .cr-participant-row__status")).toHaveText("In call");
+  await expect(modal.locator(".cr-participant-row:not(.cr-participant-row--teacher) .cr-participant-row__status"))
+    .toHaveText(["Not joined", "In call"]);
+  expect(errors).toEqual([]);
+});

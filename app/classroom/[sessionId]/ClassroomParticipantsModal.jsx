@@ -17,43 +17,14 @@ import {
   X,
 } from "lucide-react";
 import { formatNumber } from "@/utils/locale";
+import { buildClassroomRoster, normalizeRosterName as normalizeName } from "@/lib/classroomRoster.mjs";
 import { useClassroomText } from "./classroomText";
-
-function normalizeName(value) {
-  return String(value || "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-}
 
 function getLearnerDisplayName(learner, buildDisplayName) {
   return (
     buildDisplayName(learner) ||
     learner?.email?.split("@")[0] ||
     "Learner"
-  );
-}
-
-function findLiveParticipant({ learnerName, liveParticipants, usedIds }) {
-  const normalizedName = normalizeName(learnerName);
-  if (!normalizedName) return null;
-
-  const exact = liveParticipants.find(
-    (participant) =>
-      !usedIds.has(participant.id) &&
-      normalizeName(participant.displayName) === normalizedName
-  );
-  if (exact) return exact;
-
-  return (
-    liveParticipants.find((participant) => {
-      if (usedIds.has(participant.id)) return false;
-      const displayName = normalizeName(participant.displayName);
-      return (
-        displayName.includes(normalizedName) ||
-        normalizedName.includes(displayName)
-      );
-    }) || null
   );
 }
 
@@ -242,9 +213,15 @@ export default function ClassroomParticipantsModal({
   participantCount,
   capacity,
   teacherName,
+  teacherUserId = null,
   learners,
   buildDisplayName,
   isTeacher = false,
+  // Tile id -> account id (announced by each client, stamped by the server),
+  // whether this browser is in the call, and who is viewing.
+  identities = new Map(),
+  selfInCall = false,
+  viewerUserId = null,
   raisedHands = [],
   videoParticipants = [],
   videoControlsReady = false,
@@ -281,42 +258,29 @@ export default function ClassroomParticipantsModal({
       normalizeName(typeof entry === "string" ? entry : entry.userName)
     )
   );
-  const usedLiveParticipantIds = new Set();
-  const liveTeacher = findLiveParticipant({
-    learnerName: teacherName,
+  const roster = buildClassroomRoster({
+    teacherName,
+    teacherUserId,
+    learners: safeLearners,
+    learnerName: (learner) => getLearnerDisplayName(learner, buildDisplayName),
     liveParticipants,
-    usedIds: usedLiveParticipantIds,
+    identities,
+    selfInCall,
+    viewerIsTeacher: isTeacher,
+    viewerUserId,
   });
-  if (liveTeacher) usedLiveParticipantIds.add(liveTeacher.id);
-
-  const learnerRows = safeLearners.map((learner, idx) => {
-    const learnerName = getLearnerDisplayName(learner, buildDisplayName);
-    const liveParticipant = findLiveParticipant({
-      learnerName,
-      liveParticipants,
-      usedIds: usedLiveParticipantIds,
-    });
-    if (liveParticipant) usedLiveParticipantIds.add(liveParticipant.id);
-
-    return {
-      key: learner.id || learner.userId || idx,
-      learner,
-      learnerName,
-      liveParticipant,
-      handRaised: raisedHandNames.has(normalizeName(learnerName)),
-    };
-  });
-
-  const unmatchedLiveParticipants = liveParticipants.filter(
-    (participant) =>
-      !usedLiveParticipantIds.has(participant.id) &&
-      normalizeName(participant.displayName) !== normalizeName(teacherName)
-  );
+  const liveTeacher = roster.teacherLive;
+  const learnerRows = roster.learnerRows.map((row, idx) => ({
+    ...row,
+    key: row.learner.id || row.learner.userId || idx,
+    handRaised: raisedHandNames.has(normalizeName(row.learnerName)),
+  }));
+  const unmatchedLiveParticipants = roster.unmatched;
 
   const participantCountLabel = `${formatNumber(participantCount, locale)}${
     capacity ? `/${formatNumber(capacity, locale)}` : ""
   }`;
-  const liveCountLabel = formatNumber(liveParticipants.length, locale);
+  const liveCountLabel = formatNumber(roster.inCallCount, locale);
 
   return (
     <div className="cr-modal-overlay cr-participants-overlay" onClick={() => setShowParticipantList(false)}>
@@ -425,7 +389,7 @@ export default function ClassroomParticipantsModal({
               {safeLearners.length === 0 ? (
                 <p className="cr-participants-roster__empty">{ct("cr_pm_no_learners")}</p>
               ) : (
-                learnerRows.map(({ key, learner, learnerName, liveParticipant, handRaised }) => (
+                learnerRows.map(({ key, learner, learnerName, liveParticipant, inCall, handRaised }) => (
                   <article
                     key={key}
                     className={`cr-participant-row ${learner.status === "canceled" ? "is-canceled" : ""}`}
@@ -440,9 +404,9 @@ export default function ClassroomParticipantsModal({
                           <span className="cr-participant-row__status-tag">{seatLabel(learner.status)}</span>
                         )}
                       </div>
-                      <span className={`cr-participant-row__status ${liveParticipant ? "is-live" : ""}`}>
+                      <span className={`cr-participant-row__status ${inCall ? "is-live" : ""}`}>
                         <span className="cr-participant-row__status-dot" />
-                        {liveParticipant ? ct("cr_pm_in_call") : ct("cr_pm_not_joined")}
+                        {inCall ? ct("cr_pm_in_call") : ct("cr_pm_not_joined")}
                         {handRaised && (
                           <span className="cr-participant-row__hand">
                             <Hand size={13} /> {ct("cr_pm_hand_raised")}
