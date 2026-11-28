@@ -42,3 +42,35 @@ test("target resolution prefers the authenticated mapping", () => {
   assert.equal(resolveModerationTarget({ participantId: "zz", learnerUserId: 5, identities }), 5);
   assert.equal(resolveModerationTarget({ participantId: "zz", learnerUserId: null, identities }), null);
 });
+
+test("leftover tiles: an older tile of the same person is removed", async () => {
+  const { leftoverParticipantIds } = await import("../lib/classroomVideoModeration.mjs");
+  const identities = new Map([["old1", 10], ["other", 11]]);
+  const participants = [{ id: "old1", displayName: "Belal" }, { id: "new1", displayName: "Belal" }, { id: "other", displayName: "Sara" }];
+  assert.deepEqual(
+    leftoverParticipantIds({ identity: { participantId: "new1", userId: 10 }, identities, participants, ownParticipantId: "teacher" }),
+    ["old1"]
+  );
+});
+
+test("leftover tiles: a claimed tile is trusted only if it is theirs or unknown with the same name", async () => {
+  const { leftoverParticipantIds } = await import("../lib/classroomVideoModeration.mjs");
+  const participants = [
+    { id: "ghost", displayName: "Belal Helmy" },
+    { id: "new1", displayName: "Belal Helmy" },
+    { id: "sara", displayName: "Sara" },
+    { id: "stranger", displayName: "Someone Else" },
+  ];
+  const identities = new Map([["sara", 11]]);
+  const identity = { participantId: "new1", userId: 10 };
+  // Unknown to the teacher and the same name: removed.
+  assert.deepEqual(leftoverParticipantIds({ identity, replaces: "ghost", identities, participants, ownParticipantId: "t" }), ["ghost"]);
+  // Known to belong to another learner: never removed.
+  assert.deepEqual(leftoverParticipantIds({ identity, replaces: "sara", identities, participants, ownParticipantId: "t" }), []);
+  // Unknown with a different name: never removed.
+  assert.deepEqual(leftoverParticipantIds({ identity, replaces: "stranger", identities, participants, ownParticipantId: "t" }), []);
+  // The teacher's own tile: never removed.
+  assert.deepEqual(leftoverParticipantIds({ identity, replaces: "t", identities, participants: [...participants, { id: "t", displayName: "Belal Helmy" }], ownParticipantId: "t" }), []);
+  // Already gone from the call: nothing to do.
+  assert.deepEqual(leftoverParticipantIds({ identity, replaces: "gone", identities, participants, ownParticipantId: "t" }), []);
+});

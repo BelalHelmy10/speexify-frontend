@@ -533,7 +533,20 @@ function PrepVideoCall({
 
     init();
 
+    // Reloading or closing the tab: leave the call properly, so the others
+    // don't keep a leftover tile until the video server times it out.
+    const leaveOnPageHide = (event) => {
+      if (event.persisted) return;
+      try {
+        apiRef.current?.executeCommand?.("hangup");
+      } catch {
+        // The page is going away; nothing else to do.
+      }
+    };
+    window.addEventListener("pagehide", leaveOnPageHide);
+
     return () => {
+      window.removeEventListener("pagehide", leaveOnPageHide);
       cancelled = true;
       window.clearTimeout(joinTimer);
       stopConnectionMonitor?.();
